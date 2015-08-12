@@ -793,9 +793,12 @@ class ScrapyTask(object):
         self.process = Popen(cmd, shell=True, stdout=PIPE,
                              stderr=PIPE, preexec_fn=os.setsid)
         if self.task_data.get('with_best_seller_ranking', False):
+            logger.info('With best seller ranking')
             cmd = self._parse_task_and_get_cmd(True)
             self.process_bsr = Popen(cmd, shell=True, stdout=PIPE,
                                      stderr=PIPE, preexec_fn=os.setsid)
+        else:
+            logger.info('Skipping best seller')
         logger.info('Scrapy process started for task #%s',
                     self.task_data.get('task_id', 0))
 
@@ -1069,7 +1072,7 @@ def main():
     def log_tasks_results(tasks):
         logger.info('#'*10 + 'START TASKS REPORT:' + '#'*10)
         [logger.info(_.report()) for _ in tasks]
-        logger.info(logger.info('#'*10 + 'FINISH TASKS REPORT:' + '#'*10))
+        logger.info('#'*10 + 'FINISH TASKS REPORT:' + '#'*10)
 
     while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
         TASK_QUEUE_NAME = random.choice([q for q in QUEUES_LIST.values()])
@@ -1088,6 +1091,8 @@ def main():
         logger.info("Whole tasks msg: %s", str(task_data))
         # prepare to run task
         if is_task_taken(task_data, tasks_taken):  # repeated task
+            logger.warning('Duplicate task %s, skipping.',
+                           task_data.get('task_id'))
             continue
         if not tasks_taken:  # make sure all tasks are in same branch
             branch = get_branch_for_task(task_data)
