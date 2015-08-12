@@ -1010,6 +1010,17 @@ def del_duplicate_tasks(tasks):
         task_ids.append(t)
 
 
+def is_task_taken(new_task, tasks):
+    """
+    Check, if tusk with such id already taken
+    """
+    task_ids = [t.task_data.get('task_id') for t in tasks]
+    new_task_id = new_task.task_data.get('task_id')
+    if new_task_id is None:
+        return False
+    return new_task_id in task_ids
+
+
 def main():
     if not TEST_MODE:
         instance_meta = get_instance_metadata()
@@ -1034,92 +1045,93 @@ def main():
         logger.error('Socket auth failed!')
         raise Exception  # to catch exception and write end marker
 
-    # get tasks
-    while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
-        TASK_QUEUE_NAME = random.choice([q for q in QUEUES_LIST.values()])
-        if TEST_MODE:
-            msg = test_read_msg_from_fs(TASK_QUEUE_NAME)
-        else:
-            # set short wait time, so if task has different branch,
-            # this task must appear on another instance asap
-            msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries)
-        logger.info('Trying to get task from %s, try #%s',
-                    TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
-        max_tries -= 1
-        if msg is None:
-            time.sleep(3)
-            continue
-        task_data, queue = msg
-        # get branch from first task
-        if not tasks_taken:
-            branch = get_branch_for_task(task_data)
-        elif not is_same_branch(get_branch_for_task(task_data), branch):
-            queue.reset_message()
-            # tasks have different branches, skip
-            continue
-        #queue.task_done()
-        logger.info("Task message was successfully received and "
-                    "removed form queue.")
-        logger.info("Whole tasks msg: %s", str(task_data))
-        task = ScrapyTask(queue, task_data, listener)
-        tasks_taken.append(task)
-
-    if not tasks_taken:
-        logger.warning('No tasks were taken.')
-        logger.info('Scrapy daemon finished.')
-        return
-    del_duplicate_tasks(tasks_taken)
-    # prepare to execute tasks
-    switch_branch_if_required(tasks_taken[0].task_data)
+    # new logic:
+    # get task and start in in one step
     if not os.path.exists(os.path.expanduser(JOB_OUTPUT_PATH)):
         logger.debug("Create job output dir %s",
                      os.path.expanduser(JOB_OUTPUT_PATH))
         os.makedirs(os.path.expanduser(JOB_OUTPUT_PATH))
 
-    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken])
-    # start and run tasks
-    logger.info('Starting to execute tasks, total %s.', len(tasks_taken))
-    for task in tasks_taken:
-        if task.start():  # successfully started
-            task.run()
-            task.send_current_status_to_sqs()  # report 0% progress immediately
-            task.queue.task_done()  # remove the message from the input queue
-            increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
-            update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
-            logger.info('Task #%s (%r) started successfully.',
-                        task.task_data.get('task_id', 0),
-                        task.get_output_path())
-        else:
-            logger.error('Task #%s (%r) failed to start.',
-                         task.task_data.get('task_id', 0),
-                         task.get_output_path())
-
     def is_all_tasks_finished(tasks):
         return all([_.is_finished() for _ in tasks])
 
+    def send_tasks_status(tasks):
+        return [_.send_current_status_to_sqs()
+                for _ in tasks if not _.is_finished()]
+
+    def stop_not_finished_tasks(tasks):
+        return [_.stop() for _ in tasks if not _.is_finished()]
+
+    def log_tasks_results(tasks):
+        logger.info('#'*10 + 'START TASKS REPORT:' + '#'*10)
+        [logger.info(_.report()) for _ in tasks]
+        logger.info(logger.info('#'*10 + 'FINISH TASKS REPORT:' + '#'*10))
+
+    while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
+        TASK_QUEUE_NAME = random.choice([q for q in QUEUES_LIST.values()])
+        logger.info('Trying to get task from %s, try #%s',
+                    TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
+        if TEST_MODE:
+            msg = test_read_msg_from_fs(TASK_QUEUE_NAME)
+        else:
+            msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries)
+        max_tries -= 1
+        if msg is None:  # no task
+            time.sleep(3)
+            continue
+        task_data, queue = msg
+        logger.info("Task message was successfully received.")
+        logger.info("Whole tasks msg: %s", str(task_data))
+        # prepare to run task
+        if is_task_taken(task_data, tasks_taken):  # repeated task
+            continue
+        if not tasks_taken:  # make sure all tasks are in same branch
+            branch = get_branch_for_task(task_data)
+            switch_branch_if_required(task_data)
+        elif not is_same_branch(get_branch_for_task(task_data), branch):
+            queue.reset_message()
+            continue
+        # start task
+        # if started, remove from the queue and run
+        task = ScrapyTask(queue, task_data, listener)
+        if task.start():
+            tasks_taken.append(task)
+            task.run()
+            logger.info(
+                'Task %s started successfully, removing it from the queue',
+                task.task_data.get('task_id'))
+            task.queue.task_done()
+            increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
+            update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
+        else:
+            logger.error('Task #%s failed to start. Leaving it in the queue.',
+                         task.task_data.get('task_id', 0))
+            logger.error(task.report())
+    if not tasks_taken:
+        logger.warning('No tasks were taken.')
+        logger.info('Scrapy daemon finished.')
+        return
+    del_duplicate_tasks(tasks_taken)
+    logger.info('Total tasks received: %s', len(tasks_taken))
+    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken])
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
-    cur_wait_time = 0
     try:
-        while cur_wait_time < max_wait_time:
+        for i in xrange(0, max_wait_time, step_time):
             if is_all_tasks_finished(tasks_taken):
                 logger.info('All tasks finished.')
                 break
-            # update sqs with running statuses
-            [t.send_current_status_to_sqs()
-             for t in tasks_taken
-             if not t.is_finished()]
-            cur_wait_time += step_time
+            send_tasks_status(tasks_taken)
             time.sleep(step_time)
         else:
-            logger.error('Some of the tasks not finished in allowed time.')
-            [t.stop() for t in tasks_taken if not t.is_finished()]
+            logger.error('Some of the tasks not finished in allowed time, '
+                         'stopping them.')
+            stop_not_finished_tasks(tasks_taken)
     except KeyboardInterrupt:
-        [t.stop() for t in tasks_taken]
+        stop_not_finished_tasks(tasks_taken)
         raise Exception
     listener.close()
-    for task in tasks_taken:
-        logger.info(task.report())
+    log_tasks_results(tasks_taken)
 
     # write finish marker
     logger.info('Scrapy daemon finished.')
