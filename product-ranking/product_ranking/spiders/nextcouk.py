@@ -112,7 +112,10 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 )
                 tree[val] = last_id
 
-        style_id = tree[product_id_format(product_id)]
+        try:
+            style_id = tree[product_id_format(product_id)]
+        except (KeyError, ValueError) as exc:
+            self.log('Error parsing style_id:{0}'.format(exc), ERROR)
 
         # Format product id to get proper section from html body
         item = response.xpath(
