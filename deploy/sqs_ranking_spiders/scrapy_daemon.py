@@ -1015,7 +1015,7 @@ def is_task_taken(new_task, tasks):
     Check, if tusk with such id already taken
     """
     task_ids = [t.task_data.get('task_id') for t in tasks]
-    new_task_id = new_task.task_data.get('task_id')
+    new_task_id = new_task.get('task_id')
     if new_task_id is None:
         return False
     return new_task_id in task_ids
