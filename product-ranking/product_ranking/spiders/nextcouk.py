@@ -18,11 +18,16 @@ def product_id_format(product_id, product_target):
     """
     Formats product id 123456 to 123-456-X56
     """
-    return '{0}-{1}-{2}'.format(
+    result = '{0}-{1}'.format(
         product_id[:3],
-        product_id[3:],
-        product_target
+        product_id[3:]
     )
+    if product_target:
+        result = '{0}-{1}'.format(
+            result,
+            product_target
+        )
+    return result
 
 class NextCoUkProductSpider(BaseProductsSpider):
 
@@ -62,11 +67,26 @@ class NextCoUkProductSpider(BaseProductsSpider):
         product = meta['product']
 
         product_ids = is_empty(
-            re.findall(r'#(\d+)(\w+)', product['url']),
+            re.findall(r'#(\w+)(\D+\w+)', product['url']),
             None
         )
-        product_id = product_ids[0]
-        product_target = product_ids[1].upper()
+
+        if not product_ids:
+            product_ids = response.xpath('//input[@id="idList"]/'
+                                         '@value').extract()[0]
+            product_ids = product_ids.split(',')
+            product_id = product_ids[0]
+            product_target = is_empty(
+                re.findall(r'#(\w+)', product['url']),
+                ''
+            )
+            product_target = product_target.replace(
+                product_id.lower(), ''
+            ).upper()
+        else:
+            product_id = product_ids[0]
+            product_target = product_ids[1].upper()
+
         response.meta['product_id'] = product_id
         response.meta['product_target'] = product_target
 
@@ -89,7 +109,11 @@ class NextCoUkProductSpider(BaseProductsSpider):
             elif key == 'ItemNumber':
                 tree[val] = last_id
 
-        style_id = tree[product_id_format(product_id, product_target)]
+        try:
+            style_id = tree[product_id_format(product_id, product_target)]
+        except Exception, e:
+            self.log('Error parsing style_id! ' + str(e))
+            return product
 
         # Format product id to get proper section from html body
         item = response.xpath(
@@ -185,6 +209,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
         meta = response.meta.copy()
         product_target = meta['product_target']
+        product_id = meta['product_id']
         reqs = meta.get('reqs', [])
 
         variants_data = is_empty(
@@ -216,13 +241,20 @@ class NextCoUkProductSpider(BaseProductsSpider):
                         for variant_item in vars_items:
                             variant = dict()
                             item_number = variant_item['ItemNumber'].replace('-', '')
+                            item_number_id = item_number.replace(product_target.upper(), '')
+                            variant['properties'] = {}
 
                             if name:
-                                variant['fit'] = name
+                                variant['properties']['fit'] = name
 
                             colour_name = variant_item['Colour'].strip()
                             if colour_name:
-                                variant['colour'] = colour_name
+                                variant['properties']['color'] = colour_name
+
+                            variant['image_url'] = 'http://cdn2.next.co.uk/Common/Items/Default/' \
+                                                   'Default/ItemImages/AltItemShot/315x472/{id}.jpg'.format(
+                                id=item_number_id
+                            )
 
                             variants[item_number] = variant
 
@@ -236,7 +268,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
             except (KeyError, ValueError) as exc:
                 self.log(
                     "Failed to extract variants from {url}: {exc}".format(
-                        response.url, exc
+                        url=response.url, exc=exc
                     ), ERROR
                 )
 
@@ -279,7 +311,10 @@ class NextCoUkProductSpider(BaseProductsSpider):
         reqs = meta.get('reqs')
         product = meta['product']
         product_variants = product.get('variants', [])
+        product_target = meta['product_target']
+        product_id = meta['product_id']
         variants = meta['variants']
+
         final_vars = []
 
         item_number = is_empty(
@@ -288,6 +323,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
                 response.url
             ), ''
         )
+        item_number_id = item_number.replace(product_target.upper(), '')
 
         # Get data of current variant from meta
         var = variants[item_number]
@@ -298,20 +334,22 @@ class NextCoUkProductSpider(BaseProductsSpider):
             for size in size_values:
                 final_var = var.copy()
                 sizes_var = dict()
-                fit = var.get('fit', '')
-                colour = var.get('colour', '')
+                properties = var['properties']
+                fit = properties.get('fit', '')
+                colour = properties.get('color', '')
 
+                sizes_var['properties'] = {}
                 if fit:
-                    sizes_var['fit'] = fit
+                    sizes_var['properties']['fit'] = fit
 
                 if colour:
-                    sizes_var['colour'] = colour
+                    sizes_var['properties']['color'] = colour
 
                 if '- Sold Out' in size:
                     size = size.replace('- Sold Out', '')
-                    sizes_var['out_of_stock'] = True
+                    sizes_var['in_stock'] = False
                 else:
-                    sizes_var['out_of_stock'] = False
+                    sizes_var['in_stock'] = True
 
                 if '\\xa' in repr(size):
                     price = is_empty(
@@ -334,10 +372,17 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     )
                 size = size.strip()
                 if size != "ONE":
-                    sizes_var['size'] = size
+                    sizes_var['properties']['size'] = size
 
-                final_var.update(sizes_var)
-                final_vars.append(final_var)
+                # Set selected property
+                if (fit or colour) and item_number_id == product_id and len(size_values) == 1:
+                    sizes_var['selected'] = True
+                else:
+                    sizes_var['selected'] = False
+
+                if sizes_var['properties']:
+                    final_var.update(sizes_var)
+                    final_vars.append(final_var)
 
         product_variants += final_vars
         product['variants'] = product_variants

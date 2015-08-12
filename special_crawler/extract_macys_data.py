@@ -35,18 +35,19 @@ class MacysScraper(Scraper):
         self.price_json = None
         self.mv = MacysVariants()
 
-    reviews_tree = None
-    max_score = None
-    min_score = None
-    review_count = None
-    average_review = None
-    reviews = None
-    feature_count = None
-    features = None
-    video_urls = None
-    video_count = None
-    pdf_urls = None
-    pdf_count = None
+        self.reviews_tree = None
+        self.max_score = None
+        self.min_score = None
+        self.review_count = None
+        self.average_review = None
+        self.reviews = None
+        self.feature_count = None
+        self.features = None
+        self.video_urls = None
+        self.video_count = None
+        self.pdf_urls = None
+        self.pdf_count = None
+        self.is_review_checked = False
 
     def check_url_format(self):
         # for ex: http://www1.macys.com/shop/product/closeout-biddeford-comfort-knit-fleece-heated-king-blanket?ID=694761
@@ -83,7 +84,7 @@ class MacysScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        return None
+        return self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
 
     def _site_id(self):
         site_id = self.tree_html.xpath("//input[@id='productId']/@value")[0].strip()
@@ -105,7 +106,15 @@ class MacysScraper(Scraper):
         return None
 
     def _upc(self):
-        return None
+        upc = None
+        variants = self._variants()
+
+        if not variants:
+            upc = re.findall(r'"upc": "(.*?)",', html.tostring(self.tree_html), re.DOTALL)[0]
+        elif len(variants) == 1:
+            upc = variants[0]["upc"]
+
+        return upc
 
     def _features(self):
         if self.feature_count is not None:
@@ -306,7 +315,8 @@ class MacysScraper(Scraper):
     #populate the reviews_tree variable for use by other functions
     def _load_reviews(self):
         try:
-            if not self.max_score or not self.min_score:
+            if not self.is_review_checked:
+                self.is_review_checked = True
                 # http://macys.ugc.bazaarvoice.com/7129aa/694761/reviews.djs?format=embeddedhtml
                 url = "http://macys.ugc.bazaarvoice.com/7129aa/%s/reviews.djs?format=embeddedhtml" % self._product_id()
                 contents = urllib.urlopen(url).read()
@@ -332,8 +342,11 @@ class MacysScraper(Scraper):
                     self.reviews.append([score, int(review)])
                     score += 1
 
+                if not self.reviews:
+                    self.reviews = None
                 # self.reviews_tree = html.fromstring(contents)
         except:
+            self.reviews = None
             pass
 
     def _average_review(self):
@@ -343,11 +356,15 @@ class MacysScraper(Scraper):
         for review in self.reviews:
             count += review[1]
             score += review[0]*review[1]
-        return round(1.0*score/count, 2)
+        return round(1.0*score/count, 1)
 
     def _review_count(self):
         self._load_reviews()
         count = 0
+
+        if not self.reviews:
+            return 0
+
         for review in self.reviews:
             count += review[1]
         return count
@@ -474,6 +491,7 @@ class MacysScraper(Scraper):
         "feature_count" : _feature_count, \
         "description" : _description, \
         "model" : _model, \
+        "upc" : _upc, \
         "long_description" : _long_description, \
         "variants" : _variants, \
         # CONTAINER : PAGE_ATTRIBUTES

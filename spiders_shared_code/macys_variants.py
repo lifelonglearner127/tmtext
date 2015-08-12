@@ -65,7 +65,7 @@ class MacysVariants(object):
                 if len(variants_json) == 1:
                     stockstatus_for_variants["selected"] = True
                 else:
-                    stockstatus_for_variants["selected"] = None
+                    stockstatus_for_variants["selected"] = False
 
                 stockstatus_for_variants["price"] = price_amount
 
@@ -73,6 +73,8 @@ class MacysVariants(object):
                     stockstatus_for_variants["in_stock"] = True
                 else:
                     stockstatus_for_variants["in_stock"] = False
+
+                stockstatus_for_variants["upc"] = variant_item["upc"]
 
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
 
@@ -112,9 +114,10 @@ class MacysVariants(object):
                         continue
 
                     stockstatus_for_variants["properties"] = properties
-                    stockstatus_for_variants["selected"] = None
+                    stockstatus_for_variants["selected"] = False
                     stockstatus_for_variants["price"] = price_amount
                     stockstatus_for_variants["in_stock"] = False
+                    stockstatus_for_variants["upc"] = None
 
                     stockstatus_for_variants_list.append(stockstatus_for_variants)
 

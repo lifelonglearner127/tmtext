@@ -241,6 +241,18 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
             extract())
         cond_set(product, 'brand', brand_name)
 
+        # parse Subscribe & Save
+        price_ss = response.xpath('//*[contains(text(), "Subscribe & Save:")]/'
+                                  '../..//*[@id="subscriptionPrice"]/text()').extract()
+        if price_ss:
+            price_ss = price_ss[0].strip()
+            if price_ss.startswith('$'):
+                price_ss = price_ss.replace(' ', '').replace(',', '').strip('$')
+                try:
+                    product['price_subscribe_save'] = float(str(price_ss))
+                except Exception, _:
+                    pass
+
         av = AmazonVariants()
         av.setupSC(response)
         product['variants'] = av._variants()

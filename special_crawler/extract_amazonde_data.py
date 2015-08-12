@@ -607,7 +607,7 @@ class AmazonDEScraper(Scraper):
             average_review = self.tree_html.xpath("//div[@class='gry txtnormal acrRating']//text()")
         if len(average_review) == 0:
             average_review = self.tree_html.xpath("//div[@id='avgRating']//span//text()")
-        average_review = re.findall("([0-9]\.?[0-9]?) out of 5 stars", average_review[0])[0]
+        average_review = re.findall("([0-9]\.?[0-9]?) von 5 Sternen", average_review[0])[0]
         return self._tofloat(average_review)
 
     def _review_count(self):

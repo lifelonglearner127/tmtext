@@ -55,6 +55,7 @@ from extract_walmartca_data import WalmartCAScraper
 from extract_marksandspencer_data import MarksAndSpencerScraper
 from extract_nextcouk_data import NextCoUKScraper
 from extract_amazonin_data import AmazonINScraper
+from extract_uniqlo_data import UniqloScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -118,6 +119,7 @@ SUPPORTED_SITES = {
                     "marksandspencer": MarksAndSpencerScraper,
                     "nextcouk": NextCoUKScraper,
                     "amazonin": AmazonINScraper,
+                    "uniqlo": UniqloScraper
                     }
 
 # add logger

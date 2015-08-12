@@ -8,7 +8,7 @@ import urllib
 
 from scrapy.http import Request
 from scrapy import Selector
-
+from scrapy.log import ERROR, INFO, WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
@@ -167,7 +167,8 @@ class KohlsProductsSpider(BaseProductsSpider):
             '//div[@class="multiple-price"]/div[2]/text()[normalize-space()] |'
             '//div[@class="original original-reg"]/text()[normalize-space()] |'
             '//span[@class="price_ammount"]/text()[normalize-space()] |'
-            '//div[@class="sale"]/text()[normalize-space()]'
+            '//div[@class="sale"]/text()[normalize-space()] |'
+            '//div[contains(@class, "main_price")]/text()'
         ).re("\d+.?\d{0,2}")
 
         if price:
@@ -296,9 +297,16 @@ class KohlsProductsSpider(BaseProductsSpider):
                     "/span[@class='BVRRNumber']/text()").extract()
                 if total:
                     try:
-                        total = int(total[0])
-                    except ValueError:
+                        total = int(
+                            total[0].replace(',', '')
+                        )
+                    except ValueError as exc:
                         total = 0
+                        self.log(
+                            "Error trying to extract number of BR in {url}: {exc}".format(
+                                response.url, exc
+                            ), WARNING
+                        )
                 else:
                     total = 0
 
@@ -317,10 +325,18 @@ class KohlsProductsSpider(BaseProductsSpider):
                         value = ih.xpath(
                             "span[@class='BVRRHistAbsLabel']/text()").extract()
                         if value:
-                            value = int(value[0])
+                            value = int(
+                                value[0].replace(',', '')
+                            )
                         distribution[name] = value
                     except ValueError:
-                        pass
+                        self.log(
+                            "Error trying to extract {star} value of BR in {url}: {exc}".format(
+                                star=name,
+                                url=response.url,
+                                exc=exc
+                            ), WARNING
+                        )
                 if distribution:
                     reviews = BuyerReviews(total, avrg, distribution)
                     cond_set_value(product, 'buyer_reviews', reviews)
