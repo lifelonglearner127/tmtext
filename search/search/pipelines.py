@@ -97,7 +97,7 @@ class URLsPipeline(object):
                 fields = [item['origin_upc'][0], json.dumps(item['origin_name'])]
             else:
                 if option == 5:
-                    if 'product_target_price' in item:
+                    if 'product_target_price' not in item:
                         price = ""
                     else:
                         price = item['product_target_price']
