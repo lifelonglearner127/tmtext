@@ -573,7 +573,10 @@ class ScrapyTask(object):
                 EXTENSION_SIGNALS[ext_cache_down]
 
     def get_total_wait_time(self):
-        return sum([r['wait'] for r in self.required_signals.itervalues()])
+        s = sum([r['wait'] for r in self.required_signals.itervalues()])
+        if self.current_signal:
+            s += self.current_signal[1]['wait']
+        return s
 
     def _dispose(self):
         """kill process if running, drop connection if opened"""
@@ -643,9 +646,7 @@ class ScrapyTask(object):
                      self.task_data.get('task_id', 0), signal)
 
         self.require_signal_failed = signal
-
-        _msg = generate_msg(self.task_data, 'failed')
-        put_msg_to_sqs(self.task_data['server_name']+PROGRESS_QUEUE_NAME, _msg)
+        self.send_current_status_to_sqs('failed')
 
     def _signal_succeeded(self, signal, date_time, is_ext):
         """set finish time for signal and save in finished signals if needed"""
@@ -675,6 +676,7 @@ class ScrapyTask(object):
 
         output_path = self.get_output_path()
         if self.process_bsr and self.finished_ok:
+            logger.info('Collecting best sellers data...')
             temp_file = output_path + 'temp_file.jl'
             os.system('%s/product-ranking/add-best-seller.py %s %s > %s' % (
                 REPO_BASE_PATH, output_path+'.jl',
@@ -697,6 +699,7 @@ class ScrapyTask(object):
         if CONVERT_TO_CSV:
             try:
                 csv_filepath = convert_json_to_csv(output_path)
+                logger.info('Zip created at: %r.', csv_filepath)
                 csv_data_key = put_file_into_s3(
                     AMAZON_BUCKET_NAME, csv_filepath)
             except Exception as e:
@@ -709,7 +712,8 @@ class ScrapyTask(object):
                 self.task_data['server_name']+OUTPUT_QUEUE_NAME, self.task_data)
         else:
             logger.error("Failed to load info to results sqs. Amazon keys "
-                         "wasn't received")
+                         "wasn't received. data_key=%r, logs_key=%r.",
+                         data_key, logs_key)
 
         logger.info("Spider default output:\n%s%s",
                     self.process.stderr.read(),
@@ -719,15 +723,18 @@ class ScrapyTask(object):
         # upload scrapy_daemon logs
         daemon_logs_zipfile = None
         try:
-            daemon_logs_zipfile = self._zip_daemon_logs(
-                output_path+'.daemon.zip')
+            daemon_logs_zipfile = self._zip_daemon_logs()
         except Exception as e:
             logger.warning('Could not create daemon ZIP: %s' % str(e))
         if daemon_logs_zipfile and os.path.exists(daemon_logs_zipfile):
             # now move the file into output path folder
-            # if os.path.exists(output_path+'.daemon.zip'):
-            #     os.unlink(output_path+'.daemon.zip')
-            # os.rename(daemon_logs_zipfile, output_path+'.daemon.zip')
+            if os.path.exists(output_path+'.daemon.zip'):
+                os.unlink(output_path+'.daemon.zip')
+            try:
+                os.rename(daemon_logs_zipfile, output_path+'.daemon.zip')
+            except OSError as e:
+                logger.error('File %r to %r rename error: %s.',
+                             daemon_logs_zipfile, output_path+'.daemon.zip', e)
             try:
                 put_file_into_s3(AMAZON_BUCKET_NAME, daemon_logs_zipfile,
                                  compress=False)
@@ -790,9 +797,12 @@ class ScrapyTask(object):
         self.process = Popen(cmd, shell=True, stdout=PIPE,
                              stderr=PIPE, preexec_fn=os.setsid)
         if self.task_data.get('with_best_seller_ranking', False):
+            logger.info('With best seller ranking')
             cmd = self._parse_task_and_get_cmd(True)
             self.process_bsr = Popen(cmd, shell=True, stdout=PIPE,
                                      stderr=PIPE, preexec_fn=os.setsid)
+        else:
+            logger.info('Skipping best seller')
         logger.info('Scrapy process started for task #%s',
                     self.task_data.get('task_id', 0))
 
@@ -868,9 +878,7 @@ class ScrapyTask(object):
                 raise ConnectError
             self._signal_succeeded(next_signal,
                                    datetime.datetime.utcnow(), False)
-            msg = generate_msg(self.task_data, 0)
-            put_msg_to_sqs(
-                self.task_data['server_name']+PROGRESS_QUEUE_NAME, msg)
+            self.send_current_status_to_sqs(0)
             return True
         elif next_signal[0] == SIGNAL_SCRIPT_CLOSED:  # last signal
             res = self._try_finish(max_step_time)
@@ -878,9 +886,7 @@ class ScrapyTask(object):
                 raise FinishError
             self._signal_succeeded(next_signal,
                                    datetime.datetime.utcnow(), False)
-            msg = generate_msg(self.task_data, 'finished')
-            put_msg_to_sqs(
-                self.task_data['server_name']+PROGRESS_QUEUE_NAME, msg)
+            self.send_current_status_to_sqs('finished')
             return True
         step_time_passed = 0
         while not self._stop_signal and step_time_passed < max_step_time:
@@ -989,8 +995,9 @@ class ScrapyTask(object):
             s += 'None of the signals are finished.\n'
         return s
 
-    def send_current_status_to_sqs(self):
-        msg = generate_msg(self.task_data, self.items_scraped)
+    def send_current_status_to_sqs(self, status=None):
+        msg = generate_msg(
+            self.task_data, status if status else self.items_scraped)
         put_msg_to_sqs(
             self.task_data['server_name']+PROGRESS_QUEUE_NAME, msg)
         # put current progress to S3 as well, for easier debugging & tracking
@@ -1012,6 +1019,17 @@ def del_duplicate_tasks(tasks):
             del tasks[i]
             continue
         task_ids.append(t)
+
+
+def is_task_taken(new_task, tasks):
+    """
+    Check, if tusk with such id already taken
+    """
+    task_ids = [t.task_data.get('task_id') for t in tasks]
+    new_task_id = new_task.get('task_id')
+    if new_task_id is None:
+        return False
+    return new_task_id in task_ids
 
 
 def main():
@@ -1038,92 +1056,95 @@ def main():
         logger.error('Socket auth failed!')
         raise Exception  # to catch exception and write end marker
 
-    # get tasks
-    while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
-        TASK_QUEUE_NAME = random.choice([q for q in QUEUES_LIST.values()])
-        if TEST_MODE:
-            msg = test_read_msg_from_fs(TASK_QUEUE_NAME)
-        else:
-            # set short wait time, so if task has different branch,
-            # this task must appear on another instance asap
-            msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries)
-        logger.info('Trying to get task from %s, try #%s',
-                    TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
-        max_tries -= 1
-        if msg is None:
-            time.sleep(3)
-            continue
-        task_data, queue = msg
-        # get branch from first task
-        if not tasks_taken:
-            branch = get_branch_for_task(task_data)
-        elif not is_same_branch(get_branch_for_task(task_data), branch):
-            queue.reset_message()
-            # tasks have different branches, skip
-            continue
-        #queue.task_done()
-        logger.info("Task message was successfully received and "
-                    "removed form queue.")
-        logger.info("Whole tasks msg: %s", str(task_data))
-        task = ScrapyTask(queue, task_data, listener)
-        tasks_taken.append(task)
-
-    if not tasks_taken:
-        logger.warning('No tasks were taken.')
-        logger.info('Scrapy daemon finished.')
-        return
-    del_duplicate_tasks(tasks_taken)
-    # prepare to execute tasks
-    switch_branch_if_required(tasks_taken[0].task_data)
+    # new logic:
+    # get task and start in in one step
     if not os.path.exists(os.path.expanduser(JOB_OUTPUT_PATH)):
         logger.debug("Create job output dir %s",
                      os.path.expanduser(JOB_OUTPUT_PATH))
         os.makedirs(os.path.expanduser(JOB_OUTPUT_PATH))
 
-    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken])
-    # start and run tasks
-    logger.info('Starting to execute tasks, total %s.', len(tasks_taken))
-    for task in tasks_taken:
-        if task.start():  # successfully started
-            task.run()
-            task.send_current_status_to_sqs()  # report 0% progress immediately
-            task.queue.task_done()  # remove the message from the input queue
-            increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
-            update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
-            logger.info('Task #%s (%r) started successfully.',
-                        task.task_data.get('task_id', 0),
-                        task.get_output_path())
-        else:
-            logger.error('Task #%s (%r) failed to start.',
-                         task.task_data.get('task_id', 0),
-                         task.get_output_path())
-
     def is_all_tasks_finished(tasks):
         return all([_.is_finished() for _ in tasks])
 
+    def send_tasks_status(tasks):
+        return [_.send_current_status_to_sqs()
+                for _ in tasks if not _.is_finished()]
+
+    def stop_not_finished_tasks(tasks):
+        return [_.stop() for _ in tasks if not _.is_finished()]
+
+    def log_tasks_results(tasks):
+        logger.info('#'*10 + 'START TASKS REPORT' + '#'*10)
+        [logger.info(_.report()) for _ in tasks]
+        logger.info('#'*10 + 'FINISH TASKS REPORT' + '#'*10)
+
+    while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
+        TASK_QUEUE_NAME = random.choice([q for q in QUEUES_LIST.values()])
+        logger.info('Trying to get task from %s, try #%s',
+                    TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
+        if TEST_MODE:
+            msg = test_read_msg_from_fs(TASK_QUEUE_NAME)
+        else:
+            msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries)
+        max_tries -= 1
+        if msg is None:  # no task
+            time.sleep(3)
+            continue
+        task_data, queue = msg
+        logger.info("Task message was successfully received.")
+        logger.info("Whole tasks msg: %s", str(task_data))
+        # prepare to run task
+        if is_task_taken(task_data, tasks_taken):  # repeated task
+            logger.warning('Duplicate task %s, skipping.',
+                           task_data.get('task_id'))
+            continue
+        if not tasks_taken:  # make sure all tasks are in same branch
+            branch = get_branch_for_task(task_data)
+            switch_branch_if_required(task_data)
+        elif not is_same_branch(get_branch_for_task(task_data), branch):
+            queue.reset_message()
+            continue
+        # start task
+        # if started, remove from the queue and run
+        task = ScrapyTask(queue, task_data, listener)
+        if task.start():
+            tasks_taken.append(task)
+            task.run()
+            logger.info(
+                'Task %s started successfully, removing it from the queue',
+                task.task_data.get('task_id'))
+            task.queue.task_done()
+            increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
+            update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
+        else:
+            logger.error('Task #%s failed to start. Leaving it in the queue.',
+                         task.task_data.get('task_id', 0))
+            logger.error(task.report())
+    if not tasks_taken:
+        logger.warning('No tasks were taken.')
+        logger.info('Scrapy daemon finished.')
+        return
+    del_duplicate_tasks(tasks_taken)
+    logger.info('Total tasks received: %s', len(tasks_taken))
+    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 59
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
-    cur_wait_time = 0
     try:
-        while cur_wait_time < max_wait_time:
+        for i in xrange(0, max_wait_time, step_time):
             if is_all_tasks_finished(tasks_taken):
                 logger.info('All tasks finished.')
                 break
-            # update sqs with running statuses
-            [t.send_current_status_to_sqs()
-             for t in tasks_taken
-             if not t.is_finished()]
-            cur_wait_time += step_time
+            send_tasks_status(tasks_taken)
             time.sleep(step_time)
         else:
-            logger.error('Some of the tasks not finished in allowed time.')
-            [t.stop() for t in tasks_taken if not t.is_finished()]
+            logger.error('Some of the tasks not finished in allowed time, '
+                         'stopping them.')
+            stop_not_finished_tasks(tasks_taken)
     except KeyboardInterrupt:
-        [t.stop() for t in tasks_taken]
+        stop_not_finished_tasks(tasks_taken)
         raise Exception
     listener.close()
-    for task in tasks_taken:
-        logger.info(task.report())
+    log_tasks_results(tasks_taken)
 
     # write finish marker
     logger.info('Scrapy daemon finished.')
