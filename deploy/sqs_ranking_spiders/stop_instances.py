@@ -168,8 +168,8 @@ def stop_if_required(inst_ip, inst_id):
     proc = mp.Process(target=os.system, args=(run_cmd,))
     proc.start()
     checker = 0
-    # it will give 60 seconds to downloads logs.
-    while checker < 60:
+    # it will give 5 minutes to downloads logs.
+    while checker < 60*5:
         if proc.is_alive():
             checker += 1
             time.sleep(1)
