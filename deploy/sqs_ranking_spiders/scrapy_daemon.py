@@ -573,7 +573,10 @@ class ScrapyTask(object):
                 EXTENSION_SIGNALS[ext_cache_down]
 
     def get_total_wait_time(self):
-        return sum([r['wait'] for r in self.required_signals.itervalues()])
+        s = sum([r['wait'] for r in self.required_signals.itervalues()])
+        if self.current_signal:
+            s += self.current_signal[1]['wait']
+        return s
 
     def _dispose(self):
         """kill process if running, drop connection if opened"""
@@ -673,6 +676,7 @@ class ScrapyTask(object):
 
         output_path = self.get_output_path()
         if self.process_bsr and self.finished_ok:
+            logger.info('Collecting best sellers data...')
             temp_file = output_path + 'temp_file.jl'
             os.system('%s/product-ranking/add-best-seller.py %s %s > %s' % (
                 REPO_BASE_PATH, output_path+'.jl',
@@ -1070,9 +1074,9 @@ def main():
         return [_.stop() for _ in tasks if not _.is_finished()]
 
     def log_tasks_results(tasks):
-        logger.info('#'*10 + 'START TASKS REPORT:' + '#'*10)
+        logger.info('#'*10 + 'START TASKS REPORT' + '#'*10)
         [logger.info(_.report()) for _ in tasks]
-        logger.info('#'*10 + 'FINISH TASKS REPORT:' + '#'*10)
+        logger.info('#'*10 + 'FINISH TASKS REPORT' + '#'*10)
 
     while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
         TASK_QUEUE_NAME = random.choice([q for q in QUEUES_LIST.values()])
@@ -1122,7 +1126,7 @@ def main():
         return
     del_duplicate_tasks(tasks_taken)
     logger.info('Total tasks received: %s', len(tasks_taken))
-    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 60
+    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 59
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
     try:
