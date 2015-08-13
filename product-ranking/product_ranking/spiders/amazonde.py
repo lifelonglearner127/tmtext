@@ -274,9 +274,19 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         if not product.get('brand', '').strip():
-            cond_set(product, 'brand',
-                     [''.join(response.css('#byline ::text').extract()).strip()]
-            )
+            brand = response.xpath('//*[contains(@class, "contributorNameID")]/text() |'
+                                   '//*[@id="bylineContributor"]/text() |'
+                                   '//*[@id="contributorLink"]/text() |'
+                                   '//*[@id="by-line"]/.//a/text() |'
+                                   '//*[@id="artist-container"]/.//a/text() |'
+                                   '//*[@id="byline"]/.//*[contains(@class,"author")]/a/text() |'
+                                   '//div[@class="buying"]/.//a[contains(@href, "search-type=ss")]/text() |'
+                                   '//a[@id="ProductInfoArtistLink"]/text()')
+            if len(brand) > 1:
+                brand = brand.extract()
+            else:
+                brand = is_empty(brand.extract(), '').strip()
+            cond_set_value(product, 'brand', brand)
         cond_set(
             product,
             'price',
