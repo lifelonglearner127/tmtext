@@ -176,8 +176,10 @@ class SearchSpider(BaseSpider):
         else:
             return map(lambda x: int(x), bestsellers_range_string.split("-"))
 
-    # TODO: make more general. this is pretty specific to the clorox audit batch input file
     def parse_products_file(self, products_file):
+        '''Parse input csv containing the needed columns for the source product,
+        instead of using the input url and scraping for them
+        '''
         products = []
         with open(products_file) as f:
             # skip first line
@@ -213,6 +215,18 @@ class SearchSpider(BaseSpider):
                             self.log("No UPC in csv for row " + str(data) + "\n", level=log.INFO)
                         try:
                             product['product_price'] = float(data['Product_Price'])
+                        except Exception:
+                            pass
+                        try:
+                            product['product_model'] = data['Product_Model']
+                        except Exception:
+                            pass
+                        try:
+                            product['product_ASIN'] = data['ASIN']
+                        except Exception:
+                            pass
+                        try:
+                            product['product_url'] = data['URL']
                         except Exception:
                             pass
                         products.append(product)
