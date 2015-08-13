@@ -140,14 +140,15 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
             # Get url for marketplace
-            url = is_empty(response.xpath(
-                    "//div[contains(@class, 'a-box-inner')]/span" \
-                    "/a/@href |" \
-                    "//div[contains(@class, 'a-box-inner')]" \
-                    "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
-                    "//div[@id='secondaryUsedAndNew']" \
-                    "//a[contains(@href, '/gp/offer-listing/')]/@href"
-            ).extract())
+            url = is_empty(
+                response.xpath("//div[contains(@class, 'a-box-inner')]/span"
+                               "/a/@href |"
+                               "//div[contains(@class, 'a-box-inner')]"
+                               "//a[contains(@href, '/gp/offer-listing/')]/@href |"
+                               "//div[@id='secondaryUsedAndNew']"
+                               "//a[contains(@href, '/gp/offer-listing/')]/@href |"
+                               "//*[@id='universal-marketplace-glance-features']/.//a/@href"
+                               ).extract())
             if url:
                 mkt_place_link = urlparse.urljoin(
                     response.url,
