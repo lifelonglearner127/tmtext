@@ -167,10 +167,16 @@ class WalmartSpider(SearchSpider):
 
         # extract price
         # TODO: good enough for all pages? could also extract from page directly
-        price_holder = hxs.select("//meta[@itemprop='price']/@content | //div[@itemprop='price']/@content").extract()
-        # if we can't find it like above try other things:
+        price_holder = hxs.select("//meta[@itemprop='price']/@content").extract()
+        product_target_price = None
         if price_holder:
             product_target_price = price_holder[0].strip()
+
+        else:
+            product_target_price = "".join(hxs.select("//div[@itemprop='price']//text()").extract()).strip()
+
+        # if we can't find it like above try other things:
+        if product_target_price:
             # remove commas separating orders of magnitude (ex 2,000)
             product_target_price = re.sub(",","",product_target_price)
             m = re.match("\$([0-9]+\.?[0-9]*)", product_target_price)
