@@ -43,6 +43,7 @@ class URLsPipeline(object):
             if int(spider.output) == 5:
                 titles.append("Product_Name")
                 titles.append("Original_URL")
+                titles.append("Target_Price")
 
             # TODO: uncomment.
             # if int(spider.output) == 3:
@@ -96,7 +97,7 @@ class URLsPipeline(object):
                 fields = [item['origin_upc'][0], json.dumps(item['origin_name'])]
             else:
                 if option == 5:
-                    fields = [json.dumps(item['origin_name']), item['origin_url']]
+                    fields = [json.dumps(item['origin_name']), item['origin_url'], item['product_price']]
                 else:
                     fields = [item['origin_url']]
 
