@@ -173,6 +173,8 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             _avail = ''.join(_avail)
             if "nichtauflager" in _avail.lower().replace(' ', ''):
                 prod['is_out_of_stock'] = True
+            else:
+                prod['is_out_of_stock'] = False
 
             if isinstance(prod['buyer_reviews'], Request):
                 return prod['buyer_reviews']
@@ -193,6 +195,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         return result
 
     def get_last_buyer_review_date(self, response):
+
         if self._has_captcha(response):
             return self._handle_captcha(
                 response,
