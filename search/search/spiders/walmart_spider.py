@@ -167,7 +167,7 @@ class WalmartSpider(SearchSpider):
 
         # extract price
         # TODO: good enough for all pages? could also extract from page directly
-        price_holder = hxs.select("//meta[@itemprop='price']/@content").extract()
+        price_holder = hxs.select("//meta[@itemprop='price']/@content | //div[@itemprop='price']/@content").extract()
         # if we can't find it like above try other things:
         if price_holder:
             product_target_price = price_holder[0].strip()
