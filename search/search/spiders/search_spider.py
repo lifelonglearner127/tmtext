@@ -216,7 +216,11 @@ class SearchSpider(BaseSpider):
                         try:
                             product['product_price'] = float(data['Product_Price'])
                         except Exception:
-                            pass
+                            # exclude currency
+                            try:
+                                product['product_price'] = float(data['Product_Price'][1:])
+                            except Exception:
+                                pass
                         try:
                             product['product_model'] = data['Product_Model']
                         except Exception:
