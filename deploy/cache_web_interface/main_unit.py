@@ -318,6 +318,23 @@ def get_s3_file():
     return render_template('s3_file.html')
 
 
+@app.route('/log_install_error', methods=['GET', 'POST'])
+def log_install_error():
+    file_to_save_logs = '/tmp/install_errors.log'
+    if request.method == 'GET':
+        with open(file_to_save_logs, 'r') as f:
+            c = f.read()
+            return c
+    form = request.form
+    item = form['item']
+    error = form['error']
+    if not error or not item:
+        return 'No data'
+    with open(file_to_save_logs, 'a') as f:
+        f.write('%s - %r\n\n' % (item, error))
+    return 'ok'
+
+
 if __name__ == '__main__':
     app.debug = True
     app.run()
