@@ -5,6 +5,7 @@ import lxml
 import lxml.html
 import requests
 import json
+import ast
 
 from itertools import groupby
 
@@ -77,6 +78,9 @@ class DeliveryWalmartScraper(Scraper):
     def _meta_tags(self):
         return None
 
+    def _upc(self):
+        return self.product_json["data"]["upc"][0]
+
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
@@ -109,7 +113,7 @@ class DeliveryWalmartScraper(Scraper):
         return 0
 
     def _description(self):
-        self.product_json["data"]["description"]
+        return self.product_json["data"]["description"]
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
@@ -151,6 +155,48 @@ class DeliveryWalmartScraper(Scraper):
 
         return len(ingredients)
 
+    def _rollback(self):
+        if not self.product_json["price"]["isRollback"]:
+            return 0
+        else:
+            return 1
+
+    def _no_image(self, url):
+        """Overwrites the _no_image
+        in the base class with an additional test.
+        Then calls the base class no_image.
+
+        Returns True if image in url is a "no image"
+        image, False if not
+        """
+
+        # if image name is "no_image", return True
+        if re.match(".*no.image\..*", url):
+            return True
+        else:
+            return Scraper._no_image(self, url)
+
+    def _nutrition_facts(self):
+        return self.product_json["data"]["nutritionFacts"]
+
+    def _nutrition_fact_count(self):
+        # number of nutrition facts (of elements in the nutrition_facts list) - integer
+        nutrition_facts = self._nutrition_facts()
+
+        if nutrition_facts:
+            return len(nutrition_facts)
+
+        return 0
+
+    def _nutrition_fact_text_health(self):
+        if not self._nutrition_facts():
+            return 0
+
+        if self._nutrition_fact_count() < 2:
+            return 1
+
+        return 2
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -158,6 +204,12 @@ class DeliveryWalmartScraper(Scraper):
         pass
         
     def _image_urls(self):
+        try:
+            if self._no_image(self.product_json["data"]["images"]["thumbnail"]):
+                return None
+        except Exception, e:
+            print "WARNING: ", e.message
+
         return self.product_json["data"]["images"]["large"]
 
     def _image_count(self):
@@ -276,6 +328,11 @@ class DeliveryWalmartScraper(Scraper):
         "ingredients": _ingredients, \
         "ingredient_count": _ingredients_count,
         "meta_tags": _meta_tags,
+        "upc": _upc,
+        "rollback": _rollback,
+        "nutrition_facts": _nutrition_facts, \
+        "nutrition_fact_count": _nutrition_fact_count, \
+        "nutrition_fact_text_health": _nutrition_fact_text_health, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
