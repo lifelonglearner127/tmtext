@@ -13,7 +13,7 @@ from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.items import SiteProductItem, Price, BuyerReviews, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set,\
     cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
@@ -122,21 +122,28 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             )
 
         if not self._has_captcha(response):
+            meta = response.meta.copy()
+            response.meta['product'] = prod
+            prod_id = is_empty(re.findall(r'/dp?/(\w+)|product/(\w+)/', response.url))
+            prod_id = list(prod_id)[0]
+            response.meta['product_id'] = prod_id
+
             self._populate_from_js(response, prod)
 
             self._populate_from_html(response, prod)
 
             cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
-            #Get url for marketplace
-            url = is_empty(response.xpath(
-                    "//div[contains(@class, 'a-box-inner')]/span" \
-                    "/a/@href |" \
-                    "//div[contains(@class, 'a-box-inner')]" \
-                    "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
-                    "//div[@id='secondaryUsedAndNew']" \
-                    "//a[contains(@href, '/gp/offer-listing/')]/@href"
-            ).extract())
+            # Get url for marketplace
+            url = is_empty(
+                response.xpath("//div[contains(@class, 'a-box-inner')]/span"
+                               "/a/@href |"
+                               "//div[contains(@class, 'a-box-inner')]"
+                               "//a[contains(@href, '/gp/offer-listing/')]/@href |"
+                               "//div[@id='secondaryUsedAndNew']"
+                               "//a[contains(@href, '/gp/offer-listing/')]/@href |"
+                               "//*[@id='universal-marketplace-glance-features']/.//a/@href"
+                               ).extract())
             if url:
                 mkt_place_link = urlparse.urljoin(
                     response.url,
@@ -168,6 +175,8 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             _avail = ''.join(_avail)
             if "nichtauflager" in _avail.lower().replace(' ', ''):
                 prod['is_out_of_stock'] = True
+            else:
+                prod['is_out_of_stock'] = False
 
             if isinstance(prod['buyer_reviews'], Request):
                 result = prod['buyer_reviews'].replace(meta=meta)
@@ -188,6 +197,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         return result
 
     def get_last_buyer_review_date(self, response):
+
         if self._has_captcha(response):
             return self._handle_captcha(
                 response,
@@ -260,11 +270,25 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 = department.items()[0]
 
     def _populate_from_html(self, response, product):
+
+        related_products = self._parse_related(response)
+        cond_set(product, 'related_products', related_products)
+
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         if not product.get('brand', '').strip():
-            cond_set(product, 'brand',
-                     [''.join(response.css('#byline ::text').extract()).strip()]
-            )
+            brand = response.xpath('//*[contains(@class, "contributorNameID")]/text() |'
+                                   '//*[@id="bylineContributor"]/text() |'
+                                   '//*[@id="contributorLink"]/text() |'
+                                   '//*[@id="by-line"]/.//a/text() |'
+                                   '//*[@id="artist-container"]/.//a/text() |'
+                                   '//*[@id="byline"]/.//*[contains(@class,"author")]/a/text() |'
+                                   '//div[@class="buying"]/.//a[contains(@href, "search-type=ss")]/text() |'
+                                   '//a[@id="ProductInfoArtistLink"]/text()')
+            if len(brand) > 1:
+                brand = brand.extract()
+            else:
+                brand = is_empty(brand.extract(), '').strip()
+            cond_set_value(product, 'brand', brand)
         cond_set(
             product,
             'price',
@@ -491,6 +515,32 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 max(img_data.items(), key=lambda (_, size): size[0]),
                 conv=lambda (url, _): url)
 
+    def _parse_related(self, response):
+        """
+        Parses related products
+        """
+        related_products = []
+
+        # Parse often bought products
+        often_bought = response.xpath('//*[@id="fbt-expander-content"]/.//li[position()>1]/./'
+                                      '/div[@class="sims-fbt-row-outer"]')
+
+        if often_bought:
+            for item in often_bought:
+                title = is_empty(item.xpath('.//div[contains(@class,"sims-fbt-title")]/./'
+                                            '/div/text()').extract(), '')
+                url = is_empty(item.xpath('.//a/@href').extract(), '')
+
+                if url:
+                    url = 'http://www.' + self.allowed_domains[0] + url
+                    if title:
+                        related_products.append(RelatedProduct(
+                            title=title.strip(),
+                            url=url
+                        ))
+
+        return related_products
+
     def _scrape_total_matches(self, response):
         if u'ne correspond à aucun article' in response.body_as_unicode():
             total_matches = 0
@@ -656,7 +706,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             average = sum(k * v for k, v in
                           ratings.iteritems()) / total if ratings else 0
 
-        #For another HTML makeup
+        # For another HTML makeup
         if not total:
             ratings = {}
             average = 0
