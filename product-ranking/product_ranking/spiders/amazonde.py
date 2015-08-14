@@ -412,8 +412,10 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 '//img[@id="main-image"]/@src |'
                 '//div[@id="imgTagWrapperId"]/img/@src |'
                 '//div[@id="kib-container"]/div[@id="kib-ma-container-0"]'
-                '/img/@src'
+                '/img/@src |'
+                '//img[@id="imgBlkFront"]/@style'
             ).extract()
+
         if image and image[0].strip().startswith('http'):
             # sometimes images are coded data
             cond_set(
