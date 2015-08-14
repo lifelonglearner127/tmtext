@@ -120,7 +120,7 @@ class DeliveryWalmartScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        return None
+        return self.product_json["data"]["directions"]
 
     def _ingredients(self):
         contents = self.product_json["data"]["ingredients"]
@@ -143,7 +143,7 @@ class DeliveryWalmartScraper(Scraper):
         if not ingredients:
             return None
 
-        ingredients = [ingredient.strip for ingredient in ingredients]
+        ingredients = [ingredient.strip() for ingredient in ingredients]
 
         return ingredients
 
@@ -189,10 +189,22 @@ class DeliveryWalmartScraper(Scraper):
         return 0
 
     def _nutrition_fact_text_health(self):
-        if not self._nutrition_facts():
+        nutrition_facts = self._nutrition_facts()
+        serving_info_count = calories_info_count = 0
+        nutrition_fact_count = self._nutrition_fact_count()
+
+        if nutrition_fact_count == 0:
             return 0
 
-        if self._nutrition_fact_count() < 2:
+        for nutrition_fact in nutrition_facts:
+            if "serving" in nutrition_fact:
+                serving_info_count = serving_info_count + 1
+
+        for nutrition_fact in nutrition_facts:
+            if "calories" in nutrition_fact:
+                calories_info_count = calories_info_count + 1
+
+        if serving_info_count == 0 or calories_info_count == 0 or nutrition_fact_count - serving_info_count - calories_info_count == 0:
             return 1
 
         return 2
@@ -204,12 +216,13 @@ class DeliveryWalmartScraper(Scraper):
         pass
         
     def _image_urls(self):
+        '''
         try:
             if self._no_image(self.product_json["data"]["images"]["thumbnail"]):
                 return None
         except Exception, e:
             print "WARNING: ", e.message
-
+        '''
         return self.product_json["data"]["images"]["large"]
 
     def _image_count(self):
