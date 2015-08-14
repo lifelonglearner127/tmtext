@@ -763,6 +763,15 @@ class WalmartScraper(Scraper):
         if description_elements:
             description_elements = description_elements[0]
 
+            parent = description_elements
+
+            while parent:
+                parent = parent.getparent()
+
+                if parent and "class" in parent.attrib and "hide-content" in parent.attrib["class"]:
+                    description_elements = []
+                    break
+
             for description_element in description_elements:
                 sub_description = lxml.html.tostring(description_element)
 
@@ -887,6 +896,15 @@ class WalmartScraper(Scraper):
         long_description_start = False
         ingredients_description = False
         long_description_start_index = -2
+
+        parent = description_elements
+
+        while parent:
+            parent = parent.getparent()
+
+            if parent and "class" in parent.attrib and "hide-content" in parent.attrib["class"]:
+                description_elements = []
+                break
 
         for description_element in description_elements:
             if (not long_description_start and "<b>" in lxml.html.tostring(description_element)) or \
