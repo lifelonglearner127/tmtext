@@ -23,6 +23,8 @@ from product_ranking.amazon_tests import AmazonTests
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 
+from product_ranking.amazon_base_class import AmazonBaseClass
+
 try:
     from spiders_shared_code.amazon_variants import AmazonVariants
 except ImportError:
@@ -71,11 +73,15 @@ class AmazoncnValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'iphone stone': [40, 250]
     }
 
-class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
+class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     name = 'amazoncn_products'
     allowed_domains = ["amazon.cn"]
 
     settings = AmazoncnValidatorSettings()
+
+    # Variables for total matches method (_scrape_total_matches)
+    total_matches_str = '没有找到任何与'
+    total_matches_re = '共'
 
     SEARCH_URL = "http://www.amazon.cn/s/?field-keywords={search_term}"
     #SEARCH_URL = "http://www.amazon.cn/s/ref=sr_st_{sort_mode}" \
@@ -388,23 +394,23 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                 max(img_data.items(), key=lambda (_, size): size[0]),
                 conv=lambda (url, _): url)
 
-    def _scrape_total_matches(self, response):
-        if len(response.css('h1#noResultsTitle')):
-            total_matches = 0
-        else:
-            #count_matches = response.xpath(
-            #    '//*[@id="resultCount"]/text()').re(u'共([\d, ]+)')
-            count_matches = "".join(
-                response.xpath("//h2[@id='s-result-count']/text()")
-                .extract())
-            count_matches = re.findall(r"[\d, ]+", count_matches)
-            count_matches = [r for r in count_matches if len(r.strip()) > 0]
-            if count_matches and count_matches[-1]:
-                total_matches = int(
-                    count_matches[-1].replace(',', '').strip())
-            else:
-                total_matches = None
-        return total_matches
+    # def _scrape_total_matches(self, response):
+    #     if len(response.css('h1#noResultsTitle')):
+    #         total_matches = 0
+    #     else:
+    #         #count_matches = response.xpath(
+    #         #    '//*[@id="resultCount"]/text()').re(u'共([\d, ]+)')
+    #         count_matches = "".join(
+    #             response.xpath("//h2[@id='s-result-count']/text()")
+    #             .extract())
+    #         count_matches = re.findall(r"[\d, ]+", count_matches)
+    #         count_matches = [r for r in count_matches if len(r.strip()) > 0]
+    #         if count_matches and count_matches[-1]:
+    #             total_matches = int(
+    #                 count_matches[-1].replace(',', '').strip())
+    #         else:
+    #             total_matches = None
+    #     return total_matches
 
     def _scrape_product_links(self, response):
         lis = response.xpath("//ul/li[@class='s-result-item']")

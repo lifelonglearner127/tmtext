@@ -21,6 +21,8 @@ from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
 
+from product_ranking.amazon_base_class import AmazonBaseClass
+
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -67,10 +69,14 @@ class AmazonDeValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
     }
 
 
-class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
+class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
 
     name = 'amazonde_products'
     allowed_domains = ["amazon.de"]
+
+    # Variables for total matches method (_scrape_total_matches)
+    total_matches_str = 'ergab leider keine Produkttreffer.'
+    total_matches_re = 'von'
 
     SEARCH_URL = "http://www.amazon.de/s/?field-keywords={search_term}"
 
@@ -491,40 +497,40 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 max(img_data.items(), key=lambda (_, size): size[0]),
                 conv=lambda (url, _): url)
 
-    def _scrape_total_matches(self, response):
-        if u'ne correspond à aucun article' in response.body_as_unicode():
-            total_matches = 0
-        else:
-            count_matches = response.xpath(
-                '//h2[@id="s-result-count"]/text()').re('sur (.+) r')
-            if count_matches and count_matches[-1]:
-                total_matches = int(count_matches[-1].replace(
-                    u' ', '').replace(u'\xa0', ''))
-            else:
-                total_matches = None
-            if not total_matches:
-                count_matches = response.xpath(
-                    '//h2[@id="s-result-count"]/text()').re('([\d\.]+) Ergebnisse')
-                if count_matches:
-                    total_matches = int(
-                        count_matches[0].strip().replace('.', ''))
-                else:
-                    total_matches = None
-        if not total_matches:
-            total_matches = is_empty(
-                response.xpath(
-                    '//*[contains(@id, "results")]'
-                    '//span[contains(text(), "Ergebnisse")]').extract()
-            )
-            if total_matches:
-                total_matches = re.search(r'[\d\.]+', total_matches)
-                if total_matches:
-                    total_matches = total_matches.group(0).replace('.', '').strip()
-                    if total_matches.isdigit():
-                        total_matches = int(total_matches)
-                    else:
-                        total_matches = None
-        return total_matches
+    # def _scrape_total_matches(self, response):
+    #     if u'ne correspond à aucun article' in response.body_as_unicode():
+    #         total_matches = 0
+    #     else:
+    #         count_matches = response.xpath(
+    #             '//h2[@id="s-result-count"]/text()').re('sur (.+) r')
+    #         if count_matches and count_matches[-1]:
+    #             total_matches = int(count_matches[-1].replace(
+    #                 u' ', '').replace(u'\xa0', ''))
+    #         else:
+    #             total_matches = None
+    #         if not total_matches:
+    #             count_matches = response.xpath(
+    #                 '//h2[@id="s-result-count"]/text()').re('([\d\.]+) Ergebnisse')
+    #             if count_matches:
+    #                 total_matches = int(
+    #                     count_matches[0].strip().replace('.', ''))
+    #             else:
+    #                 total_matches = None
+    #     if not total_matches:
+    #         total_matches = is_empty(
+    #             response.xpath(
+    #                 '//*[contains(@id, "results")]'
+    #                 '//span[contains(text(), "Ergebnisse")]').extract()
+    #         )
+    #         if total_matches:
+    #             total_matches = re.search(r'[\d\.]+', total_matches)
+    #             if total_matches:
+    #                 total_matches = total_matches.group(0).replace('.', '').strip()
+    #                 if total_matches.isdigit():
+    #                     total_matches = int(total_matches)
+    #                 else:
+    #                     total_matches = None
+    #     return total_matches
 
     def _scrape_product_links(self, response):
         lis = response.xpath("//ul/li[@class='s-result-item']")

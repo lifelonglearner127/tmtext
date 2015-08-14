@@ -20,6 +20,8 @@ from product_ranking.amazon_tests import AmazonTests
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 
+from product_ranking.amazon_base_class import AmazonBaseClass
+
 try:
     from captcha_solver import CaptchaBreakerWrapper
 except ImportError as e:
@@ -64,11 +66,15 @@ class AmazoncojpValidatorSettings(object):  # do NOT set BaseValidatorSettings a
         'batteries 330v': [40, 270]
     }
 
-class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
+class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     name = 'amazonjp_products'
     allowed_domains = ["amazon.co.jp"]
 
     settings = AmazoncojpValidatorSettings()
+
+    # Variables for total matches method (_scrape_total_matches)
+    total_matches_str = '検索に一致する商品はありませんでした'
+    total_matches_re = '検索結果'
 
     SEARCH_URL = "http://www.amazon.co.jp/s/?field-keywords={search_term}"
 
@@ -369,22 +375,22 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                 max(img_data.items(), key=lambda (_, size): size[0]),
                 conv=lambda (url, _): url)
 
-    def _scrape_total_matches(self, response):
-        if u'検索に一致する商品はありませんでした' in response.body_as_unicode():
-            total_matches = 0
-        else:
-            count_matches = response.xpath(
-                '//h2[@id="s-result-count"]/text()').re(
-                    u'\u691c\u7d22\u7d50\u679c ([\d,]+)')
-            if count_matches and count_matches[-1]:
-                total_matches = int(count_matches[-1].replace(',', ''))
-            else:
-                total_matches = None
-        if not total_matches:
-            total_matches = int(is_empty(response.xpath(
-                '//h2[@id="s-result-count"]/text()'
-            ).re(FLOATING_POINT_RGEX), 0))
-        return total_matches
+    # def _scrape_total_matches(self, response):
+    #     if u'検索に一致する商品はありませんでした' in response.body_as_unicode():
+    #         total_matches = 0
+    #     else:
+    #         count_matches = response.xpath(
+    #             '//h2[@id="s-result-count"]/text()').re(
+    #                 u'検索結果 ([\d,]+)')
+    #         if count_matches and count_matches[-1]:
+    #             total_matches = int(count_matches[-1].replace(',', ''))
+    #         else:
+    #             total_matches = None
+    #     if not total_matches:
+    #         total_matches = int(is_empty(response.xpath(
+    #             '//h2[@id="s-result-count"]/text()'
+    #         ).re(FLOATING_POINT_RGEX), 0))
+    #     return total_matches
 
     def _scrape_product_links(self, response):
         lis = response.xpath("//ul/li[@class='s-result-item']")

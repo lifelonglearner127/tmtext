@@ -22,6 +22,8 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
 from spiders_shared_code.amazon_variants import AmazonVariants
 
+from product_ranking.amazon_base_class import AmazonBaseClass
+
 is_empty = lambda x, y=None: x[0] if x else y
 
 
@@ -68,7 +70,7 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
     }
 
 
-class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
+class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     name = 'amazon_products'
     allowed_domains = ["amazon.com"]
 
@@ -583,44 +585,44 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                 )
         return buyer_reviews, table
 
-    def _scrape_total_matches(self, response):
-        # Where this value appears is a little weird and changes a bit so we
-        # need two alternatives to capture it consistently.
-
-        if response.css('#noResultsTitle'):
-            return 0
-
-        # Every result I saw is shown with this format
-        #    1-16 of 424,831 results for
-        #    2 results for
-        values = response.css('#s-result-count ::text').re(
-            '([0-9,]+)\s[Rr]esults for')
-        if not values:
-            # The first possible place is where it normally is in a fully
-            # rendered page.
-            values = response.css('#resultCount > span ::text').re(
-                '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults')
-            if not values:
-                # Otherwise, it appears within a comment.
-                values = response.css(
-                    '#result-count-only-next'
-                ).xpath(
-                    'comment()'
-                ).re(
-                    '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults\s+'
-                )
-
-        if values:
-            total_matches = int(values[0].replace(',', ''))
-        else:
-            if not self.is_nothing_found(response):
-                self.log(
-                    "Failed to parse total number of matches for: %s"
-                    % response.url,
-                    level=ERROR
-                )
-            total_matches = None
-        return total_matches
+    # def _scrape_total_matches(self, response):
+    #     # Where this value appears is a little weird and changes a bit so we
+    #     # need two alternatives to capture it consistently.
+    #
+    #     if response.css('#noResultsTitle'):
+    #         return 0
+    #
+    #     # Every result I saw is shown with this format
+    #     #    1-16 of 424,831 results for
+    #     #    2 results for
+    #     values = response.css('#s-result-count ::text').re(
+    #         '([0-9,]+)\s[Rr]esults for')
+    #     if not values:
+    #         # The first possible place is where it normally is in a fully
+    #         # rendered page.
+    #         values = response.css('#resultCount > span ::text').re(
+    #             '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults')
+    #         if not values:
+    #             # Otherwise, it appears within a comment.
+    #             values = response.css(
+    #                 '#result-count-only-next'
+    #             ).xpath(
+    #                 'comment()'
+    #             ).re(
+    #                 '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults\s+'
+    #             )
+    #
+    #     if values:
+    #         total_matches = int(values[0].replace(',', ''))
+    #     else:
+    #         if not self.is_nothing_found(response):
+    #             self.log(
+    #                 "Failed to parse total number of matches for: %s"
+    #                 % response.url,
+    #                 level=ERROR
+    #             )
+    #         total_matches = None
+    #     return total_matches
 
     def _scrape_results_per_page(self, response):
         num = response.xpath(

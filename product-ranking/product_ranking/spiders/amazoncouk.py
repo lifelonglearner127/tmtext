@@ -22,6 +22,8 @@ from product_ranking.marketplace import Amazon_marketplace
 from product_ranking.amazon_tests import AmazonTests
 from spiders_shared_code.amazon_variants import AmazonVariants
 
+from product_ranking.amazon_base_class import AmazonBaseClass
+
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -75,7 +77,7 @@ class AmazoncoukValidatorSettings(object):  # do NOT set BaseValidatorSettings a
     }
 
 
-class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
+class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
     name = "amazoncouk_products"
     allowed_domains = ["www.amazon.co.uk"]
     start_urls = []
@@ -343,21 +345,21 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
         except IndexError:
             return False
 
-    def _scrape_total_matches(self, response):
-        if 'did not match any products.' in response.body_as_unicode():
-            total_matches = 0
-        else:
-            count_matches = response.xpath(
-                '//h2[@id="s-result-count"]/text()').re('of ([\d,]+)')
-            if count_matches and count_matches[-1]:
-                total_matches = int(count_matches[-1].replace(',', ''))
-            else:
-                total_matches = None
-        if not total_matches:
-            total_matches = int(is_empty(response.xpath(
-                '//h2[@id="s-result-count"]/text()'
-            ).re(FLOATING_POINT_RGEX), 0))
-        return total_matches
+    # def _scrape_total_matches(self, response):
+    #     if 'did not match any products.' in response.body_as_unicode():
+    #         total_matches = 0
+    #     else:
+    #         count_matches = response.xpath(
+    #             '//h2[@id="s-result-count"]/text()').re('of ([\d,]+)')
+    #         if count_matches and count_matches[-1]:
+    #             total_matches = int(count_matches[-1].replace(',', ''))
+    #         else:
+    #             total_matches = None
+    #     if not total_matches:
+    #         total_matches = int(is_empty(response.xpath(
+    #             '//h2[@id="s-result-count"]/text()'
+    #         ).re(FLOATING_POINT_RGEX), 0))
+    #     return total_matches
 
     def _scrape_product_links(self, response):
         lis = response.xpath("//ul/li[@class='s-result-item']")
