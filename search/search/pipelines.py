@@ -43,6 +43,7 @@ class URLsPipeline(object):
             if int(spider.output) == 5:
                 titles.append("Product_Name")
                 titles.append("Original_URL")
+                titles.append("Target_Price")
 
             # TODO: uncomment.
             # if int(spider.output) == 3:
@@ -66,6 +67,7 @@ class URLsPipeline(object):
 
             if int(spider.output) >= 3:
                 titles.append("Confidence")
+                titles.append("UPC_match")
 
             self.file.write(",".join(titles) + "\n")
 
@@ -96,7 +98,11 @@ class URLsPipeline(object):
                 fields = [item['origin_upc'][0], json.dumps(item['origin_name'])]
             else:
                 if option == 5:
-                    fields = [json.dumps(item['origin_name']), item['origin_url']]
+                    if 'product_target_price' not in item:
+                        price = ""
+                    else:
+                        price = item['product_target_price']
+                    fields = [json.dumps(item['origin_name']), item['origin_url'], str(price)]
                 else:
                     fields = [item['origin_url']]
 
@@ -139,6 +145,7 @@ class URLsPipeline(object):
 
                 # format confidence score on a total of 5 characters and 2 decimal points 
                 fields.append(str("%5.2f" % item['confidence']) if 'confidence' in item else "")
+                fields.append(str(item['UPC_match'] if 'UPC_match' in item else ""))
 
             # construct line from fields list
             line = ",".join(map(lambda x: x.encode("utf-8"), fields)) + "\n"
