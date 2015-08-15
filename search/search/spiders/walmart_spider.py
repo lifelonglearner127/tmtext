@@ -1,7 +1,7 @@
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
-from scrapy.http import TextResponse
+from scrapy.http import TextResponse, HtmlResponse
 from scrapy.http import Response
 from scrapy.exceptions import CloseSpider
 from search.items import SearchItem
@@ -103,7 +103,12 @@ class WalmartSpider(SearchSpider):
     # keep product pages left to parse in 'search_results' meta key, send back to parseResults_new when done with all
     def parse_product_walmart(self, response):
 
-        hxs = HtmlXPathSelector(response)
+        # fix response, it ocasionally has NUL characters which ruin the parsing
+        cleaned_body = response.body.replace('\00','')
+        fixed_response = HtmlResponse(url=response.url, body=cleaned_body)
+
+
+        hxs = HtmlXPathSelector(fixed_response)
 
         items = response.meta['items']
 
