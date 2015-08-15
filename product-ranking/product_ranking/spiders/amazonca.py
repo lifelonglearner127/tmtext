@@ -361,7 +361,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         return total_matches
 
     def _scrape_product_links(self, response):
-        lis = response.xpath("//ul/li[@class='s-result-item']")
+        lis = response.xpath("//ul/li[contains(@class, 's-result-item')]")
         links = []
         for no, li in enumerate(lis):
             href = li.xpath(
