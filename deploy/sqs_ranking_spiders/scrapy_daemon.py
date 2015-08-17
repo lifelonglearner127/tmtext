@@ -9,7 +9,6 @@ import unidecode
 import string
 import redis
 import boto
-import random
 from boto.utils import get_instance_metadata
 from boto.s3.key import Key
 from collections import OrderedDict
@@ -480,31 +479,23 @@ def dump_result_data_into_sqs(data_key, logs_key, csv_data_key,
 
 
 def datetime_difference(d1, d2):
+    """helper func to get difference between two dates in seconds"""
     res = d1 - d2
     return 86400 * res.days + res.seconds
 
 
-def create_dir(p):
-    try:
-        os.makedirs(p)
-    except OSError:  # no access to create folder
-        p = os.path.expanduser('~/' + os.path.basename(p))
-        os.makedirs(p)
-    return p
-
-
-def check_required_folders():
-    # create logs & data folders if needed
-    global SCRAPY_LOGS_DIR, SCRAPY_DATA_DIR
-    if not os.path.exists(SCRAPY_LOGS_DIR):
-        SCRAPY_LOGS_DIR = create_dir(SCRAPY_LOGS_DIR)
-    if not os.path.exists(SCRAPY_DATA_DIR):
-        SCRAPY_DATA_DIR = create_dir(SCRAPY_DATA_DIR)
-
-
 class ScrapyTask(object):
-
+    """
+    class to control flow of the scrapy process with given task from SQS
+    if task wasn't finished in allowed time, it will terminate
+    """
     def __init__(self, queue, task_data, listener):
+        """
+        :param queue: SQS queue instance
+        :param task_data: message with task data, taken from the queue
+        :param listener: multiprocessing listener to establish connection
+                         with the scrapy process
+        """
         self.queue = queue
         self.task_data = task_data
         self.listener = listener  # common listener to accept connections
@@ -554,6 +545,10 @@ class ScrapyTask(object):
         return job_name
 
     def _parse_signal_settings(self, signal_settings):
+        """
+        calculate running time for the scrapy process
+        based on the signals settings
+        """
         d = OrderedDict()
         wait = 'wait'
         # dict with signal name as key and dict as value
@@ -562,6 +557,10 @@ class ScrapyTask(object):
         return d
 
     def _add_extensions(self):
+        """
+        add time limit to run scrapy process, based on the parameters of task
+        currently supports cache downloading/uploading
+        """
         ext_cache_down = 'cache_downloading'
         ext_cache_up = 'cache_uploading'
         cmd_args = self.task_data.get('cmd_args', {})
@@ -573,13 +572,19 @@ class ScrapyTask(object):
                 EXTENSION_SIGNALS[ext_cache_down]
 
     def get_total_wait_time(self):
+        """
+        get max wait time for scrapy process in seconds
+        """
         s = sum([r['wait'] for r in self.required_signals.itervalues()])
         if self.current_signal:
             s += self.current_signal[1]['wait']
         return s
 
     def _dispose(self):
-        """kill process if running, drop connection if opened"""
+        """
+        used to terminate scrapy process, called from finish method
+        kill process if running, drop connection if opened
+        """
         if self.process_bsr and self.process_bsr.poll() is None:
             try:
                 os.killpg(os.getpgid(self.process_bsr.pid), 9)
@@ -606,7 +611,8 @@ class ScrapyTask(object):
     def _get_signal_by_data(self, data):
         """
         return current main signal or
-        one of the extension signals, for which data is sent
+        one of the extension signals, for which data is sent,
+        depending on the data, received from the scrapy process
         """
         if data['name'] == 'item_scraped':
             self.items_scraped += 1
@@ -623,6 +629,9 @@ class ScrapyTask(object):
         return is_ext, signal
 
     def _process_signal_data(self, signal, data, date_time, is_ext):
+        """
+        set signal as finished, collect its duration
+        """
         new_status = data['status']  # opened/closed
         if signal[1][new_status]:  # if value is already set
             res = False
@@ -633,10 +642,10 @@ class ScrapyTask(object):
 
     def _signal_failed(self, signal, date_time, ex):
         """
-        set signal as failed
+        set signal as failed, when it takes more then allowed time
         :param signal: signal itself
         :param date_time: when signal failed
-        :param ex: exception that caused fail
+        :param ex: exception that caused fail, derived from the FlowError
         """
         signal[1]['failed'] = True
         signal[1][STATUS_FINISHED] = date_time
@@ -662,6 +671,9 @@ class ScrapyTask(object):
                 yield fname
 
     def _zip_daemon_logs(self, output_fname='/tmp/daemon_logs.zip'):
+        """
+        zips all log giles, found in the /tmp dir to the output_fname
+        """
         log_files = list(self._get_daemon_logs_files())
         if os.path.exists(output_fname):
             os.unlink(output_fname)
@@ -669,8 +681,10 @@ class ScrapyTask(object):
         return output_fname
 
     def _finish(self):
-        # runs for both successfully or failed finish
-        # upload logs/data to s3, etc
+        """
+        called after scrapy process finished, or failed for some reason
+        sends logs and data files to amazon
+        """
         self._stop_signal = True
         self._dispose()
 
@@ -746,17 +760,27 @@ class ScrapyTask(object):
         self.finish_date = datetime.datetime.utcnow()
 
     def _success_finish(self):
+        """
+        used to indicate, that scrapy process finished
+        successfully in allowed time
+        """
         # run this task after scrapy process successfully finished
         logger.info('Success finish task #%s', self.task_data.get('task_id', 0))
         self.finished_ok = True
 
     def get_output_path(self):
+        """
+        get abs path, where to store logs and data files for scrapy task
+        """
         output_path = '%s/%s' % (
             os.path.expanduser(JOB_OUTPUT_PATH), self.get_unique_name())
         return output_path
 
     def _parse_task_and_get_cmd(self, is_bsr=False):
-        """get search string from the task"""
+        """
+        convert data of the SQS task to the scrapy run command with
+        all parameters which are given in task data
+        """
         searchterms_str = self.task_data.get('searchterms_str', None)
         url = self.task_data.get('url', None)
         urls = self.task_data.get('urls', None)
@@ -793,6 +817,10 @@ class ScrapyTask(object):
         return cmd
 
     def _start_scrapy_process(self):
+        """
+        starts scrapy process for current SQS task
+        also starts second process for best_sellers if required
+        """
         cmd = self._parse_task_and_get_cmd()
         self.process = Popen(cmd, shell=True, stdout=PIPE,
                              stderr=PIPE, preexec_fn=os.setsid)
@@ -807,17 +835,22 @@ class ScrapyTask(object):
                     self.task_data.get('task_id', 0))
 
     def _establish_connection(self):
+        """
+        tries to accept connection from the scrapy process to receive
+        stats on signals, like spider_error, spider_opened etc
+        """
         self.conn = self.listener.accept()
 
     def _dummy_client(self):
-        """used to interrupt waiting for the connection from client"""
+        """used to interrupt waiting for the connection from scrapy process
+        with connecting by itself, closes connection immediately"""
         logger.warning('Running dummy client for task #%s',
                        self.task_data.get('task_id', 0))
         Client(LISTENER_ADDRESS).close()
 
     def _try_connect(self, wait):
         """
-        tries to accept new client in the given time
+        tries to establish connection to scrapy process in the given time
         checks status of connection each second
         if no connection was done in the given time, simulate it and close
         :param wait: time in seconds to wait
@@ -871,6 +904,9 @@ class ScrapyTask(object):
         return False
 
     def _run_signal(self, next_signal, step_time_start):
+        """
+        controls the flow of running given signal to scrapy process
+        """
         max_step_time = next_signal[1]['wait']
         if next_signal[0] == SIGNAL_SCRIPT_OPENED:  # first signal
             res = self._try_connect(max_step_time)
@@ -917,6 +953,10 @@ class ScrapyTask(object):
             raise SignalTimeoutError
 
     def _listen(self):
+        """
+        checks signal to finish in allowed time, otherwise raises error
+        and stops scrapy process, logs duration for given signal
+        """
         start_time = datetime.datetime.utcnow()
         while not self._stop_signal:  # run through all signals
             step_time_start = datetime.datetime.utcnow()
@@ -936,7 +976,10 @@ class ScrapyTask(object):
         self._finish()
 
     def start(self):
-        """start the scrapy process and wait for first signal"""
+        """
+        start scrapy process, try to establish connection with it,
+        terminate if fails
+        """
         start_time = datetime.datetime.utcnow()
         self.start_date = start_time
         self._start_scrapy_process()
@@ -950,6 +993,10 @@ class ScrapyTask(object):
             return False
 
     def run(self):
+        """
+        run listening of scrapy process execution in separate thread
+        to not block main thread and allow multiple tasks running same time
+        """
         t = Thread(target=self._listen)
         t.start()
 
@@ -1023,7 +1070,7 @@ def del_duplicate_tasks(tasks):
 
 def is_task_taken(new_task, tasks):
     """
-    Check, if tusk with such id already taken
+    check, if task with such id already taken
     """
     task_ids = [t.task_data.get('task_id') for t in tasks]
     new_task_id = new_task.get('task_id')
@@ -1056,8 +1103,6 @@ def main():
         logger.error('Socket auth failed!')
         raise Exception  # to catch exception and write end marker
 
-    # new logic:
-    # get task and start in in one step
     if not os.path.exists(os.path.expanduser(JOB_OUTPUT_PATH)):
         logger.debug("Create job output dir %s",
                      os.path.expanduser(JOB_OUTPUT_PATH))
@@ -1079,15 +1124,18 @@ def main():
         logger.info('#'*10 + 'FINISH TASKS REPORT' + '#'*10)
 
     add_timeout = 30  # add to visibility timeout
+    # names of the queues in SQS, ordered by priority
     q_keys = ['production', 'test', 'dev']
     q_ind = 0  # index of current queue
+    # try to get tasks, untill max number of tasks is reached or
+    # max number of tries to get tasks is reached
     while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
         TASK_QUEUE_NAME = QUEUES_LIST[q_keys[q_ind]]
         logger.info('Trying to get task from %s, try #%s',
                     TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
         if TEST_MODE:
             msg = test_read_msg_from_fs(TASK_QUEUE_NAME)
-        else:  # todo: change logic to reflect queue priorities
+        else:
             msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries+add_timeout)
         max_tries -= 1
         if msg is None:  # no task
@@ -1103,14 +1151,19 @@ def main():
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))
         # prepare to run task
-        if is_task_taken(task_data, tasks_taken):  # repeated task
+        # check if task with such id is already taken,
+        # to prevent running same task multiple times
+        if is_task_taken(task_data, tasks_taken):
             logger.warning('Duplicate task %s, skipping.',
                            task_data.get('task_id'))
             continue
-        if not tasks_taken:  # make sure all tasks are in same branch
+        if not tasks_taken:
+            # get git branch from first task, all tasks should
+            # be in the same branch
             branch = get_branch_for_task(task_data)
             switch_branch_if_required(task_data)
         elif not is_same_branch(get_branch_for_task(task_data), branch):
+            # make sure all tasks are in same branch
             queue.reset_message()
             continue
         # start task
@@ -1133,8 +1186,10 @@ def main():
         logger.warning('No tasks were taken.')
         logger.info('Scrapy daemon finished.')
         return
-    del_duplicate_tasks(tasks_taken)
     logger.info('Total tasks received: %s', len(tasks_taken))
+    # wait until all tasks are finished or max wait time is reached
+    # report each task progress after that and kill all tasks
+    #  which are not finished in time
     max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 59
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
