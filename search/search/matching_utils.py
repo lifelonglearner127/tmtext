@@ -45,7 +45,11 @@ class ProcessText():
         # convert text to ascii. so accented letters and special characters are all normalized to ascii characters
         # first normalize unicode form
         #TODO: test
-        text = unicodedata.normalize("NFD", unicode(text)).encode("ascii", "ignore")
+        try:
+            text = unicodedata.normalize("NFD", unicode(text)).encode("ascii", "ignore")
+        except Exception:
+            text = unicodedata.normalize("NFD", unicode(text, "utf-8")).encode("ascii", "ignore")
+
 
         # other preprocessing: -Inch = " - fitting for staples->amazon search
         #                        Feet = '
@@ -270,6 +274,7 @@ class ProcessText():
 
 
             product2['confidence'] = confidence
+            product2['UPC_match'] = 1 if upc_matched else 0
 
 
             if score >= threshold:

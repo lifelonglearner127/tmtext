@@ -67,6 +67,7 @@ class URLsPipeline(object):
 
             if int(spider.output) >= 3:
                 titles.append("Confidence")
+                titles.append("UPC_match")
 
             self.file.write(",".join(titles) + "\n")
 
@@ -144,6 +145,7 @@ class URLsPipeline(object):
 
                 # format confidence score on a total of 5 characters and 2 decimal points 
                 fields.append(str("%5.2f" % item['confidence']) if 'confidence' in item else "")
+                fields.append(str(item['UPC_match'] if 'UPC_match' in item else ""))
 
             # construct line from fields list
             line = ",".join(map(lambda x: x.encode("utf-8"), fields)) + "\n"
