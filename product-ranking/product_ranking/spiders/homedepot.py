@@ -162,22 +162,11 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
         skus = []
         if metadata:
             metadata = metadata[0]
-            try:
-                jsmeta = json.loads(metadata.replace(
-                    'label:"', '"label":"').replace(
-                    'guid: "', '"guid":"').replace(
-                    ",]", "]")
-                )
-            except ValueError:
-                print('+'*50)
-                print(metadata.count('guid: "'))
-                print('+'*50)
-                fl=open('file.html', 'w')
-                fl.write(metadata.replace(
+            jsmeta = json.loads(metadata.replace(
                 'label:"', '"label":"').replace(
                 'guid: "', '"guid":"').replace(
-                ",]", "]"))
-                fl.close()
+                ",]", "]")
+            )
             try:
                 #skus = jsmeta['attributeDefinition']['attributeLookup']
                 skus = [jsmeta["attributeDefinition"]["defaultSku"]]
