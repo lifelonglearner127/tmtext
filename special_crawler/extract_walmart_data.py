@@ -161,7 +161,6 @@ class WalmartScraper(Scraper):
 
         return None
 
-
     # check if there is a "Video" button available on the product page
     def _has_video_button(self):
         """Checks if a certain product page has a visible 'Video' button,
@@ -841,7 +840,14 @@ class WalmartScraper(Scraper):
         except:
             short_description = None
 
-        return short_description
+        return self._exclude_javascript_from_description(short_description)
+
+    def _exclude_javascript_from_description(self, description):
+        description = re.subn(r'<(script).*?</\1>(?s)', '', description)[0]
+#        description = re.sub(r"<script type=.+</script>", "", description)
+#       description = re.sub(r"<script>.+</script>", "", description)
+#
+        return description
 
     # ! may throw exception if not found
     # TODO:
@@ -1002,7 +1008,7 @@ class WalmartScraper(Scraper):
         # so change strategy for returning long description
         long_description = self._long_description()
 
-        return long_description
+        return self._exclude_javascript_from_description(long_description)
 
     def _shelf_description(self):
         shelf_description_li_list = self.tree_html.xpath("//div[@class='product-short-description module']/li")
