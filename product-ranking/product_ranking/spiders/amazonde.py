@@ -543,6 +543,18 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         return related_products
 
+    def _scrape_results_per_page(self, response):
+        num = response.xpath(
+            '//*[@id="s-result-count"]/text()').re('1-(\d+) von')
+        if num:
+            return int(num[0])
+        else:
+            num = response.xpath(
+                '//*[@id="s-result-count"]/text()').re('(\d+) Ergebnissen')
+            if num:
+                return int(num[0])
+        return None
+
     def _scrape_total_matches(self, response):
         if u'ne correspond à aucun article' in response.body_as_unicode():
             total_matches = 0
