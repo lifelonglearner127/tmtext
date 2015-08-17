@@ -125,7 +125,11 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         prod = response.meta['product']
 
         if not self._has_captcha(response):
-            self._populate_from_js(response, prod)
+            title = self._parse_title(response)
+            cond_set_value(prod, 'title', title)
+
+            image_url = self._parse_image_url(response)
+            cond_set_value(prod, 'image_url', image_url)
 
             self._populate_from_html(response, prod)
 
@@ -278,45 +282,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
             description,
         )
 
-        image_url = response.css(
-                '#imgTagWrapperId > img ::attr(data-old-hires)').extract()
-        if not image_url:
-            j = re.findall(r"'colorImages': { 'initial': (.*)},",
-                           response.body)
-            if not j:
-                j = re.findall(r'colorImages = {"initial":(.*)}',
-                               response.body)
-            if j:
-                try:
-                    res = json.loads(j[0])
-                    try:
-                        image = res[0]['large']
-                    except:
-                        image = res[1]['large']
-                    image_url = [image]
-                except:
-                    pass
-        if not image_url:
-            image_url = response.xpath(
-                '//div[@id="img-canvas"]/img/@src |'
-                '//div[@class="main-image-inner-wrapper"]/img/@src'
-            ).extract()
-
-        cond_set(
-            product,
-            'image_url',
-            image_url
-        )
-
-        title = response.css('#productTitle ::text').extract()
-        if not title:
-            title = response.xpath(
-                '//h1[@class="parseasinTitle"]'
-                '/span[@id="btAsinTitle"]/span/text()'
-            ).extract()
-        cond_set(
-            product, 'title', title)
-
         # Some data is in a list (ul element).
         model = None
         for li in response.css('td.bucket > .content > ul > li'):
@@ -359,18 +324,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
             product['buyer_reviews'] = revs.replace(meta=meta)
         else:
             product['buyer_reviews'] = revs
-
-    def _populate_from_js(self, response, product):
-        # Images are not always on the same spot...
-        img_jsons = response.css(
-            '#landingImage ::attr(data-a-dynamic-image)').extract()
-        if img_jsons:
-            img_data = json.loads(img_jsons[0])
-            cond_set_value(
-                product,
-                'image_url',
-                max(img_data.items(), key=lambda (_, size): size[0]),
-                conv=lambda (url, _): url)
 
     def _buyer_reviews_from_html(self, response):
         stars_regexp = r'.+(\d[\d, ]*)'

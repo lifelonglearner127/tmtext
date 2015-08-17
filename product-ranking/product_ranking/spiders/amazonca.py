@@ -95,7 +95,11 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         prod = response.meta['product']
 
         if not self._has_captcha(response):
-            self._populate_from_js(response, prod)
+            title = self._parse_title(response)
+            cond_set_value(prod, 'title', title)
+
+            image_url = self._parse_image_url(response)
+            cond_set_value(prod, 'image_url', image_url)
 
             self._populate_from_html(response, prod)
 
@@ -275,13 +279,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
             image
         )
 
-        title = response.css('#productTitle ::text').extract()
-        if not title:
-            title = response.xpath(
-                '//h1[@class="parseasinTitle"]/span/span/text()'
-            ).extract()
-        cond_set(product, 'title', title)
-
         # Some data is in a list (ul element).
         model = None
         for li in response.css('td.bucket > .content > ul > li'):
@@ -317,18 +314,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 cond_set(product, 'model', (model.strip(),))
         self._buyer_reviews_from_html(response, product)
         self.populate_bestseller_rank(product, response)
-
-    def _populate_from_js(self, response, product):
-        # Images are not always on the same spot...
-        img_jsons = response.css(
-            '#landingImage ::attr(data-a-dynamic-image)').extract()
-        if img_jsons:
-            img_data = json.loads(img_jsons[0])
-            cond_set_value(
-                product,
-                'image_url',
-                max(img_data.items(), key=lambda (_, size): size[0]),
-                conv=lambda (url, _): url)
 
     def _buyer_reviews_from_html(self, response, product):
         stars_regexp = r'.+(\d[\d, ]*)'

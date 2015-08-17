@@ -138,6 +138,12 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
                 self.parse_product
             )
 
+        title = self._parse_title(response)
+        cond_set_value(prod, 'title', title)
+
+        image_url = self._parse_image_url(response)
+        cond_set_value(prod, 'image_url', image_url)
+
         ### Populate variants with CH/SC class
         av = AmazonVariants()
         av.setupSC(response)
@@ -161,19 +167,6 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
                 ).extract())
                 if model:
                     cond_set(prod, 'model', (model,))
-
-        title = response.xpath(
-            '//span[@id="productTitle"]/text()[normalize-space()] |'
-            '//div[@class="buying"]/h1/span[@id="btAsinTitle"]'
-            '/text()[normalize-space()] |'
-            '//div[@id="title_feature_div"]/h1/text()[normalize-space()] |'
-            '//div[@id="title_row"]/span/h1/text()[normalize-space()] |'
-            '//h1[@id="aiv-content-title"]/text()[normalize-space()] |'
-            '//div[@id="item_name"]/text()[normalize-space()] |'
-            '//h1[@class="parseasinTitle"]/span[@id="btAsinTitle"]'
-            '/span/text()[normalize-space()]'
-        ).extract()
-        cond_set(prod, 'title', title)
 
         brand = response.xpath('//a[@id="brand"]/text()').extract()
         cond_set(prod, 'brand', brand)
@@ -240,39 +233,6 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
             ).extract()
 
         cond_set(prod, 'description', description)
-
-        image = []
-        j = re.findall(r"'colorImages': { 'initial': (.*)},",
-                       response.body)
-        if not j:
-            j = re.findall(r'colorImages = {"initial":(.*)}',
-                           response.body)
-        if j:
-            try:
-                res = json.loads(j[0])
-                try:
-                    image = res[0]['large']
-                except:
-                    image = res[1]['large']
-                image = [image]
-            except:
-                pass
-        if not image:
-            image = response.xpath(
-                '//div[@class="main-image-inner-wrapper"]/img/@src |'
-                '//div[@id="coverArt_feature_div"]//img/@src |'
-                '//div[@id="img-canvas"]/img/@src |'
-                '//div[@class="dp-meta-icon-container"]/img/@src |'
-                '//input[@id="mocaGlamorImageUrl"]/@value |'
-                '//div[@class="egcProdImageContainer"]'
-                '/img[@class="egcDesignPreviewBG"]/@src |'
-                '//img[@id="main-image"]/@src |'
-                '//div[@id="imgTagWrapperId"]/img/@src |'
-                '//div[@id="kib-container"]/div[@id="kib-ma-container-0"]'
-                '/img/@src'
-            ).extract()
-
-        cond_set(prod, 'image_url', image)
 
         cond_set(prod, 'locale', ['en-US'])
 

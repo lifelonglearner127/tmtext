@@ -109,7 +109,11 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
             )
 
         if not self._has_captcha(response):
-            self._populate_from_js(response, prod)
+            title = self._parse_title(response)
+            cond_set_value(prod, 'title', title)
+
+            image_url = self._parse_image_url(response)
+            cond_set_value(prod, 'image_url', image_url)
 
             self._populate_from_html(response, prod)
 
@@ -345,85 +349,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
             description,
         )
 
-        image = response.css(
-            '#imgTagWrapperId > img ::attr(data-old-hires)'
-        ).extract()
-        if not image:
-            j = re.findall(r"'colorImages': { 'initial': (.*)},",
-                           response.body)
-            if not j:
-                j = re.findall(r'colorImages = {"initial":(.*)}',
-                               response.body)
-            if j:
-                try:
-                    res = json.loads(j[0])
-                    try:
-                        image = res[0]['large']
-                    except:
-                        image = res[1]['large']
-                    image = [image]
-                except:
-                    pass
-        if not image:
-            image = response.xpath(
-                '//div[@class="main-image-inner-wrapper"]/img/@src |'
-                '//div[@id="coverArt_feature_div"]//img/@src |'
-                '//div[@id="img-canvas"]/img/@src |'
-                '//div[@class="dp-meta-icon-container"]/img/@src |'
-                '//input[@id="mocaGlamorImageUrl"]/@value |'
-                '//div[@class="egcProdImageContainer"]'
-                '/img[@class="egcDesignPreviewBG"]/@src |'
-                '//img[@id="main-image"]/@src |'
-                '//div[@id="imgTagWrapperId"]/img/@src |'
-                '//div[@id="kib-container"]/div[@id="kib-ma-container-0"]'
-                '/img/@src'
-            ).extract()
-        if image and image[0].strip().startswith('http'):
-            # sometimes images are coded data
-            cond_set(
-                product,
-                'image_url',
-                image
-            )
-
-        if not product.get('image_url', ''):
-            # try properties first
-            cond_set(product, 'image_url', response.xpath(
-                '//img[contains(@id, "main-image")]/@data-a-dynamic-image').extract())
-            if product.get('image_url', '').strip():
-                _url = None
-                try:
-                    _url = json.loads(product['image_url'])
-                except Exception as e:
-                    cond_set(product, 'image_url', response.xpath(
-                        '//img[contains(@id, "main-image")]/@src').extract())
-                if _url:
-                    _url = _url.keys()[0]
-                    product['image_url'] = _url
-
-        title = response.xpath(
-            '//span[@id="productTitle"]/text()[normalize-space()] |'
-            '//div[@class="buying"]/h1/span[@id="btAsinTitle"]'
-            '/text()[normalize-space()] |'
-            '//div[@id="title_feature_div"]/h1/text()[normalize-space()] |'
-            '//div[@id="title_row"]/span/h1/text()[normalize-space()] |'
-            '//h1[@id="aiv-content-title"]/text()[normalize-space()] |'
-            '//div[@id="item_name"]/text()[normalize-space()] |'
-            '//h1[@class="parseasinTitle"]/span[@id="btAsinTitle"]'
-            '/span/text()[normalize-space()]'
-        ).extract()
-
-        if not title:
-            title = response.xpath('//span[@id="title"]/text()').extract()
-            if not title:
-                title = response.xpath('//*[@id="product-title"]/text()').extract()
-            if not title:
-                title = response.xpath('//h1[@id="title"]/text()').extract()
-            title = [title[0].strip()] if title else title
-
-        cond_set(
-            product, 'title', title)
-
         # Some data is in a list (ul element).
         model = None
         for li in response.css('td.bucket > .content > ul > li'):
@@ -465,18 +390,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
         #else:
         #    product['buyer_reviews'] = revs
         product['buyer_reviews'] = ''
-
-    def _populate_from_js(self, response, product):
-        # Images are not always on the same spot...
-        img_jsons = response.css(
-            '#landingImage ::attr(data-a-dynamic-image)').extract()
-        if img_jsons:
-            img_data = json.loads(img_jsons[0])
-            cond_set_value(
-                product,
-                'image_url',
-                max(img_data.items(), key=lambda (_, size): size[0]),
-                conv=lambda (url, _): url)
 
     def _buyer_reviews_from_html(self, response):
         stars_regexp = r'% .+ (\d[\d, ]*) '

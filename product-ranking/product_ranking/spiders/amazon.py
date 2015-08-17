@@ -100,7 +100,11 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         prod['buyer_reviews'] = self._build_buyer_reviews(response)
 
         if not self._has_captcha(response):
-            self._populate_from_js(response, prod)
+            title = self._parse_title(response)
+            cond_set_value(prod, 'title', title)
+
+            image_url = self._parse_image_url(response)
+            cond_set_value(prod, 'image_url', image_url)
 
             self._populate_from_html(response, prod)
 
@@ -288,63 +292,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
             description,
         )
 
-        image = response.css(
-            '#imgTagWrapperId > img ::attr(data-old-hires)'
-        ).extract()
-        if not image:
-            j = re.findall(r"'colorImages': { 'initial': (.*)},",
-                           response.body)
-            if not j:
-                j = re.findall(r'colorImages = {"initial":(.*)}',
-                               response.body)
-            if j:
-                try:
-                    res = json.loads(j[0])
-                    try:
-                        image = res[0]['large']
-                    except:
-                        image = res[1]['large']
-                    image = [image]
-                except:
-                    pass
-        if not image:
-            image = response.xpath(
-                '//div[@class="main-image-inner-wrapper"]/img/@src |'
-                '//div[@id="coverArt_feature_div"]//img/@src |'
-                '//div[@id="img-canvas"]/img/@src |'
-                '//div[@class="dp-meta-icon-container"]/img/@src |'
-                '//input[@id="mocaGlamorImageUrl"]/@value |'
-                '//div[@class="egcProdImageContainer"]'
-                '/img[@class="egcDesignPreviewBG"]/@src |'
-                '//img[@id="main-image"]/@src'
-            ).extract()
-
-        if len(image)>0 and image[0]:
-            if product.get('image_url'):
-                product['image_url'] = image[0]
-            else:
-                cond_set(product, 'image_url', image)
-
-        title = response.css('#productTitle ::text').extract()
-        if not title:
-            title = response.xpath(
-                '//div[@class="buying"]/h1/span[@id="btAsinTitle"]/text() |'
-                '//div[@id="title_feature_div"]/h1/text() |'
-                '//div[@id="title_row"]/span/h1/text() |'
-                '//h1[@id="aiv-content-title"]/text() |'
-                '//div[@id="item_name"]/text()'
-            ).extract()
-        if not title:
-            parts = response.xpath(
-                '//div[@id="mnbaProductTitleAndYear"]/span/text()'
-            ).extract()
-            if parts:
-                title = ''
-                for part in parts:
-                    title += part
-                title = [title]
-        cond_set(product, 'title', title)
-
         # Some data is in a list (ul element).
         model = None
         for li in response.css('td.bucket > .content > ul > li'):
@@ -366,18 +313,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 model = li.xpath('text()').extract()
         cond_set(product, 'model', model, conv=string.strip)
         self.populate_bestseller_rank(product, response)
-
-    def _populate_from_js(self, response, product):
-        # Images are not always on the same spot...
-        img_jsons = response.css(
-            '#landingImage ::attr(data-a-dynamic-image)').extract()
-        if img_jsons:
-            img_data = json.loads(img_jsons[0])
-            cond_set_value(
-                product,
-                'image_url',
-                max(img_data.items(), key=lambda (_, size): size[0]),
-                conv=lambda (url, _): url)
 
     def _get_rating_by_star_by_individual_request(self, response):
         product = response.meta['product']
@@ -473,8 +408,8 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         if not buyer_reviews.get('rating_by_star'):
             response.meta['product']['buyer_reviews'] = buyer_reviews
             # if still no rating_by_star (probably the rating is percent-based)
-            return self._create_post_requests(
-                response, self._get_asin_from_url(response.url))
+            # return self._create_post_requests(
+            #     response, self._get_asin_from_url(response.url))
             #return
 
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)

@@ -2,6 +2,7 @@
 
 import re
 import urlparse
+import json
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
@@ -90,7 +91,7 @@ class AmazonBaseClass(BaseProductsSpider):
         """
 
         lis = response.xpath('//ul/li[contains(@class, "s-result-item")] |'
-                             '//*[contains(@id, "results")] |'
+                             '//div[@id="mainResults"]/div[contains(@class, "prod")] |'
                              '//*[contains(@class, "sx-table-item")]')
         links = []
 
@@ -148,6 +149,128 @@ class AmazonBaseClass(BaseProductsSpider):
             result = super(AmazonBaseClass, self).parse(response)
 
         return result
+
+    def parse_product(self, response):
+        meta = response.meta.copy()
+        product = meta['product']
+        reqs = []
+
+        if self._has_captcha(response):
+            return self._handle_captcha(
+                response,
+                self.parse_product
+            )
+
+        # Parse title
+        title = self._parse_title(response)
+        cond_set(product, 'title', title)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def _parse_title(self, response, add_xpath=None):
+        """
+        Parses product title.
+        :param response:
+        :param add_xpath: Additional xpathes, so you don't need to change base class
+        :return: Number of total matches (int)
+        """
+
+        xpathes = '//span[@id="productTitle"]/text()[normalize-space()] |' \
+                  '//div[@class="buying"]/h1/span[@id="btAsinTitle"]/text()[normalize-space()] |' \
+                  '//div[@id="title_feature_div"]/h1/text()[normalize-space()] |' \
+                  '//div[@id="title_row"]/span/h1/text()[normalize-space()] |' \
+                  '//h1[@id="aiv-content-title"]/text()[normalize-space()] |' \
+                  '//div[@id="item_name"]/text()[normalize-space()] |' \
+                  '//h1[@class="parseasinTitle"]/span[@id="btAsinTitle"]' \
+                  '/span/text()[normalize-space()] |' \
+                  '//*[@id="title"]/text()[normalize-space()] |' \
+                  '//*[@id="product-title"]/text()[normalize-space()]'
+        if add_xpath:
+            xpathes += ' |' + add_xpath
+
+        title = is_empty(
+            response.xpath(xpathes).extract(), ''
+        ).strip()
+
+        if not title:
+            # Create title from parts
+            parts = response.xpath(
+                '//div[@id="mnbaProductTitleAndYear"]/span/text()'
+            ).extract()
+            if parts:
+                title = ''
+                for part in parts:
+                    title += part
+                title = [title]
+
+        return title
+
+    def _parse_image_url(self, response, add_xpath=None):
+        """
+        Parses product image.
+        :param response:
+        :param add_xpath: Additional xpathes, so you don't need to change base class
+        :return: Number of total matches (int)
+        """
+
+        xpathes = '//div[@class="main-image-inner-wrapper"]/img/@src |' \
+                  '//div[@id="coverArt_feature_div"]//img/@src |' \
+                  '//div[@id="img-canvas"]/img/@src |' \
+                  '//div[@class="dp-meta-icon-container"]/img/@src |' \
+                  '//input[@id="mocaGlamorImageUrl"]/@value |' \
+                  '//div[@class="egcProdImageContainer"]' \
+                  '/img[@class="egcDesignPreviewBG"]/@src |' \
+                  '//img[@id="main-image"]/@src |' \
+                  '//*[@id="imgTagWrapperId"]/.//img/@data-old-hires'
+        if add_xpath:
+            xpathes += ' |' + add_xpath
+
+        image = is_empty(
+            response.xpath(xpathes).extract(), ''
+        )
+
+        if not image:
+            img_re = is_empty(
+                re.findall(
+                    r"'colorImages':\s*\{\s*'initial':\s*(.*)\},|colorImages\s*=\s*\{\s*\"initial\":\s*(.*)\}",
+                    response.body), ''
+            )
+
+            img_re = is_empty(list(img_re))
+
+            if img_re:
+                try:
+                    res = json.loads(img_re)
+                    image = res[0]['large']
+                except Exception as exc:
+                    self.log('Unable to parse image url from JS on {url}: {exc}'.format(
+                        url=response.url, exc=exc), WARNING)
+
+        if not image:
+            # Images are not always on the same spot...
+            img_jsons = response.xpath(
+                '//*[@id="landingImage"]/@data-a-dynamic-image'
+            ).extract()
+
+            if img_jsons:
+                img_data = json.loads(img_jsons[0])
+                image = max(img_data.items(), key=lambda (_, size): size[0])
+
+        return image.strip()
+
+    def send_next_request(self, reqs, response):
+        """
+        Helps to handle several requests
+        """
+
+        req = reqs.pop(0)
+        new_meta = response.meta.copy()
+        if reqs:
+            new_meta["reqs"] = reqs
+        return req.replace(meta=new_meta)
 
     # Captcha handling functions.
     def _has_captcha(self, response):
