@@ -120,7 +120,7 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
             if isinstance(prod["buyer_reviews"], Request):
                 if mkt_place_link:
                     new_meta["mkt_place_link"] = mkt_place_link
-                return prod["buyer_reviews"].replace(meta=new_meta,dont_filter=True)
+                return prod["buyer_reviews"].replace(meta=new_meta, dont_filter=True)
 
             if mkt_place_link:
                 return Request(
@@ -568,66 +568,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                     number.replace(',', '')
                 )
         return buyer_reviews, table
-
-    # def _scrape_total_matches(self, response):
-    #     # Where this value appears is a little weird and changes a bit so we
-    #     # need two alternatives to capture it consistently.
-    #
-    #     if response.css('#noResultsTitle'):
-    #         return 0
-    #
-    #     # Every result I saw is shown with this format
-    #     #    1-16 of 424,831 results for
-    #     #    2 results for
-    #     values = response.css('#s-result-count ::text').re(
-    #         '([0-9,]+)\s[Rr]esults for')
-    #     if not values:
-    #         # The first possible place is where it normally is in a fully
-    #         # rendered page.
-    #         values = response.css('#resultCount > span ::text').re(
-    #             '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults')
-    #         if not values:
-    #             # Otherwise, it appears within a comment.
-    #             values = response.css(
-    #                 '#result-count-only-next'
-    #             ).xpath(
-    #                 'comment()'
-    #             ).re(
-    #                 '\s+of\s+(\d+(,\d\d\d)*)\s+[Rr]esults\s+'
-    #             )
-    #
-    #     if values:
-    #         total_matches = int(values[0].replace(',', ''))
-    #     else:
-    #         if not self.is_nothing_found(response):
-    #             self.log(
-    #                 "Failed to parse total number of matches for: %s"
-    #                 % response.url,
-    #                 level=ERROR
-    #             )
-    #         total_matches = None
-    #     return total_matches
-
-    def _scrape_results_per_page(self, response):
-        num = response.xpath(
-            '//*[@id="s-result-count"]/text()').re('1-(\d+) of')
-        if num:
-            return int(num[0])
-        else:
-            num = response.xpath(
-                '//*[@id="s-result-count"]/text()').re('(\d+) results')
-            if num:
-                return int(num[0])
-        return None
-
-    def _scrape_next_results_page_link(self, response):
-        next_pages = response.css('#pagnNextLink ::attr(href)').extract()
-        next_page_url = None
-        if len(next_pages) == 1:
-            next_page_url = next_pages[0]
-        elif len(next_pages) > 1:
-            self.log("Found more than one 'next page' link.", ERROR)
-        return next_page_url
 
     def _search_page_error(self, response):
         body = response.body_as_unicode()

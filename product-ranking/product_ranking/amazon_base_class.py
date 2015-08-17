@@ -54,6 +54,36 @@ class AmazonBaseClass(BaseProductsSpider):
 
         return total_matches
 
+    def _scrape_results_per_page(self, response):
+        num = response.xpath(
+            '//*[@id="s-result-count"]/text()').re('1-(\d+) of')
+
+        if num:
+            return int(num[0])
+        else:
+            num = response.xpath(
+                '//*[@id="s-result-count"]/text()').re('(\d+) results')
+            if num:
+                return int(num[0])
+
+        return None
+
+    def _scrape_next_results_page_link(self, response):
+        """
+        Overrides BaseProductsSpider method to get link on next page of products.
+        """
+        next_pages = response.xpath('//*[@id="pagnNextLink"]/@href |'
+                                    '//ul[contains(@class, "a-pagination")]'
+                                    '/a[contains(text(), "eiter")]/@href').extract()
+        next_page_url = None
+
+        if len(next_pages) == 1:
+            next_page_url = next_pages[0]
+        elif len(next_pages) > 1:
+            self.log("Found more than one 'next page' link.", ERROR)
+
+        return next_page_url
+
     def _scrape_product_links(self, response):
         """
         Overrides BaseProductsSpider method to scrape product links.

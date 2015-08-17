@@ -329,14 +329,6 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
         except IndexError:
             return False
 
-    def _scrape_next_results_page_link(self, response):
-        links = response.xpath(
-            '//a[@id="pagnNextLink"]/@href'
-        )
-        if links:
-            return links.extract()[0].strip()
-        return None
-
     def get_buyer_reviews_from_2nd_page(self, response):
 
         if self._has_captcha(response):

@@ -478,22 +478,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
                 max(img_data.items(), key=lambda (_, size): size[0]),
                 conv=lambda (url, _): url)
 
-    def _scrape_next_results_page_link(self, response):
-        next_pages = response.xpath(
-            "//a[@id='pagnNextLink']/@href").extract()
-        next_page_url = None
-        if len(next_pages) == 1:
-            next_page_url = next_pages[0]
-        elif len(next_pages) > 1:
-            self.log("Found more than one 'next page' link.", ERROR)
-        if not next_pages:
-            next_pages = response.xpath(
-                '//ul[contains(@class, "a-pagination")]'
-                '//a[contains(text(), "eiter")]/@href').extract()
-            if len(next_pages) == 1:
-                next_page_url = next_pages[0]
-        return next_page_url
-
     def _buyer_reviews_from_html(self, response):
         stars_regexp = r'% .+ (\d[\d, ]*) '
         total = ''.join(response.css('#summaryStars a::text').extract())

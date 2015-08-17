@@ -374,15 +374,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 max(img_data.items(), key=lambda (_, size): size[0]),
                 conv=lambda (url, _): url)
 
-    def _scrape_next_results_page_link(self, response):
-        next_pages = response.css('#pagnNextLink ::attr(href)').extract()
-        next_page_url = None
-        if len(next_pages) == 1:
-            next_page_url = next_pages[0]
-        elif len(next_pages) > 1:
-            self.log("Found more than one 'next page' link.", ERROR)
-        return next_page_url
-
     def _buyer_reviews_from_html(self, response):
         stars_regexp = r'.+(\d[\d, ]*)'
         total = ''.join(response.css('#summaryStars a::text').extract())
