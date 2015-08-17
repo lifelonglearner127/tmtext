@@ -56,10 +56,10 @@ class AmazonDeValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
-        'dress code style all': [5, 70],
-        'water pump bronze': [2, 70],
+        'canon ixus': [50, 300],
+        'xperia screen replacement': [5, 150],
         'ceiling fan industrial': [15, 90],
-        'kaspersky total': [30, 250],
+        'kaspersky total': [5, 250],
         'car navigator garmin': [5, 100],
         'yamaha drums midi': [2, 50],
         'black men shoes size 8 red': [5, 70],
