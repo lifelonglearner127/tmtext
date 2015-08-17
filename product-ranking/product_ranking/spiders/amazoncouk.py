@@ -534,9 +534,6 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
 
         return product
 
-    def _parse_single_product(self, response):
-        return self.parse_product(response)
-
     def parse_marketplace(self, response):
         response.meta["called_class"] = self
         response.meta["next_req"] = None

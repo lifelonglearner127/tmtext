@@ -648,7 +648,7 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     def _search_page_error(self, response):
         body = response.body_as_unicode()
         return "Your search" in body \
-            and  "did not match any products." in body
+            and "did not match any products." in body
 
     # Captcha handling functions.
     def _has_captcha(self, response):
@@ -698,9 +698,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 meta=meta)
 
         return result
-
-    def _parse_single_product(self, response):
-        return self.parse_product(response)
 
     def parse_marketplace(self, response):
         response.meta["called_class"] = self

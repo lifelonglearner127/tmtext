@@ -99,9 +99,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
 
         self._cbw = CaptchaBreakerWrapper()
 
-    def _parse_single_product(self, response):
-        return self.parse_product(response)
-
     def parse(self, response):
         if self._has_captcha(response):
             result = self._handle_captcha(response, self.parse)

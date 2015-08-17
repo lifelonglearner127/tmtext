@@ -449,9 +449,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
             return next_req
         return product
 
-    def _parse_single_product(self, response):
-        return self.parse_product(response)
-
     def _validate_title(self, val):
         if not bool(val.strip()):  # empty
             return False

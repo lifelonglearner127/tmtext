@@ -1,6 +1,5 @@
 # ~~coding=utf-8~~
 
-
 import re
 import urlparse
 
@@ -91,3 +90,9 @@ class AmazonBaseClass(BaseProductsSpider):
             if is_prime_pantry:
                 prime = 'PrimePantry'
             yield link, SiteProductItem(prime=prime)
+
+    def _parse_single_product(self, response):
+        """
+        Method from BaseProductsSpider. Enables single url mode.
+        """
+        return self.parse_product(response)
