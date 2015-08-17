@@ -131,6 +131,9 @@ class AsdaProductsSpider(BaseProductsSpider):
             prod = SiteProductItem()
             prod['title'] = item['itemName']
             prod['brand'] = item['brandName']
+
+            # Hardcoded, store seems not to have out of stock products
+            prod['is_out_of_stock'] = False
             prod['price'] = item['price']
             if prod.get('price', None):
                 prod['price'] = Price(
