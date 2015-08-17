@@ -346,50 +346,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 max(img_data.items(), key=lambda (_, size): size[0]),
                 conv=lambda (url, _): url)
 
-    # def _scrape_total_matches(self, response):
-    #     if 'did not match any products.' in response.body_as_unicode():
-    #         total_matches = 0
-    #     else:
-    #         count_matches = response.xpath(
-    #             '//h2[@id="s-result-count"]/text()').re('of ([\d,]+)')
-    #         if count_matches and count_matches[-1]:
-    #             total_matches = int(count_matches[-1].replace(',', ''))
-    #         else:
-    #             total_matches = None
-    #     if not total_matches:
-    #         total_matches = int(is_empty(response.xpath(
-    #             '//h2[@id="s-result-count"]/text()'
-    #         ).re(FLOATING_POINT_RGEX), 0))
-    #     return total_matches
-
-    def _scrape_product_links(self, response):
-        lis = response.xpath("//ul/li[@class='s-result-item']")
-        links = []
-        for no, li in enumerate(lis):
-            href = li.xpath(
-                ".//a[contains(@class,'s-access-detail-page')]"
-                "/@href").extract()
-            if href:
-                href = href[0]
-                is_prime = li.xpath(
-                    "*/descendant::i[contains(concat(' ',@class,' '),"
-                    "' a-icon-prime ')]").extract()
-                is_prime_pantry = li.xpath(
-                    "*/descendant::i[contains(concat(' ',@class,' '),"
-                    "' a-icon-prime-pantry ')]").extract()
-                links.append((href, is_prime, is_prime_pantry))
-
-        if not links:
-            self.log("Found no product links.", WARNING)
-
-        for link, is_prime, is_prime_pantry in links:
-            prime = None
-            if is_prime:
-                prime = 'Prime'
-            if is_prime_pantry:
-                prime = 'PrimePantry'
-            yield link, SiteProductItem(prime=prime)
-
     def _scrape_next_results_page_link(self, response):
         next_pages = response.css('#pagnNextLink ::attr(href)').extract()
         next_page_url = None

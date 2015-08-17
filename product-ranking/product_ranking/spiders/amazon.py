@@ -636,45 +636,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 return int(num[0])
         return None
 
-    def _scrape_product_links(self, response):
-        lis = response.xpath("//div[@id='resultsCol']//ul//li |"
-                             "//div[@id='mainResults']//ul//li"
-                             "[contains(@id, 'result')] |"
-                             "//div[@id='atfResults']//ul//li"
-                             "[contains(@id, 'result')] |"
-                             "//div[@id='mainResults']//div"
-                             "[contains(@id, 'result')]")
-        links = []
-        last_idx = -1
-        for li in lis:
-            try:
-                is_prime = li.xpath("*/descendant::i[contains(concat(' ',@class,' '),' a-icon-prime ')] |"
-                    ".//span[contains(@class, 'sprPrime')]")
-                is_prime_pantry = li.xpath("*/descendant::i[contains(concat(' ',@class,' '),' a-icon-prime-pantry ')]")
-                data_asin = li.xpath('@id').extract()[0]
-                idx = int(re.findall(r'\d+', data_asin)[0])
-                if idx > last_idx:
-                    link = li.xpath(".//a[contains(@class,'s-access-detail-page')]/@href |"
-                        ".//h3[@class='newaps']/a/@href").extract()[0]
-                    if 'slredirect' in link:
-                        link = urlparse.urljoin('http://amazon.com/', link)
-                    links.append((link, is_prime, is_prime_pantry))
-                else:
-                    break
-                last_idx = idx
-            except IndexError:
-                continue
-        if len(links) < 1:
-            self.log("Found no product links.", WARNING)
-
-        for link, is_prime, is_prime_pantry in links:
-            prime = None
-            if is_prime:
-                prime = 'Prime'
-            if is_prime_pantry:
-                prime = 'PrimePantry'
-            yield link, SiteProductItem(prime=prime)
-
     def _scrape_next_results_page_link(self, response):
         next_pages = response.css('#pagnNextLink ::attr(href)').extract()
         next_page_url = None

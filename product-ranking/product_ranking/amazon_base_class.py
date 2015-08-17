@@ -12,7 +12,6 @@ from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.amazon_tests import AmazonTests
-
 from product_ranking.amazon_bestsellers import amazon_parse_department
 
 
@@ -55,3 +54,40 @@ class AmazonBaseClass(BaseProductsSpider):
             ).re(FLOATING_POINT_RGEX), 0))
 
         return total_matches
+
+    def _scrape_product_links(self, response):
+        """
+        Overrides BaseProductsSpider method to scrape product links.
+        """
+
+        lis = response.xpath('//ul/li[contains(@class, "s-result-item")] |'
+                             '//*[contains(@id, "results")] |'
+                             '//*[contains(@class, "sx-table-item")]')
+        links = []
+
+        for no, li in enumerate(lis):
+            href = li.xpath(
+                ".//a[contains(@class,'s-access-detail-page')]/@href |"
+                ".//a/@href")
+
+            if href:
+                href = is_empty(href.extract())
+                is_prime = li.xpath(
+                    "*/descendant::i[contains(concat(' ',@class,' '),' a-icon-premium ')] |"
+                    "*/descendant::i[contains(@class, 'a-icon-prime]')]").extract()
+                is_prime_pantry = li.xpath(
+                    "*/descendant::i[contains(concat(' ',@class,' '),' a-icon-premium-pantry ')] |"
+                    "*/descendant::i[contains(@class, 'a-icon-prime-pantry')] |"
+                    "*/descendant::i[contains(@class, 'a-icon-primepantry')]").extract()
+                links.append((href, is_prime, is_prime_pantry))
+
+        if not links:
+            self.log("Found no product links.", WARNING)
+
+        for link, is_prime, is_prime_pantry in links:
+            prime = None
+            if is_prime:
+                prime = 'Prime'
+            if is_prime_pantry:
+                prime = 'PrimePantry'
+            yield link, SiteProductItem(prime=prime)
