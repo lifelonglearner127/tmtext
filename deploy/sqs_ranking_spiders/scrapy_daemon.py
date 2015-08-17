@@ -1085,7 +1085,7 @@ def main():
                     TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
         if TEST_MODE:
             msg = test_read_msg_from_fs(TASK_QUEUE_NAME)
-        else:
+        else:  # todo: change logic to reflect queue priorities
             msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries+add_timeout)
         max_tries -= 1
         if msg is None:  # no task
