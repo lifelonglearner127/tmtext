@@ -10,13 +10,40 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults, cond_set_value, dump_url_to_file
 from product_ranking.guess_brand import guess_brand_from_first_words
+from product_ranking.validation import BaseValidator
+
+
+class MaplinValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['brand', 'limited_stock']
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'google_source_site', 'description', 'special_pricing', 
+        'bestseller_rank', 'model'
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = True  # ... duplicated requests?
+    ignore_log_filtered = True  # ... filtered requests?
+    test_requests = {
+        'sdfsdgdf': 0,  # should return 'no products' or just 0 products
+        'benny benassi': 0,
+        'red car': [20, 150],
+        'stone': [50, 160],
+        'gone': [5, 80],
+        'rose': [10, 110],
+        'long term black': [1, 50],
+        'selling': [15, 120],
+        'water proof': [50, 160],
+        'long night': [30, 110],
+    }
 
 
 # scrapy crawl maplin_products -a searchterms_str="Earth" [-a order=default]
-class GandermountainProductsSpider(BaseProductsSpider):
+class MaplinProductsSpider(BaseValidator, BaseProductsSpider):
     name = "maplin_products"
     allowed_domains = ["www.maplin.co.uk"]
     start_urls = []
+
+    settings = MaplinValidatorSettings
 
     SEARCH_URL = "http://www.maplin.co.uk/search?text={search_term}&x=0&y=0"\
                  "&sort={search_sort}"
@@ -42,7 +69,7 @@ class GandermountainProductsSpider(BaseProductsSpider):
                      % order, WARNING)
             order = 'default'
         search_sort = self.SORT_MODES[order]
-        super(GandermountainProductsSpider, self).__init__(
+        super(MaplinProductsSpider, self).__init__(
             url_formatter=FormatterWithDefaults(
                 search_sort=search_sort,
             ), *args, **kwargs
@@ -173,6 +200,9 @@ class GandermountainProductsSpider(BaseProductsSpider):
         return self.parse_product(initial_response)
 
     def _scrape_total_matches(self, response):
+        if "Sorry, we couldn't find any results for your search" \
+                in response.body_as_unicode():
+            return 0
         total_matches = None
         if 'No products found matching the search criteria'\
                 in response.body_as_unicode():
