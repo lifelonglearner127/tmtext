@@ -288,6 +288,9 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 brand = brand.extract()
             else:
                 brand = is_empty(brand.extract(), '').strip()
+            if isinstance(brand, (list, tuple)):
+                if brand:
+                    brand = brand[0]
             cond_set_value(product, 'brand', brand)
         cond_set(
             product,
@@ -347,7 +350,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         if product.get('price', None):
             if not u'EUR' in product.get('price', ''):
-                self.log('Invalid price at: %s' % response.url, level=ERROR)
+                self.log('Invalid price at: %s' % response.url, level=WARNING)
             else:
                 price = re.findall(FLOATING_POINT_RGEX,
                     product['price'].replace(u'\xa0', '').strip())
