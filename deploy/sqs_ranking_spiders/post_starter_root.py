@@ -29,7 +29,7 @@ def _install_system_package(package):
         try:
             import urllib2
             import urllib
-            url = 'sqs-metrics.contentanalyticsinc.com/log_install_error'
+            url = 'http://sqs-metrics.contentanalyticsinc.com/log_install_error'
             data = dict(item=package, error=e.output)
             req = urllib2.Request(url, urllib.urlencode(data))
             urllib2.urlopen(req)

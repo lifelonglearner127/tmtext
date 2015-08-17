@@ -609,10 +609,17 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         if not links:
             lis = response.xpath('//*[contains(@id, "results")]'
                                  '//*[contains(@class, "sx-table-item")]')
+            if not lis:
+                lis = response.xpath('//*[contains(@id, "results")]'
+                                     '//*[contains(@class, "s-result-item")]')
             for no, li in enumerate(lis):
                 is_prime = li.css('i.a-icon-prime').extract()
                 is_prime_pantry = (li.css('i.a-icon-prime-pantry').extract()
                                    or li.css('i.a-icon-primepantry').extract())
+                if not is_prime_pantry:
+                    is_prime_pantry = bool(li.xpath(
+                        "*/descendant::i[contains(concat(' ',@class,' '),"
+                        "' a-icon-premium-pantry ')]").extract())
                 links.append([
                     is_empty(li.xpath('.//a/@href').extract()),
                     is_prime, is_prime_pantry
