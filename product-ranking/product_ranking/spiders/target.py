@@ -45,7 +45,7 @@ class TargetValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
         'navigator': [10, 110],
         'manager': [15, 130],
         'IPhone-6': [1, 50],
-        'air conditioner': [60, 170]
+        'air conditioner': [60, 170],
     }
 
 
@@ -735,8 +735,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             "//li[contains(@class, 'pagination--next')]/a/@href"
         ).extract()
         if next_page:
-            if "?searchTerm=%s" % self.searchterms[0] in next_page[0] \
-                    and "page=" in next_page[0]:
+            search = "?searchTerm=%s" % self.searchterms[0].replace(" ", "+")
+            if search in next_page[0] and "page=" in next_page[0]:
                 return next_page[0]
             next_page = next_page[0]
             return self._gen_next_request(response, next_page)
