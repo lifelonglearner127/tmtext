@@ -32,6 +32,7 @@ def _install_system_package(package):
             url = 'http://sqs-metrics.contentanalyticsinc.com/log_install_error'
             data = dict(item=package, error=e.output)
             req = urllib2.Request(url, urllib.urlencode(data))
+            req.add_header('Authorization', 'Basic YWRtaW46Q29udGVudDEyMzQ1')
             urllib2.urlopen(req)
         except Exception:
             pass
