@@ -1091,7 +1091,12 @@ def main():
             msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries+add_timeout)
         max_tries -= 1
         if msg is None:  # no task
-            q_ind = q_ind + 1 if q_ind < len(q_keys) - 1 else 0
+            # if failed to get task from current queue,
+            # then change it to the following value in a circle
+            if q_ind < len(q_keys) - 1:
+                q_ind += 1
+            else:
+                q_ind = 0
             time.sleep(3)
             continue
         task_data, queue = msg
