@@ -99,22 +99,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
 
         self._cbw = CaptchaBreakerWrapper()
 
-    def parse(self, response):
-        if self._has_captcha(response):
-            result = self._handle_captcha(response, self.parse)
-        else:
-            result = super(AmazonProductsSpider, self).parse(response)
-        return result
-
-    def _get_products(self, response):
-        result = super(AmazonProductsSpider, self)._get_products(response)
-        for r in result:
-            if isinstance(r, Request):
-                r = r.replace(dont_filter=True)
-                yield r
-            else:
-                yield r
-
     def parse_product(self, response):
         prod = response.meta['product']
 
@@ -509,58 +493,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
             if len(next_pages) == 1:
                 next_page_url = next_pages[0]
         return next_page_url
-
-    ## Captcha handling functions.
-
-    def _has_captcha(self, response):
-        return 'Geben Sie die angezeigten Zeichen im Bild ein:' in\
-            response.body_as_unicode()
-
-    def _solve_captcha(self, response):
-        forms = response.xpath('//form')
-        assert len(forms) == 1, "More than one form found."
-
-        captcha_img = forms[0].xpath(
-            '//img/@src').extract()[0]
-            #[contains(@src, "opfcaptcha-prod")]
-
-        self.log("Extracted capcha url: %s" % captcha_img, level=DEBUG)
-        return self._cbw.solve_captcha(captcha_img)
-
-    def _handle_captcha(self, response, callback):
-        # FIXME This is untested and wrong.
-        captcha_solve_try = response.meta.get('captcha_solve_try', 0)
-        url = response.url
-        self.log("Captcha challenge for %s (try %d)."
-                 % (url, captcha_solve_try),
-                 level=INFO)
-
-        captcha = self._solve_captcha(response)
-
-        if captcha is None:
-            self.log(
-                "Failed to guess captcha for '%s' (try: %d)." % (
-                    url, captcha_solve_try),
-                level=ERROR
-            )
-            result = None
-        else:
-            self.log(
-                "On try %d, submitting captcha '%s' for '%s'." % (
-                    captcha_solve_try, captcha, url),
-                level=INFO
-            )
-            meta = response.meta.copy()
-            meta['captcha_solve_try'] = captcha_solve_try + 1
-            result = FormRequest.from_response(
-                response,
-                formname='',
-                formdata={'field-keywords': captcha},
-                callback=callback,
-                dont_filter=True,
-                meta=meta)
-
-        return result
 
     def _buyer_reviews_from_html(self, response):
         stars_regexp = r'% .+ (\d[\d, ]*) '

@@ -96,3 +96,76 @@ class AmazonBaseClass(BaseProductsSpider):
         Method from BaseProductsSpider. Enables single url mode.
         """
         return self.parse_product(response)
+
+    def _get_products(self, response):
+        """
+        Method from BaseProductsSpider.
+        """
+        result = super(AmazonBaseClass, self)._get_products(response)
+
+        for r in result:
+            if isinstance(r, Request):
+                r = r.replace(dont_filter=True)
+            yield r
+
+    def parse(self, response):
+        """
+        Main parsing method from BaseProductsSpider.
+        """
+        if self._has_captcha(response):
+            result = self._handle_captcha(response, self.parse)
+        else:
+            result = super(AmazonBaseClass, self).parse(response)
+
+        return result
+
+    # Captcha handling functions.
+    def _has_captcha(self, response):
+        return '.images-amazon.com/captcha/' in response.body_as_unicode()
+
+    def _solve_captcha(self, response):
+        forms = response.xpath('//form')
+        assert len(forms) == 1, "More than one form found."
+
+        captcha_img = forms[0].xpath(
+            '//img[contains(@src, "/captcha/")]/@src').extract()[0]
+
+        self.log("Extracted capcha url: %s" % captcha_img, level=DEBUG)
+        return self._cbw.solve_captcha(captcha_img)
+
+    def _handle_captcha(self, response, callback):
+        # FIXME This is untested and wrong.
+        captcha_solve_try = response.meta.get('captcha_solve_try', 0)
+        url = response.url
+
+        self.log("Captcha challenge for %s (try %d)."
+                 % (url, captcha_solve_try),
+                 level=INFO)
+
+        captcha = self._solve_captcha(response)
+        if captcha is None:
+            self.log(
+                "Failed to guess captcha for '%s' (try: %d)." % (
+                    url, captcha_solve_try),
+                level=ERROR
+            )
+            result = None
+        else:
+            self.log(
+                "On try %d, submitting captcha '%s' for '%s'." % (
+                    captcha_solve_try, captcha, url),
+                level=INFO
+            )
+
+            meta = response.meta.copy()
+            meta['captcha_solve_try'] = captcha_solve_try + 1
+
+            result = FormRequest.from_response(
+                response,
+                formname='',
+                formdata={'field-keywords': captcha},
+                callback=callback,
+                dont_filter=True,
+                meta=meta)
+
+        return result
