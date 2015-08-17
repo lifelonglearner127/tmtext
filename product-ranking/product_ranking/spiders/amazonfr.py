@@ -72,8 +72,8 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     allowed_domains = ["amazon.fr"]
 
     # Variables for total matches method (_scrape_total_matches)
-    total_matches_str = 'ne correspond à aucun article.'
-    total_matches_re = 'sur'
+    total_match_not_found = 'ne correspond à aucun article.'
+    total_matches_re = r'sur\s?([\d,.\s?]+)'
 
     settings = AmazonfrValidatorSettings()
 

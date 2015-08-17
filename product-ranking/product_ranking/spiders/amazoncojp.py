@@ -73,8 +73,8 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     settings = AmazoncojpValidatorSettings()
 
     # Variables for total matches method (_scrape_total_matches)
-    total_matches_str = '検索に一致する商品はありませんでした'
-    total_matches_re = '検索結果'
+    total_match_not_found = '検索に一致する商品はありませんでした'
+    total_matches_re = r'検索結果\s?([\d,.\s?]+)'
 
     SEARCH_URL = "http://www.amazon.co.jp/s/?field-keywords={search_term}"
 

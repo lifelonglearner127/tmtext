@@ -19,10 +19,11 @@ is_empty = lambda x, y=None: x[0] if x else y
 
 class AmazonBaseClass(BaseProductsSpider):
 
+    # Defaults --- for English Amazon's
     # String from html body that means there's no results ( "no results.", for example)
-    total_matches_str = 'did not match any products.'
-    # For regexp for total matches to parse a number from html body ( "sur", for example for French)
-    total_matches_re = 'of'
+    total_match_not_found = 'did not match any products.'
+    # Regexp for total matches to parse a number from html body
+    total_matches_re = r'of\s?([\d,.\s?]+)'
 
     def _scrape_total_matches(self, response):
         """
@@ -32,14 +33,13 @@ class AmazonBaseClass(BaseProductsSpider):
         :return: Number of total matches (int)
         """
 
-        if unicode(self.total_matches_str) in response.body_as_unicode():
+        if unicode(self.total_match_not_found) in response.body_as_unicode():
             total_matches = 0
         else:
             count_matches = is_empty(
                 response.xpath(
-                    '//h2[@id="s-result-count"]/text()').re(
-                    u'{0}\s?([\d,.\s?]+)'.format(unicode(self.total_matches_re))
-                )
+                    '//h2[@id="s-result-count"]/text()'
+                ).re(unicode(self.total_matches_re))
             )
             if count_matches:
                 total_matches = int(count_matches.replace(

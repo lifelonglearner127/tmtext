@@ -80,12 +80,10 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     settings = AmazoncnValidatorSettings()
 
     # Variables for total matches method (_scrape_total_matches)
-    total_matches_str = '没有找到任何与'
-    total_matches_re = '共'
+    total_match_not_found = '没有找到任何与'
+    total_matches_re = r'共\s?([\d,.\s?]+)'
 
     SEARCH_URL = "http://www.amazon.cn/s/?field-keywords={search_term}"
-    #SEARCH_URL = "http://www.amazon.cn/s/ref=sr_st_{sort_mode}" \
-    #             "?keywords={search_term}&rh=k:{search_term},i:{sort_category}"
 
     REVIEW_DATE_URL = 'http://www.amazon.cn/product-reviews/{product_id}/' \
                       'ref=cm_cr_pr_top_recent?ie=UTF8&showViewpoints=0&' \

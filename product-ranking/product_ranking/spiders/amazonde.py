@@ -75,8 +75,8 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
     allowed_domains = ["amazon.de"]
 
     # Variables for total matches method (_scrape_total_matches)
-    total_matches_str = 'ergab leider keine Produkttreffer.'
-    total_matches_re = 'von'
+    total_match_not_found = 'ergab leider keine Produkttreffer.'
+    total_matches_re = r'von\s?([\d,.\s?]+)'
 
     SEARCH_URL = "http://www.amazon.de/s/?field-keywords={search_term}"
 
