@@ -1079,8 +1079,10 @@ def main():
         logger.info('#'*10 + 'FINISH TASKS REPORT' + '#'*10)
 
     add_timeout = 30  # add to visibility timeout
+    q_keys = ['production', 'test', 'dev']
+    q_ind = 0  # index of current queue
     while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
-        TASK_QUEUE_NAME = random.choice([q for q in QUEUES_LIST.values()])
+        TASK_QUEUE_NAME = QUEUES_LIST[q_keys[q_ind]]
         logger.info('Trying to get task from %s, try #%s',
                     TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
         if TEST_MODE:
@@ -1089,6 +1091,7 @@ def main():
             msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries+add_timeout)
         max_tries -= 1
         if msg is None:  # no task
+            q_ind = q_ind + 1 if q_ind < len(q_keys) - 1 else 0
             time.sleep(3)
             continue
         task_data, queue = msg
