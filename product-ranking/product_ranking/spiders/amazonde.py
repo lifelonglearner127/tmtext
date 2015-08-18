@@ -685,7 +685,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             self.log(
                 "Failed to guess captcha for '%s' (try: %d)." % (
                     url, captcha_solve_try),
-                level=ERROR
+                level=WARNING
             )
             result = None
         else:
