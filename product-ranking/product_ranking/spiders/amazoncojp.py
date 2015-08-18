@@ -270,7 +270,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         )
 
         # Some data is in a list (ul element).
-        model = None
         for li in response.css('td.bucket > .content > ul > li'):
             raw_keys = li.xpath('b/text()').extract()
             if not raw_keys:
@@ -286,9 +285,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                     'upc',
                     raw_upc.strip().replace(' ', ';'),
                 )
-            elif key == 'ASIN' and model is None or key == 'ITEM MODEL NUMBER':
-                model = li.xpath('text()').extract()
-        cond_set(product, 'model', model, conv=string.strip)
         self.populate_bestseller_rank(product, response)
         revs = self._buyer_reviews_from_html(response)
         if isinstance(revs, Request):

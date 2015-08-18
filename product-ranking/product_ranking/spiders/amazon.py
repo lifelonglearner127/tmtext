@@ -233,15 +233,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
 
         self.mtp_class.get_price_from_main_response(response, product)
 
-        spans = response.xpath('//span[@class="a-text-bold"]')
-        for span in spans:
-            text = is_empty(span.xpath('text()').extract())
-            if text and 'Item model number:' in text:
-                possible_model = span.xpath('../span/text()').extract()
-                if len(possible_model) > 1:
-                    model = possible_model[1]
-                    cond_set_value(product, 'model', model)
-
         description = response.css('.productDescriptionWrapper').extract()
         if not description:
             iframe_content = re.findall(
@@ -271,13 +262,11 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         )
 
         # Some data is in a list (ul element).
-        model = None
         for li in response.css('td.bucket > .content > ul > li'):
             raw_keys = li.xpath('b/text()').extract()
             if not raw_keys:
                 # This is something else, ignore.
                 continue
-
             key = raw_keys[0].strip(' :').upper()
             if key == 'UPC':
                 # Some products have several UPCs.
@@ -287,9 +276,7 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                     'upc',
                     raw_upc.strip().replace(' ', ';'),
                 )
-            elif key == 'ASIN' and model is None or key == 'ITEM MODEL NUMBER':
-                model = li.xpath('text()').extract()
-        cond_set(product, 'model', model, conv=string.strip)
+
         self.populate_bestseller_rank(product, response)
 
     def _get_rating_by_star_by_individual_request(self, response):

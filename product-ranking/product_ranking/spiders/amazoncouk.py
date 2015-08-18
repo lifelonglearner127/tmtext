@@ -153,25 +153,6 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
         av.setupSC(response)
         prod['variants'] = av._variants()
 
-        li_tags = response.xpath('//div[@class="content"]/ul/li')
-        for tag in li_tags:
-            text = is_empty(tag.xpath('b/text()').extract())
-            if text and 'Item model number:' in text:
-                possible_model = tag.xpath('text()').extract()
-                cond_set(prod, 'model', possible_model)
-            if not prod.get('model'):
-                model = is_empty(response.xpath(
-                    '//div[contains(@class, "content")]/ul/'
-                    'li/b[contains(text(), "ASIN")]/../text() |'
-                    '//table/tbody/tr/'
-                    'td[contains(@class, "label") and contains(text(), "ASIN")]'
-                    '/../td[contains(@class, "value")]/text() |'
-                    '//div[contains(@class, "content")]/ul/'
-                    'li/b[contains(text(), "ISBN-10")]/../text()'
-                ).extract())
-                if model:
-                    cond_set(prod, 'model', (model,))
-
         title = response.xpath(
             '//span[@id="productTitle"]/text()[normalize-space()] |'
             '//div[@class="buying"]/h1/span[@id="btAsinTitle"]'

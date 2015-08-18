@@ -3,6 +3,7 @@
 import re
 import urlparse
 import json
+import string
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
@@ -174,15 +175,19 @@ class AmazonBaseClass(BaseProductsSpider):
 
         # Parse image url
         image_url = self._parse_image_url(response)
-        cond_set_value(product, 'image_url', image_url)
+        cond_set_value(product, 'image_url', image_url, conv=string.strip)
 
         # Parse brand
         brand = self._parse_brand(response)
         cond_set_value(product, 'brand', brand)
 
-        # Parse Subscribe & Save
+        # Parse price Subscribe & Save
         price_subscribe_save = self._parse_price_subscribe_save(response)
         cond_set_value(product, 'price_subscribe_save', price_subscribe_save)
+
+        # Parse model
+        model = self._parse_model(response)
+        cond_set_value(product, 'model', model, conv=string.strip)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -275,7 +280,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 img_data = json.loads(img_jsons[0])
                 image = max(img_data.items(), key=lambda (_, size): size[0])
 
-        return image.strip()
+        return image
 
     def _parse_brand(self, response, add_xpath=None):
         """
@@ -312,7 +317,9 @@ class AmazonBaseClass(BaseProductsSpider):
                 brand = brand_logo.split('/')[1]
 
         if not brand and title:
-            brand = [guess_brand_from_first_words(title)]
+            brand = guess_brand_from_first_words(title)
+            if brand:
+                brand = [brand]
 
         brand = brand or ['NO BRAND']
         brand = [br.strip() for br in brand]
@@ -344,6 +351,47 @@ class AmazonBaseClass(BaseProductsSpider):
                 )
 
         return price_ss
+
+    def _parse_model(self, response, add_xpath=None):
+        """
+        Parses product model.
+        :param add_xpath: Additional xpathes, so you don't need to change base class
+        """
+        xpathes = '//div[contains(@class, "content")]/ul/li/' \
+                  'b[contains(text(), "ASIN")]/../text() |' \
+                  '//table/tbody/tr/' \
+                  'td[contains(@class, "label") and contains(text(), "ASIN")]/' \
+                  '../td[contains(@class, "value")]/text() |' \
+                  '//div[contains(@class, "content")]/ul/li/' \
+                  'b[contains(text(), "ISBN-10")]/../text()'
+        if add_xpath:
+            xpathes += ' |' + add_xpath
+
+        model = is_empty(
+            response.xpath(xpathes).extract(), ''
+        )
+
+        if not model:
+            spans = response.xpath('//span[@class="a-text-bold"]')
+            for span in spans:
+                text = is_empty(span.xpath('text()').extract())
+                if text and 'Item model number:' in text:
+                    possible_model = span.xpath('../span/text()').extract()
+                    if len(possible_model) > 1:
+                        model = possible_model[1]
+
+        if not model:
+            for li in response.css('td.bucket > .content > ul > li'):
+                raw_keys = li.xpath('b/text()').extract()
+                if not raw_keys:
+                    # This is something else, ignore.
+                    continue
+
+                key = raw_keys[0].strip(' :').upper()
+                if key == 'ASIN' and model is None or key == 'ITEM MODEL NUMBER':
+                    model = li.xpath('text()').extract()
+
+        return model
 
     def send_next_request(self, reqs, response):
         """

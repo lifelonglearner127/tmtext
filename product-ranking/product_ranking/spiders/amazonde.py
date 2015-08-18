@@ -437,7 +437,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
             product, 'title', title)
 
         # Some data is in a list (ul element).
-        model = None
         for li in response.css('td.bucket > .content > ul > li'):
             raw_keys = li.xpath('b/text()').extract()
             if not raw_keys:
@@ -453,22 +452,7 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
                     'upc',
                     raw_upc.strip().replace(' ', ';'),
                 )
-            elif key == 'ASIN' and model is None or key == 'ITEM MODEL NUMBER':
-                model = li.xpath('text()').extract()
-        if not product.get('model'):
-                model = is_empty(response.xpath(
-                    '//div[contains(@class, "content")]/ul/'
-                    'li/b[contains(text(), "ASIN")]/../text() |'
-                    '//table/tbody/tr/'
-                    'td[contains(@class, "label") and contains(text(), "ASIN")]'
-                    '/../td[contains(@class, "value")]/text() |'
-                    '//div[contains(@class, "content")]/ul/'
-                    'li/b[contains(text(), "ISBN-10")]/../text()'
-                ).extract())
-                if model:
-                    cond_set(product, 'model', (model,))
 
-        cond_set(product, 'model', model, conv=string.strip)
         self._populate_bestseller_rank(product, response)
         #revs = self._buyer_reviews_from_html(response)
         #if isinstance(revs, Request):
