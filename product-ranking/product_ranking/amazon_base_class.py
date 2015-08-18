@@ -345,7 +345,7 @@ class AmazonBaseClass(BaseProductsSpider):
             xpathes += ' |' + add_xpath
 
         price_ss = is_empty(
-            response.xpath(xpathes).extract(), ''
+            response.xpath(xpathes).extract(), None
         ).strip()
         if price_ss and price_ss.startswith('$'):
             price_ss = price_ss.replace(' ', '').replace(',', '').strip('$')
@@ -420,7 +420,9 @@ class AmazonBaseClass(BaseProductsSpider):
                   '//span[@id="priceblock_dealprice"]/text()[normalize-space()] |' \
                   '//*[contains(@class, "price3P")]/text()[normalize-space()] |' \
                   '//span[@id="ags_price_local"]/text()[normalize-space()] |' \
-                  '//div[@id="olpDivId"]/.//span[@class="price"]/text()[normalize-space()]'
+                  '//div[@id="olpDivId"]/.//span[@class="price"]/text()[normalize-space()] |' \
+                  '//div[@id="buybox"]/.//span[@class="a-color-price"]/text()[normalize-space()] |' \
+                  '//div[@id="usedBuySection"]/.//span[contains(@class, "")]/text()[normalize-space()]'
 
         if add_xpath:
             xpathes += ' |' + add_xpath
@@ -429,12 +431,6 @@ class AmazonBaseClass(BaseProductsSpider):
         price = is_empty(
             response.xpath(xpathes).extract(), ''
         )
-
-        print('*'*50)
-        print price
-        print('*'*50)
-        print(response.xpath('//*[@id="soldByThirdParty"]/span[1]').extract())
-        print('*'*50)
 
         if price:
             if price_currency_view not in price:
