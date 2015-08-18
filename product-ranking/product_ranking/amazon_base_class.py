@@ -278,16 +278,22 @@ class AmazonBaseClass(BaseProductsSpider):
         Parses product brand.
         :param add_xpath: Additional xpathes, so you don't need to change base class
         """
-        xpathes = '//*[@id="brand"]/text()'
+        xpathes = '//*[@id="brand"]/text() |' \
+                  '//*[contains(@class, "contributorNameID")]/text() |' \
+                  '//*[@id="bylineContributor"]/text() |' \
+                  '//*[@id="contributorLink"]/text() |' \
+                  '//*[@id="by-line"]/.//a/text() |' \
+                  '//*[@id="artist-container"]/.//a/text() |' \
+                  '//*[@id="byline"]/.//*[contains(@class,"author")]/a/text() |' \
+                  '//div[@class="buying"]/.//a[contains(@href, "search-type=ss")]/text() |' \
+                  '//a[@id="ProductInfoArtistLink"]/text()'
         if add_xpath:
             xpathes += ' |' + add_xpath
 
         product = response.meta['product']
         title = product.get('title', '')
 
-        brand = is_empty(
-            response.xpath(xpathes).extract(), ''
-        )
+        brand = response.xpath(xpathes).extract()
 
         if brand and (u'®' in brand):
             brand = brand.replace(u'®', '')
@@ -302,7 +308,7 @@ class AmazonBaseClass(BaseProductsSpider):
         if not brand and title:
             brand = guess_brand_from_first_words(title)
 
-        return [brand] or ['NO BRAND']
+        return brand or ['NO BRAND']
 
     def send_next_request(self, reqs, response):
         """

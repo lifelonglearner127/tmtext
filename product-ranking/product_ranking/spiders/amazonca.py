@@ -246,36 +246,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
             'description',
             description,
         )
-        image = response.css(
-                '#imgTagWrapperId > img ::attr(data-old-hires)').extract()
-        if not image:
-            j = re.findall(r"'colorImages': { 'initial': (.*)},",
-                           response.body)
-            if not j:
-                j = re.findall(r'colorImages = {"initial":(.*)}',
-                               response.body)
-            if j:
-                try:
-                    res = json.loads(j[0])
-                    try:
-                        image = res[0]['large']
-                    except:
-                        image = res[1]['large']
-                    image = [image]
-                except:
-                    pass
-        if not image:
-            image = response.xpath(
-                '//div[@id="img-canvas"]/img/@src |'
-                '//img[@id="main-image"]/@src |'
-                '//div[@class="main-image-inner-wrapper"]/img/@src'
-            ).extract()
-
-        cond_set(
-            product,
-            'image_url',
-            image
-        )
 
         # Some data is in a list (ul element).
         model = None

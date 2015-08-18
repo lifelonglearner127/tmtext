@@ -262,24 +262,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
         related_products = self._parse_related(response)
         cond_set(product, 'related_products', related_products)
 
-        cond_set(product, 'brand', response.css('#brand ::text').extract())
-        if not product.get('brand', '').strip():
-            brand = response.xpath('//*[contains(@class, "contributorNameID")]/text() |'
-                                   '//*[@id="bylineContributor"]/text() |'
-                                   '//*[@id="contributorLink"]/text() |'
-                                   '//*[@id="by-line"]/.//a/text() |'
-                                   '//*[@id="artist-container"]/.//a/text() |'
-                                   '//*[@id="byline"]/.//*[contains(@class,"author")]/a/text() |'
-                                   '//div[@class="buying"]/.//a[contains(@href, "search-type=ss")]/text() |'
-                                   '//a[@id="ProductInfoArtistLink"]/text()')
-            if len(brand) > 1:
-                brand = brand.extract()
-            else:
-                brand = is_empty(brand.extract(), '').strip()
-            if isinstance(brand, (list, tuple)):
-                if brand:
-                    brand = brand[0]
-            cond_set_value(product, 'brand', brand)
         cond_set(
             product,
             'price',
