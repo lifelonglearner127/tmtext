@@ -84,7 +84,14 @@ class MacysScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        return self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
+        product_id = None
+
+        try:
+            product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
+        except:
+            product_id = self.tree_html.xpath("//input[@id='productId']/@value")[0]
+
+        return product_id
 
     def _site_id(self):
         site_id = self.tree_html.xpath("//input[@id='productId']/@value")[0].strip()
