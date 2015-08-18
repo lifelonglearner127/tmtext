@@ -249,11 +249,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
                 = department.items()[0]
 
     def _populate_from_html(self, response, product):
-        cond_set(product, 'brand', response.css('#brand ::text').extract())
-        if not product.get('brand', '').strip():
-            cond_set(product, 'brand',
-                     [''.join(response.css('#byline ::text').extract()).strip()]
-            )
         cond_set(
             product,
             'price',

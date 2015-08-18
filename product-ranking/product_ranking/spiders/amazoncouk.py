@@ -172,12 +172,6 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
                 if model:
                     cond_set(prod, 'model', (model,))
 
-        brand = response.xpath('//a[@id="brand"]/text()').extract()
-        cond_set(prod, 'brand', brand)
-
-        if not prod.get('brand', None):
-            dump_url_to_file(response.url)
-
         cond_set(
             prod,
             'price',

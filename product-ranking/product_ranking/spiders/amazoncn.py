@@ -17,7 +17,6 @@ from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import (BaseProductsSpider, cond_set,
                                      cond_set_value, FormatterWithDefaults,
                                      FLOATING_POINT_RGEX)
-from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.amazon_tests import AmazonTests
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
@@ -233,7 +232,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         av.setupSC(response)
         product['variants'] = av._variants()
 
-        cond_set(product, 'brand', response.css('#brand ::text').extract())
         price = response.css('#priceblock_ourprice ::text '
                          ', .price3P::text'
                          ', .priceLarge::text').extract()
@@ -310,9 +308,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 ).extract())
                 if model:
                     cond_set(product, 'model', (model, ))
-        if not product.get('brand') and product.get('title'):
-            brand = guess_brand_from_first_words(product['title'])
-            cond_set_value(product, 'brand', brand)
         cond_set(product, 'model', model, conv=string.strip)
         self._populate_bestseller_rank(product, response)
         revs = self._buyer_reviews_from_html(response)

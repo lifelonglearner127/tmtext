@@ -182,7 +182,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 = department.items()[0]
 
     def _populate_from_html(self, response, product):
-        cond_set(product, 'brand', response.css('#brand ::text').extract())
         cond_set(
             product,
             'price',

@@ -13,6 +13,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.amazon_tests import AmazonTests
 from product_ranking.amazon_bestsellers import amazon_parse_department
+from product_ranking.guess_brand import guess_brand_from_first_words
 
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -175,6 +176,10 @@ class AmazonBaseClass(BaseProductsSpider):
         image_url = self._parse_image_url(response)
         cond_set_value(product, 'image_url', image_url)
 
+        # Parse brand
+        brand = self._parse_brand(response)
+        cond_set_value(product, 'brand', brand)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -220,9 +225,7 @@ class AmazonBaseClass(BaseProductsSpider):
     def _parse_image_url(self, response, add_xpath=None):
         """
         Parses product image.
-        :param response:
         :param add_xpath: Additional xpathes, so you don't need to change base class
-        :return: Number of total matches (int)
         """
         xpathes = '//div[@class="main-image-inner-wrapper"]/img/@src |' \
                   '//div[@id="coverArt_feature_div"]//img/@src |' \
@@ -269,6 +272,37 @@ class AmazonBaseClass(BaseProductsSpider):
                 image = max(img_data.items(), key=lambda (_, size): size[0])
 
         return image.strip()
+
+    def _parse_brand(self, response, add_xpath=None):
+        """
+        Parses product brand.
+        :param add_xpath: Additional xpathes, so you don't need to change base class
+        """
+        xpathes = '//*[@id="brand"]/text()'
+        if add_xpath:
+            xpathes += ' |' + add_xpath
+
+        product = response.meta['product']
+        title = product.get('title', '')
+
+        brand = is_empty(
+            response.xpath(xpathes).extract(), ''
+        )
+
+        if brand and (u'®' in brand):
+            brand = brand.replace(u'®', '')
+
+        if not brand:
+            brand_logo = is_empty(
+                response.xpath('//a[@id="brand"]/@href').extract()
+            )
+            if brand_logo:
+                brand = brand_logo.split('/')[1]
+
+        if not brand and title:
+            brand = guess_brand_from_first_words(title)
+
+        return [brand] or ['NO BRAND']
 
     def send_next_request(self, reqs, response):
         """

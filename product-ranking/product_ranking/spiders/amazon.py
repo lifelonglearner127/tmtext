@@ -226,13 +226,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 = department.items()[0]     
 
     def _populate_from_html(self, response, product):
-        cond_set(product, 'brand', response.css('#brand ::text').extract())
-        self._get_price(response, product)
-
-        brand_name = is_empty(response.xpath('//a[@id="brand"]/text()').
-            extract())
-        cond_set(product, 'brand', brand_name)
-
         # parse Subscribe & Save
         price_ss = response.xpath('//*[contains(text(), "Subscribe & Save:")]/'
                                   '../..//*[@id="subscriptionPrice"]/text()').extract()
@@ -248,12 +241,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         av = AmazonVariants()
         av.setupSC(response)
         product['variants'] = av._variants()
-
-        brand_logo = is_empty(response.xpath('//a[@id="brand"]/@href')
-            .extract())
-        if brand_logo:
-            brand = brand_logo.split('/')[1]
-            cond_set_value(product, 'brand', brand)
 
         self.mtp_class.get_price_from_main_response(response, product)
 
