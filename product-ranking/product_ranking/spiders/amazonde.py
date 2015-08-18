@@ -160,13 +160,13 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
 
             if isinstance(prod['buyer_reviews'], Request):
                 result = prod['buyer_reviews'].replace(meta=meta)
-            else:
-                if prod['buyer_reviews'] != 0:
-                    return Request(url=self.REVIEW_DATE_URL.format(product_id=prod_id),
-                                   meta=meta,
-                                   dont_filter=True,
-                                   callback=self.get_last_buyer_review_date)
-                result = prod
+            # else:
+                # if prod['buyer_reviews'] != 0:
+                #     return Request(url=self.REVIEW_DATE_URL.format(product_id=prod_id),
+                #                    meta=meta,
+                #                    dont_filter=True,
+                #                    callback=self.get_last_buyer_review_date)
+            result = prod
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
             self.log("Giving up on trying to solve the captcha challenge after"
                      " %s tries for: %s" % (self.captcha_retries, response.meta['product']['url']),
