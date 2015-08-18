@@ -112,6 +112,17 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             else:
                 yield r
 
+    @staticmethod
+    def parse_product_id(url):
+        prod_id = re.findall(r'/dp?/(\w+)|product/(\w+)/', url)
+        if not prod_id:
+            prod_id = re.findall(r'/dp?/(\w+)|product/(\w+)', url)
+        if isinstance(prod_id, (list, tuple)):
+            prod_id = [s for s in prod_id if s][0]
+        if isinstance(prod_id, (list, tuple)):
+            prod_id = [s for s in prod_id if s][0]
+        return prod_id
+
     def parse_product(self, response):
         prod = response.meta['product']
 
@@ -124,8 +135,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         if not self._has_captcha(response):
             meta = response.meta.copy()
             response.meta['product'] = prod
-            prod_id = is_empty(re.findall(r'/dp?/(\w+)|product/(\w+)/', response.url))
-            prod_id = list(prod_id)[0]
+            prod_id = self.parse_product_id(response.url)
             response.meta['product_id'] = prod_id
 
             self._populate_from_js(response, prod)
@@ -164,9 +174,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
             meta = response.meta.copy()
             meta['product'] = prod
-            prod_id = is_empty(re.findall('/dp/([a-zA-Z0-9]+)', response.url))
-            if not prod_id:
-                prod_id = is_empty(re.findall('/d/([a-zA-Z0-9]+)', response.url))
+            prod_id = self.parse_product_id(response.url)
             meta['product_id'] = prod_id
             if mkt_place_link:
                 meta["mkt_place_link"] = mkt_place_link
@@ -276,14 +284,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         if not product.get('brand', '').strip():
-            brand = response.xpath('//*[contains(@class, "contributorNameID")]/text() |'
-                                   '//*[@id="bylineContributor"]/text() |'
-                                   '//*[@id="contributorLink"]/text() |'
-                                   '//*[@id="by-line"]/.//a/text() |'
-                                   '//*[@id="artist-container"]/.//a/text() |'
-                                   '//*[@id="byline"]/.//*[contains(@class,"author")]/a/text() |'
-                                   '//div[@class="buying"]/.//a[contains(@href, "search-type=ss")]/text() |'
-                                   '//a[@id="ProductInfoArtistLink"]/text()')
+            brand = response.css('#brand')
             if len(brand) > 1:
                 brand = brand.extract()
             else:
