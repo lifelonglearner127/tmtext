@@ -180,6 +180,10 @@ class AmazonBaseClass(BaseProductsSpider):
         brand = self._parse_brand(response)
         cond_set_value(product, 'brand', brand)
 
+        # Parse Subscribe & Save
+        price_subscribe_save = self._parse_price_subscribe_save(response)
+        cond_set_value(product, 'price_subscribe_save', price_subscribe_save)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -314,6 +318,32 @@ class AmazonBaseClass(BaseProductsSpider):
         brand = [br.strip() for br in brand]
 
         return brand
+
+    def _parse_price_subscribe_save(self, response, add_xpath=None):
+        """
+        Parses product price subscribe and save.
+        :param add_xpath: Additional xpathes, so you don't need to change base class
+        """
+        xpathes = '//*[contains(text(), "Subscribe & Save:")]/' \
+                  '../..//*[@id="subscriptionPrice"]/text()'
+        if add_xpath:
+            xpathes += ' |' + add_xpath
+
+        price_ss = is_empty(
+            response.xpath(xpathes).extract(), ''
+        ).strip()
+        if price_ss and price_ss.startswith('$'):
+            price_ss = price_ss.replace(' ', '').replace(',', '').strip('$')
+            try:
+                price_ss = float(price_ss)
+            except Exception as exc:
+                self.log(
+                    "Unable to extract price Subscribe&Save on {url}: {exc}".format(
+                        url=response.url, exc=exc
+                    ), WARNING
+                )
+
+        return price_ss
 
     def send_next_request(self, reqs, response):
         """
