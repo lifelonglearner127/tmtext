@@ -430,26 +430,23 @@ class AmazonBaseClass(BaseProductsSpider):
             response.xpath(xpathes).extract(), ''
         )
 
+        print('*'*50)
+        print price
+        print('*'*50)
+        print(response.xpath('//*[@id="soldByThirdParty"]/span[1]').extract())
+        print('*'*50)
+
         if price:
             if price_currency_view not in price:
                 price = '0.00'
                 if 'FREE' not in price:
                     self.log('Currency symbol not recognized: %s' % response.url,
                              level=WARNING)
-
             else:
                 price = is_empty(re.findall(r'[\d,.]+\d', price), '0.00')
                 price = price.replace(price_currency_view, '').replace(',', '.')
         else:
-            price = re.search(
-                r'a-color-price aw-nowrap&quot;&gt;{0} ([\d\.\,]+)&lt;/span&gt'.format(price_currency_view),
-                response.body
-            )
-            if price:
-                price = price.group(1).strip().replace(' ', '')\
-                    .replace('.', '').replace(',', '.')
-            else:
-                price = '0.00'
+            price = '0.00'
 
         price = round(float(price.strip()), 2)
         price = Price(price=price, priceCurrency=self.price_currency)
