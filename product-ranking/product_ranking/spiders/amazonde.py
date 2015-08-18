@@ -56,10 +56,10 @@ class AmazonDeValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
-        'dress code style all': [5, 70],
-        'water pump bronze': [2, 70],
+        'canon ixus': [50, 300],
+        'xperia screen replacement': [5, 150],
         'ceiling fan industrial': [15, 90],
-        'kaspersky total': [30, 250],
+        'kaspersky total': [5, 250],
         'car navigator garmin': [5, 100],
         'yamaha drums midi': [2, 50],
         'black men shoes size 8 red': [5, 70],
@@ -288,6 +288,9 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 brand = brand.extract()
             else:
                 brand = is_empty(brand.extract(), '').strip()
+            if isinstance(brand, (list, tuple)):
+                if brand:
+                    brand = brand[0]
             cond_set_value(product, 'brand', brand)
         cond_set(
             product,
@@ -347,7 +350,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         if product.get('price', None):
             if not u'EUR' in product.get('price', ''):
-                self.log('Invalid price at: %s' % response.url, level=ERROR)
+                self.log('Invalid price at: %s' % response.url, level=WARNING)
             else:
                 price = re.findall(FLOATING_POINT_RGEX,
                     product['price'].replace(u'\xa0', '').strip())
