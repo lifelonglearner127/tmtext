@@ -168,7 +168,7 @@ class JcpenneyVariants(object):
                         stockstatus = False
 
                 stockstatus_for_variants["properties"] = properties
-                stockstatus_for_variants["in_stock"] = stockstatus
+                stockstatus_for_variants["in_stock"] = None
 
                 if len(variation_combinations_values) == 1:
                     stockstatus_for_variants["selected"] = True

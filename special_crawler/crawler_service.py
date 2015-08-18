@@ -56,6 +56,7 @@ from extract_marksandspencer_data import MarksAndSpencerScraper
 from extract_nextcouk_data import NextCoUKScraper
 from extract_amazonin_data import AmazonINScraper
 from extract_uniqlo_data import UniqloScraper
+from extract_deliverywalmart_data import DeliveryWalmartScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -119,7 +120,8 @@ SUPPORTED_SITES = {
                     "marksandspencer": MarksAndSpencerScraper,
                     "nextcouk": NextCoUKScraper,
                     "amazonin": AmazonINScraper,
-                    "uniqlo": UniqloScraper
+                    "uniqlo": UniqloScraper,
+                    "deliverywalmart": DeliveryWalmartScraper
                     }
 
 # add logger
@@ -201,6 +203,8 @@ def extract_domain(url):
         return 'walmartca'
     if 'next.co.uk' in url:
         return 'nextcouk'
+    if 'delivery.walmart' in url:
+        return "deliverywalmart"
 
 
     m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)

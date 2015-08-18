@@ -3,7 +3,7 @@
 
 import os
 import sys
-
+from subprocess import check_output, CalledProcessError
 
 main_folder = '/home/spiders/repo/'
 
@@ -23,7 +23,19 @@ def mark_as_finished():
 
 
 def _install_system_package(package):
-    os.system('apt-get install -y %s' % package)
+    try:
+        check_output('apt-get install -y %s' % package, shell=True)
+    except CalledProcessError as e:
+        try:
+            import urllib2
+            import urllib
+            url = 'http://sqs-metrics.contentanalyticsinc.com/log_install_error'
+            data = dict(item=package, error=e.output)
+            req = urllib2.Request(url, urllib.urlencode(data))
+            req.add_header('Authorization', 'Basic YWRtaW46Q29udGVudDEyMzQ1')
+            urllib2.urlopen(req)
+        except Exception:
+            pass
 
 
 def main():

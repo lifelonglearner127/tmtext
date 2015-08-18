@@ -172,6 +172,25 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
                 if model:
                     cond_set(prod, 'model', (model,))
 
+        title = response.xpath(
+            '//span[@id="productTitle"]/text()[normalize-space()] |'
+            '//div[@class="buying"]/h1/span[@id="btAsinTitle"]'
+            '/text()[normalize-space()] |'
+            '//div[@id="title_feature_div"]/h1/text()[normalize-space()] |'
+            '//div[@id="title_row"]/span/h1/text()[normalize-space()] |'
+            '//h1[@id="aiv-content-title"]/text()[normalize-space()] |'
+            '//div[@id="item_name"]/text()[normalize-space()] |'
+            '//h1[@class="parseasinTitle"]/span[@id="btAsinTitle"]'
+            '/span/text()[normalize-space()]'
+        ).extract()
+        cond_set(prod, 'title', title)
+
+        brand = response.xpath('//a[@id="brand"]/text()').extract()
+        cond_set(prod, 'brand', brand)
+
+        if not prod.get('brand', None):
+            dump_url_to_file(response.url)
+
         cond_set(
             prod,
             'price',

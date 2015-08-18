@@ -37,6 +37,7 @@ class SearchItem(Item):
     product_videos = Field() # for manufacturer spider: nr of product videos on target (manufacturer) site
 
     confidence = Field() # score in percent indicating confidence in match
+    UPC_match = Field() # binary field (1/0) indicating if there was a match between UPCs
 
 # items used in walmart_fullurls spider to match walmart ids to their product pages full URLs
 class WalmartItem(Item):

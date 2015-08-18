@@ -9,7 +9,7 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..'))
 
 from flask import Flask, request, send_from_directory, send_file
-from flask import render_template, redirect, url_for
+from flask import render_template, redirect, url_for, make_response
 from boto.sqs.message import Message
 import boto.sqs
 import boto
@@ -298,6 +298,41 @@ def get_content():
     key = enumerated_list[int(item_number)][1]
     data = display_log_file(key)
     return data
+
+
+@app.route('/get_s3_file', methods=['GET'])
+def get_s3_file():
+    fname = request.args.get('file')
+    if fname:
+        conn = boto.connect_s3()
+        bucket = conn.get_bucket(AMAZON_BUCKET_NAME, validate=False)
+        key = bucket.get_key(fname)
+        if not key:
+            return render_template(
+                's3_file.html', msg='No such file: %r.' % fname)
+        file_data = key.get_contents_as_string()
+        resp = make_response(file_data)
+        resp.headers['Content-Disposition'] = \
+            'attachment; filename=%s' % fname.split('/')[-1]
+        return resp
+    return render_template('s3_file.html')
+
+
+@app.route('/log_install_error', methods=['GET', 'POST'])
+def log_install_error():
+    file_to_save_logs = '/tmp/install_errors.log'
+    if request.method == 'GET':
+        with open(file_to_save_logs, 'r') as f:
+            c = f.read()
+            return c
+    form = request.form
+    item = form['item']
+    error = form['error']
+    if not error or not item:
+        return 'No data'
+    with open(file_to_save_logs, 'a') as f:
+        f.write('%s - %r\n\n' % (item, error))
+    return 'ok'
 
 
 if __name__ == '__main__':

@@ -13,7 +13,7 @@ from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.items import SiteProductItem, Price, BuyerReviews, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, cond_set,\
     cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
@@ -22,7 +22,6 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
 
 from product_ranking.amazon_base_class import AmazonBaseClass
-
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -58,10 +57,10 @@ class AmazonDeValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
-        'dress code style all': [5, 70],
-        'water pump bronze': [2, 70],
+        'canon ixus': [50, 300],
+        'xperia screen replacement': [5, 150],
         'ceiling fan industrial': [15, 90],
-        'kaspersky total': [30, 250],
+        'kaspersky total': [5, 250],
         'car navigator garmin': [5, 100],
         'yamaha drums midi': [2, 50],
         'black men shoes size 8 red': [5, 70],
@@ -103,6 +102,7 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
         self._cbw = CaptchaBreakerWrapper()
 
     def parse_product(self, response):
+        prod = response.meta['product']
 
         if self._has_captcha(response):
             return self._handle_captcha(
@@ -111,21 +111,27 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
             )
 
         if not self._has_captcha(response):
+            meta = response.meta.copy()
+            response.meta['product'] = prod
+            prod_id = is_empty(re.findall(r'/dp?/(\w+)|product/(\w+)/', response.url))
+            prod_id = list(prod_id)[0]
+            response.meta['product_id'] = prod_id
 
             super(AmazonProductsSpider, self).parse_product(response)
             prod = response.meta['product']
 
             self._populate_from_html(response, prod)
 
-            #Get url for marketplace
-            url = is_empty(response.xpath(
-                    "//div[contains(@class, 'a-box-inner')]/span" \
-                    "/a/@href |" \
-                    "//div[contains(@class, 'a-box-inner')]" \
-                    "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
-                    "//div[@id='secondaryUsedAndNew']" \
-                    "//a[contains(@href, '/gp/offer-listing/')]/@href"
-            ).extract())
+            # Get url for marketplace
+            url = is_empty(
+                response.xpath("//div[contains(@class, 'a-box-inner')]/span"
+                               "/a/@href |"
+                               "//div[contains(@class, 'a-box-inner')]"
+                               "//a[contains(@href, '/gp/offer-listing/')]/@href |"
+                               "//div[@id='secondaryUsedAndNew']"
+                               "//a[contains(@href, '/gp/offer-listing/')]/@href |"
+                               "//*[@id='universal-marketplace-glance-features']/.//a/@href"
+                               ).extract())
             if url:
                 mkt_place_link = urlparse.urljoin(
                     response.url,
@@ -157,6 +163,8 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
             _avail = ''.join(_avail)
             if "nichtauflager" in _avail.lower().replace(' ', ''):
                 prod['is_out_of_stock'] = True
+            else:
+                prod['is_out_of_stock'] = False
 
             if isinstance(prod['buyer_reviews'], Request):
                 result = prod['buyer_reviews'].replace(meta=meta)
@@ -250,6 +258,28 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
                 = department.items()[0]
 
     def _populate_from_html(self, response, product):
+
+        related_products = self._parse_related(response)
+        cond_set(product, 'related_products', related_products)
+
+        cond_set(product, 'brand', response.css('#brand ::text').extract())
+        if not product.get('brand', '').strip():
+            brand = response.xpath('//*[contains(@class, "contributorNameID")]/text() |'
+                                   '//*[@id="bylineContributor"]/text() |'
+                                   '//*[@id="contributorLink"]/text() |'
+                                   '//*[@id="by-line"]/.//a/text() |'
+                                   '//*[@id="artist-container"]/.//a/text() |'
+                                   '//*[@id="byline"]/.//*[contains(@class,"author")]/a/text() |'
+                                   '//div[@class="buying"]/.//a[contains(@href, "search-type=ss")]/text() |'
+                                   '//a[@id="ProductInfoArtistLink"]/text()')
+            if len(brand) > 1:
+                brand = brand.extract()
+            else:
+                brand = is_empty(brand.extract(), '').strip()
+            if isinstance(brand, (list, tuple)):
+                if brand:
+                    brand = brand[0]
+            cond_set_value(product, 'brand', brand)
         cond_set(
             product,
             'price',
@@ -308,7 +338,7 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
 
         if product.get('price', None):
             if not u'EUR' in product.get('price', ''):
-                self.log('Invalid price at: %s' % response.url, level=ERROR)
+                self.log('Invalid price at: %s' % response.url, level=WARNING)
             else:
                 price = re.findall(FLOATING_POINT_RGEX,
                     product['price'].replace(u'\xa0', '').strip())
@@ -342,6 +372,87 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
             'description',
             description,
         )
+
+        image = response.css(
+            '#imgTagWrapperId > img ::attr(data-old-hires)'
+        ).extract()
+        if not image:
+            j = re.findall(r"'colorImages': { 'initial': (.*)},",
+                           response.body)
+            if not j:
+                j = re.findall(r'colorImages = {"initial":(.*)}',
+                               response.body)
+            if j:
+                try:
+                    res = json.loads(j[0])
+                    try:
+                        image = res[0]['large']
+                    except:
+                        image = res[1]['large']
+                    image = [image]
+                except:
+                    pass
+        if not image:
+            image = response.xpath(
+                '//div[@class="main-image-inner-wrapper"]/img/@src |'
+                '//div[@id="coverArt_feature_div"]//img/@src |'
+                '//div[@id="img-canvas"]/img/@src |'
+                '//div[@class="dp-meta-icon-container"]/img/@src |'
+                '//input[@id="mocaGlamorImageUrl"]/@value |'
+                '//div[@class="egcProdImageContainer"]'
+                '/img[@class="egcDesignPreviewBG"]/@src |'
+                '//img[@id="main-image"]/@src |'
+                '//div[@id="imgTagWrapperId"]/img/@src |'
+                '//div[@id="kib-container"]/div[@id="kib-ma-container-0"]'
+                '/img/@src |'
+                '//img[@id="imgBlkFront"]/@style'
+            ).extract()
+
+        if image and image[0].strip().startswith('http'):
+            # sometimes images are coded data
+            cond_set(
+                product,
+                'image_url',
+                image
+            )
+
+        if not product.get('image_url', ''):
+            # try properties first
+            cond_set(product, 'image_url', response.xpath(
+                '//img[contains(@id, "main-image")]/@data-a-dynamic-image').extract())
+            if product.get('image_url', '').strip():
+                _url = None
+                try:
+                    _url = json.loads(product['image_url'])
+                except Exception as e:
+                    cond_set(product, 'image_url', response.xpath(
+                        '//img[contains(@id, "main-image")]/@src').extract())
+                if _url:
+                    _url = _url.keys()[0]
+                    product['image_url'] = _url
+
+        title = response.xpath(
+            '//span[@id="productTitle"]/text()[normalize-space()] |'
+            '//div[@class="buying"]/h1/span[@id="btAsinTitle"]'
+            '/text()[normalize-space()] |'
+            '//div[@id="title_feature_div"]/h1/text()[normalize-space()] |'
+            '//div[@id="title_row"]/span/h1/text()[normalize-space()] |'
+            '//h1[@id="aiv-content-title"]/text()[normalize-space()] |'
+            '//div[@id="item_name"]/text()[normalize-space()] |'
+            '//h1[@class="parseasinTitle"]/span[@id="btAsinTitle"]'
+            '/span/text()[normalize-space()]'
+        ).extract()
+
+        if not title:
+            title = response.xpath('//span[@id="title"]/text()').extract()
+            if not title:
+                title = response.xpath('//*[@id="product-title"]/text()').extract()
+            if not title:
+                title = response.xpath('//h1[@id="title"]/text()').extract()
+            title = [title[0].strip()] if title else title
+
+        cond_set(
+            product, 'title', title)
 
         # Some data is in a list (ul element).
         model = None
@@ -385,6 +496,32 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
         #    product['buyer_reviews'] = revs
         product['buyer_reviews'] = ''
 
+    def _parse_related(self, response):
+        """
+        Parses related products
+        """
+        related_products = []
+
+        # Parse often bought products
+        often_bought = response.xpath('//*[@id="fbt-expander-content"]/.//li[position()>1]/./'
+                                      '/div[@class="sims-fbt-row-outer"]')
+
+        if often_bought:
+            for item in often_bought:
+                title = is_empty(item.xpath('.//div[contains(@class,"sims-fbt-title")]/./'
+                                            '/div/text()').extract(), '')
+                url = is_empty(item.xpath('.//a/@href').extract(), '')
+
+                if url:
+                    url = 'http://www.' + self.allowed_domains[0] + url
+                    if title:
+                        related_products.append(RelatedProduct(
+                            title=title.strip(),
+                            url=url
+                        ))
+
+        return related_products
+
     def _buyer_reviews_from_html(self, response):
         stars_regexp = r'% .+ (\d[\d, ]*) '
         total = ''.join(response.css('#summaryStars a::text').extract())
@@ -410,7 +547,7 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
             average = sum(k * v for k, v in
                           ratings.iteritems()) / total if ratings else 0
 
-        #For another HTML makeup
+        # For another HTML makeup
         if not total:
             ratings = {}
             average = 0
