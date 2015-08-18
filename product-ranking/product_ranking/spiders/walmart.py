@@ -405,7 +405,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             try:
                 with open('/tmp/_walmart_BZ_3049_redirects', 'a') as fh:
                     # just count the number of redirected URLs
-                    fh.write(str(datetime.datetime.utcnow()) + '  |  ' + response.url + '\n')
+                    fh.write(str(datetime.utcnow()) + '  |  ' + response.url + '\n')
             except Exception, e:
                 pass
         original_response = response.meta['original_response_']
