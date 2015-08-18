@@ -89,6 +89,10 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
 
     # Locale
     locale = 'en-US'
+
+    # Price currency
+    price_currency = 'GBP'
+    price_currency_view = '£'
     
     SEARCH_URL = ("http://www.amazon.co.uk/s/ref=nb_sb_noss?"
                   "url=search-alias=aps&field-keywords={search_term}&rh=i:aps,"
@@ -171,51 +175,6 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
 
         if not prod.get('brand', None):
             dump_url_to_file(response.url)
-
-        cond_set(
-            prod,
-            'price',
-            response.css(
-                '#priceblock_ourprice ::text'
-                ', #unqualifiedBuyBox .a-color-price ::text'
-                ', #priceblock_saleprice ::text'
-                ', #buyNewSection .offer-price ::text'
-            ).extract(),
-        )
-        if not prod.get('price', None):
-            cond_set(
-                prod,
-                'price',
-                response.xpath(
-                    '//td/b[@class="priceLarge"]/text() |'
-                    '//span[@class="olp-padding-right"]'
-                    '/span[@class="a-color-price"]/text() |'
-                    '//div[contains(@data-reftag,"atv_dp_bb_est_hd_movie")]'
-                    '/button/text() |'
-                    '//span[@id="priceblock_saleprice"]/text() |'
-                    '//li[@class="swatchElement selected"]'
-                    '//span[@class="a-color-price"]/text() |'
-                    '//div[contains(@data-reftag,"atv_dp_bb_est_sd_movie")]'
-                    '/button/text() |'
-                    '//div[@id="mocaBBRegularPrice"]'
-                    '/div/text()[normalize-space()] |'
-                    '//span[@id="actualPriceValue"]/b/text()'
-                    '[normalize-space()] |'
-                    '//span[@id="actualPriceValue"]/text()[normalize-space()]'
-                ).extract()
-            )
-
-        if prod.get('price', None):
-            if not u'£' in prod.get('price', ''):
-                self.log('Invalid price at: %s' % response.url, level=ERROR)
-            else:
-                price = re.findall('[\d ,.]+\d', prod['price'])
-                price = re.sub('[, ]', '', price[0])
-                prod['price'] = Price(
-                    price=price.replace(u'£', '').replace(
-                        ' ', '').replace(',', '').strip(),
-                    priceCurrency='GBP'
-                )
 
         self.mtp_class.get_price_from_main_response(response, prod)
 

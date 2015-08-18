@@ -82,6 +82,10 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     # Locale
     locale = 'en-US'
 
+    # Price currency
+    price_currency = 'CAD'
+    price_currency_view = 'CDN$'
+
     SEARCH_URL = "http://www.amazon.ca/s/?field-keywords={search_term}"
 
     REVIEW_DATE_URL = 'http://www.amazon.ca/product-reviews/{product_id}/' \
@@ -190,48 +194,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         av = AmazonVariants()
         av.setupSC(response)
         product['variants'] = av._variants()
-
-        price = response.xpath(
-            '//span[@id="priceblock_saleprice"]/text()'
-        ).extract()
-        if not price:
-            price = response.css('#priceblock_ourprice ::text').extract()
-        if not price:
-            price = response.xpath(
-                '//div[contains(@class, "a-box")]//div[@class="a-row"]'
-                '//span[contains(@class, "a-color-price")]/text() |'
-                '//b[@class="priceLarge"]/text() |'
-                '//span[@class="olp-padding-right"]'
-                '/span[@class="a-color-price"]/text() |'
-                '//div[@class="a-box-inner"]/div/'
-                'span[@class="a-color-price"]/text() |'
-                '//span[@id="priceblock_dealprice"]/text()'
-            ).extract()
-
-        cond_set(
-            product,
-            'price',
-            price,
-        )
-        if product.get('price', None):
-            price = product.get('price', '')
-            if not u'CDN$' in price:
-                if 'FREE' in price or ' ' in price:
-                    product['price'] = Price(
-                        priceCurrency='CAD',
-                        price='0.00'
-                    )
-                else:
-                    self.log('Invalid price at: %s' % response.url,
-                             level=ERROR)
-            else:
-                price = re.findall('[\d ,.]+\d', product['price'])
-                price = re.sub('[, ]', '', price[0])
-                product['price'] = Price(
-                    price=price.replace(u'CDN$', '').replace(
-                        ' ', '').replace(',', '').strip(),
-                    priceCurrency='CAD'
-                )
 
         self.mtp_class.get_price_from_main_response(response, product)
 

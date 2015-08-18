@@ -85,6 +85,10 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     # Locale
     locale = 'en-US'
 
+    # Price currency
+    price_currency = 'CNY'
+    price_currency_view = u'\uffe5'
+
     SEARCH_URL = "http://www.amazon.cn/s/?field-keywords={search_term}"
 
     REVIEW_DATE_URL = 'http://www.amazon.cn/product-reviews/{product_id}/' \
@@ -232,37 +236,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         av = AmazonVariants()
         av.setupSC(response)
         product['variants'] = av._variants()
-
-        price = response.css('#priceblock_ourprice ::text '
-                         ', .price3P::text'
-                         ', .priceLarge::text').extract()
-        if not price:
-            price = response.xpath(
-                '//span[@id="priceblock_saleprice"]/text() |'
-                '//div[@class="a-box-inner"]'
-                '//span[@class="a-color-price"]/text() |'
-                '//td/b[@class="priceLarge"]/text() |'
-                '//div[contains(@data-reftag,"atv_dp_bb_est_hd_movie")]'
-                '/button/text() |'
-                '//li[@class="swatchElement selected"]'
-                '//span[@class="a-color-price"]/text() |'
-                '//span[@id="ags_price_local"]/text()'
-            ).extract()
-
-        cond_set(
-            product,
-            'price',
-            price,
-        )
-        if product.get('price', None):
-            if u'\uffe5' not in product.get('price', ''):
-                self.log('Invalid price at: %s' % response.url, level=ERROR)
-            else:
-                price = re.findall(FLOATING_POINT_RGEX, product['price'])[0]
-                product['price'] = Price(
-                    price=price.replace(' ', '').replace(',', '').strip(),
-                    priceCurrency='CNY'
-                )
 
         description = response.css('.productDescriptionWrapper').extract()
         if not description:

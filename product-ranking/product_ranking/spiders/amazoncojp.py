@@ -79,6 +79,10 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     # Locale
     locale = 'en-US'
 
+    # Price currency
+    price_currency = 'JPY'
+    price_currency_view = '￥'
+
     SEARCH_URL = "http://www.amazon.co.jp/s/?field-keywords={search_term}"
 
     REVIEW_DATE_URL = 'http://www.amazon.co.jp/product-reviews/{product_id}/' \
@@ -208,50 +212,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 = department.items()[0]
 
     def _populate_from_html(self, response, product):
-
-        cond_set(
-            product,
-            'price',
-            response.css(
-                '#priceblock_ourprice ::text'
-                ', #unqualifiedBuyBox .a-color-price ::text'
-                ', #priceblock_saleprice ::text'
-                ', #buyNewSection .offer-price ::text'
-            ).extract(),
-        )
-        if not product.get('price', None):
-            cond_set(
-                product,
-                'price',
-                response.xpath(
-                    '//td/b[@class="priceLarge"]/text() |'
-                    '//span[@class="olp-padding-right"]'
-                    '/span[@class="a-color-price"]/text() |'
-                    '//div[contains(@data-reftag,"atv_dp_bb_est_hd_movie")]'
-                    '/button/text() |'
-                    '//span[@id="priceblock_saleprice"]/text() |'
-                    '//li[@class="swatchElement selected"]'
-                    '//span[@class="a-color-price"]/text() |'
-                    '//div[contains(@data-reftag,"atv_dp_bb_est_sd_movie")]'
-                    '/button/text() |'
-                    '//div[@id="mocaBBRegularPrice"]'
-                    '/div/text()[normalize-space()] |'
-                    '//*[@id="actualPriceValue"]/b/text()[normalize-space()]'
-                ).extract()
-            )
-        if product.get('price', None):
-            if not u'￥' in product.get('price', ''):
-                self.log('Invalid price at: %s' % response.url, level=ERROR)
-            else:
-                price = re.findall('[\d ,.]+\d', product['price'])
-                price = price[0].replace(' ', '').replace(',', '.')
-                if not '.' in price:
-                    price = price + '.00'
-                product['price'] = Price(
-                    price=price.replace(u'￥', '').replace(
-                        ' ', '').replace(',', '').strip(),
-                    priceCurrency='JPY'
-                )
 
         description = response.css('.productDescriptionWrapper').extract()
         if not description:

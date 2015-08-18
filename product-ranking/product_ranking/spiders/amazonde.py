@@ -80,6 +80,10 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
     # Locale
     locale = 'en-US'
 
+    # Price currency
+    price_currency = 'EUR'
+    price_currency_view = 'EUR'
+
     SEARCH_URL = "http://www.amazon.de/s/?field-keywords={search_term}"
 
     REVIEW_DATE_URL = "http://www.amazon.de/product-reviews/" \
@@ -261,76 +265,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
 
         related_products = self._parse_related(response)
         cond_set(product, 'related_products', related_products)
-
-        cond_set(
-            product,
-            'price',
-            response.css(
-                '#priceblock_ourprice ::text'
-                ', #unqualifiedBuyBox .a-color-price ::text'
-                ', #priceblock_saleprice ::text'
-                ', #buyNewSection .offer-price ::text'
-            ).extract(),
-        )
-        if not product.get('price', None):
-            cond_set(
-                product,
-                'price',
-                response.xpath(
-                    '//td/b[@class="priceLarge"]/text() |'
-                    '//span[@class="olp-padding-right"]'
-                    '/span[@class="a-color-price"]/text() |'
-                    '//div[contains(@data-reftag,"atv_dp_bb_est_hd_movie")]'
-                    '/button/text() |'
-                    '//span[@id="priceblock_saleprice"]/text() |'
-                    '//li[@class="swatchElement selected"]'
-                    '//span[@class="a-color-price"]/text() |'
-                    '//div[contains(@data-reftag,"atv_dp_bb_est_sd_movie")]'
-                    '/button/text() |'
-                    '//div[@id="mocaBBRegularPrice"]'
-                    '/div/text()[normalize-space()] |'
-                    '//span[@id="actualPriceValue"]/b/text()'
-                    '[normalize-space()] |'
-                    '//span[@id="actualPriceValue"]/text()[normalize-space()]|'
-                    '//span[@class="price"]/text()'
-                ).extract()
-            )
-        if not product.get('price', None):
-            _price = re.search(
-                r'a-color-price aw-nowrap&quot;&gt;EUR ([\d\.\,]+)&lt;/span&gt',
-                response.body
-            )
-            if _price:
-                _price = _price.group(1).strip().replace(' ', '')\
-                    .replace('.', '').replace(',', '.')
-                cond_set(product, 'price', ['EUR ' + _price])
-
-        if not product.get('price', None):
-            _price = response.xpath('//*[@id="product-price"]/text()').extract()
-            cond_set(product, 'price', [_price])
-        if not product.get('price', None):
-            _price = response.xpath(
-                '//*[contains(@class, "a-color-price")]/text()').extract()
-            if _price:
-                product['price'] = _price[0].strip()
-
-        if isinstance(product.get('price', None), (list, tuple)):
-            if product.get('price', None):
-                product['price'] = product['price'][0]
-
-        if product.get('price', None):
-            if not u'EUR' in product.get('price', ''):
-                self.log('Invalid price at: %s' % response.url, level=WARNING)
-            else:
-                price = re.findall(FLOATING_POINT_RGEX,
-                    product['price'].replace(u'\xa0', '').strip())
-                price = re.sub('[, ]', '.', price[0])
-                product['price'] = Price(
-                    price=price,
-                    priceCurrency='EUR'
-                )
-        else:
-            product.pop('price', '')  # remove the key completely
 
         if 'usverkauft' in response.body_as_unicode().lower().replace(' ', '') \
             or 'ergriffen' in response.body_as_unicode().lower().replace(' ', '') \

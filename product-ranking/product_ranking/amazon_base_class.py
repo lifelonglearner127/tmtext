@@ -31,6 +31,10 @@ class AmazonBaseClass(BaseProductsSpider):
     # Default locale
     locale = 'en-US'
 
+    # Default price currency
+    price_currency = 'USD'
+    price_currency_view = '$'
+
     def _scrape_total_matches(self, response):
         """
         Overrides BaseProductsSpider method to scrape total result matches. total_matches_str
@@ -188,6 +192,10 @@ class AmazonBaseClass(BaseProductsSpider):
         # Parse model
         model = self._parse_model(response)
         cond_set_value(product, 'model', model, conv=string.strip)
+
+        # Parse price
+        price = self._parse_price(response)
+        cond_set_value(product, 'price', price)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -392,6 +400,61 @@ class AmazonBaseClass(BaseProductsSpider):
                     model = li.xpath('text()').extract()
 
         return model
+
+    def _parse_price(self, response, add_xpath=None):
+        """
+        Parses product price.
+        :param add_xpath: Additional xpathes, so you don't need to change base class
+        """
+        xpathes = '//b[@class="priceLarge"]/text()[normalize-space()] |' \
+                  '//div[contains(@data-reftag,"atv_dp_bb_est_hd_movie")]' \
+                  '/button/text()[normalize-space()] |' \
+                  '//span[@id="priceblock_saleprice"]/text()[normalize-space()] |' \
+                  '//div[@id="mocaBBRegularPrice"]/div/text()[normalize-space()] |' \
+                  '//*[@id="priceblock_ourprice"][contains(@class, "a-color-price")]/text()[normalize-space()] |' \
+                  '//*[@id="priceBlock"]/.//span[@class="priceLarge"]/text()[normalize-space()] |' \
+                  '//*[@id="actualPriceValue"]/*[@class="priceLarge"]/text()[normalize-space()] |' \
+                  '//*[@id="actualPriceValue"]/text()[normalize-space()] |' \
+                  '//*[@id="buyNewSection"]/.//*[contains(@class, "offer-price")]/text()[normalize-space()] |' \
+                  '//div[contains(@class, "a-box")]/div[@class="a-row"]/text()[normalize-space()] |' \
+                  '//span[@id="priceblock_dealprice"]/text()[normalize-space()] |' \
+                  '//*[contains(@class, "price3P")]/text()[normalize-space()] |' \
+                  '//span[@id="ags_price_local"]/text()[normalize-space()] |' \
+                  '//div[@id="olpDivId"]/.//span[@class="price"]/text()[normalize-space()]'
+
+        if add_xpath:
+            xpathes += ' |' + add_xpath
+
+        price_currency_view = unicode(self.price_currency_view)
+        price = is_empty(
+            response.xpath(xpathes).extract(), ''
+        )
+
+        if price:
+            if price_currency_view not in price:
+                price = '0.00'
+                if 'FREE' not in price:
+                    self.log('Currency symbol not recognized: %s' % response.url,
+                             level=WARNING)
+
+            else:
+                price = is_empty(re.findall(r'[\d,.]+\d', price), '0.00')
+                price = price.replace(price_currency_view, '').replace(',', '.')
+        else:
+            price = re.search(
+                r'a-color-price aw-nowrap&quot;&gt;{0} ([\d\.\,]+)&lt;/span&gt'.format(price_currency_view),
+                response.body
+            )
+            if price:
+                price = price.group(1).strip().replace(' ', '')\
+                    .replace('.', '').replace(',', '.')
+            else:
+                price = '0.00'
+
+        price = round(float(price.strip()), 2)
+        price = Price(price=price, priceCurrency=self.price_currency)
+
+        return price
 
     def send_next_request(self, reqs, response):
         """

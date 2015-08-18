@@ -85,6 +85,10 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     # Locale
     locale = 'en-US'
 
+    # Price currency
+    price_currency = 'USD'
+    price_currency_view = '$'
+
     SEARCH_URL = ('http://www.amazon.com/s/ref=nb_sb_noss_1?url=search-alias'
                   '%3Daps&field-keywords={search_term}')
 
@@ -148,61 +152,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
             result = self._handle_captcha(response, self.parse_product)
 
         return result
-
-    def _get_price(self, response, product):
-        """ Parses and sets the product price, with all possible variations
-        :param response: Scrapy's Response obj
-        :param product: Scrapy's Item (dict, basically)
-        :return: None
-        """
-        cond_set(
-            product,
-            'price',
-            response.css(
-                '#priceblock_ourprice ::text'
-                ', #unqualifiedBuyBox .a-color-price ::text'
-                ', #priceblock_saleprice ::text'
-                ', #actualPriceValue ::text'
-                ', #buyNewSection .offer-price ::text'
-            ).extract(),
-        )
-        if not product.get('price', None):
-            cond_set(
-                product,
-                'price',
-                response.xpath(
-                    '//td/b[@class="priceLarge"]/text() |'
-                    '//span[@class="olp-padding-right"]'
-                    '/span[@class="a-color-price"]/text() |'
-                    '//div[contains(@data-reftag,"atv_dp_bb_est_hd_movie")]'
-                    '/button/text() |'
-                    '//span[@id="priceblock_saleprice"]/text() |'
-                    '//li[@class="swatchElement selected"]'
-                    '//span[@class="a-color-price"]/text() |'
-                    '//div[contains(@data-reftag,"atv_dp_bb_est_sd_movie")]'
-                    '/button/text() |'
-                    '//div[@id="mocaBBRegularPrice"]'
-                    '/div/text()[normalize-space()]'
-                ).extract()
-            )
-        if product.get('price', None):
-            if not '$' in product['price']:
-                if 'FREE' in product['price'] or ' ' in product['price']:
-                    product['price'] = Price(
-                        priceCurrency='USD',
-                        price='0.00'
-                    )
-                else:
-                    self.log('Currency symbol not recognized: %s' % response.url,
-                             level=ERROR)
-            else:
-                price = re.findall('[\d ,.]+\d', product['price'])
-                price = re.sub('[, ]', '', price[0])
-                product['price'] = Price(
-                    priceCurrency='USD',
-                    price=price.replace('$', '').strip()\
-                        .replace(',', '')
-                )
 
     def populate_bestseller_rank(self, product, response):
         ranks = {' > '.join(map(unicode.strip,
