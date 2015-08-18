@@ -211,7 +211,7 @@ class MacysScraper(Scraper):
                 if len(img) >= 2:
                     image_url_primary.append("http://slimages.macys.com/is/image/MCY/products/%s" % img[1].replace('"','').replace("'",""))
 
-            image_url_additional = []
+        image_url_additional = []
         image_url_tmp = re.findall(r"MACYS.pdp.additionalImages\[\d+\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
         if len(image_url_tmp) > 0:
             image_urls = image_url_tmp[0].split('",')
@@ -243,8 +243,7 @@ class MacysScraper(Scraper):
             except Exception, e:
                 print "WARNING: ", e.message
 
-#        image_url = image_url + image_url_primary + image_url_imageZoomer + image_url_additional
-        image_url = image_url_imageZoomer
+        image_url = image_url + image_url_primary + image_url_imageZoomer + image_url_additional
         image_url2 = []
         for r in image_url:
             try:
