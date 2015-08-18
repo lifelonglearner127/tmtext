@@ -12,6 +12,7 @@ from product_ranking.items import Price
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
+from spiders_shared_code.jet_variants import JetVariants
 
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -222,6 +223,10 @@ class JetProductsSpider(BaseProductsSpider):
 
         product["locale"] = "en_US"
 
+        JV = JetVariants()
+        JV.setupSC(response)
+        product["variants"] = JV._variants()
+
         csrf = self.get_csrf(response)
         if response.meta.get("model") and csrf:
             reqs.append(
@@ -249,7 +254,10 @@ class JetProductsSpider(BaseProductsSpider):
         reqs = response.meta.get("reqs")
 
         data = json.loads(response.body)
-        
+
+        if str(data.get("twoDay")) == "True":
+            product["deliver_in"] = "2 Days"
+
         if data["unavailable"]:
             cond_set_value(product, "is_out_of_stock", True)
         else:
