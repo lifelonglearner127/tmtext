@@ -280,7 +280,9 @@ class AmazonBaseClass(BaseProductsSpider):
         """
         xpathes = '//*[@id="brand"]/text() |' \
                   '//*[contains(@class, "contributorNameID")]/text() |' \
+                  '//*[contains(@id, "contributorName")]/text() |' \
                   '//*[@id="bylineContributor"]/text() |' \
+                  '//a[contains(@href, "field-author")]/text() |' \
                   '//*[@id="contributorLink"]/text() |' \
                   '//*[@id="by-line"]/.//a/text() |' \
                   '//*[@id="artist-container"]/.//a/text() |' \
@@ -306,9 +308,12 @@ class AmazonBaseClass(BaseProductsSpider):
                 brand = brand_logo.split('/')[1]
 
         if not brand and title:
-            brand = guess_brand_from_first_words(title)
+            brand = [guess_brand_from_first_words(title)]
 
-        return brand or ['NO BRAND']
+        brand = brand or ['NO BRAND']
+        brand = [br.strip() for br in brand]
+
+        return brand
 
     def send_next_request(self, reqs, response):
         """
