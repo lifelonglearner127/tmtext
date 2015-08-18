@@ -127,9 +127,10 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 dont_filter=True,
             )
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
+            product = response.meta['product']
             self.log(
                 "Giving up on trying to solve the captcha challenge after"
-                " %s tries for: %s" % (self.captcha_retries, prod['url']),
+                " %s tries for: %s" % (self.captcha_retries, product['url']),
                 level=WARNING
             )
             result = None

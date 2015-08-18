@@ -142,8 +142,9 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
             result = prod
 
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
+            product = response.meta['product']
             self.log("Giving up on trying to solve the captcha challenge after"
-                     " %s tries for: %s" % (self.captcha_retries, prod['url']),
+                     " %s tries for: %s" % (self.captcha_retries, product['url']),
                      level=WARNING)
             result = None
         else:
@@ -378,7 +379,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
 
         buyer_reviews["rating_by_star"] = {}
         buyer_reviews = self.get_rating_by_star(response, buyer_reviews)
-
 
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
 
