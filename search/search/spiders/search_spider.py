@@ -304,6 +304,10 @@ class SearchSpider(BaseSpider):
                     product_upc = None
                 if 'product_url' in product_info:
                     product_url = product_info['product_url']
+                    if not product_model:
+                        product_model = ProcessText.extract_model_from_url(product_url)
+                    if not product_model:
+                        product_model = ''
                 else:
                     product_url = ''
                 if 'product_manufacturer_code' in product_info:
@@ -626,6 +630,9 @@ class SearchSpider(BaseSpider):
         # if there is no product model, try to extract it
         if not product_model and product_name:
             product_model = ProcessText.extract_model_from_name(product_name)
+
+            if not product_model:
+                product_model = ProcessText.extract_model_from_url(response.url)
 
             # for logging purposes, set this back to the empty string if it wasn't found (so was None)
             if not product_model:
