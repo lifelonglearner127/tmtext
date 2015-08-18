@@ -56,10 +56,10 @@ class AmazonDeValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
-        'dress code style all': [5, 70],
-        'water pump bronze': [2, 70],
+        'canon ixus': [50, 300],
+        'xperia screen replacement': [5, 150],
         'ceiling fan industrial': [15, 90],
-        'kaspersky total': [30, 250],
+        'kaspersky total': [5, 250],
         'car navigator garmin': [5, 100],
         'yamaha drums midi': [2, 50],
         'black men shoes size 8 red': [5, 70],
@@ -112,6 +112,17 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
             else:
                 yield r
 
+    @staticmethod
+    def parse_product_id(url):
+        prod_id = re.findall(r'/dp?/(\w+)|product/(\w+)/', url)
+        if not prod_id:
+            prod_id = re.findall(r'/dp?/(\w+)|product/(\w+)', url)
+        if isinstance(prod_id, (list, tuple)):
+            prod_id = [s for s in prod_id if s][0]
+        if isinstance(prod_id, (list, tuple)):
+            prod_id = [s for s in prod_id if s][0]
+        return prod_id
+
     def parse_product(self, response):
         prod = response.meta['product']
 
@@ -124,8 +135,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         if not self._has_captcha(response):
             meta = response.meta.copy()
             response.meta['product'] = prod
-            prod_id = is_empty(re.findall(r'/dp?/(\w+)|product/(\w+)/', response.url))
-            prod_id = list(prod_id)[0]
+            prod_id = self.parse_product_id(response.url)
             response.meta['product_id'] = prod_id
 
             self._populate_from_js(response, prod)
@@ -164,9 +174,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
             meta = response.meta.copy()
             meta['product'] = prod
-            prod_id = is_empty(re.findall('/dp/([a-zA-Z0-9]+)', response.url))
-            if not prod_id:
-                prod_id = is_empty(re.findall('/d/([a-zA-Z0-9]+)', response.url))
+            prod_id = self.parse_product_id(response.url)
             meta['product_id'] = prod_id
             if mkt_place_link:
                 meta["mkt_place_link"] = mkt_place_link
@@ -276,18 +284,14 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         if not product.get('brand', '').strip():
-            brand = response.xpath('//*[contains(@class, "contributorNameID")]/text() |'
-                                   '//*[@id="bylineContributor"]/text() |'
-                                   '//*[@id="contributorLink"]/text() |'
-                                   '//*[@id="by-line"]/.//a/text() |'
-                                   '//*[@id="artist-container"]/.//a/text() |'
-                                   '//*[@id="byline"]/.//*[contains(@class,"author")]/a/text() |'
-                                   '//div[@class="buying"]/.//a[contains(@href, "search-type=ss")]/text() |'
-                                   '//a[@id="ProductInfoArtistLink"]/text()')
+            brand = response.css('#brand')
             if len(brand) > 1:
                 brand = brand.extract()
             else:
                 brand = is_empty(brand.extract(), '').strip()
+            if isinstance(brand, (list, tuple)):
+                if brand:
+                    brand = brand[0]
             cond_set_value(product, 'brand', brand)
         cond_set(
             product,
@@ -347,7 +351,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         if product.get('price', None):
             if not u'EUR' in product.get('price', ''):
-                self.log('Invalid price at: %s' % response.url, level=ERROR)
+                self.log('Invalid price at: %s' % response.url, level=WARNING)
             else:
                 price = re.findall(FLOATING_POINT_RGEX,
                     product['price'].replace(u'\xa0', '').strip())
@@ -413,8 +417,10 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 '//img[@id="main-image"]/@src |'
                 '//div[@id="imgTagWrapperId"]/img/@src |'
                 '//div[@id="kib-container"]/div[@id="kib-ma-container-0"]'
-                '/img/@src'
+                '/img/@src |'
+                '//img[@id="imgBlkFront"]/@style'
             ).extract()
+
         if image and image[0].strip().startswith('http'):
             # sometimes images are coded data
             cond_set(
@@ -541,6 +547,18 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         return related_products
 
+    def _scrape_results_per_page(self, response):
+        num = response.xpath(
+            '//*[@id="s-result-count"]/text()').re('1-(\d+) von')
+        if num:
+            return int(num[0])
+        else:
+            num = response.xpath(
+                '//*[@id="s-result-count"]/text()').re('(\d+) Ergebnissen')
+            if num:
+                return int(num[0])
+        return None
+
     def _scrape_total_matches(self, response):
         if u'ne correspond à aucun article' in response.body_as_unicode():
             total_matches = 0
@@ -595,10 +613,17 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         if not links:
             lis = response.xpath('//*[contains(@id, "results")]'
                                  '//*[contains(@class, "sx-table-item")]')
+            if not lis:
+                lis = response.xpath('//*[contains(@id, "results")]'
+                                     '//*[contains(@class, "s-result-item")]')
             for no, li in enumerate(lis):
                 is_prime = li.css('i.a-icon-prime').extract()
                 is_prime_pantry = (li.css('i.a-icon-prime-pantry').extract()
                                    or li.css('i.a-icon-primepantry').extract())
+                if not is_prime_pantry:
+                    is_prime_pantry = bool(li.xpath(
+                        "*/descendant::i[contains(concat(' ',@class,' '),"
+                        "' a-icon-premium-pantry ')]").extract())
                 links.append([
                     is_empty(li.xpath('.//a/@href').extract()),
                     is_prime, is_prime_pantry

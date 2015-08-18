@@ -59,7 +59,7 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
         'nothing_found_1234654654': 0,
         'samsung t9500 battery 2600 li-ion warranty': [30, 250],
         'water pump bronze inch apollo': [2, 30],
-        'ceiling fan industrial white system': [5, 50],
+        'ceiling fan industrial white system': [5, 100],
         'kaspersky total': [20, 100],
         'car navigator garmin maps 44LM': [1, 20],
         'yamaha drums midi': [50, 300],

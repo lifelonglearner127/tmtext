@@ -74,7 +74,7 @@ class SearchSpider(BaseSpider):
         # call specific init for each derived class
         self.init_sub()
 
-        self.version = "7982305dc2591d1d9ec8d88ab49f3affe6876e55"
+        self.version = "4c90893ee7e6a6417d61d051890f8cacd7c3cfe2"
 
         self.product_url = product_url
         self.products_file = products_file
@@ -304,6 +304,10 @@ class SearchSpider(BaseSpider):
                     product_upc = None
                 if 'product_url' in product_info:
                     product_url = product_info['product_url']
+                    if not product_model:
+                        product_model = ProcessText.extract_model_from_url(product_url)
+                    if not product_model:
+                        product_model = ''
                 else:
                     product_url = ''
                 if 'product_manufacturer_code' in product_info:
@@ -626,6 +630,9 @@ class SearchSpider(BaseSpider):
         # if there is no product model, try to extract it
         if not product_model and product_name:
             product_model = ProcessText.extract_model_from_name(product_name)
+
+            if not product_model:
+                product_model = ProcessText.extract_model_from_url(response.url)
 
             # for logging purposes, set this back to the empty string if it wasn't found (so was None)
             if not product_model:

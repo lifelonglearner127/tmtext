@@ -324,7 +324,7 @@ def log_install_error():
     if request.method == 'GET':
         with open(file_to_save_logs, 'r') as f:
             c = f.read()
-            return c
+            return '<pre>%s</pre>' % c
     form = request.form
     item = form['item']
     error = form['error']

@@ -45,7 +45,11 @@ class ProcessText():
         # convert text to ascii. so accented letters and special characters are all normalized to ascii characters
         # first normalize unicode form
         #TODO: test
-        text = unicodedata.normalize("NFD", unicode(text)).encode("ascii", "ignore")
+        try:
+            text = unicodedata.normalize("NFD", unicode(text)).encode("ascii", "ignore")
+        except Exception:
+            text = unicodedata.normalize("NFD", unicode(text, "utf-8")).encode("ascii", "ignore")
+
 
         # other preprocessing: -Inch = " - fitting for staples->amazon search
         #                        Feet = '
@@ -270,6 +274,7 @@ class ProcessText():
 
 
             product2['confidence'] = confidence
+            product2['UPC_match'] = 1 if upc_matched else 0
 
 
             if score >= threshold:
@@ -653,6 +658,26 @@ class ProcessText():
             return name_tokenized[model_index]
         else:
             return None
+
+    # extract model number from product url, for supported sites
+    @staticmethod
+    def extract_model_from_url(product_url):
+        r = re.match("https?://www\.([^/]*)\.com/.*", product_url)
+        if not r:
+            log.msg("Domain could not be extracted from URL " + product_url + " for extracting product model", level=log.DEBUG)
+            return None
+        domain = r.group(1)
+        # only walmart is supported
+        if domain != 'walmart':
+            return None
+
+        rname = re.match("https?://www\.([^/]*)\.com/ip/([^/]*)/[0-9]*", product_url)
+        if not rname:
+            log.msg("Product model could not be extracted from Walmart URL because of unknown URL format", level=log.DEBUG)
+            return None
+        
+        name_from_url = " ".join(rname.group(2).split("-"))
+        return ProcessText.extract_model_from_name(name_from_url)
 
 
     # compute weight to be used for a word for measuring similarity between two texts
