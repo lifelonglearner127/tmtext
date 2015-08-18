@@ -83,6 +83,9 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     total_match_not_found = '没有找到任何与'
     total_matches_re = r'共\s?([\d,.\s?]+)'
 
+    # Locale
+    locale = 'en-US'
+
     SEARCH_URL = "http://www.amazon.cn/s/?field-keywords={search_term}"
 
     REVIEW_DATE_URL = 'http://www.amazon.cn/product-reviews/{product_id}/' \
@@ -122,18 +125,12 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     def parse_product(self, response):
         if self._has_captcha(response):
             result = self._handle_captcha(response, self.parse_product)
-        prod = response.meta['product']
 
         if not self._has_captcha(response):
-            title = self._parse_title(response)
-            cond_set_value(prod, 'title', title)
-
-            image_url = self._parse_image_url(response)
-            cond_set_value(prod, 'image_url', image_url)
+            super(AmazonProductsSpider, self).parse_product(response)
+            prod = response.meta['product']
 
             self._populate_from_html(response, prod)
-
-            cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
             mkt_place_link = urlparse.urljoin(
                 response.url,

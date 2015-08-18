@@ -77,6 +77,14 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     user_agent = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:35.0) Gecko'
                   '/20100101 Firefox/35.0')
 
+    # String from html body that means there's no results
+    total_match_not_found = 'did not match any products.'
+    # Regexp for total matches to parse a number from html body
+    total_matches_re = r'of\s?([\d,.\s?]+)'
+
+    # Locale
+    locale = 'en-US'
+
     SEARCH_URL = ('http://www.amazon.com/s/ref=nb_sb_noss_1?url=search-alias'
                   '%3Daps&field-keywords={search_term}')
 
@@ -95,20 +103,14 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         self._cbw = CaptchaBreakerWrapper()
 
     def parse_product(self, response):
-        prod = response.meta['product']
-
-        prod['buyer_reviews'] = self._build_buyer_reviews(response)
 
         if not self._has_captcha(response):
-            title = self._parse_title(response)
-            cond_set_value(prod, 'title', title)
-
-            image_url = self._parse_image_url(response)
-            cond_set_value(prod, 'image_url', image_url)
+            super(AmazonProductsSpider, self).parse_product(response)
+            prod = response.meta['product']
 
             self._populate_from_html(response, prod)
 
-            cond_set_value(prod, 'locale', 'en-US')  # Default locale.
+            prod['buyer_reviews'] = self._build_buyer_reviews(response)
 
             mkt_place_link = urlparse.urljoin(
                 response.url,

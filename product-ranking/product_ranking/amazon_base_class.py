@@ -26,6 +26,9 @@ class AmazonBaseClass(BaseProductsSpider):
     # Regexp for total matches to parse a number from html body
     total_matches_re = r'of\s?([\d,.\s?]+)'
 
+    # Default locale
+    locale = 'en-US'
+
     def _scrape_total_matches(self, response):
         """
         Overrides BaseProductsSpider method to scrape total result matches. total_matches_str
@@ -161,9 +164,16 @@ class AmazonBaseClass(BaseProductsSpider):
                 self.parse_product
             )
 
+        # Set locale
+        cond_set_value(product, 'locale', self.locale)
+
         # Parse title
         title = self._parse_title(response)
-        cond_set(product, 'title', title)
+        cond_set_value(product, 'title', title)
+
+        # Parse image url
+        image_url = self._parse_image_url(response)
+        cond_set_value(product, 'image_url', image_url)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -177,7 +187,6 @@ class AmazonBaseClass(BaseProductsSpider):
         :param add_xpath: Additional xpathes, so you don't need to change base class
         :return: Number of total matches (int)
         """
-
         xpathes = '//span[@id="productTitle"]/text()[normalize-space()] |' \
                   '//div[@class="buying"]/h1/span[@id="btAsinTitle"]/text()[normalize-space()] |' \
                   '//div[@id="title_feature_div"]/h1/text()[normalize-space()] |' \
@@ -215,7 +224,6 @@ class AmazonBaseClass(BaseProductsSpider):
         :param add_xpath: Additional xpathes, so you don't need to change base class
         :return: Number of total matches (int)
         """
-
         xpathes = '//div[@class="main-image-inner-wrapper"]/img/@src |' \
                   '//div[@id="coverArt_feature_div"]//img/@src |' \
                   '//div[@id="img-canvas"]/img/@src |' \
@@ -233,6 +241,7 @@ class AmazonBaseClass(BaseProductsSpider):
         )
 
         if not image:
+            # Another try to parse img_url: from html body as JS data
             img_re = is_empty(
                 re.findall(
                     r"'colorImages':\s*\{\s*'initial':\s*(.*)\},|colorImages\s*=\s*\{\s*\"initial\":\s*(.*)\}",
@@ -265,11 +274,12 @@ class AmazonBaseClass(BaseProductsSpider):
         """
         Helps to handle several requests
         """
-
         req = reqs.pop(0)
         new_meta = response.meta.copy()
+
         if reqs:
             new_meta["reqs"] = reqs
+
         return req.replace(meta=new_meta)
 
     # Captcha handling functions.

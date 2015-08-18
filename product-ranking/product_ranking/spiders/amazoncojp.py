@@ -76,6 +76,9 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     total_match_not_found = '検索に一致する商品はありませんでした'
     total_matches_re = r'検索結果\s?([\d,.\s?]+)'
 
+    # Locale
+    locale = 'en-US'
+
     SEARCH_URL = "http://www.amazon.co.jp/s/?field-keywords={search_term}"
 
     REVIEW_DATE_URL = 'http://www.amazon.co.jp/product-reviews/{product_id}/' \
@@ -90,18 +93,12 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         self._cbw = CaptchaBreakerWrapper()
 
     def parse_product(self, response):
-        prod = response.meta['product']
 
         if not self._has_captcha(response):
-            title = self._parse_title(response)
-            cond_set_value(prod, 'title', title)
-
-            image_url = self._parse_image_url(response)
-            cond_set_value(prod, 'image_url', image_url)
+            super(AmazonProductsSpider, self).parse_product(response)
+            prod = response.meta['product']
 
             self._populate_from_html(response, prod)
-
-            cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
             mkt_place_link = is_empty(response.xpath(
                     "//div[contains(@class, 'a-box-inner')]" \

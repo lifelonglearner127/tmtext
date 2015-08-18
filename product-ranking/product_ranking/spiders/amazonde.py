@@ -78,6 +78,9 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
     total_match_not_found = 'ergab leider keine Produkttreffer.'
     total_matches_re = r'von\s?([\d,.\s?]+)'
 
+    # Locale
+    locale = 'en-US'
+
     SEARCH_URL = "http://www.amazon.de/s/?field-keywords={search_term}"
 
     REVIEW_DATE_URL = "http://www.amazon.de/product-reviews/" \
@@ -100,7 +103,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
         self._cbw = CaptchaBreakerWrapper()
 
     def parse_product(self, response):
-        prod = response.meta['product']
 
         if self._has_captcha(response):
             return self._handle_captcha(
@@ -109,15 +111,11 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
             )
 
         if not self._has_captcha(response):
-            title = self._parse_title(response)
-            cond_set_value(prod, 'title', title)
 
-            image_url = self._parse_image_url(response)
-            cond_set_value(prod, 'image_url', image_url)
+            super(AmazonProductsSpider, self).parse_product(response)
+            prod = response.meta['product']
 
             self._populate_from_html(response, prod)
-
-            cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
             #Get url for marketplace
             url = is_empty(response.xpath(
@@ -171,7 +169,7 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
                 result = prod
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
             self.log("Giving up on trying to solve the captcha challenge after"
-                     " %s tries for: %s" % (self.captcha_retries, prod['url']),
+                     " %s tries for: %s" % (self.captcha_retries, response.meta['product']['url']),
                      level=WARNING)
             result = None
         else:
@@ -447,20 +445,20 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
                               ratings.iteritems()) / int(total) if ratings else 0
                 average = float("%.2f" % round(average, 2))
 
-        if not ratings:
-            buyer_rev_link = response.xpath(
-                '//div[@id="summaryContainer"]//table[@id="histogramTable"]'
-                '/../a/@href'
-            ).extract()
-            if buyer_rev_link:
-                buyer_rev_req = Request(
-                    url=buyer_rev_link[0],
-                    callback=self.get_buyer_reviews_from_2nd_page,
-                    meta=response.meta.copy()
-                )
-                return buyer_rev_req
-            else:
-                return ZERO_REVIEWS_VALUE
+        # if not ratings:
+        #     buyer_rev_link = response.xpath(
+        #         '//div[@id="summaryContainer"]//table[@id="histogramTable"]'
+        #         '/../a/@href'
+        #     ).extract()
+        #     if buyer_rev_link:
+        #         buyer_rev_req = Request(
+        #             url=buyer_rev_link[0],
+        #             callback=self.get_buyer_reviews_from_2nd_page,
+        #             meta=response.meta.copy()
+        #         )
+        #         return buyer_rev_req
+        #     else:
+        #         return ZERO_REVIEWS_VALUE
 
         # add missing marks
         for mark in range(1, 6):

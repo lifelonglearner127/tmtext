@@ -81,6 +81,14 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
     name = "amazoncouk_products"
     allowed_domains = ["www.amazon.co.uk"]
     start_urls = []
+
+    # String from html body that means there's no results
+    total_match_not_found = 'did not match any products.'
+    # Regexp for total matches to parse a number from html body
+    total_matches_re = r'of\s?([\d,.\s?]+)'
+
+    # Locale
+    locale = 'en-US'
     
     SEARCH_URL = ("http://www.amazon.co.uk/s/ref=nb_sb_noss?"
                   "url=search-alias=aps&field-keywords={search_term}&rh=i:aps,"
@@ -130,7 +138,6 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
                 = department.items()[0]
 
     def parse_product(self, response):
-        prod = response.meta['product']
 
         if self._has_captcha(response):
             return self._handle_captcha(
@@ -138,11 +145,8 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
                 self.parse_product
             )
 
-        title = self._parse_title(response)
-        cond_set_value(prod, 'title', title)
-
-        image_url = self._parse_image_url(response)
-        cond_set_value(prod, 'image_url', image_url)
+        super(AmazonCoUkProductsSpider, self).parse_product(response)
+        prod = response.meta['product']
 
         ### Populate variants with CH/SC class
         av = AmazonVariants()
@@ -233,8 +237,6 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
             ).extract()
 
         cond_set(prod, 'description', description)
-
-        cond_set(prod, 'locale', ['en-US'])
 
         prod['url'] = response.url
         self._populate_bestseller_rank(prod, response)

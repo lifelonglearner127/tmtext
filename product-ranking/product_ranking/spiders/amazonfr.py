@@ -75,6 +75,9 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     total_match_not_found = 'ne correspond à aucun article.'
     total_matches_re = r'sur\s?([\d,.\s?]+)'
 
+    # Locale
+    locale = 'en-US'
+
     settings = AmazonfrValidatorSettings()
 
     SEARCH_URL = "http://www.amazon.fr/s/?field-keywords={search_term}"
@@ -92,18 +95,12 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         self._cbw = CaptchaBreakerWrapper()
 
     def parse_product(self, response):
-        prod = response.meta['product']
 
         if not self._has_captcha(response):
-            title = self._parse_title(response)
-            cond_set_value(prod, 'title', title)
-
-            image_url = self._parse_image_url(response)
-            cond_set_value(prod, 'image_url', image_url)
+            super(AmazonProductsSpider, self).parse_product(response)
+            prod = response.meta['product']
 
             self._populate_from_html(response, prod)
-
-            cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
             mkt_place_link = urlparse.urljoin(
                 response.url,

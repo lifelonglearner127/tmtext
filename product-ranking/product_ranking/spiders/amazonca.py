@@ -74,6 +74,14 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     name = 'amazonca_products'
     allowed_domains = ["amazon.ca"]
 
+    # String from html body that means there's no results
+    total_match_not_found = 'did not match any products.'
+    # Regexp for total matches to parse a number from html body
+    total_matches_re = r'of\s?([\d,.\s?]+)'
+
+    # Locale
+    locale = 'en-US'
+
     SEARCH_URL = "http://www.amazon.ca/s/?field-keywords={search_term}"
 
     REVIEW_DATE_URL = 'http://www.amazon.ca/product-reviews/{product_id}/' \
@@ -92,18 +100,12 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         self.mtp_class = Amazon_marketplace(self)
 
     def parse_product(self, response):
-        prod = response.meta['product']
 
         if not self._has_captcha(response):
-            title = self._parse_title(response)
-            cond_set_value(prod, 'title', title)
-
-            image_url = self._parse_image_url(response)
-            cond_set_value(prod, 'image_url', image_url)
+            super(AmazonProductsSpider, self).parse_product(response)
+            prod = response.meta['product']
 
             self._populate_from_html(response, prod)
-
-            cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
             mkt_place_link = urlparse.urljoin(
                 response.url,
