@@ -156,21 +156,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         return result
 
     def _populate_from_html(self, response, product):
-        description = response.css('.productDescriptionWrapper').extract()
-        if not description:
-            description = response.xpath(
-                '//div[@id="descriptionAndDetails"] |'
-                '//div[@id="feature-bullets"] |'
-                '//div[@id="ps-content"] |'
-                '//div[@id="productDescription_feature_div"] |'
-                '//div[contains(@class, "dv-simple-synopsis")] |'
-                '//div[@class="bucket"]/div[@class="content"]'
-            ).extract()
-        cond_set(
-            product,
-            'description',
-            description,
-        )
 
         # Some data is in a list (ul element).
         for li in response.css('td.bucket > .content > ul > li'):

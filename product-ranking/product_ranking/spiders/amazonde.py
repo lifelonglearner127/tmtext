@@ -242,22 +242,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
                 with open('/tmp/_am_urls', 'a') as fh:
                     fh.write(str(response.url) + '\n')
 
-        description = response.css('.productDescriptionWrapper').extract()
-        if not description:
-            description = response.xpath(
-                '//div[@id="descriptionAndDetails"] |'
-                '//div[@id="feature-bullets"] |'
-                '//div[@id="ps-content"] |'
-                '//div[@id="productDescription_feature_div"] |'
-                '//div[contains(@class, "dv-simple-synopsis")] |'
-                '//div[@class="bucket"]/div[@class="content"]'
-            ).extract()
-        cond_set(
-            product,
-            'description',
-            description,
-        )
-
         image = response.css(
             '#imgTagWrapperId > img ::attr(data-old-hires)'
         ).extract()

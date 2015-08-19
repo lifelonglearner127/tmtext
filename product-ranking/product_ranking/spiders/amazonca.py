@@ -174,18 +174,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
 
         self.mtp_class.get_price_from_main_response(response, product)
 
-        description = response.css('.productDescriptionWrapper').extract()
-        if not description:
-            description = response.xpath(
-                '//div[@id="feature-bullets"] |'
-                '//div[@class="bucket"]/div[@class="content"]'
-            ).extract()
-        cond_set(
-            product,
-            'description',
-            description,
-        )
-
         # Some data is in a list (ul element).
         for li in response.css('td.bucket > .content > ul > li'):
             raw_keys = li.xpath('b/text()').extract()

@@ -202,20 +202,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         av.setupSC(response)
         product['variants'] = av._variants()
 
-        description = response.css('.productDescriptionWrapper').extract()
-        if not description:
-            description = response.xpath(
-                '//div[@id="bookDescription_feature_div"]/noscript |'
-                '//div[@class="bucket"]/div[@class="content"] |'
-                '//div[@id="featurebullets_feature_div"]'
-            ).extract()
-
-        cond_set(
-            product,
-            'description',
-            description,
-        )
-
         # Some data is in a list (ul element).
         for li in response.css('td.bucket > .content > ul > li'):
             raw_keys = li.xpath('b/text()').extract()

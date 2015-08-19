@@ -2,6 +2,7 @@
 
 import re
 import urlparse
+from urllib import unquote
 import json
 import string
 
@@ -196,6 +197,10 @@ class AmazonBaseClass(BaseProductsSpider):
         # Parse price
         price = self._parse_price(response)
         cond_set_value(product, 'price', price)
+
+        # Parse description
+        description = self._parse_description(response)
+        cond_set_value(product, 'description', description)
 
         # Parse category
         category = self._parse_category(response)
@@ -490,6 +495,39 @@ class AmazonBaseClass(BaseProductsSpider):
         category = [{'category': k, 'rank': v} for k, v in category.iteritems()]
 
         return category
+
+    def _parse_description(self, response, add_xpath=None):
+        """
+        Parses product model.
+        :param add_xpath: Additional xpathes, so you don't need to change base class
+        """
+        xpathes = '//*[contains(@class, "productDescriptionWrapper")] |' \
+                  '//div[@id="descriptionAndDetails"] |' \
+                  '//div[@id="feature-bullets"] |' \
+                  '//div[@id="ps-content"] |' \
+                  '//div[@id="productDescription_feature_div"] |' \
+                  '//div[contains(@class, "dv-simple-synopsis")] |' \
+                  '//div[@class="bucket"]/div[@class="content"] |' \
+                  '//div[@id="bookDescription_feature_div"]/noscript |' \
+                  '//div[@id="featurebullets_feature_div"]'
+
+        if add_xpath:
+            xpathes += ' |' + add_xpath
+
+        description = is_empty(response.xpath(xpathes).extract())
+        if not description:
+            iframe_content = re.findall(
+                r'var iframeContent = "(.*)"', response.body
+            )
+            if iframe_content:
+                res = iframe_content[0]
+                f = re.findall('body%3E%0A%20%20(.*)'
+                               '%0A%20%20%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A', res)
+                if f:
+                    desc = unquote(f[0])
+                    description = [desc]
+
+        return description
 
     def send_next_request(self, reqs, response):
         """
