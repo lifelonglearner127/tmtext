@@ -197,6 +197,19 @@ class AmazonBaseClass(BaseProductsSpider):
         price = self._parse_price(response)
         cond_set_value(product, 'price', price)
 
+        # Parse category
+        category = self._parse_category(response)
+        cond_set_value(product, 'category', category)
+
+        if category:
+            # Parse departments and bestseller rank
+            department = amazon_parse_department(category)
+            if department is not None:
+                department, bestseller_rank = department.items()[0]
+
+                cond_set_value(product, 'department', department)
+                cond_set_value(product, 'bestseller_rank', bestseller_rank)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -449,6 +462,34 @@ class AmazonBaseClass(BaseProductsSpider):
         price = Price(price=price, priceCurrency=self.price_currency)
 
         return price
+
+    def _parse_category(self, response):
+        """
+        Parses product categories.
+        """
+        category = {
+            ' > '.join(map(
+                unicode.strip, itm.css('.zg_hrsr_ladder a::text').extract())
+            ): int(re.sub('[ ,]', '', itm.css('.zg_hrsr_rank::text').re('([\d, ]+)')[0]))
+            for itm in response.css('.zg_hrsr_item')
+        }
+
+        prim_a = response.css('#SalesRank::text, #SalesRank .value::text').re(
+            '(\d+){0,1}\.{0,1}(\d+) .*en (.+)\(')
+        prim = []
+        if prim_a:
+            if len(prim_a) > 1 and prim_a[0].isdigit() and prim_a[1].isdigit():
+                prim.append(prim_a[0] + prim_a[1])
+                prim.append(prim_a[2])
+            elif len(prim_a) > 1 and prim_a[0].isdigit():
+                prim[0].append(prim_a[0])
+                prim[1].append(prim_a[1])
+        if prim:
+            prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
+            category.update(prim)
+        category = [{'category': k, 'rank': v} for k, v in category.iteritems()]
+
+        return category
 
     def send_next_request(self, reqs, response):
         """

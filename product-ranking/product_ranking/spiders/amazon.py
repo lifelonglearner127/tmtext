@@ -17,7 +17,6 @@ from product_ranking.spiders import BaseProductsSpider, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.amazon_tests import AmazonTests
 
-from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
 from spiders_shared_code.amazon_variants import AmazonVariants
@@ -153,28 +152,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
 
         return result
 
-    def populate_bestseller_rank(self, product, response):
-        ranks = {' > '.join(map(unicode.strip,
-                                itm.css('.zg_hrsr_ladder a::text').extract())):
-                     int(re.sub('[ ,]', '',
-                                itm.css('.zg_hrsr_rank::text').re(
-                                    '([\d, ]+)')[0]))
-                 for itm in response.css('.zg_hrsr_item')}
-        prim = response.css('#SalesRank::text, #SalesRank .value'
-                            '::text').re('#([\d ,]+) .*in (.+)\(')
-        if prim:
-            prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
-            ranks.update(prim)
-        ranks = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
-        cond_set_value(product, 'category', ranks)
-        # parse department
-        department = amazon_parse_department(ranks)
-        if department is None:
-            product['department'] = None
-        else:
-            product['department'], product['bestseller_rank'] \
-                = department.items()[0]     
-
     def _populate_from_html(self, response, product):
         av = AmazonVariants()
         av.setupSC(response)
@@ -225,8 +202,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                     'upc',
                     raw_upc.strip().replace(' ', ';'),
                 )
-
-        self.populate_bestseller_rank(product, response)
 
     def _get_rating_by_star_by_individual_request(self, response):
         product = response.meta['product']

@@ -230,37 +230,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
                 )
         return product
 
-    def _populate_bestseller_rank(self, product, response):
-        ranks = {' > '.join(map(unicode.strip,
-                                itm.css('.zg_hrsr_ladder a::text').extract())):
-                     int(re.sub('[ ,]', '',
-                                itm.css('.zg_hrsr_rank::text').re(
-                                    '([\d, ]+)')[0]))
-                 for itm in response.css('.zg_hrsr_item')}
-
-        prim_a = response.css('#SalesRank::text, #SalesRank .value::text').re(
-            '(\d+){0,1}\.{0,1}(\d+) .*en (.+)\(')
-        prim = []
-        if prim_a:
-            if len(prim_a) > 1 and prim_a[0].isdigit() and prim_a[1].isdigit():
-                prim.append(prim_a[0] + prim_a[1])
-                prim.append(prim_a[2])
-            elif len(prim_a) > 1 and prim_a[0].isdigit():
-                prim[0].append(prim_a[0])
-                prim[1].append(prim_a[1])
-        if prim:
-            prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
-            ranks.update(prim)
-        ranks = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
-        cond_set_value(product, 'category', ranks)
-        # parse department
-        department = amazon_parse_department(ranks)
-        if department is None:
-            product['department'] = None
-        else:
-            product['department'], product['bestseller_rank'] \
-                = department.items()[0]
-
     def _populate_from_html(self, response, product):
 
         related_products = self._parse_related(response)
@@ -387,7 +356,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
                     raw_upc.strip().replace(' ', ';'),
                 )
 
-        self._populate_bestseller_rank(product, response)
         #revs = self._buyer_reviews_from_html(response)
         #if isinstance(revs, Request):
         #    meta = {"product": product}
