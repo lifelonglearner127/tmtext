@@ -23,7 +23,6 @@ from product_ranking.validation import BaseValidator
 
 is_empty = lambda x, y="": x[0] if x else y
 
-ip = "http://151.236.56.213:80"
 
 class JcpenneyValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
     optional_fields = []
@@ -37,15 +36,15 @@ class JcpenneyValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
     ignore_log_filtered = True  # ... filtered requests?
     test_requests = {
         'sdfsdgdf': 0,  #+ should return 'no products' or just 0 products
-        'benny benassi': 0, #+
+        'benny benassi': 0,
         'water proof': [110, 210],
-        'peace': [10, 70],#+
+        'peace': [10, 70],
         'hot': [80, 180],
         'drink': [30, 130],
         'term': [30, 130],
-        'tiny': [10, 80],#+
-        'selling': [1, 30],#+
-        'night': [40, 140],#+
+        'tiny': [10, 80],
+        'selling': [1, 30],
+        'night': [40, 140],
     }
 
 
@@ -133,7 +132,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             )
             yield Request(
                 url,
-                meta={'search_term': st, 'remaining': self.quantity, "proxy": ip}
+                meta={'search_term': st, 'remaining': self.quantity}
             )
 
         if self.product_url:
@@ -141,7 +140,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod, "proxy": ip})
+                          meta={'product': prod})
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -161,7 +160,6 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
-        new_meta["proxy"] = ip
         if product_id:
             new_meta['product_id'] = product_id
 
@@ -346,14 +344,16 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     except ValueError:
                         pass
                 if distribution:
-                    reviews = BuyerReviews(total, avrg, distribution)
+                    dfr = dict({1: 0, 2: 0, 3: 0, 4: 0, 5: 0})
+                    dfr.update(distribution)
+                    reviews = BuyerReviews(total, avrg, dfr)
+                    #reviews = ZERO_REVIEWS_VALUE.update(distribution)
                     product['buyer_reviews'] = reviews
 
         if 'buyer_reviews' not in product:
             cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         new_meta = response.meta.copy()
         new_meta['product'] = product
-        new_meta["proxy"] = ip
         return Request(self.RELATED_URL.format(product_id=product_id),
                        meta=new_meta, callback=self._parse_related_products,
                        dont_filter=True)
