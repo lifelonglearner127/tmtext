@@ -157,6 +157,9 @@ class AmazonSpider(SearchSpider):
         if 'origin_upc' in response.meta:
             item['origin_upc'] = response.meta['origin_upc']
 
+        if 'origin_brand' in response.meta:
+            item['origin_brand'] = response.meta['origin_brand']
+
         if 'origin_bestsellers_rank' in response.meta:
             item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
 
