@@ -103,6 +103,10 @@ class WalmartScraper(Scraper):
 
         self.failure_type = None
 
+        self.review_json = None
+        self.review_list = None
+        self.is_review_checked = False
+
         self.wv = WalmartVariants()
 
     # checks input format
@@ -1415,138 +1419,75 @@ class WalmartScraper(Scraper):
 
         return seller_info
 
-    # extract max review information from its product page tree
-    # ! may return None if not found or no review
+    def _average_review(self):
+        if self._review_count() == 0:
+            return None
+
+        average_review = round(float(self.review_json["jsonData"]["attributes"]["avgRating"]), 1)
+
+        if str(average_review).split('.')[1] == '0':
+            return int(average_review)
+        else:
+            return float(average_review)
+
+    def _review_count(self):
+        self._reviews()
+
+        if not self.review_json:
+            return 0
+
+        return int(self.review_json["jsonData"]["attributes"]["numReviews"])
+
     def _max_review(self):
-        review_rating_list_text = self.tree_html.xpath('//div[contains(@class, "review-summary")]//div[contains(@class, "js-rating-filter")]/span/text()')
-        review_rating_list_int = []
-
-        if not review_rating_list_text:
+        if self._review_count() == 0:
             return None
 
-        for index in range(5):
-            if int(review_rating_list_text[index]) > 0:
-                review_rating_list_int.append(5 - index)
+        for i, review in enumerate(self.review_list):
+            if review[1] > 0:
+                return 5 - i
 
-        if not review_rating_list_int:
-            return None
-
-        return float(max(review_rating_list_int))
-
-    # extract min review information from its product page tree
-    # ! may return None if not found or no review
     def _min_review(self):
-        review_rating_list_text = self.tree_html.xpath('//div[contains(@class, "review-summary")]//div[contains(@class, "js-rating-filter")]/span/text()')
-        review_rating_list_int = []
-
-        if not review_rating_list_text:
+        if self._review_count() == 0:
             return None
 
-        for index in range(5):
-            if int(review_rating_list_text[index]) > 0:
-                review_rating_list_int.append(5 - index)
+        for i, review in enumerate(reversed(self.review_list)):
+            if review[1] > 0:
+                return i + 1
 
-        if not review_rating_list_int:
-            return None
-
-        return float(min(review_rating_list_int))
-
-    # extract revew list information from its product page tree
-    # ! may return None if not found or no reviews
     def _reviews(self):
-        review_rating_list_text = self.tree_html.xpath('//div[contains(@class, "review-summary")]//div[contains(@class, "js-rating-filter")]/span/text()')
-        review_rating_list_int = []
+        if self.is_review_checked:
+            return self.review_list
 
-        if not review_rating_list_text:
-            return None
+        self.is_review_checked = True
 
-        for index in range(5):
-            if int(review_rating_list_text[index]) > 0:
-                review_rating_list_int.append([5 - index, int(review_rating_list_text[index])])
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        contents = s.get(self.BASE_URL_REVIEWSREQ.format(self._extract_product_id()), headers=h, timeout=5).text
 
-        if not review_rating_list_int:
-            return None
-
-        return review_rating_list_int
-
-    # extract average product reviews information from its product page
-    # ! may throw exception if not found
-    def _avg_review_new(self):
-        """Extracts average review info for walmart product using page source
-        Works for new walmart page structure
-        Returns:
-            float containing average value of reviews
-        """
-        average_review_str = self.tree_html.xpath("//div[@class='review-summary Grid']\
-            //p[@class='heading-e']/text()")[0]
-        average_review = re.search('reviews \| (.+?) out of ', average_review_str).group(1)
-        average_review = float(average_review)
-
-        return average_review
-
-    # ! may throw exception if not found
-    def _avg_review_old(self):
-        """Extracts average review info for walmart product using page source
-        Works for old walmart page structure
-        Returns:
-            float containing average value of reviews
-        """
-        reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
-        average_review = float(reviews_info_node.xpath("span[@itemprop='ratingValue']/text()")[0])
-        return average_review
-
-    def _avg_review(self):
-        """Extracts average review value for walmart product
-        Works for both new and old walmart page structure
-        (uses the extractor function relevant for this page)
-        Returns:
-            float containing average value of reviews
-        """
-
-        # assume new page structure
-        # extractor function may throw exception if extraction failed
         try:
-            average_review = self._avg_review_new()
-        except Exception:
-            average_review = None
+            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
+            end_index = contents.find("}},", start_index) + 2
 
-        # extractor for new page structure failed. try with old
-        if average_review is None:
-            return self._avg_review_old()
+            self.review_json = contents[start_index:end_index]
+            self.review_json = json.loads(self.review_json)
+        except:
+            self.review_json = None
 
-        return average_review
+        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
+        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
+        reviews_by_mark = reviews_by_mark[:5]
+        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
 
-    def _nr_reviews(self):
-        """Extracts total nr of reviews info for walmart product using page source
-        Works for both new and old walmart page structure
-        (uses the extractor function relevant for this page)
-        Returns:
-            int containing total nr of reviews
-        """
+        if not review_list:
+            review_list = None
 
-        # assume new page structure
-        # extractor function may throw exception if extraction failed
+        self.review_list = review_list
 
-        nr_reviews = 0
-
-        if self._version() == "Walmart v1":
-            if not self.tree_html.xpath("//div[@id='BVReviewsContainer']"):
-                return 0
-
-            reviews_info_node = self.tree_html.xpath("//div[@id='BVReviewsContainer']//span[@itemprop='aggregateRating']")[0]
-            nr_reviews = reviews_info_node.xpath("span[@itemprop='reviewCount']/text()")
-
-            nr_reviews = int(nr_reviews[0])
-
-        if self._version() == "Walmart v2":
-            nr_reviews_str = self.tree_html.xpath("//span[@itemprop='ratingCount']/text()")
-
-            if not nr_reviews_str:
-                return 0
-
-            nr_reviews = int(nr_reviews_str[0])
-
-        return nr_reviews
+        return self.review_list
 
     def _rollback(self):
         if self._version() == "Walmart v1":
@@ -2707,8 +2648,8 @@ class WalmartScraper(Scraper):
         "in_stock": _in_stock, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
-        "review_count": _nr_reviews, \
-        "average_review": _avg_review, \
+        "review_count": _review_count, \
+        "average_review": _average_review, \
         "max_review": _max_review, \
         "min_review": _min_review, \
         "reviews": _reviews, \
