@@ -423,7 +423,6 @@ class ProcessText():
         # then remove from name only words which were part of product1_brand
         #TODO: does this lead to any errors?
         if product1_brand and "".join(product1_brand.split()) in "".join(words2_copy):
-            print "PRODUCT1 BRAND in NAME2", product1_brand, words2
             # remove/replace words in brand name
             for word in words2:
                 if word in product1_brand:
