@@ -244,7 +244,8 @@ class AmazonSpider(SearchSpider):
 
             # extract product model number
             model_number_holder = hxs.select("""//tr[@class='item-model-number']/td[@class='value']/text() |
-             //li/b/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/text()""").extract()
+             //li/b/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/text() |
+             //span/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/span[2]/text()""").extract()
             if model_number_holder:
                 item['product_model'] = model_number_holder[0].strip()
             # if no product model explicitly on the page, try to extract it from name
