@@ -115,6 +115,8 @@ class CurrysSpider(SearchSpider):
             item['origin_model'] = response.meta['origin_model']
         if 'origin_upc' in response.meta:
             item['origin_upc'] = response.meta['origin_upc']
+        if 'origin_brand' in response.meta:
+            item['origin_brand'] = response.meta['origin_brand']
 
 
         product_name_node = hxs.select("//span[@itemprop='name']/text()").extract()
