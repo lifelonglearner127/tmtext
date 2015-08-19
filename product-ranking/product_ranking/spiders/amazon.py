@@ -19,7 +19,6 @@ from product_ranking.amazon_tests import AmazonTests
 
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
-from spiders_shared_code.amazon_variants import AmazonVariants
 
 from product_ranking.amazon_base_class import AmazonBaseClass
 
@@ -153,9 +152,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         return result
 
     def _populate_from_html(self, response, product):
-        av = AmazonVariants()
-        av.setupSC(response)
-        product['variants'] = av._variants()
 
         self.mtp_class.get_price_from_main_response(response, product)
 

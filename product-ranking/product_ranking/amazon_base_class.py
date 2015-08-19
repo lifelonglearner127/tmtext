@@ -14,6 +14,7 @@ from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.amazon_tests import AmazonTests
+from spiders_shared_code.amazon_variants import AmazonVariants
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.guess_brand import guess_brand_from_first_words
 
@@ -205,6 +206,10 @@ class AmazonBaseClass(BaseProductsSpider):
         # Parse upc
         upc = self._parse_upc(response)
         cond_set_value(product, 'upc', upc)
+
+        # Parse variants
+        variants = self._parse_variants(response)
+        product['variants'] = variants
 
         # Parse category
         category = self._parse_category(response)
@@ -552,6 +557,16 @@ class AmazonBaseClass(BaseProductsSpider):
                 upc = raw_upc.strip().replace(' ', ';')
 
         return upc
+
+    def _parse_variants(self, response):
+        """
+        Parses product variants.
+        """
+        av = AmazonVariants()
+        av.setupSC(response)
+        variants = av._variants()
+
+        return variants
 
     def send_next_request(self, reqs, response):
         """

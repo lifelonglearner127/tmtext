@@ -20,7 +20,6 @@ from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
 from product_ranking.amazon_tests import AmazonTests
-from spiders_shared_code.amazon_variants import AmazonVariants
 
 from product_ranking.amazon_base_class import AmazonBaseClass
 
@@ -129,11 +128,6 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
 
         super(AmazonCoUkProductsSpider, self).parse_product(response)
         prod = response.meta['product']
-
-        ### Populate variants with CH/SC class
-        av = AmazonVariants()
-        av.setupSC(response)
-        prod['variants'] = av._variants()
 
         title = response.xpath(
             '//span[@id="productTitle"]/text()[normalize-space()] |'

@@ -21,7 +21,6 @@ from product_ranking.spiders import (BaseProductsSpider, cond_set,
 
 from product_ranking.marketplace import Amazon_marketplace
 from product_ranking.amazon_tests import AmazonTests
-from spiders_shared_code.amazon_variants import AmazonVariants
 
 from product_ranking.amazon_base_class import AmazonBaseClass
 
@@ -167,11 +166,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         return product
 
     def _populate_from_html(self, response, product):
-        ### Populate variants with CH/SC class
-        av = AmazonVariants()
-        av.setupSC(response)
-        product['variants'] = av._variants()
-
         self.mtp_class.get_price_from_main_response(response, product)
 
         self._buyer_reviews_from_html(response, product)

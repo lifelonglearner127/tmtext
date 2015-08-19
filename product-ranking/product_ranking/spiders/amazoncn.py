@@ -25,11 +25,6 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.amazon_base_class import AmazonBaseClass
 
 try:
-    from spiders_shared_code.amazon_variants import AmazonVariants
-except ImportError:
-    from amazon_variants import AmazonVariants
-
-try:
     from captcha_solver import CaptchaBreakerWrapper
 except ImportError as e:
     import sys
@@ -198,9 +193,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         return product
 
     def _populate_from_html(self, response, product):
-        av = AmazonVariants()
-        av.setupSC(response)
-        product['variants'] = av._variants()
 
         revs = self._buyer_reviews_from_html(response)
         if isinstance(revs, Request):
