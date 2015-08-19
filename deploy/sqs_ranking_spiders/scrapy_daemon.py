@@ -1125,7 +1125,7 @@ def main():
 
     add_timeout = 30  # add to visibility timeout
     # names of the queues in SQS, ordered by priority
-    q_keys = ['production', 'test', 'dev']
+    q_keys = ['urgent', 'production', 'test', 'dev']
     q_ind = 0  # index of current queue
     # try to get tasks, untill max number of tasks is reached or
     # max number of tries to get tasks is reached
