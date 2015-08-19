@@ -24,7 +24,7 @@ def mark_as_finished():
 
 def _install_system_package(package):
     try:
-        check_output('apt-get install -y %s' % package,
+        check_output('sudo apt-get install -y %s' % package,
                      shell=True, stderr=STDOUT)
     except CalledProcessError as e:
         try:
