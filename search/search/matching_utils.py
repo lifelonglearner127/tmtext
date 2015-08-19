@@ -122,6 +122,7 @@ class ProcessText():
         #TODO: only if result of stemming is in the dictionary?
         if stem:
             clean = [ProcessText.stem(token) for token in clean]
+            clean = [word for word in clean if word != '']
 
         # TODO:
         # # add versions of the queries with different spelling
