@@ -18,12 +18,38 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
 from product_ranking.spiders import cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.jcpenney_variants import JcpenneyVariants
+from product_ranking.validation import BaseValidator
 
 
 is_empty = lambda x, y="": x[0] if x else y
 
+ip = "http://151.236.56.213:80"
 
-class JcpenneyProductsSpider(BaseProductsSpider):
+class JcpenneyValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = []
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'google_source_site', 'description', 'special_pricing', 
+        'bestseller_rank', 'model',
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = True  # ... duplicated requests?
+    ignore_log_filtered = True  # ... filtered requests?
+    test_requests = {
+        'sdfsdgdf': 0,  #+ should return 'no products' or just 0 products
+        'benny benassi': 0, #+
+        'water proof': [110, 210],
+        'peace': [10, 70],#+
+        'hot': [80, 180],
+        'drink': [30, 130],
+        'term': [30, 130],
+        'tiny': [10, 80],#+
+        'selling': [1, 30],#+
+        'night': [40, 140],#+
+    }
+
+
+class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     """ jcpenny.com product ranking spider.
 
     Takes `order` argument with following possible values:
@@ -35,6 +61,8 @@ class JcpenneyProductsSpider(BaseProductsSpider):
     """
 
     name = 'jcpenney_products'
+
+    settings = JcpenneyValidatorSettings
 
     allowed_domains = [
         'jcpenney.com',
@@ -105,7 +133,7 @@ class JcpenneyProductsSpider(BaseProductsSpider):
             )
             yield Request(
                 url,
-                meta={'search_term': st, 'remaining': self.quantity}
+                meta={'search_term': st, 'remaining': self.quantity, "proxy": ip}
             )
 
         if self.product_url:
@@ -113,7 +141,7 @@ class JcpenneyProductsSpider(BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod})
+                          meta={'product': prod, "proxy": ip})
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -133,6 +161,7 @@ class JcpenneyProductsSpider(BaseProductsSpider):
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
+        new_meta["proxy"] = ip
         if product_id:
             new_meta['product_id'] = product_id
 
@@ -324,6 +353,7 @@ class JcpenneyProductsSpider(BaseProductsSpider):
             cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         new_meta = response.meta.copy()
         new_meta['product'] = product
+        new_meta["proxy"] = ip
         return Request(self.RELATED_URL.format(product_id=product_id),
                        meta=new_meta, callback=self._parse_related_products,
                        dont_filter=True)
