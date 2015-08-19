@@ -174,23 +174,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
 
         self.mtp_class.get_price_from_main_response(response, product)
 
-        # Some data is in a list (ul element).
-        for li in response.css('td.bucket > .content > ul > li'):
-            raw_keys = li.xpath('b/text()').extract()
-            if not raw_keys:
-                # This is something else, ignore.
-                continue
-
-            key = raw_keys[0].strip(' :').upper()
-            if key == 'UPC':
-                # Some products have several UPCs.
-                raw_upc = li.xpath('text()').extract()[0]
-                cond_set_value(
-                    product,
-                    'upc',
-                    raw_upc.strip().replace(' ', ';'),
-                )
-
         self._buyer_reviews_from_html(response, product)
 
     def _buyer_reviews_from_html(self, response, product):

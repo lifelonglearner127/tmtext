@@ -202,22 +202,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         av.setupSC(response)
         product['variants'] = av._variants()
 
-        # Some data is in a list (ul element).
-        for li in response.css('td.bucket > .content > ul > li'):
-            raw_keys = li.xpath('b/text()').extract()
-            if not raw_keys:
-                # This is something else, ignore.
-                continue
-
-            key = raw_keys[0].strip(' :').upper()
-            if key == 'UPC':
-                # Some products have several UPCs.
-                raw_upc = li.xpath('text()').extract()[0]
-                cond_set_value(
-                    product,
-                    'upc',
-                    raw_upc.strip().replace(' ', ';'),
-                )
         revs = self._buyer_reviews_from_html(response)
         if isinstance(revs, Request):
             meta = {"product": product}

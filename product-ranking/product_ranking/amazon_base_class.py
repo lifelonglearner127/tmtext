@@ -202,6 +202,10 @@ class AmazonBaseClass(BaseProductsSpider):
         description = self._parse_description(response)
         cond_set_value(product, 'description', description)
 
+        # Parse upc
+        upc = self._parse_upc(response)
+        cond_set_value(product, 'upc', upc)
+
         # Parse category
         category = self._parse_category(response)
         cond_set_value(product, 'category', category)
@@ -498,7 +502,7 @@ class AmazonBaseClass(BaseProductsSpider):
 
     def _parse_description(self, response, add_xpath=None):
         """
-        Parses product model.
+        Parses product description.
         :param add_xpath: Additional xpathes, so you don't need to change base class
         """
         xpathes = '//*[contains(@class, "productDescriptionWrapper")] |' \
@@ -528,6 +532,26 @@ class AmazonBaseClass(BaseProductsSpider):
                     description = [desc]
 
         return description
+
+    def _parse_upc(self, response):
+        """
+        Parses product upc.
+        """
+        upc = None
+        for li in response.css('td.bucket > .content > ul > li'):
+            raw_keys = li.xpath('b/text()').extract()
+
+            if not raw_keys:
+                # This is something else, ignore.
+                continue
+
+            key = raw_keys[0].strip(' :').upper()
+            if key == 'UPC':
+                # Some products have several UPCs.
+                raw_upc = li.xpath('text()').extract()[0]
+                upc = raw_upc.strip().replace(' ', ';')
+
+        return upc
 
     def send_next_request(self, reqs, response):
         """
