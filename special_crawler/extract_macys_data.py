@@ -84,7 +84,14 @@ class MacysScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        return self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
+        product_id = None
+
+        try:
+            product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
+        except:
+            product_id = self.tree_html.xpath("//input[@id='productId']/@value")[0]
+
+        return product_id
 
     def _site_id(self):
         site_id = self.tree_html.xpath("//input[@id='productId']/@value")[0].strip()
@@ -203,7 +210,7 @@ class MacysScraper(Scraper):
 
     def _image_urls(self):
         image_url_primary = []
-        image_url_tmp = re.findall(r"MACYS.pdp.primaryImages\[\d+\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        image_url_tmp = re.findall(r"MACYS.pdp.primaryImages\[" + self._product_id() + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
         if len(image_url_tmp) > 0:
             image_urls = image_url_tmp[0].split(",")
             for r in image_urls:
@@ -212,7 +219,7 @@ class MacysScraper(Scraper):
                     image_url_primary.append("http://slimages.macys.com/is/image/MCY/products/%s" % img[1].replace('"','').replace("'",""))
 
         image_url_additional = []
-        image_url_tmp = re.findall(r"MACYS.pdp.additionalImages\[\d+\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        image_url_tmp = re.findall(r"MACYS.pdp.additionalImages\[" + self._product_id() + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
         if len(image_url_tmp) > 0:
             image_urls = image_url_tmp[0].split('",')
             for r in image_urls:

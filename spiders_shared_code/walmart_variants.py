@@ -39,15 +39,17 @@ class WalmartVariants(object):
                 variation_key_values = {}
                 variation_attribute_id = variation_attribute["id"]
 
-                for variation in variation_attribute["variants"]:
-                    variation_key_values[variation["id"]] = variation["name"]
+                if "variants" in variation_attribute:
+                    for variation in variation_attribute["variants"]:
+                        variation_key_values[variation["id"]] = variation["name"]
 
                 variation_key_values_by_attributes[variation_attribute_id] = variation_key_values
 
             selected_variants = {}
 
             for item in json_body:
-                selected_variants[item["id"]] = item["selectedValue"]
+                if "variants" in item:
+                    selected_variants[item["id"]] = item["selectedValue"]
 
             startIndex = page_raw_text.find('"variantProducts":') + len('"variantProducts":')
 
