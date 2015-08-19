@@ -409,6 +409,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 = j.get('stock', '').lower() == 'not available'
             product['_walmart_original_price'] \
                 = j.get('price', j.get('salePrice'))
+            product['upc'] = j.get('upc', product.get('upc', ''))  # set original item UPC
         original_response.meta['product'] = product
         yield self.parse_product(original_response)
 
