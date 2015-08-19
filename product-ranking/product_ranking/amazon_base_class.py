@@ -187,7 +187,7 @@ class AmazonBaseClass(BaseProductsSpider):
 
         # Parse price Subscribe & Save
         price_subscribe_save = self._parse_price_subscribe_save(response)
-        cond_set_value(product, 'price_subscribe_save', price_subscribe_save)
+        cond_set_value(product, 'price_subscribe_save', price_subscribe_save, conv=string.strip)
 
         # Parse model
         model = self._parse_model(response)
@@ -346,7 +346,7 @@ class AmazonBaseClass(BaseProductsSpider):
 
         price_ss = is_empty(
             response.xpath(xpathes).extract(), None
-        ).strip()
+        )
         if price_ss and price_ss.startswith('$'):
             price_ss = price_ss.replace(' ', '').replace(',', '').strip('$')
             try:
@@ -422,7 +422,8 @@ class AmazonBaseClass(BaseProductsSpider):
                   '//span[@id="ags_price_local"]/text()[normalize-space()] |' \
                   '//div[@id="olpDivId"]/.//span[@class="price"]/text()[normalize-space()] |' \
                   '//div[@id="buybox"]/.//span[@class="a-color-price"]/text()[normalize-space()] |' \
-                  '//div[@id="usedBuySection"]/.//span[contains(@class, "")]/text()[normalize-space()]'
+                  '//div[@id="unqualifiedBuyBox"]/.//span[@class="a-color-price"]/text() |' \
+                  '//div[@id="tmmSwatches"]/.//li[contains(@class,"selected")]/.//span[@class="a-color-price"]'
 
         if add_xpath:
             xpathes += ' |' + add_xpath
