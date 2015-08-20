@@ -329,13 +329,16 @@ class AmazonScraper(Scraper):
 
         try:
             ingredients = re.search('<b>Ingredients</b><br>(.+?)<br>', page_raw_text).group(1)
-            ingredients = ingredients.split(",")
-
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            ingredients = r.findall(ingredients)
             ingredients = [ingredient.strip() for ingredient in ingredients]
 
             if ingredients:
                 return ingredients
         except:
+            pass
+
+        try:
             desc = '\n'.join(self.tree_html.xpath('//script//text()'))
             desc = re.findall(r'var iframeContent = "(.*)";', desc)
             desc = urllib.unquote_plus(str(desc))
@@ -344,12 +347,33 @@ class AmazonScraper(Scraper):
             if "</h5>" in ingredients:
                 return None
 
-            ingredients = ingredients.split(",")
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            ingredients = r.findall(ingredients)
 
             ingredients = [ingredient.strip() for ingredient in ingredients]
 
             if ingredients:
                 return ingredients
+        except:
+            pass
+
+        try:
+            start_index = page_raw_text.find('<span class="a-text-bold">Ingredients</span>')
+
+            if start_index < 0:
+                raise Exception("Ingredients doesn't exist!")
+
+            start_index = page_raw_text.find('<p>', start_index)
+            end_index = page_raw_text.find('</p>', start_index)
+            ingredients = page_raw_text[start_index + 3:end_index]
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            ingredients = r.findall(ingredients)
+            ingredients = [ingredient.strip() for ingredient in ingredients]
+
+            if ingredients:
+                return ingredients
+        except:
+            pass
 
         return None
 
@@ -360,12 +384,22 @@ class AmazonScraper(Scraper):
         return 0
 
     def _nutrition_facts(self):
+        page_raw_text = html.tostring(self.tree_html)
+        page_raw_text = urllib.unquote_plus(page_raw_text)
+
         try:
-            desc = '\n'.join(self.tree_html.xpath('//script//text()'))
-            desc = re.findall(r'var iframeContent = "(.*)";', desc)
-            desc = urllib.unquote_plus(str(desc))
-            nutrition_facts = re.search('<h5>Nutritional Facts and Ingredients:</h5> <p>(.+?)(</p>|<br>)', desc).group(1)
-            nutrition_facts = nutrition_facts.split(",")
+            start_index = page_raw_text.find('<h5>Nutritional Facts and Ingredients:</h5>')
+
+            if start_index < 0:
+                raise Exception("Nutritional info doesn't exist!")
+
+            start_index = page_raw_text.find('<p>', start_index)
+            end_index = page_raw_text.find('</p>', start_index)
+
+            nutrition_facts = page_raw_text[start_index + 3:end_index]
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            nutrition_facts = r.findall(nutrition_facts)
+
             nutrition_facts = [nutrition_fact.strip() for nutrition_fact in nutrition_facts]
 
             if nutrition_facts:
