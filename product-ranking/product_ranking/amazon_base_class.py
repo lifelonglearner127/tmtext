@@ -551,7 +551,7 @@ class AmazonBaseClass(BaseProductsSpider):
                              level=WARNING)
             else:
                 price = is_empty(re.findall(r'[\d,.]+\d', price), '0.00')
-                price = price.replace(price_currency_view, '').replace(',', '.')
+                price = price.replace(price_currency_view, '').replace(',', '')
         else:
             price = '0.00'
 
