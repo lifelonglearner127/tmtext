@@ -396,18 +396,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         # if API request succeed
         original_id = response.meta['original_id']
         current_id = response.meta['current_id']
-        if original_id and current_id:
-            if original_id != current_id:
-                product = response.meta['product']
-                if 'upc' in product:
-                    del product['upc']  # UPCs are invalid with redirected items,
-                                        # TODO: parse UPCs from APIs instead!
-            try:
-                with open('/tmp/_walmart_BZ_3049_redirects', 'a') as fh:
-                    # just count the number of redirected URLs
-                    fh.write(str(datetime.utcnow()) + '  |  ' + response.url + '\n')
-            except Exception, e:
-                pass
         original_response = response.meta['original_response_']
         if not 'product' in response.meta:
             response.meta['product'] = {}
@@ -421,6 +409,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 = j.get('stock', '').lower() == 'not available'
             product['_walmart_original_price'] \
                 = j.get('price', j.get('salePrice'))
+            product['upc'] = j.get('upc', product.get('upc', ''))  # set original item UPC
         original_response.meta['product'] = product
         yield self.parse_product(original_response)
 
@@ -743,14 +732,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 'upc',
                 response.xpath('//strong[@id="UPC_CODE"]/text()').extract()
             )
-            original_id = product.get('_walmart_original_id')
-            current_id = product.get('_walmart_current_id')
-            if original_id and current_id:
-                if original_id != current_id:
-                    product = response.meta['product']
-                    if 'upc' in product:
-                        del product['upc']  # UPCs are invalid with redirected items,
-                                            # TODO: parse UPCs from APIs instead!
 
         self._parse_marketplaces_from_page_html(response, product)
 
@@ -945,20 +926,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                             )
         except KeyError:
             pass
-        try:
-            cond_set_value(
-                product, 'upc', data['analyticsData']['upc'], conv=unicode)
-        except (ValueError, KeyError):
-            pass  # Not really a UPC.
-        original_id = product.get('_walmart_original_id')
-        current_id = product.get('_walmart_current_id')
-        if original_id and current_id:
-            if original_id != current_id:
-                product = response.meta['product']
-                if 'upc' in product:
-                    del product['upc']  # UPCs are invalid with redirected items,
-                                        # TODO: parse UPCs from APIs instead!
-
+        if not product.get('upc', None):
+            try:
+                cond_set_value(
+                    product, 'upc', data['analyticsData']['upc'], conv=unicode)
+            except (ValueError, KeyError):
+                pass  # Not really a UPC.
         try:
             cond_set_value(
                 product,

@@ -74,7 +74,7 @@ class SearchSpider(BaseSpider):
         # call specific init for each derived class
         self.init_sub()
 
-        self.version = "0f915e4b3f40a1926a5f83443124368cbbf54bc1"
+        self.version = " 29ec2d4105826036bcd46a99d6dc297f3248e79f"
 
         self.product_url = product_url
         self.products_file = products_file
@@ -230,6 +230,10 @@ class SearchSpider(BaseSpider):
                         except Exception:
                             pass
                         try:
+                            product['product_brand'] = data['Brand']
+                        except Exception:
+                            pass
+                        try:
                             product['product_url'] = data['URL']
                         except Exception:
                             pass
@@ -302,6 +306,10 @@ class SearchSpider(BaseSpider):
                     product_upc = product_info['product_upc']
                 else:
                     product_upc = None
+                if 'product_brand' in product_info:
+                    product_brand = product_info['product_brand']
+                else:
+                    product_brand = None
                 if 'product_url' in product_info:
                     product_url = product_info['product_url']
                     if not product_model:
@@ -366,38 +374,59 @@ class SearchSpider(BaseSpider):
                     else:
                         pending_requests.append(request1)
 
+                # 3) Search by model number + brand/first word
+                if product_model:
 
-                # 3) Search by product full name
-                if product_name:
-                    query2 = self.build_search_query(product_name)
+                    #TODO: model was extracted with ProcessText.extract_model_from_name(), without lowercasing, should I lowercase before adding it to query?
+                    if product_brand:
+                        query2 = self.build_search_query(product_model + " " + product_brand)
+                    else:
+                        query2 = self.build_search_query(product_model + " " + ProcessText.normalize(product_name)[0])
                     search_pages2 = self.build_search_pages(query2)
-                    #page2 = search_pages2[self.target_site]
                     page2 = search_pages2[self.target_site]
+
                     request2 = Request(page2, callback = self.parseResults)
 
                     request2.meta['query'] = query2
                     request2.meta['target_site'] = self.target_site
-
+                    
                     if not request:
                         request = request2
                     else:
                         pending_requests.append(request2)
 
-                    # 4) Search by combinations of words in product's name
+
+                # 4) Search by product full name
+                if product_name:
+                    query3 = self.build_search_query(product_name)
+                    search_pages3 = self.build_search_pages(query3)
+                    #page2 = search_pages2[self.target_site]
+                    page3 = search_pages3[self.target_site]
+                    request3 = Request(page3, callback = self.parseResults)
+
+                    request3.meta['query'] = query3
+                    request3.meta['target_site'] = self.target_site
+
+                    if not request:
+                        request = request3
+                    else:
+                        pending_requests.append(request3)
+
+                    # 5) Search by combinations of words in product's name
                     # create queries
 
                     for words in ProcessText.words_combinations(product_name, fast=self.fast):
-                        query3 = self.build_search_query(" ".join(words))
-                        search_pages3 = self.build_search_pages(query3)
+                        query4 = self.build_search_query(" ".join(words))
+                        search_pages4 = self.build_search_pages(query4)
                         #page3 = search_pages3[self.target_site]
-                        page3 = search_pages3[self.target_site]
-                        request3 = Request(page3, callback = self.parseResults)
+                        page4 = search_pages4[self.target_site]
+                        request4 = Request(page4, callback = self.parseResults)
 
-                        request3.meta['query'] = query3
-                        request3.meta['target_site'] = self.target_site
+                        request4.meta['query'] = query4
+                        request4.meta['target_site'] = self.target_site
 
 
-                        pending_requests.append(request3)
+                        pending_requests.append(request4)
 
                 request.meta['pending_requests'] = pending_requests
                 #request.meta['origin_site'] = 
@@ -410,7 +439,7 @@ class SearchSpider(BaseSpider):
                 request.meta['origin_upc'] = [product_upc]
                 if product_price:
                     request.meta['origin_price'] = product_price
-
+                request.meta['origin_brand'] = product_brand
                 request.meta['origin_brand_extracted'] = product_brand_extracted
                 request.meta['origin_manufacturer_code'] = product_manufacturer_code
 
@@ -571,7 +600,7 @@ class SearchSpider(BaseSpider):
 
 
         if site in self.parse_url_functions:
-            (product_name, product_model, product_price, product_upc, product_manufacturer_code) = self.parse_url_functions[site](hxs)
+            (product_name, product_model, product_price, product_upc, product_manufacturer_code, product_brand) = self.parse_url_functions[site](hxs)
 
         else:
             raise CloseSpider("Unsupported site: " + site)
@@ -658,7 +687,7 @@ class SearchSpider(BaseSpider):
         if self.name == 'manufacturer':
 
             #TODO: restore commented code; if brand not found, try to search for it on every manufacturer site (build queries fo every supported site)
-            # hardcode target site to sony
+            # hardcode target site to sony`
             #self.target_site = 'sony'
             #self.target_site = product_brand_extracted
 
@@ -771,49 +800,57 @@ class SearchSpider(BaseSpider):
             else:
                 pending_requests.append(request2)
 
+        # 3) Search by model number + brand/first word
+        if product_model:
 
-        # 3) Search by product full name
-        query3 = self.build_search_query(product_name)
-        search_pages3 = self.build_search_pages(query3)
+            #TODO: model was extracted with ProcessText.extract_model_from_name(), without lowercasing, should I lowercase before adding it to query?
+            if product_brand:
+                query3 = self.build_search_query(product_model + " " + product_brand)
+            else:
+                query3 = self.build_search_query(product_model + " " + ProcessText.normalize(product_name)[0])
+            search_pages3 = self.build_search_pages(query3)
+            page3 = search_pages3[target_site]
+
+            request3 = Request(page3, callback = self.parseResults)
+
+            request3.meta['query'] = query3
+            request3.meta['target_site'] = target_site
+            
+            if not request:
+                request = request3
+            else:
+                pending_requests.append(request3)
+
+
+        # 4) Search by product full name
+        query4 = self.build_search_query(product_name)
+        search_pages4 = self.build_search_pages(query4)
         #page2 = search_pages2[self.target_site]
-        page3 = search_pages3[target_site]
-        request3 = Request(page3, callback = self.parseResults)
+        page4 = search_pages4[target_site]
+        request4 = Request(page4, callback = self.parseResults)
 
-        # set cookies for amazon
-        if (self.target_site == 'amazon' and self.cookies_file):
-            request3.cookies = self.amazon_cookies
-            request3.headers['Cookies'] = self.amazon_cookie_header
-            #request2.meta['dont_merge_cookies'] = True
-
-        request3.meta['query'] = query3
-        request3.meta['target_site'] = target_site
+        request4.meta['query'] = query4
+        request4.meta['target_site'] = target_site
 
         if not request:
-            request = request3
+            request = request4
         else:
-            pending_requests.append(request3)
+            pending_requests.append(request4)
 
-        # 4) Search by combinations of words in product's name
+        # 5) Search by combinations of words in product's name
         # create queries
 
         for words in ProcessText.words_combinations(product_name, fast=self.fast):
-            query4 = self.build_search_query(" ".join(words))
-            search_pages4 = self.build_search_pages(query4)
-            #page3 = search_pages4[self.target_site]
-            page4 = search_pages4[target_site]
-            request4 = Request(page4, callback = self.parseResults)
+            query5 = self.build_search_query(" ".join(words))
+            search_pages5 = self.build_search_pages(query5)
+            page5 = search_pages5[target_site]
+            request5 = Request(page5, callback = self.parseResults)
 
-            # set amazon cookies
-            if (self.target_site == 'amazon' and self.cookies_file):
-                request4.cookies = self.amazon_cookies
-                request4.headers['Cookies'] = self.amazon_cookie_header
-                #request3.meta['dont_merge_cookies'] = True
-
-            request4.meta['query'] = query4
-            request4.meta['target_site'] = target_site
+            request5.meta['query'] = query5
+            request5.meta['target_site'] = target_site
 
 
-            pending_requests.append(request4)
+            pending_requests.append(request5)
 
         request.meta['pending_requests'] = pending_requests
         #request.meta['origin_site'] = 
@@ -824,6 +861,7 @@ class SearchSpider(BaseSpider):
         request.meta['origin_name'] = product_name
         request.meta['origin_model'] = product_model
         request.meta['origin_upc'] = [product_upc]
+        request.meta['origin_brand'] = product_brand
         request.meta['origin_manufacturer_code'] = product_manufacturer_code
         if product_price:
             request.meta['origin_price'] = product_price
@@ -866,7 +904,7 @@ class SearchSpider(BaseSpider):
             if m:
                 product_model = m.group(2).strip()
 
-        return (product_name, product_model, None, None, None)
+        return (product_name, product_model, None, None, None, None)
 
 
 
@@ -936,7 +974,13 @@ class SearchSpider(BaseSpider):
         if product_upc_holder:
             upc = product_upc_holder[0].strip()
 
-        return (product_name, product_model, product_price, upc, None)
+        brand_holder = hxs.select("//meta[@itemprop='brand']/@content | //span[@itemprop='brand']/text()").extract()
+        if brand_holder:
+            product_brand = brand_holder[0]
+        else:
+            product_brand = None
+
+        return (product_name, product_model, product_price, upc, None, product_brand)
 
 #TODO: for the sites below, complete with missing logic, for not returning empty elements in manufacturer spider
     def parseURL_newegg(self, hxs):
@@ -960,7 +1004,7 @@ class SearchSpider(BaseSpider):
         else:
             product_model = None
 
-        return (product_name, product_model, None, None, None)
+        return (product_name, product_model, None, None, None, None)
 
     #TODO: add price info? product model? brand?
     def parseURL_boots(self, hxs):
@@ -981,7 +1025,7 @@ class SearchSpider(BaseSpider):
         if not product_name:
             product_name = None
 
-        return (product_name, None, None, None, None)
+        return (product_name, None, None, None, None, None)
 
     #TODO: add price info? product model? brand
     def parseURL_tesco(self, hxs):
@@ -992,7 +1036,7 @@ class SearchSpider(BaseSpider):
         else:
             product_name_holder = None
 
-        return (product_name, None, None, None, None)
+        return (product_name, None, None, None, None, None)
 
     def parseURL_amazon(self, hxs):
         # works for amazon.com and amazon.co.uk
@@ -1025,13 +1069,12 @@ class SearchSpider(BaseSpider):
                 if product_model_extracted:
                     model_number = product_model_extracted
 
-        # # no support for brand yet
-        # brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text() | //a[@id='brand']/text()").extract()
-        # if brand_holder:
-        #     brand = brand_holder[0]
-        # else:
-        #     pass
-        #     #sys.stderr.write("Didn't find product brand: " + response.url + "\n")
+        brand_holder = hxs.select("//div[@id='brandByline_feature_div']//a/text() | //a[@id='brand']/text()").extract()
+        if brand_holder:
+            brand = brand_holder[0]
+        else:
+            brand = None
+            #sys.stderr.write("Didn't find product brand: " + response.url + "\n")
 
         # extract price
         #! extracting list price and not discount price when discounts available?
@@ -1090,7 +1133,7 @@ class SearchSpider(BaseSpider):
         if upc_node:
             upc = upc_node[0]
 
-        return (product_name, None, price, upc, None)
+        return (product_name, None, price, upc, None, None)
 
 
     def parseURL_maplin(self, hxs):
@@ -1127,7 +1170,7 @@ class SearchSpider(BaseSpider):
             self.log("No code for product " + str(product_name), level=log.WARNING)
             product_code = None
 
-        return (product_name, None, price, upc, product_code)
+        return (product_name, None, price, upc, product_code, None)
 
 
     # accumulate results for each (sending the pending requests and the partial results as metadata),
@@ -1158,8 +1201,13 @@ class SearchSpider(BaseSpider):
             origin_manufacturer_code = ''
         else:
             origin_manufacturer_code = str(response.meta['origin_manufacturer_code'])
+        origin_brand = ''
+        if 'origin_brand' in response.meta:
+            if response.meta['origin_brand']:
+                origin_brand = response.meta['origin_brand']
         self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8") +\
-         " UPC: " + origin_upc.encode("utf-8") + " MANUFACTURER_CODE: " + origin_manufacturer_code.encode("utf-8"), level=log.DEBUG)
+         " UPC: " + origin_upc.encode("utf-8") + " MANUFACTURER_CODE: " + origin_manufacturer_code.encode("utf-8") + \
+         " BRAND: " + origin_brand.encode("utf-8"), level=log.DEBUG)
         self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
         self.log( "MATCHES: ", level=log.DEBUG)
         for item in items:
@@ -1192,6 +1240,8 @@ class SearchSpider(BaseSpider):
                 request.meta['origin_brand_extracted'] = response.meta['origin_brand_extracted']
                 if 'origin_upc' in response.meta:
                     request.meta['origin_upc'] = response.meta['origin_upc']
+                if 'origin_brand' in response.meta:
+                    request.meta['origin_brand'] = response.meta['origin_brand']
                 if 'threshold' in response.meta:
                     request.meta['threshold'] = response.meta['threshold']
                 if 'origin_manufacturer_code' in response.meta:
@@ -1238,13 +1288,19 @@ class SearchSpider(BaseSpider):
                     else:
                         origin_upc = None
 
+                    if 'origin_brand' in response.meta:
+                        origin_brand = response.meta['origin_brand']
+                    else:
+                        origin_brand = None
+
                     if 'origin_manufacturer_code' in response.meta:
                         origin_manufacturer_code = response.meta['origin_manufacturer_code']
                     else:
                         origin_manufacturer_code = None
 
                         ## print "NO PRICE"
-                    best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'], product_price, origin_upc, origin_manufacturer_code, items, threshold)
+                    best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'],\
+                     product_price, origin_upc, origin_manufacturer_code, origin_brand, items, threshold)
 
                     # #self.log( "ALL MATCHES: ", level=log.WARNING)                    
                     # for item in items:
@@ -1272,6 +1328,8 @@ class SearchSpider(BaseSpider):
                         item['origin_manufacturer_code'] = response.meta['origin_manufacturer_code']
                     if 'origin_bestsellers_rank' in response.meta:
                         item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
+                    if 'origin_brand' in response.meta:
+                        item['origin_brand'] = response.meta['origin_brand']
 
                     # if 'origin_id' in response.meta:
                     #     item['origin_id'] = response.meta['origin_id']

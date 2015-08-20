@@ -122,6 +122,7 @@ class ProcessText():
         #TODO: only if result of stemming is in the dictionary?
         if stem:
             clean = [ProcessText.stem(token) for token in clean]
+            clean = [word for word in clean if word != '']
 
         # TODO:
         # # add versions of the queries with different spelling
@@ -146,7 +147,7 @@ class ProcessText():
     #            param - threshold for accepting a product name as similar or not (float between 0-1)
     
     @staticmethod
-    def similar(product_name, product_model, product_price, product_upc, product1_mancode, products2, param):
+    def similar(product_name, product_model, product_price, product_upc, product1_mancode, product_brand, products2, param):
         result = None
         products_found = []
         for product2 in products2:
@@ -168,7 +169,6 @@ class ProcessText():
             else:
                 product2_mancode = None
 
-            #TODO: currently only considering brand for target products
             # and only available for Amazon
             # normalize brand name
             if 'product_brand' in product2:
@@ -182,6 +182,8 @@ class ProcessText():
 
             else:
                 product2_brand = None
+
+            product1_brand = product_brand
 
 
             # compute a term to penalize score woth for large price differences (above 100% of small price)
@@ -215,7 +217,7 @@ class ProcessText():
             (model_matched, words1_copy, words2_copy) = ProcessText.models_match(words1, words2, product_model, product2_model)
 
             # check if product brands match
-            (brand_matched, words1_copy, words2_copy) = ProcessText.brands_match(words1_copy, words2_copy, product2_brand)
+            (brand_matched, words1_copy, words2_copy) = ProcessText.brands_match(words1_copy, words2_copy, product1_brand, product2_brand)
 
             # check if product UPCs match
             upc_matched = ProcessText.upcs_match(product_upc, product2_upc)
@@ -275,6 +277,7 @@ class ProcessText():
 
             product2['confidence'] = confidence
             product2['UPC_match'] = 1 if upc_matched else 0
+            product2['model_match'] = 1 if model_matched else 0
 
 
             if score >= threshold:
@@ -346,7 +349,7 @@ class ProcessText():
     # check if brands of 2 products match, using words in their names, and brand for second product extracted from special field if available
     # return a boolean indicating if brands were matched, and the product names, with matched brands replaced with placeholders
     @staticmethod
-    def brands_match(words1, words2, product2_brand):
+    def brands_match(words1, words2, product1_brand, product2_brand):
         # build copies of the original names to use in matching
         words1_copy = list(words1)
         words2_copy = list(words2)
@@ -363,13 +366,42 @@ class ProcessText():
         if len(words2_copy) < 2:
             words2_copy.append("__brand2_dummy__")
 
+        if product1_brand:
+            product1_brand = lower(product1_brand)
+        if product2_brand:
+            product2_brand = lower(product2_brand)
+
+        # deal with case where actual certain (we're sure these are brands) brands match
+        if product1_brand and product2_brand:
+
+            if "".join(product1_brand.split()) == "".join(product2_brand.split()) \
+            or set(product1_brand.split()).intersection(set(product2_brand.split())):
+                # remove/replace words in brand name
+                for word in words1:
+                    if word in product1_brand:
+                        if "__brand1__" not in words1_copy:
+                            words1_copy[words1.index(word)] = "__brand1__"
+                        else:
+                            words1_copy.remove(word)
+                # remove/replace words in brand name
+                for word in words2:
+                    if word in product2_brand:
+                        if "__brand2__" not in words2_copy:
+                            words2_copy[words2.index(word)] = "__brand2__"
+                        else:
+                            words2_copy.remove(word)
+
+
+                return (True, words1_copy, words2_copy)
+
+            else:
+                return (False, words1_copy, words2_copy)
 
         # deal separately with the case where product2_brand (we're sure this is the brand) is found as is in fist product name
         # check if it's in the concatenation of all words in words1 - this way we capture concatenated pairs of words too.
         # then remove from name only words which were part of product2_brand
         #TODO: does this lead to any errors?
         if product2_brand and "".join(product2_brand.split()) in "".join(words1_copy):
-            # remove/replace words in brand name
             for word in words1:
                 if word in product2_brand:
                     if "__brand1__" not in words1_copy:
@@ -385,6 +417,31 @@ class ProcessText():
                         words2_copy.remove(word)
 
             return (True, words1_copy, words2_copy)
+
+
+        # TODO: maybe do this more optimally - it is a little redundant with the fragment above
+        # deal separately with the case where product1_brand (we're sure this is the brand) is found as is in second product name
+        # check if it's in the concatenation of all words in words2 - this way we capture concatenated pairs of words too.
+        # then remove from name only words which were part of product1_brand
+        #TODO: does this lead to any errors?
+        if product1_brand and "".join(product1_brand.split()) in "".join(words2_copy):
+            # remove/replace words in brand name
+            for word in words2:
+                if word in product1_brand:
+                    if "__brand2__" not in words2_copy:
+                        words2_copy[words2.index(word)] = "__brand2__"
+                    else:
+                        words2_copy.remove(word)
+
+            for word in words1:
+                if word in product1_brand:
+                    if "__brand1__" not in words1_copy:
+                        words1_copy[words1.index(word)] = "__brand1__"
+                    else:
+                        words1_copy.remove(word)
+
+            return (True, words1_copy, words2_copy)
+
 
         
         brand_matched = False
