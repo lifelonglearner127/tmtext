@@ -18,10 +18,37 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
 from product_ranking.spiders import cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.kohls_variants import KohlsVariants
+from product_ranking.validation import BaseValidator
 
 is_empty = lambda x, y="": x[0] if x else y
+ip = "http://101.227.252.130:8081"
 
-class KohlsProductsSpider(BaseProductsSpider):
+
+class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = []
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'google_source_site', 'description', 'special_pricing', 
+        'bestseller_rank', 'model'
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = True  # ... duplicated requests?
+    ignore_log_filtered = True  # ... filtered requests?
+    test_requests = {
+        'sdfsdgdf': 0,  # should return 'no products' or just 0 products
+        'benny benassi': 0,
+        'red car': [20, 150],
+        'black stone': [120, 230],
+        'gone': [5, 80],
+        'green rose': [10, 100],
+        'long term black': [5, 50],
+        'low ceiling': [30, 120],
+        'Water Sandals': [5, 80],
+        'long night': [30, 120],
+    }
+
+
+class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
     """ kohls.com product ranking spider.
 
     `upc` field is missing
@@ -40,6 +67,8 @@ class KohlsProductsSpider(BaseProductsSpider):
         'kohls.com',
         'kohls.ugc.bazaarvoice.com',
     ]
+
+    settings = KohlsValidatorSettings
 
     SEARCH_URL = "http://www.kohls.com/search.jsp?" \
                  "N=0&" \
@@ -95,7 +124,7 @@ class KohlsProductsSpider(BaseProductsSpider):
             )
             yield Request(
                 url,
-                meta={'search_term': st, 'remaining': self.quantity}
+                meta={'search_term': st, 'remaining': self.quantity, "proxy": ip}
             )
 
         if self.product_url:
@@ -103,7 +132,7 @@ class KohlsProductsSpider(BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod})
+                          meta={'product': prod, "proxy": ip})
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -124,6 +153,7 @@ class KohlsProductsSpider(BaseProductsSpider):
         new_meta = response.meta.copy()
         new_meta['product'] = prod
         new_meta['product_id'] = product_id[0]
+        new_meta["proxy"] = ip
         return Request(self.url_formatter.format(self.REVIEW_URL,
                                                  product_id=product_id[0]),
                        meta=new_meta, callback=self._parse_reviews)
@@ -344,6 +374,7 @@ class KohlsProductsSpider(BaseProductsSpider):
             cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         new_meta = response.meta.copy()
         new_meta['product'] = product
+        new_meta["proxy"] = ip
         return Request(self.RELATED_URL.format(product_id=product_id),
                        meta=new_meta, callback=self._parse_related_products,
                        dont_filter=True)
