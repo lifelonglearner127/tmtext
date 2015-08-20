@@ -18,7 +18,6 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
 
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.marketplace import Amazon_marketplace
 from product_ranking.amazon_tests import AmazonTests
 
 from product_ranking.amazon_base_class import AmazonBaseClass
@@ -26,31 +25,6 @@ from product_ranking.amazon_base_class import AmazonBaseClass
 # scrapy crawl amazoncouk_products -a searchterms_str="iPhone"
 
 is_empty = lambda x, y=None: x[0] if x else y
-
-try:
-    from captcha_solver import CaptchaBreakerWrapper
-except ImportError as e:
-    import sys
-    print(
-        "### Failed to import CaptchaBreaker.",
-        "Will continue without solving captchas:",
-        e,
-        file=sys.stderr,
-    )
-    class FakeCaptchaBreaker(object):
-        @staticmethod
-        def solve_captcha(url):
-            msg("No CaptchaBreaker to solve: %s" % url, level=WARNING)
-            return None
-    CaptchaBreakerWrapper = FakeCaptchaBreaker
-
-
-    class FakeCaptchaBreaker(object):
-        @staticmethod
-        def solve_captcha(url):
-            msg("No CaptchaBreaker to solve: %s" % url, level=WARNING)
-            return None
-    CaptchaBreakerWrapper = FakeCaptchaBreaker
 
 
 class AmazoncoukValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
@@ -80,18 +54,6 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
     name = "amazoncouk_products"
     allowed_domains = ["www.amazon.co.uk"]
     start_urls = []
-
-    # String from html body that means there's no results
-    total_match_not_found = 'did not match any products.'
-    # Regexp for total matches to parse a number from html body
-    total_matches_re = r'of\s?([\d,.\s?]+)'
-
-    # Locale
-    locale = 'en-US'
-
-    # Price currency
-    price_currency = 'GBP'
-    price_currency_view = '£'
     
     SEARCH_URL = ("http://www.amazon.co.uk/s/ref=nb_sb_noss?"
                   "url=search-alias=aps&field-keywords={search_term}&rh=i:aps,"
@@ -100,8 +62,6 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
     REVIEW_DATE_URL = 'http://www.amazon.co.uk/product-reviews/{product_id}' \
                       '/ref=cm_cr_dp_see_all_btm?ie=UTF8&' \
                       'showViewpoints=1&sortBy=bySubmissionDateDescending'
-
-    _cbw = CaptchaBreakerWrapper()
 
     settings = AmazoncoukValidatorSettings
 
@@ -114,19 +74,15 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
         # loc = locations.get(location, '')
         super(AmazonCoUkProductsSpider, self).__init__(*args, **kwargs)
 
-        self.captcha_retries = int(captcha_retries)
+        # Price currency
+        self.price_currency = 'GBP'
+        self.price_currency_view = '£'
 
-        self.mtp_class = Amazon_marketplace(self)
+        self.captcha_retries = int(captcha_retries)
 
     def parse_product(self, response):
 
-        if self._has_captcha(response):
-            return self._handle_captcha(
-                response,
-                self.parse_product
-            )
-
-        super(AmazonCoUkProductsSpider, self).parse_product(response)
+        return super(AmazonCoUkProductsSpider, self).parse_product(response)
         prod = response.meta['product']
 
         title = response.xpath(
@@ -152,28 +108,13 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
 
         prod['url'] = response.url
 
-        mkt_place_link = urlparse.urljoin(
-                response.url,
-                is_empty(response.xpath(
-                    "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
-                    "//div[contains(@class, 'a-box-inner')]" \
-                    "//div[@id='secondaryUsedAndNew']" \
-                    "//a[contains(@href, '/gp/offer-listing/')]/@href"
-                ).extract()))
-
         new_meta = response.meta.copy()
         new_meta['product'] = prod
         prod_id = is_empty(re.findall('/dp/([a-zA-Z0-9]+)', response.url))
         new_meta['product_id'] = prod_id
 
-        if mkt_place_link and "condition=" in mkt_place_link:
-            mkt_place_link = re.sub("condition=([^\&]*)", "", mkt_place_link)
-            new_meta['mkt_place_link'] = mkt_place_link
-
         revs = self._buyer_reviews_from_html(response)
         if isinstance(revs, Request):
-            if mkt_place_link:
-                new_meta["mkt_place_link"] = mkt_place_link
             return revs.replace(meta=new_meta)
         else:
             prod['buyer_reviews'] = revs
@@ -371,27 +312,7 @@ class AmazonCoUkProductsSpider(AmazonTests, AmazonBaseClass):
             date = d.strftime('%d/%m/%Y')
             product['last_buyer_review_date'] = date
         """
-        new_meta = response.meta.copy()
-        new_meta['product'] = product
-        if 'mkt_place_link' in response.meta.keys():
-            return Request(
-                url=response.meta['mkt_place_link'],
-                callback=self.parse_marketplace,
-                meta=new_meta,
-                dont_filter=True,
-            )
 
-        return product
-
-    def parse_marketplace(self, response):
-        response.meta["called_class"] = self
-        response.meta["next_req"] = None
-        return self.mtp_class.parse_marketplace(response)
-
-    def exit_point(self, product, next_req):
-        if next_req:
-            next_req.replace(meta={"product": product})
-            return next_req
         return product
 
     def parse_502(self, response):

@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-#
-from __future__ import division, absolute_import, unicode_literals
-from __future__ import print_function
 
-import json
-import string
 import re
-from urllib import unquote
-import urlparse
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
@@ -18,30 +12,10 @@ from product_ranking.spiders import BaseProductsSpider, \
 from product_ranking.amazon_tests import AmazonTests
 
 from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.marketplace import Amazon_marketplace
 
 from product_ranking.amazon_base_class import AmazonBaseClass
 
 is_empty = lambda x, y=None: x[0] if x else y
-
-
-try:
-    from captcha_solver import CaptchaBreakerWrapper
-except ImportError as e:
-    import sys
-    print(
-        "### Failed to import CaptchaBreaker.",
-        "Will continue without solving captchas:",
-        e,
-        file=sys.stderr,
-    )
-
-    class FakeCaptchaBreaker(object):
-        @staticmethod
-        def solve_captcha(url):
-            msg("No CaptchaBreaker to solve: %s" % url, level=WARNING)
-            return None
-    CaptchaBreakerWrapper = FakeCaptchaBreaker
 
 
 class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
@@ -75,18 +49,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     user_agent = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:35.0) Gecko'
                   '/20100101 Firefox/35.0')
 
-    # String from html body that means there's no results
-    total_match_not_found = 'did not match any products.'
-    # Regexp for total matches to parse a number from html body
-    total_matches_re = r'of\s?([\d,.\s?]+)'
-
-    # Locale
-    locale = 'en-US'
-
-    # Price currency
-    price_currency = 'USD'
-    price_currency_view = '$'
-
     SEARCH_URL = ('http://www.amazon.com/s/ref=nb_sb_noss_1?url=search-alias'
                   '%3Daps&field-keywords={search_term}')
 
@@ -95,48 +57,18 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     buyer_reviews_stars = ['one_star', 'two_star', 'three_star', 'four_star',
                            'five_star']
 
-    def __init__(self, captcha_retries='10', *args, **kwargs):
-        super(AmazonProductsSpider, self).__init__(*args, **kwargs)
-
-        self.captcha_retries = int(captcha_retries)
-
-        self.mtp_class = Amazon_marketplace(self)
-
-        self._cbw = CaptchaBreakerWrapper()
-
     def parse_product(self, response):
 
         if not self._has_captcha(response):
-            super(AmazonProductsSpider, self).parse_product(response)
+            return super(AmazonProductsSpider, self).parse_product(response)
             prod = response.meta['product']
-
-            self._populate_from_html(response, prod)
 
             prod['buyer_reviews'] = self._build_buyer_reviews(response)
 
-            mkt_place_link = urlparse.urljoin(
-                response.url,
-                is_empty(response.xpath(
-                    "//div[contains(@class, 'a-box-inner')]" \
-                    "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
-                    "//div[@id='secondaryUsedAndNew']" \
-                    "//a[contains(@href, '/gp/offer-listing/')]/@href"
-                ).extract()))
-
-            new_meta = response.meta.copy()
-            new_meta['product'] = prod
             if isinstance(prod["buyer_reviews"], Request):
-                if mkt_place_link:
-                    new_meta["mkt_place_link"] = mkt_place_link
+                new_meta = response.meta.copy()
+                new_meta['product'] = prod
                 return prod["buyer_reviews"].replace(meta=new_meta, dont_filter=True)
-
-            if mkt_place_link:
-                return Request(
-                    url=mkt_place_link, 
-                    callback=self.parse_marketplace,
-                    meta=new_meta,
-                    dont_filter=True
-                )
 
             result = prod
 
@@ -151,13 +83,8 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
 
         return result
 
-    def _populate_from_html(self, response, product):
-
-        self.mtp_class.get_price_from_main_response(response, product)
-
     def _get_rating_by_star_by_individual_request(self, response):
         product = response.meta['product']
-        mkt_place_link = response.meta.get("mkt_place_link")
         current_star = response.meta['_current_star']
         current_star_int = [
             i+1 for i, _star in enumerate(self.buyer_reviews_stars)
@@ -167,8 +94,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         if br:
             rating_by_star = br.get('rating_by_star')
         else:
-            if mkt_place_link:
-                return self.mkt_request(mkt_place_link, {"product": product})
             return product
         if not rating_by_star:
             rating_by_star = {}
@@ -191,8 +116,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 = float(product['buyer_reviews']['average_rating'])
             # ok we collected all marks for all stars - can return the product
             product['buyer_reviews'] = BuyerReviews(**product['buyer_reviews'])
-            if mkt_place_link:
-                return self.mkt_request(mkt_place_link, {"product": product})
             return product
 
     def _get_asin_from_url(self, url):
@@ -254,16 +177,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
             #return
 
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
-
-        meta = {"product": product}
-        mkt_place_link = response.meta.get("mkt_place_link", None)
-        if mkt_place_link:
-            return Request(
-                url=mkt_place_link, 
-                callback=self.parse_marketplace,
-                meta=meta,
-                dont_filter=True
-            )
 
         return product
 
@@ -355,21 +268,7 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         response.meta["next_req"] = None
         return self.mtp_class.parse_marketplace(response)
 
-    def exit_point(self, product, next_req):
-        if next_req:
-            next_req.replace(meta={"product": product})
-            return next_req
-        return product
-
     def is_nothing_found(self, response):
         txt = response.xpath('//h1[@id="noResultsTitle"]/text()').extract()
         txt = ''.join(txt)
         return 'did not match any products' in txt
-
-    def mkt_request(self, link, meta):
-        return Request(
-            url=link, 
-            callback=self.parse_marketplace,
-            meta=meta,
-            dont_filter=True
-        )

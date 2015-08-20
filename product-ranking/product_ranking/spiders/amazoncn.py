@@ -24,25 +24,8 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 
 from product_ranking.amazon_base_class import AmazonBaseClass
 
-try:
-    from captcha_solver import CaptchaBreakerWrapper
-except ImportError as e:
-    import sys
-    print(
-        "### Failed to import CaptchaBreaker.",
-        "Will continue without solving captchas:",
-        e,
-        file=sys.stderr,
-    )
-
-    class FakeCaptchaBreaker(object):
-        @staticmethod
-        def solve_captcha(url):
-            msg("No CaptchaBreaker to solve: %s" % url, level=WARNING)
-            return None
-    CaptchaBreakerWrapper = FakeCaptchaBreaker
-
 is_empty = lambda x, y=None: x[0] if x else y
+
 
 class AmazoncnValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
     optional_fields = ['model', 'brand', 'price', 'bestseller_rank',
@@ -73,17 +56,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
 
     settings = AmazoncnValidatorSettings()
 
-    # Variables for total matches method (_scrape_total_matches)
-    total_match_not_found = '没有找到任何与'
-    total_matches_re = r'共\s?([\d,.\s?]+)'
-
-    # Locale
-    locale = 'en-US'
-
-    # Price currency
-    price_currency = 'CNY'
-    price_currency_view = u'\uffe5'
-
     SEARCH_URL = "http://www.amazon.cn/s/?field-keywords={search_term}"
 
     REVIEW_DATE_URL = 'http://www.amazon.cn/product-reviews/{product_id}/' \
@@ -100,57 +72,36 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         'rating': 'review-rank'
     }
 
-    def __init__(self, sort_category=None,
-                 order='default', captcha_retries='10', *args, **kwargs):
-        if sort_category is None and order != 'default':
-            self.log('Category must be set for sort ordering')
-            sort_mode = ''
-        else:
-            sort_mode = self.SORT_MODES.get(order)
-            if sort_mode is None:
-                self.log('No such sort mode defined: %s' % sort_mode)
-        url_formatter = FormatterWithDefaults(
-            sort_mode=sort_mode or self.SORT_MODES['default'],
-            sort_category=sort_category or '')
+    def __init__(self, *args, **kwargs):
+        super(AmazonProductsSpider, self).__init__(*args, **kwargs)
 
-        super(AmazonProductsSpider, self).__init__(url_formatter, *args,
-                                                   **kwargs)
+        # Variables for total matches method (_scrape_total_matches)
+        self.total_match_not_found = '没有找到任何与'
+        self.total_matches_re = r'共\s?([\d,.\s?]+)'
 
-        self.captcha_retries = int(captcha_retries)
-
-        self._cbw = CaptchaBreakerWrapper()
+        # Price currency
+        self.price_currency = 'CNY'
+        self.price_currency_view = u'\uffe5'
 
     def parse_product(self, response):
         if self._has_captcha(response):
             result = self._handle_captcha(response, self.parse_product)
 
         if not self._has_captcha(response):
-            super(AmazonProductsSpider, self).parse_product(response)
+            return super(AmazonProductsSpider, self).parse_product(response)
             prod = response.meta['product']
 
             self._populate_from_html(response, prod)
 
-            mkt_place_link = urlparse.urljoin(
-                response.url,
-                is_empty(response.xpath(
-                    "//div[contains(@class, 'a-box-inner')]" \
-                    "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
-                    "//div[@id='secondaryUsedAndNew']" \
-                    "//a[contains(@href, '/gp/offer-listing/')]/@href"
-                ).extract()))
-
             if isinstance(prod['buyer_reviews'], Request):
                 meta = prod['buyer_reviews'].meta
-                meta["mkt_place_link"] = mkt_place_link
-                result =  prod['buyer_reviews'].replace(meta=meta)
+                result = prod['buyer_reviews'].replace(meta=meta)
             else:
                 result = prod
 
             prod_id = is_empty(re.findall('/dp/([a-zA-Z0-9]+)', response.url))
             meta = response.meta.copy()
             meta = {"product": prod, 'product_id': prod_id}
-            if mkt_place_link:
-                meta['mkt_place_link'] = mkt_place_link
             return Request(
                 url=self.REVIEW_DATE_URL.format(product_id=prod_id),
                 callback=self.parse_last_buyer_review_date,
@@ -183,13 +134,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
 
         new_meta = response.meta.copy()
         new_meta['product'] = product
-        if 'mkt_place_link' in response.meta.keys():
-                return Request(
-                    url=response.meta['mkt_place_link'],
-                    callback=self.parse_marketplace,
-                    meta=new_meta,
-                    dont_filter=True,
-                )
         return product
 
     def _populate_from_html(self, response, product):
@@ -361,45 +305,3 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
             average = float(total)/ float(buyer_reviews['num_of_reviews'])
             buyer_reviews['average_rating'] = round(average, 1)
         return buyer_reviews
-
-    def parse_marketplace(self, response):
-        if self._has_captcha(response):
-            result = self._handle_captcha(response, self.parse_marketplace)
-
-        product = response.meta["product"]
-
-        marketplaces = response.meta.get("marketplaces", [])
-
-        for seller in response.xpath(
-            '//div[contains(@class, "a-section")]/' \
-            'div[contains(@class, "a-row a-spacing-mini olpOffer")]'):
-
-            price = is_empty(seller.xpath(
-                'div[contains(@class, "a-column")]' \
-                '/span[contains(@class, "price")]/text()'
-            ).re(FLOATING_POINT_RGEX), 0)
-
-            name = is_empty(seller.xpath(
-                'div/p[contains(@class, "Name")]/span/a/text()').extract())
-
-            marketplaces.append({
-                "price": Price(price=price, priceCurrency="CNY"),
-                "name": name
-            })
-
-        next_link = is_empty(response.xpath(
-            "//ul[contains(@class, 'a-pagination')]" \
-            "/li[contains(@class, 'a-last')]/a/@href"
-        ).extract())
-
-        if next_link:
-            meta = {"product": product, "marketplaces": marketplaces}
-            return Request(
-                url=urlparse.urljoin(response.url, next_link), 
-                callback=self.parse_marketplace,
-                meta=meta
-            )
-
-        product["marketplace"] = marketplaces
-
-        return product

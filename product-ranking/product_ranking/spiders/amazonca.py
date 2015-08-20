@@ -26,24 +26,6 @@ from product_ranking.amazon_base_class import AmazonBaseClass
 
 is_empty = lambda x, y=None: x[0] if x else y
 
-try:
-    from captcha_solver import CaptchaBreakerWrapper
-except ImportError as e:
-    import sys
-    print(
-        "### Failed to import CaptchaBreaker.",
-        "Will continue without solving captchas:",
-        e,
-        file=sys.stderr,
-    )
-
-    class FakeCaptchaBreaker(object):
-        @staticmethod
-        def solve_captcha(url):
-            msg("No CaptchaBreaker to solve: %s" % url, level=WARNING)
-            return None
-    CaptchaBreakerWrapper = FakeCaptchaBreaker
-
 
 class AmazoncaValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
     optional_fields = ['model', 'brand', 'description', 'price', 'bestseller_rank']
@@ -72,18 +54,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     name = 'amazonca_products'
     allowed_domains = ["amazon.ca"]
 
-    # String from html body that means there's no results
-    total_match_not_found = 'did not match any products.'
-    # Regexp for total matches to parse a number from html body
-    total_matches_re = r'of\s?([\d,.\s?]+)'
-
-    # Locale
-    locale = 'en-US'
-
-    # Price currency
-    price_currency = 'CAD'
-    price_currency_view = 'CDN$'
-
     SEARCH_URL = "http://www.amazon.ca/s/?field-keywords={search_term}"
 
     REVIEW_DATE_URL = 'http://www.amazon.ca/product-reviews/{product_id}/' \
@@ -92,36 +62,24 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
 
     settings = AmazoncaValidatorSettings
 
-    def __init__(self, captcha_retries='10', *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
 
-        self.captcha_retries = int(captcha_retries)
-
-        self._cbw = CaptchaBreakerWrapper()
-
-        self.mtp_class = Amazon_marketplace(self)
+        # Price currency
+        self.price_currency = 'CAD'
+        self.price_currency_view = 'CDN$'
 
     def parse_product(self, response):
 
         if not self._has_captcha(response):
-            super(AmazonProductsSpider, self).parse_product(response)
+            return super(AmazonProductsSpider, self).parse_product(response)
             prod = response.meta['product']
 
             self._populate_from_html(response, prod)
 
-            mkt_place_link = urlparse.urljoin(
-                response.url,
-                is_empty(response.xpath(
-                    "//div[contains(@class, 'a-box-inner')]" \
-                    "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
-                    "//div[@id='secondaryUsedAndNew']" \
-                    "//a[contains(@href, '/gp/offer-listing/')]/@href"
-                ).extract()))
             prod_id = is_empty(re.findall('/dp/([a-zA-Z0-9]+)', response.url))
             meta = response.meta.copy()
             meta = {"product": prod}
-            if mkt_place_link:
-                meta['mkt_place_link'] = mkt_place_link
             return Request(
                 url=self.REVIEW_DATE_URL.format(product_id=prod_id),
                 callback=self.parse_last_buyer_review_date,
@@ -154,20 +112,9 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
             date = d.strftime('%d/%m/%Y')
             product['last_buyer_review_date'] = date
 
-        new_meta = response.meta.copy()
-        new_meta['product'] = product
-        if 'mkt_place_link' in response.meta.keys():
-                return Request(
-                    url=response.meta['mkt_place_link'],
-                    callback=self.parse_marketplace,
-                    meta=new_meta,
-                    dont_filter=True,
-                )
         return product
 
     def _populate_from_html(self, response, product):
-        self.mtp_class.get_price_from_main_response(response, product)
-
         self._buyer_reviews_from_html(response, product)
 
     def _buyer_reviews_from_html(self, response, product):
@@ -202,26 +149,3 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                                      rating_by_star=ratings)
         cond_set_value(product, 'buyer_reviews',
                        buyer_reviews if total else ZERO_REVIEWS_VALUE)
-
-    def parse_marketplace(self, response):
-        response.meta["called_class"] = self
-        response.meta["next_req"] = None
-        return self.mtp_class.parse_marketplace(response)
-
-    def exit_point(self, product, next_req):
-        if next_req:
-            next_req.replace(meta={"product": product})
-            return next_req
-        return product
-
-    def _validate_title(self, val):
-        if not bool(val.strip()):  # empty
-            return False
-        if len(val.strip()) > 2500:  # too long
-            return False
-        if val.strip().count(u' ') > 600:  # too many spaces
-            return False
-        if '<' in val or '>' in val:  # no tags
-            if not re.search("(\<\s?\d)|(\>\s?\d)", val):
-                return False
-        return True

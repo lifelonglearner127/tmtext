@@ -19,27 +19,8 @@ from product_ranking.spiders import BaseProductsSpider, cond_set,\
 from product_ranking.validation import BaseValidator
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.marketplace import Amazon_marketplace
 
 from product_ranking.amazon_base_class import AmazonBaseClass
-
-try:
-    from captcha_solver import CaptchaBreakerWrapper
-except ImportError as e:
-    import sys
-    print(
-        "### Failed to import CaptchaBreaker.",
-        "Will continue without solving captchas:",
-        e,
-        file=sys.stderr,
-    )
-
-    class FakeCaptchaBreaker(object):
-        @staticmethod
-        def solve_captcha(url):
-            msg("No CaptchaBreaker to solve: %s" % url, level=WARNING)
-            return None
-    CaptchaBreakerWrapper = FakeCaptchaBreaker
 
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -73,17 +54,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
     name = 'amazonde_products'
     allowed_domains = ["amazon.de"]
 
-    # Variables for total matches method (_scrape_total_matches)
-    total_match_not_found = 'ergab leider keine Produkttreffer.'
-    total_matches_re = r'von\s?([\d,.\s?]+)'
-
-    # Locale
-    locale = 'en-US'
-
-    # Price currency
-    price_currency = 'EUR'
-    price_currency_view = 'EUR'
-
     SEARCH_URL = "http://www.amazon.de/s/?field-keywords={search_term}"
 
     REVIEW_DATE_URL = "http://www.amazon.de/product-reviews/" \
@@ -99,11 +69,15 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
     def __init__(self, captcha_retries='20', *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
 
+        # Variables for total matches method (_scrape_total_matches)
+        self.total_match_not_found = 'ergab leider keine Produkttreffer.'
+        self.total_matches_re = r'von\s?([\d,.\s?]+)'
+
+        # Price currency
+        self.price_currency = 'EUR'
+        self.price_currency_view = 'EUR'
+
         self.captcha_retries = int(captcha_retries)
-
-        self.mtp_class = Amazon_marketplace(self)
-
-        self._cbw = CaptchaBreakerWrapper()
 
     def parse_product(self, response):
         prod = response.meta['product']
@@ -121,38 +95,38 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
             prod_id = list(prod_id)[0]
             response.meta['product_id'] = prod_id
 
-            super(AmazonProductsSpider, self).parse_product(response)
+            return super(AmazonProductsSpider, self).parse_product(response)
             prod = response.meta['product']
 
             self._populate_from_html(response, prod)
 
-            # Get url for marketplace
-            url = is_empty(
-                response.xpath("//div[contains(@class, 'a-box-inner')]/span"
-                               "/a/@href |"
-                               "//div[contains(@class, 'a-box-inner')]"
-                               "//a[contains(@href, '/gp/offer-listing/')]/@href |"
-                               "//div[@id='secondaryUsedAndNew']"
-                               "//a[contains(@href, '/gp/offer-listing/')]/@href |"
-                               "//*[@id='universal-marketplace-glance-features']/.//a/@href"
-                               ).extract())
-            if url:
-                mkt_place_link = urlparse.urljoin(
-                    response.url,
-                    url
-                )
-            else:
-                asin = is_empty(response.xpath("//form[@id='addToCart']"
-                    "/input[@name='ASIN']/@value").extract())
-                if not asin:
-                    asin = is_empty(re.findall(
-                        "\"ASIN\"\:\"([^\"]*)", response.body_as_unicode()))
-                if asin:
-                    url = "/gp/offer-listing/%s/ref=dp_olp_all_mbc"\
-                        "?ie=UTF8&amp;condition=new" % (asin,)
-                    mkt_place_link = urlparse.urljoin(response.url, url)
-                else:
-                    mkt_place_link = None
+            # # Get url for marketplace
+            # url = is_empty(
+            #     response.xpath("//div[contains(@class, 'a-box-inner')]/span"
+            #                    "/a/@href |"
+            #                    "//div[contains(@class, 'a-box-inner')]"
+            #                    "//a[contains(@href, '/gp/offer-listing/')]/@href |"
+            #                    "//div[@id='secondaryUsedAndNew']"
+            #                    "//a[contains(@href, '/gp/offer-listing/')]/@href |"
+            #                    "//*[@id='universal-marketplace-glance-features']/.//a/@href"
+            #                    ).extract())
+            # if url:
+            #     mkt_place_link = urlparse.urljoin(
+            #         response.url,
+            #         url
+            #     )
+            # else:
+            #     asin = is_empty(response.xpath("//form[@id='addToCart']"
+            #         "/input[@name='ASIN']/@value").extract())
+            #     if not asin:
+            #         asin = is_empty(re.findall(
+            #             "\"ASIN\"\:\"([^\"]*)", response.body_as_unicode()))
+            #     if asin:
+            #         url = "/gp/offer-listing/%s/ref=dp_olp_all_mbc"\
+            #             "?ie=UTF8&amp;condition=new" % (asin,)
+            #         mkt_place_link = urlparse.urljoin(response.url, url)
+            #     else:
+            #         mkt_place_link = None
 
             meta = response.meta.copy()
             meta['product'] = prod
@@ -160,8 +134,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
             if not prod_id:
                 prod_id = is_empty(re.findall('/d/([a-zA-Z0-9]+)', response.url))
             meta['product_id'] = prod_id
-            if mkt_place_link:
-                meta["mkt_place_link"] = mkt_place_link
 
             _avail = response.css('#availability ::text').extract()
             _avail = ''.join(_avail)
@@ -221,13 +193,7 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
 
         new_meta = response.meta.copy()
         new_meta['product'] = product
-        if 'mkt_place_link' in response.meta.keys():
-                return Request(
-                    url=response.meta['mkt_place_link'],
-                    callback=self.parse_marketplace,
-                    meta=new_meta,
-                    dont_filter=True,
-                )
+
         return product
 
     def _populate_from_html(self, response, product):
@@ -503,12 +469,6 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
             buyer_reviews['average_rating'] = round(average, 1)
         return buyer_reviews
 
-    def parse_marketplace(self, response):
-        response.meta["called_class"] = self
-        response.meta["next_req"] = None
-        return self.mtp_class.parse_marketplace(
-            response, replace_comma_with_dot=True)
-
     def _validate_url(self, val):
         if not bool(val.strip()):  # empty
             return False
@@ -522,20 +482,3 @@ class AmazonProductsSpider(BaseValidator, AmazonBaseClass):
         if not val.strip().lower().startswith('http'):
             return False
         return True
-
-    def _validate_title(self, val):
-        if not bool(val.strip()):  # empty
-            return False
-        if len(val.strip()) > 1500:  # too long
-            return False
-        if val.strip().count(u' ') > 300:  # too many spaces
-            return False
-        if '<' in val or '>' in val:  # no tags
-            return False
-        return True
-
-    def exit_point(self, product, next_req):
-        if next_req:
-            next_req.replace(meta={"product": product})
-            return next_req
-        return product

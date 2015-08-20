@@ -1,4 +1,6 @@
 # ~~coding=utf-8~~
+from __future__ import division, absolute_import, unicode_literals
+from __future__ import print_function
 
 import re
 import urlparse
@@ -13,29 +15,58 @@ from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value, FLOATING_POINT_RGEX
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.amazon_tests import AmazonTests
+from product_ranking.marketplace import Amazon_marketplace
 from spiders_shared_code.amazon_variants import AmazonVariants
 from product_ranking.amazon_bestsellers import amazon_parse_department
-from product_ranking.guess_brand import guess_brand_from_first_words
 
 
 is_empty = lambda x, y=None: x[0] if x else y
 
+try:
+    from captcha_solver import CaptchaBreakerWrapper
+except ImportError as e:
+    import sys
+    print(
+        "### Failed to import CaptchaBreaker.",
+        "Will continue without solving captchas:",
+        e,
+        file=sys.stderr
+    )
+
+    class FakeCaptchaBreaker(object):
+        @staticmethod
+        def solve_captcha(url):
+            msg("No CaptchaBreaker to solve: %s" % url, level=WARNING)
+            return None
+    CaptchaBreakerWrapper = FakeCaptchaBreaker
+
 
 class AmazonBaseClass(BaseProductsSpider):
 
-    # Defaults --- for English Amazon's
-    # String from html body that means there's no results ( "no results.", for example)
-    total_match_not_found = 'did not match any products.'
-    # Regexp for total matches to parse a number from html body
-    total_matches_re = r'of\s?([\d,.\s?]+)'
+    def __init__(self, captcha_retries='10', *args, **kwargs):
+        super(AmazonBaseClass, self).__init__(*args, **kwargs)
 
-    # Default locale
-    locale = 'en-US'
+        self.mtp_class = Amazon_marketplace(self)
 
-    # Default price currency
-    price_currency = 'USD'
-    price_currency_view = '$'
+        # Defaults --- for English Amazon's
+        # String from html body that means there's no results ( "no results.", for example)
+        self.total_match_not_found = 'did not match any products.'
+        # Regexp for total matches to parse a number from html body
+        self.total_matches_re = r'of\s?([\d,.\s?]+)'
+
+        # Default locale
+        self.locale = 'en-US'
+
+        # Default price currency
+        self.price_currency = 'USD'
+        self.price_currency_view = '$'
+
+        self.captcha_retries = int(captcha_retries)
+
+        self._cbw = CaptchaBreakerWrapper()
 
     def _scrape_total_matches(self, response):
         """
@@ -171,63 +202,74 @@ class AmazonBaseClass(BaseProductsSpider):
                 response,
                 self.parse_product
             )
+        elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
+            product = response.meta['product']
+            self.log("Giving up on trying to solve the captcha challenge after"
+                     " %s tries for: %s" % (self.captcha_retries, product['url']),
+                     level=WARNING)
+            return None
+        else:
+            # Set locale
+            cond_set_value(product, 'locale', self.locale)
 
-        # Set locale
-        cond_set_value(product, 'locale', self.locale)
+            # Parse title
+            title = self._parse_title(response)
+            cond_set_value(product, 'title', title)
 
-        # Parse title
-        title = self._parse_title(response)
-        cond_set_value(product, 'title', title)
+            # Parse image url
+            image_url = self._parse_image_url(response)
+            cond_set_value(product, 'image_url', image_url, conv=string.strip)
 
-        # Parse image url
-        image_url = self._parse_image_url(response)
-        cond_set_value(product, 'image_url', image_url, conv=string.strip)
+            # Parse brand
+            brand = self._parse_brand(response)
+            cond_set_value(product, 'brand', brand)
 
-        # Parse brand
-        brand = self._parse_brand(response)
-        cond_set_value(product, 'brand', brand)
+            # Parse price Subscribe & Save
+            price_subscribe_save = self._parse_price_subscribe_save(response)
+            cond_set_value(product, 'price_subscribe_save', price_subscribe_save, conv=string.strip)
 
-        # Parse price Subscribe & Save
-        price_subscribe_save = self._parse_price_subscribe_save(response)
-        cond_set_value(product, 'price_subscribe_save', price_subscribe_save, conv=string.strip)
+            # Parse model
+            model = self._parse_model(response)
+            cond_set_value(product, 'model', model, conv=string.strip)
 
-        # Parse model
-        model = self._parse_model(response)
-        cond_set_value(product, 'model', model, conv=string.strip)
+            # Parse price
+            price = self._parse_price(response)
+            cond_set_value(product, 'price', price)
 
-        # Parse price
-        price = self._parse_price(response)
-        cond_set_value(product, 'price', price)
+            # Parse description
+            description = self._parse_description(response)
+            cond_set_value(product, 'description', description)
 
-        # Parse description
-        description = self._parse_description(response)
-        cond_set_value(product, 'description', description)
+            # Parse upc
+            upc = self._parse_upc(response)
+            cond_set_value(product, 'upc', upc)
 
-        # Parse upc
-        upc = self._parse_upc(response)
-        cond_set_value(product, 'upc', upc)
+            # Parse variants
+            variants = self._parse_variants(response)
+            product['variants'] = variants
 
-        # Parse variants
-        variants = self._parse_variants(response)
-        product['variants'] = variants
+            # Parse marketplaces
+            marketplace_req = self._parse_marketplace(response)
+            if marketplace_req:
+                reqs.append(marketplace_req)
 
-        # Parse category
-        category = self._parse_category(response)
-        cond_set_value(product, 'category', category)
+            # Parse category
+            category = self._parse_category(response)
+            cond_set_value(product, 'category', category)
 
-        if category:
-            # Parse departments and bestseller rank
-            department = amazon_parse_department(category)
-            if department is not None:
-                department, bestseller_rank = department.items()[0]
+            if category:
+                # Parse departments and bestseller rank
+                department = amazon_parse_department(category)
+                if department is not None:
+                    department, bestseller_rank = department.items()[0]
 
-                cond_set_value(product, 'department', department)
-                cond_set_value(product, 'bestseller_rank', bestseller_rank)
+                    cond_set_value(product, 'department', department)
+                    cond_set_value(product, 'bestseller_rank', bestseller_rank)
 
-        if reqs:
-            return self.send_next_request(reqs, response)
+            if reqs:
+                return self.send_next_request(reqs, response)
 
-        return product
+            return product
 
     def _parse_title(self, response, add_xpath=None):
         """
@@ -386,6 +428,47 @@ class AmazonBaseClass(BaseProductsSpider):
                 )
 
         return price_ss
+
+    def _parse_marketplace(self, response):
+        """
+        Parses product marketplaces
+        :param response:
+        :return: Request to parse marketplace if url exists
+        """
+        meta = response.meta.copy()
+        product = meta['product']
+
+        self.mtp_class.get_price_from_main_response(response, product)
+
+        mkt_place_link = urlparse.urljoin(
+            response.url,
+            is_empty(response.xpath(
+                "//div[contains(@class, 'a-box-inner')]/./"
+                "/a[contains(@href, '/gp/offer-listing/')]/@href |"
+                "//div[@id='secondaryUsedAndNew']/./"
+                "/a[contains(@href, '/gp/offer-listing/')]/@href |"
+                "//div[contains(@class, 'a-box-inner')]/span/a/@href |"
+                "//*[@id='universal-marketplace-glance-features']/.//a/@href"
+            ).extract())
+        )
+
+        if mkt_place_link:
+            new_meta = response.meta.copy()
+            new_meta['product'] = product
+            new_meta["mkt_place_link"] = mkt_place_link
+            return Request(
+                url=mkt_place_link,
+                callback=self.parse_mkt,
+                meta=new_meta,
+                dont_filter=True
+            )
+
+        return None
+
+    def parse_mkt(self, response):
+        response.meta["called_class"] = self
+        response.meta["next_req"] = None
+        return self.mtp_class.parse_marketplace(response)
 
     def _parse_model(self, response, add_xpath=None):
         """
@@ -630,3 +713,9 @@ class AmazonBaseClass(BaseProductsSpider):
                 meta=meta)
 
         return result
+
+    def exit_point(self, product, next_req):
+        if next_req:
+            next_req.replace(meta={"product": product})
+            return next_req
+        return product
