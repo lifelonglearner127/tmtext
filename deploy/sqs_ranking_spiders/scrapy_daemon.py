@@ -138,7 +138,9 @@ def switch_branch_if_required(metadata):
         cmd = 'git checkout -f {branch} && git pull origin {branch} && '\
               'git checkout master -- task_id_generator.py && '\
               'git checkout master -- remote_instance_starter.py && '\
-              'git checkout master -- upload_logs_to_s3.py'
+              'git checkout master -- upload_logs_to_s3.py && '\
+              'git checkout master -- ' \
+                  '../../product-ranking/product_ranking/extensions.py'
         cmd = cmd.format(branch=branch_name)
         logger.info("Run '%s'", cmd)
         os.system(cmd)
@@ -1183,14 +1185,14 @@ def main():
                          task.task_data.get('task_id', 0))
             logger.error(task.report())
     if not tasks_taken:
-        logger.warning('No tasks were taken.')
+        logger.warning('No any task messages were found.')
         logger.info('Scrapy daemon finished.')
         return
     logger.info('Total tasks received: %s', len(tasks_taken))
     # wait until all tasks are finished or max wait time is reached
     # report each task progress after that and kill all tasks
     #  which are not finished in time
-    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 59
+    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 61
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
     try:
