@@ -138,9 +138,7 @@ def switch_branch_if_required(metadata):
         cmd = 'git checkout -f {branch} && git pull origin {branch} && '\
               'git checkout master -- task_id_generator.py && '\
               'git checkout master -- remote_instance_starter.py && '\
-              'git checkout master -- upload_logs_to_s3.py && '\
-              'git checkout master -- ' \
-                  '../../product-ranking/product_ranking/extensions.py'
+              'git checkout master -- upload_logs_to_s3.py'
         cmd = cmd.format(branch=branch_name)
         logger.info("Run '%s'", cmd)
         os.system(cmd)
