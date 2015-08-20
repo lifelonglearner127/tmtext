@@ -250,7 +250,11 @@ class AmazonScraper(Scraper):
         all_features_text = "\n".join(rows_text)
         # return dict with all features info
      #   return all_features_text
-        return rows_text
+
+        if rows_text:
+            return rows_text
+
+        return None
 
 
     def _feature_count(self): # extract number of features from tree
