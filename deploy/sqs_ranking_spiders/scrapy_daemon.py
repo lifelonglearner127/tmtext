@@ -1018,7 +1018,7 @@ class ScrapyTask(object):
             s += 'Task started at %s.\n' % str(self.start_date.time())
         if self.finish_date:
             s += 'Finished %s at %s, duration %s.\n' % (
-                'successfully' if self.finished_ok else 'with error',
+                'successfully' if self.finished_ok else 'containing errors',
                 str(self.finish_date.time()),
                 str(self.finish_date - self.start_date))
         if self.require_signal_failed:
@@ -1183,14 +1183,14 @@ def main():
                          task.task_data.get('task_id', 0))
             logger.error(task.report())
     if not tasks_taken:
-        logger.warning('No tasks were taken.')
+        logger.warning('No any task messages were found.')
         logger.info('Scrapy daemon finished.')
         return
     logger.info('Total tasks received: %s', len(tasks_taken))
     # wait until all tasks are finished or max wait time is reached
     # report each task progress after that and kill all tasks
     #  which are not finished in time
-    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 59
+    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 61
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
     try:
@@ -1230,9 +1230,7 @@ def prepare_test_data():
         server_name='test_server_name', with_best_seller_ranking=True,
         cmd_args={'quantity': 50}
     )]
-    files = [open('/tmp/sqs_ranking_spiders_tasks_tests', 'w'),
-             open('/tmp/sqs_ranking_spiders_tasks_dev', 'w'),
-             open('/tmp/sqs_ranking_spiders_tasks', 'w')]
+    files = [open('/tmp/' + q, 'w') for q in QUEUES_LIST.itervalues()]
     for fh in files:
         for msg in tasks:
             fh.write(json.dumps(msg, default=json_serializer)+'\n')

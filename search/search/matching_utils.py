@@ -277,6 +277,7 @@ class ProcessText():
 
             product2['confidence'] = confidence
             product2['UPC_match'] = 1 if upc_matched else 0
+            product2['model_match'] = 1 if model_matched else 0
 
 
             if score >= threshold:

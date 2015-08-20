@@ -62,7 +62,6 @@ def main():
 
 
 if __name__ == '__main__':
-    _install_system_package('tesseract-ocr')
     if not can_run():
         sys.exit()
     main()

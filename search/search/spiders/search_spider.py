@@ -74,7 +74,7 @@ class SearchSpider(BaseSpider):
         # call specific init for each derived class
         self.init_sub()
 
-        self.version = "3bff8c724008018c569fac814051f0885f481686"
+        self.version = " 29ec2d4105826036bcd46a99d6dc297f3248e79f"
 
         self.product_url = product_url
         self.products_file = products_file
@@ -374,38 +374,59 @@ class SearchSpider(BaseSpider):
                     else:
                         pending_requests.append(request1)
 
+                # 3) Search by model number + brand/first word
+                if product_model:
 
-                # 3) Search by product full name
-                if product_name:
-                    query2 = self.build_search_query(product_name)
+                    #TODO: model was extracted with ProcessText.extract_model_from_name(), without lowercasing, should I lowercase before adding it to query?
+                    if product_brand:
+                        query2 = self.build_search_query(product_model + " " + product_brand)
+                    else:
+                        query2 = self.build_search_query(product_model + " " + ProcessText.normalize(product_name)[0])
                     search_pages2 = self.build_search_pages(query2)
-                    #page2 = search_pages2[self.target_site]
                     page2 = search_pages2[self.target_site]
+
                     request2 = Request(page2, callback = self.parseResults)
 
                     request2.meta['query'] = query2
                     request2.meta['target_site'] = self.target_site
-
+                    
                     if not request:
                         request = request2
                     else:
                         pending_requests.append(request2)
 
-                    # 4) Search by combinations of words in product's name
+
+                # 4) Search by product full name
+                if product_name:
+                    query3 = self.build_search_query(product_name)
+                    search_pages3 = self.build_search_pages(query3)
+                    #page2 = search_pages2[self.target_site]
+                    page3 = search_pages3[self.target_site]
+                    request3 = Request(page3, callback = self.parseResults)
+
+                    request3.meta['query'] = query3
+                    request3.meta['target_site'] = self.target_site
+
+                    if not request:
+                        request = request3
+                    else:
+                        pending_requests.append(request3)
+
+                    # 5) Search by combinations of words in product's name
                     # create queries
 
                     for words in ProcessText.words_combinations(product_name, fast=self.fast):
-                        query3 = self.build_search_query(" ".join(words))
-                        search_pages3 = self.build_search_pages(query3)
+                        query4 = self.build_search_query(" ".join(words))
+                        search_pages4 = self.build_search_pages(query4)
                         #page3 = search_pages3[self.target_site]
-                        page3 = search_pages3[self.target_site]
-                        request3 = Request(page3, callback = self.parseResults)
+                        page4 = search_pages4[self.target_site]
+                        request4 = Request(page4, callback = self.parseResults)
 
-                        request3.meta['query'] = query3
-                        request3.meta['target_site'] = self.target_site
+                        request4.meta['query'] = query4
+                        request4.meta['target_site'] = self.target_site
 
 
-                        pending_requests.append(request3)
+                        pending_requests.append(request4)
 
                 request.meta['pending_requests'] = pending_requests
                 #request.meta['origin_site'] = 
@@ -779,49 +800,57 @@ class SearchSpider(BaseSpider):
             else:
                 pending_requests.append(request2)
 
+        # 3) Search by model number + brand/first word
+        if product_model:
 
-        # 3) Search by product full name
-        query3 = self.build_search_query(product_name)
-        search_pages3 = self.build_search_pages(query3)
+            #TODO: model was extracted with ProcessText.extract_model_from_name(), without lowercasing, should I lowercase before adding it to query?
+            if product_brand:
+                query3 = self.build_search_query(product_model + " " + product_brand)
+            else:
+                query3 = self.build_search_query(product_model + " " + ProcessText.normalize(product_name)[0])
+            search_pages3 = self.build_search_pages(query3)
+            page3 = search_pages3[target_site]
+
+            request3 = Request(page3, callback = self.parseResults)
+
+            request3.meta['query'] = query3
+            request3.meta['target_site'] = target_site
+            
+            if not request:
+                request = request3
+            else:
+                pending_requests.append(request3)
+
+
+        # 4) Search by product full name
+        query4 = self.build_search_query(product_name)
+        search_pages4 = self.build_search_pages(query4)
         #page2 = search_pages2[self.target_site]
-        page3 = search_pages3[target_site]
-        request3 = Request(page3, callback = self.parseResults)
+        page4 = search_pages4[target_site]
+        request4 = Request(page4, callback = self.parseResults)
 
-        # set cookies for amazon
-        if (self.target_site == 'amazon' and self.cookies_file):
-            request3.cookies = self.amazon_cookies
-            request3.headers['Cookies'] = self.amazon_cookie_header
-            #request2.meta['dont_merge_cookies'] = True
-
-        request3.meta['query'] = query3
-        request3.meta['target_site'] = target_site
+        request4.meta['query'] = query4
+        request4.meta['target_site'] = target_site
 
         if not request:
-            request = request3
+            request = request4
         else:
-            pending_requests.append(request3)
+            pending_requests.append(request4)
 
-        # 4) Search by combinations of words in product's name
+        # 5) Search by combinations of words in product's name
         # create queries
 
         for words in ProcessText.words_combinations(product_name, fast=self.fast):
-            query4 = self.build_search_query(" ".join(words))
-            search_pages4 = self.build_search_pages(query4)
-            #page3 = search_pages4[self.target_site]
-            page4 = search_pages4[target_site]
-            request4 = Request(page4, callback = self.parseResults)
+            query5 = self.build_search_query(" ".join(words))
+            search_pages5 = self.build_search_pages(query5)
+            page5 = search_pages5[target_site]
+            request5 = Request(page5, callback = self.parseResults)
 
-            # set amazon cookies
-            if (self.target_site == 'amazon' and self.cookies_file):
-                request4.cookies = self.amazon_cookies
-                request4.headers['Cookies'] = self.amazon_cookie_header
-                #request3.meta['dont_merge_cookies'] = True
-
-            request4.meta['query'] = query4
-            request4.meta['target_site'] = target_site
+            request5.meta['query'] = query5
+            request5.meta['target_site'] = target_site
 
 
-            pending_requests.append(request4)
+            pending_requests.append(request5)
 
         request.meta['pending_requests'] = pending_requests
         #request.meta['origin_site'] = 
