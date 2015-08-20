@@ -263,11 +263,6 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         return "Your search" in body \
             and "did not match any products." in body
 
-    def parse_marketplace(self, response):
-        response.meta["called_class"] = self
-        response.meta["next_req"] = None
-        return self.mtp_class.parse_marketplace(response)
-
     def is_nothing_found(self, response):
         txt = response.xpath('//h1[@id="noResultsTitle"]/text()').extract()
         txt = ''.join(txt)

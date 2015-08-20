@@ -458,16 +458,23 @@ class AmazonBaseClass(BaseProductsSpider):
             new_meta["mkt_place_link"] = mkt_place_link
             return Request(
                 url=mkt_place_link,
-                callback=self.parse_mkt,
+                callback=self._parse_mkt,
                 meta=new_meta,
                 dont_filter=True
             )
 
         return None
 
-    def parse_mkt(self, response):
+    def _parse_mkt(self, response):
+        if self._has_captcha(response):
+            return self._handle_captcha(
+                response,
+                self._parse_mkt
+            )
+
         response.meta["called_class"] = self
         response.meta["next_req"] = None
+
         return self.mtp_class.parse_marketplace(response)
 
     def _parse_model(self, response, add_xpath=None):
