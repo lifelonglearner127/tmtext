@@ -239,7 +239,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
             # Set buyer reviews info
             self._build_buyer_reviews(main_info['ReviewStatistics'], response)
-        except (ValueError, KeyError):
+        except (ValueError, KeyError, IndexError):
             product['buyer_reviews'] = ZERO_REVIEWS_VALUE
             self.log("Impossible to get product info - %r" % response.url, WARNING)
 
