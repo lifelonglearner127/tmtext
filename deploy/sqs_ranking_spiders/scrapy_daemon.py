@@ -1230,9 +1230,7 @@ def prepare_test_data():
         server_name='test_server_name', with_best_seller_ranking=True,
         cmd_args={'quantity': 50}
     )]
-    files = [open('/tmp/sqs_ranking_spiders_tasks_tests', 'w'),
-             open('/tmp/sqs_ranking_spiders_tasks_dev', 'w'),
-             open('/tmp/sqs_ranking_spiders_tasks', 'w')]
+    files = [open('/tmp/' + q, 'w') for q in QUEUES_LIST.itervalues()]
     for fh in files:
         for msg in tasks:
             fh.write(json.dumps(msg, default=json_serializer)+'\n')
