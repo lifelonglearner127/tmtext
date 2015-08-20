@@ -217,3 +217,5 @@ class SiteProductItem(Item):
     last_buyer_review_date = Field()
 
     response_code = Field()  # for 404, 500 etc.
+
+    last_buyer_review_date = Field()

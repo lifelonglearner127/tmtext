@@ -43,6 +43,9 @@ ITEM_PIPELINES = {
 # Delay between requests not to be blocked (seconds).
 DOWNLOAD_DELAY = 0.5
 
+# Maximum URL length
+URLLENGTH_LIMIT = 5000
+
 #AmazonFresh mapping locations and market place id
 AMAZONFRESH_LOCATION = {
     "southern_cali": "A241IQ0793UAL2",
