@@ -1018,7 +1018,7 @@ class ScrapyTask(object):
             s += 'Task started at %s.\n' % str(self.start_date.time())
         if self.finish_date:
             s += 'Finished %s at %s, duration %s.\n' % (
-                'successfully' if self.finished_ok else 'with error',
+                'successfully' if self.finished_ok else 'containing errors',
                 str(self.finish_date.time()),
                 str(self.finish_date - self.start_date))
         if self.require_signal_failed:
