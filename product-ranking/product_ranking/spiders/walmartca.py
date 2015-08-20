@@ -644,7 +644,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                 image = image.decode('utf-8').replace(' :', ':').replace('//', 'http://')
                 data_image = hjson.loads(image, object_pairs_hook=dict)
                 image_urls = [value['enlargedURL'] for k, value in enumerate(data_image)]
-                cond_set_value(product, 'image_url', image_urls, conv=list)
+                if image_urls and isinstance(image_urls, (tuple, list)):
+                    image_urls = [image_urls[0]]
+                cond_set(product, 'image_url', image_urls)
             except (ValueError, KeyError):
                 self.log("Impossible to set image urls in %r." % response.url, WARNING)
 
