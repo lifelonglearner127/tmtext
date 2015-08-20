@@ -259,6 +259,10 @@ class AmazonScraper(Scraper):
 
     def _feature_count(self): # extract number of features from tree
         rows = self._features()
+
+        if not rows:
+            return 0
+
         return len(rows)
         # select table rows with more than 2 cells (the others are just headers), count them
     #    return len(filter(lambda row: len(row.xpath(".//td"))>0, self.tree_html.xpath("//div[@class='content pdClearfix']//tbody//tr")))
