@@ -148,6 +148,25 @@ class HouseoffraserProductSpider(BaseProductsSpider):
 
         return None
 
+    def _parse_category(self, data):
+        category = []
+
+        for key, value in data.iteritems():
+            if 'productCat' in key and value:
+                category.append(value)
+
+        if category:
+            return category
+
+        return None
+
+    def _parse_description(self, response):
+        description = is_empty(
+            response.xpath('//div[@class="hof-description"]').extract()
+        )
+
+        return description
+
     def send_next_request(self, reqs, response):
         """
         Helps to handle several requests
