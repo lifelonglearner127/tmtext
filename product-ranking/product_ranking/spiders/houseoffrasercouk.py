@@ -2,6 +2,7 @@
 
 import json
 import re
+import urllib2
 
 from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
@@ -48,10 +49,62 @@ class HouseoffraserProductSpider(BaseProductsSpider):
         meta = response.meta.copy()
         product = meta['product']
 
+        # Get base product info from HTML body
+        base_product_info = self._get_base_product_info(response)
+
+        # Set price from base product info
+        price = self._parse_price(base_product_info)
+        cond_set_value(product, 'price', price)
+
+        # Set brand from base product info
+        brand = self._parse_brand(base_product_info)
+        cond_set_value(product, 'brand', brand)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
+
+    def _get_base_product_info(self, response):
+        data = is_empty(re.findall(
+            r'var\s+_DCSVariables\s+=\s+(.[^;]+)',
+            response.body_as_unicode()
+        ))
+
+        if data:
+            try:
+                base_product_info = json.loads(data)
+            except Exception as exc:
+                self.log(
+                    "Failed to extract base product info from {url}: {exc}".format(
+                        url=response.url, exc=exc
+                    ), WARNING
+                )
+                return None
+        else:
+            self.log(
+                "Failed to extract base product info from {url}".format(response.url),
+                WARNING
+            )
+            return None
+
+        return base_product_info
+
+    def _parse_price(self, data):
+        price = data.get('currentPrice')
+
+        if price:
+            price = Price(priceCurrency="GBP", price=price)
+
+        return price
+
+    def _parse_brand(self, data):
+        brand = data.get('productBrand')
+
+        if brand:
+            brand = urllib2.unquote(brand)
+
+        return brand
 
     def send_next_request(self, reqs, response):
         """
