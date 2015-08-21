@@ -16,7 +16,7 @@ class WalmartCAVariants(object):
         self.tree_html = tree_html
 
     def _variants(self):
-        if self.variant_json["numberOfVariants"] == 0:
+        if not self.variant_json or self.variant_json["numberOfVariants"] == 0:
             return None
 
         try:
