@@ -10,7 +10,7 @@ from itertools import groupby
 
 from lxml import html, etree
 from extract_data import Scraper
-from spiders_shared_code.jcpenney_variants import JcpenneyVariants
+from spiders_shared_code.walmartca_variants import WalmartCAVariants
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -71,10 +71,13 @@ class WalmartCAScraper(Scraper):
 
         self.failure_type = None
 
+        self.wcv = WalmartCAVariants()
+
         self.review_json = None
         self.review_list = None
         self.is_review_checked = False
         self.product_json = None
+        self.variant_json = None
         self.list_out_of_stock = ['70', '80', '85', '87', '90']
         self.list_not_sold_online = ['85', '87', '90']
 
@@ -103,6 +106,7 @@ class WalmartCAScraper(Scraper):
             return True
 
         self._load_product_json()
+        self.wcv.setupCH(self.variant_json, self.tree_html)
 
         return False
 
@@ -111,7 +115,7 @@ class WalmartCAScraper(Scraper):
     ##########################################
 
     def _load_product_json(self):
-        skuid = self.tree_html.xpath("//form[@data-product-id={}]/@data-sku-id".format(self._product_id()))[0]
+        skuid = self.tree_html.xpath("//form[@data-product-id]/@data-sku-id")[0]
 
         # Extract base product info from JS
         data = re.findall(
@@ -125,7 +129,7 @@ class WalmartCAScraper(Scraper):
             data = data.decode('utf-8').replace(' :', ':')
 
             try:
-                product_data = json.loads(data)
+                self.variant_json = product_data = json.loads(data)
             except ValueError:
                 return
         else:
@@ -263,7 +267,7 @@ class WalmartCAScraper(Scraper):
         return 0
 
     def _variants(self):
-        return None
+        return self.wcv._variants()
 
     def _rollback(self):
         if self.product_json["products"][0]["isRollback"]:
