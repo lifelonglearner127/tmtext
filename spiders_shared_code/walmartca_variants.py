@@ -42,6 +42,9 @@ class WalmartCAVariants(object):
                 '''
                 variant_item["selected"] = False
 #                variant_item["url"] = canonical_link[:canonical_link.rfind("/") + 1] + variant_info["sku_id"][0]
+                variant_item["url"] = None
+                variant_item["sku"] = variant_info["sku_id"][0]
+
                 properties = {}
 
                 for attribute in variant_info:
