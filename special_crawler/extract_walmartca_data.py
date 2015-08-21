@@ -115,88 +115,91 @@ class WalmartCAScraper(Scraper):
     ##########################################
 
     def _load_product_json(self):
-        skuid = self._sku()
+        try:
+            skuid = self._sku()
 
-        # Extract base product info from JS
-        data = re.findall(
-                r'productPurchaseCartridgeData\["\d+"\]\s*=\s*(\{(.|\n)*?\});',
-                html.tostring(self.tree_html)
-        )
+            # Extract base product info from JS
+            data = re.findall(
+                    r'productPurchaseCartridgeData\["\d+"\]\s*=\s*(\{(.|\n)*?\});',
+                    html.tostring(self.tree_html)
+            )
 
-        if data:
-            data = list(data)[0]
-            data = data[0].replace('numberOfVariants', '"numberOfVariants"').replace('variantDataRaw', '"variantDataRaw"')
-            data = data.decode('utf-8').replace(' :', ':')
+            if data:
+                data = list(data)[0]
+                data = data[0].replace('numberOfVariants', '"numberOfVariants"').replace('variantDataRaw', '"variantDataRaw"')
+                data = data.decode('utf-8').replace(' :', ':')
 
-            try:
-                self.variant_json = product_data = json.loads(data)
-            except ValueError:
+                try:
+                    self.variant_json = product_data = json.loads(data)
+                except ValueError:
+                    return
+            else:
                 return
-        else:
-            return
 
-        product_data['baseProdInfo'] = product_data['variantDataRaw'][0]
+            product_data['baseProdInfo'] = product_data['variantDataRaw'][0]
 
-        # Set variants
-        number_of_variants = product_data.get('numberOfVariants', 0)
-        data_variants = product_data['variantDataRaw']
-        skus = []
+            # Set variants
+            number_of_variants = product_data.get('numberOfVariants', 0)
+            data_variants = product_data['variantDataRaw']
+            skus = []
 
-        if number_of_variants:
-            try:
-                variants = {}
+            if number_of_variants:
+                try:
+                    variants = {}
 
-                for var in data_variants:
-                    variant = dict()
-                    properties = dict()
+                    for var in data_variants:
+                        variant = dict()
+                        properties = dict()
 
-                    sku_id = is_empty(
-                        var.get('sku_id', ''),
-                        ''
-                    )
-                    skus.append({"skuid": sku_id})
+                        sku_id = is_empty(
+                            var.get('sku_id', ''),
+                            ''
+                        )
+                        skus.append({"skuid": sku_id})
 
-                    price = var.get('price_store_price')
-                    if price:
-                        price = is_empty(price, None)
-                        price = price.replace(',', '')
-                        price = format(float(price), '.2f')
-                    variant['price'] = price
+                        price = var.get('price_store_price')
+                        if price:
+                            price = is_empty(price, None)
+                            price = price.replace(',', '')
+                            price = format(float(price), '.2f')
+                        variant['price'] = price
 
-                    color = is_empty(var.get('variantKey_en_Colour', []))
-                    size = is_empty(var.get('variantKey_en_Size', []))
+                        color = is_empty(var.get('variantKey_en_Colour', []))
+                        size = is_empty(var.get('variantKey_en_Size', []))
 
-                    if size:
-                        properties['size'] = size
-                    if color:
-                        properties['color'] = color
-                    variant['properties'] = properties
+                        if size:
+                            properties['size'] = size
+                        if color:
+                            properties['color'] = color
+                        variant['properties'] = properties
 
-                    variants[sku_id] = variant
-            except (KeyError, ValueError):
-                variants = []
+                        variants[sku_id] = variant
+                except (KeyError, ValueError):
+                    variants = []
 
-        else:
-            skus = [{"skuid": skuid}]
+            else:
+                skus = [{"skuid": skuid}]
 
-        headers={
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
+            headers={
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+            s = requests.Session()
+            a = requests.adapters.HTTPAdapter(max_retries=3)
+            b = requests.adapters.HTTPAdapter(max_retries=3)
+            s.mount('http://', a)
+            s.mount('https://', b)
 
-        request_data = [{
-            "productid": self._product_id(),
-            "skus": [skus]
-        }]
+            request_data = [{
+                "productid": self._product_id(),
+                "skus": [skus]
+            }]
 
-        request_data = json.dumps(request_data).replace(' ', '')
-        contents = s.post("http://www.walmart.ca/ws/online/products", data={"products": request_data}, headers=headers, timeout=5).text
+            request_data = json.dumps(request_data).replace(' ', '')
+            contents = s.post("http://www.walmart.ca/ws/online/products", data={"products": request_data}, headers=headers, timeout=5).text
 
-        self.product_json = json.loads(contents)
+            self.product_json = json.loads(contents)
+        except:
+            self.product_json = None
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -204,7 +207,10 @@ class WalmartCAScraper(Scraper):
         return canonical_link
 
     def _sku(self):
-        return self.tree_html.xpath("//form[@data-product-id]/@data-sku-id")[0]
+        try:
+            return self.tree_html.xpath("//form[@data-product-id]/@data-sku-id")[0]
+        except:
+            return None
 
     def _url(self):
         return self.product_page_url
@@ -232,8 +238,12 @@ class WalmartCAScraper(Scraper):
         if not self.tree_html.xpath("//div[@id='specGroup']"):
             return None
 
-        feature_name_list = self.tree_html.xpath("//div[@id='specGroup']/div[@data-sku-id={}]//div[contains(@class, 'name')]".format(self._sku()))
-        feature_value_list = self.tree_html.xpath("//div[@id='specGroup']/div[@data-sku-id={}]//div[contains(@class, 'value')]".format(self._sku()))
+        if self._sku():
+            feature_name_list = self.tree_html.xpath("//div[@id='specGroup']/div[@data-sku-id={}]//div[contains(@class, 'name')]".format(self._sku()))
+            feature_value_list = self.tree_html.xpath("//div[@id='specGroup']/div[@data-sku-id={}]//div[contains(@class, 'value')]".format(self._sku()))
+        else:
+            feature_name_list = self.tree_html.xpath("//div[@id='specGroup']//div[contains(@class, 'name')]")
+            feature_value_list = self.tree_html.xpath("//div[@id='specGroup']//div[contains(@class, 'value')]")
 
         feature_list = []
 
