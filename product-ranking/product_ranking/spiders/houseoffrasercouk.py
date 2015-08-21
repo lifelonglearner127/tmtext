@@ -80,6 +80,10 @@ class HouseoffraserProductSpider(BaseProductsSpider):
         image_url = self._parse_image_url(response)
         cond_set_value(product, 'image_url', image_url)
 
+        # Parse product variants
+        variants = self._parse_variants(response)
+        cond_set_value(product, 'variants', variants)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -189,6 +193,31 @@ class HouseoffraserProductSpider(BaseProductsSpider):
         )
 
         return image_url
+
+    def _parse_variants(self, response):
+        """
+        Parses variants using RegExp from HTML body
+        """
+        variants_data = is_empty(
+            re.findall(r'var\s+variations\s+=\s+((.|\n)+)\.variations;', response.body_as_unicode())
+        )
+
+        if variants_data:
+            variants_data = list(variants_data)[0]
+            try:
+                data = json.loads()
+            except (KeyError, ValueError) as exc:
+                self.log(
+                    "Failed to extract variants from {url}: {exc}".format(
+                        url=response.url, exc=exc), WARNING
+                )
+            return []
+        else:
+            self.log(
+                "Failed to extract variants from {url}".format(response.url),
+                WARNING
+            )
+            return []
 
     def send_next_request(self, reqs, response):
         """
