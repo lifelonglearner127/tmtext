@@ -12,6 +12,7 @@ from lxml import html, etree
 from extract_data import Scraper
 from spiders_shared_code.jcpenney_variants import JcpenneyVariants
 
+is_empty = lambda x, y="": x[0] if x else y
 
 class WalmartCAScraper(Scraper):
     ##########################################
@@ -19,11 +20,63 @@ class WalmartCAScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www\.walmart\.ca/(en|fr)/ip/[product-name]/[product-id]$"
+    PRODUCT_INFO_URL = "http://api.bazaarvoice.com/data/batch.json?passkey=e6wzzmz844l2kk3v6v7igfl6i&" \
+                      "apiversion=5.5&displaycode=2036-en_ca&resource.q0=products&" \
+                      "filter.q0=id%3Aeq%3A{product_id}&" \
+                      "stats.q0=questions%2Creviews&filteredstats.q0=questions%2Creviews&" \
+                      "filter_questions.q0=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
+                      "filter_answers.q0=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
+                      "filter_reviews.q0=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
+                      "filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
+                      "resource.q1=questions&" \
+                      "filter.q1=productid%3Aeq%3A{product_id}&" \
+                      "filter.q1=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
+                      "sort.q1=hasstaffanswers%3Adesc&stats.q1=questions&" \
+                      "filteredstats.q1=questions&include.q1=authors%2Cproducts%2Canswers&" \
+                      "filter_questions.q1=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
+                      "filter_answers.q1=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
+                      "sort_answers.q1=submissiontime%3Aasc&limit.q1=10&offset.q1=0&" \
+                      "limit_answers.q1=10&resource.q2=reviews&filter.q2=isratingsonly%3Aeq%3Afalse&" \
+                      "filter.q2=productid%3Aeq%3A{product_id}&filter.q2=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
+                      "sort.q2=helpfulness%3Adesc%2Ctotalpositivefeedbackcount%3Adesc&" \
+                      "stats.q2=reviews&filteredstats.q2=reviews&include.q2=authors%2Cproducts%2Ccomments&" \
+                      "filter_reviews.q2=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
+                      "filter_reviewcomments.q2=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
+                      "filter_comments.q2=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&limit.q2=6&offset.q2=0&" \
+                      "limit_comments.q2=3&resource.q3=reviews&filter.q3=productid%3Aeq%3A{product_id}&" \
+                      "filter.q3=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&limit.q3=1&resource.q4=reviews&" \
+                      "filter.q4=productid%3Aeq%3A{product_id}&filter.q4=isratingsonly%3Aeq%3Afalse&" \
+                      "filter.q4=rating%3Agt%3A3&filter.q4=totalpositivefeedbackcount%3Agte%3A3&" \
+                      "filter.q4=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&sort.q4=totalpositivefeedbackcount%3Adesc&" \
+                      "stats.q4=reviews&filteredstats.q4=reviews&include.q4=authors%2Creviews&" \
+                      "filter_reviews.q4=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
+                      "filter_reviewcomments.q4=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
+                      "limit.q4=1&resource.q5=reviews&filter.q5=productid%3Aeq%3A{product_id}&" \
+                      "filter.q5=isratingsonly%3Aeq%3Afalse&filter.q5=rating%3Alte%3A3&" \
+                      "filter.q5=totalpositivefeedbackcount%3Agte%3A3&" \
+                      "filter.q5=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
+                      "sort.q5=totalpositivefeedbackcount%3Adesc&stats.q5=reviews&" \
+                      "filteredstats.q5=reviews&include.q5=authors%2Creviews&" \
+                      "filter_reviews.q5=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&" \
+                      "filter_reviewcomments.q5=contentlocale%3Aeq%3Aen_CA%2Cen_GB%2Cen_US&limit.q5=1"
+
+    IN_STOCK_URL = "https://om.ordergroove.com/offer/af0a84f8847311e3b233bc764e1107f2/pdp?" \
+                   "session_id=af0a84f8847311e3b233bc764e1107f2.262633.1436277025&" \
+                   "page_type=1&p=%5B%22{product_id}%22%5D&module_view=%5B%22regular%22%5D"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
-        # whether product has any webcollage media
+        self.product_info_json = None
+
+        self.failure_type = None
+
+        self.review_json = None
+        self.review_list = None
+        self.is_review_checked = False
+        self.product_json = None
+        self.list_out_of_stock = ['70', '80', '85', '87', '90']
+        self.list_not_sold_online = ['85', '87', '90']
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -46,15 +99,100 @@ class WalmartCAScraper(Scraper):
         try:
             if self.tree_html.xpath("//meta[@property='og:type']")[0] == "product":
                 raise Exception()
-
         except Exception:
             return True
+
+        self._load_product_json()
 
         return False
 
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
+
+    def _load_product_json(self):
+        skuid = self.tree_html.xpath("//form[@data-product-id={}]/@data-sku-id".format(self._product_id()))[0]
+
+        # Extract base product info from JS
+        data = re.findall(
+                r'productPurchaseCartridgeData\["\d+"\]\s*=\s*(\{(.|\n)*?\});',
+                html.tostring(self.tree_html)
+        )
+
+        if data:
+            data = list(data)[0]
+            data = data[0].replace('numberOfVariants', '"numberOfVariants"').replace('variantDataRaw', '"variantDataRaw"')
+            data = data.decode('utf-8').replace(' :', ':')
+
+            try:
+                product_data = json.loads(data)
+            except ValueError:
+                return
+        else:
+            return
+
+        product_data['baseProdInfo'] = product_data['variantDataRaw'][0]
+
+        # Set variants
+        number_of_variants = product_data.get('numberOfVariants', 0)
+        data_variants = product_data['variantDataRaw']
+        skus = []
+
+        if number_of_variants:
+            try:
+                variants = {}
+
+                for var in data_variants:
+                    variant = dict()
+                    properties = dict()
+
+                    sku_id = is_empty(
+                        var.get('sku_id', ''),
+                        ''
+                    )
+                    skus.append({"skuid": sku_id})
+
+                    price = var.get('price_store_price')
+                    if price:
+                        price = is_empty(price, None)
+                        price = price.replace(',', '')
+                        price = format(float(price), '.2f')
+                    variant['price'] = price
+
+                    color = is_empty(var.get('variantKey_en_Colour', []))
+                    size = is_empty(var.get('variantKey_en_Size', []))
+
+                    if size:
+                        properties['size'] = size
+                    if color:
+                        properties['color'] = color
+                    variant['properties'] = properties
+
+                    variants[sku_id] = variant
+            except (KeyError, ValueError):
+                variants = []
+
+        else:
+            skus = [{"skuid": skuid}]
+
+        headers={
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+
+        request_data = [{
+            "productid": self._product_id(),
+            "skus": [skus]
+        }]
+
+        request_data = json.dumps(request_data).replace(' ', '')
+        contents = s.post("http://www.walmart.ca/ws/online/products", data={"products": request_data}, headers=headers, timeout=5).text
+
+        self.product_json = json.loads(contents)
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -65,7 +203,8 @@ class WalmartCAScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        return re.search('prod\.jump\?ppId=(.+?)$', self.product_page_url).group(1)
+        product_id = self.product_page_url.split('/')[-1]
+        return product_id
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -125,6 +264,12 @@ class WalmartCAScraper(Scraper):
 
     def _variants(self):
         return None
+
+    def _rollback(self):
+        if self.product_json["products"][0]["isRollback"]:
+            return 1
+
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -211,7 +356,7 @@ class WalmartCAScraper(Scraper):
         if average_review.is_integer():
             average_review = int(average_review)
         else:
-            average_review = float(average_review)
+            average_review = "%.1f" % float(average_review)
 
         return average_review
 
@@ -223,12 +368,61 @@ class WalmartCAScraper(Scraper):
         return review_count
 
     def _max_review(self):
-        return None
+        reviews = self._reviews()
+
+        if not reviews:
+            return None
+
+        max_review = None
+
+        for rating in reviews:
+            if (max_review < rating[0] and rating[1] > 0) or max_review is None:
+                max_review = rating[0]
+
+        return max_review
 
     def _min_review(self):
-        return None
+        reviews = self._reviews()
+
+        if not reviews:
+            return None
+
+        min_review = None
+
+        for rating in reviews:
+            if (min_review > rating[0] and rating[1] > 0) or min_review is None:
+                min_review = rating[0]
+
+        return min_review
 
     def _reviews(self):
+        if self.is_review_checked:
+            return self.review_list
+
+        self.is_review_checked = True
+
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        contents = s.get(self.PRODUCT_INFO_URL.format(product_id=self._product_id()), headers=h, timeout=5).text
+
+        try:
+            self.review_json = json.loads(contents)
+            self.review_list = []
+
+            for rating in self.review_json["BatchedResults"]["q0"]["Results"][0]["ReviewStatistics"]["RatingDistribution"]:
+                self.review_list.append([int(rating['RatingValue']), int(rating['Count'])])
+
+            if self.review_list:
+                return self.review_list
+
+            self.review_list = None
+        except:
+            pass
+
         return None
 
     ##########################################
@@ -244,6 +438,9 @@ class WalmartCAScraper(Scraper):
         return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
 
     def _site_online(self):
+        if self.product_json["products"][0]["availability"] in self.list_not_sold_online:
+            return 0
+
         return 1
 
     def _in_stores(self):
@@ -253,7 +450,7 @@ class WalmartCAScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
-        if "out of stock online" in html.tostring(self.tree_html).lower():
+        if self.product_json["products"][0]["availability"] in self.list_out_of_stock:
             return 1
 
         return 0
@@ -313,7 +510,7 @@ class WalmartCAScraper(Scraper):
         "ingredients": _ingredients, \
         "ingredient_count": _ingredients_count,
         "variants": _variants,
-
+        "rollback": _rollback,
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
