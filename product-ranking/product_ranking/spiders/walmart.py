@@ -371,6 +371,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             '//*[contains(@class, "NotAvailable")]'
             '[contains(@style, "block")]/text()'
         ).extract()
+        if not _na_text:
+            _na_text = response.css('#WMNotAvailableLine ::text').extract()
         if _na_text:
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
