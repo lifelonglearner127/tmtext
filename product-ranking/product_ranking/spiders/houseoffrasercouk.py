@@ -60,6 +60,18 @@ class HouseoffraserProductSpider(BaseProductsSpider):
         brand = self._parse_brand(base_product_info)
         cond_set_value(product, 'brand', brand)
 
+        # Set categories from base product info
+        category = self._parse_category(base_product_info)
+        cond_set_value(product, 'category', category)
+
+        # Set title from base product info
+        title = self._parse_title(base_product_info)
+        cond_set_value(product, 'title', title)
+
+        # Parse description
+        description = self._parse_description(response)
+        cond_set_value(product, 'description', description)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -105,6 +117,36 @@ class HouseoffraserProductSpider(BaseProductsSpider):
             brand = urllib2.unquote(brand)
 
         return brand
+
+    def _parse_title(self, data):
+        brand = data.get('productBrand')
+        name = data.get('productName')
+
+        if brand:
+            brand = urllib2.unquote(brand)
+        else:
+            brand = ''
+
+        if name:
+            name = urllib2.unquote(name)
+        else:
+            name = ''
+
+        title = brand + ' ' + name
+
+        return title
+
+    def _parse_category(self, data):
+        category = []
+
+        for key, value in data.iteritems():
+            if 'productCat' in key and value:
+                category.append(value)
+
+        if category:
+            return category
+
+        return None
 
     def send_next_request(self, reqs, response):
         """
