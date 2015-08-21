@@ -56,6 +56,10 @@ class HouseoffraserProductSpider(BaseProductsSpider):
         price = self._parse_price(base_product_info)
         cond_set_value(product, 'price', price)
 
+        # Set special pricing from base product info
+        special_pricing = self._parse_special_pricing(base_product_info)
+        cond_set_value(product, 'special_pricing', special_pricing)
+
         # Set brand from base product info
         brand = self._parse_brand(base_product_info)
         cond_set_value(product, 'brand', brand)
@@ -71,6 +75,10 @@ class HouseoffraserProductSpider(BaseProductsSpider):
         # Parse description
         description = self._parse_description(response)
         cond_set_value(product, 'description', description)
+
+        # Parse image url
+        image_url = self._parse_image_url(response)
+        cond_set_value(product, 'image_url', image_url)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -109,6 +117,14 @@ class HouseoffraserProductSpider(BaseProductsSpider):
             price = Price(priceCurrency="GBP", price=price)
 
         return price
+
+    def _parse_special_pricing(self, data):
+        special_pricing = data.get('previousPrice')
+
+        if special_pricing:
+            return True
+        else:
+            return False
 
     def _parse_brand(self, data):
         brand = data.get('productBrand')
@@ -166,6 +182,13 @@ class HouseoffraserProductSpider(BaseProductsSpider):
         )
 
         return description
+
+    def _parse_image_url(self, response):
+        image_url = is_empty(
+            response.xpath('//li[@class="coach"]/img/@src').extract()
+        )
+
+        return image_url
 
     def send_next_request(self, reqs, response):
         """
