@@ -115,7 +115,7 @@ class WalmartCAScraper(Scraper):
     ##########################################
 
     def _load_product_json(self):
-        skuid = self.tree_html.xpath("//form[@data-product-id]/@data-sku-id")[0]
+        skuid = self._sku()
 
         # Extract base product info from JS
         data = re.findall(
@@ -203,6 +203,9 @@ class WalmartCAScraper(Scraper):
 
         return canonical_link
 
+    def _sku(self):
+        return self.tree_html.xpath("//form[@data-product-id]/@data-sku-id")[0]
+
     def _url(self):
         return self.product_page_url
 
@@ -229,8 +232,8 @@ class WalmartCAScraper(Scraper):
         if not self.tree_html.xpath("//div[@id='specGroup']"):
             return None
 
-        feature_name_list = self.tree_html.xpath("//div[@id='specGroup']//div[contains(@class, 'name')]")
-        feature_value_list = self.tree_html.xpath("//div[@id='specGroup']//div[contains(@class, 'value')]")
+        feature_name_list = self.tree_html.xpath("//div[@id='specGroup']/div[@data-sku-id={}]//div[contains(@class, 'name')]".format(self._sku()))
+        feature_value_list = self.tree_html.xpath("//div[@id='specGroup']/div[@data-sku-id={}]//div[contains(@class, 'value')]".format(self._sku()))
 
         feature_list = []
 
@@ -433,7 +436,10 @@ class WalmartCAScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath("//span[@itemprop='price']/text()")[0]
+        try:
+            return self.tree_html.xpath("//span[@itemprop='price']/text()")[0]
+        except:
+            return self.tree_html.xpath("//span[@itemprop='lowPrice']/text()")[0] + " to " + self.tree_html.xpath("//span[@itemprop='highPrice']/text()")[0]
 
     def _price_amount(self):
         return float(self.tree_html.xpath("//span[@itemprop='price']/text()")[0][1:])

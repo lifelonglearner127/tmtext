@@ -26,12 +26,17 @@ class WalmartCAVariants(object):
             for variant_info in variants_info_list:
                 variant_item = {}
 
-                if variant_info["StoreStatus"][0] == "NotSold":
+                if variant_info["online_status"][0] in ['70', '80', '85', '87', '90']:
                     variant_item["in_stock"] = False
                 else:
                     variant_item["in_stock"] = True
 
-                variant_item["price"] = float(self.tree_html.xpath("//span[@itemprop='price']/text()")[0][1:])
+                if variant_info["StoreStatus"][0] == "NotSold":
+                    variant_item["in_stores"] = False
+                else:
+                    variant_item["in_stores"] = True
+
+                variant_item["price"] = float(variant_info["price_store_price"][0])
                 canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
                 '''
