@@ -116,13 +116,13 @@ class HouseoffraserProductSpider(BaseProductsSpider):
         if items:
             for item in items:
                 link = is_empty(
-                    item.xpath('./div[@class="product-description"]/./'
+                    item.xpath('.//div[@class="product-description"]/./'
                                '/a/@href').extract()
                 )
                 res_item = SiteProductItem()
                 yield link, res_item
         else:
-            self.log("Found no product links in {url}".format(response.url), INFO)
+            self.log("Found no product links in {url}".format(response.url), WARNING)
 
     def _scrape_next_results_page_link(self, response):
         next_page_url = response.xpath('//a[contains(@class, "nextPage")]/@href').extract()
