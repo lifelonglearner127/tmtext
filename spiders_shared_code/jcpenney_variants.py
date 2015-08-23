@@ -167,6 +167,10 @@ class JcpenneyVariants(object):
             color_list = self.tree_html.xpath("//ul[@id='" + product_id + "COLOR']//li[contains(@id, '" + product_id + "')]/a/img/@alt")
             color_li_list = self.tree_html.xpath("//ul[@id='" + product_id + "COLOR']//li[contains(@id, '" + product_id + "')]")
 
+            _color_stock = re.findall(r'showColor\(.+?,(.+?),(.+?),.+?,.+?,.+?,.+?\;', self.response.body)
+            _color_stock = [(c[0].replace("'", ''), json.loads(c[1].replace("'", ''))) for c in _color_stock]
+            _color_stock = {v[0]:v[1] for v in _color_stock}
+
             if color_list:
                 stockstatus_list = []
 
@@ -199,7 +203,6 @@ class JcpenneyVariants(object):
                 for index, variation_key in enumerate(variation_key_list):
                     properties[variation_key] = variation_combination[index]
 
-
                     if stockstatus is True and stockstatus_list_by_variation[index][variation_combination[index]] in ["sku_not_available", "sku_illegal"]:
                         stockstatus = False
 
@@ -219,11 +222,15 @@ class JcpenneyVariants(object):
                     if color == img.get("color"):
                         stockstatus_for_variants["image_url"] = img.get("img")
 
+                _color = stockstatus_for_variants.get('properties', {}).get('color', None)
+                if _color_stock.get(_color, None) is False:
+                    stockstatus_for_variants['in_stock'] = False
+
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
 
             if not stockstatus_for_variants_list:
                 return None
             else:
                 return stockstatus_for_variants_list
-        except:
+        except Exception, e:
             return None
