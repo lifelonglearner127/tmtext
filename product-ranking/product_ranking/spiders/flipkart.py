@@ -8,6 +8,7 @@
 #7) UPC (?)
 #8) image_url
 #9) model (?)
+#10) XML fields version file
 
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
@@ -212,3 +213,5 @@ class FlipkartProductsSpider(BaseProductsSpider):
             link = urlparse.urlunsplit(url_parts)
         return link
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
