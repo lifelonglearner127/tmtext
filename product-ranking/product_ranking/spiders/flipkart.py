@@ -16,6 +16,7 @@ from future_builtins import *
 import urlparse
 import urllib
 import string
+import re
 
 from scrapy.log import ERROR, DEBUG
 from scrapy.http import Request
@@ -80,6 +81,13 @@ class FlipkartProductsSpider(BaseProductsSpider):
         if price:
             product['price'] = Price(price=price[0],
                                      priceCurrency='INR')
+
+        brand = response.xpath('//a[contains(@href, "~brand/")]/@href').extract()
+        if brand:
+            brand = re.search(r'/([a-zA-Z0-9 \.]{2,30})~brand/', brand[0])
+            brand = brand.group(1)
+            if brand:
+                product['brand'] = brand.strip()
 
         cond_set_value(product, 'description', self.clear_desc(
             response.xpath(
