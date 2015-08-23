@@ -80,7 +80,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
     settings = AmazonDeValidatorSettings
 
-    use_proxies = True
+    use_proxies = False
 
     handle_httpstatus_list = [502, 503, 504]
 
