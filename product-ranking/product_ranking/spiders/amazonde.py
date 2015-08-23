@@ -681,6 +681,13 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         captcha = self._solve_captcha(response)
 
+        _captcha_try = 0
+        while captcha is None:
+            _captcha_try += 1
+            captcha = self._solve_captcha(response)
+            if _captcha_try > 20:
+                break
+
         if captcha is None:
             self.log(
                 "Failed to guess captcha for '%s' (try: %d)." % (
