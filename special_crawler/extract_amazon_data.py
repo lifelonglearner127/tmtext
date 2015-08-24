@@ -190,8 +190,10 @@ class AmazonScraper(Scraper):
     def _status(self):
         return 'success'
 
-
-
+    def _exclude_javascript_from_description(self, description):
+        description = re.subn(r'<(script).*?</\1>(?s)', '', description)[0]
+        description = re.subn(r'<(style).*?</\1>(?s)', '', description)[0]
+        return description
 
     ##########################################
     ################ CONTAINER : PRODUCT_INFO
@@ -291,30 +293,64 @@ class AmazonScraper(Scraper):
 
 
     def _long_description_helper(self):
-        desc = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
-        if desc is not None and len(desc)>5:
-            return desc
-        desc = " ".join(self.tree_html.xpath('//div[@id="psPlaceHolder"]/preceding-sibling::noscript//text()')).strip()
-        if desc is not None and len(desc)>5:
-            return desc
-        pd = self.tree_html.xpath("//h2[contains(text(),'Product Description')]/following-sibling::*//text()")
-        if len(pd)>0:
-            desc = " ".join(pd).strip()
-            if desc is not None and len(desc)>0:
-                return  self._clean_text(desc)
-        desc = '\n'.join(self.tree_html.xpath('//script//text()'))
-        desc = re.findall(r'var iframeContent = "(.*)";', desc)
-        desc = urllib.unquote_plus(str(desc))
-        desc = html.fromstring(desc)
-        dsw = desc.xpath('//div[@class="productDescriptionWrapper"]')
-        res = ""
-        for d in dsw:
-            if len(d.xpath('.//div[@class="aplus"]'))==0:
-                res += self._clean_text(' '.join(d.xpath('.//text()')))+" "
-        if res != "" :
-            return res
-        return None
+        try:
+            description = ""
+            block = self.tree_html.xpath('//*[@class="productDescriptionWrapper"]')[0]
 
+            for item in block:
+                description = description + html.tostring(item)
+
+            description = self._clean_text(self._exclude_javascript_from_description(description))
+
+            if description is not None and len(description) > 5:
+                return description
+        except:
+            pass
+
+        try:
+            description = ""
+            block = self.tree_html.xpath('//div[@id="psPlaceHolder"]/preceding-sibling::noscript')[0]
+
+            for item in block:
+                description = description + html.tostring(item)
+
+            description = self._clean_text(self._exclude_javascript_from_description(description))
+
+            if description is not None and len(description) > 5:
+                return description
+        except:
+            pass
+
+        try:
+            description = ""
+            block = self.tree_html.xpath("//h2[contains(text(),'Product Description')]/following-sibling::*")[0]
+
+            for item in block:
+                description = description + html.tostring(item)
+
+            description = self._clean_text(self._exclude_javascript_from_description(description))
+
+            if description is not None and len(description) > 5:
+                return description
+        except:
+            pass
+
+        try:
+            description = '\n'.join(self.tree_html.xpath('//script//text()'))
+            description = re.findall(r'var iframeContent = "(.*)";', description)
+            description = urllib.unquote_plus(str(description))
+            description = html.fromstring(description)
+            description = description.xpath('//div[@class="productDescriptionWrapper"]')
+            res = ""
+            for d in description:
+                if len(d.xpath('.//div[@class="aplus"]'))==0:
+                    res += self._clean_text(' '.join(d.xpath('.//text()')))+" "
+            if res != "":
+                return res
+        except:
+            pass
+
+        return None
 
     def _apluscontent_desc(self):
         res = self._clean_text(' '.join(self.tree_html.xpath('//div[@id="aplusProductDescription"]//text()')))
