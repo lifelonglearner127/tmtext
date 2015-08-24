@@ -1549,11 +1549,14 @@ class WalmartScraper(Scraper):
                 find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script))
             except:
                 find = []
-            if len(find)>0:
+            if len(find) > 0:
                 return self._qualify_image_urls(find)
 
         if self.tree_html.xpath("//link[@rel='image_src']/@href"):
-            return self.tree_html.xpath("//link[@rel='image_src']/@href")
+            if self._no_image(self.tree_html.xpath("//link[@rel='image_src']/@href")[0]):
+                return None
+            else:
+                return self.tree_html.xpath("//link[@rel='image_src']/@href")
 
         # It should only return this img when there's no img carousel
         pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
