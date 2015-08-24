@@ -285,6 +285,8 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         if not product.get('brand', '').strip():
             brand = response.css('#brand')
+            if not brand:
+                brand = response.css('#bylineContributor ::text')
             if len(brand) > 1:
                 brand = brand.extract()
             else:
@@ -293,6 +295,13 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 if brand:
                     brand = brand[0]
             cond_set_value(product, 'brand', brand)
+            # check that it's not Author (for Iphone6-mode books)
+            if 'iphone' in getattr(self, 'user_agent', '').lower()\
+                    or 'ipad' in getattr(self, 'user_agent', '').lower():
+                if u'(Autor)' in response.body_as_unicode() \
+                        or response.css('#brandByline_feature_div'):
+                    product['brand'] = ''
+
         cond_set(
             product,
             'price',
