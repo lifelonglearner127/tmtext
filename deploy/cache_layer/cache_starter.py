@@ -81,7 +81,7 @@ def main_starter(CACHE_QUEUES_LIST):
         time.sleep(3)
 
 
-if (__name__ == '__main__'):
+if __name__ == '__main__':
     time.sleep(random.randrange(10))
     if not can_run():
         sys.exit()
