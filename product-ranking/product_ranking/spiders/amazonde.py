@@ -284,13 +284,25 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
         cond_set(product, 'brand', response.css('#brand ::text').extract())
         if not product.get('brand', '').strip():
-            brand = response.css('#brand')
+            brand = response.css('#brand ::text')
             if not brand:
-                brand = response.css('#bylineContributor ::text')
+                brand = response.css('#bylineContributor ::text')  # iphone6-mode
             if len(brand) > 1:
                 brand = brand.extract()
             else:
                 brand = is_empty(brand.extract(), '').strip()
+            if not brand:
+                # if brand is image
+                if response.xpath('//a[@id="brand"]/img'):
+                    brand = response.xpath('//a[@id="brand"]/@href').extract()
+                    if brand:
+                        brand = urlparse.parse_qs(urlparse.urlparse(brand[0]).query)\
+                            .get('field-brandtextbin', '')
+            if isinstance(brand, (list, tuple)):
+                if brand:
+                    brand = brand[0]
+            if not isinstance(brand, (str, unicode)):
+                brand = brand.extract()
             if isinstance(brand, (list, tuple)):
                 if brand:
                     brand = brand[0]
