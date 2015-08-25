@@ -12,6 +12,7 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set_value
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -76,7 +77,11 @@ class WayfairProductSpider(BaseProductsSpider):
         cond_set_value(product, 'variants', variants)
 
         # Parse stock status
-        stock_status = self._parse_stock_status(response)
+        self._parse_stock_status(response)
+
+        # Parse variants
+        buyer_reviews = self._parse_buyer_reviews(response)
+        cond_set_value(product, 'buyer_reviews', buyer_reviews)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -155,6 +160,59 @@ class WayfairProductSpider(BaseProductsSpider):
                 product['is_out_of_stock'] = False
 
         return product
+
+    def _parse_buyer_reviews(self, response):
+        """
+        Parse product buyer reviews
+        """
+        num_of_reviews = is_empty(
+            response.xpath('//span[contains(@class, "ratingcount")]/'
+                           'span/text()').extract(), ''
+        )
+
+        if num_of_reviews:
+            num_of_reviews = is_empty(
+                re.findall(r'(\d+) reviews', num_of_reviews)
+            )
+
+            if num_of_reviews:
+                average_rating = is_empty(
+                    response.xpath('//span[@itemprop="ratingValue"]/'
+                                   'text()').extract(), '0'
+                )
+
+                histogram = is_empty(
+                    re.findall(r'"formatted_histogram_stats":\s?\[(.[^]]+)',
+                               response.body_as_unicode())
+                )
+
+                if not histogram or not average_rating:
+                    return ZERO_REVIEWS_VALUE
+                else:
+                    histogram = "[{0}]".format(histogram)
+
+                    try:
+                        stars_data = json.loads(histogram)
+                        rating_by_star = {}
+
+                        for star in stars_data:
+                            rating_by_star[star['id']] = star['he_count']
+
+                        buyer_reviews = {
+                            'average_rating': average_rating,
+                            'num_of_reviews': num_of_reviews,
+                            'rating_by_star': rating_by_star,
+                        }
+                    except (KeyError, ValueError) as exc:
+                        self.log('Unable to parse star rating from {url}: {exc}'.format(
+                            url=response.url,
+                            exc=exc
+                        ), ERROR)
+                        return ZERO_REVIEWS_VALUE
+        else:
+            return ZERO_REVIEWS_VALUE
+
+        return BuyerReviews(**buyer_reviews)
 
     def _parse_variants(self, response):
         """
