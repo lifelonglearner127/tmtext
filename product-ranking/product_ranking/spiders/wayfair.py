@@ -39,6 +39,10 @@ class WayfairProductSpider(BaseProductsSpider):
         brand = self._parse_brand(response)
         cond_set_value(product, 'brand', brand, conv=string.strip)
 
+        # Parse price
+        price = self._parse_price(response)
+        cond_set_value(product, 'price', price)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -63,6 +67,38 @@ class WayfairProductSpider(BaseProductsSpider):
         )
 
         return brand
+
+    def _parse_price(self, response):
+        """
+        Parse product brand
+        """
+        price = is_empty(
+            response.xpath('//span[contains(@class, "product_price")]')
+        )
+
+        if price:
+            usd = is_empty(
+                price.xpath('./text()').extract(), ''
+            )
+            coins = is_empty(
+                price.xpath('.//sup/text()').extract(), ''
+            )
+
+            if usd:
+                usd = usd.strip().replace('$', '')
+
+                if coins:
+                    coins = coins.strip()
+                    price = usd + coins
+                else:
+                    price = usd + '00'
+            else:
+                price = '0.00'
+        else:
+            self.log('No price in {0}'. format(response.url), WARNING)
+            price = '0.00'
+
+        return Price(price=price, priceCurrency='USD')
 
     def send_next_request(self, reqs, response):
         """
