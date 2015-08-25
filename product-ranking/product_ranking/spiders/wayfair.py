@@ -183,7 +183,7 @@ class WayfairProductSpider(BaseProductsSpider):
                     value = option['name']
                     add_price = option['price']
                     # From this data for price we get an additional price value (+ 3.00 USD, for ex.)
-                    price = main_price.price.__float__() + add_price
+                    price = round(main_price.price.__float__() + add_price, 2)
 
                     if not final_options.get(category):
                         final_options[category] = []
