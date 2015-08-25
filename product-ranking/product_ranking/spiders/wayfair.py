@@ -76,6 +76,15 @@ class WayfairProductSpider(BaseProductsSpider):
         variants = self._parse_variants(response)
         cond_set_value(product, 'variants', variants)
 
+        # Parse categories
+        category = self._parse_category(response)
+        cond_set_value(product, 'category', category)
+
+        # Parse department
+        if category:
+            department = category[-1]
+            cond_set_value(product, 'department', department)
+
         # Parse stock status
         self._parse_stock_status(response)
 
@@ -138,6 +147,15 @@ class WayfairProductSpider(BaseProductsSpider):
         )
 
         return description
+
+    def _parse_category(self, response):
+        """
+        Parse product categories
+        """
+        category = response.xpath('//div[contains(@class, "product__nova__breadcrumbs")]/./'
+                                  '/a[contains(@class, "breadcrumb")]/text()').extract()
+
+        return category
 
     def _parse_stock_status(self, response):
         """
