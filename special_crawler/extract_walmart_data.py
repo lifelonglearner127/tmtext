@@ -1073,15 +1073,6 @@ class WalmartScraper(Scraper):
     def _style(self):
         return self.wv._style()
 
-    def _stockstatus_for_variants(self):
-        return self.wv._stockstatus_for_variants()
-
-    def _price_for_variants(self):
-        return self.wv._price_for_variants()
-
-    def _selected_variants(self):
-        return self.wv._selected_variants()
-
     # extract product price from its product product page tree
     def _price_from_tree(self):
         """Extracts product price
