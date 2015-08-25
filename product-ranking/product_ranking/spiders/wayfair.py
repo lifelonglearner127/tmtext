@@ -51,6 +51,10 @@ class WayfairProductSpider(BaseProductsSpider):
         image_url = self._parse_image_url(response)
         cond_set_value(product, 'image_url', image_url)
 
+        # Parse description
+        description = self._parse_description(response)
+        cond_set_value(product, 'description', description)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -96,6 +100,16 @@ class WayfairProductSpider(BaseProductsSpider):
         )
 
         return image_url
+
+    def _parse_description(self, response):
+        """
+        Parse product description
+        """
+        description = is_empty(
+            response.xpath('//*[@id="information"]/div').extract()
+        )
+
+        return description
 
     def _parse_price(self, response):
         """
