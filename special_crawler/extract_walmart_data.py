@@ -2136,7 +2136,7 @@ class WalmartScraper(Scraper):
                 elif "OutOfStock" in site_online_out_of_stock:
                     return 1
             except Exception:
-                pass
+                return 1
 
         return None
 
