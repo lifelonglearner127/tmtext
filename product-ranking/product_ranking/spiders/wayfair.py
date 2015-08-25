@@ -3,6 +3,7 @@
 import json
 import re
 import string
+import itertools
 
 from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
@@ -31,6 +32,21 @@ class WayfairProductSpider(BaseProductsSpider):
         meta = response.meta.copy()
         product = meta['product']
 
+        # Set product primary sku
+        product_sku = is_empty(
+            response.xpath('//span[@class="product_breadcrumb"]/text()').extract()
+        )
+
+        if product_sku:
+            product_sku = is_empty(
+                re.findall(r'SKU:\s?(\w+)', product_sku)
+            )
+            response.meta['product_sku'] = product_sku
+        else:
+            self.log('No product sku in {0}'.format(
+                response.url
+            ), WARNING)
+
         # Parse title
         title = self._parse_title(response)
         cond_set_value(product, 'title', title, conv=string.strip)
@@ -54,6 +70,10 @@ class WayfairProductSpider(BaseProductsSpider):
         # Parse description
         description = self._parse_description(response)
         cond_set_value(product, 'description', description)
+
+        # Parse variants
+        variants = self._parse_variants(response)
+        cond_set_value(product, 'variants', variants)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -110,6 +130,61 @@ class WayfairProductSpider(BaseProductsSpider):
         )
 
         return description
+
+    def _parse_variants(self, response):
+        """
+        Parse product variants from HTML body as JS var
+        """
+        meta = response.meta.copy()
+        product = meta['product']
+        variants_data = is_empty(
+            re.findall(
+                'wf\.appData\.product_data_%s\s?=\s?({.[^;]+)' % meta.get('product_sku'),
+                response.body_as_unicode()
+            )
+        )
+
+        if variants_data:
+            main_price = product['price']
+            try:
+                data = json.loads(variants_data)
+                option_details = data['option_details']
+                variants = []
+                final_options = {}
+
+                for option in option_details.itervalues():
+                    # Getting information for every variant and push it to dict
+                    category = option['category'].replace(' ', '_').lower()
+                    value = option['name']
+                    add_price = option['price']
+                    # From this data for price we get an additional price value (+ 3.00 USD, for ex.)
+                    price = main_price.price.__float__() + add_price
+
+                    if not final_options.get(category):
+                        final_options[category] = []
+
+                    final_options[category].append({category: value, 'price': price})
+
+                for variant in itertools.product(*final_options.values()):
+                    # Make a list of dictionary with variant from a list of tuples
+                    # ({u'color': u'Yellow', 'price': 12.99}, {'price': 15.99, u'size': u'10'}) -->
+                    #     {u'color': u'Yellow', 'price': 15.99, u'size': u'10'}
+                    single_variant = {}
+                    properties = {}
+                    for var in variant:
+                        properties.update(var)
+                    single_variant['price'] = properties.pop('price')
+                    single_variant['properties'] = properties
+                    variants.append(single_variant)
+                return variants
+            except (KeyError, ValueError) as exc:
+                self.log('Unable to parse variants on {url}" {exc}'.format(
+                    url=response.url,
+                    exc=exc
+                ))
+                return []
+
+        return []
 
     def _parse_price(self, response):
         """
