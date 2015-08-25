@@ -24,6 +24,10 @@ class WayfairProductSpider(BaseProductsSpider):
 
     SEARCH_URL = "http://www.wayfair.com/keyword.php?keyword={search_term}"
 
+    LAST_BR_DATE_URL = "http://www.wayfair.com/a/product_review_page/get_update_reviews_json?" \
+                       "_format=json&product_sku={sku}&page_number=1&sort_order=date_desc" \
+                       "&filter_rating=&filter_tag=&item_per_page=10&is_nova=1&_txid=rBAZEVXcZE6pEXHr94MSAg%3D%3D"
+
     def __init__(self, *args, **kwargs):
         super(WayfairProductSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
@@ -88,9 +92,16 @@ class WayfairProductSpider(BaseProductsSpider):
         # Parse stock status
         self._parse_stock_status(response)
 
-        # Parse variants
+        # Parse buyer reviews
         buyer_reviews = self._parse_buyer_reviews(response)
         cond_set_value(product, 'buyer_reviews', buyer_reviews)
+
+        # Parse last buyer review date
+        if buyer_reviews is not ZERO_REVIEWS_VALUE:
+            reqs.append(Request(
+                url=self.LAST_BR_DATE_URL.format(sku=product_sku),
+                callback=self._parse_last_buyer_review_date
+            ))
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -231,6 +242,30 @@ class WayfairProductSpider(BaseProductsSpider):
             return ZERO_REVIEWS_VALUE
 
         return BuyerReviews(**buyer_reviews)
+
+    def _parse_last_buyer_review_date(self, response):
+        """
+        Parse product buyer reviews
+        """
+        meta = response.meta.copy()
+        reqs = meta.get('reqs')
+        product = meta['product']
+
+        try:
+            data = json.loads(response.body_as_unicode())
+            last_buyer_review = data['reviews'][0]
+            last_buyer_review_date = last_buyer_review['date']
+            cond_set_value(product, 'last_buyer_review_date', last_buyer_review_date)
+        except (KeyError, ValueError) as exc:
+            self.log('Unable to get last buyer review date on {url}: {exc}'.format(
+                url=response.url,
+                exc=exc
+            ), WARNING)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
 
     def _parse_variants(self, response):
         """
