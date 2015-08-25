@@ -54,3 +54,7 @@ product-ranking/product_ranking/settings_local.py
 django.errors
 _http_cache
 _http_s3_cache
+
+.env/
+product-ranking/amazon_marketplace/new/
+product-ranking/product_ranking/amazon_marketplace/
