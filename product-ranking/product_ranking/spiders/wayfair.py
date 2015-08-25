@@ -106,12 +106,10 @@ class WayfairProductSpider(BaseProductsSpider):
             '//a[contains(@class, "pages_prev_next")]/@href'
         ).extract()
 
-        print('*'*50)
-        print(url[2:])
-        print('*'*50)
-
         if len(url) == 1:
             return url[0]
-        elif len(url) > 1:
-            self.log("Found more than one 'next page' link.", ERROR)
+        elif len(url) == 0:
+            self.log("Found no 'next page' links", WARNING)
+            return None
+        else:
             return url[1]
