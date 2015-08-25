@@ -75,6 +75,9 @@ class WayfairProductSpider(BaseProductsSpider):
         variants = self._parse_variants(response)
         cond_set_value(product, 'variants', variants)
 
+        # Parse stock status
+        stock_status = self._parse_stock_status(response)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -130,6 +133,28 @@ class WayfairProductSpider(BaseProductsSpider):
         )
 
         return description
+
+    def _parse_stock_status(self, response):
+        """
+        Parse product stock status
+        """
+        meta = response.meta.copy()
+        product = meta['product']
+        stock_status = is_empty(
+            response.xpath('//ul[@id="ship_display"]/'
+                           'li[contains(@class, "stock_count")]').extract()
+        )
+
+        if stock_status:
+            stock_status = stock_status.lower()
+            if 'out of stock' in stock_status:
+                product['is_out_of_stock'] = True
+            elif 'low' in stock_status:
+                product['is_limited'] = True
+            else:
+                product['is_out_of_stock'] = False
+
+        return product
 
     def _parse_variants(self, response):
         """
