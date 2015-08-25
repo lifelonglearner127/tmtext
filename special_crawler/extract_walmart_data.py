@@ -2108,13 +2108,20 @@ class WalmartScraper(Scraper):
 
         except Exception:
             #       old design
+            if self._in_stores_only():
+                return 0
+
+            body_raw = "" . join(self.tree_html.xpath("//script/text()")).strip()
+
+            if "sellerName: 'Walmart.com'" in body_raw:
+                return 1
+
             if self.tree_html.xpath("//meta[@itemprop='seller']/@content")[0] == "Walmart.com":
                 if self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']"):
                     if not self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']/@style") or \
                             "display:none" not in self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']/@style")[0]:
                         return 1
 
-                body_raw = "" . join(self.tree_html.xpath("//script/text()")).strip()
                 body_clean = re.sub("\n", " ", body_raw)
                 sIndex = body_clean.find("'item_online_availability'") + len("'item_online_availability'") + 2
                 eIndex = body_clean.find("']", sIndex)
