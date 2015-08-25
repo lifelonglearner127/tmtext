@@ -35,17 +35,34 @@ class WayfairProductSpider(BaseProductsSpider):
         title = self._parse_title(response)
         cond_set_value(product, 'title', title, conv=string.strip)
 
+        # Parse brand
+        brand = self._parse_brand(response)
+        cond_set_value(product, 'brand', brand, conv=string.strip)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
 
     def _parse_title(self, response):
+        """
+        Parse product title
+        """
         title = is_empty(
             response.xpath('//*[@class="title_name"]/text()').extract()
         )
 
         return title
+
+    def _parse_brand(self, response):
+        """
+        Parse product brand
+        """
+        brand = is_empty(
+            response.xpath('//*[@class="manu_name"]/a/text()').extract()
+        )
+
+        return brand
 
     def send_next_request(self, reqs, response):
         """
