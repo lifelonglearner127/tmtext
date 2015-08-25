@@ -2,6 +2,7 @@
 
 import json
 import re
+import string
 
 from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
@@ -30,10 +31,21 @@ class WayfairProductSpider(BaseProductsSpider):
         meta = response.meta.copy()
         product = meta['product']
 
+        # Parse title
+        title = self._parse_title(response)
+        cond_set_value(product, 'title', title, conv=string.strip)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
+
+    def _parse_title(self, response):
+        title = is_empty(
+            response.xpath('//*[@class="title_name"]/text()').extract()
+        )
+
+        return title
 
     def send_next_request(self, reqs, response):
         """
