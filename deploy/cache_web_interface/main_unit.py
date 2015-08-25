@@ -335,6 +335,17 @@ def log_install_error():
     return 'ok'
 
 
+@app.route('/killer')
+def get_killer_logs():
+    conn = boto.connect_s3()
+    bucket = conn.get_bucket(AMAZON_BUCKET_NAME, validate=False)
+    bucket_key = bucket.get_key('instances_killer_logs')
+    if bucket_key:
+        return '<pre>%s</pre>' % bucket_key.get_contents_as_string()
+    else:
+        return 'Killer logs not found'
+
+
 if __name__ == '__main__':
     app.debug = True
     app.run()
