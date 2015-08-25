@@ -47,6 +47,10 @@ class WayfairProductSpider(BaseProductsSpider):
         special_pricing = self._parse_special_pricing(response)
         cond_set_value(product, 'special_pricing', special_pricing, conv=bool)
 
+        # Parse image link
+        image_url = self._parse_image_url(response)
+        cond_set_value(product, 'image_url', image_url)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -81,6 +85,17 @@ class WayfairProductSpider(BaseProductsSpider):
         )
 
         return special_pricing
+
+    def _parse_image_url(self, response):
+        """
+        Parse product image link
+        """
+        image_url = is_empty(
+            response.xpath('//*[@id="zoomimg"]/.//*[contains(@class, "pdp_main_carousel_container")]/./'
+                           '/a/img/@src').extract()
+        )
+
+        return image_url
 
     def _parse_price(self, response):
         """
