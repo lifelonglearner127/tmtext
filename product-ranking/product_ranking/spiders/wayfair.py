@@ -43,6 +43,10 @@ class WayfairProductSpider(BaseProductsSpider):
         price = self._parse_price(response)
         cond_set_value(product, 'price', price)
 
+        # Parse special pricing
+        special_pricing = self._parse_special_pricing(response)
+        cond_set_value(product, 'special_pricing', special_pricing, conv=bool)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -68,9 +72,19 @@ class WayfairProductSpider(BaseProductsSpider):
 
         return brand
 
+    def _parse_special_pricing(self, response):
+        """
+        Parse product special price
+        """
+        special_pricing = is_empty(
+            response.xpath('//*[contains(@class, "listprice")]').extract()
+        )
+
+        return special_pricing
+
     def _parse_price(self, response):
         """
-        Parse product brand
+        Parse product price
         """
         price = is_empty(
             response.xpath('//span[contains(@class, "product_price")]')
