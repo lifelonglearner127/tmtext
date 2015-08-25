@@ -294,6 +294,7 @@ def _setup_virtual_env_scrapyd():
         run('pip install sqlalchemy')
         run('pip install psycopg2')
         run('pip install hjson')
+        run('pip install pyyaml')
 
     _setup_simmetrica_monitoring()
 
