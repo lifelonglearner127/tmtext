@@ -33,7 +33,10 @@ class AmazonVariants(object):
             variation_values_list = []
 
             for variation_key in variation_key_list:
-                variation_values_list.append(variation_key_values[variation_key + "_name"])
+                if variation_key == "processor":
+                    variation_values_list.append(variation_key_values[variation_key + "_description"])
+                else:
+                    variation_values_list.append(variation_key_values[variation_key + "_name"])
 
             variation_combinations_values = list(itertools.product(*variation_values_list))
 
@@ -62,7 +65,10 @@ class AmazonVariants(object):
                 variation_combination_key = ""
 
                 for key in variation_key_list:
-                    variation_combination_key += variation_key_values[key + "_name"][int(asin_variation_values[asin_variation][key+"_name"])]
+                    if key == "processor":
+                        variation_combination_key += variation_key_values[key + "_description"][int(asin_variation_values[asin_variation][key+"_description"])]
+                    else:
+                        variation_combination_key += variation_key_values[key + "_name"][int(asin_variation_values[asin_variation][key+"_name"])]
                     property_index = property_index + 1
 
                 variation_asin_values[variation_combination_key] = asin_variation
