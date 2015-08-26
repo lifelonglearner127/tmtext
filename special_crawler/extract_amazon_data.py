@@ -501,7 +501,7 @@ class AmazonScraper(Scraper):
             if "50_PKmb-play-button-overlay-thumb_.png" in url:
                 continue
 
-            origin_image_urls.append(url.replace(",50_.", "."))
+            origin_image_urls.append(url.replace(",50_.", ".").replace("._SS40_.", "."))
 
         if not origin_image_urls:
             return None
@@ -518,12 +518,12 @@ class AmazonScraper(Scraper):
         #The small images are to the left of the big image
         image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls])
+            return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls])
 
         #The small images are below the big image
         image_url = tree.xpath("//div[@id='thumbs-image']//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            res = [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls]
+            res = [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls]
             return self._get_origin_image_urls_from_thumbnail_urls(res)
 
         #Amazon instant video
@@ -537,7 +537,7 @@ class AmazonScraper(Scraper):
 
         image_url = tree.xpath("//div[contains(@id,'thumb-container')]//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls])
+            return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls])
 
         image_url = tree.xpath("//div[contains(@class,'imageThumb')]//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
