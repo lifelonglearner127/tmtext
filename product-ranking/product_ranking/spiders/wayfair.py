@@ -4,6 +4,7 @@ import json
 import re
 import string
 import itertools
+import urllib
 
 from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
@@ -27,6 +28,9 @@ class WayfairProductSpider(BaseProductsSpider):
     LAST_BR_DATE_URL = "http://www.wayfair.com/a/product_review_page/get_update_reviews_json?" \
                        "_format=json&product_sku={sku}&page_number=1&sort_order=date_desc" \
                        "&filter_rating=&filter_tag=&item_per_page=10&is_nova=1&_txid=rBAZEVXcZE6pEXHr94MSAg%3D%3D"
+
+    VARIANTS_STOCK_URL = "http://www.wayfair.com/ajax/stock_total.php?bpss=yes&" \
+                         "skulist={sku}&kitmode=0&postalcode=67346&_txid=rBAZEVXca8GoynHn%2FREfAg%3D%3D"
 
     def __init__(self, *args, **kwargs):
         super(WayfairProductSpider, self).__init__(
@@ -79,6 +83,20 @@ class WayfairProductSpider(BaseProductsSpider):
         # Parse variants
         variants = self._parse_variants(response)
         cond_set_value(product, 'variants', variants)
+
+        # Parse stock status for variants
+        if variants:
+            stock_skus = urllib.quote(response.meta['stock_skus'])
+            reqs.append(Request(
+                url=self.VARIANTS_STOCK_URL.format(sku=stock_skus),
+                callback=self._parse_variants_stock,
+                headers={
+                    'Referer': response.url,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'User-Agent': 'Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36 (KHTML, '
+                                  'like Gecko) Chrome/43.0.2357.134 Safari/537.36'
+                }
+            ))
 
         # Parse categories
         category = self._parse_category(response)
@@ -287,8 +305,15 @@ class WayfairProductSpider(BaseProductsSpider):
                 option_details = data['option_details']
                 variants = []
                 final_options = {}
+                # A dict for sku accordance for every single variant.
+                # Will contain, for ex.: 'blue': '123456', 'red': '456789'
+                variants_skus = {}
+                # Will contain sku for stock status request. If the variant is {'color: 'blue', 'size':10}
+                # skus for every of them are: {'blue':'123456', 'red': '456789'} and product sku: 'QMP2470'
+                # we will get 'QMP2470-123456,456789'
+                stock_skus = []
 
-                for option in option_details.itervalues():
+                for sku, option in option_details.iteritems():
                     # Getting information for every variant and push it to dict
                     category = option['category'].replace(' ', '_').lower()
                     value = option['name']
@@ -299,28 +324,79 @@ class WayfairProductSpider(BaseProductsSpider):
                     if not final_options.get(category):
                         final_options[category] = []
 
+                    variants_skus[value] = sku
                     final_options[category].append({category: value, 'price': price})
+
+                response.meta['variants_skus'] = variants_skus
 
                 for variant in itertools.product(*final_options.values()):
                     # Make a list of dictionary with variant from a list of tuples
-                    # ({u'color': u'Yellow', 'price': 12.99}, {'price': 15.99, u'size': u'10'}) -->
-                    #     {u'color': u'Yellow', 'price': 15.99, u'size': u'10'}
+                    # ({'color': u'Yellow', 'price': 12.99}, {'price': 15.99, 'size': u'10'}) -->
+                    #     {'color': u'Yellow', 'price': 15.99, 'size': u'10'}
                     single_variant = {}
                     properties = {}
+                    stock_sku = []
+
                     for var in variant:
                         properties.update(var)
+
                     single_variant['price'] = properties.pop('price')
                     single_variant['properties'] = properties
+
+                    for property in properties.itervalues():
+                        stock_sku.append(variants_skus[property])
+
+                    stock_skus.append(
+                        meta['product_sku'] + '-'
+                        + ','.join(stock_sku)
+                    )
+
                     variants.append(single_variant)
+                response.meta['stock_skus'] = '~^~'.join(stock_skus)
+
                 return variants
-            except (KeyError, ValueError) as exc:
-                self.log('Unable to parse variants on {url}" {exc}'.format(
+            except Exception as exc:
+                self.log('Unable to parse variants on {url}: {exc}'.format(
                     url=response.url,
                     exc=exc
-                ))
+                ), ERROR)
                 return []
 
         return []
+
+    def _parse_variants_stock(self, response):
+        """
+        Parse product variants from HTML body as JS var
+        """
+        meta = response.meta.copy()
+        product = meta['product']
+        reqs = meta.get('reqs')
+
+        try:
+            # Dict where stock status data is accesses by sky, for ex.: "QMP2470_14347972_14347969"
+            stock_status_data = json.loads(response.body_as_unicode())
+            variants = product['variants']
+            skus = response.meta['variants_skus']
+
+            for variant in variants:
+                variant_sku = [meta['product_sku']]
+
+                for property in variant['properties'].itervalues():
+                    variant_sku.append(skus[property])
+
+                variant_sku = '_'.join(variant_sku)
+                stock_status = stock_status_data[variant_sku]['QuantityDisplay']
+
+        except Exception as exc:
+            self.log('Unable to parse variants on {url}: {exc}'.format(
+                url=response.url,
+                exc=exc
+            ), ERROR)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
 
     def _parse_price(self, response):
         """
