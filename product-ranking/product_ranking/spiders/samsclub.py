@@ -134,7 +134,13 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 "//div[contains(@class,'prodTitlePlus')]"
                 "/span[@itemprop='brand']/text()"
             ).extract())
-        cond_set_value(product, 'brand', 'NO BRAND')
+        if not product.get('brand', None):
+            cond_set(
+                product,
+                'brand',
+                response.xpath(
+                    '//*[@itemprop="brand"]//span/text()'
+            ).extract())
 
         cond_set(
             product,
