@@ -1093,7 +1093,40 @@ class WalmartScraper(Scraper):
                 if "camelPrice" not in body_jpart[sIndex:eIndex] and self._in_stores_only():
                     return "in stores only - no online price"
 
-                return self.tree_html.xpath("//span[contains(@class, 'camelPrice')]")[0].text_content().strip()
+                try:
+                    return self.tree_html.xpath("//span[contains(@class, 'camelPrice')]")[0].text_content().strip()
+                except:
+                    pass
+
+                try:
+                    script_bodies = self.tree_html.xpath("//script/text()")
+                    price_html = None
+
+                    for script in script_bodies:
+                        if "var DefaultItem =" in script:
+                            price_html = script
+                            break
+
+                    if not price_html:
+                        raise Exception
+
+                    start_index = end_index = 0
+
+                    start_index = price_html.find(",\nprice: '") + len(",\nprice: '")
+                    end_index = price_html.find("',\nprice4SAC:")
+                    price_html = price_html[start_index:end_index]
+                    price_html = html.fromstring(price_html)
+                    price = price_html.text_content()
+                    price = re.findall("\$\d+.\d+", price_html.text_content())
+
+                    if not price:
+                        raise Exception
+
+                    return price[0]
+                except:
+                    pass
+
+                return None
             except:
                 pass
 
@@ -1769,33 +1802,39 @@ class WalmartScraper(Scraper):
         """
         in_stores = 0
 
-        try:
-            if self._in_stores_only() == 1:
-                return 1
-
-            in_stores = self._stores_available_from_script_old_page()
-            return in_stores
-        except Exception:
-            pass
-
-        try:
-            in_stores = self._stores_available_from_script_new_page()
-
-            if in_stores:
-                return in_stores
-            else:
-                body_raw = "".join(self.tree_html.xpath("//script//text()"))
-                body_clean = re.sub("\n", " ", body_raw)
-                # extract json part of function body
-#                body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
-
-                body_jpart = re.findall("\{\"query.*?\}", body_clean)[0]
-                body_dict = json.loads(body_jpart)
-
-                if body_dict["inStore"] is True:
+        if self._version() == "Walmart v1":
+            try:
+                if self._in_stores_only() == 1:
                     return 1
-        except Exception:
-            pass
+
+                if self.tree_html.xpath("//*[@id='STORE_STOCK_STATUS']"):
+                    if "Also in stores" in self.tree_html.xpath("//*[@id='STORE_STOCK_STATUS']")[0].text_content():
+                        return 1
+
+                in_stores = self._stores_available_from_script_old_page()
+                return in_stores
+            except Exception:
+                pass
+
+        if self._version() == "Walmart v2":
+            try:
+                in_stores = self._stores_available_from_script_new_page()
+
+                if in_stores:
+                    return in_stores
+                else:
+                    body_raw = "".join(self.tree_html.xpath("//script//text()"))
+                    body_clean = re.sub("\n", " ", body_raw)
+                    # extract json part of function body
+    #                body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
+
+                    body_jpart = re.findall("\{\"query.*?\}", body_clean)[0]
+                    body_dict = json.loads(body_jpart)
+
+                    if body_dict["inStore"] is True:
+                        return 1
+            except Exception:
+                pass
 
         return in_stores
 
