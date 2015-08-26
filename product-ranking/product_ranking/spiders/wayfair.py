@@ -108,7 +108,9 @@ class WayfairProductSpider(BaseProductsSpider):
             cond_set_value(product, 'department', department)
 
         # Parse stock status
-        self._parse_stock_status(response)
+        stock_status = self._parse_stock_status(response)
+        if stock_status:
+            product.update(stock_status)
 
         # Parse buyer reviews
         buyer_reviews = self._parse_buyer_reviews(response)
@@ -191,22 +193,32 @@ class WayfairProductSpider(BaseProductsSpider):
         Parse product stock status
         """
         meta = response.meta.copy()
-        product = meta['product']
         stock_status = is_empty(
             response.xpath('//ul[@id="ship_display"]/'
                            'li[contains(@class, "stock_count")]').extract()
         )
 
         if stock_status:
-            stock_status = stock_status.lower()
-            if 'out of stock' in stock_status:
-                product['is_out_of_stock'] = True
-            elif 'low' in stock_status:
-                product['is_limited'] = True
-            else:
-                product['is_out_of_stock'] = False
+            return self._guess_stock_field(stock_status)
+        else:
+            self.log('Unable to parse stock status on {url}'.format(
+                url=response.url
+            ), WARNING)
+            return None
 
-        return product
+    def _guess_stock_field(self, stock_status):
+        """
+        Selects what field to fill.
+        For ex. for '+10 in Stock' --> {'is_out_of_stock': False}
+        """
+        stock_status = stock_status.lower()
+
+        if 'out of stock' in stock_status:
+            return {'is_out_of_stock': True}
+        elif 'low' in stock_status:
+            return {'is_limited': True}
+        else:
+            return {'is_out_of_stock': False}
 
     def _parse_buyer_reviews(self, response):
         """
@@ -385,7 +397,12 @@ class WayfairProductSpider(BaseProductsSpider):
                     variant_sku.append(skus[property])
 
                 variant_sku = '_'.join(variant_sku)
-                stock_status = stock_status_data[variant_sku]['QuantityDisplay']
+                stock_status = self._guess_stock_field(
+                    stock_status_data[variant_sku]['QuantityDisplay']
+                )
+
+                if stock_status:
+                    variant.update(stock_status)
 
         except Exception as exc:
             self.log('Unable to parse variants on {url}: {exc}'.format(
