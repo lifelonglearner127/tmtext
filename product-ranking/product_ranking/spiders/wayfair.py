@@ -23,6 +23,8 @@ class WayfairProductSpider(BaseProductsSpider):
     name = 'wayfair_products'
     allowed_domains = ["wayfair.com"]
 
+    use_proxies = True
+
     SEARCH_URL = "http://www.wayfair.com/keyword.php?keyword={search_term}"
 
     LAST_BR_DATE_URL = "http://www.wayfair.com/a/product_review_page/get_update_reviews_json?" \
