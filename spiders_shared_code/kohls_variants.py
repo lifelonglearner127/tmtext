@@ -66,7 +66,7 @@ class KohlsVariants(object):
             price = item.get("SkuSalePrice") or item.get("SkuRegularPrice") or 0
             if price:
                 try:
-                    price_amount = float(price.replace("$", ""))
+                    price_amount = float(re.findall(r"[-+]?\d*\.\d+|\d+", price.replace("$", ""))[0])
                 except:
                     price_amount = None
             inStock = item.get("inventoryStatus")
@@ -78,12 +78,12 @@ class KohlsVariants(object):
                 "skuId": skuId,
                 "upc": upc,
                 "price": price_amount,
-                "price_string" : price,
                 "in_stock": inStock,
                 "properties": {
                     "color": color[len(color)-1],
                     "size": size[1],
                 },
+                'unavailable': False,
                 "selected": selected,
             }
             variants.append(obj)
@@ -100,8 +100,12 @@ class KohlsVariants(object):
         color_value_list = list(set(color_value_list))
         size_value_list = list(set(size_value_list))
 
+        all_combinations = []
+
         for color in color_value_list:
             for size in size_value_list:
+                all_combinations.append([color, size])
+
                 if [color, size] in instock_variant_combination_list:
                     continue
 
@@ -109,16 +113,30 @@ class KohlsVariants(object):
                     "skuId": None,
                     "upc": None,
                     "price": None,
-                    "price_string" : None,
                     "in_stock": False,
                     "properties": {
                         "color": color,
                         "size": size,
                     },
+                    'unavailable': True,
                     "selected": False,
                 }
 
                 variants.append(obj)
+
+        for index, variant in enumerate(variants):
+            if [variant["properties"]["color"], variant["properties"]["size"]] in all_combinations:
+                all_combinations.remove([variant["properties"]["color"], variant["properties"]["size"]])
+            else:
+                variants[index]["properties"] = None
+
+        temp = []
+
+        for variant in variants:
+            if variant["properties"]:
+                temp.append(variant)
+
+        variants = temp
 
         # scrape HTML variants (to get images)
         for var in self.tree_html.xpath(
