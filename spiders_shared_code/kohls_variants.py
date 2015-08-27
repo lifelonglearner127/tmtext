@@ -2,6 +2,10 @@ import re
 import json
 
 import lxml.html
+import requests
+import json
+
+from lxml import html, etree
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -17,17 +21,17 @@ class KohlsVariants(object):
         self.tree_html = tree_html
 
     def _variants(self):
-
+        page_raw_text = html.tostring(self.tree_html)
         # scrape JSON variants
         variants_text = is_empty(re.findall(
-            "\"variants\"\s+\:\s+([^\]]*)", self.response.body), ""
+            "\"variants\"\s+\:\s+([^\]]*)", page_raw_text), ""
         ).strip("\n").strip("\t")
         variants_text = variants_text.strip().rstrip(",") + "]"
 
         variants_count = is_empty(
             re.findall(
                 r'availablevariantsCount_product\s*=\s*\'(\d+)\'',
-                self.response.body
+                page_raw_text
             ), 0
         )
 
@@ -61,7 +65,10 @@ class KohlsVariants(object):
             upc = item.get("skuUpcCode")
             price = item.get("SkuSalePrice") or item.get("SkuRegularPrice") or 0
             if price:
-                price = price.replace("$", "")
+                try:
+                    price_amount = float(price.replace("$", ""))
+                except:
+                    price_amount = None
             inStock = item.get("inventoryStatus")
             if inStock == 'true':
                 inStock = True
@@ -70,7 +77,8 @@ class KohlsVariants(object):
             obj = {
                 "skuId": skuId,
                 "upc": upc,
-                "price": float(price),
+                "price": price_amount,
+                "price_string" : price,
                 "in_stock": inStock,
                 "properties": {
                     "color": color[len(color)-1],
@@ -79,6 +87,38 @@ class KohlsVariants(object):
                 "selected": selected,
             }
             variants.append(obj)
+
+        color_value_list = []
+        size_value_list = []
+        instock_variant_combination_list = []
+
+        for variant in variants:
+            color_value_list.append(variant["properties"]["color"])
+            size_value_list.append(variant["properties"]["size"])
+            instock_variant_combination_list.append([variant["properties"]["color"], variant["properties"]["size"]])
+
+        color_value_list = list(set(color_value_list))
+        size_value_list = list(set(size_value_list))
+
+        for color in color_value_list:
+            for size in size_value_list:
+                if [color, size] in instock_variant_combination_list:
+                    continue
+
+                obj = {
+                    "skuId": None,
+                    "upc": None,
+                    "price": None,
+                    "price_string" : None,
+                    "in_stock": False,
+                    "properties": {
+                        "color": color,
+                        "size": size,
+                    },
+                    "selected": False,
+                }
+
+                variants.append(obj)
 
         # scrape HTML variants (to get images)
         for var in self.tree_html.xpath(

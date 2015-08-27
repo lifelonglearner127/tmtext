@@ -10,6 +10,7 @@ from itertools import groupby
 
 from lxml import html, etree
 from extract_data import Scraper
+from spiders_shared_code.kohls_variants import KohlsVariants
 
 
 class KohlsScraper(Scraper):
@@ -29,6 +30,7 @@ class KohlsScraper(Scraper):
         self.failure_type = None
         self.review_list = None
         self.is_review_checked = False
+        self.kv = KohlsVariants()
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -48,6 +50,12 @@ class KohlsScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
+
+        try:
+            self.kv.setupCH(self.tree_html)
+        except:
+            pass
+
         try:
             self._failure_type()
 
@@ -219,6 +227,9 @@ class KohlsScraper(Scraper):
 
     def _ingredients_count(self):
         return 0
+
+    def _variants(self):
+        return self.kv._variants()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -486,7 +497,7 @@ class KohlsScraper(Scraper):
         "long_description" : _long_description, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredients_count,
-
+        "variants": _variants,
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
