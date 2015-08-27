@@ -147,7 +147,6 @@ class JcpenneyProductsSpider(BaseProductsSpider):
                            meta=new_meta, callback=self._parse_reviews,
                            dont_filter=True)
         elif product_id:
-            print response.url, '!'*40
             return Request(self.url_formatter.format(self.REVIEW_URL,
                                                      product_id=product_id),
                            meta=new_meta, callback=self._parse_reviews,
