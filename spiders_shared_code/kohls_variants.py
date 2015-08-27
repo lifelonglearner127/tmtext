@@ -74,7 +74,7 @@ class KohlsVariants(object):
             obj = {
                 "skuId": skuId,
                 "upc": upc,
-                "price": float(price),
+                "price": price,
                 "in_stock": inStock,
                 "properties": {
                     "color": color[len(color)-1],
@@ -83,6 +83,37 @@ class KohlsVariants(object):
                 "selected": selected,
             }
             variants.append(obj)
+
+        color_value_list = []
+        size_value_list = []
+        instock_variant_combination_list = []
+
+        for variant in variants:
+            color_value_list.append(variant["properties"]["color"])
+            size_value_list.append(variant["properties"]["size"])
+            instock_variant_combination_list.append([variant["properties"]["color"], variant["properties"]["size"]])
+
+        color_value_list = list(set(color_value_list))
+        size_value_list = list(set(size_value_list))
+
+        for color in color_value_list:
+            for size in size_value_list:
+                if [color, size] in instock_variant_combination_list:
+                    continue
+
+                obj = {
+                    "skuId": None,
+                    "upc": None,
+                    "price": None,
+                    "in_stock": False,
+                    "properties": {
+                        "color": color,
+                        "size": size,
+                    },
+                    "selected": False,
+                }
+
+                variants.append(obj)
 
         # scrape HTML variants (to get images)
         for var in self.tree_html.xpath(
