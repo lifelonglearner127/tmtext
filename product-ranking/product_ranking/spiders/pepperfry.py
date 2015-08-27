@@ -4,7 +4,8 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
-from scrapy import Request, Selector
+from spiders_shared_code.pepperfry_variants import PepperfryVariants
+from scrapy import Request
 from scrapy.log import WARNING, ERROR
 
 
@@ -13,10 +14,7 @@ class PepperfryProductsSpider(BaseProductsSpider):
 
     Missing fields:
     * `reviews`
-    * `is_out_of_stock`
     * `upc`
-    * `variants`
-
 
     Takes `order` argument with the following values:
     * `new` (default)
@@ -121,11 +119,7 @@ class PepperfryProductsSpider(BaseProductsSpider):
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
-    def parse_product(self, response):
-        prod = response.meta['product']
-        cond_set_value(prod, 'url', response.url)
-        cond_set_value(prod, 'locale', 'en-US')
-
+    def _populate_from_html(self, response, prod):
         # title
         title = response.css('h2[itemprop=name]::text')
         cond_set(prod, 'title', title.extract())
@@ -137,6 +131,10 @@ class PepperfryProductsSpider(BaseProductsSpider):
         price = price_div.css('[itemprop=price]::attr(content)')
         if currency and price:
             prod['price'] = Price(currency[0].extract(), price[0].extract())
+
+        # out of stock
+        cond_set_value(
+            prod, 'is_out_of_stock', response.css('.out_of_stock_box'), bool)
 
         # image
         img = response.css('.vip_gallery [itemprop=image] ::attr(src)')
@@ -164,4 +162,14 @@ class PepperfryProductsSpider(BaseProductsSpider):
             r = RelatedProduct(r_t[0].extract(), r_hr[0].extract())
             related.append(r)
         prod['related_products'] = {rel_key: related}
+
+    def parse_product(self, response):
+        prod = response.meta['product']
+        cond_set_value(prod, 'url', response.url)
+        cond_set_value(prod, 'locale', 'en-US')
+        self._populate_from_html(response, prod)
+        pv = PepperfryVariants()
+        pv.setupSC(response)
+        variants = pv._variants()
+        cond_set_value(prod, 'variants', variants)
         return prod
