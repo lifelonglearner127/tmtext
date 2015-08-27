@@ -2,6 +2,10 @@ import re
 import json
 
 import lxml.html
+import requests
+import json
+
+from lxml import html, etree
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -17,17 +21,17 @@ class KohlsVariants(object):
         self.tree_html = tree_html
 
     def _variants(self):
-
+        page_raw_text = html.tostring(self.tree_html)
         # scrape JSON variants
         variants_text = is_empty(re.findall(
-            "\"variants\"\s+\:\s+([^\]]*)", self.response.body), ""
+            "\"variants\"\s+\:\s+([^\]]*)", page_raw_text), ""
         ).strip("\n").strip("\t")
         variants_text = variants_text.strip().rstrip(",") + "]"
 
         variants_count = is_empty(
             re.findall(
                 r'availablevariantsCount_product\s*=\s*\'(\d+)\'',
-                self.response.body
+                page_raw_text
             ), 0
         )
 
