@@ -3,6 +3,7 @@
 import json
 import re
 import hjson
+import urlparse
 
 from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
@@ -264,6 +265,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
                             reqs.append(
                                 Request(
                                     url='http://www.next.co.uk/item/{0}?CTRL=select'.format(item_number),
+                                    dont_filter=True,
                                     callback=self._parse_size_variants
                                 )
                             )
@@ -605,7 +607,14 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     item.css('.Details .Title a ::attr(href)').extract()
                 )
                 res_item = SiteProductItem()
-                yield link, res_item
+
+                link = urlparse.urljoin(response.url, link)
+                yield Request(
+                    link,
+                    dont_filter=True,
+                    meta={'product': res_item},
+                    callback=self.parse_product,
+                ), res_item
         else:
             self.log("Found no product links in {url}".format(response.url), INFO)
 
