@@ -65,7 +65,10 @@ class KohlsVariants(object):
             upc = item.get("skuUpcCode")
             price = item.get("SkuSalePrice") or item.get("SkuRegularPrice") or 0
             if price:
-                price_amount = float(price.replace("$", ""))
+                try:
+                    price_amount = float(price.replace("$", ""))
+                except:
+                    price_amount = None
             inStock = item.get("inventoryStatus")
             if inStock == 'true':
                 inStock = True
