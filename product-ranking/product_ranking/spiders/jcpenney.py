@@ -81,6 +81,8 @@ class JcpenneyProductsSpider(BaseProductsSpider):
                   "rcs=eF4NzLkNgDAMAMAmFbtYin-zAXM4JhIFHTA_aa-" \
                   "41t5xhHZ3y4Iae4JMdiCshNOVEXVO6rTd33OVIBmgsPQwDg5SkAW4hh--nxIA&l=1"
 
+    use_proxies = True
+
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
