@@ -65,7 +65,7 @@ class KohlsVariants(object):
             upc = item.get("skuUpcCode")
             price = item.get("SkuSalePrice") or item.get("SkuRegularPrice") or 0
             if price:
-                price = price.replace("$", "")
+                price_amount = float(price.replace("$", ""))
             inStock = item.get("inventoryStatus")
             if inStock == 'true':
                 inStock = True
@@ -74,7 +74,8 @@ class KohlsVariants(object):
             obj = {
                 "skuId": skuId,
                 "upc": upc,
-                "price": price,
+                "price": price_amount,
+                "price_string" : price,
                 "in_stock": inStock,
                 "properties": {
                     "color": color[len(color)-1],
@@ -105,6 +106,7 @@ class KohlsVariants(object):
                     "skuId": None,
                     "upc": None,
                     "price": None,
+                    "price_string" : None,
                     "in_stock": False,
                     "properties": {
                         "color": color,
