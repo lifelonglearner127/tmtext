@@ -41,7 +41,7 @@ ITEM_PIPELINES = {
 #USER_AGENT = 'product_ranking (+http://www.yourdomain.com)'
 
 # Delay between requests not to be blocked (seconds).
-DOWNLOAD_DELAY = 0.5
+DOWNLOAD_DELAY = 1
 
 # Maximum URL length
 URLLENGTH_LIMIT = 5000
