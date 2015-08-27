@@ -68,6 +68,11 @@ class HouseoffraserProductSpider(BaseProductsSpider):
         category = self._parse_category(base_product_info)
         cond_set_value(product, 'category', category)
 
+        # Set department
+        if category:
+            department = category[-1]
+            cond_set_value(product, 'department', department)
+
         # Set title from base product info
         title = self._parse_title(base_product_info)
         cond_set_value(product, 'title', title)
