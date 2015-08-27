@@ -148,10 +148,7 @@ class MacysScraper(Scraper):
         return None
 
     def _description(self):
-        description = self._description_helper()
-        if description is None or len(description) < 1:
-            return self._long_description_helper()
-        return description
+        return self.tree_html.xpath("//div[@id='longDescription']")[0].text_content()
 
     def _description_helper(self):
         description = ""
@@ -172,10 +169,13 @@ class MacysScraper(Scraper):
         return description
 
     def _long_description(self):
+        '''
         description = self._description_helper()
         if description is None or len(description) < 1:
             return None
         return self._long_description_helper()
+        '''
+        return html.tostring(self.tree_html.xpath("//ul[@id='bullets']")[0])
 
     def _long_description_helper(self):
         script = " ".join(self.tree_html.xpath("//script//text()"))
