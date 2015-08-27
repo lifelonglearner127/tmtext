@@ -141,6 +141,7 @@ class JcpenneyProductsSpider(BaseProductsSpider):
         review_id = is_empty(response.xpath(
             '//script/text()[contains(.,"reviewId")]'
         ).re('reviewId:\"(\d+)\",'))
+        """
         if review_id:
             return Request(self.url_formatter.format(self.REVIEW_URL,
                                                      product_id=review_id),
@@ -151,6 +152,7 @@ class JcpenneyProductsSpider(BaseProductsSpider):
                                                      product_id=product_id),
                            meta=new_meta, callback=self._parse_reviews,
                            dont_filter=True)
+        """
         return prod
 
     def _populate_from_html(self, response, product):
@@ -325,9 +327,11 @@ class JcpenneyProductsSpider(BaseProductsSpider):
             cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         new_meta = response.meta.copy()
         new_meta['product'] = product
+        """
         return Request(self.RELATED_URL.format(product_id=product_id),
                        meta=new_meta, callback=self._parse_related_products,
                        dont_filter=True)
+        """
 
     def _scrape_product_links(self, response):
         links = response.xpath(
