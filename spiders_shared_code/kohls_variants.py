@@ -57,10 +57,14 @@ class KohlsVariants(object):
 
         for item in variants_json:
             color = item.get("color", "").split("_")
+            if not ("". join(color)).strip():
+                color = ["not supported"]
             selected = False
             if color[len(color)-1].strip() == active_c.strip():
                 selected = True
             size = item.get("size2", "").split("_")
+            if not ("". join(size)).strip():
+                size = ["not supported", "not supported"]
             skuId = item.get("skuId")
             upc = item.get("skuUpcCode")
             price = item.get("SkuSalePrice") or item.get("SkuRegularPrice") or 0
@@ -127,6 +131,10 @@ class KohlsVariants(object):
         for index, variant in enumerate(variants):
             if [variant["properties"]["color"], variant["properties"]["size"]] in all_combinations:
                 all_combinations.remove([variant["properties"]["color"], variant["properties"]["size"]])
+                if variant["properties"]["color"] == "not supported":
+                    del variant["properties"]["color"]
+                if variant["properties"]["size"] == "not supported":
+                    del variant["properties"]["size"]
             else:
                 variants[index]["properties"] = None
 
