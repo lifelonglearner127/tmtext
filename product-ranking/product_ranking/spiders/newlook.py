@@ -83,6 +83,8 @@ class NewlookProductsSpider(BaseProductsSpider):
                               meta={'product': prod})
 
     def parse_302(self, response):
+        if not self.SORTING:
+            self.SORTING = ''
         url = response.url + '&Ns=' + self.SORTING
         return Request(url,
             meta=response.meta, dont_filter=True)
