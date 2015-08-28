@@ -10,7 +10,7 @@ from itertools import groupby
 
 from lxml import html, etree
 from extract_data import Scraper
-from spiders_shared_code.jcpenney_variants import JcpenneyVariants
+from spiders_shared_code.snapdeal_variants import SnapdealVariants
 
 
 class SnapdealScraper(Scraper):
@@ -31,6 +31,8 @@ class SnapdealScraper(Scraper):
         self.review_count = 0
         self.is_review_checked = False
 
+        self.sv = SnapdealVariants()
+
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
@@ -49,6 +51,8 @@ class SnapdealScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
+
+        self.sv.setupCH(self.tree_html)
 
         try:
             if self.tree_html.xpath("//meta[@property='og:type']/@content")[0] != "snapdeallog:item":
@@ -154,7 +158,7 @@ class SnapdealScraper(Scraper):
         return None
 
     def _variants(self):
-        return None
+        return self.sv._variants()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -200,7 +204,7 @@ class SnapdealScraper(Scraper):
         youtubu_urls = []
 
         for iframe in youtubu_iframes:
-            youtubu_urls.append(iframe.xpath("./@lazysrc")[0])
+            youtubu_urls.append(iframe.xpath("./@lazysrc")[0].strip())
 
         return youtubu_urls
 
