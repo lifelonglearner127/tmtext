@@ -1,8 +1,7 @@
 #TODO:
-#1) marketplace
-#2) buyer reviews
-#3) description (?)
 #4) variants (with OOS status)
+# OOS, img_url and price requires additional request per each variant
+# -------------
 #5) brand
 #6) is_out_of_stock
 #7) UPC (?)
@@ -17,13 +16,17 @@ import urlparse
 import urllib
 import string
 import re
+import json
 
 from scrapy.log import ERROR, DEBUG
 from scrapy.http import Request
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price
+from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
+    BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+from spiders_shared_code.flipkart_variants import FlipkartVariants
 
 
 class FlipkartProductsSpider(BaseProductsSpider):
@@ -74,6 +77,21 @@ class FlipkartProductsSpider(BaseProductsSpider):
 
         cond_set(product, 'image_url',
                  response.xpath('//img[@id="visible-image-small"]/@src').extract())
+
+        # marketplace
+        cond_set_value(product, 'marketplace', self.parse_marketplace(response))
+        # reviews
+        cond_set_value(
+            product, 'buyer_reviews', self.parse_buyer_reviews(response))
+        # description
+        cond_set_value(
+            product, 'description', ''.join(response.xpath(
+                '//div[@class="rpdSection" or '
+                '@class="description specSection"]').extract()))
+        # variants
+        fv = FlipkartVariants()
+        fv.setupSC(response)
+        cond_set_value(product, 'variants', fv._variants())
 
         price = response.xpath(
             '//meta[@itemprop="price"]/@content').re(FLOATING_POINT_RGEX)
@@ -223,3 +241,41 @@ class FlipkartProductsSpider(BaseProductsSpider):
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
+
+    def parse_marketplace(self, response):
+        marketplace_section = response.css(
+            '.seller-table-wrap::attr(data-config)')
+        if not marketplace_section:  # no marketplaces
+            return None
+        json_data = json.loads(marketplace_section[0].extract())
+        marketplace = []
+        for item in json_data.get('dataModel', []):
+            mp = dict(
+                name=item['sellerInfo']['name'],
+                price=Price(
+                    price=item['priceInfo']['sellingPrice'],
+                    priceCurrency='INR'
+                )
+            )
+            marketplace.append(mp)
+        return marketplace or None
+
+    def parse_buyer_reviews(self, response):
+        review_section = response.css('.reviewSection')
+
+        total_rating = review_section.css('.bigStar::text').extract()
+        total_review = review_section.css(
+            '.avgWrapper > .subText:last-child::text').re(FLOATING_POINT_RGEX)
+        if not total_rating or not total_review:
+            return ZERO_REVIEWS_VALUE
+
+        reviews_list = review_section.css('ul.ratingsDistribution > li > a')
+        reviews = {}
+        for item in reviews_list:
+            stars = item.css('span::text').re('\d+')
+            count = item.css('.progress::text').extract()
+            if stars and count:
+                reviews[stars[0]] = int(count[0].replace(',', ''))
+
+        return BuyerReviews(
+            int(total_review[0].replace(',', '')), float(total_rating[0]), reviews)
