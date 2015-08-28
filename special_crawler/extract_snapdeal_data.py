@@ -200,7 +200,7 @@ class SnapdealScraper(Scraper):
         youtubu_urls = []
 
         for iframe in youtubu_iframes:
-            youtubu_urls.append(iframe.xpath("./@lazysrc")[0])
+            youtubu_urls.append(iframe.xpath("./@lazysrc")[0].strip())
 
         return youtubu_urls
 
