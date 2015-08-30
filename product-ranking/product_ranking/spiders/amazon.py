@@ -210,6 +210,16 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                     price=price.replace('$', '').strip()\
                         .replace(',', '')
                 )
+        price_original = response.xpath(
+            '//*[@id="price"]//*[contains(@class, "text-strike")]/text()').extract()
+        if price_original:
+            price_original = price_original[0].replace('$', '').strip()
+            try:
+                price_original = float(price_original)
+            except Exception, _:
+                price_original = None
+            if price_original:
+                product['price_original'] = price_original
 
     def populate_bestseller_rank(self, product, response):
         ranks = {' > '.join(map(unicode.strip,

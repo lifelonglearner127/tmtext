@@ -203,6 +203,7 @@ class SiteProductItem(Item):
     special_pricing = Field()  # 1/0 for TPC, Rollback; target, walmart
 
     price_subscribe_save = Field()  # Amazon
+    price_original = Field()  # a price without discount (if applicable)
 
     variants = Field()
 

@@ -598,6 +598,12 @@ class BaseValidator(object):
         if re.match(r'^[\d\.]+$', str(val)):
             return True
 
+    def _validate_price_original(self, val):
+        if not val:
+            return True
+        if re.match(r'^[\d\.]+$', str(val)):
+            return True
+
     def _validate_response_code(self, val):
         if not val:
             return True
