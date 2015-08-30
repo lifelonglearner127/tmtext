@@ -46,6 +46,9 @@ DOWNLOAD_DELAY = 0.5
 # Maximum URL length
 URLLENGTH_LIMIT = 5000
 
+# show all duplicates (makes debugging easier)
+DUPEFILTER_DEBUG = True
+
 #AmazonFresh mapping locations and market place id
 AMAZONFRESH_LOCATION = {
     "southern_cali": "A241IQ0793UAL2",

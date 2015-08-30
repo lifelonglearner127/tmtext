@@ -178,6 +178,7 @@ class BaseValidatorSettings(object):
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = False  # ... duplicated requests?
     ignore_log_filtered = False  # ... filtered requests?
+    ignore_log_duplications_and_ranking_gaps = False  # ranking issues + dupls.
 
     # Test requests {request: [min_products; max_products], ...}
     # The requests below are for example purposes only!
@@ -742,6 +743,11 @@ class BaseValidator(object):
             if 'DUPLICATIONS' in log_issues:
                 found_issues.update(
                     OrderedDict(log_issues='duplicated requests found'))
+
+        if getattr(self.settings, 'ignore_log_duplications_and_ranking_gaps', None):
+            # remove notifications about missing products and duplications
+            found_issues.pop('ranking', None)
+            found_issues.pop('log_issues', None)
 
         if not self.settings.ignore_log_filtered:
             if 'FILTERED' in log_issues:
