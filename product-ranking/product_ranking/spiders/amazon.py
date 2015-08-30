@@ -58,7 +58,7 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
         'samsung t9500 battery 2600 li-ion warranty': [30, 250],
-        'water pump bronze inch apollo': [2, 30],
+        'electric bicycle parts wheel': [100, 350],
         'ceiling fan industrial white system': [5, 100],
         'kaspersky total': [20, 100],
         'car navigator garmin maps 44LM': [1, 20],
