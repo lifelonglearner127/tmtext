@@ -78,6 +78,7 @@ class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = False  # ... duplicated requests?
     ignore_log_filtered = False  # ... filtered requests?
+    ignore_log_duplications_and_ranking_gaps = True
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_123': 0,
