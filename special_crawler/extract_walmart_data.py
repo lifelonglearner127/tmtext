@@ -1847,14 +1847,14 @@ class WalmartScraper(Scraper):
         onlinePriceText = ""
 
         try:
-            onlinePriceText = "".join(self.tree_html.xpath("//div[@class='onlinePriceWM']//text()"))
+            onlinePriceText = self.tree_html.xpath("//div[@class='onlinePriceWM']")[0].text_content()
             if "In stores only" in onlinePriceText:
                 return 1
         except Exception:
             pass
 
         try:
-            onlinePriceText = "".join(self.tree_html.xpath("//div[@class='onlinePriceMP']//text()"))
+            onlinePriceText = self.tree_html.xpath("//div[@class='onlinePriceMP']")[0].text_content()
             if "In stores only" in onlinePriceText:
                 return 1
         except Exception:
