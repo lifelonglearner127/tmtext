@@ -74,7 +74,7 @@ class PepperfryProductsSpider(BaseProductsSpider):
                           meta={'product': prod})
 
         if self.products_url:
-            urls = self.product_urls.split('||||')
+            urls = self.products_url.split('||||')
             for url in urls:
                 prod = SiteProductItem()
                 prod['url'] = url
