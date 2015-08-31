@@ -87,18 +87,18 @@ class WayfairProductSpider(BaseProductsSpider):
         cond_set_value(product, 'variants', variants)
 
         # Parse stock status for variants
-        if variants:
-            stock_skus = urllib.quote(response.meta['stock_skus'])
-            reqs.append(Request(
-                url=self.VARIANTS_STOCK_URL.format(sku=stock_skus),
-                callback=self._parse_variants_stock,
-                headers={
-                    'Referer': response.url,
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'User-Agent': 'Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36 (KHTML, '
-                                  'like Gecko) Chrome/43.0.2357.134 Safari/537.36'
-                }
-            ))
+        # if variants:
+        #     stock_skus = urllib.quote(response.meta['stock_skus'])
+        #     reqs.append(Request(
+        #         url=self.VARIANTS_STOCK_URL.format(sku=stock_skus),
+        #         callback=self._parse_variants_stock,
+        #         headers={
+        #             'Referer': response.url,
+        #             'X-Requested-With': 'XMLHttpRequest',
+        #             'User-Agent': 'Mozilla/5.0 (X11; Linux i686 (x86_64)) AppleWebKit/537.36 (KHTML, '
+        #                           'like Gecko) Chrome/43.0.2357.134 Safari/537.36'
+        #         }
+        #     ))
 
         # Parse categories
         category = self._parse_category(response)
@@ -119,11 +119,11 @@ class WayfairProductSpider(BaseProductsSpider):
         cond_set_value(product, 'buyer_reviews', buyer_reviews)
 
         # Parse last buyer review date
-        if buyer_reviews is not ZERO_REVIEWS_VALUE:
-            reqs.append(Request(
-                url=self.LAST_BR_DATE_URL.format(sku=product_sku),
-                callback=self._parse_last_buyer_review_date
-            ))
+        # if buyer_reviews is not ZERO_REVIEWS_VALUE:
+        #     reqs.append(Request(
+        #         url=self.LAST_BR_DATE_URL.format(sku=product_sku),
+        #         callback=self._parse_last_buyer_review_date
+        #     ))
 
         if reqs:
             return self.send_next_request(reqs, response)
