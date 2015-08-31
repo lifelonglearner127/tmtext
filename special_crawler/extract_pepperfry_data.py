@@ -135,7 +135,7 @@ class PepperfryScraper(Scraper):
         return None
 
     def _ingredients_count(self):
-        return None
+        return 0
 
     def _variants(self):
         return None
@@ -175,24 +175,6 @@ class PepperfryScraper(Scraper):
         return None
 
     def _pdf_count(self):
-        return 0
-
-    def _wc_emc(self):
-        return 0
-
-    def _wc_prodtour(self):
-        return 0
-
-    def _wc_360(self):
-        return 0
-
-    def _wc_video(self):
-        return 0
-
-    def _wc_pdf(self):
-        return 0
-
-    def _webcollage(self):
         return 0
 
     def _htags(self):
@@ -240,13 +222,13 @@ class PepperfryScraper(Scraper):
         return 1
 
     def _in_stores(self):
-        return None
+        return 0
 
     def _site_online_out_of_stock(self):
         return 0
 
     def _marketplace(self):
-        return 1
+        return 0
 
     def _marketplace_prices(self):
         return None
