@@ -1144,6 +1144,11 @@ class WalmartScraper(Scraper):
             except:
                 pass
 
+            try:
+                return self.product_info_json["buyingOptions"]["price"]["currencyUnitSymbol"] + str(self.product_info_json["buyingOptions"]["price"]["currencyAmount"])
+            except:
+                pass
+
         return None
 
     def _price_amount(self):
