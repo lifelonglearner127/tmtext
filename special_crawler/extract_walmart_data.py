@@ -1860,6 +1860,14 @@ class WalmartScraper(Scraper):
         except Exception:
             pass
 
+        try:
+            modal_texts = self.tree_html.xpath("//*[@class='js-pure-soi-flyout-header']")[0].text_content()
+
+            if "This item is only sold at a Walmart store." in modal_texts:
+                return 1
+        except Exception:
+            pass
+
         return 0
 
     def _stores_available_from_script_old_page(self):
