@@ -402,7 +402,7 @@ class WalmartScraper(Scraper):
             or 0 if none found
         """
 
-        self.extracted_webcollage_video_view= True
+        self.extracted_webcollage_video_view = True
 
 #        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
 #                                str(self._extract_product_id()) + "/WebcollageVideos").text
@@ -701,7 +701,7 @@ class WalmartScraper(Scraper):
             # assume old design
             product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
 
-        return self.stringify_children(product_name_node[0]).strip()
+        return product_name_node[0].text_content().strip()
 
     # extract walmart no
     def _site_id(self):
@@ -1141,6 +1141,11 @@ class WalmartScraper(Scraper):
                         return "out of stock - no price given"
                     else:
                         return None
+            except:
+                pass
+
+            try:
+                return self.product_info_json["buyingOptions"]["price"]["currencyUnitSymbol"] + str(self.product_info_json["buyingOptions"]["price"]["currencyAmount"])
             except:
                 pass
 
@@ -1847,15 +1852,23 @@ class WalmartScraper(Scraper):
         onlinePriceText = ""
 
         try:
-            onlinePriceText = "".join(self.tree_html.xpath("//div[@class='onlinePriceWM']//text()"))
+            onlinePriceText = self.tree_html.xpath("//div[@class='onlinePriceWM']")[0].text_content()
             if "In stores only" in onlinePriceText:
                 return 1
         except Exception:
             pass
 
         try:
-            onlinePriceText = "".join(self.tree_html.xpath("//div[@class='onlinePriceMP']//text()"))
+            onlinePriceText = self.tree_html.xpath("//div[@class='onlinePriceMP']")[0].text_content()
             if "In stores only" in onlinePriceText:
+                return 1
+        except Exception:
+            pass
+
+        try:
+            modal_texts = self.tree_html.xpath("//*[@class='js-pure-soi-flyout-header']")[0].text_content()
+
+            if "This item is only sold at a Walmart store." in modal_texts:
                 return 1
         except Exception:
             pass
@@ -2000,8 +2013,14 @@ class WalmartScraper(Scraper):
             marketplace_new = None
 
         if marketplace_new is None:
-            # try to extract assuming old page structure
-            return self._marketplace_meta_from_tree()
+            try:
+                # try to extract assuming old page structure
+                marketplace_new = self._marketplace_meta_from_tree()
+            except Exception:
+                marketplace_new = None
+
+        if marketplace_new is None:
+            marketplace_new = 0
 
         return marketplace_new
 
@@ -2135,8 +2154,10 @@ class WalmartScraper(Scraper):
                 for marketplace in marketplace_seller_names:
                     if marketplace.lower().strip() == "walmart.com":
                         return 1
+        except:
+            pass
 
-        except Exception:
+        try:
             #       old design
             if self._in_stores_only():
                 return 0
@@ -2158,6 +2179,9 @@ class WalmartScraper(Scraper):
 
                 if "camelPrice" not in body_clean[sIndex:eIndex] == "true":
                     return 1
+        except:
+            pass
+
         return 0
 
     def _site_online_out_of_stock(self):
@@ -2177,7 +2201,7 @@ class WalmartScraper(Scraper):
             except Exception:
                 return 1
 
-        return None
+        return 0
 
     def _failure_type(self):
         # we ignore bundle product

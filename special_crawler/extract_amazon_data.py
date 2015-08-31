@@ -748,19 +748,30 @@ class AmazonScraper(Scraper):
 
         review_list = []
         review_link = self.tree_html.xpath("//a[contains(@class, 'a-link-normal a-text-normal product-reviews-link')]/@href")[0]
-        review_link = review_link[:review_link.rfind("sortBy=")]
+        if review_link.find("cm_cr_dp_qt_see_all_top") > 0:
+            index_1 = review_link.find("cm_cr_dp_qt_see_all_top") + len("cm_cr_dp_qt_see_all_top")
+            index_2 = review_link.find("ie=UTF8")
+            review_link = review_link[:index_1] + "?" + review_link[index_2:]
+        elif review_link.find("cm_cr_dp_see_all_top") > 0:
+            index_1 = review_link.find("cm_cr_dp_see_all_top") + len("cm_cr_dp_see_all_top")
+            index_2 = review_link.find("ie=UTF8")
+            review_link = review_link[:index_1] + "?" + review_link[index_2:]
 
+        review_link = review_link[:review_link.rfind("sortBy=")]
         mark_list = ["one", "two", "three", "four", "five"]
 
         for index, mark in enumerate(mark_list):
-            review_link_mark_star = review_link.replace("cm_cr_dp_qt_see_all_top", "cm_cr_pr_viewopt_sr") + "sortBy=helpful&reviewerType=all_reviews&formatType=all_formats&filterByStar=" + mark + "_star&pageNumber=1"
+            if review_link.find("cm_cr_dp_qt_see_all_top") > 0:
+                review_link_mark_star = review_link.replace("cm_cr_dp_qt_see_all_top", "cm_cr_pr_viewopt_sr") + "sortBy=helpful&reviewerType=all_reviews&formatType=all_formats&filterByStar=" + mark + "_star&pageNumber=1"
+            elif review_link.find("cm_cr_dp_see_all_top") > 0:
+                review_link_mark_star = review_link.replace("cm_cr_dp_see_all_top", "cm_cr_pr_viewopt_sr") + "sortBy=helpful&reviewerType=all_reviews&formatType=all_formats&filterByStar=" + mark + "_star&pageNumber=1"
             h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
             s = requests.Session()
             a = requests.adapters.HTTPAdapter(max_retries=3)
             b = requests.adapters.HTTPAdapter(max_retries=3)
             s.mount('http://', a)
             s.mount('https://', b)
-            contents = s.get(review_link_mark_star, headers=h, timeout=5).text
+            contents = requests.get(review_link_mark_star).text
 
             if "Sorry, no reviews match your current selections." in contents:
                 review_list.append([index + 1, 0])
