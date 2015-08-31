@@ -131,6 +131,10 @@ class WalmartVariants(object):
 
                 for item in json_body:
                     if "variants" in item:
+                        if "selectedValue" not in item:
+                            selected_variants = None
+                            break
+
                         selected_variants[item["id"]] = item["selectedValue"]
 
                 startIndex = page_raw_text.find('"variantProducts":') + len('"variantProducts":')
@@ -163,8 +167,11 @@ class WalmartVariants(object):
                             else:
                                 properties[key] = variation_key_values_by_attributes[key][variants[key]["id"]]
 
-                            if selected_variants[key] != variation_key_values_by_attributes[key][variants[key]["id"]]:
+                            if selected_variants and selected_variants[key] != variation_key_values_by_attributes[key][variants[key]["id"]]:
                                 isSelected = False
+
+                    if not selected_variants:
+                        isSelected = False
 
                     variant_product_id = item['buyingOptions']['usItemId']
                     variant_product_url = original_product_canonical_link[:original_product_canonical_link.rfind("/") + 1] + str(variant_product_id)
