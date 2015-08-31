@@ -2,10 +2,7 @@
 #4) variants (with OOS status)
 # OOS, img_url and price requires additional request per each variant
 # -------------
-#5) brand
-#6) is_out_of_stock
 #7) UPC (?)
-#8) image_url
 #9) model (?)
 #10) XML fields version file
 
@@ -15,8 +12,9 @@ from future_builtins import *
 import urlparse
 import urllib
 import string
-import re
 import json
+from datetime import datetime
+from pyramid.response import response_adapter
 
 from scrapy.log import ERROR, DEBUG
 from scrapy.http import Request
@@ -75,19 +73,32 @@ class FlipkartProductsSpider(BaseProductsSpider):
                  response.xpath('//h1[@itemprop="name"]/text()').extract(),
                  string.strip)
 
-        cond_set(product, 'image_url',
-                 response.xpath('//img[@id="visible-image-small"]/@src').extract())
-
+        # image_url
+        image_url = response.css('.mainImage > .imgWrapper > '
+                                 'img::attr(data-src)')
+        cond_set(product, 'image_url', image_url.extract())
         # marketplace
         cond_set_value(product, 'marketplace', self.parse_marketplace(response))
         # reviews
         cond_set_value(
             product, 'buyer_reviews', self.parse_buyer_reviews(response))
+        # last review date
+        last_review = response.xpath('//div[@class="recentReviews"]'
+                                     '/div[contains(@class,"review")][1]')
+        if not last_review:
+            last_review = response.xpath('//div[@class="helpfulReviews"]'
+                                         '/div[contains(@class,"review")][1]')
+        last_review = last_review.xpath('//p[@class="review-date"]/text()')
+        if last_review:
+            cond_set_value(
+                product, 'last_buyer_review_date',
+                datetime.strptime(last_review[0].extract(), '%b %d, %Y').date())
         # description
         cond_set_value(
-            product, 'description', ''.join(response.xpath(
-                '//div[@class="rpdSection" or '
-                '@class="description specSection"]').extract()))
+            product, 'description', ''.join(
+                response.css('.rpdSection, .description.specSection').extract()
+            )
+        )
         # variants
         fv = FlipkartVariants()
         fv.setupSC(response)
@@ -100,20 +111,15 @@ class FlipkartProductsSpider(BaseProductsSpider):
             product['price'] = Price(price=price[0],
                                      priceCurrency='INR')
 
-        brand = response.xpath('//a[contains(@href, "~brand/")]/@href').extract()
-        if brand:
-            brand = re.search(r'/([a-zA-Z0-9 \.]{2,30})~brand/', brand[0])
-            brand = brand.group(1)
-            if brand:
-                product['brand'] = brand.strip()
+        # brand
+        brand = response.css('div.title-wrap::attr(data-prop41)')
+        cond_set(product, 'brand', brand.extract())
 
-        cond_set_value(product, 'description', self.clear_desc(
-            response.xpath(
-                '//div[@id="description"]/div[contains(@class,"item_desc_text")]//text()'
-            ).extract()))
+        # out of stock
+        oos = response.css('.coming-soon, .out-of-stock')
+        cond_set_value(product, 'is_out_of_stock', oos, bool)
 
         cond_set_value(product, 'locale', 'en-IN')
-
         cond_set_value(product, 'related_products', {})
 
         #Get product id (for related requests)
