@@ -701,7 +701,7 @@ class WalmartScraper(Scraper):
             # assume old design
             product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
 
-        return self.stringify_children(product_name_node[0]).strip()
+        return product_name_node[0].text_content().strip()
 
     # extract walmart no
     def _site_id(self):
@@ -2000,8 +2000,14 @@ class WalmartScraper(Scraper):
             marketplace_new = None
 
         if marketplace_new is None:
-            # try to extract assuming old page structure
-            return self._marketplace_meta_from_tree()
+            try:
+                # try to extract assuming old page structure
+                marketplace_new = self._marketplace_meta_from_tree()
+            except Exception:
+                marketplace_new = None
+
+        if marketplace_new is None:
+            marketplace_new = 0
 
         return marketplace_new
 
@@ -2135,8 +2141,10 @@ class WalmartScraper(Scraper):
                 for marketplace in marketplace_seller_names:
                     if marketplace.lower().strip() == "walmart.com":
                         return 1
+        except:
+            pass
 
-        except Exception:
+        try:
             #       old design
             if self._in_stores_only():
                 return 0
@@ -2158,6 +2166,9 @@ class WalmartScraper(Scraper):
 
                 if "camelPrice" not in body_clean[sIndex:eIndex] == "true":
                     return 1
+        except:
+            pass
+
         return 0
 
     def _site_online_out_of_stock(self):
@@ -2177,7 +2188,7 @@ class WalmartScraper(Scraper):
             except Exception:
                 return 1
 
-        return None
+        return 0
 
     def _failure_type(self):
         # we ignore bundle product
