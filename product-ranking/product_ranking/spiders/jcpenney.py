@@ -324,8 +324,8 @@ class JcpenneyProductsSpider(BaseProductsSpider):
         new_meta = response.meta.copy()
         new_meta['product'] = product
         return Request(self.RELATED_URL.format(product_id=product_id),
-                       meta=new_meta, callback=self._parse_related_products,
-                       dont_filter=True)
+                       meta=new_meta, callback=self._parse_related_products)
+                       #dont_filter=True)
 
     def _scrape_product_links(self, response):
         links = response.xpath(
