@@ -264,6 +264,7 @@ class WayfairProductSpider(BaseProductsSpider):
                             'num_of_reviews': num_of_reviews,
                             'rating_by_star': rating_by_star,
                         }
+                        return BuyerReviews(**buyer_reviews)
                     except (KeyError, ValueError) as exc:
                         self.log('Unable to parse star rating from {url}: {exc}'.format(
                             url=response.url,
@@ -272,8 +273,6 @@ class WayfairProductSpider(BaseProductsSpider):
                         return ZERO_REVIEWS_VALUE
         else:
             return ZERO_REVIEWS_VALUE
-
-        return BuyerReviews(**buyer_reviews)
 
     def _parse_last_buyer_review_date(self, response):
         """
