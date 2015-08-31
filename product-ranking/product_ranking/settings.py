@@ -43,6 +43,9 @@ ITEM_PIPELINES = {
 # Delay between requests not to be blocked (seconds).
 DOWNLOAD_DELAY = 0.5
 
+# allow max N seconds to download anything
+DOWNLOAD_TIMEOUT = 60
+
 # Maximum URL length
 URLLENGTH_LIMIT = 5000
 
