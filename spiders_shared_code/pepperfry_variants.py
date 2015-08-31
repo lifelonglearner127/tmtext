@@ -27,6 +27,11 @@ class PepperfryVariants(object):
             return None
         orig_price = self.tree_html.cssselect(
             '[itemprop=price] > [itemprop=price]')
+        prop_key = self.tree_html.cssselect('#div_selected_size')
+        if prop_key:
+            prop_key = re.search('Select (.+)', prop_key[0].text).group(1)
+        else:
+            prop_key = 'Size'
         orig_price = float(orig_price[0].attrib['content'])
         variants = []
         for key, item in js_dict.iteritems():
@@ -35,8 +40,12 @@ class PepperfryVariants(object):
                 'price': variant_price,
                 'selected': orig_price == variant_price,
                 'properties': {
-                    'size': key
+                    prop_key: key
                 }
             }
             variants.append(variant)
+        # check that not all variants are selected
+        if all([v['selected'] for v in variants]):
+            for v in variants:
+                v['selected'] = False
         return variants

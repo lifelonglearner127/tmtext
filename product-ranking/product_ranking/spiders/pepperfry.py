@@ -161,12 +161,14 @@ class PepperfryProductsSpider(BaseProductsSpider):
                 continue
             r = RelatedProduct(r_t[0].extract(), r_hr[0].extract())
             related.append(r)
-        prod['related_products'] = {rel_key: related}
+        related_products = {rel_key: related}
+        if related_products and related_products.values()[0]:
+            cond_set_value(prod, 'related_products', related_products)
 
     def parse_product(self, response):
         prod = response.meta['product']
         cond_set_value(prod, 'url', response.url)
-        cond_set_value(prod, 'locale', 'en-US')
+        cond_set_value(prod, 'locale', 'en-IN')
         self._populate_from_html(response, prod)
         pv = PepperfryVariants()
         pv.setupSC(response)
