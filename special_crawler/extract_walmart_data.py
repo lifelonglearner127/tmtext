@@ -402,7 +402,7 @@ class WalmartScraper(Scraper):
             or 0 if none found
         """
 
-        self.extracted_webcollage_video_view= True
+        self.extracted_webcollage_video_view = True
 
 #        contents = requests.get("http://www.walmart-content.com/product/idml/video/" +
 #                                str(self._extract_product_id()) + "/WebcollageVideos").text
