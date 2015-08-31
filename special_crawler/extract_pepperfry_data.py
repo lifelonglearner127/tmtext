@@ -297,12 +297,6 @@ class PepperfryScraper(Scraper):
         "video_urls" : _video_urls, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
-        "webcollage" : _webcollage, \
-        "wc_360": _wc_360, \
-        "wc_emc": _wc_emc, \
-        "wc_pdf": _wc_pdf, \
-        "wc_prodtour": _wc_prodtour, \
-        "wc_video": _wc_video, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "canonical_link": _canonical_link,
