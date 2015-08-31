@@ -748,6 +748,9 @@ class AmazonScraper(Scraper):
 
         review_list = []
         review_link = self.tree_html.xpath("//a[contains(@class, 'a-link-normal a-text-normal product-reviews-link')]/@href")[0]
+        index_1 = review_link.find("cm_cr_dp_qt_see_all_top") + len("cm_cr_dp_qt_see_all_top")
+        index_2 = review_link.find("ie=UTF8")
+        review_link = review_link[:index_1] + "?" + review_link[index_2:]
         review_link = review_link[:review_link.rfind("sortBy=")]
 
         mark_list = ["one", "two", "three", "four", "five"]
