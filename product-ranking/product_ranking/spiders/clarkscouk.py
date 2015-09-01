@@ -4,6 +4,7 @@ import json
 import re
 import hjson
 import urlparse
+import string
 
 from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
@@ -33,12 +34,28 @@ class ClarksProductSpider(BaseProductsSpider):
         meta = response.meta.copy()
         product = meta['product']
 
-
+        # Parse title
+        title = self._parse_title(response)
+        cond_set_value(product, 'title', title, conv=string.strip)
 
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
+
+    def _parse_title(self, response):
+        title_sel = response.xpath('//h1[@itemprop="name"]'
+                                   '/span[@class="name"]/text()')
+        material_sel = response.xpath('//h1[@itemprop="name"]'
+                                      '/span[@itemprop="color"]/text()')
+
+        title = is_empty(title_sel.extract(), '').strip()
+        material = is_empty(material_sel.extract(), '').strip()
+
+        if title and material:
+            return title + ' ' + material
+        else:
+            return title
 
     def send_next_request(self, reqs, response):
         """
