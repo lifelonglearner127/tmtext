@@ -122,6 +122,10 @@ class FlipkartScraper(Scraper):
         try:
             description = self._clean_text(self.tree_html.xpath("//ul[@class='keyFeaturesList']")[0].text_content().strip())
 
+            description = re.sub('\\n+', ' ', description).strip()
+            description = re.sub('\\t+', ' ', description).strip()
+            description = re.sub(' +', ' ', description).strip()
+
             if description:
                 return description
         except:
@@ -137,6 +141,10 @@ class FlipkartScraper(Scraper):
         try:
             long_description = self._clean_text(self.tree_html.xpath("//div[@class='description specSection']")[0].text_content().strip())
 
+            long_description = re.sub('\\n+', ' ', long_description).strip()
+            long_description = re.sub('\\t+', ' ', long_description).strip()
+            long_description = re.sub(' +', ' ', long_description).strip()
+
             if long_description:
                 return long_description
         except:
@@ -144,6 +152,10 @@ class FlipkartScraper(Scraper):
 
         try:
             long_description = self._clean_text(self.tree_html.xpath("//div[@class='rpdSection']")[0].text_content().strip())
+
+            long_description = re.sub('\\n+', ' ', long_description).strip()
+            long_description = re.sub('\\t+', ' ', long_description).strip()
+            long_description = re.sub(' +', ' ', long_description).strip()
 
             if long_description:
                 return long_description
@@ -195,24 +207,6 @@ class FlipkartScraper(Scraper):
         return None
 
     def _pdf_count(self):
-        return 0
-
-    def _wc_emc(self):
-        return 0
-
-    def _wc_prodtour(self):
-        return 0
-
-    def _wc_360(self):
-        return 0
-
-    def _wc_video(self):
-        return 0
-
-    def _wc_pdf(self):
-        return 0
-
-    def _webcollage(self):
         return 0
 
     def _htags(self):
@@ -286,7 +280,7 @@ class FlipkartScraper(Scraper):
         return 1
 
     def _in_stores(self):
-        return None
+        return 0
 
     def _site_online_out_of_stock(self):
         try:
@@ -381,12 +375,6 @@ class FlipkartScraper(Scraper):
         "video_urls" : _video_urls, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
-        "webcollage" : _webcollage, \
-        "wc_360": _wc_360, \
-        "wc_emc": _wc_emc, \
-        "wc_pdf": _wc_pdf, \
-        "wc_prodtour": _wc_prodtour, \
-        "wc_video": _wc_video, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "canonical_link": _canonical_link,
