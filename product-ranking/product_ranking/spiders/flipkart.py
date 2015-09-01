@@ -19,6 +19,16 @@ from spiders_shared_code.flipkart_variants import FlipkartVariants
 
 
 class FlipkartProductsSpider(BaseProductsSpider):
+    """ flipkart.com product ranking spider
+
+    Missing fields:
+    * upc
+
+    Takes `search_sort` argument with the following values:
+    * `best_match` - default, most relevance
+    * `price_asc`, price_desc
+    * `best_sellers` - most selling (popular)
+    """
     name = 'flipkart_products'
     allowed_domains = ["flipkart.com"]
     start_urls = []
