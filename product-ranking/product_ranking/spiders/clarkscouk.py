@@ -58,6 +58,10 @@ class ClarksProductSpider(BaseProductsSpider):
         related_products = self._parse_related_products(response)
         cond_set_value(product, 'related_products', related_products)
 
+        # Parse variants
+        variants = self._parse_variants(response)
+        cond_set_value(product, 'variants', variants)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -169,6 +173,52 @@ class ClarksProductSpider(BaseProductsSpider):
                 related_products['another_color'].append(prod)
 
         return related_products
+
+    def _parse_variants(self, response):
+        variants = []
+        vars = response.xpath('//div[@id="size-options"]/ul/li')
+
+        for item in vars:
+            size = is_empty(
+                item.xpath('./input/@value').extract()
+            )
+
+            # Extract fits for sizes
+            fits = is_empty(
+                item.xpath('./div/@data-price').extract()
+            )
+            if fits:
+                try:
+                    fits = json.loads(fits)
+                    stock = is_empty(
+                        item.xpath('./div/@data-outofstock').extract()
+                    )
+                    if stock:
+                        stock = stock.replace('#alt-fitid-', '').split(',')
+
+                    for fit, price in fits.iteritems():
+                        single_variant = {}
+                        properties = {}
+                        properties['size'] = size
+                        properties['fit'] = fit
+
+                        if stock and fit in stock:
+                            single_variant['out_of_stock'] = True
+                        else:
+                            single_variant['out_of_stock'] = False
+
+                        single_variant['price'] = price.replace(u'£', '')
+                        single_variant['properties'] = properties
+
+                        variants.append(single_variant)
+                except Exception as exc:
+                    self.log(
+                        'Unable to parse fits for variants on {url}: {exc}'.format(
+                            url=response.url, exc=exc
+                        ), WARNING
+                    )
+
+        return variants
 
     def send_next_request(self, reqs, response):
         """
