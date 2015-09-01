@@ -32,7 +32,7 @@ class JcpenneyValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'bestseller_rank', 'model'
     ]
     ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = False  # ... duplicated requests?
+    ignore_log_duplications = True  # ... duplicated requests?
     ignore_log_filtered = False  # ... filtered requests?
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
@@ -41,7 +41,7 @@ class JcpenneyValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'adidas black': [50, 250],
         'red handbag': [50, 200],
         'baby jacket': [20, 100],
-        'black window curtain': [50, 200],
+        'levis': [300, 600],
         'beach towel': [5, 100],
         'mi zone': [20, 150],
         'kid americana': [10, 100]
