@@ -42,6 +42,10 @@ class ClarksProductSpider(BaseProductsSpider):
         category = self._parse_category(response)
         cond_set_value(product, 'category', category)
 
+        # Parse description
+        description = self._parse_description(response)
+        cond_set_value(product, 'description', description)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -67,6 +71,12 @@ class ClarksProductSpider(BaseProductsSpider):
         category = is_empty(category_sel.extract())
 
         return category
+
+    def _parse_description(self, response):
+        description_sel = response.xpath('//div[@id="description"]')
+        description = is_empty(description_sel.extract())
+
+        return description
 
     def send_next_request(self, reqs, response):
         """
