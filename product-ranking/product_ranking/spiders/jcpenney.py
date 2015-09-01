@@ -15,6 +15,7 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
+from product_ranking.validation import BaseValidator
 from product_ranking.spiders import cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.jcpenney_variants import JcpenneyVariants
@@ -23,7 +24,31 @@ from spiders_shared_code.jcpenney_variants import JcpenneyVariants
 is_empty = lambda x, y="": x[0] if x else y
 
 
-class JcpenneyProductsSpider(BaseProductsSpider):
+class JcpenneyValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['brand', 'price', 'buyer_reviews']
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'google_source_site', 'description', 'special_pricing',
+        'bestseller_rank', 'model'
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = False  # ... duplicated requests?
+    ignore_log_filtered = False  # ... filtered requests?
+    test_requests = {
+        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
+        'nothing_found_1234654654': 0,
+        'men white shoes': [30, 150],
+        'adidas black': [50, 250],
+        'red handbag': [50, 200],
+        'baby jacket': [20, 100],
+        'black window curtain': [50, 200],
+        'beach towel': [5, 100],
+        'mi zone': [20, 150],
+        'kid americana': [10, 100]
+    }
+
+
+class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     """ jcpenny.com product ranking spider.
 
     Takes `order` argument with following possible values:
@@ -80,6 +105,8 @@ class JcpenneyProductsSpider(BaseProductsSpider):
                   "26_dyncharset%3DUTF-8&" \
                   "rcs=eF4NzLkNgDAMAMAmFbtYin-zAXM4JhIFHTA_aa-" \
                   "41t5xhHZ3y4Iae4JMdiCshNOVEXVO6rTd33OVIBmgsPQwDg5SkAW4hh--nxIA&l=1"
+
+    settings = JcpenneyValidatorSettings
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode:
