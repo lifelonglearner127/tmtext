@@ -20,7 +20,7 @@ is_empty = lambda x, y=None: x[0] if x else y
 class ClarksProductSpider(BaseProductsSpider):
 
     name = 'clarkscouk_products'
-    allowed_domains = ["www.clarks.co.uk"]
+    allowed_domains = ["clarks.co.uk"]
 
     SEARCH_URL = "http://www.clarks.co.uk/s/{search_term}"
 
@@ -53,6 +53,10 @@ class ClarksProductSpider(BaseProductsSpider):
         # Parse image url
         image_url = self._parse_image_url(response)
         cond_set_value(product, 'image_url', image_url)
+
+        # Parse related products
+        related_products = self._parse_related_products(response)
+        cond_set_value(product, 'related_products', related_products)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -114,6 +118,57 @@ class ClarksProductSpider(BaseProductsSpider):
             image_url = image_url.replace('//', '')
 
         return image_url
+
+    def _parse_related_products(self, response):
+        related_products = {
+            'also_liked': [],
+            'another_color': []
+        }
+
+        # Parse also liked related products
+        also_liked_products = response.xpath('//*[@id="up-sells"]/ul/li')
+        for item in also_liked_products:
+            title = is_empty(
+                item.xpath('././/*[@class="title"]/a/text()').extract()
+            )
+            material = is_empty(
+                item.xpath('././/*[@class="inner"]/p/text()').extract()
+            )
+            url = is_empty(
+                item.xpath('././/*[@class="title"]/a/@href').extract()
+            )
+
+            if title and url:
+                if material:
+                    title = title + ' ' + material
+
+                url = 'http://www.{domain}{link}'.format(
+                    domain=self.allowed_domains[0],
+                    link=url
+                )
+                prod = RelatedProduct(url=url, title=title)
+                related_products['also_liked'].append(prod)
+
+        # Parse color options
+        another_color_products = response.xpath('//*[@id="colour-options"]/'
+                                                'ul/li')
+        for item in another_color_products:
+            title = is_empty(
+                item.xpath('./a/@title').extract()
+            )
+            url = is_empty(
+                item.xpath('./a/@href').extract()
+            )
+
+            if title and url:
+                url = 'http://www.{domain}{link}'.format(
+                    domain=self.allowed_domains[0],
+                    link=url
+                )
+                prod = RelatedProduct(url=url, title=title)
+                related_products['another_color'].append(prod)
+
+        return related_products
 
     def send_next_request(self, reqs, response):
         """
