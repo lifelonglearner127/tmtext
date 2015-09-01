@@ -3,6 +3,7 @@
 import json
 import re
 import hjson
+import urlparse
 
 from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
@@ -20,31 +21,19 @@ class ClarksProductSpider(BaseProductsSpider):
     name = 'clarkscouk_products'
     allowed_domains = ["www.clarks.co.uk"]
 
-    SEARCH_URL = "http://www.clarks.co.uk/s/{search_term}#pagesize-is-40{sort}"
+    SEARCH_URL = "http://www.clarks.co.uk/s/{search_term}"
 
-    _SORT_MODES = {
-        "DEFAULT": "",
-        "PRICE_ASC": "-and-Sort-is-price-by-ascending",
-        "PRICE_DESC": "-and-Sort-is-price-by-descending"
-    }
+    NEXT_PAGE_URL = 'http://www.clarks.co.uk/ProductListWidget/Ajax/GetFilteredProducts?location={location}'
 
-    ITEMS_PER_PAGE = 40
-
-    def __init__(self, search_sort='DEFAULT', *args, **kwargs):
-        self.start_pos = 0
-        super(ClarksProductSpider, self).__init__(
-            site_name=self.allowed_domains[0],
-            url_formatter=FormatterWithDefaults(
-                search_sort=self._SORT_MODES[search_sort]
-            ),
-            *args, **kwargs)
+    items_per_page = 40
+    page_num = 1
 
     def parse_product(self, response):
         reqs = []
         meta = response.meta.copy()
         product = meta['product']
 
-        print('Hello')
+
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -62,6 +51,15 @@ class ClarksProductSpider(BaseProductsSpider):
             new_meta["reqs"] = reqs
         return req.replace(meta=new_meta)
 
+    def start_requests(self):
+        """Generate Requests from the SEARCH_URL and the search terms."""
+        requests = super(ClarksProductSpider, self).start_requests()
+
+        for req in requests:
+            new_url = req.url.replace('+', '%20')
+            req = req.replace(url=new_url)
+            yield req
+
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
@@ -71,7 +69,7 @@ class ClarksProductSpider(BaseProductsSpider):
         """
         total_matches = is_empty(
             response.xpath('//div[@id="product-list-paging-top"]/./'
-                           '/span[class="page-size-container"]/text()').extract()
+                           '/span[@class="page-size-container"]/text()').extract()
         )
 
         try:
@@ -96,8 +94,7 @@ class ClarksProductSpider(BaseProductsSpider):
         """
         Number of results on page
         """
-
-        return self.ITEMS_PER_PAGE
+        return self.items_per_page
 
     def _scrape_product_links(self, response):
         """
@@ -105,7 +102,7 @@ class ClarksProductSpider(BaseProductsSpider):
         """
 
         items = response.xpath(
-            '//ul[@id="prod-list"]/li[@class="product-list-item"]'
+            '//ul[@id="prod-list"]/li[contains(@class, "product-list-item")]'
         )
 
         if items:
@@ -117,9 +114,53 @@ class ClarksProductSpider(BaseProductsSpider):
                 res_item = SiteProductItem()
                 yield link, res_item
         else:
-            self.log("Found no product links in {url}".format(response.url), INFO)
+            self.log("Found no product links.".format(response.url), INFO)
 
     def _scrape_next_results_page_link(self, response):
-        url = self.NEXT_PAGE_URL.format(start_pos=self.start_pos)
-        self.start_pos += self.items_per_page
-        return url
+        if '/c/' in response.url:
+            location = 'Category'
+        else:
+            location = 'Search'
+        url_parse = urlparse.urlparse(response.url)
+        self.page_num += 1
+        query_criteria = is_empty(
+            re.findall(
+                r'\/s?c?\/(.+)',
+                url_parse.path
+            )
+        )
+        data = {
+            "QueryCriteria": query_criteria,
+            "ImageSize": "LargeListerThumbnail",
+            "ViewName": "3Columns",
+            "Location": location,
+            "FilteredProductQueries": [
+                {
+                    "Behaviour": "kvp",
+                     "FhName": "fh_view_size",
+                     "DisplayName": "pagesize",
+                     "DataSplit": "-or-",
+                     "Priority": "secondary",
+                     "Items": [self.items_per_page]
+                },
+                {
+                    "Behaviour": "kvp",
+                    "DataSplit": "-or-",
+                    "DisplayName": "page",
+                    "FhName": "fh_start_index",
+                    "Items": [self.page_num]
+                }
+            ],
+            "PathName": url_parse.path,
+            "Scroll": "true",
+            "DeviceType": "Desktop"
+        }
+        return Request(
+            url=self.NEXT_PAGE_URL.format(location=location),
+            method='POST',
+            body=json.dumps(data),
+            headers={
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            }
+        )
