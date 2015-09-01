@@ -220,6 +220,10 @@ class JetProductsSpider(BaseProductsSpider):
             ).extract()
         )
 
+        upc = re.search('"upc":"(\d+)"', response.body)
+        if upc:
+            product['upc'] = upc.group(1)
+
         product["locale"] = "en_US"
 
         csrf = self.get_csrf(response)
