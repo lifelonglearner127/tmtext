@@ -96,13 +96,13 @@ class PepperfryScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//h2[@itemprop='name']/text()")[0]
+        return self.tree_html.xpath("//h2[@itemprop='name']/text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath("//h2[@itemprop='name']/text()")[0]
+        return self.tree_html.xpath("//h2[@itemprop='name']/text()")[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath("//h2[@itemprop='name']/text()")[0]
+        return self.tree_html.xpath("//h2[@itemprop='name']/text()")[0].strip()
 
     def _model(self):
         return None
