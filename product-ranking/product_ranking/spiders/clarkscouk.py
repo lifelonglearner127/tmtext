@@ -46,6 +46,10 @@ class ClarksProductSpider(BaseProductsSpider):
         description = self._parse_description(response)
         cond_set_value(product, 'description', description)
 
+        # Parse price
+        price = self._parse_price(response)
+        cond_set_value(product, 'price', price)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -77,6 +81,20 @@ class ClarksProductSpider(BaseProductsSpider):
         description = is_empty(description_sel.extract())
 
         return description
+
+    def _parse_price(self, response):
+        price_sel = response.xpath('//meta[@itemprop="price"]/@content')
+        price = is_empty(price_sel.extract())
+
+        price_currency_sel = response.xpath('//meta[@itemprop="priceCurrency"]/@content')
+        price_currency = is_empty(price_currency_sel.extract())
+
+        if price and price_currency:
+            price = Price(price=price, priceCurrency=price_currency)
+        else:
+            price = Price(price=0.00, priceCurrency="GBP")
+
+        return price
 
     def send_next_request(self, reqs, response):
         """
