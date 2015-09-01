@@ -50,6 +50,10 @@ class ClarksProductSpider(BaseProductsSpider):
         price = self._parse_price(response)
         cond_set_value(product, 'price', price)
 
+        # Parse image url
+        image_url = self._parse_image_url(response)
+        cond_set_value(product, 'image_url', image_url)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -83,10 +87,15 @@ class ClarksProductSpider(BaseProductsSpider):
         return description
 
     def _parse_price(self, response):
-        price_sel = response.xpath('//meta[@itemprop="price"]/@content')
+        price_sel = response.xpath(
+            '//meta[@itemprop="price"]'
+            '/@content')
         price = is_empty(price_sel.extract())
 
-        price_currency_sel = response.xpath('//meta[@itemprop="priceCurrency"]/@content')
+        price_currency_sel = response.xpath(
+            '//meta[@itemprop="priceCurrency"]'
+            '/@content'
+        )
         price_currency = is_empty(price_currency_sel.extract())
 
         if price and price_currency:
@@ -95,6 +104,16 @@ class ClarksProductSpider(BaseProductsSpider):
             price = Price(price=0.00, priceCurrency="GBP")
 
         return price
+
+    def _parse_image_url(self, response):
+        image_url = is_empty(
+            response.xpath('//img[@id="main-image"]/@src').extract()
+        )
+
+        if image_url:
+            image_url = image_url.replace('//', '')
+
+        return image_url
 
     def send_next_request(self, reqs, response):
         """
