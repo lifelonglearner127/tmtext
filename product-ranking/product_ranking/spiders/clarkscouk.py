@@ -38,6 +38,10 @@ class ClarksProductSpider(BaseProductsSpider):
         title = self._parse_title(response)
         cond_set_value(product, 'title', title, conv=string.strip)
 
+        # Parse category
+        category = self._parse_category(response)
+        cond_set_value(product, 'category', category)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -56,6 +60,13 @@ class ClarksProductSpider(BaseProductsSpider):
             return title + ' ' + material
         else:
             return title
+
+    def _parse_category(self, response):
+        category_sel = response.xpath('//h1[@itemprop="name"]'
+                                      '/span[@class="category"]/text()')
+        category = is_empty(category_sel.extract())
+
+        return category
 
     def send_next_request(self, reqs, response):
         """
