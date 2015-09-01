@@ -62,6 +62,10 @@ class ClarksProductSpider(BaseProductsSpider):
         variants = self._parse_variants(response)
         cond_set_value(product, 'variants', variants)
 
+        # Parse stock status
+        out_of_stock = self._parse_stock_status(response)
+        cond_set_value(product, 'is_out_of_stock', out_of_stock)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -219,6 +223,19 @@ class ClarksProductSpider(BaseProductsSpider):
                     )
 
         return variants
+
+    def _parse_stock_status(self, response):
+        stock_status = is_empty(
+            response.xpath('//input[@id="add-to-basket-button-static"]'
+                           '/@alt').extract()
+        )
+
+        if stock_status and 'Out of stock' in stock_status:
+            stock_status = True
+        else:
+            stock_status = False
+
+        return stock_status
 
     def send_next_request(self, reqs, response):
         """
