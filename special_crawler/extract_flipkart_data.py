@@ -319,6 +319,9 @@ class FlipkartScraper(Scraper):
             marketplace_sellers.append(seller["sellerInfo"]["name"])
 
         if not marketplace_sellers:
+            marketplace_sellers = self.tree_html.xpath("//a[@class='seller-name']/text()")
+
+        if not marketplace_sellers:
             return None
 
         return marketplace_sellers
