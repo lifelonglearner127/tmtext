@@ -3,6 +3,7 @@
 import json
 import re
 import urllib2
+from itertools import izip
 
 from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
@@ -18,12 +19,24 @@ is_empty = lambda x, y=None: x[0] if x else y
 class HouseoffraserProductSpider(BaseProductsSpider):
 
     name = 'houseoffraser_products'
-    allowed_domains = ["houseoffraser.co.uk"]
+    allowed_domains = [
+        "houseoffraser.co.uk",
+        "houseoffraser.ugc.bazaarvoice.com"
+    ]
 
-    SEARCH_URL = "http://www.houseoffraser.co.uk/on/demandware.store/Sites-hof-Site/default/Search-Show?" \
-                 "q={search_term}&srule={sort_mode}"
+    SEARCH_URL = "http://www.houseoffraser.co.uk/on/demandware.store/" \
+                 "Sites-hof-Site/default/Search-Show?q={search_term}" \
+                 "&srule={sort_mode}"
+    NEXT_PAGE_URL = "http://www.next.co.uk/search?w=jeans&isort=score" \
+                    "&srt={start_pos}"
+    BUYER_REVIEWS_URL = "http://houseoffraser.ugc.bazaarvoice.com/" \
+                        "6017-en_gb/{product_id}/reviews.djs?format=embeddedhtml"
 
-    NEXT_PAGE_URL = "http://www.next.co.uk/search?w=jeans&isort=score&srt={start_pos}"
+    ZERO_REVIEWS_VALUE = {
+        'num_of_reviews': 0,
+        'average_rating': 0.0,
+        'rating_by_star': {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+    }
 
     _SORT_MODES = {
         "NAME_ASC": "product-name-asc",
@@ -48,6 +61,12 @@ class HouseoffraserProductSpider(BaseProductsSpider):
         reqs = []
         meta = response.meta.copy()
         product = meta['product']
+
+        # Get real product ID
+        product_id = is_empty(response.xpath(
+            '//input[@name="masterproduct_pid"]/@value'
+        ).extract())
+        response.meta['product_id'] = product_id
 
         # Get base product info from HTML body
         base_product_info = self._get_base_product_info(response)
@@ -88,6 +107,14 @@ class HouseoffraserProductSpider(BaseProductsSpider):
         # Parse product variants
         variants = self._parse_variants(response)
         cond_set_value(product, 'variants', variants)
+
+        # Parse buyer reviews
+        reqs.append(
+            Request(
+                url=self.BUYER_REVIEWS_URL.format(product_id=product_id),
+                callback=self._parse_buyer_reviews
+            )
+        )
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -173,18 +200,6 @@ class HouseoffraserProductSpider(BaseProductsSpider):
 
         return None
 
-    def _parse_category(self, data):
-        category = []
-
-        for key, value in data.iteritems():
-            if 'productCat' in key and value:
-                category.append(value)
-
-        if category:
-            return category
-
-        return None
-
     def _parse_description(self, response):
         description = is_empty(
             response.xpath('//div[@class="hof-description"]').extract()
@@ -247,6 +262,103 @@ class HouseoffraserProductSpider(BaseProductsSpider):
                 WARNING
             )
             return []
+
+    def _parse_buyer_reviews(self, response):
+        """
+        Parses buyer reviews
+        """
+        meta = response.meta.copy()
+        product = meta['product']
+        reqs = meta.get('reqs', [])
+
+        body_data = response.body_as_unicode()
+
+        # Get dictionary for BR analytics data from response body
+        base_reviews_data = is_empty(
+            re.findall(
+                r'webAnalyticsConfig:({.+})',
+                body_data
+            )
+        )
+        if base_reviews_data:
+            try:
+                base_reviews_data = json.loads(base_reviews_data)
+                base_reviews_data = base_reviews_data['jsonData']
+                num_of_reviews = int(
+                    base_reviews_data['attributes']['numReviews']
+                )
+
+                if num_of_reviews:
+                    average_rating = base_reviews_data['attributes']['avgRating']
+                    rating_by_star = self._get_rating_by_star(response)
+
+                    buyer_reviews = {
+                        'num_of_reviews': num_of_reviews,
+                        'average_rating': average_rating,
+                        'rating_by_star': rating_by_star
+                    }
+                else:
+                    buyer_reviews = self.ZERO_REVIEWS_VALUE
+
+            except (KeyError, IndexError) as exc:
+                self.log(
+                    'Unable to parse buyer reviews on {url}: {exc}'.format(
+                        url=product['url'],
+                        exc=exc
+                    ), ERROR
+                )
+                buyer_reviews = self.ZERO_REVIEWS_VALUE
+        else:
+            buyer_reviews = self.ZERO_REVIEWS_VALUE
+
+        product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def _get_rating_by_star(self, response):
+        meta = response.meta.copy()
+        product = meta['product']
+
+        data = is_empty(
+            re.findall(
+                r'materials=({.+})',
+                response.body_as_unicode()
+            )
+        )
+        if data:
+            try:
+                data = json.loads(data)
+                histogram_data = data['BVRRSourceID'].replace('\\ ', '')\
+                    .replace('\\', '').replace('\\"', '')
+
+                stars = re.findall(
+                    r'<span class="BVRRHistStarLabelText">(\d+) stars?<\/span>|'
+                    r'<span class="BVRRHistAbsLabel">(\d+)<\/span>',
+                    histogram_data
+                )
+
+                item_list = []
+                for star in stars:
+                    # ('5', '') --> '5'
+                    item_list.append(filter(None, list(star))[0])
+
+                # ['3', '0', '5', '6'] --> {'3': '0', '5': '6'}
+                i = iter(item_list)
+                values_dict = dict(izip(i, i))
+
+            except (KeyError, IndexError) as exc:
+                self.log(
+                    'Unable to parse buyer reviews on {url}: {exc}'.format(
+                        url=product['url'],
+                        exc=exc
+                    ), ERROR
+                )
+                return self.ZERO_REVIEWS_VALUE['rating_by_star']
+        else:
+            return self.ZERO_REVIEWS_VALUE['rating_by_star']
 
     def send_next_request(self, reqs, response):
         """
