@@ -10,6 +10,7 @@ from itertools import groupby
 
 from lxml import html, etree
 from extract_data import Scraper
+from spiders_shared_code.flipkart_variants import FlipkartVariants
 
 
 class FlipkartScraper(Scraper):
@@ -29,6 +30,7 @@ class FlipkartScraper(Scraper):
         self.min_review = 0
         self.review_count = 0
         self.is_review_checked = False
+        self.fv = FlipkartVariants()
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -54,6 +56,8 @@ class FlipkartScraper(Scraper):
                 raise Exception
         except Exception:
             return True
+
+        self.fv.setupCH(self.tree_html)
 
         return False
 
@@ -171,7 +175,7 @@ class FlipkartScraper(Scraper):
         return None
 
     def _variants(self):
-        return None
+        return self.fv._variants()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -311,12 +315,16 @@ class FlipkartScraper(Scraper):
         return marketplace_prices
 
     def _marketplace_sellers(self):
-        marketplace_json = self.tree_html.xpath("//div[@class='seller-table-wrap section']/@data-config")[0]
-        marketplace_json = json.loads(marketplace_json)
         marketplace_sellers = []
 
-        for seller in marketplace_json["dataModel"]:
-            marketplace_sellers.append(seller["sellerInfo"]["name"])
+        try:
+            marketplace_json = self.tree_html.xpath("//div[@class='seller-table-wrap section']/@data-config")[0]
+            marketplace_json = json.loads(marketplace_json)
+
+            for seller in marketplace_json["dataModel"]:
+                marketplace_sellers.append(seller["sellerInfo"]["name"])
+        except:
+            pass
 
         if not marketplace_sellers:
             marketplace_sellers = self.tree_html.xpath("//a[@class='seller-name']/text()")

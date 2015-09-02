@@ -1026,15 +1026,6 @@ class WalmartScraper(Scraper):
 
         return None
 
-    def _color(self):
-        return self.wv._color()
-
-    def _size(self):
-        return self.wv._size()
-
-    def _color_size_stockstatus(self):
-        return self.wv._color_size_stockstatus()
-
     def _variants(self):
         return self.wv._variants()
 

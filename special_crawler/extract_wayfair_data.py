@@ -13,6 +13,9 @@ from lxml import html
 import time
 import requests
 from extract_data import Scraper
+from spiders_shared_code.wayfair_variants import WayfairVariants
+
+is_empty = lambda x, y=None: x[0] if x else y
 
 class WayfairScraper(Scraper):
     ##########################################
@@ -22,13 +25,14 @@ class WayfairScraper(Scraper):
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
-    
+        self.wv = WayfairVariants()
+
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.wayfair.com/[0-9a-zA-Z\-\~\/\.]+\.html$", self.product_page_url)
+        m = re.match(r"^http://www.wayfair.com/.+\.html$", self.product_page_url)
 
         return not not m
     
@@ -47,6 +51,8 @@ class WayfairScraper(Scraper):
 
         except Exception:
             return True
+
+        self.wv.setupCH(self.tree_html)
 
         return False
 
@@ -100,7 +106,7 @@ class WayfairScraper(Scraper):
         return len(features)
 
     def _description(self):
-        return self.tree_html.xpath("//p[@class='product_section_description']/text()")[0].strip()
+        return self.tree_html.xpath("//p[@class='product_section_description']")[0].text_content().strip()
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
@@ -132,7 +138,7 @@ class WayfairScraper(Scraper):
         return None
 
     def _variants(self):
-        return None
+        return self.wv._variants()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -174,7 +180,7 @@ class WayfairScraper(Scraper):
         if not pdf_urls:
             return 0
 
-        return pdf_urls
+        return len(pdf_urls)
 
     def _webcollage(self):
         return None
@@ -194,18 +200,63 @@ class WayfairScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        return float(self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0])
+        return float(self.tree_html.xpath('//span[@itemprop="ratingValue"]/text()')[0])
 
     def _review_count(self):
-        return int(self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0])
+        return int(self.tree_html.xpath('//*[@itemprop="reviewCount"]/text()')[0])
 
     def _max_review(self):
-        return None
+        reviews = self._reviews()
+
+        if not reviews:
+            return None
+
+        max_review = 0
+
+        for review in reviews:
+            if max_review < review[0] and review[1] > 0:
+                max_review = review[0]
+
+        return max_review
 
     def _min_review(self):
-        return None
+        reviews = self._reviews()
 
+        if not reviews:
+            return None
 
+        min_review = 5
+
+        for review in reviews:
+            if min_review > review[0] and review[1] > 0:
+                min_review = review[0]
+
+        return min_review
+
+    def _reviews(self):
+        histogram = re.findall(r'"formatted_histogram_stats":\s?\[(.[^]]+)',
+                       html.tostring(self.tree_html))
+
+        rating_by_star = []
+
+        if not histogram or not self._average_review():
+            return None
+        else:
+            histogram = histogram[0]
+            histogram = "[{0}]".format(histogram)
+
+            try:
+                stars_data = json.loads(histogram)
+
+                for star in stars_data:
+                    rating_by_star.append([int(star['id']), int(star['he_count'])])
+            except:
+                pass
+
+        if not rating_by_star:
+            return None
+
+        return rating_by_star
 
     ##########################################
     ############### CONTAINER : SELLERS
@@ -224,6 +275,9 @@ class WayfairScraper(Scraper):
     def _site_online(self):
         return 1
 
+    def _site_online_out_of_stock(self):
+        return 0
+
     def _in_stores(self):
         return 0
     
@@ -235,11 +289,11 @@ class WayfairScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        return self.tree_html.xpath("//div[contains(@class, 'product__nova__breadcrumbs')]/a/text()")[:-1]
+        return self.tree_html.xpath("//div[contains(@class, 'product__nova__breadcrumbs')]/a/text()")
 
 
     def _category_name(self):
-        return self._categories()[1]
+        return self._categories()[-1]
 
     def _brand(self):
         return self.tree_html.xpath('//meta[@property="og:brand"]/@content')[0]
@@ -290,10 +344,14 @@ class WayfairScraper(Scraper):
         "average_review" : _average_review, \
         "max_review" : _max_review, \
         "min_review" : _min_review, \
+        "reviews" : _reviews, \
+
         # CONTAINER : SELLERS
         "price" : _price, \
         "in_stores" : _in_stores, \
+        "site_online_out_of_stock": _site_online_out_of_stock, \
         "marketplace" : _marketplace, \
+        "site_online": _site_online, \
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
         "category_name" : _category_name, \
