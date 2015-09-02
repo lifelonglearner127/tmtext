@@ -340,15 +340,15 @@ class HouseoffraserProductSpider(BaseProductsSpider):
                     histogram_data
                 )
 
+                # ('5', '') --> '5'
                 item_list = []
                 for star in stars:
-                    # ('5', '') --> '5'
                     item_list.append(filter(None, list(star))[0])
 
                 # ['3', '0', '5', '6'] --> {'3': '0', '5': '6'}
                 i = iter(item_list)
-                values_dict = dict(izip(i, i))
-
+                stars = {k: int(v) for (k, v) in izip(i, i)}
+                return stars
             except (KeyError, IndexError) as exc:
                 self.log(
                     'Unable to parse buyer reviews on {url}: {exc}'.format(
