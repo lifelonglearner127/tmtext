@@ -271,6 +271,9 @@ class WayfairScraper(Scraper):
     def _site_online(self):
         return 1
 
+    def _site_online_out_of_stock(self):
+        return 0
+
     def _in_stores(self):
         return 0
     
@@ -342,7 +345,9 @@ class WayfairScraper(Scraper):
         # CONTAINER : SELLERS
         "price" : _price, \
         "in_stores" : _in_stores, \
+        "site_online_out_of_stock": _site_online_out_of_stock, \
         "marketplace" : _marketplace, \
+        "site_online": _site_online, \
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
         "category_name" : _category_name, \
