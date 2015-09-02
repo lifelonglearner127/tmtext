@@ -313,59 +313,62 @@ class WayfairProductSpider(BaseProductsSpider):
 
         if variants_data:
             main_price = product['price']
+
             try:
                 data = json.loads(variants_data)
-                option_details = data['option_details']
+                option_details = data.get('option_details')
                 variants = []
-                final_options = {}
-                # A dict for sku accordance for every single variant.
-                # Will contain, for ex.: 'blue': '123456', 'red': '456789'
-                variants_skus = {}
-                # Will contain sku for stock status request. If the variant is {'color: 'blue', 'size':10}
-                # skus for every of them are: {'blue':'123456', 'red': '456789'} and product sku: 'QMP2470'
-                # we will get 'QMP2470-123456,456789'
-                stock_skus = []
 
-                for sku, option in option_details.iteritems():
-                    # Getting information for every variant and push it to dict
-                    category = option['category'].replace(' ', '_').lower()
-                    value = option['name']
-                    add_price = option['price']
-                    # From this data for price we get an additional price value (+ 3.00 USD, for ex.)
-                    price = round(main_price.price.__float__() + add_price, 2)
+                if option_details:
+                    final_options = {}
+                    # A dict for sku accordance for every single variant.
+                    # Will contain, for ex.: 'blue': '123456', 'red': '456789'
+                    variants_skus = {}
+                    # Will contain sku for stock status request. If the variant is {'color: 'blue', 'size':10}
+                    # skus for every of them are: {'blue':'123456', 'red': '456789'} and product sku: 'QMP2470'
+                    # we will get 'QMP2470-123456,456789'
+                    stock_skus = []
 
-                    if not final_options.get(category):
-                        final_options[category] = []
+                    for sku, option in option_details.iteritems():
+                        # Getting information for every variant and push it to dict
+                        category = option['category'].replace(' ', '_').lower()
+                        value = option['name']
+                        add_price = option['price']
+                        # From this data for price we get an additional price value (+ 3.00 USD, for ex.)
+                        price = round(main_price.price.__float__() + add_price, 2)
 
-                    variants_skus[value] = sku
-                    final_options[category].append({category: value, 'price': price})
+                        if not final_options.get(category):
+                            final_options[category] = []
 
-                response.meta['variants_skus'] = variants_skus
+                        variants_skus[value] = sku
+                        final_options[category].append({category: value, 'price': price})
 
-                for variant in itertools.product(*final_options.values()):
-                    # Make a list of dictionary with variant from a list of tuples
-                    # ({'color': u'Yellow', 'price': 12.99}, {'price': 15.99, 'size': u'10'}) -->
-                    #     {'color': u'Yellow', 'price': 15.99, 'size': u'10'}
-                    single_variant = {}
-                    properties = {}
-                    stock_sku = []
+                    response.meta['variants_skus'] = variants_skus
 
-                    for var in variant:
-                        properties.update(var)
+                    for variant in itertools.product(*final_options.values()):
+                        # Make a list of dictionary with variant from a list of tuples
+                        # ({'color': u'Yellow', 'price': 12.99}, {'price': 15.99, 'size': u'10'}) -->
+                        #     {'color': u'Yellow', 'price': 15.99, 'size': u'10'}
+                        single_variant = {}
+                        properties = {}
+                        stock_sku = []
 
-                    single_variant['price'] = properties.pop('price')
-                    single_variant['properties'] = properties
+                        for var in variant:
+                            properties.update(var)
 
-                    for property in properties.itervalues():
-                        stock_sku.append(variants_skus[property])
+                        single_variant['price'] = properties.pop('price')
+                        single_variant['properties'] = properties
 
-                    stock_skus.append(
-                        meta['product_sku'] + '-'
-                        + ','.join(stock_sku)
-                    )
+                        for property in properties.itervalues():
+                            stock_sku.append(variants_skus[property])
 
-                    variants.append(single_variant)
-                response.meta['stock_skus'] = '~^~'.join(stock_skus)
+                        stock_skus.append(
+                            meta['product_sku'] + '-'
+                            + ','.join(stock_sku)
+                        )
+
+                        variants.append(single_variant)
+                    response.meta['stock_skus'] = '~^~'.join(stock_skus)
 
                 return variants
             except Exception as exc:
