@@ -10,6 +10,7 @@ from itertools import groupby
 
 from lxml import html, etree
 from extract_data import Scraper
+from spiders_shared_code.pepperfry_variants import PepperfryVariants
 
 
 class PepperfryScraper(Scraper):
@@ -25,6 +26,7 @@ class PepperfryScraper(Scraper):
         # whether product has any webcollage media
         self.product_json = None
         self.is_product_json_checked = False
+        self.pv = PepperfryVariants()
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -50,6 +52,8 @@ class PepperfryScraper(Scraper):
                 raise Exception
         except Exception:
             return True
+
+        self.pv.setupCH(self.tree_html)
 
         self._extract_product_json()
 
@@ -138,7 +142,7 @@ class PepperfryScraper(Scraper):
         return 0
 
     def _variants(self):
-        return None
+        return self.pv._variants()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
