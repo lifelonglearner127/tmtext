@@ -100,7 +100,7 @@ class WayfairScraper(Scraper):
         return len(features)
 
     def _description(self):
-        return self.tree_html.xpath("//p[@class='product_section_description']/text()")[0].strip()
+        return self.tree_html.xpath("//p[@class='product_section_description']")[0].text_content().strip()
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
