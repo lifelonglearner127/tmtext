@@ -474,9 +474,6 @@ class WayfairProductSpider(BaseProductsSpider):
             total_matches = total_matches.replace(',', '')
             return int(total_matches)
         else:
-            self.log(
-                "Failed to get total matches", WARNING
-            )
             return 0
 
     def _scrape_results_per_page(self, response):
@@ -488,9 +485,6 @@ class WayfairProductSpider(BaseProductsSpider):
         )
 
         if not num:
-            self.log(
-                "Failed to get number of results", WARNING
-            )
             return 0
 
         return int(num)
@@ -512,7 +506,7 @@ class WayfairProductSpider(BaseProductsSpider):
                 res_item = SiteProductItem()
                 yield link, res_item
         else:
-            self.log("Found no product links in {url}".format(response.url), INFO)
+            self.log("Found no product links in {url}".format(url=response.url), INFO)
 
     def _scrape_next_results_page_link(self, response):
         url = response.xpath(
