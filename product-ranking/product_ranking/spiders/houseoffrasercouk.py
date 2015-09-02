@@ -112,6 +112,7 @@ class HouseoffraserProductSpider(BaseProductsSpider):
         reqs.append(
             Request(
                 url=self.BUYER_REVIEWS_URL.format(product_id=product_id),
+                dont_filter=True,
                 callback=self._parse_buyer_reviews
             )
         )
