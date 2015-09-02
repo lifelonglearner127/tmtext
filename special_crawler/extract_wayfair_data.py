@@ -14,6 +14,8 @@ import time
 import requests
 from extract_data import Scraper
 
+is_empty = lambda x, y=None: x[0] if x else y
+
 class WayfairScraper(Scraper):
     ##########################################
     ############### PREP
@@ -28,7 +30,7 @@ class WayfairScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.wayfair.com/[0-9a-zA-Z\-\~\/\.]+\.html$", self.product_page_url)
+        m = re.match(r"^http://www.wayfair.com/.+\.html$", self.product_page_url)
 
         return not not m
     
@@ -174,7 +176,7 @@ class WayfairScraper(Scraper):
         if not pdf_urls:
             return 0
 
-        return pdf_urls
+        return len(pdf_urls)
 
     def _webcollage(self):
         return None
@@ -194,18 +196,63 @@ class WayfairScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        return float(self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0])
+        return float(self.tree_html.xpath('//span[@itemprop="ratingValue"]/text()')[0])
 
     def _review_count(self):
-        return int(self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0])
+        return int(self.tree_html.xpath('//*[@itemprop="reviewCount"]/text()')[0])
 
     def _max_review(self):
-        return None
+        reviews = self._reviews()
+
+        if not reviews:
+            return None
+
+        max_review = 0
+
+        for review in reviews:
+            if max_review < review[0] and review[1] > 0:
+                max_review = review[0]
+
+        return max_review
 
     def _min_review(self):
-        return None
+        reviews = self._reviews()
 
+        if not reviews:
+            return None
 
+        min_review = 5
+
+        for review in reviews:
+            if min_review > review[0] and review[1] > 0:
+                min_review = review[0]
+
+        return min_review
+
+    def _reviews(self):
+        histogram = re.findall(r'"formatted_histogram_stats":\s?\[(.[^]]+)',
+                       html.tostring(self.tree_html))
+
+        rating_by_star = []
+
+        if not histogram or not self._average_review():
+            return None
+        else:
+            histogram = histogram[0]
+            histogram = "[{0}]".format(histogram)
+
+            try:
+                stars_data = json.loads(histogram)
+
+                for star in stars_data:
+                    rating_by_star.append([int(star['id']), int(star['he_count'])])
+            except:
+                pass
+
+        if not rating_by_star:
+            return None
+
+        return rating_by_star
 
     ##########################################
     ############### CONTAINER : SELLERS
@@ -235,11 +282,11 @@ class WayfairScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        return self.tree_html.xpath("//div[contains(@class, 'product__nova__breadcrumbs')]/a/text()")[:-1]
+        return self.tree_html.xpath("//div[contains(@class, 'product__nova__breadcrumbs')]/a/text()")
 
 
     def _category_name(self):
-        return self._categories()[1]
+        return self._categories()[-1]
 
     def _brand(self):
         return self.tree_html.xpath('//meta[@property="og:brand"]/@content')[0]
@@ -290,6 +337,8 @@ class WayfairScraper(Scraper):
         "average_review" : _average_review, \
         "max_review" : _max_review, \
         "min_review" : _min_review, \
+        "reviews" : _reviews, \
+
         # CONTAINER : SELLERS
         "price" : _price, \
         "in_stores" : _in_stores, \

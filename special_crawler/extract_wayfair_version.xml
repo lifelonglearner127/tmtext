@@ -21,10 +21,10 @@
     <field name="pdf_count" version="1.1"></field>
     <field name="htags" version="1.1"></field>
     <field name="keywords" version="1.1"></field>
-    <field name="average_review" version="1.1"></field>
-    <field name="review_count" version="1.1"></field>
-    <field name="max_review" version="1.1"></field>
-    <field name="min_review" version="1.1"></field>
+    <field name="average_review" version="1.2"></field>
+    <field name="review_count" version="1.2"></field>
+    <field name="max_review" version="1.2"></field>
+    <field name="min_review" version="1.2"></field>
     <field name="price" version="1.1"></field>
     <field name="in_stores" version="1.1"></field>
     <field name="marketplace" version="1.1"></field>
