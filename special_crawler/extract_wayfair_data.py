@@ -13,6 +13,7 @@ from lxml import html
 import time
 import requests
 from extract_data import Scraper
+from spiders_shared_code.wayfair_variants import WayfairVariants
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -24,7 +25,8 @@ class WayfairScraper(Scraper):
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
-    
+        self.wv = WayfairVariants()
+
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
@@ -49,6 +51,8 @@ class WayfairScraper(Scraper):
 
         except Exception:
             return True
+
+        self.wv.setupCH(self.tree_html)
 
         return False
 
@@ -134,7 +138,7 @@ class WayfairScraper(Scraper):
         return None
 
     def _variants(self):
-        return None
+        return self.wv._variants()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
