@@ -34,6 +34,8 @@ class WayfairProductSpider(BaseProductsSpider):
     VARIANTS_STOCK_URL = "http://www.wayfair.com/ajax/stock_total.php?bpss=yes&" \
                          "skulist={sku}&kitmode=0&postalcode=67346&_txid=rBAZEVXca8GoynHn%2FREfAg%3D%3D"
 
+    use_proxies = True
+
     def __init__(self, *args, **kwargs):
         super(WayfairProductSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
