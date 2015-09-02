@@ -23,8 +23,6 @@ class WayfairProductSpider(BaseProductsSpider):
     name = 'wayfair_products'
     allowed_domains = ["wayfair.com"]
 
-    use_proxies = True
-
     SEARCH_URL = "http://www.wayfair.com/keyword.php?keyword={search_term}"
 
     LAST_BR_DATE_URL = "http://www.wayfair.com/a/product_review_page/get_update_reviews_json?" \
@@ -33,8 +31,6 @@ class WayfairProductSpider(BaseProductsSpider):
 
     VARIANTS_STOCK_URL = "http://www.wayfair.com/ajax/stock_total.php?bpss=yes&" \
                          "skulist={sku}&kitmode=0&postalcode=67346&_txid=rBAZEVXca8GoynHn%2FREfAg%3D%3D"
-
-    use_proxies = True
 
     def __init__(self, *args, **kwargs):
         super(WayfairProductSpider, self).__init__(
