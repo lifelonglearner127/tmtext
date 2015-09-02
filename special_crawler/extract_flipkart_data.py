@@ -311,12 +311,16 @@ class FlipkartScraper(Scraper):
         return marketplace_prices
 
     def _marketplace_sellers(self):
-        marketplace_json = self.tree_html.xpath("//div[@class='seller-table-wrap section']/@data-config")[0]
-        marketplace_json = json.loads(marketplace_json)
         marketplace_sellers = []
 
-        for seller in marketplace_json["dataModel"]:
-            marketplace_sellers.append(seller["sellerInfo"]["name"])
+        try:
+            marketplace_json = self.tree_html.xpath("//div[@class='seller-table-wrap section']/@data-config")[0]
+            marketplace_json = json.loads(marketplace_json)
+
+            for seller in marketplace_json["dataModel"]:
+                marketplace_sellers.append(seller["sellerInfo"]["name"])
+        except:
+            pass
 
         if not marketplace_sellers:
             marketplace_sellers = self.tree_html.xpath("//a[@class='seller-name']/text()")
