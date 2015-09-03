@@ -1,10 +1,12 @@
 # todo:
 #  reviews
-#  related products
-#  upc [none]
-#  marketplace [none]
+#  xml file with fields
 
 
+import re
+import hjson
+from urllib import quote
+from urlparse import urlparse, parse_qs
 from scrapy import Request, FormRequest
 from scrapy.log import ERROR, WARNING
 
@@ -12,7 +14,6 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
-from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 
@@ -22,6 +23,9 @@ class HomebaseProductSpider(BaseProductsSpider):
                        'homebase.ugc.bazaarvoice.com']
     start_urls = []
 
+    # needed to get total results
+    FIRST_URL = ('http://www.homebase.co.uk/en/homebaseuk/searchterm/'
+                 '{search_term}')
     # url is the same for any request, all parameters passed via form data
     SEARCH_URL = ('http://www.homebase.co.uk/CategoryNavigationResultsView?'
                   'searchTermScope=&searchType=&filterTerm=&langId=110&'
@@ -29,6 +33,14 @@ class HomebaseProductSpider(BaseProductsSpider):
                   'manufacturer=&filterType=&resultCatEntryType=&'
                   'catalogId=10011&searchForContent=false&categoryId=&'
                   'storeId=10201&filterFacet=')
+    REVIEWS_URL = ('http://homebase.ugc.bazaarvoice.com/1494redes-en_gb/'
+                   '{product_id}'
+                   '/reviews.djs?format=embeddedhtml')
+    RELATED_URL = ('http://recs.richrelevance.com/rrserver/p13n_generated.js?'
+                   'a=04ba7209bebf8d76&'
+                   'p={product_id}&'
+                   'pt=%7Citem_page.recs_3%7Citem_page.recs_4%7Citem_page.recs_5&'
+                   'cts=http%3A%2F%2Fwww.homebase.co.uk&l=1')
     RESULTS_PER_PAGE = 43
     SORT_MODES = {
         'default': '1',
@@ -38,45 +50,50 @@ class HomebaseProductSpider(BaseProductsSpider):
         'rating': '5'  # customers rating, high to low
     }
     FORM_DATA = {
-        'contentBeginIndex': 0,  # always 0
-        'beginIndex': 0,  # set items offset
-        'isHistory': False,
+        'contentBeginIndex': '0',  # always 0
+        'beginIndex': '0',  # set items offset
+        'isHistory': 'false',
         'pageView': '',
         'resultType': 'products',
         'orderByContent': '',
-        'searchTerm': 'phones',
-        'storeId': 10201,
-        'catalogId': 10011,
-        'langId': 110,
+        'searchTerm': '',  # set search term
+        'storeId': '10201',
+        'catalogId': '10011',
+        'langId': '110',
         'pageFromName': 'SearchPage',
         'pagename': 'Search successful',
         'objectId': '',
         'requesttype': 'ajax',
-        'productBeginIndex': 0,  # set items offset
+        'productBeginIndex': '0',  # set items offset
         'orderBy': ''  # set order type
     }
-    REVIEWS_URL = ('http://homebase.ugc.bazaarvoice.com/1494redes-en_gb/'
-                   '{product_id}/reviews.djs?format=embeddedhtml')
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode not in self.SORT_MODES:
             sort_mode = 'default'
         self.SORT = self.SORT_MODES[sort_mode]
         self.pages = dict()
-        super(HomebaseProductSpider, self).__init__(*args, **kwargs)
+        super(HomebaseProductSpider, self).__init__(
+            site_name=self.allowed_domains[0], *args, **kwargs)
 
     def start_requests(self):
-        for st in self.search_terms:
+        for st in self.searchterms:
             form_data = self.FORM_DATA.copy()
+            form_data['searchTerm'] = st
             form_data['orderBy'] = self.SORT
-            self.pages[st] = 1
-            yield FormRequest(url=self.SEARCH_URL, form_data=form_data,
-                              meta={'form_data': form_data})
+            self.pages[st] = 0
+            # send request just to count number of total results
+            yield Request(
+                url=self.url_formatter.format(
+                    self.FIRST_URL, search_term=quote(st)),
+                callback=self.parse_total_and_start_search,
+                meta={'form_data': form_data,
+                      'search_term': st,
+                      'remaining': self.quantity})
         if self.product_url:
             prod = SiteProductItem()
             prod['is_single_result'] = True
             prod['url'] = self.product_url
-            prod['search_term'] = ''
             yield Request(self.product_url,
                           self._parse_single_product,
                           meta={'product': prod})
@@ -91,20 +108,30 @@ class HomebaseProductSpider(BaseProductsSpider):
                               self._parse_single_product,
                               meta={'product': prod})
 
+    def parse_total_and_start_search(self, response):
+        self._scrape_total_matches(response)
+        return self._scrape_next_results_page_link(response)
+
     def _scrape_product_links(self, response):
         items = response.css('.product_lister-product > '
                              '.product_lister-product-summary > '
                              'h4 > a::attr(href)').extract()
         for item in items:
-            yield item
+            yield item, SiteProductItem()
 
     def _scrape_total_matches(self, response):
-        items = response.css('#totalProcCount::attr(value)').extract()
-        try:
-            return int(items[0])
-        except (IndexError, ValueError) as e:
-            self.log(str(e), ERROR)
-            return 0
+        items = response.meta.get('total_matches')
+        if items is not None:
+            return items
+        else:
+            items = response.css('#totalProcCount::attr(value)').extract()
+            try:
+                items = int(items[0])
+                response.meta['total_matches'] = items
+                return items
+            except (IndexError, ValueError) as e:
+                self.log(str(e), ERROR)
+                return 0
 
     def _scrape_results_per_page(self, response):
         items = response.css(
@@ -119,21 +146,26 @@ class HomebaseProductSpider(BaseProductsSpider):
         meta = response.meta.copy()
         st = meta['search_term']
         offset = self.pages[st] * self.RESULTS_PER_PAGE
+        # check if there are no more products
+        if offset >= meta.get('total_matches', 0):
+            return None
+        offset = str(offset)
         form_data = meta['form_data']
         form_data['beginIndex'] = offset
         form_data['productBeginIndex'] = offset
         self.pages[st] += 1
-        return FormRequest(url=self.SEARCH_URL, formdata=form_data, meta=meta)
+        return FormRequest(url=self.SEARCH_URL, formdata=form_data,
+                           meta=meta, dont_filter=True)
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
     def _populate_from_html(self, response, prod):
-        cond_set(prod, 'title', response.xpath('/html/head/title/text()'))
-
+        cond_set(prod, 'title',
+                 response.css('.main_header[itemprop=name]::text').extract())
         # price
         currency = response.css(
-            'span[itemprop=priceCurrency]::text()').extract()
+            'span[itemprop=priceCurrency]::text').extract()
         price = response.css('#prodOfferPrice::attr(value)').extract()
         if currency and price:
             cond_set_value(prod, 'price', Price(price=price[0],
@@ -154,18 +186,60 @@ class HomebaseProductSpider(BaseProductsSpider):
             brand = guess_brand_from_first_words(prod['title'])
         cond_set_value(prod, 'brand', brand)
         # model
-        cond_set(prod, 'model', response.css('span[itemprop=sku]::text'),
+        cond_set(prod, 'model',
+                 response.css('span[itemprop=sku]::text').extract(),
                  unicode.strip)
         # out of stock
         cond_set_value(prod, 'is_out_of_stock',
                        response.css('.currently-out-of-stock'), bool)
 
     def parse_product(self, response):
-        prod = response.meta['product']
+        meta = response.meta.copy()
+        prod = meta['product']
         cond_set_value(
             prod, 'locale', response.headers.get('Content-Language', 'en-GB'))
-        prod['url'] = response.url
         self._populate_from_html(response, prod)
+        return Request(
+            self.url_formatter.format(
+                self.RELATED_URL,
+                product_id=prod['model']),
+            callback=self.parse_related,
+            meta=meta)
 
-        # todo: get urls for reviews and related
+    def parse_related(self, response):
+        """parse response from richrelevance api"""
+        prod = response.meta['product']
+        body = re.sub('\t|\s{2,6}', '', response.body)  # strip tabs
+        initial_data = re.findall('json\s?=\s?(\{.+?\});', body)
+        initial_data = [re.sub('\t|\s{2,6}', '', _) for _ in initial_data]
+        initial_data = [hjson.loads(_) for _ in initial_data]
+        additional_data = re.findall(
+            '\[(\d+)\]\.json\.items\.push\((\{.+?\})\);', body)
+        for ind, data in additional_data:
+            initial_data[int(ind)]['items'].append(hjson.loads(data))
+        related_products = []
+        for data in initial_data:
+            l = []
+            for item in data['items']:
+                title = item.get('name', '')
+                url = item.get('link_url', '')
+                if not title or not url:
+                    continue
+                url = parse_qs(urlparse(url).query).get('ct', [''])[0]
+                if not url:
+                    continue
+                if url.startswith('/'):
+                    url = 'http://www.homebase.co.uk%s' % url
+                l.append(RelatedProduct(title=title, url=url))
+            if l:
+                related_products.append({data['message']: l})
+        cond_set_value(prod, 'related_products', related_products)
+        return Request(
+            self.url_formatter.format(
+                self.REVIEWS_URL, product_id=prod['model']),
+            callback=self.parse_reviews)
+
+    def parse_reviews(self, response):
+        prod = response.meta['product']
+        # todo: get reviews from basaar api
         return prod
