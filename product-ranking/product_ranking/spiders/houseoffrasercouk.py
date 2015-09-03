@@ -8,8 +8,7 @@ from itertools import izip
 from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set_value
 
@@ -67,6 +66,9 @@ class HouseoffraserProductSpider(BaseProductsSpider):
             '//input[@name="masterproduct_pid"]/@value'
         ).extract())
         response.meta['product_id'] = product_id
+
+        # Set locale
+        product['locale'] = 'en_GB'
 
         # Get base product info from HTML body
         base_product_info = self._get_base_product_info(response)
