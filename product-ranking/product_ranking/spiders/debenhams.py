@@ -47,6 +47,10 @@ class DebenhamsProductSpider(BaseProductsSpider):
         department = self._parse_department(response)
         cond_set_value(product, 'department', department)
 
+        # Parse category
+        category = self._parse_category(response)
+        cond_set_value(product, 'category', category)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -72,6 +76,21 @@ class DebenhamsProductSpider(BaseProductsSpider):
         )
 
         return department
+
+    def _parse_category(self, response):
+        category = is_empty(
+            response.xpath('//meta[@property="category"]/@content').extract(),
+            ''
+        )
+        subcategory = is_empty(
+            response.xpath('//meta[@property="subcategory"]/@content').extract(),
+            ''
+        )
+
+        if subcategory and category:
+            return [category, subcategory]
+
+        return category
 
     def send_next_request(self, reqs, response):
         """
