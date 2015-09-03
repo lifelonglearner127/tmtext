@@ -133,6 +133,10 @@ class FlipkartProductsSpider(BaseProductsSpider):
         # get some token
         fk = response.xpath(
             '//input[@name="__FK"][1]/@value').extract()
+        if not fk:
+            fk = response.xpath('//div[@id="login-signup-newDialog"]//'
+                                'preceding-sibling::'
+                                'script[1]/text()').re('\s?=\s?"(.+)";')
         if fk:
             response.meta['FK'] = fk[0]
         response.meta['iter'] = iter(self.related_links)
@@ -191,6 +195,7 @@ class FlipkartProductsSpider(BaseProductsSpider):
         return Request(
             url,
             callback=self._parse_related,
+            dont_filter=True,
             meta=response.meta)
 
     def _scrape_total_matches(self, response):
@@ -236,7 +241,7 @@ class FlipkartProductsSpider(BaseProductsSpider):
         else:
             query_string['start'] = [next_start]
             url_parts = url_parts._replace(
-                query=urllib.urlencode(query_string,True))
+                query=urllib.urlencode(query_string, True))
             link = urlparse.urlunsplit(url_parts)
         return link
 
