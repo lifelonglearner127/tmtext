@@ -61,12 +61,21 @@ class KohlsVariants(object):
             upc = item.get("skuUpcCode")
             price = item.get("SkuSalePrice") or item.get("SkuRegularPrice") or 0
             if price:
-                price = price.replace("$", "")
+                price = price.replace("$", "").replace(',', '').replace(' ', '')
+                price = re.findall('\d+\.\d*', price)
+                price = price[0]
+
             inStock = item.get("inventoryStatus")
             if inStock == 'true':
                 inStock = True
             else:
                 inStock = False
+
+            try:
+                sizev = size[1]
+            except IndexError:
+                sizev = None
+
             obj = {
                 "skuId": skuId,
                 "upc": upc,
@@ -74,7 +83,7 @@ class KohlsVariants(object):
                 "in_stock": inStock,
                 "properties": {
                     "color": color[len(color)-1],
-                    "size": size[1],
+                    "size": sizev,
                 },
                 "selected": selected,
             }
