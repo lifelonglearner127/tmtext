@@ -106,7 +106,7 @@ class WalmartScraper(Scraper):
         self.review_json = None
         self.review_list = None
         self.is_review_checked = False
-
+        self.is_legacy_review = False
         self.wv = WalmartVariants()
 
     # checks input format
@@ -1443,6 +1443,14 @@ class WalmartScraper(Scraper):
         if self._review_count() == 0:
             return None
 
+        if self.is_legacy_review:
+            average_review_str = self.tree_html.xpath("//div[@class='review-summary Grid']\
+                //p[@class='heading-e']/text()")[0]
+            average_review = re.search('reviews \| (.+?) out of ', average_review_str).group(1)
+            average_review = float(average_review)
+
+            return average_review
+
         average_review = round(float(self.review_json["jsonData"]["attributes"]["avgRating"]), 1)
 
         if str(average_review).split('.')[1] == '0':
@@ -1452,6 +1460,18 @@ class WalmartScraper(Scraper):
 
     def _review_count(self):
         self._reviews()
+
+        if self.is_legacy_review:
+            nr_reviews = 0
+
+            nr_reviews_str = self.tree_html.xpath("//span[@itemprop='ratingCount']/text()")
+
+            if not nr_reviews_str:
+                return 0
+
+            nr_reviews = int(nr_reviews_str[0])
+
+            return nr_reviews
 
         if not self.review_json:
             return 0
@@ -1513,6 +1533,7 @@ class WalmartScraper(Scraper):
                 pass
 
             if review_list:
+                self.is_legacy_review = True
                 self.review_list = review_list
                 return review_list
 
