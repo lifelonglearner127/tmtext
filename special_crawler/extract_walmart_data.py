@@ -1943,9 +1943,17 @@ class WalmartScraper(Scraper):
 
         for seller in sellers_dict:
             if seller["sellerName"] != "Walmart.com":
-                prices.append(seller["price"])
+                prices.append(float(seller["price"]))
 
         return prices
+
+    def _marketplace_lowest_price(self):
+        marketplace_prices = self._marketplace_prices()
+
+        if marketplace_prices is None:
+            return None
+
+        return min(marketplace_prices)
 
     # ! may throw exception if not found
     def _in_stock_from_script(self):
@@ -2050,6 +2058,10 @@ class WalmartScraper(Scraper):
         # assume new page version
         try:
             prices = self._marketplace_prices_from_script()
+
+            if not prices:
+                return None
+
             return prices if prices else None
         except:
             prices = None
@@ -2071,6 +2083,11 @@ class WalmartScraper(Scraper):
             price_html = html.fromstring(self._find_between(product_info_json_text, ",\nprice: '", "',\nprice4SAC:"))
 
             prices = [price_html.text_content()]
+
+            prices = [float(price) for price in prices]
+
+            if not prices:
+                return None
 
             return prices
 
@@ -2709,6 +2726,7 @@ class WalmartScraper(Scraper):
         "marketplace_prices" : _marketplace_prices, \
         "marketplace_sellers": _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
+        "marketplace_lowest_price" : _marketplace_lowest_price, \
         "primary_seller": _primary_seller, \
         "in_stock": _in_stock, \
         "site_online": _site_online, \
