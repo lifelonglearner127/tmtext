@@ -1502,12 +1502,37 @@ class WalmartScraper(Scraper):
         reviews_by_mark = reviews_by_mark[:5]
         review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
 
-        if not review_list:
-            review_list = None
+        if review_list:
+            self.review_list = review_list
+            return review_list
 
-        self.review_list = review_list
+        if self._version() == "Walmart v2":
+            try:
+                review_list = self.legacy_reviews_v2()
+            except:
+                pass
 
-        return self.review_list
+            if review_list:
+                self.review_list = review_list
+                return review_list
+
+        return None
+
+    def legacy_reviews_v2(self):
+        review_rating_list_text = self.tree_html.xpath('//div[contains(@class, "review-summary")]//div[contains(@class, "js-rating-filter")]/span/text()')
+        review_rating_list_int = []
+
+        if not review_rating_list_text:
+            return None
+
+        for index in range(5):
+            if int(review_rating_list_text[index]) > 0:
+                review_rating_list_int.append([5 - index, int(review_rating_list_text[index])])
+
+        if not review_rating_list_int:
+            return None
+
+        return review_rating_list_int
 
     def _rollback(self):
         if self._version() == "Walmart v1":
