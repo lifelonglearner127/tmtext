@@ -343,6 +343,7 @@ class WayfairProductSpider(BaseProductsSpider):
 
                     response.meta['variants_skus'] = variants_skus
 
+                    cur_iteration = 0
                     for variant in itertools.product(*final_options.values()):
                         # Make a list of dictionary with variant from a list of tuples
                         # ({'color': u'Yellow', 'price': 12.99}, {'price': 15.99, 'size': u'10'}) -->
@@ -366,6 +367,9 @@ class WayfairProductSpider(BaseProductsSpider):
                         )
 
                         variants.append(single_variant)
+                        cur_iteration += 1
+                        if cur_iteration > 200:
+                            break  # TODO: fix this, this turns into an infinite loop on URLs like http://www.wayfair.com/Bass-Celebrity-Custom-Theater-BSS1567.html
                     response.meta['stock_skus'] = '~^~'.join(stock_skus)
 
                 return variants
