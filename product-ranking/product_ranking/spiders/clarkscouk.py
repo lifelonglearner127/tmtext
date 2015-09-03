@@ -40,6 +40,9 @@ class ClarksProductSpider(BaseProductsSpider):
         meta = response.meta.copy()
         product = meta['product']
 
+        # Set locale
+        product['locale'] = 'en_US'
+
         # Parse title
         title = self._parse_title(response)
         cond_set_value(product, 'title', title, conv=string.strip)
