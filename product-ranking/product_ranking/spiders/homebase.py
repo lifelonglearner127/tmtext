@@ -3,13 +3,11 @@
 #  xml file with fields
 
 
-import re
-import hjson
 from urllib import quote
-from urlparse import urlparse, parse_qs
 from scrapy import Request, FormRequest
 from scrapy.log import ERROR, WARNING
 
+from product_ranking.rich_relevance_reviews_api import RichRelevanceApi
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
@@ -208,38 +206,16 @@ class HomebaseProductSpider(BaseProductsSpider):
 
     def parse_related(self, response):
         """parse response from richrelevance api"""
-        prod = response.meta['product']
-        body = re.sub('\t|\s{2,6}', '', response.body)  # strip tabs
-        initial_data = re.findall('json\s?=\s?(\{.+?\});', body)
-        initial_data = [re.sub('\t|\s{2,6}', '', _) for _ in initial_data]
-        initial_data = [hjson.loads(_) for _ in initial_data]
-        additional_data = re.findall(
-            '\[(\d+)\]\.json\.items\.push\((\{.+?\})\);', body)
-        for ind, data in additional_data:
-            initial_data[int(ind)]['items'].append(hjson.loads(data))
-        related_products = []
-        for data in initial_data:
-            l = []
-            for item in data['items']:
-                title = item.get('name', '')
-                url = item.get('link_url', '')
-                if not title or not url:
-                    continue
-                url = parse_qs(urlparse(url).query).get('ct', [''])[0]
-                if not url:
-                    continue
-                if url.startswith('/'):
-                    url = 'http://www.homebase.co.uk%s' % url
-                l.append(RelatedProduct(title=title, url=url))
-            if l:
-                related_products.append({data['message']: l})
-        cond_set_value(prod, 'related_products', related_products)
+        meta = response.meta.copy()
+        prod = meta['product']
+        rr = RichRelevanceApi(response, prod, 'http://www.homebase.co.uk')
+        rr.parse_related_products()
         return Request(
             self.url_formatter.format(
                 self.REVIEWS_URL, product_id=prod['model']),
-            callback=self.parse_reviews)
+            callback=self.parse_reviews,
+            meta=meta)
 
     def parse_reviews(self, response):
         prod = response.meta['product']
-        # todo: get reviews from basaar api
         return prod
