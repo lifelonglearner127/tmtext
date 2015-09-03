@@ -12,7 +12,7 @@ from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set_value
 
-from product_ranking.br_bazaarvoice_api_script import parse_buyer_reviews
+from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -51,6 +51,8 @@ class HouseoffraserProductSpider(BaseProductsSpider):
     }
 
     def __init__(self, search_sort='NEWEST', *args, **kwargs):
+        self.br = BuyerReviewsBazaarApi()
+
         super(HouseoffraserProductSpider, self).__init__(
             site_name=self.allowed_domains[0],
             url_formatter=FormatterWithDefaults(
@@ -117,7 +119,7 @@ class HouseoffraserProductSpider(BaseProductsSpider):
             Request(
                 url=self.BUYER_REVIEWS_URL.format(product_id=product_id),
                 dont_filter=True,
-                callback=parse_buyer_reviews
+                callback=self.br.parse_buyer_reviews
             )
         )
 
