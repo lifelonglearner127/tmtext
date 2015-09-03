@@ -1,6 +1,7 @@
 import re
 import json
 from itertools import izip
+from datetime import datetime
 
 from scrapy.log import ERROR, INFO, WARNING
 
@@ -90,9 +91,19 @@ class BuyerReviewsBazaarApi(object):
                 histogram_data = data['BVRRSourceID'].replace('\\ ', '')\
                     .replace('\\', '').replace('\\"', '')
 
+                date = is_empty(
+                    re.findall(
+                        r'<span class="BVRRValue BVRRReviewDate">(\d+ \w+ \d+)</span>',
+                        histogram_data
+                    )
+                )
+                last_buyer_review_date = datetime.strptime(date.replace('.', ''), '%d %B %Y')
+                if last_buyer_review_date:
+                    product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d/%m/%Y')
+
                 stars = re.findall(
-                    r'<span class="BVRRHistStarLabelText">(\d+) stars?<\/span>|'
-                    r'<span class="BVRRHistAbsLabel">(\d+)<\/span>',
+                    r'<span class="BVRRHistStarLabelText">(\d+) stars?</span>|'
+                    r'<span class="BVRRHistAbsLabel">(\d+)</span>',
                     histogram_data
                 )
 

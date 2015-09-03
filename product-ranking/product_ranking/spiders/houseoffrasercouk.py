@@ -51,7 +51,7 @@ class HouseoffraserProductSpider(BaseProductsSpider):
     }
 
     def __init__(self, search_sort='NEWEST', *args, **kwargs):
-        self.br = BuyerReviewsBazaarApi()
+        self.br = BuyerReviewsBazaarApi(called_class=self)
 
         super(HouseoffraserProductSpider, self).__init__(
             site_name=self.allowed_domains[0],
