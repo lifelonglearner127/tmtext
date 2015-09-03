@@ -29,6 +29,12 @@ class ClarksProductSpider(BaseProductsSpider):
     items_per_page = 40
     page_num = 1
 
+    ZERO_REVIEWS_VALUE = {
+        'num_of_reviews': 0,
+        'average_rating': 0.0,
+        'rating_by_star': {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+    }
+
     def parse_product(self, response):
         reqs = []
         meta = response.meta.copy()
@@ -65,6 +71,10 @@ class ClarksProductSpider(BaseProductsSpider):
         # Parse stock status
         out_of_stock = self._parse_stock_status(response)
         cond_set_value(product, 'is_out_of_stock', out_of_stock)
+
+        # Parse buyer reviews
+        buyer_reviews = self._parse_buyer_reviews(response)
+        cond_set_value(product, 'buyer_reviews', buyer_reviews)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -236,6 +246,37 @@ class ClarksProductSpider(BaseProductsSpider):
             stock_status = False
 
         return stock_status
+
+    def _parse_buyer_reviews(self, response):
+        num_of_reviews = is_empty(
+            response.xpath('//meta[@itemprop="reviewCount"]/@content').extract()
+        )
+
+        if num_of_reviews:
+            # Get average rating
+            average_rating = is_empty(
+                response.xpath('//meta[@itemprop="ratingValue"]/@content').extract(),
+                0.0
+            )
+
+            # Count rating by star
+            rating_by_star = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+            stars = response.xpath('//*[@id="reviews"]/./'
+                                   '/li/.//meta[@itemprop="ratingValue"]'
+                                   '/@content').extract()
+
+            for star in stars:
+                rating_by_star[star] += 1
+
+            buyer_reviews = {
+                'num_of_reviews': int(num_of_reviews),
+                'average_rating': float(average_rating),
+                'rating_by_star': rating_by_star
+            }
+        else:
+            buyer_reviews = self.ZERO_REVIEWS_VALUE
+
+        return BuyerReviews(**buyer_reviews)
 
     def send_next_request(self, reqs, response):
         """
