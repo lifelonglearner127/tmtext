@@ -310,21 +310,24 @@ class ClarksProductSpider(BaseProductsSpider):
                            '/span[@class="page-size-container"]/text()').extract()
         )
 
-        try:
-            total_matches = re.findall(
-                r'Found (\d+) styles',
-                total_matches
-            )
-            return int(
-                is_empty(total_matches, '0')
-            )
-        except (KeyError, ValueError) as exc:
-            total_matches = None
-            self.log(
-                "Failed to extract total matches from {url}: {exc}".format(
-                    response.url, exc
-                ), ERROR
-            )
+        if total_matches:
+            try:
+                total_matches = re.findall(
+                    r'Found (\d+) styles',
+                    total_matches
+                )
+                return int(
+                    is_empty(total_matches, '0')
+                )
+            except (KeyError, ValueError) as exc:
+                total_matches = None
+                self.log(
+                    "Failed to extract total matches from {url}: {exc}".format(
+                        response.url, exc
+                    ), ERROR
+                )
+        else:
+            total_matches = 0
 
         return total_matches
 
@@ -352,19 +355,42 @@ class ClarksProductSpider(BaseProductsSpider):
                 res_item = SiteProductItem()
                 yield link, res_item
         else:
-            self.log("Found no product links.".format(response.url), INFO)
+            links = re.findall(
+                r'<a href=\\"(\/p\/\d+)\\"',
+                response.body_as_unicode().replace('\u003c', '<').replace('\u003e', '>')
+            )
+            if links:
+                links = list(set(links))
+                for link in links:
+                    res_item = SiteProductItem()
+                    yield link, res_item
+            else:
+                self.log("Found no product links.".format(response.url), INFO)
 
     def _scrape_next_results_page_link(self, response):
-        if '/c/' in response.url:
+        meta = response.meta.copy()
+
+        # We need initial link always to be a referer:
+        #   for ex. http://www.clarks.co.uk/s/smart
+        # But after sending the first Req, self.NEXT_PAGE_URL
+        # becomes a referer. So this is to prevent:
+        response_url = meta.get(
+            'response_url'
+        )
+        if not response_url:
+            response.meta['response_url'] = response.url
+            response_url = response.url
+
+        if '/c/' in response_url:
             location = 'Category'
         else:
             location = 'Search'
-        url_parse = urlparse.urlparse(response.url)
+        parsed_url = urlparse.urlparse(response_url)
         self.page_num += 1
         query_criteria = is_empty(
             re.findall(
                 r'\/s?c?\/(.+)',
-                url_parse.path
+                parsed_url.path
             )
         )
         data = {
@@ -379,23 +405,25 @@ class ClarksProductSpider(BaseProductsSpider):
                      "DisplayName": "pagesize",
                      "DataSplit": "-or-",
                      "Priority": "secondary",
-                     "Items": [self.items_per_page]
+                     "Items": [str(self.items_per_page)]
                 },
                 {
                     "Behaviour": "kvp",
                     "DataSplit": "-or-",
                     "DisplayName": "page",
                     "FhName": "fh_start_index",
-                    "Items": [self.page_num]
+                    "Items": [str(self.page_num)]
                 }
             ],
-            "PathName": url_parse.path,
-            "Scroll": "true",
+            "PathName": parsed_url.path,
+            "Scroll": True,
             "DeviceType": "Desktop"
         }
+
         return Request(
             url=self.NEXT_PAGE_URL.format(location=location),
             method='POST',
+            meta=response.meta.copy(),
             body=json.dumps(data),
             headers={
                 'X-Requested-With': 'XMLHttpRequest',
