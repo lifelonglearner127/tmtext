@@ -75,13 +75,13 @@ class WayfairScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//h1[@class="product__nova__title"]/span[@class="title_name"]')[0].strip()
+        return self.tree_html.xpath('//h1[@class="product__nova__title"]/span[@class="title_name"]/text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//h1[@class="product__nova__title"]/span[@class="title_name"]')[0].strip()
+        return self.tree_html.xpath('//h1[@class="product__nova__title"]/span[@class="title_name"]/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//h1[@class="product__nova__title"]/span[@class="title_name"]')[0].strip()
+        return self.tree_html.xpath('//h1[@class="product__nova__title"]/span[@class="title_name"]/text()')[0].strip()
 
     def _model(self):
         return None
