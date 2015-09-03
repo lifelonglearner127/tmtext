@@ -39,6 +39,10 @@ class DebenhamsProductSpider(BaseProductsSpider):
         title = self._parse_title(response)
         cond_set_value(product, 'title', title, conv=string.strip)
 
+        # Parse brand
+        brand = self._parse_brand(response)
+        cond_set_value(product, 'brand', brand, conv=string.strip)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -50,6 +54,13 @@ class DebenhamsProductSpider(BaseProductsSpider):
         )
 
         return title
+
+    def _parse_brand(self, response):
+        brand = is_empty(
+            response.xpath('//meta[@property="brand"]/@content').extract()
+        )
+
+        return brand
 
     def send_next_request(self, reqs, response):
         """
