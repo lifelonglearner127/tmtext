@@ -2098,6 +2098,15 @@ class WalmartScraper(Scraper):
 
         return None
 
+    def _primary_seller(self):
+        if self._version() == "Walmart v1":
+            return self.tree_html.xpath("//meta[@itemprop='seller']/@content")[0]
+
+        if self._version() == "Walmart v2":
+            self._extract_product_info_json()
+            return self.product_info_json["buyingOptions"]["seller"]["name"]
+
+        return None
     def _in_stock(self):
         """Extracts info on whether product is available to be
         bought on the site, from any seller (marketplace or owned).
@@ -2700,6 +2709,7 @@ class WalmartScraper(Scraper):
         "marketplace_prices" : _marketplace_prices, \
         "marketplace_sellers": _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
+        "primary_seller": _primary_seller, \
         "in_stock": _in_stock, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
