@@ -497,7 +497,7 @@ class AmazonScraper(Scraper):
         origin_image_urls = []
 
         for url in thumbnail_urls:
-            if "50_PKmb-play-button-overlay-thumb_.png" in url:
+            if "PKmb-play-button-overlay-thumb_.png" in url:
                 continue
 
             origin_image_urls.append(url.replace(",50_.", ".").replace("._SS40_.", "."))
