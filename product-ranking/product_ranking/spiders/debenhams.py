@@ -35,10 +35,21 @@ class DebenhamsProductSpider(BaseProductsSpider):
         # Set locale
         product['locale'] = 'en_GB'
 
+        # Parse title
+        title = self._parse_title(response)
+        cond_set_value(product, 'title', title, conv=string.strip)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
+
+    def _parse_title(self, response):
+        title = is_empty(
+            response.xpath('//meta[@property="og:title"]/@content').extract()
+        )
+
+        return title
 
     def send_next_request(self, reqs, response):
         """
