@@ -68,7 +68,7 @@ class WalmartRedirectedItemFieldReplace(object):
         _walmart_original_price = item.get('_walmart_original_price', None)
         if _walmart_original_oos:
             item['is_out_of_stock'] = _walmart_original_oos
-        if _walmart_original_price:
+        if _walmart_original_price and item.get('price', None):
             item['price'] = Price(priceCurrency=item['price'].priceCurrency,
                                   price=_walmart_original_price)
         return item
