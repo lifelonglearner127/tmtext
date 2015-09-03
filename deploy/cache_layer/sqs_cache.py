@@ -18,8 +18,10 @@ from cache_starter import log_settings
 from simmetrica_class import Simmetrica
 
 CACHE_TASKS_SQS = 'cache_sqs_ranking_spiders_tasks' # received_requests
-CACHE_OUTPUT_QUEUE_NAME = 'cache_sqs_ranking_spiders_output'
-CACHE_PROGRESS_QUEUE = 'cache_sqs_ranking_spiders_progress'
+# CACHE_OUTPUT_QUEUE_NAME = 'cache_sqs_ranking_spiders_output'
+# CACHE_PROGRESS_QUEUE = 'cache_sqs_ranking_spiders_progress'
+CACHE_OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
+CACHE_PROGRESS_QUEUE = 'sqs_ranking_spiders_progress'
 
 SPIDERS_TASKS_SQS = 'sqs_ranking_spiders_tasks_tests'  # tasks to spiders
 SPIDERS_PROGRESS_QUEUE_NAME = 'sqs_ranking_spiders_progress'  # rcvd progress report from spiders 
