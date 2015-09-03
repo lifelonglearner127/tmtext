@@ -7,6 +7,7 @@ from urllib import quote
 from scrapy import Request, FormRequest
 from scrapy.log import ERROR, WARNING
 
+from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.rich_relevance_reviews_api import RichRelevanceApi
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
@@ -71,6 +72,7 @@ class HomebaseProductSpider(BaseProductsSpider):
             sort_mode = 'default'
         self.SORT = self.SORT_MODES[sort_mode]
         self.pages = dict()
+        self.br = BuyerReviewsBazaarApi(called_class=self)
         super(HomebaseProductSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
 
@@ -213,9 +215,5 @@ class HomebaseProductSpider(BaseProductsSpider):
         return Request(
             self.url_formatter.format(
                 self.REVIEWS_URL, product_id=prod['model']),
-            callback=self.parse_reviews,
+            callback=self.br.parse_buyer_reviews,
             meta=meta)
-
-    def parse_reviews(self, response):
-        prod = response.meta['product']
-        return prod
