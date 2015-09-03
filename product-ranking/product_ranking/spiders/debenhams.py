@@ -32,6 +32,9 @@ class DebenhamsProductSpider(BaseProductsSpider):
         meta = response.meta.copy()
         product = meta['product']
 
+        # Set locale
+        product['locale'] = 'en_GB'
+
         if reqs:
             return self.send_next_request(reqs, response)
 
