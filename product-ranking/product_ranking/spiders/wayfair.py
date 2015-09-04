@@ -238,7 +238,7 @@ class WayfairProductSpider(BaseProductsSpider):
 
         if num_of_reviews:
             num_of_reviews = is_empty(
-                re.findall(r'(\d+) reviews', num_of_reviews)
+                re.findall(r'(\d+) reviews?', num_of_reviews)
             )
 
             if num_of_reviews:
