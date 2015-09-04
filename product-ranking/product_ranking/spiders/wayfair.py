@@ -59,7 +59,8 @@ class WayfairProductSpider(BaseProductsSpider):
         # Set kitid
         # Needed to choose product own variants
         kit_id = is_empty(
-            response.xpath('//input[@name="kitId"]/@value').extract()
+            response.xpath('//input[@name="kitId"]/@value').extract(),
+            '0'
         )
         response.meta['kit_id'] = int(kit_id)
 
@@ -199,7 +200,6 @@ class WayfairProductSpider(BaseProductsSpider):
         """
         Parse product stock status
         """
-        meta = response.meta.copy()
         stock_status = is_empty(
             response.xpath('//ul[@id="ship_display"]/'
                            'li[contains(@class, "stock_count")]').extract()
@@ -321,6 +321,8 @@ class WayfairProductSpider(BaseProductsSpider):
 
             try:
                 data = json.loads(variants_data)
+                # Contains data for all variants for all products on page
+                # (ps. there also can be related prods with variants)
                 option_details = data.get('option_details')
                 variants = []
 
@@ -339,6 +341,7 @@ class WayfairProductSpider(BaseProductsSpider):
                         if option['kit_id'] == meta['kit_id']:
                             category = option['category'].replace(' ', '_').lower()
                             value = option['name']
+
                             add_price = option['price']
                             # From this data for price we get an additional price value (+ 3.00 USD, for ex.)
                             price = round(main_price.price.__float__() + add_price, 2)
@@ -368,12 +371,16 @@ class WayfairProductSpider(BaseProductsSpider):
                         for property in properties.itervalues():
                             stock_sku.append(variants_skus[property])
 
+                        # This argument is needed to send Req for variant stock status
+                        # Ex.: BSS1567-2673193,2673179
                         stock_skus.append(
                             meta['product_sku'] + '-'
                             + ','.join(stock_sku)
                         )
 
                         variants.append(single_variant)
+                    # This argument is needed to send Req for variant stock status
+                    # Ex.: BSS1567-2673193,2673179~^~BSS1567-2673199,2673190
                     response.meta['stock_skus'] = '~^~'.join(stock_skus)
 
                 return variants
