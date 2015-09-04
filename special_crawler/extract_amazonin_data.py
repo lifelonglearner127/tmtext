@@ -403,6 +403,20 @@ class AmazonINScraper(Scraper):
             return img_list[0] == img_list[1]
         return None
 
+    def _get_origin_image_urls_from_thumbnail_urls(self, thumbnail_urls):
+        origin_image_urls = []
+
+        for url in thumbnail_urls:
+            if "PKmb-play-button-overlay-thumb_.png" in url:
+                continue
+
+            origin_image_urls.append(url.replace(",50_.", ".").replace("._SS40_.", "."))
+
+        if not origin_image_urls:
+            return None
+
+        return origin_image_urls
+
     def _image_urls(self, tree = None):
         allimg = self._image_helper()
         n = len(allimg)
@@ -413,34 +427,34 @@ class AmazonINScraper(Scraper):
         #The small images are to the left of the big image
         image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls]
+            return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls])
 
         #The small images are below the big image
         image_url = tree.xpath("//div[@id='thumbs-image']//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            res = [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls]
-            return res
+            res = [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls]
+            return self._get_origin_image_urls_from_thumbnail_urls(res)
 
         #Amazon instant video
         image_url = tree.xpath("//div[@class='dp-meta-icon-container']//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return image_url
+            return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
         image_url = tree.xpath("//td[@id='prodImageCell']//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return image_url
+            return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
         image_url = tree.xpath("//div[contains(@id,'thumb-container')]//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls]
+            return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls])
 
         image_url = tree.xpath("//div[contains(@class,'imageThumb')]//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return image_url
+            return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
         image_url = tree.xpath("//div[contains(@id,'coverArt')]//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return image_url
+            return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
         image_url = tree.xpath('//img[@id="imgBlkFront"]')
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
@@ -453,7 +467,7 @@ class AmazonINScraper(Scraper):
                 if vurls:
                     allimg = allimg[:-1]
 
-            return allimg
+            return self._get_origin_image_urls_from_thumbnail_urls(allimg)
         return None
 
     def _image_helper(self):

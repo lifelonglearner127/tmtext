@@ -52,7 +52,8 @@ class SearchSpider(BaseSpider):
     allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
                        "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
                        "boots.com", "ocado.com", "tesco.com", "maplin.co.uk", "amazon.co.uk", "currys.co.uk", "pcworld.co.uk", "ebay.co.uk", \
-                       "argos.co.uk", "ebuyer.com", "ebuyer.co.uk", "firebox.com", "rakuten.co.uk", "uk.rs-online.com", "screwfix.com"]
+                       "argos.co.uk", "ebuyer.com", "ebuyer.co.uk", "firebox.com", "rakuten.co.uk", "uk.rs-online.com", "screwfix.com",
+                       "macys.com"]
 
     # pass product as argument to constructor - either product name or product URL
     # arguments:
@@ -74,7 +75,7 @@ class SearchSpider(BaseSpider):
         # call specific init for each derived class
         self.init_sub()
 
-        self.version = " 29ec2d4105826036bcd46a99d6dc297f3248e79f"
+        self.version = "cea53bc96d849f211ba408deab6de895f04bc5dd"
 
         self.product_url = product_url
         self.products_file = products_file
@@ -154,7 +155,8 @@ class SearchSpider(BaseSpider):
                         "firebox" : "http://www.firebox.com/firebox/search?searchstring=%s" % search_query, \
                         "rakuten" : "http://www.rakuten.co.uk/search/%s/" % search_query, \
                         "rscomponents" : "http://uk.rs-online.com/web/c/?searchTerm=%s" % search_query, \
-                        "screwfix" : "http://www.screwfix.com/search?search=%s" % search_query
+                        "screwfix" : "http://www.screwfix.com/search?search=%s" % search_query, \
+                        "macys" : "http://www1.macys.com/shop/search?keyword=%s" % search_query
                         }
 
         return search_pages
@@ -1102,7 +1104,7 @@ class SearchSpider(BaseSpider):
         else:
             self.log("Didn't find product price: (" + str(product_name) + ")\n", level=log.INFO)
 
-        return (product_name, product_model, price, None, None)
+        return (product_name, product_model, price, None, None, brand)
 
     def parseURL_target(self, hxs):
         product_name_holder = hxs.select("//h2[@class='product-name item']/span[@itemprop='name']/text()").extract()

@@ -7,7 +7,6 @@ import re
 import sys
 import json
 import lxml
-
 from lxml import html
 import time
 import requests
@@ -498,7 +497,7 @@ class AmazonScraper(Scraper):
         origin_image_urls = []
 
         for url in thumbnail_urls:
-            if "50_PKmb-play-button-overlay-thumb_.png" in url:
+            if "PKmb-play-button-overlay-thumb_.png" in url:
                 continue
 
             origin_image_urls.append(url.replace(",50_.", ".").replace("._SS40_.", "."))
@@ -747,7 +746,16 @@ class AmazonScraper(Scraper):
             return self.review_list
 
         review_list = []
-        review_link = self.tree_html.xpath("//a[contains(@class, 'a-link-normal a-text-normal product-reviews-link')]/@href")[0]
+        try:
+            review_link = self.tree_html.xpath("//a[contains(@class, 'a-link-normal a-text-normal product-reviews-link')]/@href")[0]
+        except:
+            pass
+
+        try:
+            review_link = self.tree_html.xpath("//div[contains(@class, 'acrCount')]/a/@href")[0]
+        except:
+            pass
+
         if review_link.find("cm_cr_dp_qt_see_all_top") > 0:
             index_1 = review_link.find("cm_cr_dp_qt_see_all_top") + len("cm_cr_dp_qt_see_all_top")
             index_2 = review_link.find("ie=UTF8")
@@ -784,7 +792,7 @@ class AmazonScraper(Scraper):
 
                 review_html = html.fromstring(contents)
                 review_count = review_html.xpath("//div[@id='cm_cr-review_list']//div[contains(@class, 'a-section a-spacing-medium')]//span[@class='a-size-base']/text()")[0]
-                review_count = int(re.search('of (.*) reviews', review_count).group(1))
+                review_count = int(re.search('of (.*) reviews', review_count).group(1).replace(",", ""))
                 review_list.append([index + 1, review_count])
 
         if not review_list:
