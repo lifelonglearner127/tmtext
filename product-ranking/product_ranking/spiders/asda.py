@@ -29,12 +29,12 @@ class AsdaValidatorSettings(object):  # do NOT set BaseValidatorSettings as pare
     ignore_log_duplications = True  # ... duplicated requests?
     ignore_log_filtered = True  # ... filtered requests?
     test_requests = {
-        'qwerty': 0,  # should return 'no products' or just 0 products
+        'qlkjwehjqwdfahsdfh': 0,  # should return 'no products' or just 0 products
         '!': 0,
         'eat': [20, 150],
         'dress': [2, 40],
         'red pepper': [10, 80],
-        'chilly pepper': [15, 130],
+        'chilly pepper': [5, 130],
         'breakfast': [70, 220],
         'vodka': [30, 150],
         'water proof': [10, 100],
