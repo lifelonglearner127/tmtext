@@ -51,6 +51,10 @@ class DebenhamsProductSpider(BaseProductsSpider):
         category = self._parse_category(response)
         cond_set_value(product, 'category', category)
 
+        # Parse price
+        price = self._parse_price(response)
+        cond_set_value(product, 'price', price)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -91,6 +95,23 @@ class DebenhamsProductSpider(BaseProductsSpider):
             return [category, subcategory]
 
         return category
+
+    def _parse_price(self, response):
+        currency = is_empty(
+            response.xpath('//span[@itemprop="priceCurrency"]'
+                           '/@content').extract(),
+            'GBP'
+        )
+        price = is_empty(
+            response.xpath('//span[@itemprop="price"]'
+                           '/text()').extract(),
+            0.00
+        )
+
+        return Price(
+            price=float(price),
+            priceCurrency=currency
+        )
 
     def send_next_request(self, reqs, response):
         """
