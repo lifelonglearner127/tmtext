@@ -342,15 +342,14 @@ class WayfairProductSpider(BaseProductsSpider):
                             category = option['category'].replace(' ', '_').lower()
                             value = option['name']
 
-                            add_price = option['price']
                             # From this data for price we get an additional price value (+ 3.00 USD, for ex.)
-                            price = round(main_price.price.__float__() + add_price, 2)
+                            add_price = round(option['price'], 2)
 
                             if not final_options.get(category):
                                 final_options[category] = []
 
                             variants_skus[value] = sku
-                            final_options[category].append({category: value, 'price': price})
+                            final_options[category].append({category: value, 'price': add_price})
 
                     response.meta['variants_skus'] = variants_skus
 
@@ -359,13 +358,17 @@ class WayfairProductSpider(BaseProductsSpider):
                         # ({'color': u'Yellow', 'price': 12.99}, {'price': 15.99, 'size': u'10'}) -->
                         #     {'color': u'Yellow', 'price': 15.99, 'size': u'10'}
                         single_variant = {}
-                        properties = {}
                         stock_sku = []
 
+                        # Make a final price from additional prices for variants
+                        final_price = product['price'].price.__float__()
                         for var in variant:
-                            properties.update(var)
+                            final_price += var['price']
 
-                        single_variant['price'] = properties.pop('price')
+                        properties = dict(sum(map(dict.items, variant), []))
+                        del properties['price']
+
+                        single_variant['price'] = round(final_price, 2)
                         single_variant['properties'] = properties
 
                         for property in properties.itervalues():
