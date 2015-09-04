@@ -55,6 +55,10 @@ class DebenhamsProductSpider(BaseProductsSpider):
         price = self._parse_price(response)
         cond_set_value(product, 'price', price)
 
+        # Parse special pricing
+        special_pricing = self._parse_special_pricing(response)
+        cond_set_value(product, 'special_pricing', special_pricing, conv=bool)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -112,6 +116,14 @@ class DebenhamsProductSpider(BaseProductsSpider):
             price=float(price),
             priceCurrency=currency
         )
+
+    def _parse_special_pricing(self, response):
+        special_pricing = is_empty(
+            response.xpath('//span[@class="price-was"]').extract(),
+            False
+        )
+
+        return special_pricing
 
     def send_next_request(self, reqs, response):
         """
