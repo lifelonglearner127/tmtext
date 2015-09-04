@@ -274,17 +274,18 @@ class WayfairProductSpider(BaseProductsSpider):
                 if not histogram:
                     # If we don't have BR data in HTML code, we
                     # send a Request to get it
-                    buyer_reviews = Request(
-                        url=self.BUYER_REVIEWS_URL.format(
-                            sku=meta['product_sku']
-                        ),
-                        callback=self._get_stars_by_request,
-                        headers={
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json, text/javascript, */*; q=0.01'
-                        },
-                        meta=response.meta.copy()
-                    )
+                    # buyer_reviews = Request(
+                    #     url=self.BUYER_REVIEWS_URL.format(
+                    #         sku=meta['product_sku']
+                    #     ),
+                    #     callback=self._get_stars_by_request,
+                    #     headers={
+                    #         'X-Requested-With': 'XMLHttpRequest',
+                    #         'Accept': 'application/json, text/javascript, */*; q=0.01'
+                    #     },
+                    #     meta=response.meta.copy()
+                    # )
+                    buyer_reviews = ZERO_REVIEWS_VALUE
                 else:
                     histogram = "[{0}]".format(histogram)
 
