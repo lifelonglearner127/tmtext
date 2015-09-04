@@ -24,8 +24,8 @@ class MacysSpider(SearchResultsSpider):
         for result in results:
 
             item = SearchItem()
-            product_name = result.select("div[@class='shortDescription']/a/text()").extract()
-            product_url = result.select("div[@class='shortDescription']/a/@href").extract()
+            product_name = result.select(".//div[@class='shortDescription']/a/text()").extract()
+            product_url = result.select(".//div[@class='shortDescription']/a/@href").extract()
 
             # quit if there is no product name
             if product_name and product_url:
