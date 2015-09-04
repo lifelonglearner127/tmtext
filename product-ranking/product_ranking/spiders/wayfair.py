@@ -196,7 +196,9 @@ class WayfairProductSpider(BaseProductsSpider):
         Parse product description
         """
         description = is_empty(
-            response.xpath('//*[@id="information"]/div').extract()
+            response.xpath('//*[@id="information"]/div |'
+                           '//*[contains(@class, "product_details_tab")]'
+                           '/div[contains(@class, "details_body")]').extract()
         )
 
         return description
