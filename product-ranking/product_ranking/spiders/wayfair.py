@@ -142,6 +142,10 @@ class WayfairProductSpider(BaseProductsSpider):
         #         callback=self._parse_last_buyer_review_date
         #     ))
 
+        # Parse related products
+        related_products = self._parse_related_product(response)
+        cond_set_value(product, 'related_products', related_products)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -247,7 +251,6 @@ class WayfairProductSpider(BaseProductsSpider):
         """
         Parse product buyer reviews
         """
-        meta = response.meta.copy()
         num_of_reviews = is_empty(
             response.xpath('//span[contains(@class, "ratingcount")]/'
                            'span/text() |'
@@ -552,6 +555,35 @@ class WayfairProductSpider(BaseProductsSpider):
             price = '0.00'
 
         return Price(price=price, priceCurrency='USD')
+
+    def _parse_related_product(self, response):
+        items = response.xpath('//div[@name="carousel"][@data-carousel-type="product,"]/./'
+                               '/div[contains(@class, "carousel_item")]')
+        related_products = []
+
+        if items:
+            for item in items:
+                title = is_empty(
+                    item.xpath('././/div[@data-click-track="carousel_product_name"]/./'
+                               '/strong/text()').extract()
+                )
+                url = is_empty(
+                    item.xpath('./div[@class="productimage "]'
+                               '/a/@href').extract()
+                )
+
+                if title and url:
+                    if self.allowed_domains[0] not in url:
+                        url = 'http://www.{domain}{url}'.format(
+                            domain=self.allowed_domains[0],
+                            url=url
+                        )
+
+                    related_products.append(
+                        RelatedProduct(url=url, title=title)
+                    )
+
+        return related_products
 
     def send_next_request(self, reqs, response):
         """
