@@ -63,6 +63,10 @@ class DebenhamsProductSpider(BaseProductsSpider):
         image_url = self._parse_image_url(response)
         cond_set_value(product, 'image_url', image_url, conv=string.strip)
 
+        # Parse description
+        description = self._parse_description(response)
+        cond_set_value(product, 'description', description, conv=string.strip)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -135,6 +139,13 @@ class DebenhamsProductSpider(BaseProductsSpider):
         )
 
         return image_url
+
+    def _parse_description(self, response):
+        description = is_empty(
+            response.xpath('//div[@id="item-description-block"]').extract()
+        )
+
+        return description
 
     def send_next_request(self, reqs, response):
         """
