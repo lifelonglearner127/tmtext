@@ -59,6 +59,10 @@ class DebenhamsProductSpider(BaseProductsSpider):
         special_pricing = self._parse_special_pricing(response)
         cond_set_value(product, 'special_pricing', special_pricing, conv=bool)
 
+        # Parse image url
+        image_url = self._parse_image_url(response)
+        cond_set_value(product, 'image_url', image_url, conv=string.strip)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -124,6 +128,13 @@ class DebenhamsProductSpider(BaseProductsSpider):
         )
 
         return special_pricing
+
+    def _parse_image_url(self, response):
+        image_url = is_empty(
+            response.xpath('//meta[@property="og:image"]/@content').extract()
+        )
+
+        return image_url
 
     def send_next_request(self, reqs, response):
         """
