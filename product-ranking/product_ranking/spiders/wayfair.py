@@ -25,6 +25,9 @@ class WayfairProductSpider(BaseProductsSpider):
 
     SEARCH_URL = "http://www.wayfair.com/keyword.php?keyword={search_term}"
 
+    BUYER_REVIEWS_URL = "http://www.wayfair.com/a/product_review_page/get_reviews_html?" \
+                        "product_sku={sku}&privatesale=1&_txid=rBAZEVXpgcMOxC5k0LKVAg%3D%3D"
+
     LAST_BR_DATE_URL = "http://www.wayfair.com/a/product_review_page/get_update_reviews_json?" \
                        "_format=json&product_sku={sku}&page_number=1&sort_order=date_desc" \
                        "&filter_rating=&filter_tag=&item_per_page=10&is_nova=1&_txid=rBAZEVXcZE6pEXHr94MSAg%3D%3D"
@@ -43,12 +46,14 @@ class WayfairProductSpider(BaseProductsSpider):
 
         # Set product primary sku
         product_sku = is_empty(
-            response.xpath('//span[@class="product_breadcrumb"]/text()').extract()
+            response.xpath('//span[@class="product_breadcrumb"]/text() |'
+                           '//div[contains(@class,"sku_info_header")]'
+                           '/div[contains(@class, "emphasis")]/text()').extract()
         )
 
         if product_sku:
             product_sku = is_empty(
-                re.findall(r'SKU:\s?(\w+)', product_sku)
+                re.findall(r'SKU\s?#?:\s?(\w+)', product_sku)
             )
             response.meta['product_sku'] = product_sku
         else:
@@ -124,7 +129,11 @@ class WayfairProductSpider(BaseProductsSpider):
 
         # Parse buyer reviews
         buyer_reviews = self._parse_buyer_reviews(response)
-        cond_set_value(product, 'buyer_reviews', buyer_reviews)
+
+        if isinstance(buyer_reviews, Request):
+            reqs.append(buyer_reviews)
+        else:
+            cond_set_value(product, 'buyer_reviews', buyer_reviews)
 
         # Parse last buyer review date
         # if buyer_reviews is not ZERO_REVIEWS_VALUE:
@@ -165,7 +174,8 @@ class WayfairProductSpider(BaseProductsSpider):
         Parse product special price
         """
         special_pricing = is_empty(
-            response.xpath('//*[contains(@class, "listprice")]').extract()
+            response.xpath('//*[contains(@class, "listprice")] |'
+                           '//span[@id="msrp"]').extract()
         )
 
         return special_pricing
@@ -235,20 +245,25 @@ class WayfairProductSpider(BaseProductsSpider):
         """
         Parse product buyer reviews
         """
+        meta = response.meta.copy()
         num_of_reviews = is_empty(
             response.xpath('//span[contains(@class, "ratingcount")]/'
-                           'span/text()').extract(), ''
+                           'span/text() |'
+                           '//span[contains(@class, "reviews_text")]'
+                           '/text()').extract(), ''
         )
 
         if num_of_reviews:
             num_of_reviews = is_empty(
-                re.findall(r'(\d+) reviews?', num_of_reviews)
+                re.findall(r'(\d+) R?r?eviews?', num_of_reviews)
             )
 
             if num_of_reviews:
                 average_rating = is_empty(
                     response.xpath('//span[@itemprop="ratingValue"]/'
-                                   'text()').extract(), '0'
+                                   'text() |'
+                                   '//a[@href="#reviews"]/span[@class="margin_sm_top"]'
+                                   '/text()').extract(), '0'
                 )
 
                 histogram = is_empty(
@@ -256,8 +271,20 @@ class WayfairProductSpider(BaseProductsSpider):
                                response.body_as_unicode())
                 )
 
-                if not histogram or not average_rating:
-                    return ZERO_REVIEWS_VALUE
+                if not histogram:
+                    # If we don't have BR data in HTML code, we
+                    # send a Request to get it
+                    buyer_reviews = Request(
+                        url=self.BUYER_REVIEWS_URL.format(
+                            sku=meta['product_sku']
+                        ),
+                        callback=self._get_stars_by_request,
+                        headers={
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json, text/javascript, */*; q=0.01'
+                        },
+                        meta=response.meta.copy()
+                    )
                 else:
                     histogram = "[{0}]".format(histogram)
 
@@ -269,19 +296,70 @@ class WayfairProductSpider(BaseProductsSpider):
                             rating_by_star[star['id']] = star['he_count']
 
                         buyer_reviews = {
-                            'average_rating': average_rating,
-                            'num_of_reviews': num_of_reviews,
+                            'average_rating': float(average_rating),
+                            'num_of_reviews': int(num_of_reviews),
                             'rating_by_star': rating_by_star,
                         }
-                        return BuyerReviews(**buyer_reviews)
+                        buyer_reviews = BuyerReviews(**buyer_reviews)
                     except (KeyError, ValueError) as exc:
                         self.log('Unable to parse star rating from {url}: {exc}'.format(
                             url=response.url,
                             exc=exc
                         ), ERROR)
-                        return ZERO_REVIEWS_VALUE
+                        buyer_reviews = ZERO_REVIEWS_VALUE
         else:
-            return ZERO_REVIEWS_VALUE
+            buyer_reviews = ZERO_REVIEWS_VALUE
+
+        return buyer_reviews
+
+    def _get_stars_by_request(self, response):
+        """
+        Callback for Requast on buyer reviews.
+        In response body we get json with html code.
+        """
+        meta = response.meta.copy()
+        reqs = meta.get('reqs')
+        product = meta['product']
+
+        data = response.body_as_unicode()
+
+        try:
+            data = json.loads(data)
+            html = data['html']
+            num_of_reviews = is_empty(
+                re.findall(
+                    r'<span id="review_count">\s+(\d+)\s+</span>',
+                    html
+                )
+            )
+            average_rating = is_empty(
+                re.findall(
+                    r'itemprop="ratingValue">\s+(\d.\d)\s+</span>',
+                    html
+                )
+            )
+            star_rating = re.findall(
+                r'<tr class="histogramrating" data-rating="(\d+)" data-reviewcount="(\d+)">',
+                html
+            )
+            rating_by_star = {k: int(v) for (k, v) in star_rating}
+            buyer_reviews = {
+                'num_of_reviews': int(num_of_reviews),
+                'average_rating': float(average_rating),
+                'rating_by_star': rating_by_star
+            }
+            product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
+        except Exception as exc:
+            self.log('Unable to parse buyer reviews from {url}: {exc}'.format(
+                url=product['url'],
+                exc=exc
+            ), ERROR)
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
 
     def _parse_last_buyer_review_date(self, response):
         """
@@ -444,7 +522,8 @@ class WayfairProductSpider(BaseProductsSpider):
         Parse product price
         """
         price = is_empty(
-            response.xpath('//span[contains(@class, "product_price")]')
+            response.xpath('//span[contains(@class, "product_price")] |'
+                           '//div[@id="sale_price"]')
         )
 
         if price:
