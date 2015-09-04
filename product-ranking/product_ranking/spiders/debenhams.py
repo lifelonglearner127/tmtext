@@ -67,6 +67,10 @@ class DebenhamsProductSpider(BaseProductsSpider):
         description = self._parse_description(response)
         cond_set_value(product, 'description', description, conv=string.strip)
 
+        # Parse stock status
+        is_out_of_stock = self._parse_stock_status(response)
+        cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -146,6 +150,19 @@ class DebenhamsProductSpider(BaseProductsSpider):
         )
 
         return description
+
+    def _parse_stock_status(self, response):
+        stock_status = is_empty(
+            response.xpath('//meta[@name="twitter:data2"]'
+                           '/@content').extract()
+        )
+
+        if stock_status.lower() is 'in stock':
+            stock_status = True
+        else:
+            stock_status = False
+
+        return stock_status
 
     def send_next_request(self, reqs, response):
         """
