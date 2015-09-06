@@ -443,6 +443,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         original_parent_id = _get_walmart_original_redirect_item_id(response)
         current_id = get_walmart_id_from_url(response.url)
+        if str(original_parent_id) == str(current_id):
+            # there was redirect but the IDs are the same, so it's the same product
+            original_parent_id = None
         # store current ID to identify it later to match the products
         if 'product' not in response.meta:
             response.meta['product'] = {}
