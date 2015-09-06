@@ -177,8 +177,10 @@ class AmazonDEScraper(Scraper):
     def _status(self):
         return 'success'
 
-
-
+    def _exclude_javascript_from_description(self, description):
+        description = re.subn(r'<(script).*?</\1>(?s)', '', description)[0]
+        description = re.subn(r'<(style).*?</\1>(?s)', '', description)[0]
+        return description
 
     ##########################################
     ################ CONTAINER : PRODUCT_INFO
@@ -237,11 +239,19 @@ class AmazonDEScraper(Scraper):
         all_features_text = "\n".join(rows_text)
         # return dict with all features info
      #   return all_features_text
-        return rows_text
+
+        if rows_text:
+            return rows_text
+
+        return None
 
 
     def _feature_count(self): # extract number of features from tree
         rows = self._features()
+
+        if not rows:
+            return 0
+
         return len(rows)
         # select table rows with more than 2 cells (the others are just headers), count them
     #    return len(filter(lambda row: len(row.xpath(".//td"))>0, self.tree_html.xpath("//div[@class='content pdClearfix']//tbody//tr")))
@@ -270,28 +280,63 @@ class AmazonDEScraper(Scraper):
 
 
     def _long_description_helper(self):
-        desc = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
-        if desc is not None and len(desc)>5:
-            return desc
-        desc = " ".join(self.tree_html.xpath('//div[@id="psPlaceHolder"]/preceding-sibling::noscript//text()')).strip()
-        if desc is not None and len(desc)>5:
-            return desc
-        pd = self.tree_html.xpath("//h2[contains(text(),'Product Description')]/following-sibling::*//text()")
-        if len(pd)>0:
-            desc = " ".join(pd).strip()
-            if desc is not None and len(desc)>0:
-                return  self._clean_text(desc)
-        desc = '\n'.join(self.tree_html.xpath('//script//text()'))
-        desc = re.findall(r'var iframeContent = "(.*)";', desc)
-        desc = urllib.unquote_plus(str(desc))
-        desc = html.fromstring(desc)
-        dsw = desc.xpath('//div[@class="productDescriptionWrapper"]')
-        res = ""
-        for d in dsw:
-            if len(d.xpath('.//div[@class="aplus"]'))==0:
-                res += self._clean_text(' '.join(d.xpath('.//text()')))+" "
-        if res != "" :
-            return res
+        try:
+            description = ""
+            block = self.tree_html.xpath('//*[@class="productDescriptionWrapper"]')[0]
+
+            for item in block:
+                description = description + html.tostring(item)
+
+            description = self._clean_text(self._exclude_javascript_from_description(description))
+
+            if description is not None and len(description) > 5:
+                return description
+        except:
+            pass
+
+        try:
+            description = ""
+            block = self.tree_html.xpath('//div[@id="psPlaceHolder"]/preceding-sibling::noscript')[0]
+
+            for item in block:
+                description = description + html.tostring(item)
+
+            description = self._clean_text(self._exclude_javascript_from_description(description))
+
+            if description is not None and len(description) > 5:
+                return description
+        except:
+            pass
+
+        try:
+            description = ""
+            block = self.tree_html.xpath("//h2[contains(text(),'Produktbeschreibungen')]/following-sibling::*")[0]
+
+            for item in block:
+                description = description + html.tostring(item)
+
+            description = self._clean_text(self._exclude_javascript_from_description(description))
+
+            if description is not None and len(description) > 5:
+                return description
+        except:
+            pass
+
+        try:
+            description = '\n'.join(self.tree_html.xpath('//script//text()'))
+            description = re.findall(r'var iframeContent = "(.*)";', description)
+            description = urllib.unquote_plus(str(description))
+            description = html.fromstring(description)
+            description = description.xpath('//div[@class="productDescriptionWrapper"]')
+            res = ""
+            for d in description:
+                if len(d.xpath('.//div[@class="aplus"]'))==0:
+                    res += self._clean_text(' '.join(d.xpath('.//text()')))+" "
+            if res != "":
+                return res
+        except:
+            pass
+
         return None
 
 
@@ -316,13 +361,16 @@ class AmazonDEScraper(Scraper):
 
         try:
             ingredients = re.search('<b>Ingredients</b><br>(.+?)<br>', page_raw_text).group(1)
-            ingredients = ingredients.split(",")
-
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            ingredients = r.findall(ingredients)
             ingredients = [ingredient.strip() for ingredient in ingredients]
 
             if ingredients:
                 return ingredients
         except:
+            pass
+
+        try:
             desc = '\n'.join(self.tree_html.xpath('//script//text()'))
             desc = re.findall(r'var iframeContent = "(.*)";', desc)
             desc = urllib.unquote_plus(str(desc))
@@ -331,12 +379,33 @@ class AmazonDEScraper(Scraper):
             if "</h5>" in ingredients:
                 return None
 
-            ingredients = ingredients.split(",")
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            ingredients = r.findall(ingredients)
 
             ingredients = [ingredient.strip() for ingredient in ingredients]
 
             if ingredients:
                 return ingredients
+        except:
+            pass
+
+        try:
+            start_index = page_raw_text.find('<span class="a-text-bold">Ingredients</span>')
+
+            if start_index < 0:
+                raise Exception("Ingredients doesn't exist!")
+
+            start_index = page_raw_text.find('<p>', start_index)
+            end_index = page_raw_text.find('</p>', start_index)
+            ingredients = page_raw_text[start_index + 3:end_index]
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            ingredients = r.findall(ingredients)
+            ingredients = [ingredient.strip() for ingredient in ingredients]
+
+            if ingredients:
+                return ingredients
+        except:
+            pass
 
         return None
 
@@ -347,12 +416,22 @@ class AmazonDEScraper(Scraper):
         return 0
 
     def _nutrition_facts(self):
+        page_raw_text = html.tostring(self.tree_html)
+        page_raw_text = urllib.unquote_plus(page_raw_text)
+
         try:
-            desc = '\n'.join(self.tree_html.xpath('//script//text()'))
-            desc = re.findall(r'var iframeContent = "(.*)";', desc)
-            desc = urllib.unquote_plus(str(desc))
-            nutrition_facts = re.search('<h5>Nutritional Facts and Ingredients:</h5> <p>(.+?)(</p>|<br>)', desc).group(1)
-            nutrition_facts = nutrition_facts.split(",")
+            start_index = page_raw_text.find('<h5>Nutritional Facts and Ingredients:</h5>')
+
+            if start_index < 0:
+                raise Exception("Nutritional info doesn't exist!")
+
+            start_index = page_raw_text.find('<p>', start_index)
+            end_index = page_raw_text.find('</p>', start_index)
+
+            nutrition_facts = page_raw_text[start_index + 3:end_index]
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            nutrition_facts = r.findall(nutrition_facts)
+
             nutrition_facts = [nutrition_fact.strip() for nutrition_fact in nutrition_facts]
 
             if nutrition_facts:
@@ -403,6 +482,20 @@ class AmazonDEScraper(Scraper):
             return img_list[0] == img_list[1]
         return None
 
+    def _get_origin_image_urls_from_thumbnail_urls(self, thumbnail_urls):
+        origin_image_urls = []
+
+        for url in thumbnail_urls:
+            if "PKmb-play-button-overlay-thumb_.png" in url:
+                continue
+
+            origin_image_urls.append(url.replace(",50_.", ".").replace("._SS40_.", "."))
+
+        if not origin_image_urls:
+            return None
+
+        return origin_image_urls
+
     def _image_urls(self, tree = None):
         allimg = self._image_helper()
         n = len(allimg)
@@ -413,34 +506,34 @@ class AmazonDEScraper(Scraper):
         #The small images are to the left of the big image
         image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls]
+            return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls])
 
         #The small images are below the big image
         image_url = tree.xpath("//div[@id='thumbs-image']//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            res = [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls]
-            return res
+            res = [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls]
+            return self._get_origin_image_urls_from_thumbnail_urls(res)
 
         #Amazon instant video
         image_url = tree.xpath("//div[@class='dp-meta-icon-container']//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return image_url
+            return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
         image_url = tree.xpath("//td[@id='prodImageCell']//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return image_url
+            return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
         image_url = tree.xpath("//div[contains(@id,'thumb-container')]//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m not in vurls]
+            return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls])
 
         image_url = tree.xpath("//div[contains(@class,'imageThumb')]//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return image_url
+            return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
         image_url = tree.xpath("//div[contains(@id,'coverArt')]//img/@src")
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return image_url
+            return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
         image_url = tree.xpath('//img[@id="imgBlkFront"]')
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
@@ -453,7 +546,7 @@ class AmazonDEScraper(Scraper):
                 if vurls:
                     allimg = allimg[:-1]
 
-            return allimg
+            return self._get_origin_image_urls_from_thumbnail_urls(allimg)
         return None
 
     def _image_helper(self):
@@ -718,26 +811,39 @@ class AmazonDEScraper(Scraper):
 
         try:
             price = self._clean_text(self.tree_html.xpath("//b[@class='priceLarge']")[0].text_content())
+            price = price.replace(currency, u"").strip()
         except:
             price = None
 
         if not price:
             try:
                 price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_ourprice']")[0].text_content())
+                price = price.replace(currency, u"").strip()
             except:
                 price = None
 
         if not price:
             try:
                 price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_dealprice']")[0].text_content())
+                price = price.replace(currency, u"").strip()
             except:
                 price = None
 
         if not price:
             try:
                 price = self._clean_text(self.tree_html.xpath("//span[@id='priceblock_saleprice']")[0].text_content())
+                price = price.replace(currency, u"").strip()
             except:
                 price = None
+
+        if "-" in price:
+            if currency not in price:
+                price = currency + price.split("-")[0].strip() + u"-" + currency + price.split("-")[1].strip()
+            else:
+                price = price.split("-")[0].strip() + u"-" + price.split("-")[1].strip()
+        else:
+            if currency not in price:
+                price = currency + price
 
         if not price:
             return None
