@@ -71,6 +71,10 @@ class DebenhamsProductSpider(BaseProductsSpider):
         is_out_of_stock = self._parse_stock_status(response)
         cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
 
+        # Parse upc
+        upc = self._parse_upc(response)
+        cond_set_value(product, 'upc', upc)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -171,6 +175,14 @@ class DebenhamsProductSpider(BaseProductsSpider):
             stock_status = False
 
         return stock_status
+
+    def _parse_upc(self, response):
+        upc = is_empty(
+            response.xpath('//meta[@property="product_number"]'
+                           '/@content').extract()
+        )
+
+        return upc
 
     def send_next_request(self, reqs, response):
         """
