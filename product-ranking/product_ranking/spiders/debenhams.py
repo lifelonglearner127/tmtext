@@ -75,6 +75,10 @@ class DebenhamsProductSpider(BaseProductsSpider):
         upc = self._parse_upc(response)
         cond_set_value(product, 'upc', upc)
 
+        # Parse variants
+        variants = self._parse_variants(response)
+        cond_set_value(product, 'variants', variants)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -183,6 +187,66 @@ class DebenhamsProductSpider(BaseProductsSpider):
         )
 
         return upc
+
+    def _parse_variants(self, response):
+        meta = response.meta.copy()
+        product = meta['product']
+
+        variants = []
+        data = is_empty(re.findall(
+            r'<div id="entitledItem_\w+" class="hidediv">(\[(.|\n)*?\])',
+            response.body_as_unicode()
+        ))
+
+        if data:
+            data = list(data)[0]
+
+            try:
+                variants_data = json.loads(data.replace('\'', '"'))
+            except ValueError as exc:
+                self.log(
+                    'Unable to parse variants from {url}: {exc}'.format(
+                        exc=exc,
+                        url=response.url
+                    ), ERROR
+                )
+                return []
+
+            for var_data in variants_data:
+                properties = {}
+
+                for attr, value in var_data['Attributes'].iteritems():
+                    attr = attr.lower().split('_')
+                    properties[attr[0]] = attr[1]
+
+                price = is_empty(
+                    re.findall(
+                        r'(\d+\.\d+)',
+                        var_data.get('offer_price', 0.00)
+                    ), product['price'].price.__float__()
+                )
+
+                status = var_data.get('inventory_status', 'unavailable')
+                stock = status.lower() == 'unavailable'
+
+                image_url = 'http://debenhams.scene7.com/is/image/Debenhams/' \
+                            '{upc}_{id}'.format(
+                                upc=product['upc'],
+                                id=var_data['part_number']
+                            )
+
+                variant = {
+                    'properties': properties,
+                    'price': float(price),
+                    'is_out_of_stock': stock,
+                    'image_url': image_url
+                }
+
+                variants.append(variant)
+        else:
+            return []
+
+        return variants
 
     def send_next_request(self, reqs, response):
         """
