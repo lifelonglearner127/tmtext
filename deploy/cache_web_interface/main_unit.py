@@ -17,10 +17,12 @@ from boto.s3.key import Key
 
 from cache_layer.simmetrica_class import Simmetrica
 from cache_layer import additional_sqs_metrics
+from cache_layer.cache_service import SqsCache
 
 
 app = Flask(__name__)
 s = Simmetrica()
+cache = SqsCache()
 
 def send_msg_to_sqs(task):
     sqs_conn = boto.sqs.connect_to_region("us-east-1")
@@ -345,6 +347,32 @@ def get_killer_logs():
     else:
         return 'Killer logs not found'
 
+
+@app.route('save_cache', methods=['POST'])
+def save_cache_item():
+    """
+    save cached sqs item response
+    """
+    task = request.form['task']
+    message = request.form['message']
+    result = cache.put_result(task, message)
+    return make_response('', 200 if result else 404)
+
+
+@app.route('get_cache', methods=['POST'])
+def get_cache_item():
+    """
+    get item from sqs cache
+    """
+    task = request.form['task']
+    freshness = int(request.form.get('freshness', 60))  # 60 minutes, todo
+    from_cache, result = cache.get_result(task, freshness)
+    if result:
+        return make_response(result, 200)
+    elif from_cache:
+        return make_response('Item found in cache but it is too old', 404)
+    else:
+        return make_response('Item not found in cache', 404)
 
 if __name__ == '__main__':
     app.debug = True
