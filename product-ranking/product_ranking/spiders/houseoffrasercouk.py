@@ -235,7 +235,7 @@ class HouseoffraserProductSpider(BaseProductsSpider):
                 data = json.loads(variants_data)
                 variations = data.get('variations')
                 if variations:
-                    for variation in variations:
+                    for variation in variations.itervalues():
                         for size, value in variation['sizes'].iteritems():
                             single_variant = {}
                             properties = {}
