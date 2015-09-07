@@ -208,6 +208,14 @@ class DebenhamsProductSpider(BaseProductsSpider):
                            '/@content').extract()
         )
 
+        if upc:
+            upc = is_empty(
+                re.findall(
+                    r'(\d{12})+',
+                    upc
+                )
+            )
+
         return upc
 
     def _parse_variants(self, response):
