@@ -1942,6 +1942,12 @@ class WalmartScraper(Scraper):
         else:
             pinfo_dict = self.product_info_json
 
+        for store in pinfo_dict["analyticsData"]["storesAvail"]:
+            if int(store["isAvail"]) == 1:
+                return 1
+
+        return 0
+
         available = pinfo_dict["analyticsData"]["storesAvail"]
 
         return 1 if available else 0
