@@ -101,20 +101,31 @@ class BuyerReviewsBazaarApi(object):
                 if last_buyer_review_date:
                     product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d/%m/%Y')
 
-                stars = re.findall(
-                    r'<span class="BVRRHistStarLabelText">(\d+) S?s?tars?</span>|'
+                stars_data = re.findall(
+                    r'<span class="BVRRHistStarLabelText">(\d+) (?:S|s)tars?</span>|'
                     r'<span class="BVRRHistAbsLabel">(\d+)</span>',
                     histogram_data
                 )
 
-                # ('5', '') --> '5'
-                item_list = []
-                for star in stars:
-                    item_list.append(filter(None, list(star))[0])
+                if stars_data:
+                    # ('5', '') --> '5'
+                    item_list = []
+                    for star in stars_data:
+                        item_list.append(filter(None, list(star))[0])
 
-                # ['3', '0', '5', '6'] --> {'3': '0', '5': '6'}
-                i = iter(item_list)
-                stars = {k: int(v) for (k, v) in izip(i, i)}
+                    # ['3', '0', '5', '6'] --> {'3': '0', '5': '6'}
+                    i = iter(item_list)
+                    stars = {k: int(v) for (k, v) in izip(i, i)}
+                else:
+                    stars_data = re.findall(
+                        r'<div itemprop="reviewRating".+>.+<span itemprop="ratingValue" '
+                        r'class="BVRRNumber BVRRRatingNumber">(\d+)</span>',
+                        histogram_data
+                    )
+                    stars = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+                    for star in stars_data:
+                        stars[star] += 1
+
                 return stars
             except (KeyError, IndexError) as exc:
                 self.called_class.log(
