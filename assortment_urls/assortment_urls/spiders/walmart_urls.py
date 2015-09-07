@@ -12,6 +12,7 @@ from assortment_urls.items import AssortmentUrlsItem
 
 is_empty = lambda x: x[0] if x else None
 
+
 class MySpider(scrapy.Spider):
     """To run that spider:
     scrapy crawl walmart_urls -o output.json -a file_name=sm.txt
@@ -21,37 +22,28 @@ class MySpider(scrapy.Spider):
     name = 'walmart_urls'
     allowed_domains = ['www.walmart.com']
 
+    current_page = 1
+
     def __init__(self, *args, **kwargs):
-        self.file = None
-        if "file_name" in kwargs:
-            if os.path.isfile(kwargs["file_name"]): 
-                self.file = open(kwargs["file_name"], "r")
+        self.product_url = kwargs['product_url']
+
+        if "num_pages" in kwargs:
+            self.num_pages = int(kwargs['num_pages'])
+        else:
+            self.num_pages = 1  # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
 
         self.user_agent = "Mozilla/5.0 (X11; Linux i686 (x86_64))" \
             " AppleWebKit/537.36 (KHTML, like Gecko)" \
             " Chrome/37.0.2062.120 Safari/537.36"
 
     def start_requests(self):
-        if self.file:
-            self.urls = self.file.readlines()
-            if not self.urls:
-                return
-            url = self.urls.pop(0).strip()
-            yield Request(url=self.valid_url(url))
+        yield Request(url=self.valid_url(self.product_url))
 
     def parse(self, response):
         yield self.get_urls(response)
-
         request = self.next_pagination_link(response)
         if request is not None:
             yield request
-        else:
-            if self.urls:
-                for i in range(0, len(self.urls)):
-                    url = self.urls.pop(0).strip()
-                    if url:
-                        break             
-                yield Request(url=self.valid_url(url))
 
     def get_urls(self, response):
         item = AssortmentUrlsItem()
@@ -104,9 +96,20 @@ class MySpider(scrapy.Spider):
         #print "-"*50
         assortment_url = {response.url: urls}
         item["assortment_url"] = assortment_url
+        item['results_per_page'] = self._scrape_results_per_page(response)
         return item
 
+    def _scrape_results_per_page(self, response):
+        num = response.css('.result-summary-container ::text').re(
+            'Showing (\d+) of')
+        if num:
+            return int(num[0])
+
     def next_pagination_link(self, response):
+        if self.current_page >= self.num_pages:
+            return
+        self.current_page += 1
+
         next_link = is_empty(
             response.xpath(
                 "//a[contains(@class, 'paginator-btn-next')]/@href"
@@ -116,7 +119,6 @@ class MySpider(scrapy.Spider):
         if next_link:
             url = urlparse.urljoin(response.url, next_link)
             return Request(url=url)
-        return None
 
     def valid_url(self, url):
         if not re.findall("http(s){0,1}\:\/\/", url):
