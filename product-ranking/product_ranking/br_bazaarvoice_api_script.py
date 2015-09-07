@@ -51,7 +51,7 @@ class BuyerReviewsBazaarApi(object):
 
                     buyer_reviews = {
                         'num_of_reviews': num_of_reviews,
-                        'average_rating': average_rating,
+                        'average_rating': round(average_rating, 1),
                         'rating_by_star': rating_by_star
                     }
                 else:
