@@ -219,4 +219,4 @@ class SiteProductItem(Item):
 
     response_code = Field()  # for 404, 500 etc.
 
-    last_buyer_review_date = Field()
+    deliver_in = Field()  # now for Jet.com only;
