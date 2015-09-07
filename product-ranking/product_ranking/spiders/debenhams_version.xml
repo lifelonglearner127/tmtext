@@ -13,6 +13,15 @@
     <field name="brand" version="1.0"></field>
     <field name="department" version="1.0"></field>
     <field name="category" version="1.0"></field>
+    <field name="price" version="1.0"></field>
+    <field name="special_pricing" version="1.0"></field>
+    <field name="description" version="1.0"></field>
+    <field name="image_url" version="1.0"></field>
+    <field name="is_out_of_stock" version="1.0"></field>
+    <field name="upc" version="1.0"></field>
+    <field name="variants" version="1.0"></field>
+    <field name="buyer_reviews" version="1.0"></field>
+    <field name="last_buyer_review_date" version="1.0"></field>
 
 
 </fields>
