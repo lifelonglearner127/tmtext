@@ -1880,30 +1880,17 @@ class WalmartScraper(Scraper):
         It will be inferred from other sellers fields.
         Method can be overwritten by scraper class if different implementation is available.
         '''
+        if self._version() == "Walmart v1":
+            return 0
 
-        onlinePriceText = ""
+        if self._version() == "Walmart v2":
+            try:
+                modal_texts = self.tree_html.xpath("//*[@class='js-pure-soi-flyout-header']")[0].text_content()
 
-        try:
-            onlinePriceText = self.tree_html.xpath("//div[@class='onlinePriceWM']")[0].text_content()
-            if "In stores only" in onlinePriceText:
-                return 1
-        except Exception:
-            pass
-
-        try:
-            onlinePriceText = self.tree_html.xpath("//div[@class='onlinePriceMP']")[0].text_content()
-            if "In stores only" in onlinePriceText:
-                return 1
-        except Exception:
-            pass
-
-        try:
-            modal_texts = self.tree_html.xpath("//*[@class='js-pure-soi-flyout-header']")[0].text_content()
-
-            if "This item is only sold at a Walmart store." in modal_texts:
-                return 1
-        except Exception:
-            pass
+                if "This item is only sold at a Walmart store." in modal_texts:
+                    return 1
+            except Exception:
+                pass
 
         return 0
 
