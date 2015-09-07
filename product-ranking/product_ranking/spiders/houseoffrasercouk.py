@@ -236,47 +236,41 @@ class HouseoffraserProductSpider(BaseProductsSpider):
             variants = []
             try:
                 data = json.loads(variants_data)
-                variations = data.get('variations')
-                if variations:
-                    for variation in variations.itervalues():
-                        for size in variation['lsizes']:
-                            single_variant = {}
-                            properties = {}
-
-                            properties['color'] = variation['colourname']
-                            properties['size'] = size
-                            single_variant['properties'] = properties
-
-                            size_info = variation['sizes'].get(size)
-                            if size_info:
-                                stock = size_info.values()[0]
-                                if stock == 'true':
-                                    single_variant['out_of_stock'] = False
-                                else:
-                                    single_variant['out_of_stock'] = True
-
-                                size_id = variation['sizes'][size].keys()[0]  # Size variant id
-                                single_variant['price'] = format(
-                                    float(variation['priceValues'][size_id]),
-                                    '.2f'
-                                )
-                            else:
-                                single_variant['out_of_stock'] = True
-                                single_variant['price'] = str(
-                                    format(
-                                        product['price'].price.__float__(),
-                                        '.2f'
-                                    )
-                                )
-
-                            variants.append(single_variant)
-                return variants
-            except Exception as exc:
+            except ValueError as exc:
                 self.log(
                     "Failed to extract variants from {url}: {exc}".format(
                         url=response.url, exc=exc), WARNING
                 )
                 return []
+
+            variations = data.get('variations')
+            if variations:
+                for variation in variations.itervalues():
+                    for size in variation['lsizes']:
+                        properties = {
+                            'color': variation['colourname'],
+                            'size': size
+                        }
+
+                        size_info = variation['sizes'].get(size)
+                        if size_info:
+                            stock = size_info.values()[0]
+                            out_of_stock = stock != 'true'
+
+                            size_id = variation['sizes'][size].keys()[0]  # Size variant id
+                            price = float(variation['priceValues'][size_id])
+                        else:
+                            out_of_stock = True
+                            price = product['price'].price.__float__()
+
+                        single_variant = {
+                            'out_of_stock': out_of_stock,
+                            'price': format(price, '.2f'),
+                            'properties': properties
+                        }
+
+                        variants.append(single_variant)
+                return variants
         else:
             self.log(
                 "Failed to extract variants from {url}".format(response.url),
