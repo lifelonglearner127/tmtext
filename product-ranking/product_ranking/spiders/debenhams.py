@@ -13,6 +13,7 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set_value
+from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -26,6 +27,14 @@ class DebenhamsProductSpider(BaseProductsSpider):
                  "Navigate?langId=-1&storeId=10701&catalogId=10001&txt={search_term}"
 
     items_per_page = 60
+
+    BUYER_REVIEWS_URL = 'http://debenhams.ugc.bazaarvoice.com/9364redes-en_gb/{upc}/' \
+                        'reviews.djs?format=embeddedhtml'
+
+    def __init__(self, *args, **kwargs):
+        self.br = BuyerReviewsBazaarApi(called_class=self)
+
+        super(DebenhamsProductSpider, self).__init__(*args, **kwargs)
 
     def parse_product(self, response):
         reqs = []
@@ -78,6 +87,15 @@ class DebenhamsProductSpider(BaseProductsSpider):
         # Parse variants
         variants = self._parse_variants(response)
         cond_set_value(product, 'variants', variants)
+
+        # Parse buyer reviews
+        reqs.append(
+            Request(
+                url=self.BUYER_REVIEWS_URL.format(upc=upc),
+                dont_filter=True,
+                callback=self.br.parse_buyer_reviews
+            )
+        )
 
         if reqs:
             return self.send_next_request(reqs, response)
