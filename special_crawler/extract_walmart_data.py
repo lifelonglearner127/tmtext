@@ -1085,7 +1085,7 @@ class WalmartScraper(Scraper):
                     price_html = None
 
                     for script in script_bodies:
-                        if "var DefaultItem =" in script:
+                        if "var DefaultItem =" in script or "var DefaultItemWidget =" in script:
                             price_html = script
                             break
 
@@ -1407,16 +1407,6 @@ class WalmartScraper(Scraper):
 
         if self._version() == "Walmart v2":
             return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
-
-    def _upc(self):
-        if self._version() == "Walmart v1":
-            upc = self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
-            return upc
-        elif self._version() == "Walmart v2":
-            product_json = self._extract_product_info_json()
-            return product_json["analyticsData"]["upc"]
-
-        return None
 
     # extract product seller information from its product product page tree
     def _seller_from_tree(self):
