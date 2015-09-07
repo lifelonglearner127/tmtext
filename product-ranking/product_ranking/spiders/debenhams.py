@@ -97,6 +97,10 @@ class DebenhamsProductSpider(BaseProductsSpider):
             )
         )
 
+        # Parse related products
+        related_products = self._parse_related_products(response)
+        cond_set_value(product, 'related_products', related_products)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -265,6 +269,49 @@ class DebenhamsProductSpider(BaseProductsSpider):
             return []
 
         return variants
+
+    def _parse_related_products(self, response):
+        related_products = []
+        data = is_empty(re.findall(
+            r'<div name="upSell_entitledItems_\w+" id="upSell_entitledItems_\w+"'
+            r' class="hidediv">(\[(.|\n)*?\])</div>',
+            response.body_as_unicode()
+        ))
+
+        if data:
+            data = list(data)[0]
+
+            try:
+                data = json.loads(data)
+            except ValueError as exc:
+                self.log(
+                    'Unable to parse related products from {url}: {exc}'.format(
+                        exc=exc,
+                        url=response.url
+                    ), ERROR
+                )
+                return
+
+            for rel_prod in data:
+                url = rel_prod.get('pdpUrl')
+                if url:
+                    url = 'www.{domain}{url}'.format(
+                        domain=self.allowed_domains[0],
+                        url=url
+                    )
+
+                title = rel_prod.get('description')
+
+                if title and url:
+                    related_products.append(
+                        RelatedProduct(
+                            url=url,
+                            title=title
+                        )
+                    )
+        else:
+            return
+        return related_products
 
     def send_next_request(self, reqs, response):
         """
