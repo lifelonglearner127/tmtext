@@ -3,6 +3,7 @@
 import json
 import re
 import hjson
+import urlparse
 
 from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
@@ -14,7 +15,7 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
 
 is_empty = lambda x, y=None: x[0] if x else y
 
-def product_id_format(product_id, product_target):
+def product_id_format(product_id, product_target=None):
     """
     Formats product id 123456 to 123-456-X56
     """
@@ -67,7 +68,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
         product = meta['product']
 
         product_ids = is_empty(
-            re.findall(r'#(\w+)(\D+\w+)', product['url']),
+            re.findall(r'#(\d+)(\D\w+)', product['url']),
             None
         )
 
@@ -107,12 +108,15 @@ class NextCoUkProductSpider(BaseProductsSpider):
             if key == 'StyleID':
                 last_id = val
             elif key == 'ItemNumber':
+                val = is_empty(
+                    re.findall(r'(\d+-\d+)', val)
+                )
                 tree[val] = last_id
 
         try:
-            style_id = tree[product_id_format(product_id, product_target)]
-        except Exception, e:
-            self.log('Error parsing style_id! ' + str(e))
+            style_id = tree[product_id_format(product_id)]
+        except (KeyError, ValueError) as exc:
+            self.log('Error parsing style_id:{0}'.format(exc), ERROR)
             return product
 
         # Format product id to get proper section from html body
@@ -261,6 +265,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
                             reqs.append(
                                 Request(
                                     url='http://www.next.co.uk/item/{0}?CTRL=select'.format(item_number),
+                                    dont_filter=True,
                                     callback=self._parse_size_variants
                                 )
                             )
@@ -602,7 +607,14 @@ class NextCoUkProductSpider(BaseProductsSpider):
                     item.css('.Details .Title a ::attr(href)').extract()
                 )
                 res_item = SiteProductItem()
-                yield link, res_item
+
+                link = urlparse.urljoin(response.url, link)
+                yield Request(
+                    link,
+                    dont_filter=True,
+                    meta={'product': res_item},
+                    callback=self.parse_product,
+                ), res_item
         else:
             self.log("Found no product links in {url}".format(response.url), INFO)
 
