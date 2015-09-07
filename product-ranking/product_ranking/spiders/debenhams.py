@@ -120,9 +120,17 @@ class DebenhamsProductSpider(BaseProductsSpider):
         )
         price = is_empty(
             response.xpath('//span[@itemprop="price"]'
-                           '/text()').extract(),
-            0.00
+                           '/text() |'
+                           '//span[@itemprop="lowPrice"]'
+                           '/text()').extract()
         )
+        if price:
+            price = is_empty(
+                re.findall(
+                    r'(\d+\.\d+)',
+                    price
+                ), 0.00
+            )
 
         return Price(
             price=float(price),
