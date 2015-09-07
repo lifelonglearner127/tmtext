@@ -233,28 +233,30 @@ class HouseoffraserProductSpider(BaseProductsSpider):
             variants = []
             try:
                 data = json.loads(variants_data)
-                for variation in data['variations'].itervalues():
-                    for size, value in variation['sizes'].iteritems():
-                        single_variant = {}
-                        properties = {}
+                variations = data.get('variations')
+                if variations:
+                    for variation in variations:
+                        for size, value in variation['sizes'].iteritems():
+                            single_variant = {}
+                            properties = {}
 
-                        properties['color'] = variation['colourname']
-                        properties['size'] = size
-                        single_variant['properties'] = properties
+                            properties['color'] = variation['colourname']
+                            properties['size'] = size
+                            single_variant['properties'] = properties
 
-                        stock = value.values()[0]
-                        if stock == 'true':
-                            single_variant['out_of_stock'] = False
-                        else:
-                            single_variant['out_of_stock'] = True
+                            stock = value.values()[0]
+                            if stock == 'true':
+                                single_variant['out_of_stock'] = False
+                            else:
+                                single_variant['out_of_stock'] = True
 
-                        size_id = value.keys()[0]  # Size variant id
-                        single_variant['price'] = format(
-                            float(variation['priceValues'][size_id]),
-                            '.2f'
-                        )
+                            size_id = value.keys()[0]  # Size variant id
+                            single_variant['price'] = format(
+                                float(variation['priceValues'][size_id]),
+                                '.2f'
+                            )
 
-                        variants.append(single_variant)
+                            variants.append(single_variant)
 
                 return variants
             except Exception as exc:
