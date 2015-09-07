@@ -125,6 +125,9 @@ class HomebaseProductSpider(BaseProductsSpider):
             return items
         else:
             items = response.css('#totalProcCount::attr(value)').extract()
+            if not items or not items[0]:
+                items = response.css('#catalog_search_result_information'
+                                     '::text').re('Count:\s?(\d+)\,')
             try:
                 items = int(items[0])
                 response.meta['total_matches'] = items
@@ -136,7 +139,7 @@ class HomebaseProductSpider(BaseProductsSpider):
     def _scrape_results_per_page(self, response):
         items = response.css(
             '.product_lister-product > .product_lister-product-summary')
-        per_page = int(len(items))
+        per_page = len(items)
         if per_page != self.RESULTS_PER_PAGE:
             self.log('Got different results per page number', WARNING)
             self.RESULTS_PER_PAGE = per_page
