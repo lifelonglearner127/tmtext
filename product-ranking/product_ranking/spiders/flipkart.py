@@ -77,8 +77,6 @@ class FlipkartProductsSpider(BaseProductsSpider):
         image_url = response.css('.mainImage > .imgWrapper > '
                                  'img::attr(data-src)')
         cond_set(product, 'image_url', image_url.extract())
-        # marketplace
-        cond_set_value(product, 'marketplace', self.parse_marketplace(response))
         # reviews
         cond_set_value(
             product, 'buyer_reviews', self.parse_buyer_reviews(response))
@@ -117,6 +115,14 @@ class FlipkartProductsSpider(BaseProductsSpider):
             if price:
                 product['price'] = Price(price=price[0].extract(),
                                          priceCurrency='INR')
+        # marketplace
+        cond_set_value(product, 'marketplace', self.parse_marketplace(response))
+        if 'marketplace' not in product:
+            seller_name = response.css('.shop-section '
+                                       '.seller-name::text').extract()
+            if seller_name and 'price' in product:
+                marketplace = dict(price=product['price'], name=seller_name[0])
+                cond_set_value(product, 'marketplace', [marketplace])
         # brand
         brand = response.css('div.title-wrap::attr(data-prop41)')
         cond_set(product, 'brand', brand.extract())
