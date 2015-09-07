@@ -9,6 +9,7 @@ import lxml
 import lxml.html
 import requests
 import random
+import yaml
 
 from extract_data import Scraper
 from compare_images import compare_images
@@ -152,16 +153,6 @@ class WalmartScraper(Scraper):
         elif self._version() == "Walmart v2":
             product_id = self.product_page_url.split('/')[-1]
             return product_id
-
-        return None
-
-    def _upc(self):
-        if self._version() == "Walmart v1":
-            upc = self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
-            return upc
-        elif self._version() == "Walmart v2":
-            product_json = self._extract_product_info_json()
-            return product_json["analyticsData"]["upc"]
 
         return None
 
@@ -1411,7 +1402,21 @@ class WalmartScraper(Scraper):
         Returns:
             string containing upc
         """
-        return self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
+        if self._version() == "Walmart v1":
+            return self._find_between(html.tostring(self.tree_html), "upc: '", "'").strip()
+
+        if self._version() == "Walmart v2":
+            return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
+
+    def _upc(self):
+        if self._version() == "Walmart v1":
+            upc = self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
+            return upc
+        elif self._version() == "Walmart v2":
+            product_json = self._extract_product_info_json()
+            return product_json["analyticsData"]["upc"]
+
+        return None
 
     # extract product seller information from its product product page tree
     def _seller_from_tree(self):
@@ -2730,7 +2735,6 @@ class WalmartScraper(Scraper):
         "product_name": _product_name_from_tree, \
         "site_id": _site_id, \
         "product_id": _extract_product_id, \
-        "upc": _upc, \
         "walmart_no": _walmart_no, \
         "keywords": _meta_keywords_from_tree, \
         "meta_tags": _meta_tags,\

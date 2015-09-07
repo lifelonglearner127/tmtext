@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <fields>
-    <field name="upc" version="2.1"></field>
+    <field name="upc" version="2.2"></field>
     <field name="product_name" version="1.1"></field>
     <field name="keywords" version="1.1"></field>
     <field name="meta_tags" version="1.1"></field>
