@@ -23,3 +23,4 @@ for u in urls:
     if href.startswith('/'):
         href = 'http://www.walmart.com' + href
     print href
+    sys.stdout.flush()
