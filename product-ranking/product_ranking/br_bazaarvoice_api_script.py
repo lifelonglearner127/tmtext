@@ -93,7 +93,7 @@ class BuyerReviewsBazaarApi(object):
 
                 date = is_empty(
                     re.findall(
-                        r'<span class="BVRRValue BVRRReviewDate">(\d+ \w+ \d+)</span>',
+                        r'<span class="BVRRValue BVRRReviewDate">(\d+ \w+ \d+).+</span>',
                         histogram_data
                     )
                 )
@@ -102,7 +102,7 @@ class BuyerReviewsBazaarApi(object):
                     product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d/%m/%Y')
 
                 stars = re.findall(
-                    r'<span class="BVRRHistStarLabelText">(\d+) stars?</span>|'
+                    r'<span class="BVRRHistStarLabelText">(\d+) S?s?tars?</span>|'
                     r'<span class="BVRRHistAbsLabel">(\d+)</span>',
                     histogram_data
                 )
