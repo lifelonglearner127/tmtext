@@ -2282,8 +2282,12 @@ class WalmartScraper(Scraper):
             if self.tree_html.xpath("//div[@class='PageTitle']/h1/text()") and "eGift Card" in self.tree_html.xpath("//div[@class='PageTitle']/h1/text()")[0]:
                 self.failure_type = "E-Card"
 
-        if "/cp/" in self._canonical_link():
-            self.failure_type = "Category page"
+        try:
+            if "/cp/" in self._canonical_link():
+                self.failure_type = "Category page"
+        except:
+            if "/cp/" in self.product_page_url:
+                self.failure_type = "Category page"
 
         # check existence of "We can't find the product you are looking for, but we have similar items for you to consider."
         text_list = self.tree_html.xpath("//body//text()")
