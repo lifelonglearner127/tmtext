@@ -19,11 +19,17 @@ is_empty = lambda x, y=None: x[0] if x else y
 class HalfordsProductSpider(BaseProductsSpider):
 
     name = 'halfords_products'
-    allowed_domains = ["halfords.com"]
+    allowed_domains = [
+        "halfords.com",
+        "halfords.ugc.bazaarvoice.com"
+    ]
 
-    SEARCH_URL = "http://www.halfords.com/webapp/wcs/stores/servlet/SearchCmd?storeId=10001&catalogId=10151&" \
-                 "langId=-1&srch={search_term}&categoryId=-1&action=listrefine&tabNo=1&qcon=fh_location=%2F%2Fcatalog_10151" \
-                 "%2Fen_GB%2F%24s%3Dblah%3Bt%3Ddefault%2Fattr_78cdb44b%3D1&channel=desktop&sort={sort}"
+    SEARCH_URL = "http://www.halfords.com/webapp/wcs/stores/servlet/SearchCmd?storeId=10001" \
+                 "&catalogId=10151&langId=-1&srch={search_term}&categoryId=-1&action=listrefine&" \
+                 "tabNo=1&qcon=fh_location=%2F%2Fcatalog_10151%2Fen_GB%2F%24s%3Dblah%3Bt%3Ddefault" \
+                 "%2Fattr_78cdb44b%3D1&channel=desktop&sort={sort}"
+    BUYER_REVIEWS_URL = "http://halfords.ugc.bazaarvoice.com/4028-redes/{product_id}/" \
+                        "reviews.djs?format=embeddedhtml"
 
     _SORT_MODES = {
         'price asc': 'price-low-to-high',
@@ -50,6 +56,23 @@ class HalfordsProductSpider(BaseProductsSpider):
 
         # Set locale
         product['locale'] = 'en_GB'
+
+        # Set product id
+        product_id = is_empty(
+            response.xpath(
+                '//input[@name="catCode"]/@value'
+            ).extract(), '0'
+        )
+        response.meta['product_id'] = product_id
+
+        # Parse buyer reviews
+        reqs.append(
+            Request(
+                url=self.BUYER_REVIEWS_URL.format(product_id=product_id),
+                dont_filter=True,
+                callback=self.br.parse_buyer_reviews
+            )
+        )
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -108,7 +131,7 @@ class HalfordsProductSpider(BaseProductsSpider):
         if items:
             for item in items:
                 link = is_empty(
-                    item.xpath('./span[@class="productTitle"]/a/@href').extract()
+                    item.xpath('././/span[@class="productTitle"]/a/@href').extract()
                 )
                 res_item = SiteProductItem()
                 yield link, res_item
