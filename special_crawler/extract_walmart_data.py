@@ -1837,60 +1837,42 @@ class WalmartScraper(Scraper):
         """Extracts whether product is available in stores.
         Returns 1/0
         """
-        in_stores = 0
 
         if self._version() == "Walmart v1":
-            try:
-                if self._in_stores_only() == 1:
-                    return 1
-
-                if self.tree_html.xpath("//*[@id='STORE_STOCK_STATUS']"):
-                    if "Also in stores" in self.tree_html.xpath("//*[@id='STORE_STOCK_STATUS']")[0].text_content():
-                        return 1
-
-                in_stores = self._stores_available_from_script_old_page()
-                return in_stores
-            except Exception:
-                pass
+            return self._in_stores_v1()
 
         if self._version() == "Walmart v2":
-            try:
-                in_stores = self._stores_available_from_script_new_page()
+            return self._in_stores_v2()
 
-                if in_stores:
-                    return in_stores
-                else:
-                    body_raw = "".join(self.tree_html.xpath("//script//text()"))
-                    body_clean = re.sub("\n", " ", body_raw)
-                    # extract json part of function body
-    #                body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
+    def _in_stores_v1(self):
+        try:
+            if self._find_between(html.tostring(self.tree_html), "isBuyableInStore:", ",").strip() == "true":
+                return 1
+        except:
+            pass
 
-                    body_jpart = re.findall("\{\"query.*?\}", body_clean)[0]
-                    body_dict = json.loads(body_jpart)
+        return 0
 
-                    if body_dict["inStore"] is True:
-                        return 1
-            except Exception:
-                pass
+    def _in_stores_v2(self):
+        try:
+            if not self.product_info_json:
+                pinfo_dict = self._extract_product_info_json()
+            else:
+                pinfo_dict = self.product_info_json
 
-        return in_stores
-
-    def _in_stores_only(self):
-        '''General function for setting value of field "in_stores_only".
-        It will be inferred from other sellers fields.
-        Method can be overwritten by scraper class if different implementation is available.
-        '''
-        if self._version() == "Walmart v1":
-            return 0
-
-        if self._version() == "Walmart v2":
-            try:
-                modal_texts = self.tree_html.xpath("//*[@class='js-pure-soi-flyout-header']")[0].text_content()
-
-                if "This item is only sold at a Walmart store." in modal_texts:
+            for store in pinfo_dict["analyticsData"]["storesAvail"]:
+                if int(store["isAvail"]) == 1:
                     return 1
-            except Exception:
-                pass
+
+            body_raw = "".join(self.tree_html.xpath("//script//text()"))
+            body_clean = re.sub("\n", " ", body_raw)
+            body_jpart = re.findall("\{\"query.*?\}", body_clean)[0]
+            body_dict = json.loads(body_jpart)
+
+            if body_dict["inStore"] is True:
+                return 1
+        except Exception:
+            pass
 
         return 0
 
@@ -1913,24 +1895,6 @@ class WalmartScraper(Scraper):
             return 1
         else:
             return 0
-
-    # ! may throw exception if not found
-    def _stores_available_from_script_new_page(self):
-        """Extracts whether product is available in stores.
-        Works on new page version.
-        Returns 1/0
-        """
-
-        if not self.product_info_json:
-            pinfo_dict = self._extract_product_info_json()
-        else:
-            pinfo_dict = self.product_info_json
-
-        for store in pinfo_dict["analyticsData"]["storesAvail"]:
-            if int(store["isAvail"]) == 1:
-                return 1
-
-        return 0
 
     # ! may throw exception if not found
     def _marketplace_sellers_from_script(self):
@@ -2178,51 +2142,49 @@ class WalmartScraper(Scraper):
         Returns 1/0
         """
 
-        # TODO: what to do when there is no 'marketplaceOptions'?
-        #       e.g. http://www.walmart.com/ip/23149039
+        if self._version() == "Walmart v1":
+            return self._site_online_v1()
+
+        if self._version() == "Walmart v2":
+            return self._site_online_v2()
+
+    def _site_online_v1(self):
         try:
-            #       new design
+            if "walmart.com" in self._find_between(html.tostring(self.tree_html), "sellerName:", ",").lower() and \
+                            self._find_between(html.tostring(self.tree_html), "isBuyableOnWWW:", ",").strip() == "true":
+                return 1
+        except:
+            pass
+
+        return 0
+
+    def _site_online_v2(self):
+        try:
+            modal_texts = self.tree_html.xpath("//*[@class='js-pure-soi-flyout-header']")[0].text_content()
+
+            if "This item is only sold at a Walmart store." in modal_texts:
+                return 0
+        except Exception:
+            pass
+
+        try:
             if not self.product_info_json:
                 pinfo_dict = self._extract_product_info_json()
             else:
                 pinfo_dict = self.product_info_json
 
-            marketplace_seller_info = pinfo_dict['buyingOptions']['marketplaceOptions']
-
             if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"]:
                 return 1
 
+            '''
             marketplace_seller_names = self.tree_html.xpath("//div[contains(@data-automation-id, 'product-mp-seller-name')]/text()")
 
             if marketplace_seller_names:
                 for marketplace in marketplace_seller_names:
                     if marketplace.lower().strip() == "walmart.com":
                         return 1
-        except:
-            pass
-
-        try:
-            #       old design
-            if self._in_stores_only():
-                return 0
-
-            body_raw = "" . join(self.tree_html.xpath("//script/text()")).strip()
-
-            if "sellerName: 'Walmart.com'" in body_raw:
-                return 1
-
-            if self.tree_html.xpath("//meta[@itemprop='seller']/@content")[0] == "Walmart.com":
-                if self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']"):
-                    if not self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']/@style") or \
-                            "display:none" not in self.tree_html.xpath("//button[@id='SPUL_ADD2CART_BTN']/@style")[0]:
-                        return 1
-
-                body_clean = re.sub("\n", " ", body_raw)
-                sIndex = body_clean.find("'item_online_availability'") + len("'item_online_availability'") + 2
-                eIndex = body_clean.find("']", sIndex)
-
-                if "camelPrice" not in body_clean[sIndex:eIndex] == "true":
-                    return 1
+            '''
+            return 0
         except:
             pass
 
@@ -2751,7 +2713,6 @@ class WalmartScraper(Scraper):
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title": _product_name_from_tree, \
         "in_stores": _in_stores, \
-        "in_stores_only": _in_stores_only, \
         "marketplace": _marketplace, \
         "marketplace_prices" : _marketplace_prices, \
         "marketplace_sellers": _marketplace_sellers, \
