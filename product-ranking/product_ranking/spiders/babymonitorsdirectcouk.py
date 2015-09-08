@@ -66,24 +66,9 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         price = self._parse_price(response)
         cond_set_value(product, 'price', price)
 
-        is_out_of_stock = response.xpath(
-            '//div[@class="DetailRow"]/div[contains(text(), "Availability:")]'
-            '/../div[@class="Value"]/text()'
-        ).extract()
-        if is_out_of_stock:
-            is_out_of_stock = is_out_of_stock[0]
-        if "In Stock" in is_out_of_stock:
-            cond_set(product, 'is_out_of_stock', ("False",))
-        elif "Out of Stock" in is_out_of_stock:
-            cond_set(product, 'is_out_of_stock', ("True",))
-        else:
-            is_out_of_stock = response.xpath(
-                '//div[@class="CurrentlySoldOut"]/p[1]/text()'
-            ).extract()
-            if is_out_of_stock:
-                is_out_of_stock = is_out_of_stock[0]
-            if "this item is currently unavailable" in is_out_of_stock:
-                cond_set(product, 'is_out_of_stock', ("False",))
+        # Parse stock status
+        is_out_of_stock = self._parse_stock_status(response)
+        cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
 
         img_url = response.xpath(
             '//div[@class="ProductThumbImage"]/a/img/@src').extract()
@@ -188,6 +173,20 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             price=price,
             priceCurrency='GBP'
         )
+
+    def _parse_stock_status(self, response):
+        is_out_of_stock = is_empty(
+            response.xpath(
+                '//div[@class="DetailRow"]/div[contains(text(), "Availability:")]'
+                '/../div[@class="Value"]/text() |'
+                '//div[@class="CurrentlySoldOut"]/p[1]/text() |'
+                '//p[contains(@class, "availability")]/span/text()'
+            ).extract(), ''
+        )
+
+        is_out_of_stock = "in stock" not in is_out_of_stock.lower()
+
+        return is_out_of_stock
 
     def _extract_reviews(self, response):
         product = response.meta['product']
