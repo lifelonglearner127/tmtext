@@ -28,31 +28,32 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
     name = 'babymonitorsdirectcouk_products'
     allowed_domains = ["babymonitorsdirect.co.uk"]
     start_urls = []
-    SEARCH_URL = "http://www.babymonitorsdirect.co.uk/search.php?" \
-        "search_query={search_term}"\
-        "&section=product&ajax=1&sortBy={order}"
+    SEARCH_URL = "http://www.babymonitorsdirect.co.uk/catalogsearch/" \
+                 "result/index/?dir={sort}&order={order}&q={search_term}"
 
     page_number = 0
     _product_on_page = 16
     count_prod = 0
 
     SEARCH_SORT = {
-        'relevance': 'relevance',
-        'featured': 'featured',
-        'newest': 'newest',
-        'bestselling': 'bestselling',  # default
-        'alphaasc': 'alphaasc',
-        'alphadesc': 'alphadesc',
-        'avgcustomerreview': 'avgcustomerreview',
-        'priceasc': 'priceasc',
-        'pricedesc': 'pricedesc',
+        'ASC': 'asc',
+        'DESC': 'desc'
     }
 
-    def __init__(self, order='bestselling', *args, **kwargs):
-        order = self.SEARCH_SORT.get(order, 'bestselling')
-        formatter = FormatterWithDefaults(order=order)
+    SEARCH_ORDER = {
+        'relevance': 'relevance',
+        'name': 'name',
+        'price': 'price'
+    }
+
+    def __init__(self, order='relevance', *args, **kwargs):
+        order = self.SEARCH_ORDER.get(order, 'relevance')
+        formatter = FormatterWithDefaults(order=order, sort='asc')
         super(BabymonitorsdirectProductsSpider,
               self).__init__(formatter, *args, **kwargs)
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
 
     def start_requests(self):
         for st in self.searchterms:
@@ -70,9 +71,6 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             yield Request(self.product_url,
                           self._parse_single_product,
                           meta={'product': prod})
-
-    def _parse_single_product(self, response):
-        return self.parse_product(response)
 
     # Function count products on last page in pagination
     def count_prod_set(self, response):
@@ -239,7 +237,6 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             return product
 
-
     def _extract_reviews(self, response):
         product = response.meta['product']
         num, avg, by_star = product.get('buyer_reviews')
@@ -267,7 +264,6 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
                            dont_filter=True)
         else:
             return product
-
 
     def _scrape_total_matches(self, response):
         total_matches = None
