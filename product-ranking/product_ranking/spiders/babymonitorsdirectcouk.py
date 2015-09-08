@@ -11,6 +11,7 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults,\
     cond_set, cond_set_value
 
+is_empty = lambda x, y=None: x[0] if x else y
 
 class BabymonitorsdirectProductsSpider(BaseProductsSpider):
     """Spider for babymonitorsdirect.co.uk.
@@ -266,15 +267,22 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             return product
 
     def _scrape_total_matches(self, response):
-        total_matches = None
-        if 'No products found matching the search criteria' in \
+        if 'No products found' in \
                 response.body_as_unicode():
             total_matches = 0
-        elif self.page_number != 0:
-            total_matches = (int(self.page_number)-1) * \
-                self._product_on_page + float(self.count_prod)
         else:
-            total_matches = self.count_prod
+            total_matches = is_empty(
+                response.xpath('//div[@class="sorter"]'
+                               '/p[@class="amount"]'
+                               '/text()').extract(), 0
+            )
+            if total_matches:
+                total_matches = is_empty(
+                    re.findall(
+                        r'of (\d+) total',
+                        total_matches
+                    ), 0
+                )
 
         return int(total_matches)
 
