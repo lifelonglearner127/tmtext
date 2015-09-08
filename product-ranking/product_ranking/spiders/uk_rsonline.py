@@ -11,7 +11,7 @@ from product_ranking.items import RelatedProduct, BuyerReviews, Price, \
     SiteProductItem
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import cond_set, cond_set_value, \
-    cond_replace_value
+    cond_replace_value, dump_url_to_file
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
 
 
@@ -93,6 +93,8 @@ class UkRsOnlineProductsSpider(ProductsSpider):
             url = urlparse.urljoin(response.url, self._link_from_box(box))
             product = SiteProductItem()
             self._populate_from_box(response, box, product)
+            if not product.get('brand', None):
+                dump_url_to_file(response.url)
             meta = response.meta.copy()
             meta['product'] = product
             user_agent = USER_AGENT_LIST.pop(0)

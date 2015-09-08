@@ -18,20 +18,64 @@ class HomeDepotScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.homedepot.com/p/<product-name>/<product-id>"
-    
+
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        # whether product has any webcollage media
+        self.product_json = None
+
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.homedepot.com/.*?$", self.product_page_url)
+        m = re.match(r"^http://www.homedepot.com/p/.*?$", self.product_page_url)
         return not not m
 
+    def not_a_product(self):
+        """Checks if current page is not a valid product page
+        (an unavailable product page or other type of method)
+        Overwrites dummy base class method.
+        Returns:
+            True if it's an unavailable product page
+            False otherwise
+        """
+        try:
+            itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
 
+            if itemtype != "product":
+                raise Exception()
+
+        except Exception:
+            return True
+
+        return False
 
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
+
+    def _extract_product_json(self):
+        if self.product_json:
+            return
+
+        try:
+            product_json_text = self.tree_html.xpath("//script[contains(text(), 'THD.PIP.products.primary')]/text()")[0]
+
+            start_index = product_json_text.find("{")
+            end_index = product_json_text.rfind("}") + 1
+
+            product_json = product_json_text[start_index:end_index]
+            self.product_json = json.loads(product_json)
+        except:
+            self.product_json = None
+
+    def _canonical_link(self):
+        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+
+        return canonical_link
+
     def _url(self):
         return self.product_page_url
 
@@ -60,14 +104,15 @@ class HomeDepotScraper(Scraper):
         return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
 
     def _product_title(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self.tree_html.xpath("//h1[@class='product_title']/text()")[0].strip()
 
     def _title_seo(self):
-        return None
+        return self.tree_html.xpath("//meta[@property='og:title']/@content")[0].strip()
 
     def _model(self):
-        model = self.tree_html.xpath('//h2[contains(@class, "product_details modelNo")]//text()')[0].strip()
-        return model
+        self._extract_product_json()
+
+        return self.product_json["info"]["modelNumber"]
 
     def _upc(self):
         print '\n\n\n\n\n'
@@ -82,31 +127,62 @@ class HomeDepotScraper(Scraper):
         return var
 
     def _features(self):
-        rows = self.tree_html.xpath('//div[contains(@class, "main_description")]//ul[@class="bulletList"]//li')
-        # list of lists of cells (by rows)
-        cells = map(lambda row: row.xpath(".//text()"), rows)
-        # list of text in each row
-        rows_text = map(\
-            lambda row: ":".join(\
-                map(lambda cell: cell.strip(), row)\
-                ), \
-            cells)
-        all_features_text = "\n".join(rows_text)
-        return all_features_text
+        features_td_list = self.tree_html.xpath('//table[contains(@class, "tablePod tableSplit")]//td')
+        features_list = []
+
+        for index, val in enumerate(features_td_list):
+            if (index + 1) % 2 == 0 and features_td_list[index - 1].xpath(".//text()")[0].strip():
+                features_list.append(features_td_list[index - 1].xpath(".//text()")[0].strip() + " " + features_td_list[index].xpath(".//text()")[0].strip())
+
+        if features_list:
+            return features_list
+
+        return None
 
     def _feature_count(self):
-        return len(filter(lambda row: len(row.xpath(".//text()"))>0, self.tree_html.xpath('//div[contains(@class, "main_description")]//ul[@class="bulletList"]//li')))
+        if self._features():
+            return len(self._features())
+
+        return None
 
     def _model_meta(self):
         return None
 
     def _description(self):
-        short_description = " ".join(self.tree_html.xpath("//*[@id='feature-bullets']//text()")).strip()
-        return short_description
+        description_block = self.tree_html.xpath("//div[contains(@class, 'main_description')]")[0]
+        short_description = ""
+
+        for description_item in description_block:
+            if description_item.tag == "ul":
+                break
+
+            short_description = short_description + html.tostring(description_item)
+
+        short_description = short_description.strip()
+
+        if short_description:
+            return short_description
+
+        return None
 
     def _long_description(self):
-        full_description = " ".join(self.tree_html.xpath('//div[contains(@class, "main_description")]//span[@itemprop="description"]//text()')).strip()
-        return full_description
+        description_block = self.tree_html.xpath("//div[contains(@class, 'main_description')]")[0]
+        long_description = ""
+        long_description_start = False
+
+        for description_item in description_block:
+            if description_item.tag == "ul":
+                long_description_start = True
+
+            if long_description_start:
+                long_description = long_description + html.tostring(description_item)
+
+        long_description = long_description.strip()
+
+        if long_description:
+            return long_description
+
+        return None
 
 
 
@@ -118,40 +194,69 @@ class HomeDepotScraper(Scraper):
 
     def _image_urls(self):        
         scripts = self.tree_html.xpath('//script//text()')
+
         for script in scripts:
-            jsonvar = re.findall(r'JSON = (.*?);', script)
+            jsonvar = re.findall(r'PRODUCT_INLINE_PLAYER_JSON = (.*?);', script)
             if len(jsonvar) > 0:
                 jsonvar = jsonvar[0]
                 break
+
         jsonvar = json.loads(jsonvar)
         imageurl = []
+
         for row in jsonvar.items():
+            if "videoId" in row[1]:
+                continue
+
             imageurl.append(row[1][0]['mediaUrl'])
-        return imageurl
+
+        if imageurl:
+            return imageurl
+
+        return None
 
     def _image_count(self):
-        return len(self._image_urls())
+        if self._image_urls():
+            return len(self._image_urls())
+
+        return 0
 
     def _video_urls(self):
         return None
 
     def _video_count(self):
-        urls = self._video_urls()
-        if urls is not None:
-            return len(urls)
-        return None
+        scripts = self.tree_html.xpath('//script//text()')
+
+        for script in scripts:
+            jsonvar = re.findall(r'PRODUCT_INLINE_PLAYER_JSON = (.*?);', script)
+            if len(jsonvar) > 0:
+                jsonvar = jsonvar[0]
+                break
+
+        jsonvar = json.loads(jsonvar)
+        video_count = 0
+
+        for row in jsonvar.items():
+            if "videoId" in row[1]:
+                video_count += 1
+
+        return video_count
 
     def _pdf_urls(self):
         moreinfo = self.tree_html.xpath('//div[@id="moreinfo_wrapper"]')[0]
         html = etree.tostring(moreinfo)
-        pdfurl = re.findall(r'(http://.*?\.pdf)', html)[0]
-        return pdfurl
+        pdf_url_list = re.findall(r'(http://.*?\.pdf)', html)
+
+        if pdf_url_list:
+            return pdf_url_list
+
+        return None
 
     def _pdf_count(self):
-        urls = self._pdf_urls()
-        if urls is not None:
-            return len(urls)
-        return None
+        if self._pdf_urls():
+            return len(self._pdf_urls())
+
+        return 0
 
     def _webcollage(self):
         return None
@@ -180,12 +285,14 @@ class HomeDepotScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
     def _average_review(self):
-        average_review = self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')[0]
-        return average_review
+        self._extract_product_json()
+
+        return float("%.1f" % float(self.product_json["ratingsReviews"]["averageRating"]))
 
     def _review_count(self):
-        nr_reviews = self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')[0]
-        return nr_reviews
+        self._extract_product_json()
+
+        return int(self.product_json["ratingsReviews"]["totalReviews"])
 
     def _max_review(self):
         return None
@@ -200,27 +307,58 @@ class HomeDepotScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        price = self.tree_html.xpath("//span[@id='ajaxPrice']//text()")
+        price = self.tree_html.xpath("//div[contains(@class, 'product_containerprice c show')]//span[@id='ajaxPrice']/text()")
+
         if price:
             return price[0].strip()
+
         return None
 
-    def _in_stores_only(self):
+    def _price_amount(self):
+        self._extract_product_json()
+
+        return float(self.product_json["itemExtension"]["displayPrice"])
+
+    def _price_currency(self):
+        price_currency = self.tree_html.xpath("//div[contains(@class, 'product_containerprice c show')]//meta[@itemprop='priceCurrency']/@content")
+
+        if price_currency:
+            return price_currency[0].strip()
+
         return None
 
     def _in_stores(self):
-        return None
+        self._extract_product_json()
 
-    def _owned(self):
+        if self.product_json["itemAvailability"]["availableInStore"] == True:
+            return 1
+
+        return 0
+
+    def _site_online(self):
+        self._extract_product_json()
+        '''
+        if self.product_json["itemAvailability"]["availableOnlineStore"] == True:
+            return 1
+        '''
         return 1
-    
+
+    def _site_online_out_of_stock(self):
+        self._extract_product_json()
+
+        for message in self.product_json["storeSkus"][0]["storeAvailability"]["itemAvilabilityMessages"]:
+            if message["messageValue"] == u'Out Of Stock Online':
+                return 1
+
+        return 0
+
+    def _in_stores_out_of_stock(self):
+        return 0
+
     def _marketplace(self):
         return 0
 
     def _seller_from_tree(self):
-        return None
-    
-    def _owned_out_of_stock(self):
         return None
 
     def _marketplace_sellers(self):
@@ -248,12 +386,12 @@ class HomeDepotScraper(Scraper):
         return all
 
     def _category_name(self):
-        all = self.tree_html.xpath("//div[@class='detailBreadcrumb']/li[@class='breadcrumb']/a//text()")
-        all = map(lambda t: self._clean_text(t), all)
-        return all[1]
+        return self._categories()[-1]
     
     def _brand(self):
-        return None
+        self._extract_product_json()
+
+        return self.product_json["info"]["brandName"]
 
 
 
@@ -304,6 +442,7 @@ class HomeDepotScraper(Scraper):
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
+        "canonical_link": _canonical_link,
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \
@@ -313,10 +452,12 @@ class HomeDepotScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
-        "in_stores_only" : _in_stores_only, \
+        "price_amount" : _price_amount, \
+        "price_currency" : _price_currency, \
         "in_stores" : _in_stores, \
-        "owned" : _owned, \
-        "owned_out_of_stock" : _owned_out_of_stock, \
+        "site_online": _site_online, \
+        "site_online_out_of_stock": _site_online_out_of_stock, \
+        "in_stores_out_of_stock": _in_stores_out_of_stock, \
         "marketplace" : _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \

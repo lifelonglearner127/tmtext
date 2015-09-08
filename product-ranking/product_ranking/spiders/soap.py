@@ -69,13 +69,23 @@ class SoapProductSpider(BaseProductsSpider):
             yield Request(
                 url='http://www.soap.com', 
                 meta=request.meta.copy(),
-                 callback=self._start_search
+                callback=self._start_search
             )
 
     def _start_search(self, response):
-        return Request(
-            self.SEARCH_URL.format(search_term=response.meta['search_term']),
-            meta=response.meta.copy())
+        if "search_term" in response.meta:
+            return Request(
+                self.SEARCH_URL.format(search_term=response.meta['search_term']),
+                meta=response.meta.copy())
+        elif self.product_url:
+            return Request(
+                url=self.product_url, 
+                meta=response.meta.copy(), 
+                callback=self._parse_single_product
+            )
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
 
     def parse(self, response):
         purl = urlparse.urlparse(response.url)

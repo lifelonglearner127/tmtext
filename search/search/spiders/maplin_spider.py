@@ -17,6 +17,9 @@ import sys
 class MaplinSpider(SearchSpider):
 
     name = "maplin"
+    # allow 404 so that it doesn't break the entire flow when one is encountered.
+    # Example: maplin search results pages when no results were found
+    handle_httpstatus_list = [404]
 
     # initialize fields specific to this derived spider
     def init_sub(self):
@@ -114,6 +117,8 @@ class MaplinSpider(SearchSpider):
             item['origin_model'] = response.meta['origin_model']
         if 'origin_upc' in response.meta:
             item['origin_upc'] = response.meta['origin_upc']
+        if 'origin_brand' in response.meta:
+            item['origin_brand'] = response.meta['origin_brand']
 
 
         product_name_node = hxs.select("//h1[@itemprop='name']/text()").extract()

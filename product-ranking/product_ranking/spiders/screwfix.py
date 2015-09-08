@@ -12,7 +12,7 @@ from product_ranking.items import Price
 from product_ranking.items import SiteProductItem, RelatedProduct, BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set, cond_set_value
+from product_ranking.spiders import cond_set, cond_set_value, dump_url_to_file
 
 
 class ScrewfixProductsSpider(BaseProductsSpider):
@@ -95,6 +95,9 @@ class ScrewfixProductsSpider(BaseProductsSpider):
                 "img[@id='product_brand_img']/@alt"
             ).extract())
 
+            if not product.get('brand', None):
+                dump_url_to_file(response.url)
+
             cond_set(product, 'image_url', response.xpath(
                 "//div[@class='product-media-top']/noscript"
                 "/a[@id='product_image_ref']/img/@src").extract())
@@ -129,24 +132,29 @@ class ScrewfixProductsSpider(BaseProductsSpider):
             ).extract()
             product_id = response.xpath(
                 '//input[@id="product_value_v1_th_rr"]/@value'
-            ).extract()
+            )
+            product_id = product_id or response.css(
+                '[itemprop=productID]::text'
+            )
+            product_id = product_id.extract()
+            product_id = product_id[0] if product_id else None
 
             # for reviews and model(may be another than for recommendations)
             prod_id = re.findall(r"'ecomm_prodid':\s'(.*)'", response.body)
             if prod_id:
                 prod_id = prod_id[0].strip()
                 product['model'] = prod_id
-
-            # populate buyer reviews
-            if product.get('buyer_reviews'):
-                rev_url = self.REVS_BASE.format(prod_id=prod_id)
+            if prod_id or product_id:
+                # populate buyer reviews
+                rev_url = self.REVS_BASE.format(prod_id=prod_id or product_id)
                 meta = response.meta.copy()
                 meta['jsessionid'] = jsessionid
                 meta['product_id'] = product_id
                 return Request(rev_url, callback=self.populate_buyer_reviews,
                                meta=meta)
             else:
-                product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+                self.log('Could not scrape buyer reviews '
+                         '(product id could not be scraped)')
 
         # case when we use this function second time after populating
         # buyer reviews
@@ -160,7 +168,8 @@ class ScrewfixProductsSpider(BaseProductsSpider):
             return Request(url, callback=self.populate_related,
                            meta={'product': product,
                                  'jsessionid': jsessionid,
-                                 'product_id': product_id})
+                                 'product_id': product_id},
+                           dont_filter=True)
         return product
 
     def populate_related(self, response):
@@ -194,7 +203,7 @@ class ScrewfixProductsSpider(BaseProductsSpider):
             scheme = 'v1_th_rr'
             url = self.generate_related_url(jsessionid, product_id, scheme)
             return Request(url, callback=self.populate_related,
-                           meta={'product': product})
+                           meta={'product': product}, dont_filter=True)
         return product
 
     def generate_related_url(self, jsessionid, product_id, scheme):
@@ -227,12 +236,7 @@ class ScrewfixProductsSpider(BaseProductsSpider):
             self.log("Found no product links.", DEBUG)
         for link in links:
             product = SiteProductItem()
-            average = link.xpath(
-                './/div//img[@class="rating_image"]/@title'
-            ).extract()
             link = link.xpath('@href').extract()[0]
-            if average:
-                product['buyer_reviews'] = True
             yield link, product
 
     def _scrape_next_results_page_link(self, response):
@@ -265,8 +269,10 @@ class ScrewfixProductsSpider(BaseProductsSpider):
         else:
             average = re.findall('"avgRating":(\d+.\d+)', response.body)
             num_of_revs = re.findall('"numReviews":(\d+)', response.body)
+            response.meta['after_reviews'] = True
+            product = response.meta['product']
             if average and num_of_revs:
-                average = float(average[0][:6])
+                average = round(float(average[0][:6]), 1)
                 num_of_revs = int(num_of_revs[0])
                 by_star = {}
                 for i in range(1, 6):
@@ -275,7 +281,12 @@ class ScrewfixProductsSpider(BaseProductsSpider):
                     num_of_reviews=num_of_revs,
                     average_rating=average,
                     rating_by_star=by_star)
-                product = response.meta['product']
                 product['buyer_reviews'] = reviews
                 response.meta['after_reviews'] = True
                 return self.parse_product(response)
+            else:
+                product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+            return self.parse_product(response)
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)

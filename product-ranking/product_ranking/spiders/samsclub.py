@@ -52,6 +52,18 @@ class SamsclubProductsSpider(BaseProductsSpider):
             url="http://www.samsclub.com/",
             meta={'club': 1})
 
+        if self.product_url:
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            prod['url'] = self.product_url
+            yield Request(self.product_url,
+                          self._parse_single_product,
+                          meta={'product': prod})
+
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse(self, response):
         club = response.meta.get('club')
         self.log("Club stage: %s" % club, DEBUG)
@@ -99,15 +111,15 @@ class SamsclubProductsSpider(BaseProductsSpider):
             c = " ".join(x.strip() for x in c if len(x.strip()) > 0)
             self.log("Selected club: '%s' '%s'" % (
                 self.clubno, " ".join(c.split())), DEBUG)
-            st = self.searchterms[0]
-            return Request(
-                self.url_formatter.format(
-                    self.SEARCH_URL,
-                    search_term=urllib.quote_plus(st.encode('utf-8')),
-                ),
-                meta={'search_term': st,
-                      'remaining': self.quantity,
-                      'club': 4})
+            for st in self.searchterms:
+                return Request(
+                    self.url_formatter.format(
+                        self.SEARCH_URL,
+                        search_term=urllib.quote_plus(st.encode('utf-8')),
+                    ),
+                    meta={'search_term': st,
+                          'remaining': self.quantity,
+                          'club': 4})
 
         elif club == 4:
             return super(SamsclubProductsSpider, self).parse(response)
@@ -122,7 +134,13 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 "//div[contains(@class,'prodTitlePlus')]"
                 "/span[@itemprop='brand']/text()"
             ).extract())
-        cond_set_value(product, 'brand', 'NO BRAND')
+        if not product.get('brand', None):
+            cond_set(
+                product,
+                'brand',
+                response.xpath(
+                    '//*[@itemprop="brand"]//span/text()'
+            ).extract())
 
         cond_set(
             product,
@@ -135,12 +153,18 @@ class SamsclubProductsSpider(BaseProductsSpider):
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='plImageHolder']/img/@src").extract())
 
+        if not product.get("price"):
+            price = response.xpath("//li/span[@itemprop='price']/text()").extract()
+            if price:
+                product["price"] = Price(price=price[0],
+                                     priceCurrency='USD')
+
         price = response.xpath(
             "//div[@class='moneyBoxBtn']/a"
             "/span[contains(@class,'onlinePrice')]"
             "/text()").re(FLOATING_POINT_RGEX)
 
-        if not price:
+        if not price and not product.get("price"):
             pr = response.xpath(
                 "//div[contains(@class,'pricingInfo')]//li"
                 "/span/text()").extract()

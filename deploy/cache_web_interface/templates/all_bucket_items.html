@@ -1,0 +1,18 @@
+<div>
+    <form action="get_logs_by_task_by_id" method="get">
+        <input type="task_id" name="task_id">
+        <input type="submit" value="Filter by task id">
+    </form>
+</div>
+
+<div>
+    <form action="get_log_body_by_task_id" method="get">
+        <input type="task_id" name="task_id">
+        <input type="submit" value="Get remote instance starter logs by task id">
+    </form>
+</div>
+
+{% for item in bucket_list %}
+    <a href="/get_content?item_number={{item[0]}}">{{item[1]}}</a>
+    <br>
+{% endfor %}

@@ -32,18 +32,24 @@ tmux send-keys -t $SESSION " cd $BASEPATH; watch -n 30 ./count_results.sh $INPUT
 tmux select-pane -t 1
 tmux send-keys -t $SESSION " cd $BASEPATH; watch -n 30 ./count_matches.sh $INPUT $RANGE" C-m
 
-# third pane: monitor errors
+# monitor 503 errors
+tmux split-window -h
 tmux select-pane -t 2
+tmux send-keys -t $SESSION " cd $BASEPATH; watch -n 60 ./count_100conf.sh $INPUT $RANGE" C-m
+
+
+# third pane: monitor errors
+tmux select-pane -t 3
 tmux send-keys -t $SESSION " cd $BASEPATH; watch -n 60 ./count_errors.sh $INPUT $RANGE" C-m
 
 
 # fourth pane: monitor exceptions
-tmux select-pane -t 3
+tmux select-pane -t 4
 tmux send-keys -t $SESSION " cd $BASEPATH; watch -n 60 ./count_exceptions.sh $INPUT $RANGE" C-m
 
 # monitor 503 errors
 tmux split-window -h
-tmux select-pane -t 4
+tmux select-pane -t 5
 tmux send-keys -t $SESSION " cd $BASEPATH; watch -n 60 ./count_503s.sh $INPUT $RANGE" C-m
 
 tmux a -t $SESSION

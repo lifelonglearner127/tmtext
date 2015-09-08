@@ -1,68 +1,20 @@
 from __future__ import division, absolute_import, unicode_literals
 
-import ast
+import re
 import json
-import string
-import urlparse
 
-from scrapy.http import FormRequest
-from scrapy.log import DEBUG, INFO, ERROR
+from scrapy.http import Request
+from scrapy.log import INFO
 from scrapy.selector import Selector
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price
-from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    populate_from_open_graph, cond_set_value
+from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
+    BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
 from product_ranking.spiders import FormatterWithDefaults
 
 
-class ConvertBadJson(ast.NodeVisitor):
-    """ Convert bad json text like
-        [{sBoxName : 'relatedByCommonViewers',bShowPorn : '',...
-
-        to array of tupples
-        [(u'[0][sBoxName]', 'relatedByCommonViewers'),
-         (u'[0][bShowPorn]', ''), (u'[0][bShowBPJM]', ''), ...
-    """
-    def __init__(self):
-        self.indexes = list()
-        self.result = list()
-
-    def generic_visit(self, node):
-        ast.NodeVisitor.generic_visit(self, node)
-
-    def visit_Expr(self, node):
-        return self.visit(node.value)
-
-    def visit_Dict(self, node):
-        for k, v in zip(node.keys, node.values):
-            k = self.visit(k)
-            self.indexes.append(k)
-            v = self.visit(v)
-
-            if isinstance(v, basestring):
-                key = "".join(["[%s]" % x for x in self.indexes])
-                self.result.append((key, v))
-            self.indexes.pop()
-
-    def visit_List(self, node):
-        self.indexes.append(0)
-        for el in node.elts:
-            self.visit(el)
-            level = self.indexes.pop()
-            self.indexes.append(level + 1)
-        self.indexes.pop()
-
-    def visit_Name(self, node):
-        return node.id
-
-    def visit_Num(self, node):
-        return node.n
-
-    def visit_Str(self, node):
-        return node.s
-
-    def get_result(self):
-        return self.result
+is_empty = lambda x,y=None: x[0] if x else y
 
 
 class SouqProductsSpider(BaseProductsSpider):
@@ -70,7 +22,9 @@ class SouqProductsSpider(BaseProductsSpider):
     allowed_domains = ["souq.com"]
     start_urls = []
     SEARCH_URL = "http://uae.souq.com/ae-en/{search_term}/s/?sortby={sort_by}"
-    _RECOM_URL = "http://uae.souq.com/ae-en/Action.php"
+    _RECOM_URL = "http://uae.souq.com/ae-en/item_one.php?action=get_views_box&"
+
+    counter = 2
 
     SORT_MODES = {
         "default": "",
@@ -91,235 +45,194 @@ class SouqProductsSpider(BaseProductsSpider):
             *args,
             **kwargs)
 
-    def _populate_from_open_graph(self, response, product):
-        """Populates from Open Graph and discards description, which is fake.
-        """
-        populate_from_open_graph(response, product)
-
-        if 'description' in product:
-            del product['description']
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
 
     def parse_product(self, response):
         product = response.meta['product']
 
-        self._populate_from_open_graph(response, product)
+        product["title"] = is_empty(response.xpath(
+            '//div/h1[@itemprop="name"]/text()').extract())
 
-        cond_set(
-            product,
-            'title',
-            response.xpath(
-                "//h1[@id='item_title']/text()").extract(),
-            conv=string.strip
-        )
+        product["image_url"] = is_empty(response.xpath(
+            "//div[contains(@class, 'img-bucket')]/img/@src").extract())
 
-        cond_set(
-            product,
-            'brand',
-            response.xpath(
-                "//div[contains(@class,'product_middle')]"
-                "/div/a[@id='brand']/text()").extract()
-        )
+        price = is_empty(response.xpath(
+            "//div/h3[contains(@class, 'price')]/text()"
+        ).re(FLOATING_POINT_RGEX))
+        priceCurrency = is_empty(response.xpath(
+            "//div/h3[contains(@class, 'price')]/" \
+            "small[contains(@class, 'currency')]/text()"
+        ).extract())
+        if price:
+            product["price"] = Price(price=price, priceCurrency=priceCurrency)
+        
+        product["description"] = is_empty(response.xpath(
+            '//ul/li[@id="description"]').extract())
 
-        cond_set(
-            product,
-            'price',
-            response.xpath(
-                "//div[@id='item_price']/div/text()").extract(),
-            conv=string.strip
+        product["brand"] = is_empty(response.xpath(
+            "//dl[contains(@class, 'stats')]/" \
+            "dt[contains(text(), 'Brand')]/following::dd/text()"
+        ).extract())
 
-        )
+        seller_all = response.xpath(
+            "//dl[contains(@class, 'stats')]" \
+            "/dt[contains(text(), 'Sold by:')]/following::dd/span/a")
+        seller = is_empty(seller_all.xpath("text()").extract())
+        if seller:
+            product["marketplace"] = [{
+                "price": product["price"], 
+                "name": seller
+            }]
 
-        # unify price
-        currency = response.css('#item_price .currency::text') \
-            or response.css('#item_price .price-holder span::text')
-        price = product.get('price', '').replace(',', '')
-        if price.replace('.', '').isdigit() and currency:
-            currency = currency[0].extract()
-            try:
-                product['price'] = Price(currency, price)
-            except ValueError:
-                product['price'] = '%s %s' % (currency, price)
+        product["model"] = is_empty(response.xpath(
+            "//dl[contains(@class, 'stats')]/" \
+            "dt[contains(text(), 'Item EAN')]/following::dd/text()"
+        ).extract())
 
-        cond_set(
-            product,
-            'upc',
-            response.xpath(
-                "//form[@id='addItemToCart']"
-                "/input[@id='id_unit']/@value").extract(),
-            conv=int
-        )
+        is_out_of_stock = is_empty(response.xpath(
+            '//span[contains(@class, "label")]/strong/text()').extract(), "")
+        if "In Stock" in is_out_of_stock:
+            product["is_out_of_stock"] = False
+        else:
+            product["is_out_of_stock"] = True
 
-        desc = response.xpath(
-            "//div[@class='ui-tabs-panel']"
-            "/div[contains(@class,'item-desc')]"
-            "/descendant::*[text()]/text()").extract()
-        if desc:
-            cond_set_value(product, 'description', desc, conv=' '.join)
+        average = is_empty(response.xpath(
+            "//div[contains(@class, 'mainRating')]/strong/text()").extract())
+        num_of_reviews = is_empty(response.xpath(
+            "//div[contains(@class, 'mainRating')]/following::h6/text()"
+        ).re(FLOATING_POINT_RGEX))
+        if average and num_of_reviews:
+            rating_by_star = {}
+            for item in response.xpath("//div[contains(@class, 'row')]" \
+                "/div/div[contains(@class, 'review-rate ')]"):
+                star = int(is_empty(item.xpath(
+                    "div[1]/span/text()").re(FLOATING_POINT_RGEX)))
+                rating_by_star[star] =  int(is_empty(item.xpath(
+                    "div[last()]/span/text()").re(FLOATING_POINT_RGEX)))
 
-        product['related_products'] = {}
+            product["buyer_reviews"] = BuyerReviews(
+                average_rating=average,
+                num_of_reviews=num_of_reviews,
+                rating_by_star=rating_by_star
+            ) if num_of_reviews else ZERO_REVIEWS_VALUE
+        elif response.css('[data-dropdown=REVIEWS_POPUP_BOX]'):
+            product["buyer_reviews"] = ZERO_REVIEWS_VALUE
 
-        # internal related-products
-        res = response.xpath(
-            "//section[contains(@class,'gallery-container')]"
-            "/ul/li[not(contains(@class,'hide'))]/a")
-        if res:
-            prodlist = []
-            for r in res:
-                try:
-                    url = r.xpath("@href").extract()[0]
-                    if url.startswith("/"):
-                        url = urlparse.urljoin(response.url, url)
-                    title = r.xpath(
-                        "span[contains(@class,'item-name')]"
-                        "/text()").extract()[0].strip()
+        product["locale"] = "en-US"
 
-                    prodlist.append(RelatedProduct(title, url))
-                except (ValueError, KeyError, IndexError):
-                    pass
-            if prodlist:
-                product['related_products']["recommended"] = prodlist
+        id_item = is_empty(re.findall(
+            "ItemIDs=\"(\d+)\"", response.body_as_unicode()))
+        id_unit = is_empty(re.findall(
+            "products=\"\;{0,1}(\d+)\"", response.body_as_unicode()))
 
-        # Extrenal
-        product_or_request = product
-        res = response.xpath(
-            "//script[contains(text(),'aBoxes')]").re(r'.*aBoxes = (.*);')
+        if id_item:
+            url = self._RECOM_URL + "&id_item=" + id_item
+            if id_unit:
+                url += "&id_unit=" + id_unit
 
-        if res:
-            text = res[0]
-            badjson = ConvertBadJson()
-            nodes = ast.parse(text)
-            badjson.visit(nodes)
-            boxes = badjson.get_result()
-
-            data = {
-                'action': 'ajaxRemote',
-                'type': 'getItemsBoxes',
-                'sItemType': '',
-                'sItemTitle': '',
-                'sRef': ''
+            count = is_empty(response.xpath(
+                "//a[@id='MORE_OFFERS_LINK']/strong/text()"
+            ).re(FLOATING_POINT_RGEX))
+            meta = {
+                "product": product,
             }
-            for k, v in boxes:
-                data['aBoxes' + k] = v
+            if count:
+                mtp_link = "http://uae.souq.com/ae-en/Action.php" \
+                    "?action=ajaxRemote&type=getUnitsCondition" \
+                    "&limit=%s&id_item=%s" % (count, id_item)
+                meta["mtp_link"] = mtp_link
+            
+            return Request(url=url, callback=self._parse_recomendar, meta=meta)
 
-            new_meta = response.meta.copy()
-
-            product_or_request = FormRequest.from_response(
-                response=response,
-                url=self._RECOM_URL,
-                method='POST',
-                formdata=data,
-                callback=self._parse_recomendar,
-                meta=new_meta)
-
-        return product_or_request
+        return product
 
     def _parse_recomendar(self, response):
-
-        def full_url(url):
-            return urlparse.urljoin(response.url, url)
-
         product = response.meta['product']
+        jdata = {}
         try:
             jdata = json.loads(response.body)
         except ValueError:
             return product
 
-        htmldata = jdata['html']
-        hxs = Selector(text=htmldata)
+        if "interest" in jdata:
+            sel = Selector(text=jdata["interest"])
+            titles = sel.xpath("//h6/a/text()").extract()
+            links = sel.xpath("//h6/a/@href").extract()
+            tl = is_empty(sel.xpath(
+                '//div[contains(@class, "row")]/div/' \
+                'h3[contains(@class, "slider-header")]/text()'
+            ).extract(), "Customers Also Viewed").strip()
+            if not titles:
+                return product
+            related_prod = dict(zip(iter(titles), iter(links)))
+            related_prod = [RelatedProduct(title=k, url=v) for k, v in related_prod.items()]
+            product["related_products"] = {tl: related_prod}
 
-        if not htmldata:
-            self.log("AJAX: Empty htmldata", ERROR)
+        if "mtp_link" in response.meta:
+            meta = {"product": product}
+            return Request(url=response.meta["mtp_link"], callback=self.parse_marketplace, meta=meta)
+
+        return product
+
+    def parse_marketplace(self, response):
+        product = response.meta['product']
+
+        try: 
+            data = json.loads(response.body)
+        except ValueError:
             return product
 
-        res = hxs.xpath("//section/ul/li/a")
-        self.log('AJAX_VIP_INTERESTS_LIST %s elements' % len(res), DEBUG)
-        if res:
-            prodlist = []
-            for r in res:
-                try:
-                    title = r.xpath("@title").extract()[0]
-                    url = r.xpath("@href").extract()[0]
-                    if url.startswith("/"):
-                        url = full_url(url)
-                    prodlist.append(RelatedProduct(title, url))
-                except (ValueError, KeyError, IndexError):
-                    pass
-            if prodlist:
-                product['related_products']["vip_interests"] = prodlist
+        sel = Selector(text=data.get("html", ""))
 
-        res = hxs.xpath(
-            "//div[contains(@class,'box-style-featuerd')]"
-            "/div[contains(@class,'feature-items-box')]/a")
+        marketplaces = []
+        for seller in sel.xpath("//div[contains(@class, 'unit')]"):
+            price = is_empty(seller.xpath(
+                "div/div/div[contains(@class, 'larg-price')]/text()"
+            ).re(FLOATING_POINT_RGEX))
+            name = is_empty(seller.xpath(
+                "div/div/span/a/text()"
+            ).extract())
 
-        self.log('AJAX_RELATED_PRODUCTS_LIST %s elements' % len(res), DEBUG)
-        if res:
-            prodlist = []
-            for r in res:
-                try:
-                    url = r.xpath("@href").extract()[0]
-                    if url.startswith("/"):
-                        url = full_url(url)
-                    rr = r.xpath("../text()")
-                    text = rr.extract()[-1].strip()
-                    prodlist.append(RelatedProduct(text, url))
-                except (ValueError, KeyError, IndexError):
-                    pass
-            if prodlist:
-                product['related_products']["featured"] = prodlist
+            marketplaces.append({
+                "price": Price(price=price, priceCurrency="AED"),
+                "name": name
+            })
+
+        if marketplaces:
+            product["marketplace"] = marketplaces
+
         return product
 
     def _scrape_total_matches(self, response):
-        if response.css('#box-results').re(
-                'returns no results|did not match any products'):
-            self.log("No products found.", INFO)
-            return 0
-
-        total = response.xpath(
-            "//div[@id='search-results-title']"
-            "/b/text()").extract()
+        total = is_empty(response.xpath(
+            '//span[contains(@class, "listing-page-text")]/text()'
+        ).re(FLOATING_POINT_RGEX))
+        self.total = int(total) or 0
         if total:
-            total = total[-1]
-            try:
-                return int(total)
-            except ValueError:
-                self.log("Error while processing total.", ERROR)
-                return None
-        else:
-            self.log("Found no product links.", ERROR)
-            return None
+            return int(total)
+        self.log("No products found.", INFO)
+        return 0
 
     def _scrape_product_links(self, response):
-        errmsg = response.xpath(
-            "//div[@id='box-results']/div"
-            "/div[contains(@class,'bord_b_dash')]/text()").re(
-                "did not match any products. Did you mean:")
-        if errmsg:
-            return
         links = response.xpath(
-            "//div[@id='ItemResultList']"
-            "/div[contains(@class,'single-item-browse')]"
-            "/table/tr/td/a/@href").extract()
-
+            "//h6[contains(@class, 'result-item-title')]/a/@href").extract()
         if not links:
-            nomatches = response.css('#box-results').re('returns no results')
-            if nomatches:
-                self.log("No products links found.", INFO)
-            else:
-                self.log("Found no product links.", ERROR)
-            return
+            self.log("No products links found.", INFO)
 
-        for no, link in enumerate(links):
+        for link in links:
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
-        errmsg = response.xpath(
-            "//div[@id='box-results']/div"
-            "/div[contains(@class,'bord_b_dash')]/text()").re(
-                "did not match any products. Did you mean:")
-        if errmsg:
-            return
-        next = response.xpath(
-            "//ul[contains(@class,'paginator')]"
-            "/li/a[@class='paginator-next']/@href")
-        if next:
-            return next.extract()[0]
+        url = response.url
+        if "page=" in url:
+            self.counter = self.counter + 1
+            url = re.sub("page=(\d+)", "", url) + "page=" + str(self.counter)
+        else:
+            url += "&page=2"
+        if self.total / 15 + 1 > self.counter:
+            return url
+        return None
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)

@@ -35,18 +35,26 @@ class URLsPipeline(object):
 
             # write headers row
             titles = []
-            if int(spider.output) in [2,3]:
-                titles.append("Product_name")
+            if int(spider.output) in [2,3,6]:
                 titles.append("Original_URL")
             if int(spider.output) == 4:
                 titles.append("Original_UPC")
-                titles.append("Product_name")
+                titles.append("Product_Name")
+            if int(spider.output) == 5:
+                titles.append("Product_Name")
+                titles.append("Original_URL")
+                # titles.append("Target_Price")
 
             # TODO: uncomment.
             # if int(spider.output) == 3:
             #     titles.append("Original_product_name")
             #     titles.append("Original_product_model")
             titles.append("Match_URL")
+
+            if int(spider.output) == 6:
+                titles.append("Original_Bestsellers_Rank")
+                titles.append("Target_Bestsellers_Rank")
+
 
             # TODO. uncomment
             # if int(spider.output) == 3:
@@ -57,7 +65,9 @@ class URLsPipeline(object):
                 titles.append("Product_images")
                 titles.append("Product_videos")
 
-            if int(spider.output) == 3:
+            if int(spider.output) >= 3:
+                titles.append("UPC_match")
+                titles.append("Model_match")
                 titles.append("Confidence")
 
             self.file.write(",".join(titles) + "\n")
@@ -88,7 +98,14 @@ class URLsPipeline(object):
             if option == 4 and 'origin_upc' in item:
                 fields = [item['origin_upc'][0], json.dumps(item['origin_name'])]
             else:
-                fields = [item['origin_url']]
+                if option == 5:
+                    if 'product_target_price' not in item:
+                        price = ""
+                    else:
+                        price = item['product_target_price']
+                    fields = [json.dumps(item['origin_name']), item['origin_url']]#, str(price)]
+                else:
+                    fields = [item['origin_url']]
 
             # TODO. uncomment
             # # if output type is 3, add additional fields
@@ -107,6 +124,13 @@ class URLsPipeline(object):
                 fields.append("")
             #fields.append(item['product_url'] if 'product_url' in item else "")
             
+            if option == 6:
+                if 'bestsellers_rank' not in item:
+                    item['bestsellers_rank'] = 0
+                fields.append(str(item['origin_bestsellers_rank']))
+                fields.append(str(item['bestsellers_rank']))
+
+            
             # if output type is 3, add additional fields
             if option >= 3:
 
@@ -121,6 +145,8 @@ class URLsPipeline(object):
                 # fields.append(item['product_model'] if 'product_model' in item else "")
 
                 # format confidence score on a total of 5 characters and 2 decimal points 
+                fields.append(str(item['UPC_match'] if 'UPC_match' in item else ""))
+                fields.append(str(item['model_match'] if 'model_match' in item else ""))
                 fields.append(str("%5.2f" % item['confidence']) if 'confidence' in item else "")
 
             # construct line from fields list

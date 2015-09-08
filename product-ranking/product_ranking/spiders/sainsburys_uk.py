@@ -144,6 +144,9 @@ class SainsburysProductSpider(ProductsSpider):
 
     HARDCODED_FIELDS = {'locale': 'en_GB'}
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse(self, response):
         if '/groceries/' in response.url:
             if 'orderBy' not in response.url:
@@ -224,6 +227,9 @@ class SainsburysProductSpider(ProductsSpider):
         brand = guess_brand_from_first_words(title, max_words=15)
         cond_set_value(product, 'brand', brand)
         self._unify_price(product)
+
+        if not product.get("locale"):
+            product["locale"] = "en_GB"
 
     def _unify_price(self, product):
         price = product['price'].encode('utf-8')

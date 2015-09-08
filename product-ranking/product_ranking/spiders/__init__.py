@@ -6,6 +6,8 @@ import re
 import string
 import urllib
 import urlparse
+import socket
+import os
 
 import scrapy.log
 from scrapy.log import ERROR, WARNING, INFO
@@ -134,6 +136,7 @@ def populate_from_open_graph(response, product):
 
     See about the Open Graph Protocol at http://ogp.me/
     """
+
     metadata = _extract_open_graph_metadata(response)
 
     if 'type' not in metadata:
@@ -145,6 +148,16 @@ def populate_from_open_graph(response, product):
             "Unknown Open Graph type: %s" % metadata['type'],
             WARNING,
         )
+
+
+def dump_url_to_file(url, fname='/home/web_runner/no_brands'):
+    """Helper function that stores a product URL to log file.
+    """
+    try:
+        with open(fname, 'a') as fh:
+            fh.write(url.strip()+'\n')
+    except Exception, e:
+        return
 
 
 class BaseProductsSpider(Spider):
@@ -168,6 +181,14 @@ class BaseProductsSpider(Spider):
             'Gecko/35.0 Firefox/35.0',
         'android': 'Mozilla/5.0 (Android; Tablet; rv:35.0) '\
             'Gecko/35.0 Firefox/35.0',
+        'iphone6': 'Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X)'\
+            ' AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25',
+        'ipad6': 'Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26'\
+                ' (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25',
+        'iphone4': 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us)'\
+            ' AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7',
+        'ipad4': 'Mozilla/5.0 (iPad; U; CPU iPhone OS 4_0 like Mac OS X; en-us)'\
+            ' AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7'
     }
 
     def __init__(self,
@@ -175,7 +196,7 @@ class BaseProductsSpider(Spider):
                  quantity=None,
                  searchterms_str=None, searchterms_fn=None,
                  site_name=None,
-                 product_url=None,
+                 product_url=None, products_url=None,
                  user_agent=None,
                  *args, **kwargs):
         if user_agent is None or user_agent not in self.USER_AGENTS.keys():
@@ -186,6 +207,11 @@ class BaseProductsSpider(Spider):
         if user_agent:
             self.user_agent = self.USER_AGENTS[user_agent]
             self.user_agent_key = user_agent
+
+        try:
+            self.server_ip = socket.gethostbyname(socket.gethostname())
+        except Exception as e:
+            self.log("Failed to get server IP", ERROR)
 
         super(BaseProductsSpider, self).__init__(*args, **kwargs)
 
@@ -210,6 +236,7 @@ class BaseProductsSpider(Spider):
             self.quantity = int(quantity)
 
         self.product_url = product_url
+        self.products_url = products_url
 
         self.searchterms = []
         if searchterms_str is not None:
@@ -244,11 +271,32 @@ class BaseProductsSpider(Spider):
             prod = SiteProductItem()
             prod['is_single_result'] = True
             prod['url'] = self.product_url
+            prod['search_term'] = ''
             yield Request(self.product_url,
                           self._parse_single_product,
                           meta={'product': prod})
 
+        if self.products_url:
+            urls = self.products_url.split('||||')
+            for url in urls:
+                prod = SiteProductItem()
+                prod['url'] = url
+                prod['search_term'] = ''
+                yield Request(url,
+                              self._parse_single_product,
+                              meta={'product': prod})
+
     def parse(self, response):
+
+        # call the appropriate method for the code. It'll only work if you set
+        #  `handle_httpstatus_list = [502, 503, 504]` in the spider
+        if hasattr(self, 'handle_httpstatus_list'):
+            for _code in self.handle_httpstatus_list:
+                if response.status == _code:
+                    _callable = getattr(self, 'parse_'+str(_code), None)
+                    if callable(_callable):
+                        yield _callable()
+
         if self._search_page_error(response):
             remaining = response.meta['remaining']
             search_term = response.meta['search_term']
@@ -256,7 +304,7 @@ class BaseProductsSpider(Spider):
             self.log("For search term '%s' with %d items remaining,"
                      " failed to retrieve search page: %s"
                      % (search_term, remaining, response.request.url),
-                     ERROR)
+                     WARNING)
         else:
             prods_count = -1  # Also used after the loop.
             for prods_count, request_or_prod in enumerate(
@@ -300,21 +348,22 @@ class BaseProductsSpider(Spider):
                     , INFO)
             else:
                 scraped_results_per_page = prods_per_page
-                self.log(
-                    "Failed to scrape number of products per page",
-                    ERROR)
+                if hasattr(self, 'is_nothing_found'):
+                    if not self.is_nothing_found(response):
+                        self.log(
+                            "Failed to scrape number of products per page", ERROR)
             response.meta['scraped_results_per_page'] = scraped_results_per_page
 
         if total_matches is None:
             total_matches = self._scrape_total_matches(response)
             if total_matches is not None:
                 response.meta['total_matches'] = total_matches
-                self.log("Found %d `     total matches." % total_matches, INFO)
+                self.log("Found %d total matches." % total_matches, INFO)
             else:
-                self.log(
-                    "Failed to parse total matches for %s" % response.url,
-                    ERROR
-                )
+                if hasattr(self, 'is_nothing_found'):
+                    if not self.is_nothing_found(response):
+                        self.log(
+                            "Failed to parse total matches for %s" % response.url,ERROR)
 
         if total_matches and not prods_per_page:
             # Parsing the page failed. Give up.

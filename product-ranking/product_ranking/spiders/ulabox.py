@@ -19,6 +19,9 @@ class UlaboxProductsSpider(BaseProductsSpider):
     start_urls = []
     SEARCH_URL = "https://www.ulabox.com/busca?q={search_term}"
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
 
         def full_url(url):

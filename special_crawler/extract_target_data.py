@@ -5,6 +5,7 @@ import urllib
 import re
 import sys
 import json
+import lxml
 import os.path
 import urllib, cStringIO
 from io import BytesIO
@@ -16,6 +17,7 @@ import time
 import requests
 from extract_data import Scraper
 
+from spiders_shared_code.target_variants import TargetVariants
 
 class TargetScraper(Scraper):
 
@@ -33,6 +35,11 @@ class TargetScraper(Scraper):
     reviews = None
     video_count = None
 
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        self.tv = TargetVariants()
+
     def check_url_format(self):
         # for ex: http://www.target.com/p/skyline-custom-upholstered-swoop-arm-chair/-/A-15186757#prodSlot=_1_1
         m = re.match(r"^http://www\.target\.com/p/([a-zA-Z0-9\-]+)/-/A-([0-9A-Za-z]+)", self.product_page_url)
@@ -44,6 +51,8 @@ class TargetScraper(Scraper):
         Currently for Amazon it detects captcha validation forms,
         and returns True if current page is one.
         '''
+
+        self.tv.setupCH(self.tree_html)
 
         if len(self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")) < 1:
             return True
@@ -145,6 +154,30 @@ class TargetScraper(Scraper):
             return None
         return self._long_description_helper()
 
+    def _color(self):
+        return self.tv._color()
+
+    def _size(self):
+        return self.tv._size()
+
+    def _style(self):
+        return self.tv._style()
+
+    def _color_size_stockstatus(self):
+        return self.tv._color_size_stockstatus()
+
+    def _stockstatus_for_variants(self):
+        return self.tv._stockstatus_for_variants()
+
+    def _variants(self):
+        return self.tv._variants()
+
+    def _price_for_variants(self):
+        return self.tv._price_for_variants()
+
+    def _selected_variants(self):
+        return self.tv._selected_variants()
+
     def _long_description_helper(self):
         rows = self.tree_html.xpath("//ul[starts-with(@class,'normal-list reduced-spacing-list')]//li")
         line_txts = []
@@ -164,10 +197,14 @@ class TargetScraper(Scraper):
         return None
 
     def _image_urls(self):
-        image_url = self.tree_html.xpath("//ul[@id='carouselContainer']//li//img/@src")
-        if len(image_url) < 1:
-            image_url = self.tree_html.xpath("//div[@class='HeroPrimContainer']//a//img//@src")
-        return image_url
+        image_urls = self.tree_html.xpath("//ul[@id='carouselContainer']//li//img/@src")
+
+        if not image_urls:
+            image_urls = self.tree_html.xpath("//div[@class='HeroPrimContainer']//a//img//@src")
+
+        image_urls = [url.replace("wid=60&hei=60?qlt=85", "wid=480&hei=480") for url in image_urls]
+
+        return image_urls
 
     def _image_count(self):
         image_urls = self._image_urls()
@@ -303,7 +340,7 @@ class TargetScraper(Scraper):
                     if max_ratingval == None or review['RatingValue'] > max_ratingval:
                         if review['Count'] > 0:
                             max_ratingval = review['RatingValue']
-                    self.reviews.append(["%s star(s)" % review['RatingValue'], review['Count']])
+                    self.reviews.append([int(review['RatingValue']), int(review['Count'])])
 
                 self.min_score = min_ratingval
                 self.max_score = max_ratingval
@@ -360,9 +397,12 @@ class TargetScraper(Scraper):
         or it can not be ordered online at all and can only be purchased in a local store,
         irrespective of availability - binary
         '''
+        if "not sold in stores" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
+            return 0
         rows = self.tree_html.xpath("//a[@id='findInStoreActive']/@title")
         if len(rows) > 0:
             return 1
+        self.tree_html.xpath("//span[contains(@class,'buttonText')]//text()")
         return 0
 
     def _marketplace(self):
@@ -392,6 +432,10 @@ class TargetScraper(Scraper):
 
     def _site_online(self):
         # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
+        if "not sold online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
+            return 0
+        if "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
+            return 1
         if 'disabled' in self.tree_html.xpath("//button[@id='addToCart']/@class")[0]:
             return 0
         return 1
@@ -400,6 +444,8 @@ class TargetScraper(Scraper):
         #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 0:
             return None
+        if "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
+            return 1
         return 0
 
 
@@ -407,6 +453,10 @@ class TargetScraper(Scraper):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
+        if self._in_stores() == 0:
+            return None
+        if "out of stock in stores" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
+            return 1
         return None
 
     ##########################################
@@ -470,7 +520,7 @@ class TargetScraper(Scraper):
         "description" : _description, \
         "model" : _model, \
         "long_description" : _long_description, \
-
+        "variants": _variants, \
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \

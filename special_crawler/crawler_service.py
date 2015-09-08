@@ -1,4 +1,9 @@
 #!/usr/bin/python
+import os
+import sys
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(1, os.path.join(CWD, '..'))
 
 from flask import Flask, jsonify, abort, request
 from extract_walmart_data import WalmartScraper
@@ -8,7 +13,6 @@ from extract_pgestore_data import PGEStore
 from extract_wayfair_data import WayfairScraper
 from extract_bestbuy_data import BestBuyScraper
 from extract_kmart_data import KMartScraper
-from extract_target_data import TargetScraper
 from extract_ozon_data import OzonScraper
 from extract_vitadepot_data import VitadepotScraper
 from extract_argos_data import ArgosScraper
@@ -29,15 +33,32 @@ from extract_staplesadvantage_data import StaplesAdvantageScraper
 from extract_souq_data import SouqScraper
 from extract_freshdirect_data import FreshDirectScraper
 from extract_peapod_data import PeapodScraper
-
 from extract_quill_data import QuillScraper
 from extract_hersheys_data import HersheysScraper
 from extract_freshamazon_data import FreshAmazonScraper
 from extract_george_data import GeorgeScraper
 from extract_bloomingdales_data import BloomingdalesScraper
 from extract_macys_data import MacysScraper
+from extract_frys_data import FrysScraper
 from extract_newegg_data import NeweggScraper
 from extract_costco_data import CostcoScraper
+from extract_proswimwear_data import ProswimwearScraper
+from extract_amazonde_data import AmazonDEScraper
+from extract_ulta_data import UltaScraper
+from extract_asda_data import AsdaScraper
+from extract_kohls_data import KohlsScraper
+from extract_jcpenney_data import JcpenneyScraper
+from extract_amazoncn_data import AmazonCNScraper
+from extract_wiggle_data import WiggleScraper
+from extract_snapdeal_data import SnapdealScraper
+from extract_walmartca_data import WalmartCAScraper
+from extract_marksandspencer_data import MarksAndSpencerScraper
+from extract_nextcouk_data import NextCoUKScraper
+from extract_amazonin_data import AmazonINScraper
+from extract_uniqlo_data import UniqloScraper
+from extract_deliverywalmart_data import DeliveryWalmartScraper
+from extract_flipkart_data import FlipkartScraper
+from extract_pepperfry_data import PepperfryScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -62,7 +83,6 @@ SUPPORTED_SITES = {
                     "ozon" : OzonScraper,
                     "pgestore" : PGEStore,
                     "pgshop" : PGEStore,
-                    # "target" : TargetScraper,
                     "vitadepot": VitadepotScraper,
                     "wayfair" : WayfairScraper,
                     "impactgel" : ImpactgelScraper,
@@ -85,9 +105,27 @@ SUPPORTED_SITES = {
                     "george" : GeorgeScraper,
                     "peapod" : PeapodScraper,
                     "bloomingdales" : BloomingdalesScraper,
-                    "macys" : MacysScraper,
+                    "macys": MacysScraper,
+                    "frys": FrysScraper,
                     "newegg": NeweggScraper,
                     "costco": CostcoScraper,
+                    "proswimwear": ProswimwearScraper,
+                    "amazonde": AmazonDEScraper,
+                    "ulta": UltaScraper,
+                    "groceries": AsdaScraper,
+                    "kohls": KohlsScraper,
+                    "jcpenney": JcpenneyScraper,
+                    "amazoncn": AmazonCNScraper,
+                    "wiggle": WiggleScraper,
+                    "snapdeal": SnapdealScraper,
+                    "walmartca": WalmartCAScraper,
+                    "marksandspencer": MarksAndSpencerScraper,
+                    "nextcouk": NextCoUKScraper,
+                    "amazonin": AmazonINScraper,
+                    "uniqlo": UniqloScraper,
+                    "deliverywalmart": DeliveryWalmartScraper,
+                    "flipkart": FlipkartScraper,
+                    "pepperfry": PepperfryScraper
                     }
 
 # add logger
@@ -157,6 +195,22 @@ def extract_domain(url):
         return 'george'
     if 'costco.com' in url:
         return 'costco'
+    if 'amazon.de' in url:
+        return 'amazonde'
+    if 'amazon.cn' in url:
+        return 'amazoncn'
+    if 'amazon.in' in url:
+        return 'amazonin'
+    if 'groceries.asda.com' in url:
+        return 'groceries'
+    if 'walmart.ca' in url:
+        return 'walmartca'
+    if 'next.co.uk' in url:
+        return 'nextcouk'
+    if 'delivery.walmart' in url:
+        return "deliverywalmart"
+
+
     m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)
     if m:
         return m.group(2)

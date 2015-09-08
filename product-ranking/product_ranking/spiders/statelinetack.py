@@ -36,6 +36,9 @@ class StatelinetackProductsSpider(BaseProductsSpider):
             *args,
             **kwargs)
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
         product = response.meta['product']
 
@@ -73,16 +76,14 @@ class StatelinetackProductsSpider(BaseProductsSpider):
 
         product['locale'] = "en-US"
 
-        related = response.xpath("//*[@class='scroller']/ul/li")
+        related = response.xpath("//*[@class='scroller']/ul/li//a[contains(@class, 'product-title')]")
         lrelated = []
         for rel in related:
-            a = rel.xpath("//a[@class='product-title']")
+            link = urlparse.urljoin(self.URL, rel.xpath('@href').extract()[0])
 
-            link = urlparse.urljoin(self.URL, a.xpath('@href').extract()[0])
+            ltitle = rel.xpath('text()').extract()[0]
 
-            ltitle = a.xpath('text()').extract()[0]
-
-            lrelated.append(RelatedProduct(ltitle, link))
+            lrelated.append(RelatedProduct(ltitle.strip(), link))
 
         if lrelated:
             product['related_products'] = {"recommended": lrelated}

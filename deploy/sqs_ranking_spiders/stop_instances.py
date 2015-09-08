@@ -6,6 +6,7 @@ import time
 import multiprocessing as mp
 import logging
 import logging.config
+import subprocess
 
 
 import boto
@@ -82,46 +83,81 @@ def get_all_group_instances_and_conn():
     return instances, conn
 
 
+def check_is_scrapy_daemon_not_running(ssh_key, inst_ip):
+    base_cmd = "ssh -o 'StrictHostKeyChecking no' -i %s ubuntu@%s 'ps aux'"
+    cmd = base_cmd % (ssh_key, inst_ip)
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    out, err = p.communicate()
+    for line in out.splitlines():
+        if 'scrapy_daemon.py' in line:
+            return False
+    return True
+
+
 def check_logs_status(file_path):
+    # if os.path.getsize(file_path) > 3072:
+    #     try:
+    #         f = open(file_path,'r')
+    #     except IOError:
+    #         return flag, reason # error - can't open the log file
+    #     else:
+    #         f.seek(0, 2)
+    #         fsize = f.tell()
+    #         f.seek(max(fsize-3072, 0), 0)
+    #         lines = f.readlines()
+    #         f.close()
+    #         for line in lines:
+    #             if 'Spider default output:' in line or \
+    #                     'Simmetrica events have been pushed...' in line:
+    #                 reason = "Task was finished"
+    #                 flag = True
+    #             elif 'Spider failed to start.' in line:
+    #                 reason = "Spider failed to start"
+    #                 flag = True
+    #         if fsize > 8000:
+    #             m1 = 'No any task messages were found at the queue'
+    #             m2 = 'Try to get task message from queue'
+    #             if m1 in lines[-1] and m2 in lines[-2]:
+    #                 reason = "No any tasks were received for long time"
+    #                 flag = True
+    # else:
+    #     reason = "No logs exist"
+    #     flag = True
     flag = False
     reason = ''
-    if os.path.getsize(file_path) > 3072:
-        try:
-            f = open(file_path,'r')
-        except IOError:
-            return flag, reason # error - can't open the log file
-        else:
-            f.seek(0, 2)
-            fsize = f.tell()
-            f.seek(max(fsize-3072, 0), 0)
-            lines = f.readlines()
-            f.close()
-            for line in lines:
-                if 'Spider default output:' in line or \
-                        'Simmetrica events have been pushed...' in line:
-                    reason = "Task was finished"
-                    flag = True
-                elif 'Spider failed to start.' in line:
-                    reason = "Spider failed to start"
-                    flag = True
-            if fsize > 8000:
-                m1 = 'No any task messages were found at the queue'
-                m2 = 'Try to get task message from queue'
-                if m1 in lines[-1] and m2 in lines[-2]:
-                    reason = "No any tasks were received for long time"
-                    flag = True
+    try:
+        f = open(file_path)
+    except IOError:
+        return flag, reason
+    last_lines = f.readlines()[-20:]  # read last lines
+    end_marker_ok = 'Scrapy daemon finished'
+    end_marker_fail = 'Finished with error'
+    for line in last_lines:
+        if end_marker_ok in line:
+            flag = True
+            reason = 'Task was finished'
+            break
+        elif end_marker_fail in line:
+            flag = True
+            reason = 'Task failed with errors'
+            break
+    else:
+        reason = 'No logs exist'
+        flag = True
     return flag, reason
 
 
 def teminate_instance_and_log_it(inst_ip, inst_id, reason):
     global autoscale_conn, TOTAL_WAS_TERMINATED
-    autoscale_conn.terminate_instance(inst_id, decrement_capacity=True)
     logger.warning("Instance with ip=%s and id=%s was terminated"
                    " due to reason='%s'.", inst_ip, inst_id, reason)
+    autoscale_conn.terminate_instance(inst_id, decrement_capacity=True)
     TOTAL_WAS_TERMINATED += 1
 
 
 def stop_if_required(inst_ip, inst_id):
+    """If this method return 'True' it will mean that script failed
+    to downoad or handle logs and the instance should be stopped"""
     tmp_file = '/tmp/tmp_file'
     # purge previous entry
     open(tmp_file, 'w').close()
@@ -132,8 +168,8 @@ def stop_if_required(inst_ip, inst_id):
     proc = mp.Process(target=os.system, args=(run_cmd,))
     proc.start()
     checker = 0
-    # it will give 30 second to downloads logs.
-    while checker < 30:
+    # it will give 5 minutes to downloads logs.
+    while checker < 60*5:
         if proc.is_alive():
             checker += 1
             time.sleep(1)
@@ -148,35 +184,62 @@ def stop_if_required(inst_ip, inst_id):
         return True
     print(inst_id, inst_ip, flag, reason)
     if flag:
+        if reason == 'No logs exist':
+            return True
+        if reason in ['Task was finished', 'Task failed with errors']:
+            time.sleep(30)
         teminate_instance_and_log_it(inst_ip, inst_id, reason)
+    else:
+        return check_is_scrapy_daemon_not_running(ssh_key, inst_ip)
 
 
 def update_unresponded_dict_or_terminate_instance(inst_ip, inst_id,
                                                   unresponded):
     if inst_id in unresponded.keys():
         last_time = unresponded[inst_id][1]
-        # if instance not responded for 15 minutes already
-        if time.time() - int(last_time) > 15*60:
+        # if instance not responded for 32 minutes already
+        if time.time() - int(last_time) > 32*60:
+            reason = "Instance not respond for 32 minutes or "\
+                     "failed to downoald logs"
             teminate_instance_and_log_it(
                 inst_ip,
                 inst_id,
-                reason="Instance not respond for 15 minutes"
+                reason=reason
             )
             del unresponded[inst_id]
     else:
         unresponded[inst_id] = [inst_ip, time.time()]
 
 
-def upload_logs_to_s3():
+def delete_old_unresponded_hosts(unresponded):
+    for inst_id in unresponded.keys():
+        last_time = unresponded[inst_id][1]
+        if time.time() - int(last_time) > 60*60*24*3:  # three day
+            del unresponded[inst_id]
+
+def get_amazon_connection():
     conn = boto.connect_s3()
     bucket = conn.get_bucket(BUCKET_NAME)
     k = Key(bucket)
     k.key = BUCKET_KEY
+    return k
+
+
+def get_logs_from_s3():
+    k = get_amazon_connection()
+    k.get_contents_to_filename(log_file_path)
+
+
+def upload_logs_to_s3():
+    k = get_amazon_connection()
     k.set_contents_from_filename(log_file_path)
 
 
 def main():
+    get_logs_from_s3()
     instances, conn = get_all_group_instances_and_conn()
+    names = ', '.join([inst.id for inst in instances])
+    logger.info("Instances running at this moment: %s", names)
     total_instances = len(instances)
     not_responded_hosts = '/tmp/not_responded_hosts'
     if not os.path.exists(not_responded_hosts):
@@ -206,6 +269,7 @@ def main():
                     inst_id,
                     unresponded
                 )
+    delete_old_unresponded_hosts(unresponded)
     with open(not_responded_hosts, 'w') as f:
         f.write(json.dumps(unresponded))
     logger.info("Were terminated %s instances from %s total.",

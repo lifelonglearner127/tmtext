@@ -10,10 +10,11 @@ from scrapy.log import ERROR
 
 from product_ranking.spiders import cond_set, cond_set_value
 from product_ranking.spiders import BaseProductsSpider
-from product_ranking.spiders import FormatterWithDefaults
+from product_ranking.spiders import FormatterWithDefaults, dump_url_to_file
 from product_ranking.items import SiteProductItem, Price
 from product_ranking.guess_brand import guess_brand_from_first_words
 
+is_empty = lambda x, y=None: x[0] if x else y
 
 def _inner_html(tag_str):
     return re.match('\A<[^<]+>(.+?)<[^>]+>\Z',
@@ -56,6 +57,7 @@ class ArgosUKProductsSpider(BaseProductsSpider):
         "promotions": "Promotions",
         "rating": "Average Rating"
     }
+    SORTING = None
 
     def __init__(self, sort_mode=None, fetch_related_products=True,
                  store_id=10151,
@@ -65,13 +67,14 @@ class ArgosUKProductsSpider(BaseProductsSpider):
         if sort_mode in self.SORT_MODES:
             sort_mode = self.SORT_MODES[sort_mode]
             self.SEARCH_URL = self.SORT_SEARCH_URL
+            self.SORTING = sort_mode
             formatter = FormatterWithDefaults(sort_mode=sort_mode,
                                               store_id=store_id,
                                               catalog_id=catalog_id,
                                               lang_id=lang_id)
         else:
             self.log('"%s" not in SORT_MODES')
-            # sort_mode = self.SORT_MODES['default']
+            self.SORTING = self.SORT_MODES['relevance']
             formatter = FormatterWithDefaults()
         cond_set_value(kwargs, 'site_name', 'argos.co.uk')
         super(ArgosUKProductsSpider, self).__init__(formatter, *args, **kwargs)
@@ -81,10 +84,22 @@ class ArgosUKProductsSpider(BaseProductsSpider):
             return 0
         if len(response.css('.noresultscontent')):
             return 0
-        return int(
-            re.search('\d+', response.css(
-                '.extrainfo.totalresults::text').extract()[0]).group()
-        )
+        total = is_empty(re.findall('\d+', is_empty(
+                response.xpath(
+                    '//div[@id="categorylist"]/h2/span/text()').extract(),
+                ""
+            )
+        ))
+        if not total:
+            total = is_empty(re.findall('\d+', is_empty(
+                    response.css(
+                      '.extrainfo.totalresults::text').extract(),
+                    ""
+                )
+            ))
+        if total:
+            return int(total)
+        return 0
 
     def _scrape_next_results_page_link_old(self, response):
         """Deprecated _scrape_next_results_page_link.
@@ -99,10 +114,12 @@ class ArgosUKProductsSpider(BaseProductsSpider):
         if page > response.meta['total_matches']:
             return None
         result = self.url_formatter.format(self.PAGE_URL, start_from=page,
+                                           products_per_page=products_per_page,
                                            search_term=response.meta[
                                                'search_term'],
-                                           products_per_page=products_per_page)
+                                           sort_mode=self.SORTING)
         response.meta['page'] = page
+        result = result.replace(' ', '%2B')
         print 'RES', result, products_per_page, page
         return result
 
@@ -118,6 +135,9 @@ class ArgosUKProductsSpider(BaseProductsSpider):
             )
             yield url, product
 
+    def _parse_single_product(self, response):
+      return self.parse_product(response)
+
     def parse_product(self, response):
         product = response.meta['product']
         cond_set(
@@ -125,11 +145,15 @@ class ArgosUKProductsSpider(BaseProductsSpider):
             lambda s: string.strip(s, ' \n')
         )
         if not product.get('brand', None):
-            brand = guess_brand_from_first_words(product['title'])
+            brand = guess_brand_from_first_words(product['title'].strip())
             if brand:
                 product['brand'] = brand
+
+        if not product.get('brand', None):
+            dump_url_to_file(response.url)
+
         if product.get('price') is None:
-            currency = (response.css('.currency::text').extract()[''])[0]
+            currency = response.css('.currency::text').extract()[0]
             price = re.search(
                 '\d+', response.css('.actualprice .price::text').extract()[0]
             ).group()

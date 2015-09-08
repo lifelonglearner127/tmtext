@@ -32,6 +32,9 @@ class FreshDirectProductsSpider(ProductsSpider):
         super(FreshDirectProductsSpider, self).__init__(*args, **kwargs)
         self.url_formatter.defaults['page'] = 1
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def _total_matches_from_html(self, response):
         matches = response.css('.pagination-text::text')
         if not matches:

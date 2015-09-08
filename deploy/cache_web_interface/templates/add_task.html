@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+
+<body>
+    <h1>Add task to cache service</h1>
+    <p>This just for debug purpose. It will not return any result. This service just sent task to cache to check how metrics will changed.</p>
+    <p>Also this form not perform validation at this moment. Be careful.</p>
+    <form action="/add-task" method="post">
+        <p>
+        Server name<br>
+        <input type="text" name="server_name">
+        <br>
+        </p>
+
+        <p>
+        Site<br>
+        <input type="text" name="site">
+        <br>
+        </p>
+
+        <p>
+        Task id<br>
+        <input type="text" name="task_id" value="{{default_id}}">
+        <br>
+        </p>
+
+        <p>
+        Search term<br>
+        <input type="text" name="searchterms_str">
+        <br>
+        Provide search term OR product url. Not both
+        </p>
+
+        <p>
+        Quantity<br>
+        <input type="text" name="quantity">
+        <br>
+        </p>
+
+        <p>
+        Single product url<br>
+        <input type="text" name="url">
+        <br>
+        </p>
+
+        <p>
+        Freshness(in hours)<br>
+        <input type="text" name="freshness">
+        <br>
+        If you left it blank cache will use 1 hour by default
+        </p>
+
+        <p>
+        Branch name<br>
+        <input type="text" name="branch_name">
+        <br>
+        Leave blank to use master branch
+        </p>
+        <br>
+        <input type="submit" value="Send task to cache">
+    </form>
+
+    <p>
+        <a href="/cache-stats">Back to cache metrics</a>
+    </p>
+</body>
+</html>
+

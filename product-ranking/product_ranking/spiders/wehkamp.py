@@ -145,3 +145,6 @@ class WehkampProductsSpider(BaseProductsSpider):
             "/li[contains(@class,'pagination-page-next')]/a/@href")
         if next:
             return next.extract()[0]
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)

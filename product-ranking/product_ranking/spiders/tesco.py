@@ -11,6 +11,7 @@ from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 
+is_empty = lambda x,y=None: x[0] if x else y
 
 def brand_at_start(brand):
     return (
@@ -21,6 +22,16 @@ def brand_at_start(brand):
 
 
 class TescoProductsSpider(BaseProductsSpider):
+    """ tesco.com product ranking spider
+
+    There are following caveats:
+
+    - always add -a user_agent='android_pad',
+      sample reverse calling
+        scrapy crawl tesco_products -a product_url='http://www.tesco.com/groceries/product/details/?id=286394325' \
+            -a user_agent='android_pad'
+    """
+
     name = 'tesco_products'
     allowed_domains = ["tesco.com"]
 
@@ -206,5 +217,26 @@ class TescoProductsSpider(BaseProductsSpider):
 
         desc = response.xpath('string(//p[@class="descriptionText"])').extract()
         cond_set(prod, "description", desc)
-
         return prod
+
+    def _parse_single_product(self, response):
+        productdata = "[" + is_empty(response.xpath(
+            '//meta[@name="productdata"]/@content'
+        ).extract(), "")[:-1].replace("|", ",") + "]"
+        productdata = is_empty(json.loads(productdata))
+        product = SiteProductItem()
+        if productdata:
+            product["title"] = productdata["name"]
+            product["is_out_of_stock"] = not productdata["available"]
+            product["url"] = "http://www.tesco.com/groceries/product/details/"\
+                "?id=" + str(productdata["productId"])
+            product["price"] = Price(
+                price=productdata["price"], 
+                priceCurrency="GBP"
+            )
+            product["image_url"] = productdata["mediumImage"]
+            product["search_term"] = ""
+            product["brand"] = is_empty(self.brand_from_title(product["title"]))
+            product["site"] = is_empty(self.allowed_domains)
+
+        return product

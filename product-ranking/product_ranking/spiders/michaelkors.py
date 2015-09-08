@@ -47,9 +47,15 @@ class MichaelKorsProductsSpider(ProductsSpider):
         super(MichaelKorsProductsSpider, self).__init__(*args, **kwargs)
         self.url_formatter.defaults['start'] = 0
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def _total_matches_from_html(self, response):
         total = response.css('#displayResultMsg span::text')
-        if not total: return 0
+        if not total:
+            total = response.css("div.search_result_msg p span::text")
+        if not total:
+            return 0
         total = total[0].extract()
         return int(total) if total.isdigit() else 0
 
@@ -68,7 +74,8 @@ class MichaelKorsProductsSpider(ProductsSpider):
 
 
     def _fetch_product_boxes(self, response):
-        return response.css('#categoryList li')
+        return response.css('#categoryList li') or \
+            response.css('li.product_panel_medium')
 
     def _link_from_box(self, box):
         return box.css('a::attr(href)')[0].extract()
@@ -78,13 +85,19 @@ class MichaelKorsProductsSpider(ProductsSpider):
         cont = '#productDetailsLeftSidebar .inner-container '
         cond_set(product, 'title', response.css(cont + 'h1::text').extract(),
                  unicode.strip)
+        if not product.get("title"):
+            title = response.xpath(
+                "//h1[contains(@class, 'prod_name')]/text()").extract()
+            if title:
+                cond_set(product, 'title', title, unicode.strip) 
 
         price = response.xpath(
             '//div[@id="productPrice"]' \
-            '/div[contains(@class, "display_price")]/input/@value'
+            '/div[contains(@class, "display_price")]/input/@value |'
+            '//div[@id="productPrice"]/span[last()]/text()'
         ).extract()
         if price:
-            price = price[0]
+            price = price[0].replace("$", "").strip()
             product["price"] = Price(priceCurrency='USD', price=price)
 
         model = response.css('#storeStyleNumber::text').extract()
@@ -94,9 +107,11 @@ class MichaelKorsProductsSpider(ProductsSpider):
                            lambda model: model.group(1))
         self._populate_related_products(response, product)
 
+        self._populate_hardcoded_fields(product)
+
     def _populate_related_products(self, response, product):
-        xpath = '//*[@id="productDetailsAlsoLike"]//ul[@class="group"]' \
-                '/li/div[@class="item-details"]/h3/a'
+        xpath = '//ul[contains(@class, "might_like")]/li/' \
+            'div[contains(@class, "product_description")]/a'
         extractor = LinkExtractor(restrict_xpaths=xpath)
         products = [RelatedProduct(url=urljoin(response.url, link.url),
                                    title=link.text.strip()) for link in

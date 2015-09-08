@@ -6,17 +6,19 @@ from __future__ import print_function
 import json
 import re
 import string
+import urlparse
+from datetime import datetime
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
-    MarketplaceSeller
-from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
-from product_ranking.amazon_bestsellers import amazon_parse_department
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
+    cond_set_value, FLOATING_POINT_RGEX
+from product_ranking.amazon_tests import AmazonTests
 
+from product_ranking.amazon_bestsellers import amazon_parse_department
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -36,13 +38,43 @@ except ImportError as e:
             return None
     CaptchaBreakerWrapper = FakeCaptchaBreaker
 
-is_empty = lambda x, y: x[0] if x else y
+is_empty = lambda x, y=None: x[0] if x else y
 
-class AmazonProductsSpider(BaseProductsSpider):
+class AmazoncojpValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['model', 'brand', 'price', 'bestseller_rank',
+                       'buyer_reviews']
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'google_source_site', 'description', 'special_pricing'
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = True  # ... duplicated requests?
+    ignore_log_filtered = True  # ... filtered requests?
+    test_requests = {
+        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
+        'alhpa beta vinigretto': 0,
+        'dandy united': [30, 300],
+        'magi yellow': [5, 150],
+        'Led Tv screen': [40, 300],
+        'red ship coat': [10, 150],
+        'trash smash': [20, 250],
+        'all for PC now': [15, 150],
+        'iphone blast': [10, 200],
+        'genius electronics black': [5, 120],
+        'batteries 330v': [40, 270]
+    }
+
+class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
     name = 'amazonjp_products'
     allowed_domains = ["amazon.co.jp"]
 
+    settings = AmazoncojpValidatorSettings()
+
     SEARCH_URL = "http://www.amazon.co.jp/s/?field-keywords={search_term}"
+
+    REVIEW_DATE_URL = 'http://www.amazon.co.jp/product-reviews/{product_id}/' \
+                      'ref=cm_cr_pr_top_recent/376-5667359-8866511?ie=UTF8&' \
+                      'showViewpoints=0&sortBy=bySubmissionDateDescending'
 
     def __init__(self, captcha_retries='10', *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
@@ -50,6 +82,9 @@ class AmazonProductsSpider(BaseProductsSpider):
         self.captcha_retries = int(captcha_retries)
 
         self._cbw = CaptchaBreakerWrapper()
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
 
     def parse(self, response):
         if self._has_captcha(response):
@@ -77,7 +112,42 @@ class AmazonProductsSpider(BaseProductsSpider):
 
             cond_set_value(prod, 'locale', 'en-US')  # Default locale.
 
-            result = prod
+            mkt_place_link = is_empty(response.xpath(
+                    "//div[contains(@class, 'a-box-inner')]" \
+                    "//a[contains(@href, '/gp/offer-listing/')]/@href |" \
+                    "//div[@id='secondaryUsedAndNew']" \
+                    "//a[contains(@href, '/gp/offer-listing/')]/@href"
+            ).extract())
+
+            meta = response.meta.copy()
+            meta['product'] = prod
+            prod_id = is_empty(re.findall('/dp/([a-zA-Z0-9]+)', response.url))
+            meta['product_id'] = prod_id
+
+            if mkt_place_link:
+                mkt_place_link = urlparse.urljoin(response.url, mkt_place_link)
+                meta["mkt_place_link"] = mkt_place_link
+
+            if isinstance(prod['buyer_reviews'], Request):
+                result = prod['buyer_reviews'].replace(meta=meta)
+            else:
+                if prod['buyer_reviews'] != 0:
+                    return Request(url=self.REVIEW_DATE_URL.format(product_id=prod_id),
+                                   meta=meta,
+                                   dont_filter=True,
+                                   callback=self.get_last_buyer_review_date)
+
+            if mkt_place_link:
+                result = Request(
+                    url=meta['mkt_place_link'],
+                    callback=self.parse_marketplace,
+                    meta=meta,
+                    dont_filter=True
+                )
+            else:
+                cond_set_value(prod, 'marketplace', [])
+                result = prod
+
         elif response.meta.get('captch_solve_try', 0) >= self.captcha_retries:
             self.log("Giving up on trying to solve the captcha challenge after"
                      " %s tries for: %s" % (self.captcha_retries, prod['url']),
@@ -86,6 +156,45 @@ class AmazonProductsSpider(BaseProductsSpider):
         else:
             result = self._handle_captcha(response, self.parse_product)
         return result
+
+    def get_last_buyer_review_date(self, response):
+        if self._has_captcha(response):
+            return self._handle_captcha(
+                response,
+                self.get_last_buyer_review_date
+            )
+
+        product = response.meta['product']
+        date = is_empty(response.xpath(
+            '//table[@id="productReviews"]/tr/td/div/div/span/nobr/text()'
+        ).extract())
+        if date:
+            d = datetime.strptime(date, '%Y/%m/%d')
+            date = d.strftime('%d/%m/%Y')
+            product['last_buyer_review_date'] = date
+
+        else:
+            date = is_empty(response.xpath(
+                '//span[contains(@class, "review-date")]/text()'
+            ).extract())
+            if date:
+                d = datetime.strptime(' '.join(re.findall('\d+', date)), '%Y %m %d')
+                date = d.strftime('%d/%m/%Y')
+                product['last_buyer_review_date'] = date
+
+        new_meta = response.meta.copy()
+        new_meta['product'] = product
+
+        if 'mkt_place_link' in response.meta.keys():
+            return Request(
+                url=response.meta['mkt_place_link'],
+                callback=self.parse_marketplace,
+                meta=new_meta,
+                dont_filter=True,
+            )
+        else:
+            cond_set_value(product, 'marketplace', [])
+        return product
 
     def populate_bestseller_rank(self, product, response):
         ranks = {' > '.join(map(unicode.strip,
@@ -118,7 +227,6 @@ class AmazonProductsSpider(BaseProductsSpider):
                 '#priceblock_ourprice ::text'
                 ', #unqualifiedBuyBox .a-color-price ::text'
                 ', #priceblock_saleprice ::text'
-                ', #actualPriceValue ::text'
                 ', #buyNewSection .offer-price ::text'
             ).extract(),
         )
@@ -138,7 +246,8 @@ class AmazonProductsSpider(BaseProductsSpider):
                     '//div[contains(@data-reftag,"atv_dp_bb_est_sd_movie")]'
                     '/button/text() |'
                     '//div[@id="mocaBBRegularPrice"]'
-                    '/div/text()[normalize-space()]'
+                    '/div/text()[normalize-space()] |'
+                    '//*[@id="actualPriceValue"]/b/text()[normalize-space()]'
                 ).extract()
             )
         if product.get('price', None):
@@ -154,48 +263,6 @@ class AmazonProductsSpider(BaseProductsSpider):
                         ' ', '').replace(',', '').strip(),
                     priceCurrency='JPY'
                 )
-
-        seller = None
-        other_products = None
-
-        seller = response.xpath(
-            '//div[@id="kindle-av-div"]/div[@class="buying"]/b/text() |'
-            '//div[@class="buying"]/b/text()'
-        ).extract()
-
-        if not seller:
-            seller_all = response.xpath('//div[@class="buying"]/b/a')#tr/td/
-            seller = seller_all.xpath('text()').extract()   
-            other_products = seller_all.xpath('@href').extract()
-        if not seller:
-            seller_all = response.xpath('//div[@id="merchant-info"]/a[1]')
-            other_products = seller_all.xpath('@href').extract()
-            seller = seller_all.xpath('text()').extract()
-        #seller in description as text
-        if not seller:
-            seller = response.xpath(
-                '//li[@id="sold-by-merchant"]/text()'
-            ).extract()
-            seller = ''.join(seller).strip()
-        #simple text seller
-        if not seller:
-            seller = response.xpath('//div[@id="merchant-info"]/text()').extract()
-            if seller:
-                seller = re.findall("sold by([^\.]*)", seller[0])
-        if not seller:
-            seller_all = response.xpath('//div[@id="usedbuyBox"]/div/div/a')
-            other_products = seller_all.xpath('@href').extract()
-            seller = seller_all.xpath('text()').extract()
-
-        if seller and isinstance(seller, list):
-            seller = seller[0].strip()
-        if other_products:
-            other_products = "www.amazon.co.jp" + other_products[0]
-
-        if seller or other_products:
-            product["marketplace"] = MarketplaceSeller(
-                seller=seller, other_products=other_products
-            )
 
         description = response.css('.productDescriptionWrapper').extract()
         if not description:
@@ -282,8 +349,13 @@ class AmazonProductsSpider(BaseProductsSpider):
             elif key == 'ASIN' and model is None or key == 'ITEM MODEL NUMBER':
                 model = li.xpath('text()').extract()
         cond_set(product, 'model', model, conv=string.strip)
-        self._buyer_reviews_from_html(response, product)
         self.populate_bestseller_rank(product, response)
+        revs = self._buyer_reviews_from_html(response)
+        if isinstance(revs, Request):
+            meta = {"product": product}
+            product['buyer_reviews'] = revs.replace(meta=meta)
+        else:
+            product['buyer_reviews'] = revs
 
     def _populate_from_js(self, response, product):
         # Images are not always on the same spot...
@@ -308,6 +380,10 @@ class AmazonProductsSpider(BaseProductsSpider):
                 total_matches = int(count_matches[-1].replace(',', ''))
             else:
                 total_matches = None
+        if not total_matches:
+            total_matches = int(is_empty(response.xpath(
+                '//h2[@id="s-result-count"]/text()'
+            ).re(FLOATING_POINT_RGEX), 0))
         return total_matches
 
     def _scrape_product_links(self, response):
@@ -395,7 +471,7 @@ class AmazonProductsSpider(BaseProductsSpider):
 
         return result
 
-    def _buyer_reviews_from_html(self, response, product):
+    def _buyer_reviews_from_html(self, response):
         stars_regexp = r'.+(\d[\d, ]*)'
         total = ''.join(response.css('#summaryStars a::text').extract())
         total = re.search('\d[\d, ]*', total)
@@ -454,42 +530,120 @@ class AmazonProductsSpider(BaseProductsSpider):
                 average = float("%.2f" % round(average, 2))
     
         if not ratings:
-            table = response.xpath(
-                '//table[@id="histogramTable"]'
-                '/tr[@class="a-histogram-row"]')
-            ratings \
-                = self._calculate_buyer_reviews_from_percents(
-                    total, table)
+            buyer_rev_link = response.xpath(
+                '//div[@id="summaryContainer"]//table[@id="histogramTable"]'
+                '/../a/@href'
+            ).extract()
+            if buyer_rev_link:
+                buyer_rev_req = Request(
+                    url=buyer_rev_link[0],
+                    callback=self.get_buyer_reviews_from_2nd_page,
+                    meta=response.meta.copy()
+                )
+                return buyer_rev_req
+            else:
+                return 0
 
         buyer_reviews = BuyerReviews(num_of_reviews=total,
                                      average_rating=average,
                                      rating_by_star=ratings)
-        cond_set_value(product, 'buyer_reviews',
-                       buyer_reviews if total else ZERO_REVIEWS_VALUE)
+        return buyer_reviews
 
+    def get_buyer_reviews_from_2nd_page(self, response):
+        product = response.meta["product"]
+        prod_id = response.meta["product_id"]
+        buyer_reviews = {}
+        product["buyer_reviews"] = {}
+        total_revs = is_empty(response.xpath(
+            '//table[@id="productSummary"]'
+            '//span[@class="crAvgStars"]/a/text()').extract(), ''
+        ).replace(",", "")
+        buyer_reviews["num_of_reviews"] = is_empty(
+                re.findall(FLOATING_POINT_RGEX, total_revs), 0
+            )
+        if int(buyer_reviews["num_of_reviews"]) == 0:
+            product["buyer_reviews"] = 0
+            return product
 
-    def _calculate_buyer_reviews_from_percents(self, total_reviews, table):
-        rating_by_star = {}
-        for title in table.xpath('.//a/@title'):
-            title = title.extract()
-            _match = re.search('(\d+)% of reviews have (\d+) star', title)
-            if _match:
-                _percent, _star = _match.group(1), _match.group(2)
-                if not _star.isdigit() or not _percent.isdigit():
-                    continue
-                rating_by_star[_star] = int(_percent)
-            else:
-                continue
-        # check if some stars are missing (that means, percent is 0)
-        for _star in range(1, 5):
-            if _star not in rating_by_star and str(_star) not in rating_by_star:
-                rating_by_star[str(_star)] = 0
-        # turn percents into numbers
-        for _star, _percent in rating_by_star.items():
-            if int(total_reviews) == 0:  # avoid division by zero
-                rating_by_star[_star] = 0
-            else:
-                rating_by_star[_star] \
-                    = float(int(total_reviews)) * (float(_percent) / 100)
-                rating_by_star[_star] = int(round(rating_by_star[_star]))
-        return rating_by_star
+        buyer_reviews["rating_by_star"] = {}
+        buyer_reviews = self.get_rating_by_star(response, buyer_reviews)
+
+        product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
+
+        meta = response.meta.copy()
+        meta['product'] = product
+        if product['buyer_reviews'] != 0:
+            return Request(url=self.REVIEW_DATE_URL.format(product_id=prod_id),
+                           meta=meta,
+                           dont_filter=True,
+                           callback=self.get_last_buyer_review_date)
+
+        return product
+
+    def get_rating_by_star(self, response, buyer_reviews):
+        table = response.xpath(
+                '//table[@id="productSummary"]//'
+                'table[@cellspacing="1"]//tr'
+            )
+        total = 0
+        if table:
+            for tr in table[:5]:
+                rating = is_empty(tr.xpath(
+                    'string(.//td[1])').re(FLOATING_POINT_RGEX), '')
+                number = is_empty(tr.xpath(
+                    'string(.//td[last()])').re(FLOATING_POINT_RGEX), 0)
+                is_perc = is_empty(tr.xpath(
+                    'string(.//td[last()])').extract(), '')
+                if "%" in is_perc:
+                    break
+                if number:
+                    number = int(number.replace(',', ''))
+                    buyer_reviews['rating_by_star'][rating] = number
+                    total += number*int(rating)
+        if total > 0:
+            average = float(total)/ float(buyer_reviews['num_of_reviews'])
+            buyer_reviews['average_rating'] = round(average, 1)
+        return buyer_reviews
+
+    def parse_marketplace(self, response):
+        if self._has_captcha(response):
+            result = self._handle_captcha(response, self.parse_marketplace)
+
+        product = response.meta["product"]
+
+        marketplaces = response.meta.get("marketplaces", [])
+
+        for seller in response.xpath(
+            '//div[contains(@class, "a-section")]/' \
+            'div[contains(@class, "a-row a-spacing-mini olpOffer")]'):
+
+            price = is_empty(seller.xpath(
+                'div[contains(@class, "a-column")]' \
+                '/span[contains(@class, "price")]/text()'
+            ).re(FLOATING_POINT_RGEX), 0)
+
+            name = is_empty(seller.xpath(
+                'div/p[contains(@class, "Name")]/span/a/text()').extract())
+
+            marketplaces.append({
+                "price": Price(price=price, priceCurrency="USD"), 
+                "name": name
+            })
+
+        next_link = is_empty(response.xpath(
+            "//ul[contains(@class, 'a-pagination')]" \
+            "/li[contains(@class, 'a-last')]/a/@href"
+        ).extract())
+
+        if next_link:
+            meta = {"product": product, "marketplaces": marketplaces}
+            return Request(
+                url=urlparse.urljoin(response.url, next_link), 
+                callback=self.parse_marketplace,
+                meta=meta,
+                dont_filter=True
+            )
+
+        product["marketplace"] = marketplaces
+
+        return product

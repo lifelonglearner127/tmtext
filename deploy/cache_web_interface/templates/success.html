@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+
+<body>
+    <h2>Task was successfully provided</h2>
+    task message: {{task}}
+    <p>
+        <a href="/cache-stats">To cache metrics</a>
+        <a href="/add-task">Send more tasks</a>
+    </p>
+    <form action="/send-task-again" method="post">
+    <input type="hidden" name="task" value="{{task}}">
+    <input type="submit" value="Send same task again">
+    </form>
+</body>
+</html>

@@ -6,7 +6,8 @@ from itertools import ifilter
 from decimal import Decimal, InvalidOperation
 
 from product_ranking.items import RelatedProduct, valid_currency_codes
-from product_ranking.spiders import cond_set, cond_replace, cond_set_value
+from product_ranking.spiders import cond_set, cond_replace, cond_set_value, \
+    dump_url_to_file
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
 from product_ranking.items import Price, MarketplaceSeller
 
@@ -172,6 +173,7 @@ class EbayUkProductsSpider(ProductsSpider):
         cond_set(product, 'image_url', box.css('img.img::attr(src)').extract())
 
     def _populate_from_html(self, response, product):
+        self._populate_hardcoded_fields(product)
         cond_set(product, 'title', response.css('#itemTitle::text').extract())
         cond_set(product, 'price',
                  response.css('[itemprop=price]::text , '
@@ -182,16 +184,12 @@ class EbayUkProductsSpider(ProductsSpider):
             '//div[@class="mbg"]/a/span/text()'
         ).extract()
 
-        other_products = response.xpath(
-            '//div[@class="si-pd-a"]/a/@href'
-        ).extract()
-        if other_products:
-            other_products = other_products[0]
         if seller:
             seller = seller[0].strip()
-            product["marketplace"] = MarketplaceSeller(
-                seller=seller, other_products=other_products
-            )
+            product["marketplace"] = [{
+                "name": seller,
+                "price": product.get("price", None)
+            }]
         
         cond_replace(product, 'image_url',
                      response.css('[itemprop=image]::attr(src)').extract())
@@ -203,6 +201,8 @@ class EbayUkProductsSpider(ProductsSpider):
         xpath = '//td[@class="attrLabels" and contains(text(), "Brand:")]' \
                 '/following-sibling::td/span/text()'
         cond_set(product, 'brand', response.xpath(xpath).extract())
+        if not product.get('brand', None):
+            dump_url_to_file(response.url)
         xpath = '//td[@class="attrLabels" and contains(text(), "Model:")]' \
                 '/following-sibling::td/span/text()'
         cond_set(product, 'model', response.xpath(xpath).extract())
@@ -251,3 +251,6 @@ class EbayUkProductsSpider(ProductsSpider):
             return None
         else:
             return price
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)

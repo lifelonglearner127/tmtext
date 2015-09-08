@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+
+<body>
+    {% if result_msg %}
+    <h3>{{result_msg}}</h3>
+    {% endif %}
+    <form action="/update-settings" method="post">
+    {% for item in current_settings %}
+    {% if item != 'report_mail' %}
+    {{item}}<br>
+    <input type="text" name="{{item}}" value="{{current_settings[item]}}">
+    <br>
+    {% else %}
+    <br>
+    Provide emails separated by coma.
+    <br>
+    {{item}}<br>
+    <textarea rows="4" cols="50" name="{{item}}">{{current_settings[item]}}</textarea>
+    <br>
+    {% endif %}
+    {% endfor %}
+    <br>
+    <input type="submit" value="Update settings">
+    </form>
+    <p>
+        <a href="/cache-stats">Back cache metrics</a>
+    </p>
+</body>
+</html>

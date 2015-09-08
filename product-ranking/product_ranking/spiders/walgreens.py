@@ -85,6 +85,54 @@ class WalGreensProductsSpider(BaseProductsSpider):
             *args,
             **kwargs)
 
+    def _parse_single_product(self, response):
+        pId = re.findall("ID=prod(\d+)", response.url)
+        if pId:
+            url = "http://www.walgreens.com/svc/products" \
+                "/prod%s/(PriceInfo+Inventory)?rnd=1428572592049" % (pId[0],)
+            meta = response.meta.copy()
+            meta.update({"response": response})
+            return Request(
+                url=url, 
+                callback=self.get_price_single_product, 
+                meta=meta
+            )
+        return self.parse_product(response)
+
+    def get_price_single_product(self, response):
+        try:
+            data = json.loads(response.body)
+        except:
+            data = {}
+
+        result = self.parse_product(response.meta["response"])
+        meta = result.meta.copy()
+        
+        if "priceInfo" in data:
+            if "messages" in data["priceInfo"]:
+                price = None
+            elif "salePrice" in data["priceInfo"]:
+                price = self.parse_price_single_product(
+                    data["priceInfo"], "salePrice")
+            elif "regularPrice" in data["priceInfo"]:
+                price = self.parse_price_single_product(
+                    data["priceInfo"], "regularPrice")
+
+            if price:
+                price = price[0]
+                meta["product"]["price"] = Price(
+                    price=price,
+                    priceCurrency='USD'
+                )       
+        return result.replace(meta=meta)
+
+    def parse_price_single_product(self, data, key):
+        if "1/" in data[key]:
+            price = re.findall("1\/.(\d+\.{0,1}\d+)", data[key])
+        else:
+            price = re.findall("(\d+\.{0,1}\d+)", data[key])
+        return price
+
     def parse_product(self, response):
         prod = response.meta['product']
 

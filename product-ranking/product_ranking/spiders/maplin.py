@@ -8,7 +8,7 @@ from product_ranking.items import SiteProductItem, Price, BuyerReviews,\
     RelatedProduct, LimitedStock
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    FormatterWithDefaults, cond_set_value
+    FormatterWithDefaults, cond_set_value, dump_url_to_file
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 
@@ -48,6 +48,9 @@ class GandermountainProductsSpider(BaseProductsSpider):
             ), *args, **kwargs
         )
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
         reviewed = response.meta.get('reviewed')
         prod = response.meta['product']
@@ -85,6 +88,9 @@ class GandermountainProductsSpider(BaseProductsSpider):
         if brand:
             cond_set(prod, 'brand', brand)
 
+        if not prod.get('brand', None):
+            dump_url_to_file(response.url)
+
         price = response.xpath(
             '//p[@class="new-price"]/meta[@itemprop="price"]/@content'
         ).extract()
@@ -109,11 +115,15 @@ class GandermountainProductsSpider(BaseProductsSpider):
         prod['url'] = response.url
 
         available = response.xpath(
-            '//form[@id="addToCartFormA59LQ"]/input[@type="submit"]/@value'
+            '//form[contains(@id,"addToCartForm")]/input[@type="submit"]/@value'
         ).extract()
+
+        if available and 'Email when back in stock' in available[0]:
+            cond_set(prod, 'is_out_of_stock', [True])
+
         if available and 'Last few in store' in available[0]:
             lim = LimitedStock(is_limited=True,
-                               items_left=[])
+                               items_left=[1])
             cond_set(prod, 'limited_stock', [lim])
 
         prod_id = re.findall(r'"id":\s"(.*)",', response.body)

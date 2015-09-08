@@ -46,6 +46,9 @@ class AhProductsSpider(BaseProductsSpider):
         formatter = FormatterWithDefaults(sort=self.sort_by)
         super(AhProductsSpider, self).__init__(formatter, *args, **kwargs)
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def _scrape_product_links(self, response):
 
         links = response.xpath(

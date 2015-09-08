@@ -13,7 +13,7 @@ from product_ranking.items import SiteProductItem, Price, RelatedProduct,\
     BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, \
-    FormatterWithDefaults, FLOATING_POINT_RGEX
+    FormatterWithDefaults, FLOATING_POINT_RGEX, dump_url_to_file
 
 
 class EBuyerProductSpider(BaseProductsSpider):
@@ -75,6 +75,14 @@ class EBuyerProductSpider(BaseProductsSpider):
                 meta={'search_term': st, 'remaining': self.quantity},
             )
 
+        if self.product_url:
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            prod['url'] = self.product_url
+            yield Request(self.product_url,
+                          self._parse_single_product,
+                          meta={'product': prod})
+
     def sort_handling(self, response):
         parsed = urlparse.urlparse(response.url)
         qs = urlparse.parse_qs(parsed.query)
@@ -117,6 +125,9 @@ class EBuyerProductSpider(BaseProductsSpider):
         else:
             return None
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
         prod = response.meta['product']
 
@@ -152,6 +163,9 @@ class EBuyerProductSpider(BaseProductsSpider):
             '//img[@itemprop="logo"]/@alt').extract()
         if brand:
             prod['brand'] = brand[0]
+
+        if not prod.get('brand', None):
+            dump_url_to_file(response.url)
 
         in_stock = response.xpath(
             '//p[@itemprop="availability"]/@content').extract()
@@ -260,6 +274,7 @@ class EBuyerProductSpider(BaseProductsSpider):
             '//div[@class="average_score"]/@title'
         ).extract()
         if not avg_total:
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
             return product
         return self.populate_by_star(response)
 

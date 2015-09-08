@@ -25,6 +25,7 @@ import urllib2
 class AmazonSpider(SearchSpider):
 
     name = "amazon"
+    handle_httpstatus_list = [404]
     # cookie_header = "x-wl-uid=1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=; session-token=JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=; x-amz-captcha-1=1391100438353490; x-amz-captcha-2=+EDhq9rcotSRn783vYMxdQ==; csm-hit=337.71|1391093239619; ubid-main=188-7820618-3817319; session-id-time=2082787201l; session-id=177-0028713-4113141"
     # cookies = {"x-wl-uid" : "1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=", \
     # "session-token" : "JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=",\
@@ -48,9 +49,11 @@ class AmazonSpider(SearchSpider):
         # this causes 404s
         if URL == "http://www.amazon.com/gp/slredirect/redirect.html":
             return False
+        if URL.startswith("http://www.amazon.co.uk/gp/slredirect/redirect.html"):
+            return False
         try:
             # disable this for now. without user agent set, it only causes 500s. and it slows everything down. just return True for all
-            #return True
+            return True
             request = urllib2.Request(URL)
             request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0')
             resp = urllib2.urlopen(request, timeout=5)
@@ -154,6 +157,12 @@ class AmazonSpider(SearchSpider):
         if 'origin_upc' in response.meta:
             item['origin_upc'] = response.meta['origin_upc']
 
+        if 'origin_brand' in response.meta:
+            item['origin_brand'] = response.meta['origin_brand']
+
+        if 'origin_bestsellers_rank' in response.meta:
+            item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
+
 
         # if 'origin_id' in response.meta:
         #     item['origin_id'] = response.meta['origin_id']
@@ -238,7 +247,8 @@ class AmazonSpider(SearchSpider):
 
             # extract product model number
             model_number_holder = hxs.select("""//tr[@class='item-model-number']/td[@class='value']/text() |
-             //li/b/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/text()""").extract()
+             //li/b/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/text() |
+             //span/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/span[2]/text()""").extract()
             if model_number_holder:
                 item['product_model'] = model_number_holder[0].strip()
             # if no product model explicitly on the page, try to extract it from name
@@ -252,6 +262,25 @@ class AmazonSpider(SearchSpider):
             if upc_node:
                 upc = upc_node[0].strip().split()
                 item['product_upc'] = upc
+
+            manufacturer_code_node = hxs.select("//li/b/text()[normalize-space()='Manufacturer reference:']/parent::node()/parent::node()/text()").extract()
+            if manufacturer_code_node:
+                manufacturer_code = manufacturer_code_node[0].strip()
+                item['manufacturer_code'] = manufacturer_code
+
+            try:
+                # for lowest level category:
+                # TODO: test the xpath for the second type of page (see second type of xpath for top-level category)
+                # bestsellers_rank = hxs.select("//tr[@id='SalesRank']/td[@class='value']/ul/li/span/text()" + \
+                # "| //li[@id='SalesRank']/ul/li/span/text()").re("#[0-9,]+")[0]
+
+                # for top-level category:
+                bestsellers_rank = hxs.select("//tr[@id='SalesRank']/td[@class='value']/text()" + 
+                    " | //li[@id='SalesRank']/text()").re("#[0-9,]+")[0]
+                item['bestsellers_rank'] = int(re.sub(",", "", "".join(bestsellers_rank[1:])))
+            except Exception, e:
+                if self.output==6 or self.bestsellers_link:
+                    self.log("Didn't find product rank: " + str(e) + " " + response.url + "\n", level=log.INFO)
 
             asin_node = hxs.select("//li/b/text()[normalize-space()='ASIN:']/parent::node()/parent::node()/text()").extract()
             if asin_node:

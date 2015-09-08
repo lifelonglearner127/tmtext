@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+
+<body>
+    <h1>Cache and SQS metrics for {{time_range}}</h1>
+    <div>
+        <h2 style="text-decoration:underline">SQS metrics</h2>
+        <p>Instaces running at this moment at group: {{sqs_instances_quantity}}</p>
+        <p>Total executed tasks from 00.00 UTC: {{executed_tasks_during_the_day}}</p>
+        <p>Total SQS instances spinned up from 00.00 UTC: {{daily_sqs_instances_counter}}</p>
+        <p>Still waiting tasks at queues: {{waiting_task}}</p>
+        <p>Tasks were handled during last hour: {{task_during_last_hour}}</p>
+        <p>Average tasks per hour for last {{time_range}}: {{average_tasks}}<br>
+        Note: You may change time range at the bottom of the page.
+        </p>
+    </div>
+    <div>
+        <h2 style="text-decoration:underline">Cache metrics</h2>
+        <h3>Total memory used</h3>
+        <p>{{used_memory}}</p>
+    </div>
+    <div>
+        {% if not total_cached_items %}
+        No any items were found in cache.
+        {% else %}
+        <ul>
+            <li>Total items in cache: {{total_cached_items}}</li>
+            <li>Age of newest item: {{age_newest_item}} hours. Was created at {{newest_item_dt}}.</li>
+            <li>Age of oldest item: {{age_oldest_item}} hours. Was created at {{oldest_item_dt}}.</li>
+        </ul>
+        {% endif %}
+    </div>
+    <div>
+        <h3>Percents and quantity of items served from cache for last {{time_range}}:</h3>
+        <ul>
+            <li>Total received requests: {{total_requests}}</li>
+            <li>Total responses sent from cache: {{total_responses}}</li>
+            <li>Correlation: {{correlation}}
+                {% if correlation %}%{% endif %}</li>
+        </ul>
+    </div>
+    <div>
+        <h3>5 most popular cached responses for last {{time_range}}:</h3>
+        format: 'task stamp for request' -- 'quantity'
+        {% if not most_recent_resp %}
+            <p>No any responses were served from cache during this time limit</p>
+        {% else %}
+        <ul>
+            {% for resp in most_recent_resp %}
+                <li>{{resp[0]}} -- {{resp[1]}}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+    <div>
+        <h3>Current settings</h3>
+        <p>{{current_settings}}</p>
+        <a href="/update-settings">Update settings</a>
+
+    </div>
+    <div>
+        <h3>Clear cache for required time limit</h3>
+        <form action="/remove-old-resp" method="post">
+            <input type="submit" value="Remove responses older than X hours">
+            <input type="text" name="time_limit" value="12">
+        </form>
+    </div>
+    <div>
+    <h3>Choose required time limit</h3>
+    <form action="/cache-stats" method="post">
+        <select name="required_hours">
+            <option value="1">1 hour</option>
+        {% for hours in range(2,13) %}
+            <option value={{hours}}>{{hours}} hours</option>
+        {% endfor %}
+        <select>
+        <input type="submit" value="Update metrics">
+    </form>
+    </div>
+    <p>
+        <a href="/add-task">Add new task to cache</a>
+    </p>
+    <p>
+        <a href="/all-logs">Display cache logs</a>
+    </p>
+    <br>
+    <br>
+    <div>
+        <form action="/flash-cache" method="post">
+            <input type="submit" value="Totally clear cache">
+        </form>
+    </div>
+</body>
+</html>

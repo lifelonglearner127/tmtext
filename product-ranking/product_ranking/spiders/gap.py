@@ -15,6 +15,7 @@ from product_ranking.spiders import FLOATING_POINT_RGEX
 from scrapy.http import Request
 from scrapy.log import DEBUG, ERROR
 
+is_empty = lambda x, y=None: x[0] if x else y
 
 class GapProductsSpider(BaseProductsSpider):
     name = 'gap_products'
@@ -35,6 +36,9 @@ class GapProductsSpider(BaseProductsSpider):
     BRAND = "GAP"
     DO_VARIANTS = True
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def start_requests(self):
         for request in super(GapProductsSpider, self).start_requests():
             request.meta['total_matches'] = 1
@@ -42,16 +46,35 @@ class GapProductsSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
-        vid = response.meta['vid']
+        vid = 1
+        if "vid" in response.meta:
+            vid = response.meta['vid']
         if 'OutOfStockNoResults' in response.url:
             self.log("Product OutOfStock %s %s" % (
                 response.url, product), DEBUG)
             return
 
+        if not product.get("price"):
+            price = is_empty(
+                response.xpath(
+                    "//span[@id='priceText']/text() |" \
+                    "//div[@id='tabWindow']/noscript"
+                ).extract(),
+                ""
+            )
+            price = is_empty(re.findall("\d+\.\d+", price)[::-1])
+            if price:
+                product["price"] = Price(price=price, priceCurrency="USD")
+
         title = product.get('title')
         if isinstance(title, str):
             product['title'] = title.decode('utf-8', 'ignore')
             title = product.get('title')
+        else:
+            title = is_empty(response.xpath(
+                "//div[@id='productNameText']/h1/text()").extract())
+            if title:
+                product["title"] = title
 
         brindex = title.find("&#153")
         if brindex > 1:
@@ -64,7 +87,12 @@ class GapProductsSpider(BaseProductsSpider):
         product['locale'] = "en-US"
 
         new_meta = response.meta.copy()
-        url = self.PRODUCT_URL_JS.format(pid=product.get('upc'), vid=vid)
+        pid = product.get('upc')
+        if not pid:
+            pid = re.findall("pid=(\d+)", response.url)
+            if pid:
+                pid = pid[0]
+        url = self.PRODUCT_URL_JS.format(pid=pid, vid=vid)
         return Request(
             url, callback=self._parse_product_js,
             meta=new_meta, priority=100)
@@ -135,17 +163,17 @@ class GapProductsSpider(BaseProductsSpider):
 
         self.log(
             "Product '%s' ikeys=%s prices=%s" % (
-                product['title'],
+                product.get("title", ""),
                 ikeys, prices), DEBUG)
 
         if len(ikeys) < 2:
             self.log("Product '%s' without variants. ikeys=%s" % (
-                product['title'], ikeys), DEBUG)
+                product.get("title", ""), ikeys), DEBUG)
             return product
 
         if len(prices) < 2:
             self.log("Product '%s' without variants. prices= %s" % (
-                product['title'], prices), DEBUG)
+                product.get("title", ""), prices), DEBUG)
             return product
 
         if not self.DO_VARIANTS:

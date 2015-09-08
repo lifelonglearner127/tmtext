@@ -11,6 +11,11 @@ class SearchItem(Item):
     product_dpci = Field() # product DPCI. Identifier specific to target.com
     product_asin = Field() # product DPCI. Identifier specific to amazon.com
     product_brand = Field() # product brand as extracted from special element in product page
+
+    manufacturer_code = Field() # product code on manufacturer site. e.g.: product code on maplin.co.uk (when maplin is manufacturer), 
+                                # "manufacturer reference" on amazon.co.uk
+    bestsellers_rank = Field() # product rank in bestsellers list on target site
+
     origin_url = Field() # original product url
 #    origin_id = Field() # original (source) product id (for walmart products)
     origin_name = Field() # product name on origin site
@@ -20,6 +25,10 @@ class SearchItem(Item):
     origin_asin = Field() # original (source) product DPCI. Identifier specific to amazon.com
     origin_brand = Field() # original (source) product brand
     origin_brand_extracted = Field() # source product brand - as extracted from product name: not guaranteed to be correct
+    
+    origin_manufacturer_code = Field() # product code on manufacturer site.
+                                       #  e.g.: product code on maplin.co.uk, "manufacturer reference" on amazon.co.uk
+    origin_bestsellers_rank = Field() # product rank in bestsellers list on source (origin) site
 
     product_origin_price = Field() # price of product on origin site, in dollars
     product_target_price = Field() # price of product on target site, in dollars
@@ -28,6 +37,8 @@ class SearchItem(Item):
     product_videos = Field() # for manufacturer spider: nr of product videos on target (manufacturer) site
 
     confidence = Field() # score in percent indicating confidence in match
+    UPC_match = Field() # binary field (1/0) indicating if there was a match between UPCs
+    model_match = Field() # binary field (1/0) indicating if there was a match between model numbers
 
 # items used in walmart_fullurls spider to match walmart ids to their product pages full URLs
 class WalmartItem(Item):

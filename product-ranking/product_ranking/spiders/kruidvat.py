@@ -15,6 +15,9 @@ class KruidvatProductsSpider(BaseProductsSpider):
     start_urls = []
     SEARCH_URL = "http://www.kruidvat.nl/search?text={search_term}"
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
         product = response.meta['product']
 
@@ -53,14 +56,19 @@ class KruidvatProductsSpider(BaseProductsSpider):
                 priceCurrency='EUR'
             )
 
-        cond_set(
-            product,
-            'upc',
-            response.xpath(
+        upc = response.xpath(
                 "//section[@class='product-details']"
-                "/meta[@itemprop='productID']/@content").extract(),
-            conv=int,
-        )
+                "/meta[@itemprop='productID']/@content").extract()
+
+        if upc and isinstance(upc[0], int):
+            cond_set(
+                product,
+                'upc',
+                response.xpath(
+                    "//section[@class='product-details']"
+                    "/meta[@itemprop='productID']/@content").extract(),
+                conv=int,
+            )
 
         cond_set(
             product,

@@ -3,13 +3,14 @@ import re
 import string
 
 from scrapy.log import ERROR
+from scrapy.http import Request
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    MarketplaceSeller
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value, \
-    cond_replace_value, cond_replace
+    cond_replace_value, cond_replace, FLOATING_POINT_RGEX
 
+is_empty = lambda x, y=None: x[0] if x else y
 
 class BolProductsSpider(BaseProductsSpider):
     name = 'bol_products'
@@ -18,6 +19,9 @@ class BolProductsSpider(BaseProductsSpider):
     SEARCH_URL = "http://www.bol.com/nl/s/algemeen/zoekresultaten/Ntt/" \
         "{search_term}/N/0/Nty/1/search/true/searchType/qck/sc/media_all/" \
         "index.html"
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
 
     def parse_product(self, response):
         product = response.meta['product']
@@ -59,18 +63,6 @@ class BolProductsSpider(BaseProductsSpider):
 
         cond_set(product, 'locale', response.xpath("//html/@lang").extract())
 
-        seller = response.xpath(
-            '//p[@class="bottom_xs"]/strong/text()'
-        ).extract()
-        if not seller:
-            seller = response.xpath(
-                '//div[@class="ratinglabel_text"]/a/text() |'
-                '//div[contains(@class, "seller_popup_wrapper")]/a/text()'
-            ).extract()
-        if seller:
-            seller = seller[0].strip()
-            product["marketplace"] = MarketplaceSeller(seller=seller, other_products=None)
-
         rel = response.xpath(
             "//div[contains(@class,'tst_inview_box')]/div"
             "/div[@class='product_details_mini']/span/a")
@@ -85,6 +77,33 @@ class BolProductsSpider(BaseProductsSpider):
         if recommended_prods:
             product['related_products'] = {"recommended": recommended_prods}
         self._price_from_html(response, product)
+
+        mkt_link = is_empty(response.xpath(
+            "//div[contains(@class, 'alternative')]/a/@href").extract())
+        meta = {"product": product}
+        if mkt_link:
+            mkt_link = re.sub("filter=([^\&]\w+)", "", mkt_link)
+            return Request(
+                url=mkt_link, 
+                callback=self.parse_marketplace, 
+                meta=meta
+            )
+        else:
+            seller = response.xpath(
+                '//p[@class="bottom_xs"]/strong/text()'
+            ).extract()
+            if not seller:
+                seller = response.xpath(
+                    '//div[@class="ratinglabel_text"]/a/text() |'
+                    '//div[contains(@class, "seller_popup_wrapper")]/a/text()'
+                ).extract()
+            if seller:
+                seller = seller[0].strip()
+                product["marketplace"] = [{
+                    "name": seller, 
+                    "price": product["price"]
+                }]
+
         return product
 
     def _price_from_html(self, response, product):
@@ -139,3 +158,46 @@ class BolProductsSpider(BaseProductsSpider):
             "//div[contains(@class,'tst_searchresults_next')]/span/a/@href")
         if next_page_links:
             return next_page_links.extract()[0]
+
+    def parse_marketplace(self, response):
+        product = response.meta["product"]
+
+        marketplaces = response.meta.get("marketplaces", [])
+
+        for seller in response.xpath(
+            "//tr[contains(@class, 'horizontal_row')]"):
+            price =  is_empty(seller.xpath(
+                "td/p[contains(@class, 'price')]/text() |" \
+                "td/span[contains(@class, 'price')]/text()"
+            ).re(FLOATING_POINT_RGEX))
+            if price:
+                price = price.replace(",", ".")
+
+            name = is_empty(seller.xpath(
+                "td/div/a/img/@title |" \
+                "td/div[contains(@class, 'ratinglabel_text')]/a/text() |" \
+                "td/img/@title"
+            ).extract())
+
+            if name and "verkoper:" in name: 
+                name = is_empty(re.findall("verkoper\:\s+(.*)", name))
+            if name:
+                name = name.strip()
+
+            marketplaces.append({
+                "price": Price(price=price, priceCurrency="EUR"),
+                "name": name
+            })
+
+        next_link = is_empty(response.xpath("//div[contains(@class, 'left_button')]/a/@href").extract())
+        if next_link:
+            meta = {"product": product, "marketplaces": marketplaces}
+            return Request(
+                url=next_link, 
+                callback=self.parse_marketplace, 
+                meta=meta
+            )
+
+        product["marketplace"] = marketplaces
+
+        return product

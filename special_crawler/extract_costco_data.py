@@ -19,6 +19,8 @@ class CostcoScraper(Scraper):
     def check_url_format(self):
         self.image_urls = None
         self.prod_help = None
+        self.wc_content = None
+        self.sp_content = None
         url = self.product_page_url.lower()
         if url.find('costco.com') > 0 and url.find('product.') > 0:
             return True
@@ -118,10 +120,23 @@ class CostcoScraper(Scraper):
 
 
     def _long_description(self):
-        long_description =  " ".join(self.tree_html.xpath('//p[@itemprop="description"]//text()[normalize-space()]')).strip()
+        html = self._wc_content()
+        m = re.findall(r'wc-rich-content-description\\">(.*?)<\\/div', html, re.DOTALL)
+        long_description = ""
+        if len(m) > 0:
+            long_description =  " ".join(m)
+        if long_description != None and  long_description != "":
+            return  self._clean_text(long_description)
+        html = self._sp_content()
+        m = re.findall(r'sp_acp_section_text_content">(.*?)</div', html, re.DOTALL)
+        if len(m) > 0:
+            long_description =  " ".join(m)
         if long_description != None and  long_description != "":
             return  self._clean_text(long_description)
         long_description =  " ".join(self.tree_html.xpath('//div[@id="product-tab1"]//text()[normalize-space()]')).strip()
+        if long_description != None and  long_description != "":
+            return  self._clean_text(long_description)
+        long_description =  " ".join(ld[0].xpath('//p[@itemprop="description"]//text()[normalize-space()]')).strip()
         if long_description != None and  long_description != "":
             return  self._clean_text(long_description)
         long_description =  " ".join(self.tree_html.xpath('//div[@class="TireLandDesc"]//text()[normalize-space()]')).strip()
@@ -181,7 +196,7 @@ class CostcoScraper(Scraper):
         if len(img_link) > 0:
             imgs = requests.get(img_link[0]).text
             img_url = re.findall(r"image\:(.+?)\,+?",imgs)
-            img_url = ["http://images.costco-static.com/image/media/"+b.replace("'","").strip()+".jpg" for b in img_url]
+            img_url = ["http://images.costco-static.com/image/media/350-"+b.replace("'","").strip()+".jpg" for b in img_url]
             if len(img_url) > 0:
                 self.image_urls = img_url
                 return img_url
@@ -219,14 +234,44 @@ class CostcoScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        vu = self.tree_html.xpath("//a[@class='video-link']/@href")
-        if len(vu)>0:
-            return vu
-        return None
+        webcollage_url = "http://content.webcollage.net/costco/smart-button?ird=true&channel-product-id=" + self._site_id()
+
+        webcollage_contents = requests.get(webcollage_url).text
+        webcollage_contents = webcollage_contents.decode("unicode-escape")
+
+        video_urls = []
+
+        if "_wccontent" in webcollage_contents:
+            wc_video_json_start_index = webcollage_contents.find('{"videos":[{')
+
+            if wc_video_json_start_index > 0:
+                wc_video_json_end_index = webcollage_contents.find('}]}', wc_video_json_start_index) + 3
+                wc_video_json = webcollage_contents[wc_video_json_start_index:wc_video_json_end_index]
+                wc_video_json = json.loads(wc_video_json.decode("unicode-escape"))
+
+                wc_video_base_url_start_index = webcollage_contents.rfind('data-resources-base="', 0, wc_video_json_start_index)
+                wc_video_base_url_start_index += len('data-resources-base="')
+                wc_video_base_url_end_index = webcollage_contents.find('"', wc_video_base_url_start_index)
+                wc_video_base_url = webcollage_contents[wc_video_base_url_start_index:wc_video_base_url_end_index]
+                wc_video_base_url = wc_video_base_url.replace("\\", "")
+
+                for video_item in wc_video_json["videos"]:
+                    video_urls.append(wc_video_base_url + video_item["src"]["src"])
+
+        if not video_urls:
+            return None
+
+        return video_urls
 
     def _video_count(self):
-        if self._video_urls()==None: return 0
-        return len(self._video_urls())
+        sp = self._sp_content()
+        n = 0
+        m = sp.count('autoplay=true') / 2
+
+        if self._video_urls():
+            n = len(self._video_urls())
+
+        return m + n
 
     # return one element containing the PDF
     def _pdf_urls(self):
@@ -238,14 +283,89 @@ class CostcoScraper(Scraper):
 
     def _pdf_count(self):
         urls = self._pdf_urls()
+        sp = self._sp_content()
+        m = n = 0
+        if sp !=None and sp !="":
+            m = sp.count('.pdf')
         if urls:
-            return len(urls)
+            n = len(urls)
+
+        return m + n
+
+    def _wc_content(self):
+        if self.wc_content == None:
+            url = "http://content2.webcollage.net/costco/smart-button?ird=true&channel-product-id=%s" % self._site_id()
+            html = urllib.urlopen(url).read()
+            if "_wccontent" in html:
+                self.wc_content = html
+                return html
+            else:
+                self.wc_content = ""
+                return ""
+        return self.wc_content
+
+
+    def _wc_360(self):
+        html = self._wc_content()
+        if "wc-360" in html: return 1
         return 0
+
+
+    def _wc_pdf(self):
+        html = self._wc_content()
+        if ".pdf" in html: return 1
+        return 0
+
+    def _wc_video(self):
+        html = self._wc_content()
+        if ".mp4" in html: return 1
+        return 0
+
+    def _wc_emc(self):
+        html = self._wc_content()
+        if "wc-aplus" in html: return 1
+        return 0
+
+
 
     def _webcollage(self):
         wbc = self.tree_html.xpath("//img[contains(@src,'webcollage.net')]")
         if len(wbc) > 0 : return 1
+        html = self._wc_content()
+        m = re.findall(r'_wccontent = (\{.*?\});', html, re.DOTALL)
+        try:
+            if ".webcollage.net" in m[0]:
+                return 1
+        except IndexError:
+            pass
         return 0
+
+    def _sellpoints(self):
+        html = self._sp_content()
+        if html != None and html != "": return 1
+        return 0
+
+    def _sp_content(self):
+        if self.sp_content == None:
+            url = 'http://sb.sellpoint.net/smart_button/lookup/acp/83_acp.js'
+            html = urllib.urlopen(url).read()
+            m = re.findall(r'(\{.*?\});', html, re.DOTALL)
+            res = ""
+            if len(m) > 0:
+                hash_table = json.loads(m[0])
+                id = self._site_id()
+                sp_id = hash_table.get(id,'')
+                if sp_id != "":
+                    sp = sp_id.split("_")
+                    if len(sp) > 2:
+                        url = "http://assetsw.sellpoint.net/_acp_/%s/%s/js/acp_content_%s.js" % tuple(sp)
+                        res = urllib.urlopen(url).read()
+            self.sp_content = res
+            return res
+        else:
+            return self.sp_content
+
+
 
     # extract htags (h1, h2) from its product product page tree
     def _htags(self):
@@ -270,7 +390,7 @@ class CostcoScraper(Scraper):
     def _average_review(self):
         avr = self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
         if len(avr) > 0:
-            return self._tofloat(avr[0])
+            return round(self._tofloat(avr[0]), 1)
         return None
 
 
@@ -359,6 +479,9 @@ class CostcoScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
+        if self.tree_html.xpath('//span[contains(@class, "out-of-stock")]'):
+            return 1
+
         return 0
 
     def _marketplace(self):
@@ -416,7 +539,10 @@ class CostcoScraper(Scraper):
 
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
-        text = text.replace("<br />"," ").replace("\n"," ").replace("\t"," ").replace("\r"," ")
+        p = re.compile(r'<.*?>')
+        text = p.sub(' ',text)
+        text = text.replace("\n"," ").replace("\t"," ").replace("\r"," ")
+        text = text.replace("\\","")
        	text = re.sub("&nbsp;", " ", text).strip()
         return  re.sub(r'\s+', ' ', text)
 
@@ -455,8 +581,13 @@ class CostcoScraper(Scraper):
         "video_urls" : _video_urls, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
+        "wc_emc" : _wc_emc, \
+        "wc_360" : _wc_360, \
+        "wc_pdf" : _wc_pdf, \
+        "wc_video" : _wc_video, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
+        "sellpoints": _sellpoints, \
         "keywords" : _keywords, \
 
         "meta_tag_count": _meta_tag_count,\

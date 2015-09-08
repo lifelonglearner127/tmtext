@@ -41,6 +41,9 @@ class OcadoProductsSpider(BaseProductsSpider):
     def clear_desc(self, l):
         return " ".join(
             [it for it in map(string.strip, l) if it])
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
       
     def parse_product(self, response):
         product = response.meta['product']

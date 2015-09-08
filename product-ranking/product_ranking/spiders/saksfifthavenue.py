@@ -20,9 +20,10 @@ from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
 
 
-def fromxml(stext):
-    return lxml.html.fromstring(stext).text
-
+def fromxml(stext, resp):
+    if stext:
+        return lxml.html.fromstring(stext).text
+    return ""
 
 class SaksfifthavenueProductsSpider(BaseProductsSpider):
     name = 'saksfifthavenue_products'
@@ -58,6 +59,9 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
             site_name=self.allowed_domains[0],
             *args,
             **kwargs)
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
 
     def parse(self, response):
         def full_url(url):
@@ -139,41 +143,94 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
         # jtext = response.xpath(
         #     "//script[contains(text(),'var mlrs =')]"
         #     "/text()").re(r"var mlrs = (.*)")
+        jtext = text
         m = re.search(r"var mlrs = (.*)", text)
         if m:
             jtext = m.group(1)
-            try:
-                jdata = json.loads(jtext)
-            except ValueError as e:
-                self.log("JSON error({0}): ".format(e.message), DEBUG)
-                return
-        cond_set(product, 'title', response.xpath(
-            "//header/h2[contains(@class,'short-description')]"
-            "/text()").extract())
-        cond_set(product, 'brand', response.xpath(
-            "//header/h1[contains(@class,'brand-name')]/a/text()").extract(),
-            conv=string.strip)
-        tprice = fromxml(jdata['response']['body'][
-            'main_products'][0]['price']['sale_price'])
-        price = re.search(FLOATING_POINT_RGEX, tprice)
-        if price:
-            price = price.group(0)
-            product['price'] = Price(
-                price=price, priceCurrency='USD')
+        try:
+            jdata = json.loads(jtext)
 
-        upc = fromxml(jdata['response']['body']['main_products'][0]['product_code'])
-        cond_set_value(product, 'upc', unicode(upc))
+            mp = jdata["response"]["body"]["main_products"][0]
+            colors = mp["colors"]["colors"]
+            sizes = mp["sizes"]["sizes"]
+            skus = mp["skus"]["skus"]
+            variants = []
 
-        description = jdata['response']['body'][
-            'main_products'][0]['description']
-        cond_set_value(product, 'description', description)
+            for sku in skus:
+                variants_dict = {}
+                for color in colors:
+                    if color.get("color_id") == sku.get("color_id"):
+                        variants_dict["color"] = color.get("label")
+                for size in sizes:
+                    if size.get("size_id") == sku.get("size_id"):
+                        variants_dict["size"] = size.get("value")
+                price = re.findall(
+                    FLOATING_POINT_RGEX,
+                    sku.get("price", {}).get("sale_price")
+                )
+                if price:
+                    variants_dict["price"] = price[len(price)-1]
+                variants_dict["is_in_stock"] = False
+                if sku.get("status_alias") == "available":
+                    variants_dict["is_in_stock"] = True
+                if variants_dict:
+                    variants.append(variants_dict)
+            
+            if variants:
+                product["variants"] = variants
 
-        media = jdata['response']['body']['main_products'][0]['media']
-        image_url = "http:" + media['images_server_url'] + media['images_path'] + \
-            media['images']['product_detail_image']
-        cond_set_value(product, 'image_url', image_url)
+            cond_set(product, 'title', response.xpath(
+                "//header/h2[contains(@class,'short-description')]"
+                "/text()").extract())
+            cond_set(product, 'brand', response.xpath(
+                "//header/h1[contains(@class,'brand-name')]/a/text()").extract(),
+                conv=string.strip)
+            tprice = fromxml(jdata['response']['body'][
+                'main_products'][0]['price']['sale_price'], response)
+            price = re.search(FLOATING_POINT_RGEX, tprice)
+            if price:
+                price = price.group(0)
+                product['price'] = Price(
+                    price=price, priceCurrency='USD')
+
+            model = fromxml(jdata['response']['body']['main_products'][0]['product_code'], response)
+            cond_set_value(product, 'model', unicode(model))
+
+            description = jdata['response']['body'][
+                'main_products'][0]['description']
+            cond_set_value(product, 'description', description)
+
+            media = jdata['response']['body']['main_products'][0]['media']
+            image_url = "http:" + media['images_server_url'] + media['images_path'] + \
+                media['images']['product_detail_image']
+            cond_set_value(product, 'image_url', image_url)
+        except ValueError as e:
+            self.log("JSON error({0}): ".format(e.message), DEBUG)
+            cond_set(product, "brand", response.xpath(
+                "//h1[contains(@class, 'brand')]/text()").extract())
+            cond_set(product, "title", response.xpath(
+                "//h2[contains(@class, 'description')]/text()").extract())
+            cond_set(product, "model", response.xpath(
+                "//h3[contains(@class, 'product-code-reskin')]/text()").extract())
+            price = response.xpath("//div[contains(@class, 'price')]"
+                "/div[contains(@class, 'value')]/text()").extract()
+            if price:
+                price = price[0]
+                product['price'] = Price(
+                    price=price, priceCurrency='USD')
+            cond_set(product, 'description', response.xpath(
+                "//span[contains(@class, 'detail-content') and "
+                "contains(@id, 'api_prod_copy')]"
+            ).extract())
+
+            image_url = response.xpath(
+                "//meta[@property='og:image']/@content").extract()
+            if image_url:
+                image_url = image_url[0].replace("60x80", "600x800")
+                cond_set(product, 'image_url', 
+                    (urlparse.urljoin("http:", image_url[0]),))
+
         cond_set_value(product, 'locale', "en-US")
-
         bvurl = self._gen_bv_url(response)
         response.meta['bvurl'] = bvurl
 
@@ -209,25 +266,27 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
                 "&p={prodno}"
                 "&pt=%7Citem_page.content2"
                 "&l=1").format(
-                    api=api, prodno=product['upc'],
+                    api=api, prodno=product['model'],
                     ts=int(jsGetTime()))
             return url
 
     def _parse_rr(self, response):
         product = response.meta['product']
-        text = response.body_as_unicode().encode('utf-8')
-        rr_data = self._parse_rr_js(text)
-        if rr_data:
-            placements = {'item_page.content2': 'recommendation'}
-            product['related_products'] = {}
-            for place, value in rr_data.items():
-                items = value['items']
-                prodlist = []
-                for item_name, item_url in items:
-                    prodlist.append(RelatedProduct(item_name, item_url))
-                pp_key = placements.get(place)
-                if pp_key:
-                    product['related_products'][pp_key] = prodlist
+
+        title = response.xpath("//div[contains(@id, 'rr_strategy')]/text()").extract()
+        urls = re.findall("a_href = \"([^\"]*)", response.body)
+        names = response.xpath("//div[contains(@class, 'medium')]/text()").extract()
+        rp = dict(zip(names, urls))
+
+        product['related_products'] = {}
+        prodlist = []
+        for k, v in rp.items():
+            prodlist.append(RelatedProduct(k, v))
+        if prodlist and title:
+             product['related_products'] = {
+                title[0]: prodlist
+             }
+
         bvurl = response.meta.get('bvurl')
         if bvurl:
             # TODO: add dont_filter
@@ -266,7 +325,7 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
                             ilink = ilink[0]
                             url_split = urlparse.urlsplit(ilink)
                             query = urlparse.parse_qs(url_split.query)
-                            original_url = query.get('ct')[0]
+                            original_url = query.get('ct', [None])[0]
                             iname = iitem.xpath(
                                 "a/div[@class='rr_item_text']"
                                 "/div[@class='medium']"
@@ -284,7 +343,7 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
         url = (
             "http://saksfifthavenue.ugc.bazaarvoice.com/5000-en_us"
             "/{prodno}/reviews.djs"
-            "?format=embeddedhtml").format(prodno=product['upc'])
+            "?format=embeddedhtml").format(prodno=product['model'])
         return url
 
     def _parse_bv(self, response):
@@ -389,9 +448,12 @@ class SaksfifthavenueProductsSpider(BaseProductsSpider):
         if self.check_alert(response):
             return
         next_page_links = response.xpath(
-            "//ol[@class='pa-page-number']"
+            "//ol[contains(@class,'pa-page-number')]"
             "/li/a/img[@alt='next']"
-            "/../@href").extract()
+            "/../@href |"
+            "//ol[contains(@class,'pa-page-number')]"
+            "/li[last()]/a/@href"
+        ).extract()
         if next_page_links:
             return full_url(next_page_links[0])
         else:

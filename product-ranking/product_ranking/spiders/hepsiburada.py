@@ -16,6 +16,9 @@ class HepsiburadaProductsSpider(BaseProductsSpider):
 
     SEARCH_URL = "http://www.hepsiburada.com/liste/search.aspx?sText={search_term}"
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
 
         product = response.meta['product']
@@ -83,7 +86,7 @@ class HepsiburadaProductsSpider(BaseProductsSpider):
             "FoundInAllCatalogs']/text()").extract()[0]
 
         if num_results:
-            return int(num_results)
+            return int(num_results.replace(".", ""))
         else:
             self.log("Failed to parse total number of matches.", level=ERROR)
 

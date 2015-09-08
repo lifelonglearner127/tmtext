@@ -106,6 +106,9 @@ class GoogleProductsSpider(BaseProductsSpider):
         )
         yield request
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
         product = response.meta['product']
         desc = response.xpath(
@@ -122,6 +125,21 @@ class GoogleProductsSpider(BaseProductsSpider):
             '[contains(./*[@class="specs-name"]/text(), "Brand")]'
             '/*[@class="specs-value"]/text()'
         ).extract())
+
+        if not product.get("price"):
+            _prices = response.xpath('.//*[contains(@class, "price")]')
+            price = get_price(_prices)
+            if price:
+                product["price"] = Price(
+                    price=price.replace("$", ""), 
+                    priceCurrency="USD"
+                )
+
+        if not product.get("title"):
+            title = response.xpath(
+                "//h1[@itemprop='name']/text()").extract()
+            if title:
+                product["title"] = title[0]
 
         if not product.get('brand', None):
             brand = guess_brand_from_first_words(product['title'])
@@ -156,11 +174,13 @@ class GoogleProductsSpider(BaseProductsSpider):
                 link = 'https://www.google.com' + review_link
                 return Request(link, callback=self.handle_reviews_request,
                                meta=response.meta)
+            else:
+                product['buyer_reviews'] = ZERO_REVIEWS_VALUE
 
         # strip GET data from only google urls
         if 'www.google.com/shopping/product' in product['url']:
             self._populate_buyer_reviews(response, product)
-            pattern = r'(.*)\?'
+            pattern = r'([^\?]*)'
             result = re.findall(pattern, product['url'])
             if result:
                 product['url'] = result[0]
@@ -221,6 +241,7 @@ class GoogleProductsSpider(BaseProductsSpider):
             '//div[@id="online-pagination"]/div[contains(@class,'
             '"jfk-button-collapse-left")]/@data-reload'
         ).extract()
+
         product['google_source_site'] = json.dumps(source_dict_new)
         if next_link:
             url = "https://www.google.com" + next_link[0]
@@ -373,11 +394,13 @@ class GoogleProductsSpider(BaseProductsSpider):
 
     def _populate_buyer_reviews(self, response, product):
         product = response.meta['product']
-        del product['buyer_reviews']
+        if "buyer_reviews" in product:
+            del product['buyer_reviews']
         revs = response.xpath(
             '//div[@id="reviews"]/div[@id="reviews"]'
         )
         if not revs:
+            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             return
         total = response.xpath(
             '//div[@class="_Ape"]/div/div/div[@class="_wpe"]/text()'
@@ -389,7 +412,8 @@ class GoogleProductsSpider(BaseProductsSpider):
         total = int(total[0].replace(',', ''))
         reviews = response.xpath(
             '//div[@id="reviews"]/div[@id="reviews"]//div[@class="_Joe"]'
-            '/div/a/div[@class="_Roe"]/@style'
+            '/div/a/div[@class="_Roe"]/@style |'
+            '//div[@id="reviews"]//a/div[@class="_Roe"]/@style'
         ).extract()
         star = 5
         by_star = {}

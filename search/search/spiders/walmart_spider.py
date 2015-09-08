@@ -1,7 +1,7 @@
 from scrapy.spider import BaseSpider
 from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
-from scrapy.http import TextResponse
+from scrapy.http import TextResponse, HtmlResponse
 from scrapy.http import Response
 from scrapy.exceptions import CloseSpider
 from search.items import SearchItem
@@ -103,7 +103,12 @@ class WalmartSpider(SearchSpider):
     # keep product pages left to parse in 'search_results' meta key, send back to parseResults_new when done with all
     def parse_product_walmart(self, response):
 
-        hxs = HtmlXPathSelector(response)
+        # fix response, it ocasionally has NUL characters which ruin the parsing
+        cleaned_body = response.body.replace('\00','')
+        fixed_response = HtmlResponse(url=response.url, body=cleaned_body)
+
+
+        hxs = HtmlXPathSelector(fixed_response)
 
         items = response.meta['items']
 
@@ -120,6 +125,10 @@ class WalmartSpider(SearchSpider):
             item['origin_model'] = response.meta['origin_model']
         if 'origin_upc' in response.meta:
             item['origin_upc'] = response.meta['origin_upc']
+        if 'origin_brand' in response.meta:
+            item['origin_brand'] = response.meta['origin_brand']
+        if 'origin_bestsellers_rank' in response.meta:
+            item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
 
         # assume new design of walmart product page
         product_name_node = hxs.select("//h1[contains(@class, 'product-name')]//text()").extract()
@@ -133,56 +142,63 @@ class WalmartSpider(SearchSpider):
         else:
             self.log("Error: No product name: " + str(response.url) + " for source product " + origin_url, level=log.ERROR)
             # TODO:is this ok? I think so
-            return
+            # return
 
-        item['product_name'] = product_name
+        if product_name_node:
+            item['product_name'] = product_name
 
-        # extract product model number
-        # TODO: use meta? works for both old and new?
+            # extract product model number
+            # TODO: use meta? works for both old and new?
 
-        # extract features table for new page version:
-        table_node = hxs.select("//div[@class='specs-table']/table").extract()
+            # extract features table for new page version:
+            table_node = hxs.select("//div[@class='specs-table']/table").extract()
 
-        if not table_node:
-            # old page version:
-            table_node = hxs.select("//table[@class='SpecTable']").extract()
+            if not table_node:
+                # old page version:
+                table_node = hxs.select("//table[@class='SpecTable']").extract()
 
-        if table_node:
-            try:
-                product_model = table_node.select(".//td[contains(text(),'Model')]/following-sibling::*/text()").extract()[0]
-                item['product_model'] = product_model
-            except:
-                pass
+            if table_node:
+                try:
+                    product_model = table_node.select(".//td[contains(text(),'Model')]/following-sibling::*/text()").extract()[0]
+                    item['product_model'] = product_model
+                except:
+                    pass
 
-        upc_node = hxs.select("//meta[@itemprop='productID']/@content")
-        if upc_node:
-            item['product_upc'] = [upc_node.extract()[0]]
+            upc_node = hxs.select("//meta[@itemprop='productID']/@content")
+            if upc_node:
+                item['product_upc'] = [upc_node.extract()[0]]
 
 
-        brand_holder = hxs.select("//meta[@itemprop='brand']/@content").extract()
-        if brand_holder:
-            item['product_brand'] = brand_holder[0]
+            brand_holder = hxs.select("//meta[@itemprop='brand']/@content").extract()
+            if brand_holder:
+                item['product_brand'] = brand_holder[0]
 
-        # extract price
-        # TODO: good enough for all pages? could also extract from page directly
-        price_holder = hxs.select("//meta[@itemprop='price']/@content").extract()
-        # if we can't find it like above try other things:
-        if price_holder:
-            product_target_price = price_holder[0].strip()
-            # remove commas separating orders of magnitude (ex 2,000)
-            product_target_price = re.sub(",","",product_target_price)
-            m = re.match("\$([0-9]+\.?[0-9]*)", product_target_price)
-            if m:
-                item['product_target_price'] = float(m.group(1))
+            # extract price
+            # TODO: good enough for all pages? could also extract from page directly
+            price_holder = hxs.select("//meta[@itemprop='price']/@content").extract()
+            product_target_price = None
+            if price_holder:
+                product_target_price = price_holder[0].strip()
+
             else:
-                self.log("Didn't match product price: " + product_target_price + " " + response.url + "\n", level=log.WARNING)
+                product_target_price = "".join(hxs.select("//div[@itemprop='price']//text()").extract()).strip()
 
-        else:
-            self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
+            # if we can't find it like above try other things:
+            if product_target_price:
+                # remove commas separating orders of magnitude (ex 2,000)
+                product_target_price = re.sub(",","",product_target_price)
+                m = re.match("\$([0-9]+\.?[0-9]*)", product_target_price)
+                if m:
+                    item['product_target_price'] = float(m.group(1))
+                else:
+                    self.log("Didn't match product price: " + product_target_price + " " + response.url + "\n", level=log.WARNING)
+
+            else:
+                self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
 
 
-        # add result to items
-        items.add(item)
+            # add result to items
+            items.add(item)
 
 
         product_urls = response.meta['search_results']

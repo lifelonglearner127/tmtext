@@ -17,6 +17,7 @@ from lxml import html, etree
 from itertools import chain
 import time
 
+
 class Scraper():
 
     """Base class for scrapers
@@ -51,6 +52,7 @@ class Scraper():
             "event",
             "product_id",
             "site_id",
+            "walmart_no",
             "date",
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
@@ -66,14 +68,25 @@ class Scraper():
             "feature_count", # number of features of product, int
             "model_meta", # model from meta, string
             "description", # short description / entire description if no short available, string
-            "long_description", # long description / null if description above is entire description, string
+            "long_description", # long description / null if description above is entire description,
+            "shelf_description",
             "apluscontent_desc", #aplus description
             "ingredients", # list of ingredients - list of strings
             "ingredient_count", # number of ingredients - integer
             "nutrition_facts", # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries)
                                # containing nutrition facts
             "nutrition_fact_count", # number of nutrition facts (of elements in the nutrition_facts list) - integer
+            "nutrition_fact_text_health", # indicate nutrition fact text status - 0: not exists, 1: exists but partially, 2: exists and perfect.
+            "drug_facts", # drug facts - list of tuples ((key,value) pairs, values could be dictionaries)
+                               # containing drug facts
+            "drug_fact_count", # number of drug facts (of elements in the drug_facts list) - integer
+            "drug_fact_text_health", # indicate drug fact text status - 0: not exists, 1: exists but partially, 2: exists and perfect.
+            "supplement_facts",
+            "supplement_fact_count",
+            "supplement_fact_text_health",
             "rollback", # binary (0/1), whether product is rollback or not
+            "variants", # list of variants
+            "related_products_urls",
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
@@ -95,9 +108,12 @@ class Scraper():
             "keywords", # keywords for this product, usually from meta tag, string
             "meta_tags",# a list of pairs of meta tag keys and values
             "meta_tag_count", # the number of meta tags in the source of the page
+            "canonical_link", # canoncial link of the page
 
             "image_hashes", # list of hash values of images as returned by _image_hash() function - list of strings (the same order as image_urls)
             "thumbnail", # thumbnail of the main product image on the page - tbd
+            "manufacturer", # manufacturer info for this product
+            "return_to", # return to for this product
 
 
             # reviews
@@ -113,11 +129,15 @@ class Scraper():
             "price_currency", # currency for price, string of max 3 chars
             "temp_price_cut", # Temp Price Cut, 1/0
             "web_only", # Web only, 1/0
+            "home_delivery", # Home Delivery, 1/0
+            "click_and_collect", # Click and Collect, 1/0
+            "dsv", # if a page has "Shipped from an alternate warehouse" than it is a DSV, 1/0
             "in_stores", # available to purchase in stores, 1/0
             "in_stores_only", # whether product can be found in stores only, 1/0
             "marketplace", # whether product can be found on marketplace, 1/0
             "marketplace_sellers", # sellers on marketplace (or equivalent) selling item, list of strings
             "marketplace_lowest_price", # string
+            'primary_seller', # primary seller
             "in_stock", # binary (0/1), whether product can be bought from the site, from any seller
             "site_online", # the item is sold by the site and delivered directly, irrespective of availability - binary
             "site_online_in_stock", # currently available from the site - binary
@@ -168,15 +188,17 @@ class Scraper():
     # TODO: add one for root? to make sure nothing new appears in root either?
     DICT_STRUCTURE = {
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
-                        "features", "feature_count", "model_meta", "description", "long_description","apluscontent_desc",
-                        "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "rollback"],
+                        "features", "feature_count", "model_meta", "description", "long_description", "shelf_description", "apluscontent_desc",
+                        "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
+                        "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
+                        "rollback", "manufacturer", "return_to"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
-                            "image_hashes", "thumbnail", "sellpoints"], \
+                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "variants", "related_products_urls"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
-        "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
-                    "marketplace", "marketplace_sellers", "marketplace_lowest_price", "in_stock", \
+        "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
+                    "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "in_stock", \
                     "site_online", "site_online_in_stock", "site_online_out_of_stock", "marketplace_in_stock", \
                     "marketplace_out_of_stock", "marketplace_prices", "in_stores_in_stock", \
                     "in_stores_out_of_stock", "online_only"],
@@ -190,7 +212,8 @@ class Scraper():
         "product_id" : None,
         "event" : None,
         "date": None,
-        "status": None
+        "status": None,
+        "failure_type": None
     }
 
     def load_image_hashes():
@@ -284,7 +307,6 @@ class Scraper():
         self.ERROR_RESPONSE['url'] = self.product_page_url
         # Set status
         self.ERROR_RESPONSE['status'] = "failure"
-
 
     # extract product info from product page.
     # (note: this is for info that can be extracted directly from the product page, not content generated through javascript)
@@ -434,9 +456,13 @@ class Scraper():
             return self.ERROR_RESPONSE
 
         for info in info_type_list:
-
             try:
-                results = self.ALL_DATA_TYPES[info](self)
+                if isinstance(self.ALL_DATA_TYPES[info], (str, unicode)):
+                    _method_to_call = getattr(self, self.ALL_DATA_TYPES[info])
+                    results = _method_to_call()
+                else:  # callable?
+                    _method_to_call = self.ALL_DATA_TYPES[info]
+                    results = _method_to_call(self)
             except IndexError, e:
                 sys.stderr.write("ERROR: No " + info + " for " + self.product_page_url.encode("utf-8") + ":\n" + str(e) + "\n")
                 results = None
@@ -524,6 +550,17 @@ class Scraper():
         else:
             return False
 
+    def is_energy_label(self, image_url):
+        """Verifies if image with URL given as argument is an
+        energy label image.
+
+        Returns:
+           True if it's an energy label image, False otherwise
+        """
+
+        # TODO: implement
+        return False
+
     def _owned(self):
         '''General function for setting value of legacy field "owned".
         It will be inferred from value of "site_online_in_stock" field.
@@ -533,7 +570,7 @@ class Scraper():
 
         # extract site_online_in_stock and stores_in_stock
         # owned will be 1 if any of these is 1
-        return (self.ALL_DATA_TYPES['site_online_in_stock'](self) or self.ALL_DATA_TYPES['in_stores_in_stock'](self))
+        return (self.ALL_DATA_TYPES['site_online'](self) or self.ALL_DATA_TYPES['in_stores'](self))
 
 
     def _owned_out_of_stock(self):

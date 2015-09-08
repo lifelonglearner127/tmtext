@@ -3,9 +3,15 @@
 
 import os
 import sys
+import random
 
 
 main_folder = os.path.expanduser('~/repo/')
+INSTALL_PACKAGES = [
+    'Pillow', 'pytesseract', 'requests', 'tldextract', 'boto', 's3peat',
+    'workerpool', 'sqlalchemy', 'psycopg2', 'hjson', 'pyyaml'
+]
+
 
 def can_run():
     if os.path.exists(os.path.join(main_folder,
@@ -23,16 +29,41 @@ def mark_as_finished():
         fh.write('1')
 
 
+def _install_pip_package(package):
+    VENV_PYTHON = '/home/spiders/virtual_environment/bin/python'
+    PIP_PATH = '/usr/local/bin/pip'
+    os.system('%s %s install %s' % (VENV_PYTHON, PIP_PATH, package))
+
+
+def _create_http_proxies_list(fpath, host='tprox.contentanalyticsinc.com'):
+    BASE_HTTP_PORT = 22100
+    NUM_PROXIES = 300
+    fh = open(fpath, 'w')
+    for i in xrange(NUM_PROXIES):
+        proxy = 'http://%s:%s' % (host, str(BASE_HTTP_PORT+i))
+        fh.write(proxy+'\n')
+    fh.close()
+
+
 def main():
     f = open('/tmp/check_file_post_starter_spiders', 'w')
     f.write('1')
     f.close()
     # put anything you want here...
-    pass
+    # add new PIP packages
+    for package in INSTALL_PACKAGES:
+        _install_pip_package(package)
 
 
 if __name__ == '__main__':
+    http_proxy_path = '/tmp/http_proxies.txt'
+    if not os.path.exists(http_proxy_path):
+        _create_http_proxies_list(fpath=http_proxy_path)
+
     if not can_run():
-        sys.exit()
+        for package in INSTALL_PACKAGES:
+            _install_pip_package(package)
+            sys.exit()
+
     main()
     mark_as_finished()

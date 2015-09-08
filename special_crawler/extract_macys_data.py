@@ -16,6 +16,7 @@ from lxml import etree
 import time
 import requests
 from extract_data import Scraper
+from spiders_shared_code.macys_variants import MacysVariants
 
 
 class MacysScraper(Scraper):
@@ -24,24 +25,33 @@ class MacysScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www\.quill\.com/(.*)"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www1\.macys\.com/shop/(.*)"
 
-    reviews_tree = None
-    max_score = None
-    min_score = None
-    review_count = None
-    average_review = None
-    reviews = None
-    feature_count = None
-    features = None
-    video_urls = None
-    video_count = None
-    pdf_urls = None
-    pdf_count = None
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        # whether product has any webcollage media
+        self.review_json = None
+        self.price_json = None
+        self.mv = MacysVariants()
+
+        self.reviews_tree = None
+        self.max_score = None
+        self.min_score = None
+        self.review_count = None
+        self.average_review = None
+        self.reviews = None
+        self.feature_count = None
+        self.features = None
+        self.video_urls = None
+        self.video_count = None
+        self.pdf_urls = None
+        self.pdf_count = None
+        self.is_review_checked = False
 
     def check_url_format(self):
         # for ex: http://www1.macys.com/shop/product/closeout-biddeford-comfort-knit-fleece-heated-king-blanket?ID=694761
-        m = re.match(r"^http://www1\.macys\.com/shop/product/(.*)", self.product_page_url)
+        m = re.match(r"^http://www1\.macys\.com/shop/(.*)", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -51,9 +61,13 @@ class MacysScraper(Scraper):
         and returns True if current page is one.
         '''
 
+        self.mv.setupCH(self.tree_html)
+
         #if len(self.tree_html.xpath("//div[@id='imageZoomer']//div[contains(@class,'main-view-holder')]/img")) < 1:
         #    return True
         if len(self.tree_html.xpath("//h1[contains(@class,'productTitle')]")) < 1:
+            return True
+        if len(self.tree_html.xpath("//div[@id='viewCollectionItemsButton']")) > 0:
             return True
         return False
 
@@ -61,12 +75,27 @@ class MacysScraper(Scraper):
     ############### CONTAINER : NONE
     ##########################################
 
+    def _canonical_link(self):
+        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+
+        return canonical_link
+
     def _url(self):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0].strip()
+        product_id = None
+
+        try:
+            product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
+        except:
+            product_id = self.tree_html.xpath("//input[@id='productId']/@value")[0]
+
         return product_id
+
+    def _site_id(self):
+        site_id = self.tree_html.xpath("//input[@id='productId']/@value")[0].strip()
+        return site_id
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -84,7 +113,15 @@ class MacysScraper(Scraper):
         return None
 
     def _upc(self):
-        return None
+        upc = None
+        variants = self._variants()
+
+        if not variants:
+            upc = re.findall(r'"upc": "(.*?)",', html.tostring(self.tree_html), re.DOTALL)[0]
+        elif len(variants) == 1:
+            upc = variants[0]["upc"]
+
+        return upc
 
     def _features(self):
         if self.feature_count is not None:
@@ -111,10 +148,7 @@ class MacysScraper(Scraper):
         return None
 
     def _description(self):
-        description = self._description_helper()
-        if description is None or len(description) < 1:
-            return self._long_description_helper()
-        return description
+        return self.tree_html.xpath("//div[@id='longDescription']")[0].text_content()
 
     def _description_helper(self):
         description = ""
@@ -123,21 +157,33 @@ class MacysScraper(Scraper):
         if len(rows) > 0:
             description += "\n".join(rows)
         if len(description) < 1:
-            return None
+            description = ""
+            rows = self.tree_html.xpath("//div[@id='productDetails']//text()")
+            rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+            if len(rows) > 0:
+                description += "\n".join(rows)
+            if len(description) < 1:
+                return None
+            if description.startswith("Product Details"):
+                description = description.replace("Product Details\n", "")
         return description
 
     def _long_description(self):
+        '''
         description = self._description_helper()
         if description is None or len(description) < 1:
             return None
         return self._long_description_helper()
+        '''
+        return html.tostring(self.tree_html.xpath("//ul[@id='bullets']")[0])
 
     def _long_description_helper(self):
         script = " ".join(self.tree_html.xpath("//script//text()"))
         link = re.findall(r"MACYS\.adLinkPopUp\.definePopup\('(.*?)'", script, re.DOTALL)
         try:
             link = "http://www1.macys.com/shop/media/popup/?popupFileName=%s" % link[0]
-            contents = urllib.urlopen(link).read()
+            req = urllib2.Request(link, headers={'User-Agent' : "Magic Browser"})
+            contents = urllib2.urlopen(req).read()
             # document.location.replace('
             tree = html.fromstring(contents)
             rows = tree.xpath("//text()")
@@ -152,6 +198,9 @@ class MacysScraper(Scraper):
         except IndexError:
             pass
 
+    def _variants(self):
+        return self.mv._variants()
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -160,14 +209,66 @@ class MacysScraper(Scraper):
         return None
 
     def _image_urls(self):
+        image_url_primary = []
+        image_url_tmp = re.findall(r"MACYS.pdp.primaryImages\[" + self._product_id() + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        if len(image_url_tmp) > 0:
+            image_urls = image_url_tmp[0].split(",")
+            for r in image_urls:
+                img = r.split(":")
+                if len(img) >= 2:
+                    image_url_primary.append("http://slimages.macys.com/is/image/MCY/products/%s" % img[1].replace('"','').replace("'",""))
+
+        image_url_additional = []
+        image_url_tmp = re.findall(r"MACYS.pdp.additionalImages\[" + self._product_id() + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        if len(image_url_tmp) > 0:
+            image_urls = image_url_tmp[0].split('",')
+            for r in image_urls:
+                img = r.split(":")
+                if len(img) >= 2:
+                    imgs = img[1].replace('"','').replace("'","").split(",")
+                    for r in imgs:
+                        image_url_additional.append("http://slimages.macys.com/is/image/MCY/products/%s" % r)
+
+        image_url_imageZoomer = []
+        image_url_tmp = re.findall(r"MACYS.pdp.imageZoomer = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        if len(image_url_tmp) > 0:
+            m = re.findall(r"imgList: '(.*?)'", image_url_tmp[0], re.DOTALL)
+            if len(m) > 0:
+                image_urls = m[0].split(',')
+                for r in image_urls:
+                    image_url_imageZoomer.append("http://slimages.macys.com/is/image/MCY/products/%s" % r)
+
         image_url = self.tree_html.xpath("//div[@id='imageZoomer']//div[contains(@class,'main-view-holder')]/img/@src")
         image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
         if len(image_url) < 1:
-            return None
-        return image_url
+            image_url = self.tree_html.xpath("//div[@class='productImageSection']//img/@src")
+
+        if len(image_url) == 1:
+            try:
+                if self._no_image(image_url[0]):
+                    return None
+            except Exception, e:
+                print "WARNING: ", e.message
+
+        image_url = image_url + image_url_primary + image_url_imageZoomer + image_url_additional
+        image_url2 = []
+        for r in image_url:
+            try:
+                image_url_tmp = r.split("?")[0]
+            except:
+                image_url_tmp = r
+            image_url2.append(image_url_tmp)
+        image_url2 = list(set(image_url2))
+
+        if self._site_id() == '1776509':
+            return image_url2[1:]
+
+        return image_url2
 
     def _image_count(self):
         image_urls = self._image_urls()
+        if image_urls is None:
+            return 0
         return len(image_urls)
 
     def _video_urls(self):
@@ -175,11 +276,15 @@ class MacysScraper(Scraper):
             return self.video_urls
         self.video_count = 0
         video_urls = []
+        rows = re.findall(r'videoid: "(.*?)"', " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        video_urls = rows
         if len(video_urls) < 1:
             return None
-        self.video_urls = video_urls
+
+        url_template = "http://c.brightcove.com/services/viewer/federated_f9?&width=328&height=412&flashID={}_v&bgcolor=%23FFFFFF&playerID=34437976001&publisherID=24953835001&%40videoPlayer=ref%3A{}&isVid=true&isUI=true&wmode=transparent"
+        self.video_urls = [url_template.format(r, r) for r in video_urls]
         self.video_count = len(self.video_urls)
-        return video_urls
+        return self.video_urls
 
     def _video_count(self):
         if self.video_count is None:
@@ -201,18 +306,6 @@ class MacysScraper(Scraper):
             self._pdf_urls()
         return self.pdf_count
 
-    def _webcollage(self):
-        # http://content.webcollage.net/pg-estore/power-page?ird=true&channel-product-id=037000864868
-        url = "http://content.webcollage.net/quill/smart-button?ignore-jsp=true&ird=true&channel-product-id=%s" % self._product_id()
-        html = urllib.urlopen(url).read()
-        m = re.findall(r'_wccontent = (\{.*?\});', html, re.DOTALL)
-        try:
-            if ".webcollage.net" in m[0]:
-                return 1
-        except IndexError:
-            pass
-        return 0
-
     # extract htags (h1, h2) from its product product page tree
     def _htags(self):
         htags_dict = {}
@@ -231,7 +324,8 @@ class MacysScraper(Scraper):
     #populate the reviews_tree variable for use by other functions
     def _load_reviews(self):
         try:
-            if not self.max_score or not self.min_score:
+            if not self.is_review_checked:
+                self.is_review_checked = True
                 # http://macys.ugc.bazaarvoice.com/7129aa/694761/reviews.djs?format=embeddedhtml
                 url = "http://macys.ugc.bazaarvoice.com/7129aa/%s/reviews.djs?format=embeddedhtml" % self._product_id()
                 contents = urllib.urlopen(url).read()
@@ -257,8 +351,11 @@ class MacysScraper(Scraper):
                     self.reviews.append([score, int(review)])
                     score += 1
 
+                if not self.reviews:
+                    self.reviews = None
                 # self.reviews_tree = html.fromstring(contents)
         except:
+            self.reviews = None
             pass
 
     def _average_review(self):
@@ -268,11 +365,15 @@ class MacysScraper(Scraper):
         for review in self.reviews:
             count += review[1]
             score += review[0]*review[1]
-        return round(1.0*score/count, 2)
+        return round(1.0*score/count, 1)
 
     def _review_count(self):
         self._load_reviews()
         count = 0
+
+        if not self.reviews:
+            return 0
+
         for review in self.reviews:
             count += review[1]
         return count
@@ -389,6 +490,7 @@ class MacysScraper(Scraper):
         # CONTAINER : NONE
         "url" : _url, \
         "product_id" : _product_id, \
+        "site_id" : _site_id, \
 
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
@@ -398,16 +500,17 @@ class MacysScraper(Scraper):
         "feature_count" : _feature_count, \
         "description" : _description, \
         "model" : _model, \
+        "upc" : _upc, \
         "long_description" : _long_description, \
-
+        "variants" : _variants, \
         # CONTAINER : PAGE_ATTRIBUTES
         "pdf_urls" : _pdf_urls, \
         "pdf_count" : _pdf_count, \
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \
-        "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
+        "canonical_link": _canonical_link,
         "mobile_image_same" : _mobile_image_same, \
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
@@ -444,9 +547,6 @@ class MacysScraper(Scraper):
         "max_review" : _max_review, \
         "min_review" : _min_review, \
         "reviews" : _reviews, \
-
-        # CONTAINER : PAGE_ATTRIBUTES
-        "webcollage" : _webcollage, \
     }
 
 

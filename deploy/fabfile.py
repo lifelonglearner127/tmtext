@@ -65,7 +65,7 @@ REPO_BASE_PATH = '~/repos/'
 REPO_URL = 'git@bitbucket.org:dfeinleib/tmtext.git'
 
 LOCAL_CERT_BASE_PATH = os.getenv("HOME") + '/tmp/web_runner_ssh_keys'
-CERT_REPO_URL = 'git@bitbucket.org:dfeinleib/tmtext-ssh.git'
+CERT_REPO_URL = 'git@bitbucket.org:dfeinleib/tmtext.git'
 LOCAL_CERT_PATH = LOCAL_CERT_BASE_PATH + os.sep + re.search(
                     '.+\/([^\s]+?)\.git$', CERT_REPO_URL).group(1)
 
@@ -217,6 +217,7 @@ def setup_packages():
     sudo('apt-get update --fix-missing')
     cuisine.package_ensure('python-software-properties')
     # TODO: verify if the repo must be added
+    cuisine.package_ensure('tesseract-ocr')
     #cuisine.repository_ensure_apt('ppa:fkrull/deadsnakes')
     cuisine.package_ensure('python3.4 python3.4-dev')
     cuisine.package_ensure('python-dev')
@@ -227,7 +228,10 @@ def setup_packages():
     cuisine.package_ensure('git')
     cuisine.package_ensure('tmux')
     cuisine.package_ensure('mc htop iotop nano')  # just for convenience
+    cuisine.package_ensure('python-psycopg2 libpq-dev python-dev')
     sudo('pip install virtualenv --upgrade')
+    sudo('pip install pytesseract')
+    sudo('pip install tldextract')
 
     env.user, env.password, env.key_filename = \
         orig_user, orig_passw, orig_cert
@@ -270,9 +274,27 @@ def _setup_virtual_env_scrapyd():
         run('virtualenv -p python2.7 ' + venv_scrapyd)
 
     with virtualenv(VENV_SCRAPYD):
-        run('pip install scrapyd')
+        run('pip install scrapy==0.24.4')
+        run('pip install scrapyd==1.0.1')
+        run('pip install service_identity')
         run('pip install simplejson')
         run('pip install requests')
+        run('pip install Pillow')
+        run('pip install pytesseract')
+        run('pip install boto')
+        run('pip install django')
+        run('pip install django-ses')
+        run('pip install django_adminplus')
+        run('pip install lxml')
+        run('pip install tldextract')
+        run('pip install s3peat')
+        run('pip install workerpool')
+        run('pip install boto')
+        run('pip install s3peat')
+        run('pip install sqlalchemy')
+        run('pip install psycopg2')
+        run('pip install hjson')
+        run('pip install pyyaml')
 
     _setup_simmetrica_monitoring()
 
@@ -305,6 +327,13 @@ def _setup_virtual_env_web_runner():
     with virtualenv(VENV_WEB_RUNNER):
         run('pip install wheel')
         run('pip install Paste')
+        run('pip install flask')
+        run('pip install lxml')
+        run('pip install s3peat')
+        run('pip install workerpool')
+        run('pip install boto')
+        run('pip install s3peat')
+        run('pip install workerpool')
 
 
 def _setup_virtual_env_web_runner_web():
@@ -315,6 +344,7 @@ def _setup_virtual_env_web_runner_web():
     with virtualenv(VENV_WEB_RUNNER_WEB):
         run('pip install django')
         run('pip install requests')
+        run('pip install lxml')
 
 
 def setup_virtual_env(scrapyd=True, web_runner=True, web_runner_web=True):
@@ -610,7 +640,7 @@ def test_scrapy():
         'water', 'guitar', 'gibson', 'toy', 'books', 'laptop', 'smartphone'
     )
     cmd = ("curl --verbose http://localhost:6543/ranking_data/"
-           "  -d 'site=amazon;searchterms_str=%s;quantity=100"
+           "  -d 'site=amazon;searchterms_str=%s;quantity=10"
            ";group_name=test'")
     run(cmd % random.choice(search_terms))
 
@@ -642,6 +672,20 @@ def fix_captchas():
 
     with virtualenv(VENV_SCRAPYD):
         run('pip install numpy')
+
+
+def tmp_mass_execute():
+    orig_user, orig_passw, orig_cert = env.user, env.password, env.key_filename
+    env.user, env.password, env.key_filename = \
+        SSH_SUDO_USER, SSH_SUDO_PASSWORD, SSH_SUDO_CERT
+    env.warn_only = True
+    sudo('pkill -9 -f scrapyd')
+
+    run('sudo chmod 777 -R /scraper_data')
+    env.warn_only = False
+    env.user, env.password, env.key_filename = \
+        orig_user, orig_passw, orig_cert
+
 
 
 # vim: set expandtab ts=4 sw=4:

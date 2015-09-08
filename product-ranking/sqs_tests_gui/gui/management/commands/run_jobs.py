@@ -15,12 +15,12 @@ from add_task_to_sqs import put_msg_to_sqs
 
 
 class Command(BaseCommand):
-    help = ('Takes up to 10 oldest newly created Jobs'
+    help = ('Takes up to 50 oldest newly created Jobs'
             ' and pushes them into the test SQS queue')
 
     def handle(self, *args, **options):
         jobs = Job.objects.filter(status='created').order_by(
-            'created').distinct()[0:10]
+            'created').distinct()[0:50]
         for job in jobs:
             msg = {
                 'task_id': int(job.task_id),
@@ -30,17 +30,40 @@ class Command(BaseCommand):
             }
             if not job.quantity:
                 del msg['cmd_args']['quantity']
+            if job.save_s3_cache:
+                msg['cmd_args']['save_s3_cache'] = '1'
+            #elif job.load_s3_cache:
+            #    msg['cmd_args']['load_s3_cache'] \
+            #        = job.load_s3_cache.strftime('%Y-%m-%d')
             if not msg['cmd_args']:
                 del msg['cmd_args']
             if job.search_term:
                 msg['searchterms_str'] = job.search_term
             elif job.product_url:
                 msg['url'] = job.product_url
+            elif job.product_urls:
+                msg['urls'] = job.product_urls
             if job.with_best_seller_ranking:
                 msg['with_best_seller_ranking'] = True
             if job.branch_name:
                 msg['branch_name'] = job.branch_name
-            put_msg_to_sqs(msg)
+            if job.extra_cmd_args and job.extra_cmd_args.strip():
+                for _arg in job.extra_cmd_args.split('\n'):
+                    extra_arg_name, extra_arg_value = _arg.split('=')
+                    extra_arg_name = extra_arg_name.strip()
+                    extra_arg_value = extra_arg_value.strip()
+                    if not 'cmd_args' in msg:
+                        msg['cmd_args'] = {}
+                    msg['cmd_args'][extra_arg_name] = extra_arg_value
+            if job.sc_ch_mode:
+                if ('cmd_args' in msg
+                        and 'content_health_mode' in msg['cmd_args']):
+                    pass  # the SC+CH mode has already been activated
+                else:  # add the cmd arg
+                    if not 'cmd_args' in msg:
+                        msg['cmd_args'] = {}
+                    msg['cmd_args']['content_health_mode'] = 'True'
+            put_msg_to_sqs(msg, job.get_input_queue())
             job.status = 'pushed into sqs'
             job.save()
 

@@ -9,7 +9,9 @@ import os.path
 import time
 import thread
 import urllib
+import urllib2
 import bz2
+import datetime
 
 import enum
 import pyramid.httpexceptions as exc
@@ -17,11 +19,50 @@ import requests
 import requests.exceptions
 import repoze.lru
 
-from .util import string_from_local2utc as local2utc
-from .util import file_is_bzip2
+
+def is_plain_json_list(fname):
+    with open(fname, 'r') as fh:
+        cont = fh.read(1024)
+    cont = cont.strip()
+    if not cont:
+        return True  # treat empty files as json lists
+    return cont[0] == '{'
+
+
+def local2utc(string, format='%Y-%m-%d %H:%M:%S.%f'):
+    """Convert a string with localtime to UTC"""
+    try:
+        offset = datetime.datetime.utcnow() - datetime.datetime.now()
+        local_datetime = datetime.datetime.strptime(string, format)
+        result_utc_datetime = local_datetime + offset
+        ret = result_utc_datetime.strftime(format)
+    except ValueError:
+        ret = None
+
+    return ret
+
 
 
 LOG = logging.getLogger(__name__)
+
+
+def unbzip(f1, f2):
+    try:
+        f = bz2.BZ2File(f1)
+        cont = f.read()
+    except:
+        return False
+    f.close()
+    with open(f2, 'wb') as fh:
+        fh.write(cont)
+    return True
+
+
+def fix_double_bzip_in_file(fname):
+    if not is_plain_json_list(fname):
+        result1 = unbzip(fname, fname)
+        while result1:
+            result1 = unbzip(fname, fname)
 
 
 class ScrapydJobException(Exception):
@@ -40,6 +81,14 @@ class ScrapydJobStartError(ScrapydJobException):
         super(ScrapydJobException, self).__init__(message)
 
         self.status = status
+
+
+def _post_params_to_sqs_tests_gui(params):
+    url = 'http://52.1.192.8/add-job/'  # TODO: change to hostname
+    data = urllib.urlencode(params)
+    req = urllib2.Request(url, data)
+    response = urllib2.urlopen(req, timeout=7)
+    _ = response.read()
 
 
 class ScrapydJobHelper(object):
@@ -73,6 +122,15 @@ class ScrapydJobHelper(object):
             project_name = self.config.project_name.format(**params)
         except KeyError as e:
             raise ScrapydJobException("Parameter %s is required." % e)
+
+        # Add an appropriate SQS job
+        # TODO: removeme after production switches to SQS!
+        try:
+            _post_params_to_sqs_tests_gui(params)
+        except Exception as e:
+            LOG.warn(
+                "Scrapyd failed to post params. " + str(e))
+            pass  # just ignore for now
 
         return self.scrapyd.schedule_job(project_name, spider_name, params)
 
@@ -124,8 +182,9 @@ class ScrapydJobHelper(object):
     def retrieve_job_data(self, jobid):
         """Returns a file like object with the job's result."""
         job_output_file = self.retrieve_job_data_fn(jobid)
+        fix_double_bzip_in_file(job_output_file)
         try:
-            if file_is_bzip2(job_output_file):
+            if not is_plain_json_list(job_output_file):
                 return bz2.BZ2File(job_output_file)
             else:
                 return open(job_output_file)

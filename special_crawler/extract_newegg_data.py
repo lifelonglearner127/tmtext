@@ -20,6 +20,7 @@ class NeweggScraper(Scraper):
         m = re.match(r"^http://www\.newegg\.com/product/product(.*)", self.product_page_url.lower())
         self.image_urls = None
         self.prod_help = None
+        self.wc_content = None
         return (not not m)
 
     def not_a_product(self):
@@ -94,9 +95,9 @@ class NeweggScraper(Scraper):
             cells=[]
             for row in rws:
                 rc = row.xpath(".//dt//text()")
-                vc = row.xpath(".//dd//text()")
+                vc = row.xpath(".//dd")
                 if len(rc) > 0 and len(vc) > 0:
-                    cells.append(rc[0] + "," + vc[0])
+                    cells.append(rc[0] + "," + vc[0].text_content())
             if len(cells)>0:
                 return cells
         return None
@@ -121,7 +122,11 @@ class NeweggScraper(Scraper):
 
 
     def _long_description(self):
+        item_desc = self.tree_html.xpath('//div[@class="itemDesc"]')
+        if len(item_desc) > 0:
+            return item_desc[0].text_content().strip()
         all_scripts = self.tree_html.xpath('//script[@type="text/javascript"]//text()')
+        p = re.compile(r'<.*?>')
         st = 0
         for s in all_scripts:
             stword = 'overview-content'
@@ -134,6 +139,33 @@ class NeweggScraper(Scraper):
                 if st < e:
                     description = s[st:e]
                     return description
+            else:
+                stword = "var overviewData"
+                st = s.find(stword)
+                if st > 0:
+                    st = s.find("itemDesc",st)
+                    if st > 0:
+                        st = s.find("itemDesc",st+15)
+                        if st > 0 :
+                            fn = s.find("<\/div>",st)
+                            if fn > st:
+                                res = s[st+11:fn].replace("\\u000d\\u000a","")
+                                res =  p.sub(' ',res.strip())
+                               	res = re.sub(r'\s+', ' ', res)
+                                return  p.sub(' ',res).strip()
+        wc = self._wc_content()
+        ld = ""
+        st = 0
+        while 1:
+            st = wc.find("wc-rich-content-description",st)
+            if st > 0 :
+                fn = wc.find("<\/div>",st)
+                if fn > st+30:
+                    ld += wc[st+30:fn]
+                    st = fn
+            else:
+                break
+        if len(ld)>3 : return p.sub('',ld)
         return None
 
 
@@ -168,7 +200,7 @@ class NeweggScraper(Scraper):
                 tree = html.fromstring(contents)
         img_list = []
         ii=0
-        tree = html.fromstring(contents)
+ #       tree = html.fromstring(contents)
         image_url_m = self._image_urls(tree)
         image_url_p = self._image_urls()
         return image_url_p == image_url_m
@@ -191,7 +223,7 @@ class NeweggScraper(Scraper):
         image_url = None
         if type(items) is list:
             for row in items:
-                if row.get('itemNumber','') == id:
+                if len(items) == 1 or row.get('itemNumber','') == id:
                     if row.has_key('normalImageInfo') and type(row['normalImageInfo']) is dict:
                         iml = row['normalImageInfo'].get('imageNameList','').split(",")
                         image_url = [sbaseurl + img for img in iml]
@@ -273,25 +305,74 @@ class NeweggScraper(Scraper):
         return None
 
     def _video_count(self):
-        if self._video_urls()==None: return 0
-        return len(self._video_urls())
+        vd = self._video_urls()
+        if vd != None and len(vd) > 0: return len(vd)
+        if self._wc_video() :
+            return 1
+        return 0
+
 
     # return one element containing the PDF
     def _pdf_urls(self):
         pdf = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
         if len(pdf)>0 :
+            pdf = list(set(pdf))
             return [p for p in pdf if "Cancellation" not in p]
         return None
 
     def _pdf_count(self):
         urls = self._pdf_urls()
+        pc = 0
         if urls:
-            return len(urls)
-        return 0
+            pc = len(urls)
+        if pc == 0:
+            html = self._wc_content()
+            pc += html.count(".pdf?")
+        return pc
+
 
     def _webcollage(self):
-        wbc = self.tree_html.xpath("//img[contains(@src,'webcollage.net')]")
-        if len(wbc) > 0 : return 1
+        html = self._wc_content()
+        m = re.findall(r'_wccontent = (\{.*?\});', html, re.DOTALL)
+        try:
+            if ".webcollage.net" in m[0]:
+                return 1
+        except IndexError:
+            pass
+        return 0
+
+    def _wc_content(self):
+        if self.wc_content == None:
+            url = "http://content.webcollage.net/newegg/power-page?ird=true&channel-product-id=%s" % self._site_id()
+            html = urllib.urlopen(url).read()
+            if "_wccontent" in html:
+                self.wc_content = html
+                return html
+            else:
+                self.wc_content = ""
+                return ""
+        return self.wc_content
+
+
+    def _wc_360(self):
+        html = self._wc_content()
+        if "wc-360" in html: return 1
+        return 0
+
+
+    def _wc_pdf(self):
+        html = self._wc_content()
+        if ".pdf" in html: return 1
+        return 0
+
+    def _wc_video(self):
+        html = self._wc_content()
+        if ".mp4" in html: return 1
+        return 0
+
+    def _wc_emc(self):
+        html = self._wc_content()
+        if "wc-aplus" in html: return 1
         return 0
 
     # extract htags (h1, h2) from its product product page tree
@@ -464,7 +545,7 @@ class NeweggScraper(Scraper):
         if self.prod_help==None:
             self.prod_help = self._product_helper()
         seller = self.prod_help.get('seller','')
-        if len(seller) > 0 : return 1
+        if len(seller) > 0 and seller != "Newegg": return 1
         return 0
 
 
@@ -472,7 +553,7 @@ class NeweggScraper(Scraper):
         if self.prod_help==None:
             self.prod_help = self._product_helper()
         seller = self.prod_help.get('seller','')
-        if seller != "":
+        if seller != "" and seller != "Newegg":
             return seller.split(',')
         return None
 
@@ -571,6 +652,10 @@ class NeweggScraper(Scraper):
         "video_urls" : _video_urls, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
+        "wc_emc" : _wc_emc, \
+        "wc_360" : _wc_360, \
+        "wc_pdf" : _wc_pdf, \
+        "wc_video" : _wc_video, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \

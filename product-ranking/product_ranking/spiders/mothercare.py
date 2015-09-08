@@ -1,5 +1,6 @@
 import json
 import re
+import urllib
 from urllib import unquote, urlencode
 from urlparse import urljoin
 
@@ -29,9 +30,9 @@ class MothercareProductsSpider(ProductsSpider):
 
     allowed_domains = [
         'mothercare.com',
-        'richrelevance.com',
-        'reevoo.com',
-        'mark.reevoo.com'
+        #'richrelevance.com',
+        #'reevoo.com',
+        #'mark.reevoo.com'
     ]
 
     SEARCH_URL = "http://www.mothercare.com/on/demandware.store" \
@@ -74,6 +75,15 @@ class MothercareProductsSpider(ProductsSpider):
 
     REVOO_URL = "http://mark.reevoo.com/reevoomark/en-GB/product?sku={sku}" \
                 "&trkref=MOT"
+
+    def __init__(self, *args, **kwargs):
+        super(MothercareProductsSpider, self).__init__(*args, **kwargs)
+        self.allowed_domains.append('richrelevance.com')
+        self.allowed_domains.append('reevoo.com')
+        self.allowed_domains.append('mark.reevoo.com')
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
 
     def _total_matches_from_html(self, response):
         total = response.css('.resultshits::text').re('of ([\d ,]+)')
@@ -121,7 +131,12 @@ class MothercareProductsSpider(ProductsSpider):
         cond_set(product, 'model',
                  response.css('[itemprop=model]::text').extract())
 
-        price = product.get('price')
+
+        price = product.get("price")
+        if not re.findall(u'\xa3 *\d[\d, .]*', price):
+            price = response.xpath("//ul[contains(@class, 'pricing')]/li[last()]/span/text()").extract()
+            if price:
+                price = price[0].strip()
         price = re.findall(u'\xa3 *\d[\d, .]*', price)
         if price:
             price = re.sub(u'[\xa3, ]+', '', price[0])
@@ -141,13 +156,21 @@ class MothercareProductsSpider(ProductsSpider):
             "setSessionId\('([^']+)'\);", response.body).group(1)
         product_id = re.search(
             "R3_ITEM\.setId\('([^']+)'\);", response.body).group(1)
-        cs = re.search("addCategory\('([^']+)', '([^']+)'", response.body)
-        cs = '%s:%s' % (cs.group(1), cs.group(2))
-        chi = re.search("addCategoryHintId\('([^']+)'\);",
-                        response.body).group(1)
-        pref = 'http://www.mothercare.com/on/demandware.store' \
-               '/Sites-MCENGB-Site/default/Search-Show?q={search_term}' \
-            .format(search_term=response.meta['search_term'])
+        try:
+            cs = re.search("addCategory\('([^']+)', '([^']+)'", response.body)
+            cs = '%s:%s' % (cs.group(1), cs.group(2))
+            chi = re.search("addCategoryHintId\('([^']+)'\);",
+                            response.body).group(1)
+        except AttributeError:
+            cs = ""
+            chi = ""
+
+        pref = ""
+        if 'search_term' in response.meta:
+            pref = 'http://www.mothercare.com/on/demandware.store' \
+                   '/Sites-MCENGB-Site/default/Search-Show?q={search_term}' \
+                .format(search_term=response.meta['search_term'])
+        
         data = {
             'a': api_key,
             'chi': '|%s' % chi,
@@ -216,7 +239,7 @@ class MothercareProductsSpider(ProductsSpider):
             if total:
                 response.meta['product']['buyer_reviews'] = res
             else:
-                return ZERO_REVIEWS_VALUE
+                response.meta['product']['buyer_reviews'] = ZERO_REVIEWS_VALUE
         else:
             sku = response.css('p.productid::attr(class)').re('p_(\d+)')
             sku = sku[0] if sku else re.search('.+/([^,]+)', response.url).group(1)
@@ -241,6 +264,7 @@ class MothercareProductsSpider(ProductsSpider):
         try:
             avg, total = self._scrape_review_summary(response)
         except ValueError:
+            response.meta['product']['buyer_reviews'] = ZERO_REVIEWS_VALUE
             return
         if not total:
             response.meta['product']['buyer_reviews'] = ZERO_REVIEWS_VALUE

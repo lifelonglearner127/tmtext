@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 import os
 import itertools
 
+
 setup(
     name='product-ranking',
     version='1.0',
@@ -14,7 +15,9 @@ setup(
         for root, _, files in itertools.chain(
             os.walk('train_captchas_data'),
             os.walk('product_ranking/data'),
-            os.walk('monitoring')
+            os.walk('monitoring'),
+            os.walk('../product_ranking_auto_tests'),
+            os.walk('spiders_shared_code')  # TODO: test!
         )
     ],
     install_requires=[

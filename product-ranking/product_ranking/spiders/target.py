@@ -18,6 +18,8 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
+from spiders_shared_code.target_variants import TargetVariants
+
 
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -122,14 +124,34 @@ class TargetProductSpider(BaseProductsSpider):
         ).extract()
         prod = response.meta['product']
 
+        tv = TargetVariants()
+        tv.setupSC(response)
+        prod['variants'] = tv._variants()
+
         price = is_empty(response.xpath(
             '//p[contains(@class, "price")]/span/text()').extract())
+        if not price:
+            price = is_empty(response.xpath(
+                '//*[contains(@class, "price")]'
+                '/*[contains(@itemprop, "price")]/text()'
+            ).extract())
         if price:
             price = is_empty(re.findall("\d+\.{0,1}\d+", price))
-            prod['price'] = Price(
-                price=price.replace('$', '').replace(',', '').strip(),
-                priceCurrency='USD'
-            )
+            if price:
+                prod['price'] = Price(
+                    price=price.replace('$', '').replace(',', '').strip(),
+                    priceCurrency='USD'
+                )
+
+        special_pricing = is_empty(response.xpath(
+            '//li[contains(@class, "eyebrow")]//text()').extract())
+        if special_pricing == "TEMP PRICE CUT":
+            prod['special_pricing'] = 1
+        else:
+            prod['special_pricing'] = 0
+
+        if 'url' not in prod:
+            prod['url'] = response.url
 
         old_url = prod['url'].rsplit('#', 1)[0]
         prod['url'] = None
@@ -143,7 +165,8 @@ class TargetProductSpider(BaseProductsSpider):
         # fiME: brand=None
         if 'brand' in prod and len(prod['brand']) == 0:
             prod['brand'] = 'No brand'
-        variants = self._extract_variants(response, prod)
+        if 'brand' not in prod:
+            prod['brand'] = 'No brand for single result'    
         payload = self._extract_rr_parms(response)
 
         collection_items = response.xpath('//div[@id="CollectionItems"]//h3/a')
@@ -155,7 +178,6 @@ class TargetProductSpider(BaseProductsSpider):
             rurls = self._extract_recomm_urls(response)
             if rurls:
                 new_meta = response.meta.copy()
-                new_meta['variants'] = variants
                 new_meta['rurls'] = rurls[1:]
                 new_meta['canonical_url'] = canonical_url
                 return Request(
@@ -166,7 +188,6 @@ class TargetProductSpider(BaseProductsSpider):
         if self.CALL_RR:
             if payload:
                 new_meta = response.meta.copy()
-                new_meta['variants'] = variants
                 new_meta['canonical_url'] = canonical_url
                 rr_url = urlparse.urljoin(self.SCRIPT_URL,
                                           "?" + urllib.urlencode(payload))
@@ -179,9 +200,6 @@ class TargetProductSpider(BaseProductsSpider):
 
         if self.POPULATE_REVIEWS:
             return self._request_reviews(response, prod, canonical_url)
-        elif self.POPULATE_VARIANTS:
-            if variants:
-                return self._populate_variants(response, prod, variants)
         else:
             return prod
 
@@ -216,51 +234,6 @@ class TargetProductSpider(BaseProductsSpider):
         if image:
             image = image.replace("_100x100.", ".")
             product['image_url'] = image
-
-    def _extract_variants(self, response, product):
-        js = response.xpath(
-            "//script[contains(text(),'Target.globals.refreshItems = ')]"
-            "/text()").re('.*Target.globals.refreshItems = (.*)')
-        variants = []
-        if js:
-            try:
-                jsdata = json.loads(js[0])
-            except ValueError:
-                jsdata = {}
-            for item in jsdata:
-                try:
-                    itype = item['Attributes']['catent_type']
-                    try:
-                        color = item['Attributes']['preselect']['var1']
-                    except KeyError:
-                        color = ""
-                    price = item['Attributes']['price']['formattedOfferPrice']
-                    if not price:
-                        price = item['Attributes']['price']['offerPriceMin']
-                    code = item['Attributes']['partNumber']
-                    variants.append((itype, color, price, code))
-                except KeyError:
-                    pass
-        return variants
-
-    def _populate_variants(self, response, product, variants):
-        product_list = []
-        for itype, color, price, code in variants:
-            if itype == 'ITEM':
-                new_product = product.copy()
-                new_product['price'] = price
-                if not isinstance(new_product, Price):
-                    price = new_product['price'].replace(
-                        '$', '').replace(',', '').strip()
-                    price = is_empty(re.findall("\d+\.{0,1}\d+", price), 0)
-                    new_product['price'] = Price(
-                        price=price,
-                        priceCurrency='USD'
-                    )
-                new_product['model'] = color
-                new_product['upc'] = code
-                product_list.append(new_product)
-        return product_list
 
     def _extract_recomm_urls(self, response):
         script = response.xpath(
@@ -398,13 +371,9 @@ class TargetProductSpider(BaseProductsSpider):
                 self._parse_recomm_json,
                 meta=new_meta)
 
-        variants = response.meta.get('variants')
-
         if self.POPULATE_REVIEWS:
             canonical_url = response.meta['canonical_url']
             return self._request_reviews(response, product, canonical_url)
-        elif variants and self.POPULATE_VARIANTS:
-            return self._populate_variants(response, product, variants)
         else:
             return product
 
@@ -453,12 +422,9 @@ class TargetProductSpider(BaseProductsSpider):
 
             product['related_products'] = {"recommended": ritems,
                                            "buyers_also_bought": obitems}
-        variants = response.meta.get('variants')
         if self.POPULATE_REVIEWS:
             canonical_url = response.meta['canonical_url']
             return self._request_reviews(response, product, canonical_url)
-        elif variants and self.POPULATE_VARIANTS:
-            return self._populate_variants(response, product, variants)
         else:
             return product
 
@@ -484,6 +450,8 @@ class TargetProductSpider(BaseProductsSpider):
                 "/div/p/text()").extract()
             if isonline:
                 isonline = isonline[0].strip()
+
+
             # TODO: isonline: u'out of stock online'
             # ==  'out of stock' & 'online'
             price = ci.xpath(
@@ -524,7 +492,7 @@ class TargetProductSpider(BaseProductsSpider):
                     price = None
                 else:
                     amount = is_empty(re.findall(
-                        '\d+\.{0,1}\d+', priceattr['amount']
+                        '\d+\.{0, 1}\d+', priceattr['amount']
                     ))                   
                     price = Price(priceCurrency=currency, price=amount)
                 cond_set_value(product, 'price', price)
@@ -552,6 +520,7 @@ class TargetProductSpider(BaseProductsSpider):
                     return
             self.log("Try again after 1-3 min.", DEBUG)
             return
+
         bi_list = self._extract_links_with_brand(containers)
 
         if not bi_list:
@@ -570,14 +539,18 @@ class TargetProductSpider(BaseProductsSpider):
 
         for brand, link, isonline, price in bi_list:
             product = SiteProductItem(brand=brand)
-            if 'out of stock' in isonline:
+
+            product['is_out_of_stock'] = False
+            if "out of stock" in isonline:
                 product['is_out_of_stock'] = True
+
+            product['is_in_store_only'] = False
             if 'in stores only' in isonline:
                 product['is_in_store_only'] = True
             if price:
                 product['price'] = Price(price=price, priceCurrency='USD')
 
-            # FIXME: 'onilne_only' status
+            # FIXME: 'online_only' status
             # if 'online only' in isonline:
             #     product['???'] = True
             yield link, product
@@ -704,7 +677,7 @@ class TargetProductSpider(BaseProductsSpider):
         return requests
 
     def _scrape_next_results_page_link(self, response):
-        if self.SORTING != None and response.meta.get('search_start'):
+        if self.SORTING is not None and response.meta.get('search_start'):
             return
         if response.meta.get('json'):
             return self._scrape_next_results_page_link_json(response)
@@ -771,10 +744,6 @@ class TargetProductSpider(BaseProductsSpider):
             cond_set_value(product, 'buyer_reviews', reviews)
         else:
             cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
-        variants = response.meta.get('variants')
-        
-        if variants and self.POPULATE_VARIANTS:
-            return self._populate_variants(response, product, variants)
         return product
 
     def _populate_collection_items(self, response, prod):
@@ -788,3 +757,6 @@ class TargetProductSpider(BaseProductsSpider):
             if name and link:
                 rp.append(RelatedProduct(name[0].strip(), link))
         prod['related_products'] = {'recommended': rp}
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)

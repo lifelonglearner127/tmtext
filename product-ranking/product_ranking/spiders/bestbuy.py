@@ -20,7 +20,7 @@ class BestBuyProductSpider(ProductsSpider):
         super(BestBuyProductSpider, self).__init__(*args, **kwargs)
         self.url_formatter.defaults['page'] = 1
 
-    def _total_matches_from_html(self, response):
+    def _scrape_total_matches(self, response):
         matches = response.css('.ui-state-active [data-facet-value=All]::text')
         if not matches:
             return 0
@@ -94,9 +94,11 @@ class BestBuyProductSpider(ProductsSpider):
     def _populate_from_html(self, response, product):
         self._populate_from_schemaorg(response, product)
         title = response.css("#sku-title ::text").extract()[0]
-        brand, _ = re.split(r'\s+-\s+', title, 1)
+        if len(re.split(r'\s+-\s+ | -', title, 1)) > 1:
+            brand, _ = re.split(r'\s+-\s+', title, 1)
+            cond_set(product, 'brand', [brand])
+
         cond_set(product, 'title', [title])
-        cond_set(product, 'brand', [brand])
 
         cond_set(product, 'upc', response.css("#sku-value ::text").extract())
         cond_set(product, 'model',
@@ -111,3 +113,6 @@ class BestBuyProductSpider(ProductsSpider):
         price = price_match.group(1)
         price = ''.join(re.split('[ ,]+', price))
         cond_replace_value(product, 'price', Price('USD', price))
+
+    def _parse_single_product(self, response):
+        return self.parse_product(response)

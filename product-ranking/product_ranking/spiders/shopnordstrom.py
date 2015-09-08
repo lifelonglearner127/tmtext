@@ -28,6 +28,9 @@ class ShopNordstromProductsSpider(BaseProductsSpider):
                                                           site_name=site_name,
                                                           **kwargs)
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def _request_buyer_reviews(self, response):
         upc = response.meta['upc']
         if not upc:
@@ -67,10 +70,6 @@ class ShopNordstromProductsSpider(BaseProductsSpider):
             else:
                 average_rating = 0
 
-            if num_of_reviews > count:
-                average_rating = 0
-                rating_by_star = {}
-
             br = BuyerReviews(
                 num_of_reviews,
                 average_rating,
@@ -85,8 +84,9 @@ class ShopNordstromProductsSpider(BaseProductsSpider):
     def _request_related_products(self, response, item_num):
         if not item_num:
             return self._request_buyer_reviews(response)
-        sessionId = re.findall("sessionId\"\:\s+\"([^\"]*)", response.body)
-        userId = re.findall("id\"\:\s+\"([^\"]*)", response.body)
+        sessionId = re.findall("sessionId\"\:\"([^\"]*)", response.body)
+        userId = re.findall("id\"\:\"([^\"]*)", response.body)
+
         url = "http://recs.richrelevance.com/rrserver/api/rrPlatform/recsForPlacements" \
               "?jcb=process" \
               "&apiClientKey=3c86c35d5f315680" \
@@ -141,7 +141,7 @@ class ShopNordstromProductsSpider(BaseProductsSpider):
         cond_set(product, 'brand', brand)  
 
         upc = re.findall(
-            "\"bazaarvoiceStyleId\"\: \"(\d+)\"",
+            "\"bazaarvoiceStyleId\"\:\"(\d+)\"",
             response.body_as_unicode()
         )
 

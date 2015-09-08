@@ -120,7 +120,8 @@ class Utils():
         # currency is assumed to be the symbol
         # currently only supports pounds
         
-        rates = {'£' : 1.5}
+        rates = {'£' : 1.5, \
+                '$' : 1}
 
         # encode currency if it's not
         try:

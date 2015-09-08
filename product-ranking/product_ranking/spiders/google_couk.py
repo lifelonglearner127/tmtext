@@ -106,6 +106,9 @@ class GoogleProductsSpider(BaseProductsSpider):
         )
         yield request
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product(self, response):
         product = response.meta['product']
 
@@ -114,6 +117,21 @@ class GoogleProductsSpider(BaseProductsSpider):
         ).extract()
         if desc:
             product['description'] = desc[0]
+
+        if not product.get("price"):
+            _prices = response.xpath('.//*[contains(@class, "price")]')
+            price = get_price(_prices)
+            if price:
+                product["price"] = Price(
+                    price=price.replace("\xa3", ""), 
+                    priceCurrency="GBP"
+                )
+
+        if not product.get("title"):
+            title = response.xpath(
+                "//h1[@itemprop='name']/text()").extract()
+            if title:
+                product["title"] = title[0]
 
         cond_set(product, 'upc', get_upc(response))
 
@@ -157,11 +175,13 @@ class GoogleProductsSpider(BaseProductsSpider):
                 link = 'https://www.google.co.uk' + review_link
                 return Request(link, callback=self.handle_reviews_request,
                                meta=response.meta)
+            else:
+                product['buyer_reviews'] = ZERO_REVIEWS_VALUE
 
         # strip GET data from only google urls
         if 'google.co.uk/shopping/product' in product['url']:
             self._populate_buyer_reviews(response, product)
-            pattern = r'(.*)\?'
+            pattern = r'([^\?]*)'
             result = re.findall(pattern, product['url'])
             if result:
                 product['url'] = result[0]
@@ -377,11 +397,13 @@ class GoogleProductsSpider(BaseProductsSpider):
         return link
 
     def _populate_buyer_reviews(self, response, product):
-        del product['buyer_reviews']
+        if "buyer_reviews" in product:
+            del product['buyer_reviews']
         revs = response.xpath(
             '//div[@id="reviews"]/div[@id="reviews"]'
         )
         if not revs:
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
             return
         total = response.xpath(
             '//div[@class="_Ape"]/div/div/div[@class="_wpe"]/text()'
@@ -394,6 +416,8 @@ class GoogleProductsSpider(BaseProductsSpider):
         reviews = response.xpath(
             '//div[@id="reviews"]/div[@id="reviews"]//div[@class="_Joe"]'
             '/div/a/div[@class="_Roe"]/@style'
+            '/div/a/div[@class="_Roe"]/@style |'
+            '//div[@id="reviews"]//a/div[@class="_Roe"]/@style'
         ).extract()
         star = 5
         by_star = {}

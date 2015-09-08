@@ -35,6 +35,9 @@ class CanadiantireProductsSpider(BaseProductsSpider):
             *args, **kwargs)
         self.force_tires = False
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse(self, response):
         redirect_urls = response.meta.get('redirect_urls')
 

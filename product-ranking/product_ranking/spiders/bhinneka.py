@@ -34,6 +34,9 @@ class BhinnekaProductsSpider(ProductsSpider):
 
     MODEL_REGEXP = re.compile('\[(.+?)\] *\Z')
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse(self, response):
         if self.sort_mode and not response.meta.get('sort_forced', False):
             formdata = {"ctl00$content$ddlProductListSort": self.sort_mode,
@@ -71,11 +74,15 @@ class BhinnekaProductsSpider(ProductsSpider):
             if not 'Rp' in product['price']:
                 self.log('Unrecognized currency at %s' % response.url)
             else:
-                product['price'] = Price(
-                    price=product['price'].lower().replace(
-                        'rp', '').replace(',', '').strip(),
-                    priceCurrency='IDR'
-                )
+                price = product["price"].lower().replace(
+                        'rp', '').replace(',', '').strip()
+                if re.match("\d+", price):
+                    product['price'] = Price(
+                        price=price,
+                        priceCurrency='IDR'
+                    )
+                else:
+                    product["price"] = None
         cond_set(product, 'image_url',
                  box.css('.prod-itm-link img::attr(src)').extract())
 

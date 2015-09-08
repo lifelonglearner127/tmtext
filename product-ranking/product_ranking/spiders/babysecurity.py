@@ -23,6 +23,9 @@ class BabySecurityProductSpider(BaseProductsSpider):
         'price': 'price',
     }
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def __init__(self, search_sort='name', direction='asc', *args, **kwargs):
         super(BabySecurityProductSpider, self).__init__(
             url_formatter=FormatterWithDefaults(
