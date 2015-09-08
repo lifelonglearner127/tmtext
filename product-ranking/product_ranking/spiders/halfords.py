@@ -65,6 +65,10 @@ class HalfordsProductSpider(BaseProductsSpider):
         )
         response.meta['product_id'] = product_id
 
+        # Set title
+        title = self._parse_title(response)
+        cond_set_value(product, 'title', title, conv=string.strip)
+
         # Parse buyer reviews
         reqs.append(
             Request(
@@ -78,6 +82,15 @@ class HalfordsProductSpider(BaseProductsSpider):
             return self.send_next_request(reqs, response)
 
         return product
+
+    def _parse_title(self, response):
+        title = is_empty(
+            response.xpath(
+                '//h1[@class="productDisplayTitle"]/text()'
+            ).extract()
+        )
+
+        return title
 
     def send_next_request(self, reqs, response):
         """
