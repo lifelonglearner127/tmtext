@@ -286,9 +286,20 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
 
         return int(total_matches)
 
+    def _scrape_results_per_page(self, response):
+        num = is_empty(
+            response.xpath('//div[@class="limiter"]'
+                           '/select/option[@selected="selected"]'
+                           '/text()').extract(), '0'
+        )
+        num = num.strip()
+
+        return int(num)
+
     def _scrape_product_links(self, response):
         links = response.xpath(
-            '//div[@class="ProductDetails"]/strong/a/@href').extract()
+            '//ul[contains(@class, "products-grid")]/li[@class="item"]'
+            '/h2[@class="product-name"]/a/@href').extract()
         for link in links:
             yield link, SiteProductItem()
 
