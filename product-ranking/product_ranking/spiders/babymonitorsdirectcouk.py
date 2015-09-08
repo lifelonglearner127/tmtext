@@ -70,9 +70,9 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         is_out_of_stock = self._parse_stock_status(response)
         cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
 
-        img_url = response.xpath(
-            '//div[@class="ProductThumbImage"]/a/img/@src').extract()
-        cond_set(product, 'image_url', img_url)
+        # Parse image url
+        image_url = self._parse_image_url(response)
+        cond_set_value(product, 'image_url', image_url)
 
         des = response.xpath(
             '//div[@class="ProductDescriptionContainer"]').extract()
@@ -187,6 +187,15 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         is_out_of_stock = "in stock" not in is_out_of_stock.lower()
 
         return is_out_of_stock
+
+    def _parse_image_url(self, response):
+        image_url = is_empty(
+            response.xpath(
+                '//img[@id="image-main"]/@src'
+            ).extract()
+        )
+
+        return image_url
 
     def _extract_reviews(self, response):
         product = response.meta['product']
