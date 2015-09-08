@@ -2176,14 +2176,13 @@ class WalmartScraper(Scraper):
             if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"]:
                 return 1
 
-            '''
             marketplace_seller_names = self.tree_html.xpath("//div[contains(@data-automation-id, 'product-mp-seller-name')]/text()")
 
             if marketplace_seller_names:
                 for marketplace in marketplace_seller_names:
                     if marketplace.lower().strip() == "walmart.com":
                         return 1
-            '''
+
             return 0
         except:
             pass
