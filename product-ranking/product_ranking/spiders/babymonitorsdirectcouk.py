@@ -2,6 +2,7 @@ from __future__ import division, absolute_import, unicode_literals
 
 import re
 import urllib
+import string
 
 from scrapy.http import Request
 
@@ -55,13 +56,11 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
 
         # Parse title
         title = self._parse_title(response)
-        cond_set_value(product, 'title', title)
+        cond_set_value(product, 'title', title, conv=string.strip)
 
-        brand = response.xpath(
-            '//div[@class="DetailRow"]/div[contains(text(), "Brand:")]'
-            '/../div[@class="Value"]/a/text()'
-        ).extract()
-        cond_set(product, 'brand', brand)
+        # Parse brand
+        brand = self._parse_brand(response)
+        cond_set_value(product, 'brand', brand, conv=string.strip)
 
         price = response.xpath(
             '//em[contains(@class, "ProductPrice")]/text()'
@@ -179,6 +178,17 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             title = title.strip()
 
         return title
+
+    def _parse_brand(self, response):
+        brand = is_empty(
+            response.xpath(
+                '//div[@class="DetailRow"]/div[contains(text(), "Brand:")]'
+                '/../div[@class="Value"]/a/text() |'
+                '//meta[@itemprop="brand"]/@content'
+            ).extract()
+        )
+
+        return brand
 
     def _extract_reviews(self, response):
         product = response.meta['product']
