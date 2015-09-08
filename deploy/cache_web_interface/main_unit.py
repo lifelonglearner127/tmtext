@@ -348,7 +348,7 @@ def get_killer_logs():
         return 'Killer logs not found'
 
 
-@app.route('save_cache', methods=['POST'])
+@app.route('/save_cache', methods=['POST'])
 def save_cache_item():
     """
     save cached sqs item response
@@ -359,7 +359,7 @@ def save_cache_item():
     return make_response('', 200 if result else 404)
 
 
-@app.route('get_cache', methods=['POST'])
+@app.route('/get_cache', methods=['POST'])
 def get_cache_item():
     """
     get item from sqs cache

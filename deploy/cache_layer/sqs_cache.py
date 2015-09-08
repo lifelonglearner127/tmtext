@@ -153,6 +153,7 @@ def load_cache_response_to_sqs(data, sqs_name):
 def generate_task_stamp(task_message):
     site = task_message['site']
     url = task_message.get('url')
+    additional_part = ''
     if url:
         additional_part = 'url:%s' % url
     searchterms_str = task_message.get('searchterms_str')
@@ -162,11 +163,11 @@ def generate_task_stamp(task_message):
         if cmd_args:
             keys = cmd_args.keys()
             keys.sort()
-        for key in keys:
-            additional_part += ':{key}:{value}'.format(
-                key=key,
-                value=cmd_args[key]
-            )
+            for key in keys:
+                additional_part += ':{key}:{value}'.format(
+                    key=key,
+                    value=cmd_args[key]
+                )
     stamp = "{site}:{additional_part}".format(
         site=site,
         additional_part=additional_part

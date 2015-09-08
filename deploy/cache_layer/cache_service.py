@@ -21,17 +21,28 @@ class SqsCache(object):
         generate unique key-string for the task, from server_name and task_id
         task should be dict
         """
-        server_name = task.get('server_name')
-        task_id = task.get('task_id')
-        if not server_name or not task_id:
+        # todo: check url, urls (maybe it's product_url(s))
+        if not isinstance(task, dict):
             return None
-        return '%s_%s' % (server_name, task_id)
+        res = []
+        keys_to_check = {'site': 'site', 'url': 'url', 'urls': 'urls',
+                         'searchterms_str': 'term',
+                         'with_best_seller_ranking': 'bsr',
+                         'branch_name': 'branch'}
+        for key in sorted(keys_to_check.keys()):
+            val = task.get(key)
+            if val is not None:
+                res.append('%s-%s' % (keys_to_check[key], val))
+        for key in sorted(task.get('cmd_args', {}).keys()):
+            res.append('%s-%s' % (key, task['cmd_args'][key]))
+        res = ':'.join(res)
+        return res
 
     def get_result(self, task_str, freshness):
         """
         retrieve cached result
         freshness in minutes
-        returns tuple (found_item_in_cache, item_or_None)
+        returns tuple (is_item_found_in_cache, item_or_None)
         """
         task = json.loads(task_str)
         uniq_key = self._task_to_key(task)
@@ -58,8 +69,6 @@ class SqsCache(object):
         if not uniq_key:
             return False
         # save some space using compress
-        res = self.db.hset(self.REDIS_CACHE_KEY, uniq_key, compress(result))
-        if not res:  # if failed to save item in cache
-            return False
-        res = self.db.zadd(uniq_key, int(time()))
+        self.db.hset(self.REDIS_CACHE_KEY, uniq_key, compress(result))
+        res = self.db.zadd(self.REDIS_CACHE_TIMESTAMP, int(time()), uniq_key)
         return bool(res)
