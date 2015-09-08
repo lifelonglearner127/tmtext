@@ -285,7 +285,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         wcp = WalmartCategoryParser()
         wcp.setupSC(response)
         try:
-            product['category'] = wcp._categories_hierarchy()
+            product['categories'] = wcp._categories_hierarchy()
         except Exception as e:
             self.log('Category not parsed: '+str(e), WARNING)
         try:
