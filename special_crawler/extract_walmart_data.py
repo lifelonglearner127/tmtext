@@ -1921,9 +1921,6 @@ class WalmartScraper(Scraper):
         Returns 1/0
         """
 
-#        if self._site_online():
-#           return 1
-
         if not self.product_info_json:
             pinfo_dict = self._extract_product_info_json()
         else:
@@ -1934,10 +1931,6 @@ class WalmartScraper(Scraper):
                 return 1
 
         return 0
-
-        available = pinfo_dict["analyticsData"]["storesAvail"]
-
-        return 1 if available else 0
 
     # ! may throw exception if not found
     def _marketplace_sellers_from_script(self):
