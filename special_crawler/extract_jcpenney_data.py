@@ -72,6 +72,14 @@ class JcpenneyScraper(Scraper):
 
         return False
 
+    def _find_between(self, s, first, last):
+        try:
+            start = s.index(first) + len(first)
+            end = s.index(last, start)
+            return s[start:end]
+        except ValueError:
+            return ""
+
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -415,11 +423,7 @@ class JcpenneyScraper(Scraper):
         contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
 
         try:
-            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
-            end_index = contents.find("}},", start_index) + 2
-
-            self.review_json = contents[start_index:end_index]
-            self.review_json = json.loads(self.review_json)
+            self.review_json = json.loads(self._find_between(contents, "webAnalyticsConfig:", ",\nwidgetInitializers:initializers,"))
         except:
             self.review_json = None
 
