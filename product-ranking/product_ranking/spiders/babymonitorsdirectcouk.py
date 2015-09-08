@@ -62,30 +62,9 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         brand = self._parse_brand(response)
         cond_set_value(product, 'brand', brand, conv=string.strip)
 
-        price = response.xpath(
-            '//em[contains(@class, "ProductPrice")]/text()'
-        ).extract()
-        if not price:
-            price = response.xpath(
-                '//em[contains(@class, "ProductPrice")]/span/text()'
-            ).extract()
-        if price and 'DISCONTNUED' in price[0]:
-            price = response.xpath(
-                '//div[contains(@class, "RetailPrice")]'
-                '/div[@class="Value"]/text()'
-            ).extract()
-            cond_set_value(product, 'is_out_of_stock', True)
-        if price:
-            price = re.findall("\d+", price[0])
-            if len(price) >= 2:
-                price = price[0] + "." + price[1]
-            else:
-                price = price[0]
-
-            product["price"] = Price(
-                price=price,
-                priceCurrency="GBP"
-            )
+        # Parse price
+        price = self._parse_price(response)
+        cond_set_value(product, 'price', price)
 
         is_out_of_stock = response.xpath(
             '//div[@class="DetailRow"]/div[contains(text(), "Availability:")]'
@@ -189,6 +168,26 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         )
 
         return brand
+
+    def _parse_price(self, response):
+        price = is_empty(
+            response.xpath('//p[@class="special-price"]/'
+                           'span[@class="price"]/text() |'
+                           '//span[@class="regular-price"]'
+                           '/span[@class="price"]/text()').extract(), 0.00
+        )
+        if price:
+            price = is_empty(
+                re.findall(
+                    r'(\d+\.\d+)',
+                    price
+                )
+            )
+
+        return Price(
+            price=price,
+            priceCurrency='GBP'
+        )
 
     def _extract_reviews(self, response):
         product = response.meta['product']
