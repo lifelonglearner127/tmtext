@@ -19,8 +19,6 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
     scrapy crawl babymonitorsdirectcouk_products
     -a searchterms_str="baby monitor" [-a order=pricedesc]
 
-    -a order=bestselling used by default.
-
     Note: some product where price market as 'DISCONTNUED' may
     be out of correct position during price order search.
     Note: This type of spider need first to crawl through all
@@ -31,10 +29,6 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
     start_urls = []
     SEARCH_URL = "http://www.babymonitorsdirect.co.uk/catalogsearch/" \
                  "result/index/?dir={sort}&order={order}&q={search_term}"
-
-    page_number = 0
-    _product_on_page = 16
-    count_prod = 0
 
     SEARCH_SORT = {
         'ASC': 'asc',
@@ -56,76 +50,12 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
-    def start_requests(self):
-        for st in self.searchterms:
-            url = self.url_formatter.format(
-                self.SEARCH_URL,
-                search_term=urllib.quote_plus(st.encode('utf-8')),
-                dont_filter=False
-            )
-            yield Request(url, callback=self.getResponse)
-
-        if self.product_url:
-            prod = SiteProductItem()
-            prod['is_single_result'] = True
-            prod['url'] = self.product_url
-            yield Request(self.product_url,
-                          self._parse_single_product,
-                          meta={'product': prod})
-
-    # Function count products on last page in pagination
-    def count_prod_set(self, response):
-        self.count_prod = 0
-        for div in response.xpath('//ul[contains(@class, "ProductList")]'
-                                  '/li[contains(@class, "ListView")]'):
-            self.count_prod += 1
-
-    def getResponse(self, response):
-        link = response.xpath(
-            '//ul[@class="PagingList"]/li[last()]/a/@href'
-        ).extract()
-
-        if link:
-            page_number_loc = re.findall("\d+", re.findall("page=\d+",
-                                         link[0])[0])[0]
-        else:
-            self.count_prod_set(response)
-            for el in self.continue_parse():
-                yield el
-            return
-
-        if int(page_number_loc) < int(self.page_number):
-            self.count_prod_set(response)
-            for el in self.continue_parse():
-                yield el
-            return
-
-        self.page_number = page_number_loc
-
-        if link:
-            ajax_link = link[0].rstrip('#results')
-            ajax_link += '&ajax=1'
-            full_link = "http://www.babymonitorsdirect.co.uk/" + ajax_link
-            yield Request(
-                full_link,
-                callback=self.getResponse,
-                dont_filter=True
-            )
-
-    # Function which start parse products after total_matches found
-    def continue_parse(self):
-        for req in super(BabymonitorsdirectProductsSpider,
-                         self).start_requests():
-            req.dont_filter = True
-            yield req
-
     def parse_product(self, response):
-
         product = response.meta['product']
 
-        title = response.xpath(
-            '//div[@class="BlockContent"]/h1/text()').extract()
-        cond_set(product, 'title', title)
+        # Parse title
+        title = self._parse_title(response)
+        cond_set_value(product, 'title', title)
 
         brand = response.xpath(
             '//div[@class="DetailRow"]/div[contains(text(), "Brand:")]'
@@ -201,7 +131,7 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
 
         product["url"] = response.url
 
-         # Reviews
+        # Reviews
         num_of_reviews = response.xpath(
             '//div[@class="DetailRow"]/div[contains(text(), "Rating:")]'
             '/../div[@class="Value"]/span/a/text()'
@@ -237,6 +167,18 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         else:
             cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             return product
+
+    def _parse_title(self, response):
+        title = is_empty(
+            response.xpath(
+                '//div[@class="BlockContent"]/'
+                'h1/text() |'
+                '//h1[@itemprop="name"]/text()').extract()
+        )
+        if title:
+            title = title.strip()
+
+        return title
 
     def _extract_reviews(self, response):
         product = response.meta['product']
