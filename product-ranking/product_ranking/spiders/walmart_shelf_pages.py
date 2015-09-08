@@ -19,7 +19,7 @@ class MySpider(scrapy.Spider):
     sm.txt - some file with urls which we need to scrape
     """
 
-    name = 'walmart_shelf_urls'
+    name = 'walmart_shelf_urls_products'
     allowed_domains = ['www.walmart.com']
 
     current_page = 1
