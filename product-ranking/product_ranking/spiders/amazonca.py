@@ -24,6 +24,7 @@ from product_ranking.marketplace import Amazon_marketplace
 from product_ranking.amazon_tests import AmazonTests
 from spiders_shared_code.amazon_variants import AmazonVariants
 
+
 is_empty = lambda x, y=None: x[0] if x else y
 
 try:
@@ -194,14 +195,6 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
 
     def _populate_from_html(self, response, product):
         cond_set(product, 'brand', response.css('#brand ::text').extract())
-        cond_set(product, 'brand', ['NO BRAND'])
-        if '®' in product.get('brand', ''):
-            product['brand'] = product['brand'].replace('®', '')
-        
-        ### Populate variants with CH/SC class
-        av = AmazonVariants()
-        av.setupSC(response)
-        product['variants'] = av._variants()
 
         price = response.xpath(
             '//span[@id="priceblock_saleprice"]/text()'
@@ -454,11 +447,14 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
         total = total.re('(\d[\d, ]*) reviews')
         total = total[0] if total else None
         total = int(re.sub('[ ,]+', '', total)) if total else None
+
         average = response.css('#avgRating span::text')
         average = average or response.css("div.acrRating::text")
         average = average.re('\d[\d ,.]*')
         average = float(average[0]) if average else None
-        ratings = {1: 0, 2: 0, 3: 0, 4: 0,5: 0}
+
+        ratings = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+
         for row in response.css('.a-histogram-row .a-span10 ~ td a'):
             title = row.css('::attr(title)').extract()
             text = row.css('::text').extract()
@@ -467,6 +463,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
             if stars:
                 stars = int(re.sub('[ ,]+', '', stars.group(1)))
                 ratings[stars] = int(text[0])
+
         if not sum(ratings.values()):
             ratings = response.css('#revH .histoCount::text').re('\d[\d ,]*')
             ratings = [re.sub(', ', '', rating) for rating in ratings]
