@@ -74,9 +74,9 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         image_url = self._parse_image_url(response)
         cond_set_value(product, 'image_url', image_url)
 
-        des = response.xpath(
-            '//div[@class="ProductDescriptionContainer"]').extract()
-        cond_set(product, 'description', des)
+        # Parse description
+        description = self._parse_description(response)
+        cond_set_value(product, 'description', description)
 
         rp = []
         for prod in response.xpath('//ul[@class="ProductList"]/li'):
@@ -196,6 +196,15 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         )
 
         return image_url
+
+    def _parse_description(self, response):
+        description = is_empty(
+            response.xpath(
+                '//div[contains(@class,"box-description")]'
+            ).extract()
+        )
+
+        return description
 
     def _extract_reviews(self, response):
         product = response.meta['product']
