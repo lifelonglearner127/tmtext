@@ -220,3 +220,5 @@ class SiteProductItem(Item):
     response_code = Field()  # for 404, 500 etc.
 
     deliver_in = Field()  # now for Jet.com only;
+
+    assortment_url = Field()

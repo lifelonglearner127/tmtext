@@ -8,7 +8,7 @@ import scrapy
 from scrapy.http import Request
 from scrapy import Selector
 
-from assortment_urls.items import AssortmentUrlsItem
+from product_ranking.items import SiteProductItem
 
 is_empty = lambda x: x[0] if x else None
 
@@ -19,7 +19,7 @@ class MySpider(scrapy.Spider):
     sm.txt - some file with urls which we need to scrape
     """
 
-    name = 'walmart_urls'
+    name = 'walmart_shelf_urls'
     allowed_domains = ['www.walmart.com']
 
     current_page = 1
@@ -46,7 +46,7 @@ class MySpider(scrapy.Spider):
             yield request
 
     def get_urls(self, response):
-        item = AssortmentUrlsItem()
+        item = SiteProductItem()
         urls = response.xpath(
             '//li/div/a[contains(@class, "js-product-title")]/@href').extract()
 
@@ -97,6 +97,7 @@ class MySpider(scrapy.Spider):
         assortment_url = {response.url: urls}
         item["assortment_url"] = assortment_url
         item['results_per_page'] = self._scrape_results_per_page(response)
+        item['scraped_results_per_page'] = len(urls)
         return item
 
     def _scrape_results_per_page(self, response):

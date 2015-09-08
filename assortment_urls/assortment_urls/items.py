@@ -12,3 +12,4 @@ class AssortmentUrlsItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
     assortment_url = scrapy.Field()
+    results_per_page = scrapy.Field()
