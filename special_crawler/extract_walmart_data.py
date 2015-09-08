@@ -1932,8 +1932,12 @@ class WalmartScraper(Scraper):
         prices = []
         sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
 
-        for seller in sellers_dict:
-            if seller["sellerName"] != "Walmart.com":
+        if self._primary_seller().lower() == "walmart.com":
+            for seller in sellers_dict:
+                if seller["sellerName"] != "Walmart.com":
+                    prices.append(float(seller["price"]))
+        else:
+            for seller in sellers_dict:
                 prices.append(float(seller["price"]))
 
         return prices
@@ -2026,7 +2030,9 @@ class WalmartScraper(Scraper):
         try:
             sellers = self._marketplace_sellers_from_script()
             # filter out walmart
-            sellers = filter(lambda s: s!="Walmart.com", sellers)
+            if self._primary_seller().lower() == "walmart.com":
+                sellers = filter(lambda s: s != "Walmart.com", sellers)
+
             return sellers if sellers else None
         except:
             sellers = None
@@ -2035,7 +2041,8 @@ class WalmartScraper(Scraper):
             # assume old page version
             sellers = self._seller_meta_from_tree().keys()
             # filter out walmart
-            sellers = filter(lambda s: s!="Walmart.com", sellers)
+            if self._primary_seller().lower() == "walmart.com":
+                sellers = filter(lambda s: s != "Walmart.com", sellers)
             return sellers if sellers else None
 
     def _marketplace_prices(self):
