@@ -97,6 +97,7 @@ class MySpider(scrapy.Spider):
         assortment_url = {response.url: urls}
         item["assortment_url"] = assortment_url
         item['results_per_page'] = self._scrape_results_per_page(response)
+        item['scraped_results_per_page'] = len(urls)
         return item
 
     def _scrape_results_per_page(self, response):
