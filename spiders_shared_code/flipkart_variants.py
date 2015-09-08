@@ -42,7 +42,8 @@ class FlipkartVariants(object):
         options = {}
         for ao in available_options:
             tmp = ao.split(':')
-            options[tmp[0]] = tmp[1].split(',')
+            tmp[1] = tmp[1].replace(', ', '|||').split(',')
+            options[tmp[0]] = [_.replace('|||', ', ') for _ in tmp[1]]
         if not options:
             return None
         variants_list = list(product(*options.values()))
