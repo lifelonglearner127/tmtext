@@ -49,7 +49,7 @@ class HomedepotValidatorSettings(object):  # do NOT set BaseValidatorSettings as
         'bunny': [7, 90],
         'soldering iron': [30, 120],
         'burger': [1, 40],
-        'hold': [30, 110],
+        'hold': [30, 200],
     }
 
 
