@@ -35,7 +35,7 @@ class AsdaValidatorSettings(object):  # do NOT set BaseValidatorSettings as pare
         'dress': [2, 40],
         'red pepper': [10, 80],
         'chilly pepper': [5, 130],
-        'breakfast': [70, 220],
+        'breakfast': [70, 1000],
         'vodka': [30, 150],
         'water proof': [10, 100],
         'sillver': [70, 190],
