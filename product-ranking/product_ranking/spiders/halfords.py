@@ -85,6 +85,11 @@ class HalfordsProductSpider(BaseProductsSpider):
         category = self._parse_category(response)
         cond_set_value(product, 'category', category)
 
+        if category:
+            # Set department
+            department = category[-1]
+            cond_set_value(product, 'department', department)
+
         # Parse buyer reviews
         reqs.append(
             Request(
