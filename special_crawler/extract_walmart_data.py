@@ -138,6 +138,11 @@ class WalmartScraper(Scraper):
 
         if self.failure_type:
             self.ERROR_RESPONSE["failure_type"] = self.failure_type
+
+            if self.failure_type == "Bundle":
+                if self._find_between(html.tostring(self.tree_html), '"walmartOnline":', "}").lower().strip() == "true" or self._find_between(html.tostring(self.tree_html), '"walmartOnline":', ",").lower().strip() == "true":
+                    self.ERROR_RESPONSE["owned"] = 1
+
             return True
 
         return False

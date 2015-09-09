@@ -213,7 +213,8 @@ class Scraper():
         "event" : None,
         "date": None,
         "status": None,
-        "failure_type": None
+        "failure_type": None,
+        "owned": None
     }
 
     def load_image_hashes():
