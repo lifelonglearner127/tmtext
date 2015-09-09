@@ -495,6 +495,10 @@ class BaseValidator(object):
             return True
         return False
 
+    def _validate_categories(self, val):
+        #TODO: better validator
+        return True
+
     def _validate_bestseller_rank(self, val):
         if isinstance(val, int):
             return True
