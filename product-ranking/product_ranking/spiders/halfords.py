@@ -81,6 +81,10 @@ class HalfordsProductSpider(BaseProductsSpider):
         image_url = self._parse_image_url(response)
         cond_set_value(product, 'image_url', image_url)
 
+        # Set categories
+        category = self._parse_category(response)
+        cond_set_value(product, 'category', category)
+
         # Parse buyer reviews
         reqs.append(
             Request(
@@ -136,6 +140,16 @@ class HalfordsProductSpider(BaseProductsSpider):
         )
 
         return image_url
+
+    def _parse_category(self, response):
+        category = response.xpath(
+            '//*[@id="breadcrumb"]/.//li/a/text()'
+        ).extract()
+
+        if category:
+            category = category[1:]
+
+        return category
 
     def send_next_request(self, reqs, response):
         """
