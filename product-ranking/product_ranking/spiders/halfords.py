@@ -84,11 +84,14 @@ class HalfordsProductSpider(BaseProductsSpider):
         # Set categories
         category = self._parse_category(response)
         cond_set_value(product, 'category', category)
-
         if category:
             # Set department
             department = category[-1]
             cond_set_value(product, 'department', department)
+
+        # Set marketplaces
+        marketplaces = self._parse_marketplaces(response)
+        cond_set_value(product, 'marketplace', marketplaces)
 
         # Parse buyer reviews
         reqs.append(
@@ -155,6 +158,25 @@ class HalfordsProductSpider(BaseProductsSpider):
             category = category[1:]
 
         return category
+
+    def _parse_marketplaces(self, response):
+        meta = response.meta.copy()
+        product = meta['product']
+
+        marketplace_name = is_empty(
+            response.xpath(
+                '//img[@id="sellerLogo"]/@alt'
+            ).extract()
+        )
+
+        if marketplace_name:
+            marketplaces = {
+                'name': marketplace_name,
+                'price': product['price']
+            }
+            return [marketplaces]
+        else:
+            return None
 
     def send_next_request(self, reqs, response):
         """
