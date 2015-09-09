@@ -73,6 +73,14 @@ class HalfordsProductSpider(BaseProductsSpider):
         price = self._parse_price(response)
         cond_set_value(product, 'price', price)
 
+        # Set special pricing
+        special_pricing = self._parse_special_pricing(response)
+        cond_set_value(product, 'special_pricing', special_pricing, conv=bool)
+
+        # Set image url
+        image_url = self._parse_image_url(response)
+        cond_set_value(product, 'image_url', image_url)
+
         # Parse buyer reviews
         reqs.append(
             Request(
@@ -109,6 +117,25 @@ class HalfordsProductSpider(BaseProductsSpider):
             price=price,
             priceCurrency='GBP'
         )
+
+    def _parse_special_pricing(self, response):
+        special_pricing = is_empty(
+            response.xpath(
+                '//div[@class="saveWasPricing"]/./'
+                '/span[@class="wasValue"]'
+            ).extract(), False
+        )
+
+        return special_pricing
+
+    def _parse_image_url(self, response):
+        image_url = is_empty(
+            response.xpath(
+                '//*[@id="tempImage"]/@src'
+            ).extract()
+        )
+
+        return image_url
 
     def send_next_request(self, reqs, response):
         """
