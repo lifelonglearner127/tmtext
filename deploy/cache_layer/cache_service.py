@@ -6,6 +6,12 @@ from zlib import compress, decompress
 from cache_layer import REDIS_HOST, REDIS_PORT
 
 
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in xrange(0, len(l), n):
+        yield l[i:i+n]
+
+
 class SqsCache(object):
     """
     interact with redis DB in terms of cache (put/get item to/from cache)
@@ -72,3 +78,26 @@ class SqsCache(object):
         self.db.hset(self.REDIS_CACHE_KEY, uniq_key, compress(result))
         res = self.db.zadd(self.REDIS_CACHE_TIMESTAMP, int(time()), uniq_key)
         return bool(res)
+
+    def delete_old_tasks(self, freshness):
+        """
+        :param freshness: value in minutes
+        clears cache from old data
+        data is considered old, if time, when it was added
+        is less then (now - freshness)
+        :return number of rows affected
+        """
+        time_offset = int(time()) - (freshness * 60)
+        old_keys = self.db.zrangebyscore(
+            self.REDIS_CACHE_TIMESTAMP, 0, time_offset)
+        # delete old keys from redis, 100 items at once
+        for sub_keys in chunks(old_keys, 100):
+            self.db.hdel(self.REDIS_CACHE_KEY, *sub_keys)
+        return self.db.zremrangebyscore(
+            self.REDIS_CACHE_TIMESTAMP, 0, time_offset)
+
+    def get_cached_tasks_count(self):
+        """
+        get count of cached tasks
+        """
+        return self.db.zcard(self.REDIS_CACHE_TIMESTAMP)
