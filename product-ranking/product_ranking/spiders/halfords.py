@@ -69,6 +69,10 @@ class HalfordsProductSpider(BaseProductsSpider):
         title = self._parse_title(response)
         cond_set_value(product, 'title', title, conv=string.strip)
 
+        # Set price
+        price = self._parse_price(response)
+        cond_set_value(product, 'price', price)
+
         # Parse buyer reviews
         reqs.append(
             Request(
@@ -91,6 +95,20 @@ class HalfordsProductSpider(BaseProductsSpider):
         )
 
         return title
+
+    def _parse_price(self, response):
+        price = is_empty(
+            response.xpath(
+                '//div[@id="priceAndLogo"]/h2/text()'
+            ).extract(), 0.00
+        )
+        if price:
+            price = price.strip().replace(u'£', '')
+
+        return Price(
+            price=price,
+            priceCurrency='GBP'
+        )
 
     def send_next_request(self, reqs, response):
         """
