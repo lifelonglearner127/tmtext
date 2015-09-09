@@ -16,18 +16,20 @@ class SqsCache(object):
     """
     interact with redis DB in terms of cache (put/get item to/from cache)
     """
-    REDIS_CACHE_TIMESTAMP = 'cached_timestamps'
-    REDIS_CACHE_KEY = 'cached_responses'
+    REDIS_CACHE_TIMESTAMP = 'cached_timestamps'  # zset, expiry for items
+    REDIS_CACHE_KEY = 'cached_responses'  # hash, cached items
+    REDIS_CACHE_STATS = 'cached_count'  # zset, to get most popular items
+    REDIS_COMPLETED_TASKS = 'completed_tasks'  # zset, count completed tasks
 
     def __init__(self, db=None):
         self.db = db if db else StrictRedis(REDIS_HOST, REDIS_PORT)
+        # self.db = db if db else StrictRedis()  # for local
 
     def _task_to_key(self, task):
         """
         generate unique key-string for the task, from server_name and task_id
         task should be dict
         """
-        # todo: check url, urls (maybe it's product_url(s))
         if not isinstance(task, dict):
             return None
         res = []
@@ -62,6 +64,7 @@ class SqsCache(object):
         item = self.db.hget(self.REDIS_CACHE_KEY, uniq_key)
         if not item:
             return False, None
+        self.db.zincrby(self.REDIS_CACHE_STATS, uniq_key, 1)
         item = decompress(item)
         return True, item
 
@@ -95,6 +98,19 @@ class SqsCache(object):
             self.db.hdel(self.REDIS_CACHE_KEY, *sub_keys)
         return self.db.zremrangebyscore(
             self.REDIS_CACHE_TIMESTAMP, 0, time_offset)
+
+    def clear_stats(self):
+        """
+        return tuple of count of deleted items from cache and from tasks
+        """
+        return \
+            (self.db.zremrangebyrank(self.REDIS_CACHE_STATS, 0, -1),
+             self.db.zremrangebyrank(self.REDIS_COMPLETED_TASKS, 0, -1))
+
+    def complete_task(self, task_str):
+        task = json.loads(task_str)
+        key = '%s_%s' % (task.get('task_id'), task.get('server_name'))
+        return self.db.zadd(self.REDIS_COMPLETED_TASKS, int(time()), key)
 
     def get_cached_tasks_count(self):
         """

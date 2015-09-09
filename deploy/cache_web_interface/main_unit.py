@@ -374,6 +374,13 @@ def get_cache_item():
     else:
         return make_response('Item not found in cache', 404)
 
+
+@app.route('/complete_task', methods=['POST'])
+def complete_task():
+    task = request.form['task']
+    cache.complete_task(task)
+    return make_response('', 200)
+
 if __name__ == '__main__':
     app.debug = True
     app.run()

@@ -106,6 +106,7 @@ CACHE_HOST = 'http://sqs-metrics.contentanalyticsinc.com/'
 # CACHE_HOST = 'http://sqs-metrics.contentanalyticsinc.com/'
 CACHE_URL_GET = 'get_cache'  # url to retrieve task cache from
 CACHE_URL_SAVE = 'save_cache'  # to save cached result to
+CACHE_URL_STATS = 'complete_task'  # to have some stats about completed tasks
 CACHE_AUTH = 'Basic YWRtaW46Q29udGVudDEyMzQ1'  # auth header value
 CACHE_TIMEOUT = 15  # 15 seconds request timeout
 # key in task data to not retrieve cached result
@@ -574,7 +575,7 @@ class ScrapyTask(object):
             job_name += str(task_id)
         if searchterms_str:
             additional_part = unidecode.unidecode(
-                searchterms_str).replace(
+                searchterms_str.replace("'", '')).replace(
                     ' ', '-').replace('/', '').replace('\\', '')
         else:
             # maybe should be changed to product_url
@@ -1116,8 +1117,12 @@ def get_task_result_from_cache(task):
     url = CACHE_HOST + CACHE_URL_GET
     freshness = task.get(CACHE_FRESHNESS_KEY, CACHE_FRESHNESS_DEFAULT)
     data = dict(task=json.dumps(task), freshness=freshness)
-    resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                         headers={'Authorization': CACHE_AUTH})
+    try:
+        resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
+                             headers={'Authorization': CACHE_AUTH})
+    except Exception as ex:
+        logger.warning(ex)
+        return None
     if resp.status_code != 200:  # means no cached data was received
         logger.info('No cached result for task %s (%s). '
                     'Status %s, message is: "%s".',
@@ -1138,8 +1143,12 @@ def save_task_result_to_cache(task, output_path):
     message = FOLDERS_PATH + os.path.basename(output_path)
     url = CACHE_HOST + CACHE_URL_SAVE
     data = dict(task=json.dumps(task), message=message)
-    resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                         headers={'Authorization': CACHE_AUTH})
+    try:
+        resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
+                             headers={'Authorization': CACHE_AUTH})
+    except Exception as ex:  # timeout passed but no response received
+        logger.warning(ex)
+        return False
     if resp.status_code != 200:
         logger.warning('Failed to save cached result for task %s (%s). '
                        'Status %s, message: "%s".',
@@ -1148,6 +1157,18 @@ def save_task_result_to_cache(task, output_path):
     else:
         logger.info('Saved cached result for task %s (%s).', task_id, server)
         return True
+
+
+def cache_complete_task(task):
+    """send request to notice that task is completed (for statistics)"""
+    url = CACHE_HOST + CACHE_URL_STATS
+    data = dict(task=json.dumps(task))
+    try:
+        requests.post(url, data=data, timeout=CACHE_TIMEOUT,
+                      headers={'Authorization': CACHE_AUTH})
+        logger.info('Updated completed task (%s).', task.get('task_id'))
+    except Exception as ex:
+        logger.warning('Update completed task error: %s.', ex)
 
 
 def del_duplicate_tasks(tasks):
@@ -1269,6 +1290,8 @@ def main():
         if task.get_cached_result():
             # if found response in cache, upload data, delete task from sqs
             task.queue.task_done()
+            increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
+            cache_complete_task(task_data)
             del task
             continue
         if task.start():
@@ -1279,7 +1302,8 @@ def main():
                 task.task_data.get('task_id'))
             task.queue.task_done()
             increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
-            update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
+            # update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
+            cache_complete_task(task_data)
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
                          task.task_data.get('task_id', 0))
