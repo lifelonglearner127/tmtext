@@ -24,7 +24,7 @@
     <field name="buyer_reviews" version="1.2"></field>
     <field name="bestseller_rank" version="1.1"></field>
     <field name="department" version="1.1"></field>
-    <field name="category" version="1.1"></field>
+    <field name="categories" version="1.1"></field>
     <field name="search_term_in_title_partial" version="1.1"></field>
     <field name="search_term_in_title_exactly" version="1.1"></field>
     <field name="search_term_in_title_interleaved" version="1.1"></field>

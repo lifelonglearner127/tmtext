@@ -21,6 +21,7 @@ from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.marketplace import Amazon_marketplace
 from spiders_shared_code.amazon_variants import AmazonVariants
+from product_ranking.amazon_modules import build_categories
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -235,6 +236,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
             ranks.update(prim)
         ranks = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
         cond_set_value(product, 'category', ranks)
+        build_categories(product)
         # parse department
         department = amazon_parse_department(ranks)
         if department is None:
