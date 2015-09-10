@@ -4,6 +4,7 @@ import time
 import datetime
 import json
 import random
+from collections import OrderedDict
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..'))
@@ -11,6 +12,7 @@ sys.path.insert(1, os.path.join(CWD, '..'))
 from flask import Flask, request, send_from_directory, send_file
 from flask import render_template, redirect, url_for, make_response
 from boto.sqs.message import Message
+import boto.ec2.autoscale
 import boto.sqs
 import boto
 from boto.s3.key import Key
@@ -18,6 +20,7 @@ from boto.s3.key import Key
 from cache_layer.simmetrica_class import Simmetrica
 from cache_layer import additional_sqs_metrics
 from cache_layer.cache_service import SqsCache
+from cache_layer import CACHE_QUEUES_LIST
 
 
 app = Flask(__name__)
@@ -388,6 +391,43 @@ def list_s3():
     b = conn.get_bucket('spyder-bucket')
     keys = b.get_all_keys(prefix='2015/09/09/', marker=marker, max_keys=1000)
     return '<pre>' + '\n'.join([k.name for k in keys]) + '</pre>'
+
+
+@app.route('/stats')
+def stats():
+    try:
+        context = dict()
+        conn = boto.ec2.autoscale.AutoScaleConnection()
+        group = conn.get_all_groups(names=['SCCluster1'])[0]
+        context['running_instances'] = len(group.instances)
+        #
+        context['today_instances'] = cache.get_today_instances()
+        #
+        context['today_executed_tasks'] = cache.get_executed_tasks_count()
+        #
+        context['last_hour_executed_tasks'] = cache.get_executed_tasks_count(
+            for_last_hour=True)
+        #
+        sqs_conn = boto.sqs.connect_to_region('us-east-1')
+        context['left_tasks'] = sum([sqs_conn.get_queue(q).count()
+                                     for q in CACHE_QUEUES_LIST.itervalues()])
+        #
+        cur_hour = datetime.datetime.now().hour
+        context['avg_hour_task'] = '{0:.2f}'.format(
+            context['today_executed_tasks'] / cur_hour)
+        #
+        hourly_tasks_stats = OrderedDict()
+        for i in xrange(0, cur_hour+1, 1):
+            key = '%s - %s' % (i, i+1)
+            hourly_tasks_stats[key] = cache.get_executed_tasks_count(i, i+1)
+        context['hourly_tasks_stats'] = hourly_tasks_stats
+        #
+        context['used_memory'] = cache.get_used_memory()
+        context['items_in_cache'] = cache.get_cached_tasks_count()
+        context['cache_most_popular'] = cache.get_most_popular_cached_items(10)
+        return render_template('stats.html', **context)
+    except Exception as e:
+        return str(e)
 
 if __name__ == '__main__':
     app.debug = True

@@ -1,7 +1,8 @@
 import json
-from time import time
+from time import time, mktime
 from redis import StrictRedis
 from zlib import compress, decompress
+from datetime import date
 
 from cache_layer import REDIS_HOST, REDIS_PORT
 
@@ -117,3 +118,42 @@ class SqsCache(object):
         get count of cached tasks
         """
         return self.db.zcard(self.REDIS_CACHE_TIMESTAMP)
+
+    def get_today_instances(self):
+        """
+        get count of started instances for current day
+        """
+        return self.db.get('daily_sqs_instances_counter')
+
+    def get_executed_tasks_count(self, hours_from=None, hours_to=None,
+                                 for_last_hour=False):
+        """
+        get count of executed tasks for
+        hours time period or for today, if not set
+        """
+        if hours_from is None and not for_last_hour:
+            return self.db.zcard(self.REDIS_COMPLETED_TASKS)
+        else:
+            today = list(date.today().timetuple())
+            if for_last_hour:
+                time_from = int(time()) - 60 * 60
+            else:
+                today[3] = hours_from
+                time_from = mktime(today)
+            if hours_to:
+                today[3] = hours_to
+                time_to = mktime(today)
+            else:
+                time_to = int(time())
+            return self.db.zcount(
+                self.REDIS_COMPLETED_TASKS, time_from, time_to)
+
+    def get_most_popular_cached_items(self, cnt=10):
+        """
+        gets 10 most popular items in cache
+        """
+        return dict(self.db.zrevrangebyscore(self.REDIS_CACHE_STATS,
+                                             9999, 0, 0, cnt, True))
+
+    def get_used_memory(self):
+        return self.db.info().get('used_memory_human')
