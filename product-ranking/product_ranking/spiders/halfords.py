@@ -4,7 +4,7 @@ import hjson
 import re
 import string
 
-from scrapy.http import FormRequest, Request
+from scrapy.http import Request
 from scrapy.log import ERROR, INFO, WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
@@ -97,6 +97,10 @@ class HalfordsProductSpider(BaseProductsSpider):
         is_out_of_stock = self._parse_stock_status(response)
         cond_set_value(product, 'is_out_of_stock', is_out_of_stock, conv=bool)
 
+        #  Set description
+        description = self._parse_description(response)
+        cond_set_value(product, 'description', description)
+
         # Parse buyer reviews
         reqs.append(
             Request(
@@ -171,6 +175,15 @@ class HalfordsProductSpider(BaseProductsSpider):
         )
 
         return is_out_of_stock
+
+    def _parse_description(self, response):
+        description = is_empty(
+            response.xpath(
+                '//*[@id="productFeatures"]/li'
+            ).extract()
+        )
+
+        return description
 
     def _parse_variants(self, response):
         meta = response.meta.copy()
