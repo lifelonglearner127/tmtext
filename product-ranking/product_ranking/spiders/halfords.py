@@ -131,11 +131,16 @@ class HalfordsProductSpider(BaseProductsSpider):
     def _parse_price(self, response):
         price = is_empty(
             response.xpath(
-                '//div[@id="priceAndLogo"]/h2/text()'
+                'string(//div[@id="priceAndLogo"]/h2)'
             ).extract(), 0.00
         )
         if price:
-            price = price.strip().replace(u'£', '')
+            price = is_empty(
+                re.findall(
+                    r'(\d+\.\d+)',
+                    price
+                ), 0.00
+            )
 
         return Price(
             price=price,
