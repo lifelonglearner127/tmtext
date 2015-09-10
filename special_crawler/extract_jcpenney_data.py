@@ -133,7 +133,8 @@ class JcpenneyScraper(Scraper):
 
         long_description = self._long_description()
 
-        description = description.replace(long_description, "")
+        if long_description:
+            description = description.replace(long_description, "")
 
         return description.strip()
 
@@ -142,18 +143,23 @@ class JcpenneyScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        description_block = self.tree_html.xpath("//div[@id='longCopyCont']//ul")[0]
-        long_description = description_block.text_content().strip()
+        try:
+            description_block = self.tree_html.xpath("//div[@id='longCopyCont']//ul")[0]
+            long_description = description_block.text_content().strip()
 
-        if not long_description:
-            return None
-        else:
-            long_description = re.sub('\\n+', ' ', long_description).strip()
-            long_description = re.sub('\\t+', ' ', long_description).strip()
-            long_description = re.sub('\\r+', ' ', long_description).strip()
-            long_description = re.sub(' +', ' ', long_description).strip()
+            if not long_description:
+                return None
+            else:
+                long_description = re.sub('\\n+', ' ', long_description).strip()
+                long_description = re.sub('\\t+', ' ', long_description).strip()
+                long_description = re.sub('\\r+', ' ', long_description).strip()
+                long_description = re.sub(' +', ' ', long_description).strip()
 
-            return long_description
+                return long_description
+        except:
+            pass
+
+        return None
 
     def _ingredients(self):
         return None
