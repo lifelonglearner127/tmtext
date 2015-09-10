@@ -90,8 +90,8 @@ class HalfordsProductSpider(BaseProductsSpider):
             cond_set_value(product, 'department', department)
 
         # Set variants
-        # variants = self._parse_variants(response)
-        # cond_set_value(product, 'variants', variants)
+        variants = self._parse_variants(response)
+        cond_set_value(product, 'variants', variants)
 
         #  Set stock status
         is_out_of_stock = self._parse_stock_status(response)
@@ -224,38 +224,62 @@ class HalfordsProductSpider(BaseProductsSpider):
         meta = response.meta.copy()
         product = meta['product']
 
-        data = is_empty(
+        number_of_variants = is_empty(
             re.findall(
-                r'var ItemVariantSelectionWidget\s?=\s?({(.|\n)+})',
+                r'var ItemVariantSelectionWidget\s?=\s?\{(?:.|\n)+'
+                r'numberOfVariants:\s+(\d+),',
                 response.body_as_unicode()
             )
         )
 
-        if data:
-            data = list(data)[0]
-            data = data.replace('\r', '').replace('\t', '').replace('\n', '')
-            try:
-                data = hjson.loads(data, object_pairs_hook=dict)
-                print(type(data))
-            except ValueError as exc:
-                self.log('Unable to parse variants on {url}: {exc}'.format(
-                    url=response.url,
-                    exc=exc
-                ), ERROR)
+        if number_of_variants:
+            data = is_empty(
+                re.findall(
+                    r'(ItemVariantSelectionWidget\s?=\s?\{(?:.|\n)+?\};)',
+                    response.body_as_unicode()
+                )
+            )
 
-            if data['numberOfVariants']:
+            name = is_empty(
+                re.findall(
+                    r'ItemVariantSelectionWidget\s?=\s?\{(?:.|\n)+variant1:\s+\{'
+                    r'(?:.|\n)+name:\s+\'(.+)?\',',
+                    data
+                )
+            )
+
+            if name:
+                name = name.replace('-', ' ').lower()
+
+                variants_data = is_empty(
+                    re.findall(
+                        r'ItemVariantSelectionWidget\s?=\s?\{(?:.|\n)+multiVariantArray'
+                        r':\s+(\[(?:.|\n)+?\]),',
+                        data
+                    )
+                )
+                try:
+                    variants_data = hjson.loads(variants_data, object_pairs_hook=dict)
+                except ValueError as exc:
+                    self.log('Unable to parse variants on {url}: {exc}'.format(
+                        url=response.url,
+                        exc=exc
+                    ), ERROR)
+                    return []
+
                 variants = []
-                name = data['variant1']['name']
-                for var_data in data['multiVariantArray']:
-                    stock = var_data['inStock']
+                for item in variants_data:
+                    stock = item['inStock']
                     properties = {
-                        name: var_data['value1']
+                        name: item['value1']
                     }
                     variants.append({
                         'in_stock': stock,
                         'price': product['price'].price.__float__(),
                         'properties': properties
                     })
+
+                return variants
 
         return []
 
