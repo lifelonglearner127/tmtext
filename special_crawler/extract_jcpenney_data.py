@@ -132,6 +132,17 @@ class JcpenneyScraper(Scraper):
         long_description = ""
         long_description_start = False
 
+        while True:
+            child_list = []
+
+            for element in description_block:
+                child_list.append(element.tag)
+
+            if child_list == ["div"]:
+                description_block = element
+            else:
+                break
+
         for element in description_block:
             if element.tag == "p" and not long_description:
                 long_description_start = True
@@ -143,6 +154,11 @@ class JcpenneyScraper(Scraper):
         if not long_description.strip():
             return None
         else:
+            long_description = re.sub('\\n+', ' ', long_description).strip()
+            long_description = re.sub('\\t+', ' ', long_description).strip()
+            long_description = re.sub('\\r+', ' ', long_description).strip()
+            long_description = re.sub(' +', ' ', long_description).strip()
+
             return long_description
 
     def _ingredients(self):

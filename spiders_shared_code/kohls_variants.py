@@ -78,6 +78,12 @@ class KohlsVariants(object):
                 inStock = True
             else:
                 inStock = False
+
+            try:
+                sizev = size[1]
+            except IndexError:
+                sizev = None
+
             obj = {
                 "skuId": skuId,
                 "upc": upc,
@@ -85,7 +91,7 @@ class KohlsVariants(object):
                 "in_stock": inStock,
                 "properties": {
                     "color": color[len(color)-1],
-                    "size": size[1],
+                    "size": sizev,
                 },
                 'unavailable': False,
                 "selected": selected,

@@ -19,32 +19,33 @@ from product_ranking.validation import BaseValidator
 from product_ranking.spiders import cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.jcpenney_variants import JcpenneyVariants
+from product_ranking.validation import BaseValidator
 
 
 is_empty = lambda x, y="": x[0] if x else y
 
 
 class JcpenneyValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand', 'price', 'buyer_reviews']
+    optional_fields = []
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'description', 'special_pricing',
-        'bestseller_rank', 'model'
+        'google_source_site', 'description', 'special_pricing', 
+        'bestseller_rank', 'model',
     ]
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = True  # ... duplicated requests?
-    ignore_log_filtered = False  # ... filtered requests?
+    ignore_log_filtered = True  # ... filtered requests?
     test_requests = {
-        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
-        'nothing_found_1234654654': 0,
-        'men white shoes': [30, 150],
-        'adidas black': [50, 250],
-        'red handbag': [50, 200],
-        'baby jacket': [20, 100],
-        'levis': [300, 600],
-        'beach towel': [5, 100],
-        'mi zone': [20, 150],
-        'kid americana': [10, 100]
+        'sdfsdgdf': 0,  #+ should return 'no products' or just 0 products
+        'benny benassi': 0,
+        'water proof': [110, 210],
+        'peace': [10, 70],
+        'hot': [80, 180],
+        'drink': [30, 130],
+        'term': [30, 130],
+        'tiny': [10, 80],
+        'selling': [1, 30],
+        'night': [40, 140],
     }
 
 
@@ -60,6 +61,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     """
 
     name = 'jcpenney_products'
+
+    settings = JcpenneyValidatorSettings
 
     allowed_domains = [
         'jcpenney.com',
@@ -343,7 +346,10 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     except ValueError:
                         pass
                 if distribution:
-                    reviews = BuyerReviews(total, avrg, distribution)
+                    dfr = dict({1: 0, 2: 0, 3: 0, 4: 0, 5: 0})
+                    dfr.update(distribution)
+                    reviews = BuyerReviews(total, avrg, dfr)
+                    #reviews = ZERO_REVIEWS_VALUE.update(distribution)
                     product['buyer_reviews'] = reviews
 
         if 'buyer_reviews' not in product:

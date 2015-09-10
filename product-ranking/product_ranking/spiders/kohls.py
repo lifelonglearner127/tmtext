@@ -13,15 +13,42 @@ from scrapy.log import ERROR, INFO, WARNING
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    FormatterWithDefaults
+from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
+    _extract_open_graph_metadata, populate_from_open_graph, cond_set
 from product_ranking.spiders import cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.kohls_variants import KohlsVariants
+from product_ranking.validation import BaseValidator
 
 is_empty = lambda x, y="": x[0] if x else y
+ip = "http://101.227.252.130:8081"
 
-class KohlsProductsSpider(BaseProductsSpider):
+
+class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['brand']
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'google_source_site', 'description', 'special_pricing', 
+        'bestseller_rank', 'model'
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = True  # ... duplicated requests?
+    ignore_log_filtered = True  # ... filtered requests?
+    test_requests = {
+        'sdfsdgdf': 0,  # should return 'no products' or just 0 products
+        'benny benassi': 0,
+        'red car': [20, 150],
+        'black stone': [120, 230],
+        'gone': [5, 80],
+        'green rose': [10, 100],
+        'long term black': [5, 50],
+        'low ceiling': [30, 120],
+        'Water Sandals': [5, 80],
+        'long night': [30, 120],
+    }
+
+
+class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
     """ kohls.com product ranking spider.
 
     `upc` field is missing
@@ -41,11 +68,15 @@ class KohlsProductsSpider(BaseProductsSpider):
         'kohls.ugc.bazaarvoice.com',
     ]
 
+    settings = KohlsValidatorSettings
+
     SEARCH_URL = "http://www.kohls.com/search.jsp?" \
                  "N=0&" \
                  "search={search_term}&" \
                  "WS={start}&S={sort_mode}"
+
     SORTING = None
+
     SORT_MODES = {
         'default': '',
         'featured': '1',
@@ -95,7 +126,7 @@ class KohlsProductsSpider(BaseProductsSpider):
             )
             yield Request(
                 url,
-                meta={'search_term': st, 'remaining': self.quantity}
+                meta={'search_term': st, 'remaining': self.quantity, "proxy": ip}
             )
 
         if self.product_url:
@@ -103,7 +134,7 @@ class KohlsProductsSpider(BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod})
+                          meta={'product': prod, "proxy": ip})
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -124,18 +155,22 @@ class KohlsProductsSpider(BaseProductsSpider):
         new_meta = response.meta.copy()
         new_meta['product'] = prod
         new_meta['product_id'] = product_id[0]
+        new_meta["proxy"] = ip
         return Request(self.url_formatter.format(self.REVIEW_URL,
-                                                 product_id=product_id[0]),
-                       meta=new_meta, callback=self._parse_reviews)
+            product_id=product_id[0]),
+            meta=new_meta, callback=self._parse_reviews)
 
     def _populate_from_html(self, response, product):
         if 'title' in product and product['title'] == '':
             del product['title']
-        cond_set(product,
-                 'title',
-                 response.xpath(
-                     '//h1[contains(@class, "title")]/text()').extract(),
-                 conv=string.strip)
+
+        metadata = _extract_open_graph_metadata(response)
+        cond_set_value(product, 'title', metadata.get('title'))
+
+        populate_from_open_graph(response, product)
+
+        title = response.css('.productTitleName ::text').extract()
+        cond_set(product, 'title', title, conv=string.strip)
 
         cond_set(
             product,
@@ -163,18 +198,8 @@ class KohlsProductsSpider(BaseProductsSpider):
 
         product['upc'] = ', '.join(upc_codes)
 
-        price = response.xpath(
-            '//div[@class="multiple-price"]/div[2]/text()[normalize-space()] |'
-            '//div[@class="original original-reg"]/text()[normalize-space()] |'
-            '//span[@class="price_ammount"]/text()[normalize-space()] |'
-            '//div[@class="sale"]/text()[normalize-space()] |'
-            '//div[contains(@class, "main_price")]/text()'
-        ).re("\d+.?\d{0,2}")
+        self._set_price(response, product)
 
-        if price:
-            product['price'] = Price(price=price[0], priceCurrency='USD')
-        else:
-            product['price'] = Price(price='0.0', priceCurrency='USD')
         product['marketplace'] = []
         marketplace_name = is_empty(response.xpath(
             '//a[@id="pdp_vendor"]/text()').extract())
@@ -217,6 +242,20 @@ class KohlsProductsSpider(BaseProductsSpider):
             (guess_brand_from_first_words(brand.strip()),2)
         )
 
+    def _set_price(self, response, product):
+        price = response.xpath(
+            '//div[@class="multiple-price"]/div[2]/text()[normalize-space()] |'
+            '//div[@class="original original-reg"]/text()[normalize-space()] |'
+            '//span[@class="price_ammount"]/text()[normalize-space()] |'
+            '//div[@class="sale"]/text()[normalize-space()] |'
+            '//div[contains(@class, "main_price")]/text()'
+        ).re("\d+.?\d{0,2}")
+
+        if price:
+            product['price'] = Price(price=price[0], priceCurrency='USD')
+        else:
+            product['price'] = Price(price='0.0', priceCurrency='USD')
+
     def _parse_related_products(self, response):
         product = response.meta['product']
         product_id = response.meta['product_id']
@@ -255,7 +294,8 @@ class KohlsProductsSpider(BaseProductsSpider):
                     title = is_empty(sel.xpath('./div/p/text()').extract())
                     related.append(
                         RelatedProduct(
-                            title=unicode.decode(title.replace("\xe9", "é")),
+                            title=unicode.decode(title.replace("\xe9", "é").
+                                replace("\xf6", "").replace("\xb0", "")),
                             url=urllib.unquote('http'+url.split('http')[-1])
                         ))
             if key and key not in product['related_products'].keys():
@@ -344,17 +384,49 @@ class KohlsProductsSpider(BaseProductsSpider):
             cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         new_meta = response.meta.copy()
         new_meta['product'] = product
+        new_meta["proxy"] = ip
         return Request(self.RELATED_URL.format(product_id=product_id),
                        meta=new_meta, callback=self._parse_related_products,
                        dont_filter=True)
 
     def _scrape_product_links(self, response):
-        links = response.xpath(
-            '//ul[@id="product-matrix"]/li/a/@href'
-        ).extract()
+        prod_blocks = response.xpath('//ul[@id="product-matrix"]/li')        
 
-        for link in links:
-            yield 'http://www.kohls.com'+link, SiteProductItem()
+        for block in prod_blocks:
+            product = SiteProductItem()
+
+            link = block.xpath('./a/@href').extract()[0]
+
+            cond_set(
+                product,
+                'title',
+                block.xpath('.//div/div/h2/a/text()').extract())
+
+            cond_set(
+                product,
+                'image_url',
+                block.xpath('.//a/img/@src').extract())
+
+            self._set_price(response, product)
+
+            url = 'http://www.kohls.com'+link
+            cond_set_value(product, 'url', url)
+
+            new_meta = response.meta.copy()
+            new_meta['product'] = product
+            new_meta['handle_httpstatus_list'] = [404]
+
+            yield Request(
+                url,
+                callback=self.parse_product,
+                meta=new_meta,
+                errback=self._handle_product_page_error), product
+
+    def _handle_product_page_error(self, failure):
+        self.log('Request failed: %s' % failure.request)
+        product = failure.request.meta['product']
+        product['locale'] = 'en-US'
+        return failure.request.meta['product']
 
     def _scrape_total_matches(self, response):
         if response.xpath('//div[@class="search-failed"]').extract():
