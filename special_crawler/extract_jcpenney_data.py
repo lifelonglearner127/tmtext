@@ -124,37 +124,28 @@ class JcpenneyScraper(Scraper):
         return 0
 
     def _description(self):
-        return html.tostring(self.tree_html.xpath("//div[@id='longCopyCont']//p[1]")[0])
+        description_block = self.tree_html.xpath("//div[@id='longCopyCont']")[0]
+        description = description_block.text_content().strip()
+        description = re.sub('\\n+', ' ', description).strip()
+        description = re.sub('\\t+', ' ', description).strip()
+        description = re.sub('\\r+', ' ', description).strip()
+        description = re.sub(' +', ' ', description).strip()
+
+        long_description = self._long_description()
+
+        description = description.replace(long_description, "")
+
+        return description.strip()
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        description_block = self.tree_html.xpath("//div[@id='longCopyCont']")[0]
-        long_description = ""
-        long_description_start = False
+        description_block = self.tree_html.xpath("//div[@id='longCopyCont']//ul")[0]
+        long_description = description_block.text_content().strip()
 
-        while True:
-            child_list = []
-
-            for element in description_block:
-                child_list.append(element.tag)
-
-            if child_list == ["div"]:
-                description_block = element
-            else:
-                break
-
-        for element in description_block:
-            if element.tag == "p" and not long_description:
-                long_description_start = True
-                continue
-
-            if long_description_start:
-                long_description = long_description + html.tostring(element)
-
-        if not long_description.strip():
+        if not long_description:
             return None
         else:
             long_description = re.sub('\\n+', ' ', long_description).strip()
