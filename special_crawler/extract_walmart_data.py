@@ -778,6 +778,13 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
+        if self.is_bundle_product:
+            if not self._long_description():
+                try:
+                    return self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]/div[contains(@class, 'js-ellipsis')]")[0].text_content().strip()
+                except:
+                    return None
+
         description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]"
                                                     "/div[contains(@class, 'js-ellipsis')]")
 
@@ -1149,9 +1156,11 @@ class WalmartScraper(Scraper):
                     product_info_json = self._extract_product_info_json()
 
                     if product_info_json["buyingOptions"]["maxPrice"]["currencyAmount"] == product_info_json["buyingOptions"]["minPrice"]["currencyAmount"]:
-                        return "${0}".format(product_info_json["buyingOptions"]["maxPrice"]["currencyAmount"])
-                    else:
+                        return "${0}".format(product_info_json["buyingOptions"]["minPrice"]["currencyAmount"])
+                    elif product_info_json["buyingOptions"]["maxPrice"]["currencyAmount"] > product_info_json["buyingOptions"]["minPrice"]["currencyAmount"]:
                         return "${0}-${1}".format(product_info_json["buyingOptions"]["minPrice"]["currencyAmount"], product_info_json["buyingOptions"]["maxPrice"]["currencyAmount"])
+                    else:
+                        return "${0}".format(product_info_json["buyingOptions"]["minPrice"]["currencyAmount"])
                 else:
                     price = self.tree_html.xpath("//div[@itemprop='price']")[0].text_content().strip()
 
