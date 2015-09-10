@@ -101,6 +101,10 @@ class HalfordsProductSpider(BaseProductsSpider):
         description = self._parse_description(response)
         cond_set_value(product, 'description', description)
 
+        #  Parse related products
+        related_products = self._parse_related_products(response)
+        cond_set_value(product, 'related_products', related_products)
+
         # Parse buyer reviews
         reqs.append(
             Request(
@@ -184,6 +188,37 @@ class HalfordsProductSpider(BaseProductsSpider):
         )
 
         return description
+
+    def _parse_related_products(self, response):
+        related_products = []
+        data = response.xpath(
+            '//*[@id="PDPCrossSellContent"]/li'
+        )
+
+        if data:
+            for item in data:
+                title = is_empty(
+                    item.xpath(
+                        '././/span[@class="productTitle"]/./'
+                        '/a[@class="productTitleLink"]/text()'
+                    ).extract()
+                )
+                url = is_empty(
+                    item.xpath(
+                        '././/span[@class="productTitle"]/./'
+                        '/a[@class="productTitleLink"]/@href'
+                    ).extract()
+                )
+
+                if url and title:
+                    related_products.append(
+                        RelatedProduct(
+                            url=url,
+                            title=title.strip()
+                        )
+                    )
+
+        return related_products
 
     def _parse_variants(self, response):
         meta = response.meta.copy()
