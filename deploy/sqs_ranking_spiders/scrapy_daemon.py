@@ -503,15 +503,15 @@ def dump_cached_data_into_sqs(cached_key, queue_name, metadata):
     msg = {
         '_msg_id': metadata.get('task_id', metadata.get('task', None)),
         'type': 'ranking_spiders',
-        's3_key_data': cached_key + '.jl',
-        's3_key_logs': cached_key + '.log',
+        's3_key_data': cached_key + '.jl.zip',
+        's3_key_logs': cached_key + '.log.zip',
         'bucket_name': AMAZON_BUCKET_NAME,
         'utc_datetime': datetime.datetime.utcnow(),
         's3_key_instance_starter_logs': s3_key_instance_starter_logs,
         'server_ip': _get_server_ip()
     }
     if CONVERT_TO_CSV:
-        msg['csv_data_key'] = cached_key + '.csv'
+        msg['csv_data_key'] = cached_key + '.csv.zip'
     if TEST_MODE:
         test_write_msg_to_fs(queue_name, msg)
     else:

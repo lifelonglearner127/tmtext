@@ -381,6 +381,14 @@ def complete_task():
     cache.complete_task(task)
     return make_response('', 200)
 
+@app.route('/list_s3')
+def list_s3():
+    marker = request.args.get('marker')
+    conn = boto.connect_s3()
+    b = conn.get_bucket('spyder-bucket')
+    keys = b.get_all_keys(prefix='2015/09/09/', marker=marker, max_keys=1000)
+    return '<pre>' + '\n'.join([k.name for k in keys]) + '</pre>'
+
 if __name__ == '__main__':
     app.debug = True
     app.run()
