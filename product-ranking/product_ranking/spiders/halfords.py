@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-#
 
-import json
+import hjson
 import re
 import string
 
@@ -89,9 +89,13 @@ class HalfordsProductSpider(BaseProductsSpider):
             department = category[-1]
             cond_set_value(product, 'department', department)
 
-        # Set marketplaces
-        marketplaces = self._parse_marketplaces(response)
-        cond_set_value(product, 'marketplace', marketplaces)
+        # Set variants
+        # variants = self._parse_variants(response)
+        # cond_set_value(product, 'variants', variants)
+
+        #  Set stock status
+        is_out_of_stock = self._parse_stock_status(response)
+        cond_set_value(product, 'is_out_of_stock', is_out_of_stock, conv=bool)
 
         # Parse buyer reviews
         reqs.append(
@@ -159,24 +163,53 @@ class HalfordsProductSpider(BaseProductsSpider):
 
         return category
 
-    def _parse_marketplaces(self, response):
+    def _parse_stock_status(self, response):
+        is_out_of_stock = is_empty(
+            response.xpath(
+                '//*[@id="productBuyable"][@class="hidden"]'
+            ).extract(), False
+        )
+
+        return is_out_of_stock
+
+    def _parse_variants(self, response):
         meta = response.meta.copy()
         product = meta['product']
 
-        marketplace_name = is_empty(
-            response.xpath(
-                '//img[@id="sellerLogo"]/@alt'
-            ).extract()
+        data = is_empty(
+            re.findall(
+                r'var ItemVariantSelectionWidget\s?=\s?({(.|\n)+})',
+                response.body_as_unicode()
+            )
         )
 
-        if marketplace_name:
-            marketplaces = {
-                'name': marketplace_name,
-                'price': product['price']
-            }
-            return [marketplaces]
-        else:
-            return None
+        if data:
+            data = list(data)[0]
+            data = data.replace('\r', '').replace('\t', '').replace('\n', '')
+            try:
+                data = hjson.loads(data, object_pairs_hook=dict)
+                print(type(data))
+            except ValueError as exc:
+                self.log('Unable to parse variants on {url}: {exc}'.format(
+                    url=response.url,
+                    exc=exc
+                ), ERROR)
+
+            if data['numberOfVariants']:
+                variants = []
+                name = data['variant1']['name']
+                for var_data in data['multiVariantArray']:
+                    stock = var_data['inStock']
+                    properties = {
+                        name: var_data['value1']
+                    }
+                    variants.append({
+                        'in_stock': stock,
+                        'price': product['price'].price.__float__(),
+                        'properties': properties
+                    })
+
+        return []
 
     def send_next_request(self, reqs, response):
         """
