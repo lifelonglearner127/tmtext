@@ -63,9 +63,12 @@ class JcpenneyScraper(Scraper):
         self.jv.setupCH(self.tree_html)
 
         try:
-            itemtype = self.tree_html.xpath('//div[@class="pdp_details"]')[0]
+            itemtype = self.tree_html.xpath('//div[@class="pdp_details"]')
 
             if not itemtype:
+                if self.tree_html.xpath("//div[@class='product_row bottom_border flt_wdt']"):
+                    self.ERROR_RESPONSE["failure_type"] = "Bundle"
+
                 raise Exception()
 
         except Exception:
