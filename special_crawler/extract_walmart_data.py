@@ -1989,8 +1989,11 @@ class WalmartScraper(Scraper):
         else:
             pinfo_dict = self.product_info_json
 
-        sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
-        sellers = map(lambda d: d["sellerName"], sellers_dict)
+#        sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
+#        sellers = map(lambda d: d["sellerName"], sellers_dict)
+
+        sellers_dict = pinfo_dict["buyingOptions"]["marketplaceOptions"]
+        sellers = map(lambda d: d["seller"]["displayName"], sellers_dict)
 
         return sellers
 
@@ -2198,7 +2201,7 @@ class WalmartScraper(Scraper):
 
         if self._version() == "Walmart v2":
             self._extract_product_info_json()
-            return self.product_info_json["buyingOptions"]["seller"]["name"]
+            return self.product_info_json["buyingOptions"]["seller"]["displayName"]
 
         return None
     def _in_stock(self):
