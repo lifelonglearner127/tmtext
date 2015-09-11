@@ -389,6 +389,9 @@ def put_file_into_s3(bucket_name, fname,
         try:
             zf.write(filename=fname, arcname=filename)
             logger.info("Adding %s to archive", filename)
+        except Exception as ex:
+            logger.error('Zipping Error')
+            logger.exception(ex)
         finally:
             zf.close()
 
