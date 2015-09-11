@@ -368,8 +368,7 @@ def get_cache_item():
     get item from sqs cache
     """
     task = request.form['task']
-    freshness = int(request.form.get('freshness', 60))  # 60 minutes, todo
-    from_cache, result = cache.get_result(task, freshness)
+    from_cache, result = cache.get_result(task)
     if result:
         return make_response(result, 200)
     elif from_cache:

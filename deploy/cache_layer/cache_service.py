@@ -48,7 +48,7 @@ class SqsCache(object):
         res = ':'.join(res)
         return res
 
-    def get_result(self, task_str, freshness):
+    def get_result(self, task_str):
         """
         retrieve cached result
         freshness in minutes
@@ -61,7 +61,10 @@ class SqsCache(object):
         score = self.db.zscore(self.REDIS_CACHE_TIMESTAMP, uniq_key)
         if not score:  # if not found item in cache
             return False, None
-        if score < (time() - (freshness*60)):  # if item is too old
+        # take only results, saved today
+        today = date.today()
+        freshness = int(mktime(today.timetuple()))
+        if score < freshness:  # if item is too old
             return True, None
         item = self.db.hget(self.REDIS_CACHE_KEY, uniq_key)
         if not item:

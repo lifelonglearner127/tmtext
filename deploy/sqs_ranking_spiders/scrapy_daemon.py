@@ -115,8 +115,6 @@ CACHE_GET_IGNORE_KEY = 'sqs_cache_get_ignore'
 # key in task data to not save cached result
 # if True, result will not be saved to cache
 CACHE_SAVE_IGNORE_KEY = 'sqs_cache_save_ignore'
-CACHE_FRESHNESS_KEY = 'sqs_cache_freshness'
-CACHE_FRESHNESS_DEFAULT = 60 * 12  # value in minutes (12 hours)
 
 
 # custom exceptions
@@ -1110,8 +1108,7 @@ def get_task_result_from_cache(task):
         logger.info('Ignoring cache result for task %s (%s).', task_id, server)
         return None
     url = CACHE_HOST + CACHE_URL_GET
-    freshness = task.get(CACHE_FRESHNESS_KEY, CACHE_FRESHNESS_DEFAULT)
-    data = dict(task=json.dumps(task), freshness=freshness)
+    data = dict(task=json.dumps(task))
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
                              headers={'Authorization': CACHE_AUTH})
