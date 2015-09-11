@@ -174,17 +174,6 @@ class GetS3FileView(AdminOnlyMixin, View):
     template_name = 'search_s3_files.html'
     max_files = 400
 
-    @staticmethod
-    def get_s3_file(
-            remote_fname,
-            local_fname,
-            access_key=AMAZON_ACCESS_KEY, secret_key=AMAZON_SECRET_KEY,
-            bucket_name=AMAZON_BUCKET_NAME):
-        conn = S3Connection(access_key, secret_key)
-        bucket = conn.get_bucket(bucket_name)
-        s3_key = bucket.get_key(remote_fname)
-        s3_key.get_contents_to_filename(local_fname)
-
     def get(self, request, **kwargs):
         fname = request.GET['file']
         ext = os.path.splitext(fname)
