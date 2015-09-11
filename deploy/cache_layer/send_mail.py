@@ -1,23 +1,27 @@
 import os
+import sys
 import json
 from datetime import date
-from flask import render_template
-from .cache_service import SqsCache
+from jinja2 import Environment, FileSystemLoader
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(1, os.path.join(CWD, '..'))
+from cache_service import SqsCache
 
 
 def collect_data(cache):
-    # executed_tasks, total_instances, used_memory
-    # total_cached_items, cache_most_popular
     context = dict()
     context['executed_tasks'] = cache.get_executed_tasks_count()
     context['total_instances'] = cache.get_today_instances()
     context['total_cached_items'] = cache.get_cached_tasks_count()
-    context['cached_most_popular'] = cache.get_most_popular_cached_items(5)
+    context['cache_most_popular'] = cache.get_most_popular_cached_items(5)
+    context['used_memory'] = cache.get_used_memory()
     return context
 
 
 def generate_mail_message(data):
-    return render_template('mail_template', **data)
+    env = Environment(loader=FileSystemLoader('.'))
+    template = env.get_template('mail_template')
+    return template.render(**data)
 
 
 def send_mail(sender, receivers, subject, text):
@@ -51,3 +55,6 @@ def main():
     send_mail(sender, receivers, subject, content)
     res = delete_old_cache_data(cache)
     print 'Deleted %s total records from cache.' % res
+
+if __name__ == '__main__':
+    main()

@@ -34,7 +34,7 @@
         <li>
             Most popular items for today:
             <ul>
-                {% for k, v in cache_most_popular.items() %}
+                {% for k, v in cache_most_popular %}
                     <li>{{ k }} - {{ v }} times</li>
                 {% endfor %}
             </ul>

@@ -21,6 +21,7 @@ class SqsCache(object):
     REDIS_CACHE_KEY = 'cached_responses'  # hash, cached items
     REDIS_CACHE_STATS = 'cached_count'  # zset, to get most popular items
     REDIS_COMPLETED_TASKS = 'completed_tasks'  # zset, count completed tasks
+    REDIS_INSTANCES_COUNTER = 'daily_sqs_instances_counter'
 
     def __init__(self, db=None):
         self.db = db if db else StrictRedis(REDIS_HOST, REDIS_PORT)
@@ -47,7 +48,7 @@ class SqsCache(object):
         res = ':'.join(res)
         return res
 
-    def get_result(self, task_str, freshness):
+    def get_result(self, task_str):
         """
         retrieve cached result
         freshness in minutes
@@ -60,7 +61,10 @@ class SqsCache(object):
         score = self.db.zscore(self.REDIS_CACHE_TIMESTAMP, uniq_key)
         if not score:  # if not found item in cache
             return False, None
-        if score < (time() - (freshness*60)):  # if item is too old
+        # take only results, saved today
+        today = date.today()
+        freshness = int(mktime(today.timetuple()))
+        if score < freshness:  # if item is too old
             return True, None
         item = self.db.hget(self.REDIS_CACHE_KEY, uniq_key)
         if not item:
@@ -81,7 +85,7 @@ class SqsCache(object):
         # save some space using compress
         self.db.hset(self.REDIS_CACHE_KEY, uniq_key, compress(result))
         res = self.db.zadd(self.REDIS_CACHE_TIMESTAMP, int(time()), uniq_key)
-        return bool(res)
+        return True
 
     def delete_old_tasks(self, freshness):
         """
@@ -104,6 +108,7 @@ class SqsCache(object):
         """
         return tuple of count of deleted items from cache and from tasks
         """
+        self.db.delete(self.REDIS_INSTANCES_COUNTER)
         return \
             (self.db.zremrangebyrank(self.REDIS_CACHE_STATS, 0, -1),
              self.db.zremrangebyrank(self.REDIS_COMPLETED_TASKS, 0, -1))
@@ -152,8 +157,8 @@ class SqsCache(object):
         """
         gets 10 most popular items in cache
         """
-        return dict(self.db.zrevrangebyscore(self.REDIS_CACHE_STATS,
-                                             9999, 0, 0, cnt, True))
+        return self.db.zrevrangebyscore(self.REDIS_CACHE_STATS,
+                                        9999, 0, 0, cnt, True, int)
 
     def get_used_memory(self):
         return self.db.info().get('used_memory_human')

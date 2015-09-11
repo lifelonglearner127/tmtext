@@ -115,8 +115,6 @@ CACHE_GET_IGNORE_KEY = 'sqs_cache_get_ignore'
 # key in task data to not save cached result
 # if True, result will not be saved to cache
 CACHE_SAVE_IGNORE_KEY = 'sqs_cache_save_ignore'
-CACHE_FRESHNESS_KEY = 'sqs_cache_freshness'
-CACHE_FRESHNESS_DEFAULT = 60 * 12  # value in minutes (12 hours)
 
 
 # custom exceptions
@@ -160,17 +158,6 @@ def switch_branch_if_required(metadata):
         cmd = cmd.format(branch=branch_name)
         logger.info("Run '%s'", cmd)
         os.system(cmd)
-
-
-def update_handled_tasks_set(set_name, redis_db):
-    """Will add new score:value pair to some redis sorted set.
-    Score and value will be current time."""
-    if redis_db:
-        try:
-            redis_db.zadd(set_name, time.time(), time.time())
-        except Exception as e:
-            logger.warning("Failed to add info to set '%s' with exception"
-                           " '%s'", set_name, e)
 
 
 def is_same_branch(b1, b2):
@@ -402,6 +389,9 @@ def put_file_into_s3(bucket_name, fname,
         try:
             zf.write(filename=fname, arcname=filename)
             logger.info("Adding %s to archive", filename)
+        except Exception as ex:
+            logger.error('Zipping Error')
+            logger.exception(ex)
         finally:
             zf.close()
 
@@ -512,6 +502,7 @@ def dump_cached_data_into_sqs(cached_key, queue_name, metadata):
     }
     if CONVERT_TO_CSV:
         msg['csv_data_key'] = cached_key + '.csv.zip'
+    logger.info('Sending cached response to queue %s: %s', queue_name, msg)
     if TEST_MODE:
         test_write_msg_to_fs(queue_name, msg)
     else:
@@ -795,8 +786,6 @@ class ScrapyTask(object):
                 logger.warning('Daemon logs uploaded')
             except Exception as e:
                 logger.warning('Could not upload daemon logs: %s' % str(e))
-
-        self.save_cached_result()
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
 
@@ -806,6 +795,14 @@ class ScrapyTask(object):
         successfully in allowed time
         """
         # run this task after scrapy process successfully finished
+        # cache result, if there is at least one scraped item
+        if self.items_scraped:
+            self.save_cached_result()
+        else:
+            logger.warning('Not caching result for task %s (%s) '
+                           'due to no scraped items.',
+                           self.task_data.get('task_id'),
+                           self.task_data.get('server_name'))
         logger.info('Success finish task #%s', self.task_data.get('task_id', 0))
         self.finished_ok = True
 
@@ -1115,8 +1112,7 @@ def get_task_result_from_cache(task):
         logger.info('Ignoring cache result for task %s (%s).', task_id, server)
         return None
     url = CACHE_HOST + CACHE_URL_GET
-    freshness = task.get(CACHE_FRESHNESS_KEY, CACHE_FRESHNESS_DEFAULT)
-    data = dict(task=json.dumps(task), freshness=freshness)
+    data = dict(task=json.dumps(task))
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
                              headers={'Authorization': CACHE_AUTH})
@@ -1290,7 +1286,6 @@ def main():
         if task.get_cached_result():
             # if found response in cache, upload data, delete task from sqs
             task.queue.task_done()
-            increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
             cache_complete_task(task_data)
             del task
             continue
@@ -1301,8 +1296,6 @@ def main():
                 'Task %s started successfully, removing it from the queue',
                 task.task_data.get('task_id'))
             task.queue.task_done()
-            increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
-            # update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
             cache_complete_task(task_data)
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
