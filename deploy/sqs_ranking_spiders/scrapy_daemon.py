@@ -499,6 +499,7 @@ def dump_cached_data_into_sqs(cached_key, queue_name, metadata):
     }
     if CONVERT_TO_CSV:
         msg['csv_data_key'] = cached_key + '.csv.zip'
+    logger.info('Sending cached response to queue %s: %s', queue_name, msg)
     if TEST_MODE:
         test_write_msg_to_fs(queue_name, msg)
     else:
