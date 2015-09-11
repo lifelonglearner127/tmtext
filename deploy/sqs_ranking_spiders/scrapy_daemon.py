@@ -162,17 +162,6 @@ def switch_branch_if_required(metadata):
         os.system(cmd)
 
 
-def update_handled_tasks_set(set_name, redis_db):
-    """Will add new score:value pair to some redis sorted set.
-    Score and value will be current time."""
-    if redis_db:
-        try:
-            redis_db.zadd(set_name, time.time(), time.time())
-        except Exception as e:
-            logger.warning("Failed to add info to set '%s' with exception"
-                           " '%s'", set_name, e)
-
-
 def is_same_branch(b1, b2):
     return b1 == b2
 
@@ -795,8 +784,6 @@ class ScrapyTask(object):
                 logger.warning('Daemon logs uploaded')
             except Exception as e:
                 logger.warning('Could not upload daemon logs: %s' % str(e))
-
-        self.save_cached_result()
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
 
@@ -806,6 +793,14 @@ class ScrapyTask(object):
         successfully in allowed time
         """
         # run this task after scrapy process successfully finished
+        # cache result, if there is at least one scraped item
+        if self.items_scraped:
+            self.save_cached_result()
+        else:
+            logger.warning('Not caching result for task %s (%s) '
+                           'due to no scraped items.',
+                           self.task_data.get('task_id'),
+                           self.task_data.get('server_name'))
         logger.info('Success finish task #%s', self.task_data.get('task_id', 0))
         self.finished_ok = True
 
@@ -1290,7 +1285,6 @@ def main():
         if task.get_cached_result():
             # if found response in cache, upload data, delete task from sqs
             task.queue.task_done()
-            increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
             cache_complete_task(task_data)
             del task
             continue
@@ -1301,8 +1295,6 @@ def main():
                 'Task %s started successfully, removing it from the queue',
                 task.task_data.get('task_id'))
             task.queue.task_done()
-            increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
-            # update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
             cache_complete_task(task_data)
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
