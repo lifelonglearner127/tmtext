@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.views.decorators.csrf import csrf_exempt
 
 from gui.views import LogFileView, CSVDataFileView, AddJob, ProgressMessagesView,\
-    ProgressFileView
+    ProgressFileView, SearchFilesView, GetS3FileView
 
 
 from django.conf import settings
@@ -25,7 +25,9 @@ urlpatterns = [
         name='progress_file_view'),
     url(r'^add-job', csrf_exempt(AddJob.as_view()),
         name='add_job_view'),
-    url(r'^progress/', ProgressMessagesView.as_view(), name='progress')
+    url(r'^progress/', ProgressMessagesView.as_view(), name='progress'),
+    url(r'^search-files/', SearchFilesView.as_view(), name='search-files'),
+    url(r'^get-file/', GetS3FileView.as_view(), name='get-file')
 ]
 
 if settings.DEBUG:
