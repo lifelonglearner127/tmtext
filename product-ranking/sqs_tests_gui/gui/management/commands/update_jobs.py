@@ -5,6 +5,7 @@ import sys
 import datetime
 import zipfile
 import subprocess
+import tempfile
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
@@ -61,9 +62,15 @@ def num_of_running_instances(file_path):
 def list_amazon_bucket(bucket=AMAZON_BUCKET_NAME,
                        local_fname=LOCAL_AMAZON_LIST_CACHE):
     filez = list_files_in_bucket(AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, bucket)
-    with open(local_fname, 'w') as fh:
+    # dump to a temporary file and replace the original one then
+    tmp_file = tempfile.NamedTemporaryFile(mode='rb', delete=False)
+
+    with open(tmp_file.name, 'w') as fh:
         for f in filez:
             fh.write(str(f)+'\n')
+    if os.path.exists(local_fname):
+        os.unlink(local_fname)
+    os.rename(tmp_file.name, local_fname)
 
 
 def get_filenames_for_task_id(task_id, server_name,
