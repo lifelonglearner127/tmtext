@@ -135,8 +135,9 @@ class CvsProductsSpider(BaseProductsSpider):
             return urlparse.urljoin(response.url, url)
 
         links = response.xpath(
-            "//div[@class='product']/div[@class='innerBox']/"
-            "div[@class='productSection1']/a/@href"
+            "//div[contains(@class, 'product')]/"
+            "div[contains(@class, 'innerBox')]/"
+            "div[contains(@class, 'productSection1')]/a/@href"
         ).extract()
 
         brands = response.meta.get('brands', set())
