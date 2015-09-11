@@ -1921,6 +1921,13 @@ class WalmartScraper(Scraper):
         try:
             if self._find_between(html.tostring(self.tree_html), "isBuyableInStore:", ",").strip() == "true":
                 return 1
+
+            try:
+                onlinePriceText = "".join(self.tree_html.xpath("//tr[@id='WM_ROW']//div[@class='onlinePriceWM']//text()"))
+                if "In stores only" in onlinePriceText:
+                    return 1
+            except:
+                pass
         except:
             pass
 
@@ -2239,6 +2246,13 @@ class WalmartScraper(Scraper):
 
     def _site_online_v1(self):
         try:
+            try:
+                onlinePriceText = "".join(self.tree_html.xpath("//tr[@id='WM_ROW']//div[@class='onlinePriceWM']//text()"))
+                if "In stores only" in onlinePriceText:
+                    return 0
+            except:
+                pass
+
             if "walmart.com" in self._find_between(html.tostring(self.tree_html), "sellerName:", ",").lower() and \
                             self._find_between(html.tostring(self.tree_html), "isBuyableOnWWW:", ",").strip() == "true":
                 return 1
