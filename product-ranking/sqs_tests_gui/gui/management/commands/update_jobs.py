@@ -64,6 +64,7 @@ def list_amazon_bucket(bucket=AMAZON_BUCKET_NAME,
     filez = list_files_in_bucket(AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, bucket)
     # dump to a temporary file and replace the original one then
     tmp_file = tempfile.NamedTemporaryFile(mode='rb', delete=False)
+    tmp_file.close()
 
     with open(tmp_file.name, 'w') as fh:
         for f in filez:
