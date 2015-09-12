@@ -64,7 +64,6 @@ def main():
         except Exception, e:
             with open('/tmp/_line', 'wb') as fh:
                 fh.write(str(line))
-            assert False
         url = product['url']
         ranking = product['ranking']
         if url in best_seller_rankings \
