@@ -727,7 +727,8 @@ class ScrapyTask(object):
                 REPO_BASE_PATH, output_path+'.jl',
                 output_path+'_bs.jl', temp_file)
             try:  # if best seller failed, download data without bsr column
-                check_output(cmd, shell=True, stderr=STDOUT)
+                output = check_output(cmd, shell=True, stderr=STDOUT)
+                logger.info('BSR script output: %s', output)
                 with open(temp_file) as bs_file:
                     lines = bs_file.readlines()
                     with open(output_path+'.jl', 'w') as main_file:
