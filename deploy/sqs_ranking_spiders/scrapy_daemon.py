@@ -1133,7 +1133,8 @@ def get_task_result_from_cache(task):
                     task_id, server, resp.status_code, resp.text)
         return None
     else:  # got task
-        logger.info('Got cached result for task %s (%s).', task_id, server)
+        logger.info('Got cached result for task %s (%s): %s.',
+                    task_id, server, resp.text)
         return resp.text
 
 
