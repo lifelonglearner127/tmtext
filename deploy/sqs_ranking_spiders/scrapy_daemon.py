@@ -16,7 +16,7 @@ from collections import OrderedDict
 import datetime
 from threading import Thread
 from multiprocessing.connection import Listener, AuthenticationError, Client
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output, CalledProcessError, STDOUT
 
 # list of all available incoming SQS with tasks
 OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
@@ -723,14 +723,19 @@ class ScrapyTask(object):
         if self.process_bsr and self.finished_ok:
             logger.info('Collecting best sellers data...')
             temp_file = output_path + 'temp_file.jl'
-            os.system('%s/product-ranking/add-best-seller.py %s %s > %s' % (
+            cmd = '%s/product-ranking/add-best-seller.py %s %s > %s' % (
                 REPO_BASE_PATH, output_path+'.jl',
-                output_path+'_bs.jl', temp_file))
-            with open(temp_file) as bs_file:
-                lines = bs_file.readlines()
-                with open(output_path+'.jl', 'w') as main_file:
-                    main_file.writelines(lines)
-            os.remove(temp_file)
+                output_path+'_bs.jl', temp_file)
+            try:  # if best seller failed, download data without bsr column
+                check_output(cmd, shell=True, stderr=STDOUT)
+                with open(temp_file) as bs_file:
+                    lines = bs_file.readlines()
+                    with open(output_path+'.jl', 'w') as main_file:
+                        main_file.writelines(lines)
+                os.remove(temp_file)
+            except CalledProcessError as ex:
+                logger.error('Best seller conversion error')
+                logger.exception(ex)
         try:
             data_key = put_file_into_s3(
                 AMAZON_BUCKET_NAME, output_path+'.jl')
