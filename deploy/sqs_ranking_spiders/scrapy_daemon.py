@@ -16,7 +16,7 @@ from collections import OrderedDict
 import datetime
 from threading import Thread
 from multiprocessing.connection import Listener, AuthenticationError, Client
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output, CalledProcessError, STDOUT
 
 # list of all available incoming SQS with tasks
 OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
@@ -723,18 +723,27 @@ class ScrapyTask(object):
         if self.process_bsr and self.finished_ok:
             logger.info('Collecting best sellers data...')
             temp_file = output_path + 'temp_file.jl'
-            os.system('%s/product-ranking/add-best-seller.py %s %s > %s' % (
+            cmd = '%s/product-ranking/add-best-seller.py %s %s > %s' % (
                 REPO_BASE_PATH, output_path+'.jl',
-                output_path+'_bs.jl', temp_file))
-            with open(temp_file) as bs_file:
-                lines = bs_file.readlines()
-                with open(output_path+'.jl', 'w') as main_file:
-                    main_file.writelines(lines)
-            os.remove(temp_file)
+                output_path+'_bs.jl', temp_file)
+            try:  # if best seller failed, download data without bsr column
+                output = check_output(cmd, shell=True, stderr=STDOUT)
+                logger.info('BSR script output: %s', output)
+                with open(temp_file) as bs_file:
+                    lines = bs_file.readlines()
+                    with open(output_path+'.jl', 'w') as main_file:
+                        main_file.writelines(lines)
+                os.remove(temp_file)
+            except CalledProcessError as ex:
+                logger.error('Best seller conversion error')
+                logger.error(ex.output)
+                logger.exception(ex)
         try:
             data_key = put_file_into_s3(
                 AMAZON_BUCKET_NAME, output_path+'.jl')
-        except Exception:
+        except Exception as ex:
+            logger.error('Data file uploading error')
+            logger.exception(ex)
             data_key = None
         logs_key = put_file_into_s3(
             AMAZON_BUCKET_NAME, output_path+'.log')
@@ -922,7 +931,7 @@ class ScrapyTask(object):
             if res is not None and res_bsr is not None:
                 logger.info('Finish try succeeded')
                 self.return_code = res
-                time.sleep(5)
+                time.sleep(15)
                 return True
         else:
             logger.warning('Killing scrapy process manually, task id is %s',
@@ -1125,7 +1134,8 @@ def get_task_result_from_cache(task):
                     task_id, server, resp.status_code, resp.text)
         return None
     else:  # got task
-        logger.info('Got cached result for task %s (%s).', task_id, server)
+        logger.info('Got cached result for task %s (%s): %s.',
+                    task_id, server, resp.text)
         return resp.text
 
 
@@ -1323,6 +1333,7 @@ def main():
             logger.error('Some of the tasks not finished in allowed time, '
                          'stopping them.')
             stop_not_finished_tasks(tasks_taken)
+        time.sleep(20)
     except KeyboardInterrupt:
         stop_not_finished_tasks(tasks_taken)
         raise Exception

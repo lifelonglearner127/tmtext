@@ -61,7 +61,7 @@ def main():
     for line in best_seller_f:
         try:
             product = json.loads(line)
-        except Exception, e:
+        except Exception as e:
             with open('/tmp/_line', 'wb') as fh:
                 fh.write(str(line))
         url = product['url']
