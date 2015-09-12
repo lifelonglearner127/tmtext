@@ -736,6 +736,7 @@ class ScrapyTask(object):
                 os.remove(temp_file)
             except CalledProcessError as ex:
                 logger.error('Best seller conversion error')
+                logger.error(ex.output)
                 logger.exception(ex)
         try:
             data_key = put_file_into_s3(
