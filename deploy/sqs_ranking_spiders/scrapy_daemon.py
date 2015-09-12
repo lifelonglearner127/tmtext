@@ -930,7 +930,7 @@ class ScrapyTask(object):
             if res is not None and res_bsr is not None:
                 logger.info('Finish try succeeded')
                 self.return_code = res
-                time.sleep(5)
+                time.sleep(15)
                 return True
         else:
             logger.warning('Killing scrapy process manually, task id is %s',
@@ -1331,6 +1331,7 @@ def main():
             logger.error('Some of the tasks not finished in allowed time, '
                          'stopping them.')
             stop_not_finished_tasks(tasks_taken)
+        time.sleep(20)
     except KeyboardInterrupt:
         stop_not_finished_tasks(tasks_taken)
         raise Exception
