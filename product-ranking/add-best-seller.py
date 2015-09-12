@@ -61,9 +61,10 @@ def main():
     for line in best_seller_f:
         try:
             product = json.loads(line)
-        except Exception, e:
+        except Exception as e:
             with open('/tmp/_line', 'wb') as fh:
                 fh.write(str(line))
+            print('Got exception: %s' % str(e))
             assert False
         url = product['url']
         ranking = product['ranking']
