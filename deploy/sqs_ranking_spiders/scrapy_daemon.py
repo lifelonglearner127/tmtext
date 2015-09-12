@@ -740,7 +740,9 @@ class ScrapyTask(object):
         try:
             data_key = put_file_into_s3(
                 AMAZON_BUCKET_NAME, output_path+'.jl')
-        except Exception:
+        except Exception as ex:
+            logger.error('Data file uploading error')
+            logger.exception(ex)
             data_key = None
         logs_key = put_file_into_s3(
             AMAZON_BUCKET_NAME, output_path+'.log')
