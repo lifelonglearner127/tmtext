@@ -1921,6 +1921,13 @@ class WalmartScraper(Scraper):
         try:
             if self._find_between(html.tostring(self.tree_html), "isBuyableInStore:", ",").strip() == "true":
                 return 1
+
+            try:
+                onlinePriceText = "".join(self.tree_html.xpath("//tr[@id='WM_ROW']//div[@class='onlinePriceWM']//text()"))
+                if "In stores only" in onlinePriceText:
+                    return 1
+            except:
+                pass
         except:
             pass
 
@@ -1989,8 +1996,11 @@ class WalmartScraper(Scraper):
         else:
             pinfo_dict = self.product_info_json
 
-        sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
-        sellers = map(lambda d: d["sellerName"], sellers_dict)
+#        sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
+#        sellers = map(lambda d: d["sellerName"], sellers_dict)
+
+        sellers_dict = pinfo_dict["buyingOptions"]["marketplaceOptions"]
+        sellers = map(lambda d: d["seller"]["displayName"], sellers_dict)
 
         return sellers
 
@@ -2198,7 +2208,7 @@ class WalmartScraper(Scraper):
 
         if self._version() == "Walmart v2":
             self._extract_product_info_json()
-            return self.product_info_json["buyingOptions"]["seller"]["name"]
+            return self.product_info_json["buyingOptions"]["seller"]["displayName"]
 
         return None
     def _in_stock(self):
@@ -2236,6 +2246,13 @@ class WalmartScraper(Scraper):
 
     def _site_online_v1(self):
         try:
+            try:
+                onlinePriceText = "".join(self.tree_html.xpath("//tr[@id='WM_ROW']//div[@class='onlinePriceWM']//text()"))
+                if "In stores only" in onlinePriceText:
+                    return 0
+            except:
+                pass
+
             if "walmart.com" in self._find_between(html.tostring(self.tree_html), "sellerName:", ",").lower() and \
                             self._find_between(html.tostring(self.tree_html), "isBuyableOnWWW:", ",").strip() == "true":
                 return 1

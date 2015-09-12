@@ -4,15 +4,21 @@ import datetime
 import random
 import json
 import base64
+import tempfile
+import mimetypes
 
+from django.core.servers.basehttp import FileWrapper
 from django.views.generic import RedirectView, View, ListView, TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 import boto
+from boto.s3.connection import S3Connection
 
 from .models import get_data_filename, get_log_filename, get_progress_filename,\
     Job, JobGrouperCache
+from management.commands.update_jobs import LOCAL_AMAZON_LIST_CACHE,\
+    AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_BUCKET_NAME, download_s3_file
 import settings
 
 
@@ -128,3 +134,59 @@ class ProgressMessagesView(AdminOnlyMixin, TemplateView):
         self._connect()
         context['msgs'] = self._msgs()
         return context
+
+
+class SearchFilesView(AdminOnlyMixin, TemplateView):
+    template_name = 'search_s3_files.html'
+    max_files = 400
+
+    def get_context_data(self, **kwargs):
+        result = []
+        context = super(SearchFilesView, self).get_context_data(**kwargs)
+        error = None
+        warning = None
+        searchterm = self.request.GET.get('searchterm', '')
+        if not searchterm:
+            return context  # not searched
+        elif len(searchterm) < 4:
+            error = 'Searchterm must be longer than 4 chars'
+        else:
+            with open(LOCAL_AMAZON_LIST_CACHE, 'r') as fh:
+                for line in fh:
+                    line = line.strip()
+                    if '<Key:' in line and ',' in line:
+                        line = line.split(',', 1)[1]
+                        if line[-1] == '>':
+                            line = line[0:-1]
+                        if searchterm.lower() in line.lower():
+                            result.append(line)
+                        if len(result) > self.max_files:
+                            warning = 'More than %i results matched' % self.max_files
+                            break
+        context['error'] = error
+        context['warning'] = warning
+        context['results'] = result
+        context['searchterm'] = searchterm
+        return context
+
+
+class GetS3FileView(AdminOnlyMixin, View):
+    template_name = 'search_s3_files.html'
+    max_files = 400
+
+    def get(self, request, **kwargs):
+        fname = request.GET['file']
+        ext = os.path.splitext(fname)
+        if ext and len(ext) > 1 and isinstance(ext, (list, tuple)):
+            ext = ext[1]
+        # save to a temporary file
+        tempfile_name = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
+        tempfile_name.close()
+        download_s3_file(AMAZON_BUCKET_NAME, fname, tempfile_name.name)
+        # create File response
+        wrapper = FileWrapper(open(tempfile_name.name, 'rb'))
+        content_type = mimetypes.guess_type(tempfile_name.name)[0]
+        response = HttpResponse(wrapper, content_type=content_type)
+        response['Content-Length'] = os.path.getsize(tempfile_name.name)
+        response['Content-Disposition'] = 'attachment; filename=%s' % tempfile_name.name
+        return response
