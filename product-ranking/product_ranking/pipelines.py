@@ -7,6 +7,7 @@ from __future__ import division, absolute_import, unicode_literals
 import string
 import unittest
 import json
+import random
 
 from scrapy import Selector
 from scrapy.exceptions import DropItem
@@ -254,10 +255,13 @@ class CollectStatistics(object):
     @staticmethod
     def process_item(item, spider):
         if STATISTICS_ENABLED:
-            try:
-                item['_statistics'] = report_statistics()
-            except Exception as e:
-                item['_statistics'] = str(e)
+            if random.randint(0, 77) == 0:
+                try:
+                    item['_statistics'] = report_statistics()
+                except Exception as e:
+                    item['_statistics'] = str(e)
+            else:
+                item['_statistics'] = ''
         else:
             item['_statistics'] = STATISTICS_ERROR_MSG
         return item
