@@ -20,6 +20,14 @@ except ImportError:
 
 from .items import Price
 
+STATISTICS_ENABLED = False
+STATISTICS_ERROR_MSG = None
+try:
+    from .statistics import report_statistics
+    STATISTICS_ENABLED = True
+except ImportError as e:
+    STATISTICS_ERROR_MSG = str(e)
+
 
 class PipelineFormatter(logformatter.LogFormatter):
     # redefine this method to change log level for DropItem exception
@@ -238,6 +246,21 @@ class FilterNonPartialSearchTermInTitleTest(unittest.TestCase):
         assert item['search_term_in_title_partial']
         assert not item['search_term_in_title_interleaved']
         assert not item['search_term_in_title_exactly']
+
+
+class CollectStatistics(object):
+    """ Gathers server and spider statistics, such as RAM, HDD, CPU etc. """
+
+    @staticmethod
+    def process_item(item, spider):
+        if STATISTICS_ENABLED:
+            try:
+                item['_statistics'] = report_statistics()
+            except Exception as e:
+                item['_statistics'] = str(e)
+        else:
+            item['_statistics'] = STATISTICS_ERROR_MSG
+        return item
 
 
 if __name__ == '__main__':

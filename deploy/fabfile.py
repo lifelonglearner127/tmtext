@@ -296,6 +296,7 @@ def _setup_virtual_env_scrapyd():
         run('pip install hjson')
         run('pip install pyyaml')
         run('pip install python-dateutil')
+        run('pip install psutil')
 
     _setup_simmetrica_monitoring()
 
