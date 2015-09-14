@@ -219,8 +219,19 @@ class AmazonScraper(Scraper):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _model(self):
-        model = self.tree_html.xpath("//tr[@class='item-model-number']/td[@class='value']//text()")[0]
-        return model
+        try:
+            model = self.tree_html.xpath("//tr[@class='item-model-number']/td[@class='value']//text()")[0].strip()
+            return model
+        except:
+            pass
+
+        try:
+            model = self.tree_html.xpath("//span[@class='a-text-bold' and contains(text(), 'Item model number:')]/following-sibling::span/text()")[0].strip()
+            return model
+        except:
+            pass
+
+        return None
 
     # Amazon's version of UPC
     def _asin(self):
