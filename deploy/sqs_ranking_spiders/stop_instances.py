@@ -1,6 +1,5 @@
 import os
 import sys
-import datetime
 import json
 import time
 import multiprocessing as mp
@@ -95,34 +94,11 @@ def check_is_scrapy_daemon_not_running(ssh_key, inst_ip):
 
 
 def check_logs_status(file_path):
-    # if os.path.getsize(file_path) > 3072:
-    #     try:
-    #         f = open(file_path,'r')
-    #     except IOError:
-    #         return flag, reason # error - can't open the log file
-    #     else:
-    #         f.seek(0, 2)
-    #         fsize = f.tell()
-    #         f.seek(max(fsize-3072, 0), 0)
-    #         lines = f.readlines()
-    #         f.close()
-    #         for line in lines:
-    #             if 'Spider default output:' in line or \
-    #                     'Simmetrica events have been pushed...' in line:
-    #                 reason = "Task was finished"
-    #                 flag = True
-    #             elif 'Spider failed to start.' in line:
-    #                 reason = "Spider failed to start"
-    #                 flag = True
-    #         if fsize > 8000:
-    #             m1 = 'No any task messages were found at the queue'
-    #             m2 = 'Try to get task message from queue'
-    #             if m1 in lines[-1] and m2 in lines[-2]:
-    #                 reason = "No any tasks were received for long time"
-    #                 flag = True
-    # else:
-    #     reason = "No logs exist"
-    #     flag = True
+    """
+    returns tuple of two elements,
+    if first element is True, then instance finished work and can be stopped,
+    second element is finish reason string
+    """
     flag = False
     reason = ''
     try:
