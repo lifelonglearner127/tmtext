@@ -259,21 +259,23 @@ class ProcessText():
 
             # if none of the products has product name
             if not words1 and not words2:
-                threshold_ = threshold = DEFAULT_THRESH
+                threshold_ = threshold = ProcessText.DEFAULT_THRESH
+
+                log.msg("Default threshold for products with no name", level=log.INFO)
+            else:
 
 
+                # compute threshold for accepting/discarding a match: log(average of name lengths)*10 * parameter
+                threshold = param*(math.log(float(len(words1) + len(words2))/2, 10))*10
 
-            # compute threshold for accepting/discarding a match: log(average of name lengths)*10 * parameter
-            threshold = param*(math.log(float(len(words1) + len(words2))/2, 10))*10
-
-            # compute confidence of result (using 'threshold' as a landmark - score equal to threshold means 50% confidence)
-            # make sure it doesn't exceed 100%
-            
-            # compute confidence using fixed param of 1.0 (default threshold property). compute threshold for this pair for param=1, and compute confidence.
-            # if threshold property (param) will change, spider will accept confidence scores lower than 50 or reject scores higher
-            # param_ and threshold_ are local values used only for confidence score computation
-            param_ = 1.0
-            threshold_ = param_*(math.log(float(len(words1) + len(words2))/2, 10))*10
+                # compute confidence of result (using 'threshold' as a landmark - score equal to threshold means 50% confidence)
+                # make sure it doesn't exceed 100%
+                
+                # compute confidence using fixed param of 1.0 (default threshold property). compute threshold for this pair for param=1, and compute confidence.
+                # if threshold property (param) will change, spider will accept confidence scores lower than 50 or reject scores higher
+                # param_ and threshold_ are local values used only for confidence score computation
+                param_ = 1.0
+                threshold_ = param_*(math.log(float(len(words1) + len(words2))/2, 10))*10
 
             if threshold_ != 0:
                 confidence = 100 * min(1.0, score/(2.0 * threshold_))
