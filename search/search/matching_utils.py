@@ -25,6 +25,8 @@ class ProcessText():
     DICTIONARY_WORD_MATCH_WEIGHT = 1
     # if price difference is above this value, consider score penalization
     PRODUCT_PRICE_THRESHOLD = 10
+    # threshold to be used if products have no names (independent of names length)
+    DEFAULT_THRESH = 5
 
     # exception brands - are brands names but are also found in the dictionary
     brand_exceptions = ['philips', 'sharp', 'sceptre', 'westinghouse', 'element', 'curtis', 'emerson', 'xerox', 'kellogg']
@@ -255,6 +257,11 @@ class ProcessText():
                         score += ProcessText.ALT_MODEL_MATCH_WEIGHT
 
 
+            # if none of the products has product name
+            if not words1 and not words2:
+                threshold_ = threshold = DEFAULT_THRESH
+
+
 
             # compute threshold for accepting/discarding a match: log(average of name lengths)*10 * parameter
             threshold = param*(math.log(float(len(words1) + len(words2))/2, 10))*10
@@ -267,6 +274,7 @@ class ProcessText():
             # param_ and threshold_ are local values used only for confidence score computation
             param_ = 1.0
             threshold_ = param_*(math.log(float(len(words1) + len(words2))/2, 10))*10
+
             if threshold_ != 0:
                 confidence = 100 * min(1.0, score/(2.0 * threshold_))
             else:
