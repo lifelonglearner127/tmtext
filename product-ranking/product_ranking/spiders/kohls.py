@@ -70,6 +70,8 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
     settings = KohlsValidatorSettings
 
+    use_proxies = True
+
     SEARCH_URL = "http://www.kohls.com/search.jsp?" \
                  "N=0&" \
                  "search={search_term}&" \
