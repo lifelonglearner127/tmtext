@@ -26,7 +26,7 @@ class ProcessText():
     # if price difference is above this value, consider score penalization
     PRODUCT_PRICE_THRESHOLD = 10
     # threshold to be used if products have no names (independent of names length)
-    DEFAULT_THRESH = 5
+    DEFAULT_THRESH = 12
 
     # exception brands - are brands names but are also found in the dictionary
     brand_exceptions = ['philips', 'sharp', 'sceptre', 'westinghouse', 'element', 'curtis', 'emerson', 'xerox', 'kellogg']
@@ -258,8 +258,8 @@ class ProcessText():
                     score += ProcessText.ALT_MODEL_MATCH_WEIGHT
 
 
-            # if none of the products has product name
-            if not words1 and not words2:
+            # if the products have no product name
+            if not words1 or not words2:
                 threshold_ = threshold = ProcessText.DEFAULT_THRESH
 
                 log.msg("Default threshold for products with no name", level=log.INFO)
