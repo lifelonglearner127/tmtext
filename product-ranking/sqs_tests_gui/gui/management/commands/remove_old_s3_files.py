@@ -74,9 +74,13 @@ class Command(BaseCommand):
         # Get current bucket
         bucket = conn.get_bucket(AMAZON_BUCKET_NAME, validate=False)
         for s3_key in bucket.list():
+            if not getattr(s3_key, 'date', None):
+                continue
             if parse_date(s3_key.date) < now() - datetime.timedelta(days=OLDER_THAN):
                 print 'removing file', s3_key
                 try:
                     s3_key.delete()
                 except Exception as e:
                     print ' '*4, str(e).upper()
+            else:
+                print 'skipping file', s3_key
