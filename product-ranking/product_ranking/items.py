@@ -223,3 +223,5 @@ class SiteProductItem(Item):
     deliver_in = Field()  # now for Jet.com only;
 
     assortment_url = Field()
+
+    _statistics = Field()  # for server and spider stats (RAM, CPU, disk etc.)

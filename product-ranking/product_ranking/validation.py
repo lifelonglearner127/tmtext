@@ -622,6 +622,9 @@ class BaseValidator(object):
     def _validate_deliver_in(self, val):
         return True  # TODO: update
 
+    def _validate__statistics(self, val):
+        return True  # TODO: update
+
     def _get_failed_fields(self, data, add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)
         :param data: 2-dimensions list or str
