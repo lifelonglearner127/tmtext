@@ -255,7 +255,12 @@ class CollectStatistics(object):
     @staticmethod
     def process_item(item, spider):
         if STATISTICS_ENABLED:
-            if random.randint(0, 77) == 0:
+            _gather_stats = False
+            if getattr(spider, 'product_url', None):
+                _gather_stats = True
+            else:
+                _gather_stats = bool(random.randint(0, 50) == 0)
+            if _gather_stats:
                 try:
                     item['_statistics'] = report_statistics()
                 except Exception as e:
