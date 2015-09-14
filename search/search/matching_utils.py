@@ -248,13 +248,14 @@ class ProcessText():
             # add model matching score
             if model_matched:
                 # only add to score if they have more than a word in common - otherwise assume it's a conincidence model match
-                if score > 1:
-                    # if actual models matched
-                    if (model_matched == 1):
-                        score += ProcessText.MODEL_MATCH_WEIGHT
-                    # if alternate models matched
-                    elif (model_matched == 2):
-                        score += ProcessText.ALT_MODEL_MATCH_WEIGHT
+                # temporarily remove this condidition to be able to use matching by just model nr and brand (no name)
+                # if score > 1:
+                # if actual models matched
+                if (model_matched == 1):
+                    score += ProcessText.MODEL_MATCH_WEIGHT
+                # if alternate models matched
+                elif (model_matched == 2):
+                    score += ProcessText.ALT_MODEL_MATCH_WEIGHT
 
 
             # if none of the products has product name
