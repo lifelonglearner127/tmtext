@@ -28,6 +28,8 @@ path = os.path.expanduser('~/repo')
 sys.path.insert(1, os.path.join(CWD, '..'))
 sys.path.insert(2, os.path.join(CWD, '..', '..', 'special_crawler',
                                 'queue_handler'))
+sys.path.insert(2, os.path.join(CWD, '..', '..', 'product-ranking'))
+
 # for servers path
 sys.path.insert(1, os.path.join(path, '..'))
 sys.path.insert(2, os.path.join(path, '..', '..', 'special_crawler',
@@ -41,11 +43,13 @@ try:
     from sqs_ranking_spiders.remote_instance_starter import REPO_BASE_PATH,\
         logging, AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
     from sqs_ranking_spiders import QUEUES_LIST
+    from product_ranking import statistics
 except ImportError:
     # we're in /home/spiders/repo
     from repo.remote_instance_starter import REPO_BASE_PATH, logging, \
         AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
     from repo.remote_instance_starter import QUEUES_LIST
+    from product_ranking import statistics
 sys.path.insert(
     3, os.path.join(REPO_BASE_PATH, 'special_crawler', 'queue_handler'))
 from sqs_connect import SQS_Queue
@@ -296,7 +300,8 @@ def generate_msg(metadata, progress):
         'site': metadata.get('site', None),
         'server_name': metadata.get('server_name', None),
         'url': metadata.get('url', None),
-        'urls': metadata.get('urls', None)
+        'urls': metadata.get('urls', None),
+        'statistics': statistics.report_statistics()
     }
     return _msg
 
