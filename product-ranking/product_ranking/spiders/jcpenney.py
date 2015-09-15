@@ -15,15 +15,41 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
+from product_ranking.validation import BaseValidator
 from product_ranking.spiders import cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.jcpenney_variants import JcpenneyVariants
+from product_ranking.validation import BaseValidator
 
 
 is_empty = lambda x, y="": x[0] if x else y
 
 
-class JcpenneyProductsSpider(BaseProductsSpider):
+class JcpenneyValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = []
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'google_source_site', 'description', 'special_pricing', 
+        'bestseller_rank', 'model',
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = True  # ... duplicated requests?
+    ignore_log_filtered = True  # ... filtered requests?
+    test_requests = {
+        'sdfsdgdf': 0,  #+ should return 'no products' or just 0 products
+        'benny benassi': 0,
+        'water proof': [110, 210],
+        'peace': [10, 70],
+        'hot': [80, 180],
+        'drink': [30, 130],
+        'term': [30, 130],
+        'tiny': [10, 80],
+        'selling': [1, 30],
+        'night': [40, 140],
+    }
+
+
+class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     """ jcpenny.com product ranking spider.
 
     Takes `order` argument with following possible values:
@@ -35,6 +61,8 @@ class JcpenneyProductsSpider(BaseProductsSpider):
     """
 
     name = 'jcpenney_products'
+
+    settings = JcpenneyValidatorSettings
 
     allowed_domains = [
         'jcpenney.com',
@@ -80,6 +108,8 @@ class JcpenneyProductsSpider(BaseProductsSpider):
                   "26_dyncharset%3DUTF-8&" \
                   "rcs=eF4NzLkNgDAMAMAmFbtYin-zAXM4JhIFHTA_aa-" \
                   "41t5xhHZ3y4Iae4JMdiCshNOVEXVO6rTd33OVIBmgsPQwDg5SkAW4hh--nxIA&l=1"
+
+    settings = JcpenneyValidatorSettings
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode:
@@ -145,7 +175,6 @@ class JcpenneyProductsSpider(BaseProductsSpider):
                            meta=new_meta, callback=self._parse_reviews,
                            dont_filter=True)
         elif product_id:
-            print response.url, '!'*40
             return Request(self.url_formatter.format(self.REVIEW_URL,
                                                      product_id=product_id),
                            meta=new_meta, callback=self._parse_reviews,
@@ -317,7 +346,10 @@ class JcpenneyProductsSpider(BaseProductsSpider):
                     except ValueError:
                         pass
                 if distribution:
-                    reviews = BuyerReviews(total, avrg, distribution)
+                    dfr = dict({1: 0, 2: 0, 3: 0, 4: 0, 5: 0})
+                    dfr.update(distribution)
+                    reviews = BuyerReviews(total, avrg, dfr)
+                    #reviews = ZERO_REVIEWS_VALUE.update(distribution)
                     product['buyer_reviews'] = reviews
 
         if 'buyer_reviews' not in product:
@@ -325,8 +357,8 @@ class JcpenneyProductsSpider(BaseProductsSpider):
         new_meta = response.meta.copy()
         new_meta['product'] = product
         return Request(self.RELATED_URL.format(product_id=product_id),
-                       meta=new_meta, callback=self._parse_related_products,
-                       dont_filter=True)
+                       meta=new_meta, callback=self._parse_related_products)
+                       #dont_filter=True)
 
     def _scrape_product_links(self, response):
         links = response.xpath(

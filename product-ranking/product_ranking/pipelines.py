@@ -7,6 +7,7 @@ from __future__ import division, absolute_import, unicode_literals
 import string
 import unittest
 import json
+import random
 
 from scrapy import Selector
 from scrapy.exceptions import DropItem
@@ -19,6 +20,14 @@ except ImportError:
     pass  # Optional import for test.
 
 from .items import Price
+
+STATISTICS_ENABLED = False
+STATISTICS_ERROR_MSG = None
+try:
+    from .statistics import report_statistics
+    STATISTICS_ENABLED = True
+except ImportError as e:
+    STATISTICS_ERROR_MSG = str(e)
 
 
 class PipelineFormatter(logformatter.LogFormatter):
@@ -68,7 +77,7 @@ class WalmartRedirectedItemFieldReplace(object):
         _walmart_original_price = item.get('_walmart_original_price', None)
         if _walmart_original_oos:
             item['is_out_of_stock'] = _walmart_original_oos
-        if _walmart_original_price:
+        if _walmart_original_price and item.get('price', None):
             item['price'] = Price(priceCurrency=item['price'].priceCurrency,
                                   price=_walmart_original_price)
         return item
@@ -113,7 +122,7 @@ class AddSearchTermInTitleFields(object):
     def process_item(item, spider):
         if not item.has_key("is_single_result"):
             AddSearchTermInTitleFields.add_search_term_in_title_fields(
-                item, item['search_term'])
+                item, item.get('search_term', ''))
 
         return item
 
@@ -238,6 +247,29 @@ class FilterNonPartialSearchTermInTitleTest(unittest.TestCase):
         assert item['search_term_in_title_partial']
         assert not item['search_term_in_title_interleaved']
         assert not item['search_term_in_title_exactly']
+
+
+class CollectStatistics(object):
+    """ Gathers server and spider statistics, such as RAM, HDD, CPU etc. """
+
+    @staticmethod
+    def process_item(item, spider):
+        if STATISTICS_ENABLED:
+            _gather_stats = False
+            if getattr(spider, 'product_url', None):
+                _gather_stats = True
+            else:
+                _gather_stats = bool(random.randint(0, 50) == 0)
+            if _gather_stats:
+                try:
+                    item['_statistics'] = report_statistics()
+                except Exception as e:
+                    item['_statistics'] = str(e)
+            else:
+                item['_statistics'] = ''
+        else:
+            item['_statistics'] = STATISTICS_ERROR_MSG
+        return item
 
 
 if __name__ == '__main__':

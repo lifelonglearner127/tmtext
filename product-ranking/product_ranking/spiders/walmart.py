@@ -78,6 +78,7 @@ class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = False  # ... duplicated requests?
     ignore_log_filtered = False  # ... filtered requests?
+    ignore_log_duplications_and_ranking_gaps = True
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_123': 0,
@@ -285,7 +286,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         wcp = WalmartCategoryParser()
         wcp.setupSC(response)
         try:
-            product['category'] = wcp._categories_hierarchy()
+            product['categories'] = wcp._categories_hierarchy()
         except Exception as e:
             self.log('Category not parsed: '+str(e), WARNING)
         try:
@@ -371,6 +372,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             '//*[contains(@class, "NotAvailable")]'
             '[contains(@style, "block")]/text()'
         ).extract()
+        if not _na_text:
+            _na_text = response.css('#WMNotAvailableLine ::text').extract()
         if _na_text:
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
@@ -409,6 +412,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 = j.get('stock', '').lower() == 'not available'
             product['_walmart_original_price'] \
                 = j.get('price', j.get('salePrice'))
+            product['upc'] = j.get('upc', product.get('upc', ''))  # set original item UPC
         original_response.meta['product'] = product
         yield self.parse_product(original_response)
 
@@ -439,6 +443,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         original_parent_id = _get_walmart_original_redirect_item_id(response)
         current_id = get_walmart_id_from_url(response.url)
+        if str(original_parent_id) == str(current_id):
+            # there was redirect but the IDs are the same, so it's the same product
+            original_parent_id = None
         # store current ID to identify it later to match the products
         if 'product' not in response.meta:
             response.meta['product'] = {}
@@ -925,11 +932,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                             )
         except KeyError:
             pass
-        try:
-            cond_set_value(
-                product, 'upc', data['analyticsData']['upc'], conv=unicode)
-        except (ValueError, KeyError):
-            pass  # Not really a UPC.
+        if not product.get('upc', None):
+            try:
+                cond_set_value(
+                    product, 'upc', data['analyticsData']['upc'], conv=unicode)
+            except (ValueError, KeyError):
+                pass  # Not really a UPC.
         try:
             cond_set_value(
                 product,

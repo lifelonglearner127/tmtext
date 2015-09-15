@@ -61,7 +61,7 @@ class Command(BaseCommand):
     help = 'Removes S3 keys older than 45 days'
 
     def handle(self, *args, **options):
-        OLDER_THAN = 45  # in days
+        OLDER_THAN = 30  # in days
 
         if num_of_running_instances('remove_old_s3_files') > 1:
             print 'an instance of the script is already running...'
@@ -73,13 +73,14 @@ class Command(BaseCommand):
         )
         # Get current bucket
         bucket = conn.get_bucket(AMAZON_BUCKET_NAME, validate=False)
-        for f in bucket.list():
-            f_last_modified = parse_date(f.last_modified)
-            if f_last_modified < now() - datetime.timedelta(days=OLDER_THAN):
-                print 'removing file', f
+        for s3_key in bucket.list():
+            if not getattr(s3_key, 'date', None):
+                continue
+            if parse_date(s3_key.date) < now() - datetime.timedelta(days=OLDER_THAN):
+                print 'removing file', s3_key
+                try:
+                    s3_key.delete()
+                except Exception as e:
+                    print ' '*4, str(e).upper()
             else:
-                print 'skip file', f
-            try:
-                f.delete()
-            except Exception as e:
-                print ' '* 4, str(e).upper()
+                print 'skipping file', s3_key

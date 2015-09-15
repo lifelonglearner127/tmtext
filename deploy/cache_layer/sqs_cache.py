@@ -18,8 +18,10 @@ from cache_starter import log_settings
 from simmetrica_class import Simmetrica
 
 CACHE_TASKS_SQS = 'cache_sqs_ranking_spiders_tasks' # received_requests
-CACHE_OUTPUT_QUEUE_NAME = 'cache_sqs_ranking_spiders_output'
-CACHE_PROGRESS_QUEUE = 'cache_sqs_ranking_spiders_progress'
+# CACHE_OUTPUT_QUEUE_NAME = 'cache_sqs_ranking_spiders_output'
+# CACHE_PROGRESS_QUEUE = 'cache_sqs_ranking_spiders_progress'
+CACHE_OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
+CACHE_PROGRESS_QUEUE = 'sqs_ranking_spiders_progress'
 
 SPIDERS_TASKS_SQS = 'sqs_ranking_spiders_tasks_tests'  # tasks to spiders
 SPIDERS_PROGRESS_QUEUE_NAME = 'sqs_ranking_spiders_progress'  # rcvd progress report from spiders 
@@ -151,6 +153,7 @@ def load_cache_response_to_sqs(data, sqs_name):
 def generate_task_stamp(task_message):
     site = task_message['site']
     url = task_message.get('url')
+    additional_part = ''
     if url:
         additional_part = 'url:%s' % url
     searchterms_str = task_message.get('searchterms_str')
@@ -160,11 +163,11 @@ def generate_task_stamp(task_message):
         if cmd_args:
             keys = cmd_args.keys()
             keys.sort()
-        for key in keys:
-            additional_part += ':{key}:{value}'.format(
-                key=key,
-                value=cmd_args[key]
-            )
+            for key in keys:
+                additional_part += ':{key}:{value}'.format(
+                    key=key,
+                    value=cmd_args[key]
+                )
     stamp = "{site}:{additional_part}".format(
         site=site,
         additional_part=additional_part
@@ -185,15 +188,24 @@ def send_status_back_to_server(status, server_name, task_id=None):
     put_message_into_sqs(msg, queue_name)
 
 
+def get_orig_queue(queue):
+    """return queue name without "cache_" part at the beginning"""
+    cache_part = 'cache_'
+    if queue.startswith(cache_part):
+        return queue[len(cache_part):]
+    else:
+        return queue
+
+
 def generate_and_handle_new_request(task_stamp, task_message, cache_db,
-        forced=False):
+                                    queue, forced=False):
     logger.info("Generate and handle new request")
     response_will_be_provided_by_another_daemon = False
     task_id = task_message['task_id']
     server_name = task_message['server_name']
     request_item = (time.time(), server_name)
-    last_request = get_data_from_cache_hash('last_request',
-        task_stamp, cache_db)
+    last_request = get_data_from_cache_hash(
+        'last_request', task_stamp, cache_db)
 
     # check what was the latest sent to SQS request for this task
     if last_request:  # request hash entry existing in database
@@ -204,13 +216,14 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db,
         if (time.time() - float(last_request) > 3600) or forced:
             logger.info("Last request is very old")
             logger.info("Provide new task to spiders SQS")
-            put_message_into_sqs(task_message, SPIDERS_TASKS_SQS)
-            send_status_back_to_server("Request for this task was found but"
-                " it was sent more than 1 hour ago.", server_name, task_id)
-            send_status_back_to_server("Redirect request to spiders sqs.",
-                                       server_name, task_id)
-            add_data_to_cache_hash('last_request', task_stamp,
-                time.time(), cache_db)
+            put_message_into_sqs(task_message, get_orig_queue(queue))
+            send_status_back_to_server(
+                "Request for this task was found but it was sent more than 1 "
+                "hour ago.", server_name, task_id)
+            send_status_back_to_server(
+                "Redirect request to spiders sqs.", server_name, task_id)
+            add_data_to_cache_hash(
+                'last_request', task_stamp, time.time(), cache_db)
         else:
             logger.info("Last request fresh enough")
             send_status_back_to_server("Wait for request from other instance.",
@@ -218,11 +231,11 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db,
             response_will_be_provided_by_another_daemon = True
     else:
         logger.info("Last request wasn't found in cache. Create new one.")
-        put_message_into_sqs(task_message, SPIDERS_TASKS_SQS)
+        put_message_into_sqs(task_message, get_orig_queue(queue))
         send_status_back_to_server("Redirect request to spiders sqs.",
                                    server_name, task_id)
         add_data_to_cache_hash('last_request', task_stamp,
-                time.time(), cache_db)
+                               time.time(), cache_db)
 
     # add request to waiting list in any case
     logger.info("Add request to waiting list")
@@ -249,7 +262,7 @@ def generate_and_handle_new_request(task_stamp, task_message, cache_db,
             counter += 1
             if counter <= 3:
                 logger.warning("Receive failed status. Restart spider.")
-                put_request_into_sqs(task_message, SPIDERS_TASKS_SQS)
+                put_message_into_sqs(task_message, get_orig_queue(queue))
                 continue
             else:
                 logger.error("Spider still not working. Exit.")
@@ -334,7 +347,7 @@ def main(queue_name):
     if forced:
         logger.info("Forced task was received")
         generate_and_handle_new_request(
-            task_stamp, task_message, cache_db, forced)
+            task_stamp, task_message, cache_db, queue_name, forced)
         sys.exit()
 
     freshness = task_message.get('freshness')
@@ -362,14 +375,16 @@ def main(queue_name):
         # Response exist but it's too old
         else:
             logger.info("Existing response not satisfy freshness")
-            generate_and_handle_new_request(task_stamp, task_message, cache_db)
+            generate_and_handle_new_request(
+                task_stamp, task_message, cache_db, queue_name)
     # Response not exist at all
     else:
         logger.info("Existing response wasn't found for this task")
-        generate_and_handle_new_request(task_stamp, task_message, cache_db)
+        generate_and_handle_new_request(
+            task_stamp, task_message, cache_db, queue_name)
 
 
-if (__name__ == '__main__'):
+if __name__ == '__main__':
     if len(sys.argv) > 1:
         queue_name = sys.argv[1].strip()
     else:

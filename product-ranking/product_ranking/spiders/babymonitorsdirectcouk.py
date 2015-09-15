@@ -186,7 +186,23 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             '//div[@class="ProductDescriptionContainer"]').extract()
         cond_set(product, 'description', des)
 
-        # Reviews
+        rp = []
+        for prod in response.xpath('//ul[@class="ProductList"]/li'):
+            prod_all = prod.xpath('div[@class="ProductDetails"]/strong/a')
+            title = prod_all.xpath('text()').extract()
+            url = prod_all.xpath('@href').extract()
+            if title:
+                title = title[0]
+            if url:
+                url = url[0]
+            rp.append(RelatedProduct(title, url))
+        cond_set_value(product, 'related_products', rp)
+
+        cond_set_value(product, 'locale', 'en_GB')
+
+        product["url"] = response.url
+
+         # Reviews
         num_of_reviews = response.xpath(
             '//div[@class="DetailRow"]/div[contains(text(), "Rating:")]'
             '/../div[@class="Value"]/span/a/text()'
@@ -205,31 +221,53 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
             average_rating = int(re.findall("IcoRating(\d)",
                                  average_rating[0])[0])
         if not average_rating:
-            num_of_reviews = None
-        buyer_reviews = BuyerReviews(num_of_reviews=num_of_reviews,
-                                     average_rating=int(average_rating),
-                                     rating_by_star={})
+            average_rating = 0
+            num_of_reviews = 0
+        buyer_reviews = BuyerReviews(num_of_reviews=int(num_of_reviews),
+                                     average_rating=float(average_rating),
+                                     rating_by_star={1: 0, 2: 0, 3: 0,
+                                                     4: 0, 5: 0})
         if average_rating or num_of_reviews:
             cond_set_value(product, 'buyer_reviews', buyer_reviews)
+            new_meta = response.meta.copy()
+            new_meta['product'] = product
+            return Request(url=response.url,
+                           meta=new_meta,
+                           callback=self._extract_reviews,
+                           dont_filter=True)
         else:
             cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
-        rp = []
-        for prod in response.xpath('//ul[@class="ProductList"]/li'):
-            prod_all = prod.xpath('div[@class="ProductDetails"]/strong/a')
-            title = prod_all.xpath('text()').extract()
-            url = prod_all.xpath('@href').extract()
-            if title:
-                title = title[0]
-            if url:
-                url = url[0]
-            rp.append(RelatedProduct(title, url))
-        cond_set_value(product, 'related_products', rp)
+            return product
 
-        cond_set_value(product, 'locale', 'en_GB')
 
-        product["url"] = response.url
+    def _extract_reviews(self, response):
+        product = response.meta['product']
+        num, avg, by_star = product.get('buyer_reviews')
 
-        return product
+        stars = response.xpath('//ol[@class="ProductReviewList"]/'
+                               'li/h4/img/@src').re('IcoRating(\d)')
+
+        for i in stars:
+            by_star[int(i)] += 1
+
+        buyer_reviews = BuyerReviews(num_of_reviews=num,
+                                     average_rating=avg,
+                                     rating_by_star=by_star)
+
+        cond_set_value(product, 'buyer_reviews', buyer_reviews)
+        next_page = response.xpath('//p[@class="ProductReviewPaging"]/span'
+                                   '/a[contains(text(),"Next")]/@href')\
+            .extract()
+
+        if next_page:
+            new_meta = response.meta.copy()
+            new_meta['product'] = product
+            return Request(url=next_page[1], meta=new_meta,
+                           callback=self._extract_reviews,
+                           dont_filter=True)
+        else:
+            return product
+
 
     def _scrape_total_matches(self, response):
         total_matches = None

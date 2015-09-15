@@ -9,13 +9,14 @@ import unidecode
 import string
 import redis
 import boto
+import requests
 from boto.utils import get_instance_metadata
 from boto.s3.key import Key
 from collections import OrderedDict
 import datetime
 from threading import Thread
 from multiprocessing.connection import Listener, AuthenticationError, Client
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, check_output, CalledProcessError, STDOUT
 
 # list of all available incoming SQS with tasks
 OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
@@ -27,6 +28,8 @@ path = os.path.expanduser('~/repo')
 sys.path.insert(1, os.path.join(CWD, '..'))
 sys.path.insert(2, os.path.join(CWD, '..', '..', 'special_crawler',
                                 'queue_handler'))
+sys.path.insert(2, os.path.join(CWD, '..', '..', 'product-ranking'))
+
 # for servers path
 sys.path.insert(1, os.path.join(path, '..'))
 sys.path.insert(2, os.path.join(path, '..', '..', 'special_crawler',
@@ -40,11 +43,13 @@ try:
     from sqs_ranking_spiders.remote_instance_starter import REPO_BASE_PATH,\
         logging, AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
     from sqs_ranking_spiders import QUEUES_LIST
+    from product_ranking import statistics
 except ImportError:
     # we're in /home/spiders/repo
     from repo.remote_instance_starter import REPO_BASE_PATH, logging, \
         AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
     from repo.remote_instance_starter import QUEUES_LIST
+    from product_ranking import statistics
 sys.path.insert(
     3, os.path.join(REPO_BASE_PATH, 'special_crawler', 'queue_handler'))
 from sqs_connect import SQS_Queue
@@ -72,8 +77,8 @@ S3_CONN = boto.connect_s3(
 S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
 
 # settings
-MAX_CONCURRENT_TASKS = 6  # tasks per instance, all with same git branch
-MAX_TRIES_TO_GET_TASK = 50  # tries to get max tasks for same branch
+MAX_CONCURRENT_TASKS = 12  # tasks per instance, all with same git branch
+MAX_TRIES_TO_GET_TASK = 100  # tries to get max tasks for same branch
 LISTENER_ADDRESS = ('localhost', 9070)  # address to listen for signals
 # SCRAPY_LOGS_DIR = ''  # where to put log files
 # SCRAPY_DATA_DIR = ''  # where to put scraped data files
@@ -99,6 +104,21 @@ EXTENSION_SIGNALS = {
     'cache_downloading': 30 * 60,  # cache load FROM s3
     'cache_uploading': 30 * 60  # cache load TO s3,
 }
+
+# cache settings
+CACHE_HOST = 'http://sqs-metrics.contentanalyticsinc.com/'
+# CACHE_HOST = 'http://sqs-metrics.contentanalyticsinc.com/'
+CACHE_URL_GET = 'get_cache'  # url to retrieve task cache from
+CACHE_URL_SAVE = 'save_cache'  # to save cached result to
+CACHE_URL_STATS = 'complete_task'  # to have some stats about completed tasks
+CACHE_AUTH = 'Basic YWRtaW46Q29udGVudDEyMzQ1'  # auth header value
+CACHE_TIMEOUT = 15  # 15 seconds request timeout
+# key in task data to not retrieve cached result
+# if True, task will be executed even if there is result for it in cache
+CACHE_GET_IGNORE_KEY = 'sqs_cache_get_ignore'
+# key in task data to not save cached result
+# if True, result will not be saved to cache
+CACHE_SAVE_IGNORE_KEY = 'sqs_cache_save_ignore'
 
 
 # custom exceptions
@@ -142,17 +162,6 @@ def switch_branch_if_required(metadata):
         cmd = cmd.format(branch=branch_name)
         logger.info("Run '%s'", cmd)
         os.system(cmd)
-
-
-def update_handled_tasks_set(set_name, redis_db):
-    """Will add new score:value pair to some redis sorted set.
-    Score and value will be current time."""
-    if redis_db:
-        try:
-            redis_db.zadd(set_name, time.time(), time.time())
-        except Exception as e:
-            logger.warning("Failed to add info to set '%s' with exception"
-                           " '%s'", set_name, e)
 
 
 def is_same_branch(b1, b2):
@@ -291,7 +300,8 @@ def generate_msg(metadata, progress):
         'site': metadata.get('site', None),
         'server_name': metadata.get('server_name', None),
         'url': metadata.get('url', None),
-        'urls': metadata.get('urls', None)
+        'urls': metadata.get('urls', None),
+        'statistics': statistics.report_statistics()
     }
     return _msg
 
@@ -384,6 +394,9 @@ def put_file_into_s3(bucket_name, fname,
         try:
             zf.write(filename=fname, arcname=filename)
             logger.info("Adding %s to archive", filename)
+        except Exception as ex:
+            logger.error('Zipping Error')
+            logger.exception(ex)
         finally:
             zf.close()
 
@@ -478,6 +491,29 @@ def dump_result_data_into_sqs(data_key, logs_key, csv_data_key,
         write_msg_to_sqs(queue_name, msg)
 
 
+def dump_cached_data_into_sqs(cached_key, queue_name, metadata):
+    instance_log_filename = DATESTAMP + '____' + RANDOM_HASH + '____' + \
+        'remote_instance_starter2.log'
+    s3_key_instance_starter_logs = (FOLDERS_PATH + instance_log_filename)
+    msg = {
+        '_msg_id': metadata.get('task_id', metadata.get('task', None)),
+        'type': 'ranking_spiders',
+        's3_key_data': cached_key + '.jl.zip',
+        's3_key_logs': cached_key + '.log.zip',
+        'bucket_name': AMAZON_BUCKET_NAME,
+        'utc_datetime': datetime.datetime.utcnow(),
+        's3_key_instance_starter_logs': s3_key_instance_starter_logs,
+        'server_ip': _get_server_ip()
+    }
+    if CONVERT_TO_CSV:
+        msg['csv_data_key'] = cached_key + '.csv.zip'
+    logger.info('Sending cached response to queue %s: %s', queue_name, msg)
+    if TEST_MODE:
+        test_write_msg_to_fs(queue_name, msg)
+    else:
+        write_msg_to_sqs(queue_name, msg)
+
+
 def datetime_difference(d1, d2):
     """helper func to get difference between two dates in seconds"""
     res = d1 - d2
@@ -535,7 +571,7 @@ class ScrapyTask(object):
             job_name += str(task_id)
         if searchterms_str:
             additional_part = unidecode.unidecode(
-                searchterms_str).replace(
+                searchterms_str.replace("'", '')).replace(
                     ' ', '-').replace('/', '').replace('\\', '')
         else:
             # maybe should be changed to product_url
@@ -692,18 +728,27 @@ class ScrapyTask(object):
         if self.process_bsr and self.finished_ok:
             logger.info('Collecting best sellers data...')
             temp_file = output_path + 'temp_file.jl'
-            os.system('%s/product-ranking/add-best-seller.py %s %s > %s' % (
+            cmd = '%s/product-ranking/add-best-seller.py %s %s > %s' % (
                 REPO_BASE_PATH, output_path+'.jl',
-                output_path+'_bs.jl', temp_file))
-            with open(temp_file) as bs_file:
-                lines = bs_file.readlines()
-                with open(output_path+'.jl', 'w') as main_file:
-                    main_file.writelines(lines)
-            os.remove(temp_file)
+                output_path+'_bs.jl', temp_file)
+            try:  # if best seller failed, download data without bsr column
+                output = check_output(cmd, shell=True, stderr=STDOUT)
+                logger.info('BSR script output: %s', output)
+                with open(temp_file) as bs_file:
+                    lines = bs_file.readlines()
+                    with open(output_path+'.jl', 'w') as main_file:
+                        main_file.writelines(lines)
+                os.remove(temp_file)
+            except CalledProcessError as ex:
+                logger.error('Best seller conversion error')
+                logger.error(ex.output)
+                logger.exception(ex)
         try:
             data_key = put_file_into_s3(
                 AMAZON_BUCKET_NAME, output_path+'.jl')
-        except Exception:
+        except Exception as ex:
+            logger.error('Data file uploading error')
+            logger.exception(ex)
             data_key = None
         logs_key = put_file_into_s3(
             AMAZON_BUCKET_NAME, output_path+'.log')
@@ -755,7 +800,6 @@ class ScrapyTask(object):
                 logger.warning('Daemon logs uploaded')
             except Exception as e:
                 logger.warning('Could not upload daemon logs: %s' % str(e))
-
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
 
@@ -765,6 +809,14 @@ class ScrapyTask(object):
         successfully in allowed time
         """
         # run this task after scrapy process successfully finished
+        # cache result, if there is at least one scraped item
+        if self.items_scraped:
+            self.save_cached_result()
+        else:
+            logger.warning('Not caching result for task %s (%s) '
+                           'due to no scraped items.',
+                           self.task_data.get('task_id'),
+                           self.task_data.get('server_name'))
         logger.info('Success finish task #%s', self.task_data.get('task_id', 0))
         self.finished_ok = True
 
@@ -884,7 +936,7 @@ class ScrapyTask(object):
             if res is not None and res_bsr is not None:
                 logger.info('Finish try succeeded')
                 self.return_code = res
-                time.sleep(5)
+                time.sleep(15)
                 return True
         else:
             logger.warning('Killing scrapy process manually, task id is %s',
@@ -1010,6 +1062,18 @@ class ScrapyTask(object):
     def is_finised_ok(self):
         return self.finished_ok
 
+    def get_cached_result(self):
+        res = get_task_result_from_cache(self.task_data)
+        if res:
+            self.send_current_status_to_sqs('finished')
+            dump_cached_data_into_sqs(
+                res, self.task_data['server_name']+OUTPUT_QUEUE_NAME,
+                self.task_data)
+        return bool(res)
+
+    def save_cached_result(self):
+        return save_task_result_to_cache(self.task_data, self.get_output_path())
+
     def report(self):
         """returns string with the task running stats"""
         s = 'Task #%s, command %r.\n' % (self.task_data.get('task_id', 0),
@@ -1018,7 +1082,7 @@ class ScrapyTask(object):
             s += 'Task started at %s.\n' % str(self.start_date.time())
         if self.finish_date:
             s += 'Finished %s at %s, duration %s.\n' % (
-                'successfully' if self.finished_ok else 'with error',
+                'successfully' if self.finished_ok else 'containing errors',
                 str(self.finish_date.time()),
                 str(self.finish_date - self.start_date))
         if self.require_signal_failed:
@@ -1052,6 +1116,70 @@ class ScrapyTask(object):
         with open(progress_fname, 'w') as fh:
             fh.write(json.dumps(msg, default=json_serializer))
         put_file_into_s3(AMAZON_BUCKET_NAME, progress_fname)
+
+
+def get_task_result_from_cache(task):
+    """try to get cached result for some task"""
+    task_id = task.get('task_id', 0)
+    server = task.get('server_name', '')
+    if task.get(CACHE_GET_IGNORE_KEY, False):
+        logger.info('Ignoring cache result for task %s (%s).', task_id, server)
+        return None
+    url = CACHE_HOST + CACHE_URL_GET
+    data = dict(task=json.dumps(task))
+    try:
+        resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
+                             headers={'Authorization': CACHE_AUTH})
+    except Exception as ex:
+        logger.warning(ex)
+        return None
+    if resp.status_code != 200:  # means no cached data was received
+        logger.info('No cached result for task %s (%s). '
+                    'Status %s, message is: "%s".',
+                    task_id, server, resp.status_code, resp.text)
+        return None
+    else:  # got task
+        logger.info('Got cached result for task %s (%s): %s.',
+                    task_id, server, resp.text)
+        return resp.text
+
+
+def save_task_result_to_cache(task, output_path):
+    """save cached result for task to sqs cache"""
+    task_id = task.get('task_id', 0)
+    server = task.get('server_name', '')
+    if task.get(CACHE_SAVE_IGNORE_KEY, False):
+        logger.info('Ignoring save to cache for task %s (%s)', task_id, server)
+        return False
+    message = FOLDERS_PATH + os.path.basename(output_path)
+    url = CACHE_HOST + CACHE_URL_SAVE
+    data = dict(task=json.dumps(task), message=message)
+    try:
+        resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
+                             headers={'Authorization': CACHE_AUTH})
+    except Exception as ex:  # timeout passed but no response received
+        logger.warning(ex)
+        return False
+    if resp.status_code != 200:
+        logger.warning('Failed to save cached result for task %s (%s). '
+                       'Status %s, message: "%s".',
+                       task_id, server, resp.status_code, resp.text)
+        return False
+    else:
+        logger.info('Saved cached result for task %s (%s).', task_id, server)
+        return True
+
+
+def cache_complete_task(task):
+    """send request to notice that task is completed (for statistics)"""
+    url = CACHE_HOST + CACHE_URL_STATS
+    data = dict(task=json.dumps(task))
+    try:
+        requests.post(url, data=data, timeout=CACHE_TIMEOUT,
+                      headers={'Authorization': CACHE_AUTH})
+        logger.info('Updated completed task (%s).', task.get('task_id'))
+    except Exception as ex:
+        logger.warning('Update completed task error: %s.', ex)
 
 
 def del_duplicate_tasks(tasks):
@@ -1125,7 +1253,7 @@ def main():
 
     add_timeout = 30  # add to visibility timeout
     # names of the queues in SQS, ordered by priority
-    q_keys = ['production', 'test', 'dev']
+    q_keys = ['urgent', 'production', 'test', 'dev']
     q_ind = 0  # index of current queue
     # try to get tasks, untill max number of tasks is reached or
     # max number of tries to get tasks is reached
@@ -1169,6 +1297,13 @@ def main():
         # start task
         # if started, remove from the queue and run
         task = ScrapyTask(queue, task_data, listener)
+        # check for cached response
+        if task.get_cached_result():
+            # if found response in cache, upload data, delete task from sqs
+            task.queue.task_done()
+            cache_complete_task(task_data)
+            del task
+            continue
         if task.start():
             tasks_taken.append(task)
             task.run()
@@ -1176,21 +1311,20 @@ def main():
                 'Task %s started successfully, removing it from the queue',
                 task.task_data.get('task_id'))
             task.queue.task_done()
-            increment_metric_counter(TASKS_COUNTER_REDIS_KEY, redis_db)
-            update_handled_tasks_set(HANDLED_TASKS_SORTED_SET, redis_db)
+            cache_complete_task(task_data)
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
                          task.task_data.get('task_id', 0))
             logger.error(task.report())
     if not tasks_taken:
-        logger.warning('No tasks were taken.')
+        logger.warning('No any task messages were found.')
         logger.info('Scrapy daemon finished.')
         return
     logger.info('Total tasks received: %s', len(tasks_taken))
     # wait until all tasks are finished or max wait time is reached
     # report each task progress after that and kill all tasks
     #  which are not finished in time
-    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 59
+    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 61
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
     try:
@@ -1204,6 +1338,7 @@ def main():
             logger.error('Some of the tasks not finished in allowed time, '
                          'stopping them.')
             stop_not_finished_tasks(tasks_taken)
+        time.sleep(20)
     except KeyboardInterrupt:
         stop_not_finished_tasks(tasks_taken)
         raise Exception
@@ -1230,9 +1365,7 @@ def prepare_test_data():
         server_name='test_server_name', with_best_seller_ranking=True,
         cmd_args={'quantity': 50}
     )]
-    files = [open('/tmp/sqs_ranking_spiders_tasks_tests', 'w'),
-             open('/tmp/sqs_ranking_spiders_tasks_dev', 'w'),
-             open('/tmp/sqs_ranking_spiders_tasks', 'w')]
+    files = [open('/tmp/' + q, 'w') for q in QUEUES_LIST.itervalues()]
     for fh in files:
         for msg in tasks:
             fh.write(json.dumps(msg, default=json_serializer)+'\n')
@@ -1243,6 +1376,7 @@ if __name__ == '__main__':
     if 'test' in [a.lower().strip() for a in sys.argv]:
         TEST_MODE = True
         prepare_test_data()
+        CACHE_HOST = 'http://127.0.0.1:5000/'
         try:
             # local mode
             from sqs_ranking_spiders.fake_sqs_queue_class import SQS_Queue

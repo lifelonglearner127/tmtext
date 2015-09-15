@@ -86,8 +86,7 @@ def check_logs_status(file_path):
 
 
 def main():
-    sys.exit()  # disable self-killer AGAIN
-    # TODO: fix and remove the line above
+    # sys.exit()  # disable self-killer AGAIN
     conn = AutoScaleConnection()
     instance_id = get_instance_metadata()['instance-id']
     log_file = '/tmp/remote_instance_starter2.log'

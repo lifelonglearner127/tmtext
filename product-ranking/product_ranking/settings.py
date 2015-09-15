@@ -34,7 +34,8 @@ ITEM_PIPELINES = {
     'product_ranking.pipelines.SetMarketplaceSellerType': 300,
     'product_ranking.pipelines.AddSearchTermInTitleFields': 300,
     'product_ranking.pipelines.CheckGoogleSourceSiteFieldIsCorrectJson': 400,
-    'product_ranking.pipelines.WalmartRedirectedItemFieldReplace': 999
+    'product_ranking.pipelines.WalmartRedirectedItemFieldReplace': 999,
+    'product_ranking.pipelines.CollectStatistics': 1300
 }
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
@@ -42,6 +43,15 @@ ITEM_PIPELINES = {
 
 # Delay between requests not to be blocked (seconds).
 DOWNLOAD_DELAY = 0.5
+
+# allow max N seconds to download anything
+DOWNLOAD_TIMEOUT = 60
+
+# Maximum URL length
+URLLENGTH_LIMIT = 5000
+
+# show all duplicates (makes debugging easier)
+DUPEFILTER_DEBUG = True
 
 #AmazonFresh mapping locations and market place id
 AMAZONFRESH_LOCATION = {
@@ -67,7 +77,6 @@ LOG_FORMATTER = 'product_ranking.pipelines.PipelineFormatter'
 
 # Value to use for buyer_reviews if no reviews found
 ZERO_REVIEWS_VALUE = [0, 0.0, {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}]
-
 
 # TODO: move out from this file! should be set dynamically in the __init__ method of the BaseValidator class
 # The piece of code below is awful, need to get rid of it asap.

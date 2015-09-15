@@ -41,6 +41,9 @@ def split():
     parser.add_option("--batch_size", "-s", dest="batch_size",
                       help="Number of rows in each output file", default=250)
 
+    parser.add_option("--with_header", "-r", dest="with_header",
+                      help="Include header row from input in all output files? (1/0)", default=1)
+
     (options, args) = parser.parse_args()
 
     # extract base of output files names from filename given as an argument
@@ -54,10 +57,16 @@ def split():
     # output files
     outfiles = []
 
+    if int(options.with_header):
+        header_line = infile.readline()
+
     # current output file
     outfile_nr = 1
     outfilename = generate_outfilename(outfiles_base, outfile_nr, outfiles_extension)
     outfile = open(outfilename, "w")
+    if int(options.with_header):
+        outfile.write(header_line)
+
 
     # append current file to output files list
     outfiles.append(outfile)
@@ -79,6 +88,9 @@ def split():
             outfile_nr += 1
             outfilename = generate_outfilename(outfiles_base, outfile_nr, outfiles_extension)
             outfile = open(outfilename, "w")
+
+            if int(options.with_header):
+                outfile.write(header_line)
 
 
     # close all open files

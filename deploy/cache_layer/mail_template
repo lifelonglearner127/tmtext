@@ -1,0 +1,13 @@
+Cache
+
+Memory used: {{ used_memory }}.
+Items in cache: {{ total_cached_items }}.
+Most used items:
+{% for k, v in cache_most_popular %}    {{ k }} ({{ v }} times)
+{% endfor %}
+
+
+Sqs
+
+Executed tasks: {{ executed_tasks }}.
+Used autoscale instances: {{ total_instances }}.

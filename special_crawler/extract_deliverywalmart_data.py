@@ -216,13 +216,12 @@ class DeliveryWalmartScraper(Scraper):
         pass
         
     def _image_urls(self):
-        '''
         try:
             if self._no_image(self.product_json["data"]["images"]["thumbnail"]):
                 return None
         except Exception, e:
             print "WARNING: ", e.message
-        '''
+
         return self.product_json["data"]["images"]["large"]
 
     def _image_count(self):

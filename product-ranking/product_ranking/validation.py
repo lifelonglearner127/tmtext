@@ -178,6 +178,7 @@ class BaseValidatorSettings(object):
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = False  # ... duplicated requests?
     ignore_log_filtered = False  # ... filtered requests?
+    ignore_log_duplications_and_ranking_gaps = False  # ranking issues + dupls.
 
     # Test requests {request: [min_products; max_products], ...}
     # The requests below are for example purposes only!
@@ -494,6 +495,10 @@ class BaseValidator(object):
             return True
         return False
 
+    def _validate_categories(self, val):
+        #TODO: better validator
+        return True
+
     def _validate_bestseller_rank(self, val):
         if isinstance(val, int):
             return True
@@ -598,12 +603,27 @@ class BaseValidator(object):
         if re.match(r'^[\d\.]+$', str(val)):
             return True
 
+    def _validate_price_original(self, val):
+        if not val:
+            return True
+        if re.match(r'^[\d\.]+$', str(val)):
+            return True
+
     def _validate_response_code(self, val):
         if not val:
             return True
         if val.isdigit():
             if 0 < val < 999:
                 return True
+
+    def _validate_assortment_url(self, val):
+        return True
+
+    def _validate_deliver_in(self, val):
+        return True  # TODO: update
+
+    def _validate__statistics(self, val):
+        return True  # TODO: update
 
     def _get_failed_fields(self, data, add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)
@@ -742,6 +762,11 @@ class BaseValidator(object):
             if 'DUPLICATIONS' in log_issues:
                 found_issues.update(
                     OrderedDict(log_issues='duplicated requests found'))
+
+        if getattr(self.settings, 'ignore_log_duplications_and_ranking_gaps', None):
+            # remove notifications about missing products and duplications
+            found_issues.pop('ranking', None)
+            found_issues.pop('log_issues', None)
 
         if not self.settings.ignore_log_filtered:
             if 'FILTERED' in log_issues:

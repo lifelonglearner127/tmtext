@@ -57,6 +57,8 @@ from extract_nextcouk_data import NextCoUKScraper
 from extract_amazonin_data import AmazonINScraper
 from extract_uniqlo_data import UniqloScraper
 from extract_deliverywalmart_data import DeliveryWalmartScraper
+from extract_flipkart_data import FlipkartScraper
+from extract_pepperfry_data import PepperfryScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -121,7 +123,9 @@ SUPPORTED_SITES = {
                     "nextcouk": NextCoUKScraper,
                     "amazonin": AmazonINScraper,
                     "uniqlo": UniqloScraper,
-                    "deliverywalmart": DeliveryWalmartScraper
+                    "deliverywalmart": DeliveryWalmartScraper,
+                    "flipkart": FlipkartScraper,
+                    "pepperfry": PepperfryScraper
                     }
 
 # add logger

@@ -14,7 +14,7 @@
     <field name="image_count" version="1.2"></field>
     <field name="image_urls" version="2.3"></field>
     <field name="video_count" version="2.4"></field>
-    <field name="video_urls" version="2.4"></field>
+    <field name="video_urls" version="2.5"></field>
     <field name="pdf_count" version="2.3"></field>
     <field name="pdf_urls" version="2.3"></field>
     <field name="wc_360" version="1.1"></field>
@@ -46,5 +46,5 @@
     <field name="category_name" version="1.1"></field>
     <field name="brand" version="1.1"></field>
     <field name="mobile_image_same" version="1.1"></field>
-    <field name="variants" version="1.1"></field>
+    <field name="variants" version="1.2"></field>
 </fields>

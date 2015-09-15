@@ -178,6 +178,7 @@ class SiteProductItem(Item):
     bestseller_rank = Field()
     department = Field()  # now for Amazons only; may change in the future
     category = Field()  # now for Amazons only; may change in the future
+    categories = Field() # now for amazon and maybe walmart
 
     # Calculated data.
     search_term_in_title_partial = Field()  # Bool
@@ -203,6 +204,7 @@ class SiteProductItem(Item):
     special_pricing = Field()  # 1/0 for TPC, Rollback; target, walmart
 
     price_subscribe_save = Field()  # Amazon
+    price_original = Field()  # a price without discount (if applicable)
 
     variants = Field()
 
@@ -217,3 +219,9 @@ class SiteProductItem(Item):
     last_buyer_review_date = Field()
 
     response_code = Field()  # for 404, 500 etc.
+
+    deliver_in = Field()  # now for Jet.com only;
+
+    assortment_url = Field()
+
+    _statistics = Field()  # for server and spider stats (RAM, CPU, disk etc.)

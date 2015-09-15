@@ -41,6 +41,10 @@ class SearchResultsSpider(SearchSpider):
 
             if 'origin_model' in response.meta:
                 item['origin_model'] = response.meta['origin_model']
+            if 'origin_upc' in response.meta:
+                item['origin_upc'] = response.meta['origin_upc']
+            if 'origin_brand' in response.meta:
+                item['origin_brand'] = response.meta['origin_brand']
 
             # extract product model from name
             product_model_extracted = ProcessText.extract_model_from_name(item['product_name'])
