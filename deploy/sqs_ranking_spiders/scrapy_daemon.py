@@ -1294,27 +1294,34 @@ def main():
             # make sure all tasks are in same branch
             queue.reset_message()
             continue
-        # start task
-        # if started, remove from the queue and run
+        # delete task, once it is received
+        queue.task_done()
+        # increase tries counter
+        task_data['tries'] = task_data.get('tries', 0) + 1
         task = ScrapyTask(queue, task_data, listener)
-        # check for cached response
-        if task.get_cached_result():
-            # if found response in cache, upload data, delete task from sqs
-            task.queue.task_done()
+        if task.get_cached_result():  # check for cached response
             cache_complete_task(task_data)
             del task
             continue
-        if task.start():
+        elif task.start():  # check for task to start
             tasks_taken.append(task)
             task.run()
             logger.info(
                 'Task %s started successfully, removing it from the queue',
                 task.task_data.get('task_id'))
-            task.queue.task_done()
             cache_complete_task(task_data)
-        else:
-            logger.error('Task #%s failed to start. Leaving it in the queue.',
-                         task.task_data.get('task_id', 0))
+        else:  # no cached data, failed to start - put task back in sqs
+            if task_data['tries'] < 3:
+                logger.warning(
+                    'Task %s (%s) failed to start, adding it back to queue.',
+                    task_data.get('task_id'), task_data.get('server_name'))
+                put_msg_to_sqs(TASK_QUEUE_NAME, task_data)
+            else:
+                logger.warning(
+                    'Task %s (%s) failed %s times. '
+                    'Not adding this task to queue again.',
+                    task_data.get('task_id'), task_data.get('server_name'),
+                    task_data.get('tries'))
             logger.error(task.report())
     if not tasks_taken:
         logger.warning('No any task messages were found.')
