@@ -67,6 +67,7 @@ class SearchSpider(BaseSpider):
     #                         5 - same as 3 but with product name as well, on first column (name from source site)
     #                         6 - same as 3 but additionally with bestsellers rank (origin and target) - to be used
     #                             in combination with the input bestsellers_link option
+    #                         7 - completely custom, using list of output fields in fields.json
     #                threshold - parameter for selecting results (the lower the value the more permissive the selection)
     def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, bestsellers_link = None, bestsellers_range = '0', \
         walmart_ids_file = None, output = 2, threshold = 1.0, \
@@ -75,7 +76,7 @@ class SearchSpider(BaseSpider):
         # call specific init for each derived class
         self.init_sub()
 
-        self.version = "99091b7aaa0cc7d9418de1571da03afa991c11d5"
+        self.version = "32bd05dca14e5e46c710b952137b3c2ff80899cb"
 
         self.product_url = product_url
         self.products_file = products_file
@@ -113,7 +114,8 @@ class SearchSpider(BaseSpider):
                                     'tesco' : self.parseURL_tesco, \
                                     'amazon' : self.parseURL_amazon, \
                                     'target' : self.parseURL_target, \
-                                    'maplin' : self.parseURL_maplin
+                                    'maplin' : self.parseURL_maplin, \
+                                    'wayfair' : self.parseURL_wayfair
                                     }
 
         # parse_bestsellers functions, for each supported origin site
@@ -983,6 +985,31 @@ class SearchSpider(BaseSpider):
             product_brand = None
 
         return (product_name, product_model, product_price, upc, None, product_brand)
+
+    def parseURL_wayfair(self, hxs):
+
+        product_name_holder = hxs.select("//span[@class='title_name']/text()").extract()
+
+        if product_name_holder:
+            product_name = product_name_holder[0].strip()
+        else:
+            product_name = None
+
+        product_price_node = hxs.select("//span[contains(@class,'product_price')]//text()").extract()
+        product_price_raw = "".join(product_price_node)
+        # remove currency and , (e.g. 1,000)
+        if product_price_node:
+            product_price = float(re.sub("[\$,]", "", product_price_raw))
+        else:
+            product_price = None
+
+        brand_holder = hxs.select("//span[@class='manu_name']/a/text()").extract()
+        if brand_holder:
+            product_brand = brand_holder[0].strip()
+        else:
+            product_brand = None
+
+        return (product_name, None, product_price, None, None, product_brand)
 
 #TODO: for the sites below, complete with missing logic, for not returning empty elements in manufacturer spider
     def parseURL_newegg(self, hxs):
