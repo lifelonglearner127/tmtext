@@ -1,7 +1,6 @@
 # ~~coding=utf-8~~
 from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
-
 import re
 import urlparse
 from urllib import unquote
@@ -15,12 +14,11 @@ from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value, FLOATING_POINT_RGEX
-from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.guess_brand import guess_brand_from_first_words
-from product_ranking.amazon_tests import AmazonTests
 from product_ranking.marketplace import Amazon_marketplace
 from spiders_shared_code.amazon_variants import AmazonVariants
 from product_ranking.amazon_bestsellers import amazon_parse_department
+from product_ranking.amazon_modules import build_categories
 
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -131,29 +129,55 @@ class AmazonBaseClass(BaseProductsSpider):
         """
         Overrides BaseProductsSpider method to scrape product links.
         """
-
-        lis = response.xpath('//ul/li[contains(@class, "s-result-item")] |'
-                             '//div[@id="mainResults"]/div[contains(@class, "prod")] |'
-                             '//*[contains(@class, "sx-table-item")]')
+        lis = response.xpath("//div[@id='resultsCol']//ul//li |"
+                             "//div[@id='mainResults']//ul//li"
+                             "[contains(@id, 'result')] |"
+                             "//div[@id='atfResults']//ul//li"
+                             "[contains(@id, 'result')] |"
+                             "//div[@id='mainResults']//div"
+                             "[contains(@id, 'result')]")
         links = []
+        last_idx = -1
 
-        for no, li in enumerate(lis):
-            href = li.xpath(
-                ".//a[contains(@class,'s-access-detail-page')]/@href |"
-                ".//a/@href")
+        for li in lis:
+            is_prime = li.xpath(
+                "*/descendant::i[contains(concat(' ', @class, ' '),"
+                "' a-icon-prime ')] |"
+                ".//span[contains(@class, 'sprPrime')]"
+            )
+            is_prime_pantry = li.xpath(
+                "*/descendant::i[contains(concat(' ',@class,' '),'"
+                "a-icon-prime-pantry ')]"
+            )
+            data_asin = is_empty(
+                li.xpath('@id').extract()
+            )
 
-            if href:
-                href = is_empty(href.extract())
-                is_prime = li.xpath(
-                    "*/descendant::i[contains(concat(' ',@class,' '),' a-icon-premium ')] |"
-                    "*/descendant::i[contains(@class, 'a-icon-prime]')]").extract()
-                is_prime_pantry = li.xpath(
-                    "*/descendant::i[contains(concat(' ',@class,' '),' a-icon-premium-pantry ')] |"
-                    "*/descendant::i[contains(@class, 'a-icon-prime-pantry')] |"
-                    "*/descendant::i[contains(@class, 'a-icon-primepantry')]").extract()
-                links.append((href, is_prime, is_prime_pantry))
+            try:
+                idx = int(is_empty(
+                    re.findall(r'\d+', data_asin)
+                ))
+            except ValueError:
+                continue
 
-        if not links:
+            if idx > last_idx:
+                link = is_empty(
+                    li.xpath(
+                        ".//a[contains(@class,'s-access-detail-page')]/@href |"
+                        ".//h3[@class='newaps']/a/@href"
+                    ).extract()
+                )
+
+                if 'slredirect' in link:
+                    link = urlparse.urljoin('http://amazon.com/', link)
+
+                links.append((link, is_prime, is_prime_pantry))
+            else:
+                break
+
+            last_idx = idx
+
+        if len(links) < 1:
             self.log("Found no product links.", WARNING)
 
         for link, is_prime, is_prime_pantry in links:
@@ -208,68 +232,74 @@ class AmazonBaseClass(BaseProductsSpider):
                      " %s tries for: %s" % (self.captcha_retries, product['url']),
                      level=WARNING)
             return None
-        else:
-            # Set locale
-            cond_set_value(product, 'locale', self.locale)
 
-            # Parse title
-            title = self._parse_title(response)
-            cond_set_value(product, 'title', title)
+        # Set locale
+        cond_set_value(product, 'locale', self.locale)
 
-            # Parse image url
-            image_url = self._parse_image_url(response)
-            cond_set_value(product, 'image_url', image_url, conv=string.strip)
+        # Parse title
+        title = self._parse_title(response)
+        cond_set_value(product, 'title', title)
 
-            # Parse brand
-            brand = self._parse_brand(response)
-            cond_set_value(product, 'brand', brand)
+        # Parse image url
+        image_url = self._parse_image_url(response)
+        cond_set_value(product, 'image_url', image_url, conv=string.strip)
 
-            # Parse price Subscribe & Save
-            price_subscribe_save = self._parse_price_subscribe_save(response)
-            cond_set_value(product, 'price_subscribe_save', price_subscribe_save, conv=string.strip)
+        # Parse brand
+        brand = self._parse_brand(response)
+        cond_set_value(product, 'brand', brand)
 
-            # Parse model
-            model = self._parse_model(response)
-            cond_set_value(product, 'model', model, conv=string.strip)
+        # Parse price Subscribe & Save
+        price_subscribe_save = self._parse_price_subscribe_save(response)
+        cond_set_value(product, 'price_subscribe_save', price_subscribe_save, conv=string.strip)
 
-            # Parse price
-            price = self._parse_price(response)
-            cond_set_value(product, 'price', price)
+        # Parse model
+        model = self._parse_model(response)
+        cond_set_value(product, 'model', model, conv=string.strip)
 
-            # Parse description
-            description = self._parse_description(response)
-            cond_set_value(product, 'description', description)
+        # Parse price
+        price = self._parse_price(response)
+        cond_set_value(product, 'price', price)
 
-            # Parse upc
-            upc = self._parse_upc(response)
-            cond_set_value(product, 'upc', upc)
+        # Parse original price
+        price_original = self._parse_price_original(response)
+        cond_set_value(product, 'price_original', price_original)
 
-            # Parse variants
-            variants = self._parse_variants(response)
-            product['variants'] = variants
+        # Parse description
+        description = self._parse_description(response)
+        cond_set_value(product, 'description', description)
 
-            # Parse marketplaces
-            marketplace_req = self._parse_marketplace(response)
-            if marketplace_req:
-                reqs.append(marketplace_req)
+        # Parse upc
+        upc = self._parse_upc(response)
+        cond_set_value(product, 'upc', upc)
 
-            # Parse category
-            category = self._parse_category(response)
-            cond_set_value(product, 'category', category)
+        # Parse variants
+        variants = self._parse_variants(response)
+        product['variants'] = variants
 
-            if category:
-                # Parse departments and bestseller rank
-                department = amazon_parse_department(category)
-                if department is not None:
-                    department, bestseller_rank = department.items()[0]
+        # Parse marketplaces
+        marketplace_req = self._parse_marketplace(response)
+        if marketplace_req:
+            reqs.append(marketplace_req)
 
-                    cond_set_value(product, 'department', department)
-                    cond_set_value(product, 'bestseller_rank', bestseller_rank)
+        # Parse category
+        category = self._parse_category(response)
+        cond_set_value(product, 'category', category)
 
-            if reqs:
-                return self.send_next_request(reqs, response)
+        build_categories(product)
 
-            return product
+        if category:
+            # Parse departments and bestseller rank
+            department = amazon_parse_department(category)
+            if department is not None:
+                department, bestseller_rank = department.items()[0]
+
+                cond_set_value(product, 'department', department)
+                cond_set_value(product, 'bestseller_rank', bestseller_rank)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
 
     def _parse_title(self, response, add_xpath=None):
         """
@@ -399,7 +429,6 @@ class AmazonBaseClass(BaseProductsSpider):
                 brand = [brand]
 
         brand = brand or ['NO BRAND']
-        brand = [br.strip() for br in brand]
 
         return brand
 
@@ -420,7 +449,7 @@ class AmazonBaseClass(BaseProductsSpider):
             price_ss = price_ss.replace(' ', '').replace(',', '').strip('$')
             try:
                 price_ss = float(price_ss)
-            except Exception as exc:
+            except ValueError as exc:
                 self.log(
                     "Unable to extract price Subscribe&Save on {url}: {exc}".format(
                         url=response.url, exc=exc
@@ -443,10 +472,7 @@ class AmazonBaseClass(BaseProductsSpider):
         mkt_place_link = urlparse.urljoin(
             response.url,
             is_empty(response.xpath(
-                "//div[contains(@class, 'a-box-inner')]/./"
-                "/a[contains(@href, '/gp/offer-listing/')]/@href |"
-                "//div[@id='secondaryUsedAndNew']/./"
-                "/a[contains(@href, '/gp/offer-listing/')]/@href |"
+                "//a[contains(@href, '/gp/offer-listing/')]/@href |"
                 "//div[contains(@class, 'a-box-inner')]/span/a/@href |"
                 "//*[@id='universal-marketplace-glance-features']/.//a/@href"
             ).extract())
@@ -528,19 +554,28 @@ class AmazonBaseClass(BaseProductsSpider):
                   '/button/text()[normalize-space()] |' \
                   '//span[@id="priceblock_saleprice"]/text()[normalize-space()] |' \
                   '//div[@id="mocaBBRegularPrice"]/div/text()[normalize-space()] |' \
-                  '//*[@id="priceblock_ourprice"][contains(@class, "a-color-price")]/text()[normalize-space()] |' \
-                  '//*[@id="priceBlock"]/.//span[@class="priceLarge"]/text()[normalize-space()] |' \
-                  '//*[@id="actualPriceValue"]/*[@class="priceLarge"]/text()[normalize-space()] |' \
+                  '//*[@id="priceblock_ourprice"][contains(@class, "a-color-price")]' \
+                  '/text()[normalize-space()] |' \
+                  '//*[@id="priceBlock"]/.//span[@class="priceLarge"]' \
+                  '/text()[normalize-space()] |' \
+                  '//*[@id="actualPriceValue"]/*[@class="priceLarge"]' \
+                  '/text()[normalize-space()] |' \
                   '//*[@id="actualPriceValue"]/text()[normalize-space()] |' \
-                  '//*[@id="buyNewSection"]/.//*[contains(@class, "offer-price")]/text()[normalize-space()] |' \
-                  '//div[contains(@class, "a-box")]/div[@class="a-row"]/text()[normalize-space()] |' \
+                  '//*[@id="buyNewSection"]/.//*[contains(@class, "offer-price")]' \
+                  '/text()[normalize-space()] |' \
+                  '//div[contains(@class, "a-box")]/div[@class="a-row"]' \
+                  '/text()[normalize-space()] |' \
                   '//span[@id="priceblock_dealprice"]/text()[normalize-space()] |' \
                   '//*[contains(@class, "price3P")]/text()[normalize-space()] |' \
                   '//span[@id="ags_price_local"]/text()[normalize-space()] |' \
-                  '//div[@id="olpDivId"]/.//span[@class="price"]/text()[normalize-space()] |' \
-                  '//div[@id="buybox"]/.//span[@class="a-color-price"]/text()[normalize-space()] |' \
+                  '//div[@id="olpDivId"]/.//span[@class="price"]' \
+                  '/text()[normalize-space()] |' \
+                  '//div[@id="buybox"]/.//span[@class="a-color-price"]' \
+                  '/text()[normalize-space()] |' \
                   '//div[@id="unqualifiedBuyBox"]/.//span[@class="a-color-price"]/text() |' \
-                  '//div[@id="tmmSwatches"]/.//li[contains(@class,"selected")]/.//span[@class="a-color-price"]'
+                  '//div[@id="tmmSwatches"]/.//li[contains(@class,"selected")]/./' \
+                  '/span[@class="a-color-price"] |' \
+                  '//div[contains(@data-reftag,"atv_dp_bb_est_sd_movie")]/button/text()'
 
         if add_xpath:
             xpathes += ' |' + add_xpath
@@ -567,19 +602,49 @@ class AmazonBaseClass(BaseProductsSpider):
 
         return price
 
+    def _parse_price_original(self, response, add_xpath=None):
+        """
+        Parses product's original price.
+        :param add_xpath: Additional xpathes, so you don't need to change base class
+        """
+        xpathes = '//*[@id="price"]/.//*[contains(@class, "a-text-strike")]' \
+                  '/text()'
+
+        if add_xpath:
+            xpathes += ' |' + add_xpath
+
+        price_original = is_empty(
+            response.xpath(xpathes).extract()
+        )
+
+        if price_original:
+            price_original = price_original.replace('$', '').strip()
+            try:
+                price_original = float(price_original)
+            except ValueError:
+                price_original = None
+
+        return price_original
+
     def _parse_category(self, response):
         """
         Parses product categories.
         """
+        meta = response.meta.copy()
+        product = meta['product']
+
         category = {
             ' > '.join(map(
                 unicode.strip, itm.css('.zg_hrsr_ladder a::text').extract())
-            ): int(re.sub('[ ,]', '', itm.css('.zg_hrsr_rank::text').re('([\d, ]+)')[0]))
+            ): int(re.sub('[ ,]', '', itm.css('.zg_hrsr_rank::text').re(
+                '([\d, ]+)'
+            )[0]))
             for itm in response.css('.zg_hrsr_item')
         }
 
         prim_a = response.css('#SalesRank::text, #SalesRank .value::text').re(
-            '(\d+){0,1}\.{0,1}(\d+) .*en (.+)\(')
+            '(\d+){0,1}\.{0,1}(\d+) .*en (.+)\('
+        )
         prim = []
         if prim_a:
             if len(prim_a) > 1 and prim_a[0].isdigit() and prim_a[1].isdigit():
