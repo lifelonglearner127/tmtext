@@ -14,7 +14,7 @@ from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    cond_set_value, FLOATING_POINT_RGEX
+    cond_set_value, FLOATING_POINT_RGEX, FormatterWithDefaults
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.marketplace import Amazon_marketplace
 from spiders_shared_code.amazon_variants import AmazonVariants
@@ -48,6 +48,9 @@ class AmazonBaseClass(BaseProductsSpider):
     buyer_reviews_stars = ['one_star', 'two_star', 'three_star', 'four_star',
                            'five_star']
 
+    SEARCH_URL = 'http://{domain}/s/ref=nb_sb_noss_1?url=search-alias' \
+                 '%3Daps&field-keywords={search_term}'
+
     REVIEW_DATE_URL = 'http://www.amazon.com/product-reviews/{product_id}/' \
                       'ref=cm_cr_pr_top_recent?ie=UTF8&showViewpoints=0&' \
                       'sortBy=bySubmissionDateDescending'
@@ -70,25 +73,14 @@ class AmazonBaseClass(BaseProductsSpider):
     }
 
     def __init__(self, captcha_retries='10', *args, **kwargs):
-        super(AmazonBaseClass, self).__init__(*args, **kwargs)
-
+        super(AmazonBaseClass, self).__init__(
+            site_name=self.allowed_domains[0],
+            url_formatter=FormatterWithDefaults(
+                domain=self.allowed_domains[0]
+            ),
+            *args, **kwargs)
         self.mtp_class = Amazon_marketplace(self)
-
-        # Defaults --- for English Amazon's
-        # String from html body that means there's no results ( "no results.", for example)
-        self.total_match_not_found = 'did not match any products.'
-        # Regexp for total matches to parse a number from html body
-        self.total_matches_re = r'of\s?([\d,.\s?]+)'
-
-        # Default locale
-        self.locale = 'en-US'
-
-        # Default price currency
-        self.price_currency = 'USD'
-        self.price_currency_view = '$'
-
         self.captcha_retries = int(captcha_retries)
-
         self._cbw = CaptchaBreakerWrapper()
 
     def _scrape_total_matches(self, response):
@@ -98,25 +90,35 @@ class AmazonBaseClass(BaseProductsSpider):
         :param response:
         :return: Number of total matches (int)
         """
+        total_match_not_found_re = getattr(self, 'total_match_not_found_re', None)
+        total_matches_re = getattr(self, 'total_matches_re', None)
 
-        if unicode(self.total_match_not_found) in response.body_as_unicode():
-            total_matches = 0
+        if not total_match_not_found_re and not total_matches_re:
+            self.log('Either total_match_not_found_re or total_matches_re '
+                     'is not defined. Or both.', ERROR)
+            return None
+
+        if unicode(total_match_not_found_re) in response.body_as_unicode():
+            return 0
+
+        count_matches = is_empty(
+            response.xpath(
+                '//h2[@id="s-result-count"]/text()'
+            ).re(unicode(self.total_matches_re))
+        )
+
+        if count_matches:
+            total_matches = int(count_matches.replace(
+                ' ', '').replace(u'\xa0', '').replace(',', '').replace('.', ''))
         else:
-            count_matches = is_empty(
-                response.xpath(
-                    '//h2[@id="s-result-count"]/text()'
-                ).re(unicode(self.total_matches_re))
-            )
-            if count_matches:
-                total_matches = int(count_matches.replace(
-                    ' ', '').replace(u'\xa0', '').replace(',', '').replace('.', ''))
-            else:
-                total_matches = None
+            total_matches = None
 
         if not total_matches:
-            total_matches = int(is_empty(response.xpath(
-                '//h2[@id="s-result-count"]/text()'
-            ).re(FLOATING_POINT_RGEX), 0))
+            total_matches = int(is_empty(
+                response.xpath(
+                    '//h2[@id="s-result-count"]/text()'
+                ).re(FLOATING_POINT_RGEX), 0
+            ))
 
         return total_matches
 
@@ -194,7 +196,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 )
 
                 if 'slredirect' in link:
-                    link = urlparse.urljoin('http://amazon.com/', link)
+                    link = urlparse.urljoin(self.allowed_domains[0], link)
 
                 links.append((link, is_prime, is_prime_pantry))
             else:
@@ -263,7 +265,10 @@ class AmazonBaseClass(BaseProductsSpider):
         cond_set_value(response.meta, 'product_id', product_id)
 
         # Set locale
-        cond_set_value(product, 'locale', self.locale)
+        if getattr(self, 'locale', None):
+            product['locale'] = self.locale
+        else:
+            self.log('Variable for locale is not defined.', ERROR)
 
         # Parse title
         title = self._parse_title(response)
@@ -634,6 +639,14 @@ class AmazonBaseClass(BaseProductsSpider):
 
         if add_xpath:
             xpathes += ' |' + add_xpath
+
+        price_currency_view = getattr(self, 'price_currency_view', None)
+        price_currency = getattr(self, 'price_currency', None)
+
+        if not price_currency and not price_currency_view:
+            self.log('Either price_currency or price_currency_view '
+                     'is not defined. Or both.', ERROR)
+            return None
 
         price_currency_view = unicode(self.price_currency_view)
         price = is_empty(
