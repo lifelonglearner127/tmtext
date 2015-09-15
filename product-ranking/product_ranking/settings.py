@@ -42,7 +42,7 @@ ITEM_PIPELINES = {
 #USER_AGENT = 'product_ranking (+http://www.yourdomain.com)'
 
 # Delay between requests not to be blocked (seconds).
-DOWNLOAD_DELAY = 0.5
+DOWNLOAD_DELAY = 0.1
 
 # allow max N seconds to download anything
 DOWNLOAD_TIMEOUT = 60
