@@ -67,6 +67,7 @@ class SearchSpider(BaseSpider):
     #                         5 - same as 3 but with product name as well, on first column (name from source site)
     #                         6 - same as 3 but additionally with bestsellers rank (origin and target) - to be used
     #                             in combination with the input bestsellers_link option
+    #                         7 - completely custom, using list of output fields in fields.json
     #                threshold - parameter for selecting results (the lower the value the more permissive the selection)
     def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, bestsellers_link = None, bestsellers_range = '0', \
         walmart_ids_file = None, output = 2, threshold = 1.0, \
