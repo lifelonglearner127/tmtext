@@ -14,11 +14,6 @@ is_empty = lambda x: x[0] if x else None
 
 
 class WalmartShelfPagesSpider(scrapy.Spider):
-    """To run that spider:
-    scrapy crawl walmart_urls -o output.json -a file_name=sm.txt
-    sm.txt - some file with urls which we need to scrape
-    """
-
     name = 'walmart_shelf_urls_products'
     allowed_domains = ['www.walmart.com']
 
