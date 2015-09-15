@@ -7,8 +7,8 @@ def get_memory_usage_for_all_processes(max_processes=7):
     process_dict = {}
     pids = [p.pid for p in psutil.process_iter()]
     for pid in pids:
-        p = psutil.Process(pid)
         try:
+            p = psutil.Process(pid)
             process_memory_percents = p.memory_percent()
         except Exception as _:
             continue
