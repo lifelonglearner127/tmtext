@@ -161,10 +161,11 @@ class URLsPipeline(object):
                 fields.append(str("%5.2f" % item['confidence']) if 'confidence' in item else "")
 
             if option == 7:
-                fields += map(lambda f: str(item[f])
-                    if f in item else ""
-                    if (f != 'confidence' or 'confidence' not in item)
-                    else str("%5.2f" % item['confidence']),
+                fields += map(lambda f:
+                    "" if f not in item
+                    else json.dumps(item[f]) if ('name' in f and f in item)
+                    else str("%5.2f" % item['confidence']) if (f == 'confidence' and 'confidence' in item)
+                    else str(item[f]),
                     self.fields)
 
             # construct line from fields list
