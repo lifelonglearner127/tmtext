@@ -26,7 +26,10 @@ def get_cpu_usage_for_all_processes(max_processes=7):
     process_dict = {}
     pids = [p.pid for p in psutil.process_iter()]
     for pid in pids:
-        p = psutil.Process(pid)
+        try:
+            p = psutil.Process(pid)
+        except Exception as _:
+            continue
         try:
             process_cpu_percents = p.cpu_percent(0.01)
         except Exception as _:
@@ -42,7 +45,10 @@ def get_cpu_usage_for_all_processes(max_processes=7):
 
 
 def get_memory_usage_for_current_process():
-    current_process = psutil.Process(os.getpid())
+    try:
+        current_process = psutil.Process(os.getpid())
+    except Exception as _:
+        return 0
     mem = current_process.memory_percent()
     for child in current_process.children(recursive=True):
         mem += child.memory_percent()
@@ -50,7 +56,10 @@ def get_memory_usage_for_current_process():
 
 
 def get_cpu_usage_for_current_process():
-    current_process = psutil.Process(os.getpid())
+    try:
+        current_process = psutil.Process(os.getpid())
+    except Exception as _:
+        return 0
     cpu = current_process.cpu_percent(0.01)
     for child in current_process.children(recursive=True):
         cpu += child.cpu_percent(0.01)
