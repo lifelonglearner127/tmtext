@@ -161,7 +161,11 @@ class URLsPipeline(object):
                 fields.append(str("%5.2f" % item['confidence']) if 'confidence' in item else "")
 
             if option == 7:
-                fields += map(lambda f: str(item[f]) if f != 'confidence' else str("%5.2f" % item['confidence']), self.fields)
+                fields += map(lambda f: str(item[f])
+                    if f in item else ""
+                    if (f != 'confidence' or 'confidence' not in item)
+                    else str("%5.2f" % item['confidence']),
+                    self.fields)
 
             # construct line from fields list
             line = ",".join(map(lambda x: x.encode("utf-8"), fields)) + "\n"
