@@ -738,15 +738,10 @@ class ProcessText():
             return None
         domain = r.group(1)
         # only walmart is supported
-        if domain != 'walmart':
-            return None
-
-        rname = re.match("https?://www\.([^/]*)\.com/ip/([^/]*)/[0-9]*", product_url)
-        if not rname:
-            log.msg("Product model could not be extracted from Walmart URL because of unknown URL format", level=log.DEBUG)
+        if domain not in ['walmart', 'wayfair']:
             return None
         
-        name_from_url = " ".join(rname.group(2).split("-"))
+        name_from_url = " ".join(product_url.split("/")[-1].split("-"))
         return ProcessText.extract_model_from_name(name_from_url)
 
 

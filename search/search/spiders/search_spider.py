@@ -114,7 +114,8 @@ class SearchSpider(BaseSpider):
                                     'tesco' : self.parseURL_tesco, \
                                     'amazon' : self.parseURL_amazon, \
                                     'target' : self.parseURL_target, \
-                                    'maplin' : self.parseURL_maplin
+                                    'maplin' : self.parseURL_maplin, \
+                                    'wayfair' : self.parseURL_wayfair
                                     }
 
         # parse_bestsellers functions, for each supported origin site
@@ -984,6 +985,31 @@ class SearchSpider(BaseSpider):
             product_brand = None
 
         return (product_name, product_model, product_price, upc, None, product_brand)
+
+    def parseURL_wayfair(self, hxs):
+
+        product_name_holder = hxs.select("//span[@class='title_name']/text()").extract()
+
+        if product_name_holder:
+            product_name = product_name_holder[0].strip()
+        else:
+            product_name = None
+
+        product_price_node = hxs.select("//span[contains(@class,'product_price')]//text()").extract()
+        product_price_raw = "".join(product_price_node)
+        # remove currency and , (e.g. 1,000)
+        if product_price_node:
+            product_price = float(re.sub("[\$,]", "", product_price_raw))
+        else:
+            product_price = None
+
+        brand_holder = hxs.select("//span[@class='manu_name']/a/text()").extract()
+        if brand_holder:
+            product_brand = brand_holder[0].strip()
+        else:
+            product_brand = None
+
+        return (product_name, None, product_price, None, None, product_brand)
 
 #TODO: for the sites below, complete with missing logic, for not returning empty elements in manufacturer spider
     def parseURL_newegg(self, hxs):
