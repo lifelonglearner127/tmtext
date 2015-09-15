@@ -58,10 +58,17 @@ class KohlsShelfPagesSpider(scrapy.Spider):
         return item
 
     def _scrape_results_per_page(self, response):
-        num = response.css('.view-indicator ::text').re(
-            'Viewing .+ of (\d+)')
-        if num:
-            return int(num[0])
+        num = ''.join(
+            response.xpath(
+                '//*[contains(text(), "Viewing")]/../text()').extract()
+        ).replace('\n', '').replace('\r', '').replace('\t', '')
+        try:
+            _from = int(num.split('of', 1)[0].strip().split(' ')[0])
+            _to = int(num.replace(u' \u2013', '').split('of', 1)[0].strip().split(' ')[1])
+        except Exception as e:
+            self.log('Failed to get num of results: ' + str(e))
+            return
+        return _to - _from
 
     def next_pagination_link(self, response):
         if self.current_page >= self.num_pages:
