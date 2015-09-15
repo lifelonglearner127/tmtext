@@ -36,8 +36,6 @@ class WalmartShelfPagesSpider(scrapy.Spider):
             " AppleWebKit/537.36 (KHTML, like Gecko)" \
             " Chrome/37.0.2062.120 Safari/537.36"
 
-        super(WalmartShelfPagesSpider, self).__init__(*args, **kwargs)
-
     def start_requests(self):
         yield Request(url=self.valid_url(self.product_url))
 
