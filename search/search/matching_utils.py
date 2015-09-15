@@ -185,7 +185,7 @@ class ProcessText():
             else:
                 product2_brand = None
 
-            product1_brand = product_brand
+            product1_brand = " ".join(ProcessText.normalize(product_brand))
 
 
             # compute a term to penalize score woth for large price differences (above 100% of small price)
@@ -237,6 +237,7 @@ class ProcessText():
             # add score for matched brand
             if brand_matched:
                 score += ProcessText.BRAND_MATCH_WEIGHT
+                log.msg("BRAND MATCHED: " + str(product1_brand) + str(product2_brand) + "\n", level=log.INFO)
 
             # add score for matched UPC
             if upc_matched:
@@ -309,6 +310,7 @@ class ProcessText():
                 product2_price = ""
             
             log.msg("\nPRODUCT: " + unicode(product_name) + " URL: " + product2['origin_url'] + " MODEL: " + unicode(product_model) + " PRICE: " + unicode(product_price) + \
+                " BRAND: " + unicode(product1_brand) + \
                 "\nPRODUCT2: " + unicode(product2['product_name']) + " URL2: " + product2['product_url'] + " BRAND2: " + unicode(product2_brand) + " MODEL2: " + unicode(product2_model) + " PRICE2: " + unicode(product2_price) + \
                 "\nSCORE: " + str(score) + " PRICE_PENLZ: " + unicode(price_score_penalization) + " THRESHOLD: " + str(threshold) + "\n", level=log.WARNING)
 
@@ -367,10 +369,6 @@ class ProcessText():
 
         # treat case with less than 2 words separately
 
-        # if one product has no words, brand matched is False
-        if len(words1_copy) < 1 or len(words2_copy) < 1:
-            return (False, words1_copy, words2_copy)
-
         # if they each have at least 1 word but not 2, append dummy word
         if len(words1_copy) < 2:
             words1_copy.append("__brand1_dummy__")
@@ -405,8 +403,8 @@ class ProcessText():
 
                 return (True, words1_copy, words2_copy)
 
-            else:
-                return (False, words1_copy, words2_copy)
+            # else:
+            #     return (False, words1_copy, words2_copy)
 
         # deal separately with the case where product2_brand (we're sure this is the brand) is found as is in fist product name
         # check if it's in the concatenation of all words in words1 - this way we capture concatenated pairs of words too.
@@ -453,6 +451,10 @@ class ProcessText():
 
             return (True, words1_copy, words2_copy)
 
+
+        # if one product has no words, brand matched is False
+        if len(words1_copy) <= 1 or len(words2_copy) <= 1:
+            return (False, words1_copy, words2_copy)
 
         
         brand_matched = False
