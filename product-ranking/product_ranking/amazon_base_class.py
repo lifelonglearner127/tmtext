@@ -6,6 +6,7 @@ import urlparse
 from urllib import unquote
 import json
 import string
+from datetime import datetime
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
@@ -46,6 +47,14 @@ class AmazonBaseClass(BaseProductsSpider):
 
     buyer_reviews_stars = ['one_star', 'two_star', 'three_star', 'four_star',
                            'five_star']
+
+    REVIEW_DATE_URL = 'http://www.amazon.com/product-reviews/{product_id}/' \
+                      'ref=cm_cr_pr_top_recent?ie=UTF8&showViewpoints=0&' \
+                      'sortBy=bySubmissionDateDescending'
+    REVIEW_URL_1 = 'http://www.amazon.com/ss/customer-reviews/ajax/reviews/get/' \
+                   'ref=cm_cr_pr_viewopt_sr'
+    REVIEW_URL_2 = 'http://www.amazon.com/product-reviews/{product_id}/' \
+                   'ref=acr_dpx_see_all?ie=UTF8&showViewpoints=1'
 
     ZERO_REVIEWS_STAR = {
         '1': {'percentage': 0.0, 'total': 0},
@@ -249,6 +258,10 @@ class AmazonBaseClass(BaseProductsSpider):
                      level=WARNING)
             return None
 
+        # Set product ID
+        product_id = self._parse_product_id(response.url)
+        cond_set_value(response.meta, 'product_id', product_id)
+
         # Set locale
         cond_set_value(product, 'locale', self.locale)
 
@@ -301,6 +314,15 @@ class AmazonBaseClass(BaseProductsSpider):
         else:
             product['buyer_reviews'] = buyer_reviews
 
+        reqs.append(
+            Request(
+                url=self.REVIEW_DATE_URL.format(product_id=product_id),
+                callback=self._parse_last_buyer_review_date,
+                meta=meta,
+                dont_filter=True,
+            )
+        )
+
         # Parse marketplaces
         marketplace_req = self._parse_marketplace(response)
         if marketplace_req:
@@ -325,6 +347,14 @@ class AmazonBaseClass(BaseProductsSpider):
             return self.send_next_request(reqs, response)
 
         return product
+
+    def _parse_product_id(self, url):
+        prod_id = re.findall(r'/dp?/(\w+)', url)
+
+        if isinstance(prod_id, (list, tuple)):
+            prod_id = [s for s in prod_id if s][0]
+
+        return prod_id
 
     def _parse_title(self, response, add_xpath=None):
         """
@@ -655,9 +685,6 @@ class AmazonBaseClass(BaseProductsSpider):
         """
         Parses product categories.
         """
-        meta = response.meta.copy()
-        product = meta['product']
-
         category = {
             ' > '.join(map(
                 unicode.strip, itm.css('.zg_hrsr_ladder a::text').extract())
@@ -748,14 +775,58 @@ class AmazonBaseClass(BaseProductsSpider):
 
         return variants
 
+    def _parse_last_buyer_review_date(self, response):
+        if self._has_captcha(response):
+            return self._handle_captcha(
+                response,
+                self._parse_last_buyer_review_date
+            )
+
+        meta = response.meta.copy()
+        product = meta['product']
+        reqs = meta.get('reqs')
+
+        if getattr(self, 'buyer_review_date_regex', None):
+            date = is_empty(
+                response.xpath(
+                    '//table[@id="productReviews"]/tr/td/div/div/span/nobr/text() |'
+                    '//span[contains(@class, "review-date")]/text()'
+                ).extract()
+            )
+
+            if date:
+                date = is_empty(
+                    re.findall(
+                        self.buyer_review_date_regex, date
+                    ), ''
+                )
+
+                if date:
+                    date = date.replace(',', '').replace('.', '')
+
+                    try:
+                        d = datetime.strptime(date, '%B %d %Y')
+                    except ValueError:
+                        d = datetime.strptime(date, '%b %d %Y')
+
+                    date = d.strftime('%d/%m/%Y')
+                    product['last_buyer_review_date'] = date
+        else:
+            self.log('Regular expression for last buyer review date is '
+                     'not defined: buyer_review_date_regex.', ERROR)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
     def _parse_buyer_reviews(self, response):
-        product = response.meta['product']
+        meta = response.meta.copy()
 
         # scrape new buyer reviews request (that will lead to a new page)
-        buyer_rev_link = 'http://www.amazon.com/product-reviews/{id}/' \
-                         'ref=acr_dpx_see_all?ie=UTF8&showViewpoints=1'.format(
-                             id=self._get_asin_from_url(product['url'])
-                         )
+        buyer_rev_link = self.REVIEW_URL_2.format(
+            product_id=meta['product_id']
+        )
 
         buyer_reviews = {}
 
@@ -806,6 +877,7 @@ class AmazonBaseClass(BaseProductsSpider):
 
     def _get_rating_by_star_by_individual_request(self, response):
         meta = response.meta.copy()
+        reqs = meta.get('reqs')
         product = meta['product']
         mkt_place_link = meta.get("mkt_place_link")
 
@@ -845,18 +917,17 @@ class AmazonBaseClass(BaseProductsSpider):
             # ok we collected all marks for all stars - can return the product
             del product['buyer_reviews']['counter']
             product['buyer_reviews'] = BuyerReviews(**product['buyer_reviews'])
+
+            if reqs:
+                return self.send_next_request(reqs, response)
+
             return product
 
-    def _get_asin_from_url(self, url):
-        match = re.search(r'/([A-Z0-9]{4,15})/?', url)
-        if match:
-            return match.group(1)
-
-    def _create_post_requests(self, response, asin):
-        url = ('http://www.amazon.com/ss/customer-reviews/ajax/reviews/get/'
-               'ref=cm_cr_pr_viewopt_sr')
-        meta = response.meta
+    def _create_post_requests(self, response):
+        meta = response.meta.copy()
         meta['_current_star'] = {}
+        asin = meta['product_id']
+
         for star in self.buyer_reviews_stars:
             args = {
                 'asin': asin, 'filterByStar': star,
@@ -869,7 +940,7 @@ class AmazonBaseClass(BaseProductsSpider):
             meta['product']['buyer_reviews']['counter'] = 0
 
             yield FormRequest(
-                url=url, formdata=args, meta=meta,
+                url=self.REVIEW_URL_1, formdata=args, meta=meta,
                 callback=self._get_rating_by_star_by_individual_request,
                 dont_filter=True
             )
@@ -881,7 +952,9 @@ class AmazonBaseClass(BaseProductsSpider):
                 self.get_buyer_reviews_from_2nd_page
             )
 
-        product = response.meta["product"]
+        meta = response.meta.copy()
+        product = meta["product"]
+        reqs = meta.get('reqs', [])
         buyer_reviews = {}
         product["buyer_reviews"] = {}
 
@@ -910,8 +983,10 @@ class AmazonBaseClass(BaseProductsSpider):
         if not buyer_reviews.get('rating_by_star') or response.meta.get('is_perc'):
             response.meta['product']['buyer_reviews'] = buyer_reviews
             # if still no rating_by_star (probably the rating is percent-based)
-            return self._create_post_requests(
-                response, self._get_asin_from_url(response.url))
+            return self._create_post_requests(response)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
 
         return product
 
