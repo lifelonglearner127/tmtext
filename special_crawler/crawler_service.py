@@ -59,6 +59,7 @@ from extract_uniqlo_data import UniqloScraper
 from extract_deliverywalmart_data import DeliveryWalmartScraper
 from extract_flipkart_data import FlipkartScraper
 from extract_pepperfry_data import PepperfryScraper
+from extract_cvs_data import CVSScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -125,7 +126,8 @@ SUPPORTED_SITES = {
                     "uniqlo": UniqloScraper,
                     "deliverywalmart": DeliveryWalmartScraper,
                     "flipkart": FlipkartScraper,
-                    "pepperfry": PepperfryScraper
+                    "pepperfry": PepperfryScraper,
+                    "cvs": CVSScraper,
                     }
 
 # add logger
