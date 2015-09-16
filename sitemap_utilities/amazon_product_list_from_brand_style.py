@@ -54,9 +54,9 @@ for row in search_url_list:
         item_count = category_html.xpath("//h2[@id='s-result-count']/text()")[0].strip()
 
         if "of " in item_count:
-            item_count = int(re.findall('of (.*?) result', item_count, re.DOTALL)[0])
+            item_count = int(re.findall('of (.*?) result', item_count, re.DOTALL)[0].replace(",", ""))
         else:
-            item_count = int(re.findall('(.*?) result', item_count, re.DOTALL)[0])
+            item_count = int(re.findall('(.*?) result', item_count, re.DOTALL)[0].replace(",", ""))
     except:
         item_count = 0
 
@@ -80,7 +80,7 @@ for row in search_url_list:
             b = requests.adapters.HTTPAdapter(max_retries=10)
             s.mount('http://', a)
             s.mount('https://', b)
-            product_json = s.get("http://52.1.156.214/get_data?url=" + urllib.quote(url), headers=h, timeout=30).text
+            product_json = s.get("http://54.85.249.210/get_data?url=" + urllib.quote(url), headers=h, timeout=30).text
 
             is_qualified = False
             is_qualified = (brand.lower() in product_json.lower() and style.lower() in product_json.lower())
@@ -162,7 +162,7 @@ for row in search_url_list:
                 b = requests.adapters.HTTPAdapter(max_retries=10)
                 s.mount('http://', a)
                 s.mount('https://', b)
-                product_json = s.get("http://52.1.156.214/get_data?url=" + urllib.quote(url), headers=h, timeout=30).text
+                product_json = s.get("http://54.85.249.210/get_data?url=" + urllib.quote(url), headers=h, timeout=30).text
 
                 is_qualified = False
                 is_qualified = (brand.lower() in product_json.lower() and style.lower() in product_json.lower())
