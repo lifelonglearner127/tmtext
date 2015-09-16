@@ -155,12 +155,12 @@ class AmazonBaseClass(BaseProductsSpider):
         """
         Overrides BaseProductsSpider method to scrape product links.
         """
-        lis = response.xpath("//div[@id='resultsCol']//ul//li |"
-                             "//div[@id='mainResults']//ul//li"
+        lis = response.xpath("//div[@id='resultsCol']/./ul/li |"
+                             "//div[@id='mainResults']/.//ul/li"
                              "[contains(@id, 'result')] |"
-                             "//div[@id='atfResults']//ul//li"
+                             "//div[@id='atfResults']/.//ul/li"
                              "[contains(@id, 'result')] |"
-                             "//div[@id='mainResults']//div"
+                             "//div[@id='mainResults']/.//div"
                              "[contains(@id, 'result')]")
         links = []
         last_idx = -1
@@ -907,13 +907,19 @@ class AmazonBaseClass(BaseProductsSpider):
         else:
             buyer_reviews = BuyerReviews(**self.ZERO_REVIEWS_VALUE)
 
-        average = self._is_empty(response.xpath(
-            '//div[contains(@class, "averageStarRatingNumerical")]//span/text()'
-        ).extract(), "")
-
-        buyer_reviews["average_rating"] = float(
-            average.replace('out of 5 stars', '').strip()
+        average = self._is_empty(
+            response.xpath(
+                '//div[contains(@class, "averageStarRatingNumerical")]//span/text()'
+            ).extract(), 0.0
         )
+        average = self._is_empty(
+            re.findall(
+                FLOATING_POINT_RGEX,
+                average
+            ), 0.0
+        )
+
+        buyer_reviews["average_rating"] = float(average.replace(',', '.'))
 
         buyer_reviews["rating_by_star"] = {}
         buyer_reviews = self._get_rating_by_star(response, buyer_reviews)[0]
