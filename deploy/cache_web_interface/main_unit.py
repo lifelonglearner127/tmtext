@@ -406,6 +406,7 @@ def stats():
         #
         context['last_hour_executed_tasks'] = cache.get_executed_tasks_count(
             for_last_hour=True)
+        context['responses_from_cache'] = cache.get_total_cached_responses()
         #
         sqs_conn = boto.sqs.connect_to_region('us-east-1')
         context['left_tasks'] = [
