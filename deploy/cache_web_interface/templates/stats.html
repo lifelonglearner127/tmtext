@@ -13,7 +13,13 @@
         <li>Today started instances: {{ today_instances }}</li>
         <li>Today executed tasks: {{ today_executed_tasks }}</li>
         <li>Last hour executed tasks: {{ last_hour_executed_tasks }}</li>
-        <li>Task left in queues: {{ left_tasks }}</li>
+        <li>Task left in queues: {{ left_tasks_total }}
+            <ul>
+                {% for k, v in left_tasks %}
+                    <li>{{ k }} - {{ v }}</li>
+                {% endfor %}
+            </ul>
+        </li>
         <li>Avg executed tasks per hour: {{ avg_hour_task }}</li>
         <li>
             Tasks statistics:
