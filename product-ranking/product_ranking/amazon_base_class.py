@@ -51,12 +51,12 @@ class AmazonBaseClass(BaseProductsSpider):
     SEARCH_URL = 'http://{domain}/s/ref=nb_sb_noss_1?url=search-alias' \
                  '%3Daps&field-keywords={search_term}'
 
-    REVIEW_DATE_URL = 'http://www.amazon.com/product-reviews/{product_id}/' \
+    REVIEW_DATE_URL = 'http://{domain}/product-reviews/{product_id}/' \
                       'ref=cm_cr_pr_top_recent?ie=UTF8&showViewpoints=0&' \
                       'sortBy=bySubmissionDateDescending'
-    REVIEW_URL_1 = 'http://www.amazon.com/ss/customer-reviews/ajax/reviews/get/' \
+    REVIEW_URL_1 = 'http://{domain}/ss/customer-reviews/ajax/reviews/get/' \
                    'ref=cm_cr_pr_viewopt_sr'
-    REVIEW_URL_2 = 'http://www.amazon.com/product-reviews/{product_id}/' \
+    REVIEW_URL_2 = 'http://{domain}/product-reviews/{product_id}/' \
                    'ref=acr_dpx_see_all?ie=UTF8&showViewpoints=1'
 
     ZERO_REVIEWS_STAR = {
@@ -321,7 +321,10 @@ class AmazonBaseClass(BaseProductsSpider):
 
         reqs.append(
             Request(
-                url=self.REVIEW_DATE_URL.format(product_id=product_id),
+                url=self.REVIEW_DATE_URL.format(
+                    product_id=product_id,
+                    domain=self.allowed_domains[0]
+                ),
                 callback=self._parse_last_buyer_review_date,
                 meta=meta,
                 dont_filter=True,
@@ -803,7 +806,8 @@ class AmazonBaseClass(BaseProductsSpider):
             date = is_empty(
                 response.xpath(
                     '//table[@id="productReviews"]/tr/td/div/div/span/nobr/text() |'
-                    '//span[contains(@class, "review-date")]/text()'
+                    '//div[contains(@class, "reviews-content")]/./'
+                    '/span[contains(@class, "review-date")]/text()'
                 ).extract()
             )
 
@@ -834,21 +838,28 @@ class AmazonBaseClass(BaseProductsSpider):
         return product
 
     def _parse_buyer_reviews(self, response):
+        """
+        Gets buyer reviews right from the product page.
+        """
         meta = response.meta.copy()
 
         # scrape new buyer reviews request (that will lead to a new page)
         buyer_rev_link = self.REVIEW_URL_2.format(
-            product_id=meta['product_id']
+            product_id=meta['product_id'],
+            domain=self.allowed_domains[0]
         )
 
         buyer_reviews = {}
 
-        total = response.xpath(
-            '//*[@id="summaryStars"] |'
-            '//div[@id="acr"]/div[@class="txtsmall"]/div[contains(@class, "acrCount")] |'
-            '//*[@id="acrCustomerReviewText"]/text()'
-        ).re(FLOATING_POINT_RGEX)
-        total = is_empty(total, '')
+        total = is_empty(
+            response.xpath(
+                '//*[@id="summaryStars"] |'
+                '//div[@id="acr"]/div[@class="txtsmall"]/div[contains(@class,'
+                ' "acrCount")] |'
+                '//*[@id="acrCustomerReviewText"]/text() |'
+                '//*[@class="crAvgStars"]/a/text()'
+            ).re(FLOATING_POINT_RGEX)
+        )
         if not total:
             return BuyerReviews(**self.ZERO_REVIEWS_VALUE)
 
@@ -868,97 +879,18 @@ class AmazonBaseClass(BaseProductsSpider):
             buyer_reviews['rating_by_star'] = {}
             buyer_reviews, table = self._get_rating_by_star(response, buyer_reviews)
 
-            if not buyer_reviews['rating_by_star'] or response.meta.get('is_perc'):
-                buyer_rev_req = Request(
-                    url=buyer_rev_link,
-                    callback=self.get_buyer_reviews_from_2nd_page
-                )
-                # now we can safely return Request
-                #  because it'll be re-crawled in the `parse_product` method
-                return buyer_rev_req
+            if buyer_reviews['rating_by_star'] or not response.meta.get('is_perc'):
+                return BuyerReviews(**buyer_reviews)
 
-        else:
-            buyer_rev_req = Request(
-                url=buyer_rev_link,
-                callback=self.get_buyer_reviews_from_2nd_page
-            )
-            # now we can safely return Request
-            #  because it'll be re-crawled in the `parse_product` method
-            return buyer_rev_req
-
-        return BuyerReviews(**buyer_reviews)
-
-    def _get_rating_by_star_by_individual_request(self, response):
-        meta = response.meta.copy()
-        reqs = meta.get('reqs')
-        product = meta['product']
-        mkt_place_link = meta.get("mkt_place_link")
-
-        counter = product['buyer_reviews']['counter']
-        product['buyer_reviews']['counter'] += 1
-
-        current_star = meta['_current_star']
-        current_star_int = [
-            i+1 for i, _star in enumerate(self.buyer_reviews_stars)
-            if _star == current_star
-        ][0]
-        br = product.get('buyer_reviews')
-        if br:
-            rating_by_star = br.get('rating_by_star')
-        else:
-            if mkt_place_link:
-                return self.mkt_request(mkt_place_link, {"product": product})
-            return product
-        if not rating_by_star:
-            rating_by_star = {}
-        num_of_reviews_for_star = re.search(
-            r'Showing .+? of ([\d,\.]+) reviews', response.body)
-        if num_of_reviews_for_star:
-            num_of_reviews_for_star = num_of_reviews_for_star.group(1)
-            num_of_reviews_for_star = num_of_reviews_for_star\
-                .replace(',', '').replace('.', '')
-            rating_by_star[str(current_star_int)]['total'] = int(num_of_reviews_for_star)
-        else:
-            rating_by_star[str(current_star_int)]['total'] = 0
-
-        if not str(current_star_int) in rating_by_star.keys():
-            rating_by_star[str(current_star_int)]['total'] = 0
-
-        product['buyer_reviews']['rating_by_star'] = rating_by_star
-
-        if counter >= 4:
-            # ok we collected all marks for all stars - can return the product
-            del product['buyer_reviews']['counter']
-            product['buyer_reviews'] = BuyerReviews(**product['buyer_reviews'])
-
-            if reqs:
-                return self.send_next_request(reqs, response)
-
-            return product
-
-    def _create_post_requests(self, response):
-        meta = response.meta.copy()
-        meta['_current_star'] = {}
-        asin = meta['product_id']
-
-        for star in self.buyer_reviews_stars:
-            args = {
-                'asin': asin, 'filterByStar': star,
-                'filterByKeyword': '', 'formatType': 'all_formats',
-                'pageNumber': '1', 'pageSize': '10', 'sortBy': 'helpful',
-                'reftag': 'cm_cr_pr_viewopt_sr', 'reviewerType': 'all_reviews',
-                'scope': 'reviewsAjax0',
-            }
-            meta['_current_star'] = star
-            meta['product']['buyer_reviews']['counter'] = 0
-
-            yield FormRequest(
-                url=self.REVIEW_URL_1, formdata=args, meta=meta,
-                callback=self._get_rating_by_star_by_individual_request,
-                dont_filter=True
-            )
+        return Request(
+            url=buyer_rev_link,
+            callback=self.get_buyer_reviews_from_2nd_page
+        )
 
     def get_buyer_reviews_from_2nd_page(self, response):
+        """
+        Gets buyer reviews from special separate buyer reviews page.
+        """
         if self._has_captcha(response):
             return self._handle_captcha(
                 response,
@@ -998,15 +930,21 @@ class AmazonBaseClass(BaseProductsSpider):
             # if still no rating_by_star (probably the rating is percent-based)
             return self._create_post_requests(response)
 
+        product['buyer_reviews'] = buyer_reviews
+
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
 
     def _get_rating_by_star(self, response, buyer_reviews):
+        """
+        Method to scrape star count from histogram table.
+        """
         table = response.xpath(
             '//table[@id="histogramTable"]/.//tr[@class="a-histogram-row"]'
         )
+
         if table:
             for tr in table:
                 rating = is_empty(tr.xpath(
@@ -1027,6 +965,7 @@ class AmazonBaseClass(BaseProductsSpider):
                         )
                     else:
                         buyer_reviews['rating_by_star'][rating]['total'] = number
+                        buyer_reviews['rating_by_star'][rating]['percentage'] = 0
         else:
             table = response.xpath(
                 '//div[@id="revH"]/div/div[contains(@class, "fl")]'
@@ -1042,6 +981,83 @@ class AmazonBaseClass(BaseProductsSpider):
                     number.replace(',', '')
                 )
         return buyer_reviews, table
+
+    def _create_post_requests(self, response):
+        """
+        Method to create request for every star count.
+        """
+        meta = response.meta.copy()
+        meta['_current_star'] = {}
+        asin = meta['product_id']
+
+        for star in self.buyer_reviews_stars:
+            args = {
+                'asin': asin, 'filterByStar': star,
+                'filterByKeyword': '', 'formatType': 'all_formats',
+                'pageNumber': '1', 'pageSize': '10', 'sortBy': 'helpful',
+                'reftag': 'cm_cr_pr_viewopt_sr', 'reviewerType': 'all_reviews',
+                'scope': 'reviewsAjax0',
+            }
+            meta['_current_star'] = star
+            meta['product']['buyer_reviews']['counter'] = 0
+
+            yield FormRequest(
+                url=self.REVIEW_URL_1.format(domain=self.allowed_domains[0]),
+                formdata=args, meta=meta,
+                callback=self._get_rating_by_star_by_individual_request,
+                dont_filter=True
+            )
+
+    def _get_rating_by_star_by_individual_request(self, response):
+        """
+        Method to count number of reviews for each star.
+        """
+        meta = response.meta.copy()
+        reqs = meta.get('reqs')
+        product = meta['product']
+
+        counter = product['buyer_reviews']['counter']
+        product['buyer_reviews']['counter'] += 1
+
+        current_star = meta['_current_star']
+        current_star_int = [
+            i+1 for i, _star in enumerate(self.buyer_reviews_stars)
+            if _star == current_star
+        ][0]
+
+        br = product.get('buyer_reviews')
+        if br:
+            rating_by_star = br.get('rating_by_star')
+        else:
+            return product
+
+        if not rating_by_star:
+            rating_by_star = {}
+
+        num_of_reviews_for_star = re.search(
+            r'Showing .+? of ([\d,\.]+) reviews', response.body)
+        if num_of_reviews_for_star:
+            num_of_reviews_for_star = num_of_reviews_for_star.group(1)
+            num_of_reviews_for_star = num_of_reviews_for_star\
+                .replace(',', '').replace('.', '')
+            rating_by_star[str(current_star_int)]['total'] = int(num_of_reviews_for_star)
+        else:
+            rating_by_star[str(current_star_int)]['total'] = 0
+
+        if not str(current_star_int) in rating_by_star.keys():
+            rating_by_star[str(current_star_int)]['total'] = 0
+
+        product['buyer_reviews']['rating_by_star'] = rating_by_star
+
+        if counter >= 4:
+            # ok we collected all marks for all stars - can return the product
+            del product['buyer_reviews']['counter']
+            product['buyer_reviews'] = BuyerReviews(**product['buyer_reviews'])
+
+            if reqs:
+                return self.send_next_request(reqs, response)
+
+            return product
 
     def send_next_request(self, reqs, response):
         """
