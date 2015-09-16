@@ -1559,31 +1559,34 @@ class WalmartScraper(Scraper):
 
         self.is_review_checked = True
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
-        contents = s.get(self.BASE_URL_REVIEWSREQ.format(self._extract_product_id()), headers=h, timeout=5).text
+        if self._version() == "Walmart v1":
+            og_url_id = self.tree_html.xpath("//meta[@property='og:url']/@content")[0]
+            og_url_id = og_url_id[og_url_id.rfind("/") + 1:]
+            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+            s = requests.Session()
+            a = requests.adapters.HTTPAdapter(max_retries=3)
+            b = requests.adapters.HTTPAdapter(max_retries=3)
+            s.mount('http://', a)
+            s.mount('https://', b)
+            contents = s.get(self.BASE_URL_REVIEWSREQ.format(og_url_id), headers=h, timeout=5).text
 
-        try:
-            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
-            end_index = contents.find("}},", start_index) + 2
+            try:
+                start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
+                end_index = contents.find("}},", start_index) + 2
 
-            self.review_json = contents[start_index:end_index]
-            self.review_json = json.loads(self.review_json)
-        except:
-            self.review_json = None
+                self.review_json = contents[start_index:end_index]
+                self.review_json = json.loads(self.review_json)
+            except:
+                self.review_json = None
 
-        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
-        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
-        reviews_by_mark = reviews_by_mark[:5]
-        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
+            review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
+            reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
+            reviews_by_mark = reviews_by_mark[:5]
+            review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
 
-        if review_list:
-            self.review_list = review_list
-            return review_list
+            if review_list:
+                self.review_list = review_list
+                return review_list
 
         if self._version() == "Walmart v2":
             try:
