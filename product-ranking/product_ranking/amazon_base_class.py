@@ -6,7 +6,6 @@ import urlparse
 from urllib import unquote
 import json
 import string
-from datetime import datetime
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
@@ -21,8 +20,6 @@ from spiders_shared_code.amazon_variants import AmazonVariants
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.amazon_modules import build_categories
 
-
-is_empty = lambda x, y=None: x[0] if x else y
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
@@ -44,7 +41,6 @@ except ImportError as e:
 
 
 class AmazonBaseClass(BaseProductsSpider):
-
     buyer_reviews_stars = ['one_star', 'two_star', 'three_star', 'four_star',
                            'five_star']
 
@@ -83,6 +79,9 @@ class AmazonBaseClass(BaseProductsSpider):
         self.captcha_retries = int(captcha_retries)
         self._cbw = CaptchaBreakerWrapper()
 
+    def _is_empty(self, x, y=None):
+        return x[0] if x else y
+
     def _scrape_total_matches(self, response):
         """
         Overrides BaseProductsSpider method to scrape total result matches. total_matches_str
@@ -101,7 +100,7 @@ class AmazonBaseClass(BaseProductsSpider):
         if unicode(total_match_not_found_re) in response.body_as_unicode():
             return 0
 
-        count_matches = is_empty(
+        count_matches = self._is_empty(
             response.xpath(
                 '//h2[@id="s-result-count"]/text()'
             ).re(unicode(self.total_matches_re))
@@ -114,7 +113,7 @@ class AmazonBaseClass(BaseProductsSpider):
             total_matches = None
 
         if not total_matches:
-            total_matches = int(is_empty(
+            total_matches = int(self._is_empty(
                 response.xpath(
                     '//h2[@id="s-result-count"]/text()'
                 ).re(FLOATING_POINT_RGEX), 0
@@ -176,19 +175,19 @@ class AmazonBaseClass(BaseProductsSpider):
                 "*/descendant::i[contains(concat(' ',@class,' '),'"
                 "a-icon-prime-pantry ')]"
             )
-            data_asin = is_empty(
+            data_asin = self._is_empty(
                 li.xpath('@id').extract()
             )
 
             try:
-                idx = int(is_empty(
+                idx = int(self._is_empty(
                     re.findall(r'\d+', data_asin)
                 ))
             except ValueError:
                 continue
 
             if idx > last_idx:
-                link = is_empty(
+                link = self._is_empty(
                     li.xpath(
                         ".//a[contains(@class,'s-access-detail-page')]/@href |"
                         ".//h3[@class='newaps']/a/@href"
@@ -357,10 +356,9 @@ class AmazonBaseClass(BaseProductsSpider):
         return product
 
     def _parse_product_id(self, url):
-        prod_id = re.findall(r'/dp?/(\w+)', url)
-
-        if isinstance(prod_id, (list, tuple)):
-            prod_id = [s for s in prod_id if s][0]
+        prod_id = self._is_empty(
+            re.findall(r'/(?:dp?|product)/(\w+)/', url), ''
+        )
 
         return prod_id
 
@@ -384,7 +382,7 @@ class AmazonBaseClass(BaseProductsSpider):
         if add_xpath:
             xpathes += ' |' + add_xpath
 
-        title = is_empty(
+        title = self._is_empty(
             response.xpath(xpathes).extract(), ''
         ).strip()
 
@@ -418,19 +416,19 @@ class AmazonBaseClass(BaseProductsSpider):
         if add_xpath:
             xpathes += ' |' + add_xpath
 
-        image = is_empty(
+        image = self._is_empty(
             response.xpath(xpathes).extract(), ''
         )
 
         if not image:
             # Another try to parse img_url: from html body as JS data
-            img_re = is_empty(
+            img_re = self._is_empty(
                 re.findall(
                     r"'colorImages':\s*\{\s*'initial':\s*(.*)\},|colorImages\s*=\s*\{\s*\"initial\":\s*(.*)\}",
                     response.body), ''
             )
 
-            img_re = is_empty(list(img_re))
+            img_re = self._is_empty(list(img_re))
 
             if img_re:
                 try:
@@ -480,7 +478,7 @@ class AmazonBaseClass(BaseProductsSpider):
             brand = brand.replace(u'®', '')
 
         if not brand:
-            brand_logo = is_empty(
+            brand_logo = self._is_empty(
                 response.xpath('//a[@id="brand"]/@href').extract()
             )
             if brand_logo:
@@ -505,7 +503,7 @@ class AmazonBaseClass(BaseProductsSpider):
         if add_xpath:
             xpathes += ' |' + add_xpath
 
-        price_ss = is_empty(
+        price_ss = self._is_empty(
             response.xpath(xpathes).extract(), None
         )
         if price_ss and price_ss.startswith('$'):
@@ -534,7 +532,7 @@ class AmazonBaseClass(BaseProductsSpider):
 
         mkt_place_link = urlparse.urljoin(
             response.url,
-            is_empty(response.xpath(
+            self._is_empty(response.xpath(
                 "//a[contains(@href, '/gp/offer-listing/')]/@href |"
                 "//div[contains(@class, 'a-box-inner')]/span/a/@href |"
                 "//*[@id='universal-marketplace-glance-features']/.//a/@href"
@@ -581,14 +579,14 @@ class AmazonBaseClass(BaseProductsSpider):
         if add_xpath:
             xpathes += ' |' + add_xpath
 
-        model = is_empty(
+        model = self._is_empty(
             response.xpath(xpathes).extract(), ''
         )
 
         if not model:
             spans = response.xpath('//span[@class="a-text-bold"]')
             for span in spans:
-                text = is_empty(span.xpath('text()').extract())
+                text = self._is_empty(span.xpath('text()').extract())
                 if text and 'Item model number:' in text:
                     possible_model = span.xpath('../span/text()').extract()
                     if len(possible_model) > 1:
@@ -652,7 +650,7 @@ class AmazonBaseClass(BaseProductsSpider):
             return None
 
         price_currency_view = unicode(self.price_currency_view)
-        price = is_empty(
+        price = self._is_empty(
             response.xpath(xpathes).extract(), ''
         )
 
@@ -663,7 +661,7 @@ class AmazonBaseClass(BaseProductsSpider):
                     self.log('Currency symbol not recognized: %s' % response.url,
                              level=WARNING)
             else:
-                price = is_empty(re.findall(r'[\d,.]+\d', price), '0.00')
+                price = self._is_empty(re.findall(r'[\d,.]+\d', price), '0.00')
                 price = price.replace(price_currency_view, '').replace(',', '')
         else:
             price = '0.00'
@@ -684,7 +682,7 @@ class AmazonBaseClass(BaseProductsSpider):
         if add_xpath:
             xpathes += ' |' + add_xpath
 
-        price_original = is_empty(
+        price_original = self._is_empty(
             response.xpath(xpathes).extract()
         )
 
@@ -746,7 +744,7 @@ class AmazonBaseClass(BaseProductsSpider):
         if add_xpath:
             xpathes += ' |' + add_xpath
 
-        description = is_empty(response.xpath(xpathes).extract())
+        description = self._is_empty(response.xpath(xpathes).extract())
         if not description:
             iframe_content = re.findall(
                 r'var iframeContent = "(.*)"', response.body
@@ -802,40 +800,30 @@ class AmazonBaseClass(BaseProductsSpider):
         product = meta['product']
         reqs = meta.get('reqs')
 
-        if getattr(self, 'buyer_review_date_regex', None):
-            date = is_empty(
-                response.xpath(
-                    '//table[@id="productReviews"]/tr/td/div/div/span/nobr/text() |'
-                    '//div[contains(@class, "reviews-content")]/./'
-                    '/span[contains(@class, "review-date")]/text()'
-                ).extract()
-            )
+        date = self._is_empty(
+            response.xpath(
+                '//table[@id="productReviews"]/tr/td/div/div/span/nobr/text() |'
+                '//div[contains(@class, "reviews-content")]/./'
+                '/span[contains(@class, "review-date")]/text()'
+            ).extract()
+        )
 
+        if date:
+            date = self._format_last_br_date(date)
             if date:
-                date = is_empty(
-                    re.findall(
-                        self.buyer_review_date_regex, date
-                    ), ''
-                )
-
-                if date:
-                    date = date.replace(',', '').replace('.', '')
-
-                    try:
-                        d = datetime.strptime(date, '%B %d %Y')
-                    except ValueError:
-                        d = datetime.strptime(date, '%b %d %Y')
-
-                    date = d.strftime('%d/%m/%Y')
-                    product['last_buyer_review_date'] = date
-        else:
-            self.log('Regular expression for last buyer review date is '
-                     'not defined: buyer_review_date_regex.', ERROR)
+                cond_set_value(product, 'last_buyer_review_date',
+                               date.strftime('%d/%m/%Y'))
 
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
+
+    def _format_last_br_date(self, data):
+        """
+        Parses date to normal format.
+        """
+        raise NotImplementedError
 
     def _parse_buyer_reviews(self, response):
         """
@@ -851,7 +839,7 @@ class AmazonBaseClass(BaseProductsSpider):
 
         buyer_reviews = {}
 
-        total = is_empty(
+        total = self._is_empty(
             response.xpath(
                 '//*[@id="summaryStars"] |'
                 '//div[@id="acr"]/div[@class="txtsmall"]/div[contains(@class,'
@@ -870,10 +858,15 @@ class AmazonBaseClass(BaseProductsSpider):
             '//div[@id="acr"]/div[@class="txtsmall"]'
             '/div[contains(@class, "acrRating")]/text()'
         )
-        average = is_empty(average.extract(), '')
+        average = self._is_empty(average.extract(), '')
 
         if average:
-            average = average.replace('out of 5 stars', '')
+            average = self._is_empty(
+                re.findall(
+                    FLOATING_POINT_RGEX,
+                    average
+                ), 0.0
+            )
             buyer_reviews['average_rating'] = float(average)
 
             buyer_reviews['rating_by_star'] = {}
@@ -903,7 +896,7 @@ class AmazonBaseClass(BaseProductsSpider):
         buyer_reviews = {}
         product["buyer_reviews"] = {}
 
-        num_of_reviews = is_empty(
+        num_of_reviews = self._is_empty(
             response.xpath(
                 '//span[contains(@class, "totalReviewCount")]'
                 '/text()'
@@ -914,7 +907,7 @@ class AmazonBaseClass(BaseProductsSpider):
         else:
             buyer_reviews = BuyerReviews(**self.ZERO_REVIEWS_VALUE)
 
-        average = is_empty(response.xpath(
+        average = self._is_empty(response.xpath(
             '//div[contains(@class, "averageStarRatingNumerical")]//span/text()'
         ).extract(), "")
 
@@ -947,11 +940,11 @@ class AmazonBaseClass(BaseProductsSpider):
 
         if table:
             for tr in table:
-                rating = is_empty(tr.xpath(
+                rating = self._is_empty(tr.xpath(
                     'string(.//td[1])').re(FLOATING_POINT_RGEX))
-                number = is_empty(tr.xpath(
+                number = self._is_empty(tr.xpath(
                     'string(.//td[last()])').re(FLOATING_POINT_RGEX))
-                is_perc = is_empty(tr.xpath(
+                is_perc = self._is_empty(tr.xpath(
                     'string(.//td[last()])').extract())
                 if number:
                     number = int(
@@ -960,6 +953,7 @@ class AmazonBaseClass(BaseProductsSpider):
                     buyer_reviews['rating_by_star'][rating] = {}
                     if "%" in is_perc:
                         response.meta['is_perc'] = True
+                        buyer_reviews['rating_by_star'][rating]['total'] = 0.0
                         buyer_reviews['rating_by_star'][rating]['percentage'] = format(
                             number / 100, '.2f'
                         )
