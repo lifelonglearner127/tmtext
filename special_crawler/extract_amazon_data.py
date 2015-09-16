@@ -708,9 +708,18 @@ class AmazonScraper(Scraper):
     def _keywords(self):
         return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0]
 
+    def _related_product_urls(self):
+        variants = self._variants()
+        related_product_url_list = []
 
+        for variant in variants:
+            if variant["url"] and variant["url"] != self.product_page_url:
+                related_product_url_list.append(variant["url"])
 
+        if related_product_url_list:
+            return related_product_url_list
 
+        return None
 
     ##########################################
     ################ CONTAINER : REVIEWS
@@ -1234,6 +1243,7 @@ class AmazonScraper(Scraper):
         "long_description" : _long_description, \
         "apluscontent_desc" : _apluscontent_desc, \
         "variants": _variants, \
+        "related_products_urls":  _related_product_urls, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \
