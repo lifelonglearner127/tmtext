@@ -459,7 +459,6 @@ class AmazonBaseClass(BaseProductsSpider):
                   '//*[contains(@class, "contributorNameID")]/text() |' \
                   '//*[contains(@id, "contributorName")]/text() |' \
                   '//*[@id="bylineContributor"]/text() |' \
-                  '//a[contains(@href, "field-author")]/text() |' \
                   '//*[@id="contributorLink"]/text() |' \
                   '//*[@id="by-line"]/.//a/text() |' \
                   '//*[@id="artist-container"]/.//a/text() |' \
@@ -636,7 +635,8 @@ class AmazonBaseClass(BaseProductsSpider):
                   '//div[@id="unqualifiedBuyBox"]/.//span[@class="a-color-price"]/text() |' \
                   '//div[@id="tmmSwatches"]/.//li[contains(@class,"selected")]/./' \
                   '/span[@class="a-color-price"] |' \
-                  '//div[contains(@data-reftag,"atv_dp_bb_est_sd_movie")]/button/text()'
+                  '//div[contains(@data-reftag,"atv_dp_bb_est_sd_movie")]/button/text() |' \
+                  '//span[contains(@class, "header-price")]/text()'
 
         if add_xpath:
             xpathes += ' |' + add_xpath
