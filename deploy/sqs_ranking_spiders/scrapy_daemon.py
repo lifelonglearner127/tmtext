@@ -107,7 +107,6 @@ EXTENSION_SIGNALS = {
 
 # cache settings
 CACHE_HOST = 'http://sqs-metrics.contentanalyticsinc.com/'
-# CACHE_HOST = 'http://sqs-metrics.contentanalyticsinc.com/'
 CACHE_URL_GET = 'get_cache'  # url to retrieve task cache from
 CACHE_URL_SAVE = 'save_cache'  # to save cached result to
 CACHE_URL_STATS = 'complete_task'  # to have some stats about completed tasks
