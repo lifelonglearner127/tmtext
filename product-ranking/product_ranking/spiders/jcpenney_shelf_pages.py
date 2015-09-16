@@ -1,12 +1,10 @@
-import os.path
+# TODO: check "product_per_page" fields, may be wrong
+
 import re
 import urlparse
-import requests
-import json
 
 import scrapy
 from scrapy.http import Request
-from scrapy import Selector
 
 from product_ranking.items import SiteProductItem
 
@@ -42,11 +40,10 @@ class JCPenneyShelfPagesSpider(scrapy.Spider):
 
     def get_urls(self, response):
         item = SiteProductItem()
-        #import pdb;pdb.set_trace()
         urls = response.xpath(
             '//div[contains(@class, "product_description")]'
-            '//a[contains(@onclick, "trackPageLoadTime")]/@href').extract()
-
+            '//img[contains(@id, "ThumbnailImage")]/../../../a/@href'
+        ).extract()
         urls = [urlparse.urljoin(response.url, x) if x.startswith('/') else x
                 for x in urls]
         #print "-"*50
