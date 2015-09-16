@@ -15,6 +15,7 @@ def collect_data(cache):
     context['total_cached_items'] = cache.get_cached_tasks_count()
     context['cache_most_popular'] = cache.get_most_popular_cached_items(5)
     context['used_memory'] = cache.get_used_memory()
+    context['responses_from_cache'] = cache.get_total_cached_responses()
     return context
 
 

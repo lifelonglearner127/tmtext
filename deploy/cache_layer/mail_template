@@ -2,6 +2,7 @@ Cache
 
 Memory used: {{ used_memory }}.
 Items in cache: {{ total_cached_items }}.
+Responses, returned from cache: {{ responses_from_cache }}.
 Most used items:
 {% for k, v in cache_most_popular %}    {{ k }} ({{ v }} times)
 {% endfor %}

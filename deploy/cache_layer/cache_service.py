@@ -162,3 +162,11 @@ class SqsCache(object):
 
     def get_used_memory(self):
         return self.db.info().get('used_memory_human')
+
+    def get_total_cached_responses(self):
+        """
+        return number of responses, which were returned from cache
+        """
+        return sum([_[1] for _ in self.db.zrange(
+            self.REDIS_CACHE_STATS, 0, -1, withscores=True, score_cast_func=int)
+        ])
