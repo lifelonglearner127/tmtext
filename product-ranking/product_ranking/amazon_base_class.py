@@ -92,8 +92,10 @@ class AmazonBaseClass(BaseProductsSpider):
             try:
                 num = int(''.join(num))
                 return num
-            except ValueError:
-                self.log("Error to parse string value to int.", ERROR)
+            except ValueError as exc:
+                self.log("Error to parse string value to int: {exc}".format(
+                    exc=exc
+                ), ERROR)
 
         return 0
 
@@ -106,9 +108,11 @@ class AmazonBaseClass(BaseProductsSpider):
                 ), 0.00
             )
             try:
-                num = float(num)
-            except ValueError:
-                self.log("Error to parse string value to float.", ERROR)
+                num = float(num.replace(',', '.'))
+            except ValueError as exc:
+                self.log("Error to parse string value to int: {exc}".format(
+                    exc=exc
+                ), ERROR)
 
         return num
 
@@ -399,6 +403,7 @@ class AmazonBaseClass(BaseProductsSpider):
                   '//*[@id="title"]/text()[normalize-space()] |' \
                   '//*[@id="product-title"]/text()[normalize-space()]'
         if add_xpath:
+            xpathes += ' |' + add_xpath
             xpathes += ' |' + add_xpath
 
         title = self._is_empty(
@@ -698,10 +703,13 @@ class AmazonBaseClass(BaseProductsSpider):
         else:
             price = '0.00'
 
-        price = round(float(price.strip()), 2)
-        price = Price(price=price, priceCurrency=self.price_currency)
+        # Price is parsed in different format:
+        # 1,235.00 --> 1235.00
+        # 2,99 --> 2.99
+        price = (price[:-3] + price[-3:].replace(',', '.')).replace(',', '')
+        price = round(float(price), 2)
 
-        return price
+        return Price(price=price, priceCurrency=self.price_currency)
 
     def _parse_price_original(self, response, add_xpath=None):
         """
@@ -898,12 +906,7 @@ class AmazonBaseClass(BaseProductsSpider):
         average = self._is_empty(average.extract(), '')
 
         if average:
-            average = self._is_empty(
-                re.findall(
-                    FLOATING_POINT_RGEX,
-                    average
-                ), 0.0
-            )
+            average = self._get_float_from_string(average)
             buyer_reviews['average_rating'] = float(average)
 
             buyer_reviews['rating_by_star'] = {}
@@ -943,25 +946,25 @@ class AmazonBaseClass(BaseProductsSpider):
         num_of_reviews = self._get_int_from_string(num_of_reviews)
         if num_of_reviews:
             buyer_reviews['num_of_reviews'] = num_of_reviews
+
+            average = self._is_empty(
+                response.xpath(
+                    '//div[contains(@class, "averageStarRatingNumerical")]//span/text()'
+                ).extract(), 0.0
+            )
+            average = self._get_float_from_string(average)
+
+            buyer_reviews["average_rating"] = average
+
+            buyer_reviews["rating_by_star"] = {}
+            buyer_reviews = self._get_rating_by_star(response, buyer_reviews)[0]
+
+            if not buyer_reviews.get('rating_by_star') or response.meta.get('is_perc'):
+                response.meta['product']['buyer_reviews'] = buyer_reviews
+                # if still no rating_by_star (probably the rating is percent-based)
+                return self._create_post_requests(response)
         else:
             buyer_reviews = BuyerReviews(**self.ZERO_REVIEWS_VALUE)
-
-        average = self._is_empty(
-            response.xpath(
-                '//div[contains(@class, "averageStarRatingNumerical")]//span/text()'
-            ).extract(), 0.0
-        )
-        average = self._get_float_from_string(average)
-
-        buyer_reviews["average_rating"] = average
-
-        buyer_reviews["rating_by_star"] = {}
-        buyer_reviews = self._get_rating_by_star(response, buyer_reviews)[0]
-
-        if not buyer_reviews.get('rating_by_star') or response.meta.get('is_perc'):
-            response.meta['product']['buyer_reviews'] = buyer_reviews
-            # if still no rating_by_star (probably the rating is percent-based)
-            return self._create_post_requests(response)
 
         product['buyer_reviews'] = buyer_reviews
 
