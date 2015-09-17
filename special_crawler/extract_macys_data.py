@@ -68,6 +68,7 @@ class MacysScraper(Scraper):
         if len(self.tree_html.xpath("//h1[contains(@class,'productTitle')]")) < 1:
             return True
         if len(self.tree_html.xpath("//div[@id='viewCollectionItemsButton']")) > 0:
+            self.ERROR_RESPONSE["failure_type"] = "Bundle"
             return True
         return False
 
