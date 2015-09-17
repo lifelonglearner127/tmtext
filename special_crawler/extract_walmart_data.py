@@ -1629,6 +1629,15 @@ class WalmartScraper(Scraper):
         else:
             return 1
 
+    def _no_longer_available(self):
+        try:
+            if "This Item is no longer available" in self.tree_html.xpath("//div[@class='prod-no-buying-option']/div[@class='heading-d']/text()")[0]:
+                return True
+        except:
+            pass
+
+        return False
+
     def _shipping(self):
         flag = 'not available'
 
@@ -2867,6 +2876,7 @@ class WalmartScraper(Scraper):
         "max_review": _max_review, \
         "min_review": _min_review, \
         "reviews": _reviews, \
+        "no_longer_available": _no_longer_available, \
         # video needs both page source and separate requests
         "video_count": _video_count, \
         "video_urls": _video_urls, \
