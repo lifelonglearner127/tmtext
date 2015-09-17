@@ -3,6 +3,8 @@
 #  xml file with fields
 
 
+import re
+import json
 from urllib import quote
 from scrapy import Request, FormRequest
 from scrapy.log import ERROR, WARNING
@@ -40,6 +42,9 @@ class HomebaseProductSpider(BaseProductsSpider):
                    'p={product_id}&'
                    'pt=%7Citem_page.recs_3%7Citem_page.recs_4%7Citem_page.recs_5&'
                    'cts=http%3A%2F%2Fwww.homebase.co.uk&l=1')
+    # url to fetch value of is in store only
+    IISO_URL = ('http://www.homebase.co.uk/en/homebaseuk/'
+                'AjaxCheckStoreStockResults')
     RESULTS_PER_PAGE = 43
     SORT_MODES = {
         'default': '1',
@@ -66,6 +71,18 @@ class HomebaseProductSpider(BaseProductsSpider):
         'productBeginIndex': '0',  # set items offset
         'orderBy': ''  # set order type
     }
+    # form data for request to get only in store value
+    IISO_LOCATION = 'London'
+    IISO_FORM_DATA = {
+        'storeId': '10201',
+        'catalogId': '10011',
+        'langId': '110',
+        'zipCode': IISO_LOCATION,
+        'qty': '1',
+        'articleNumber': '',  # replace with product id
+        'requesttype': 'ajax'
+    }
+    # if item is out of stock, check it's only_in_store flag for this location
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode not in self.SORT_MODES:
@@ -215,6 +232,29 @@ class HomebaseProductSpider(BaseProductsSpider):
         prod = meta['product']
         rr = RichRelevanceApi(response, prod, 'http://www.homebase.co.uk')
         rr.parse_related_products()
+        # if product is out of stock, check it's availability in store
+        if prod['is_out_of_stock']:
+            form_data = self.IISO_FORM_DATA.copy()
+            form_data['articleNumber'] = prod['model']
+            return FormRequest(
+                self.IISO_URL, formdata=form_data,
+                callback=self.parse_iiso, meta=meta, dont_filter=True)
+        else:
+            return Request(
+                self.url_formatter.format(
+                    self.REVIEWS_URL, product_id=prod['model']),
+                callback=self.br.parse_buyer_reviews,
+                meta=meta)
+
+    def parse_iiso(self, response):
+        """parse only in store value"""
+        meta = response.meta.copy()
+        prod = meta['product']
+        js_data = json.loads(
+            re.search('/\*(.+)\*/', response.body.replace('\n', '')).group(1))
+        first_store = js_data.get('firstStore', {})
+        ois = bool(first_store.get('stockAvl', 0))
+        cond_set_value(prod, 'is_in_store_only', ois)
         return Request(
             self.url_formatter.format(
                 self.REVIEWS_URL, product_id=prod['model']),
