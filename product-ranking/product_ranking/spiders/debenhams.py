@@ -129,13 +129,12 @@ class DebenhamsProductSpider(BaseProductsSpider):
 
     def _parse_category(self, response):
         category = is_empty(
-            response.xpath('//meta[@property="category"]/@content').extract(),
-            ''
-        )
+            response.xpath('//span[@class="breadcrumb"]/a/text()').extract()
+        ).strip()
+
         subcategory = is_empty(
-            response.xpath('//meta[@property="subcategory"]/@content').extract(),
-            ''
-        )
+            response.xpath('//span[@class="breadcrumb last"]/a/text()').extract()
+        ).strip()
 
         if subcategory and category:
             return [category, subcategory]
@@ -209,12 +208,7 @@ class DebenhamsProductSpider(BaseProductsSpider):
         )
 
         if upc:
-            upc = is_empty(
-                re.findall(
-                    r'(\d{12})+',
-                    upc
-                )
-            )
+            upc = upc.split('_')[0]
 
         return upc
 
@@ -341,15 +335,15 @@ class DebenhamsProductSpider(BaseProductsSpider):
         """
         total_matches = is_empty(
             response.xpath(
-                '//*[@id="products_found"]/span/text()'
+                '//span[@class="products_count"]/text()'
             ).extract(), 0
         )
-        total_matches = is_empty(
-            re.findall(
-                r'(\d+) products found',
-                total_matches
-            )
-        )
+        # total_matches = is_empty(
+        #     re.findall(
+        #         r'(\d+) products found',
+        #         total_matches
+        #     )
+        # )
 
         if total_matches:
             return int(total_matches)
