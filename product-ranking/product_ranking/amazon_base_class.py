@@ -82,6 +82,36 @@ class AmazonBaseClass(BaseProductsSpider):
     def _is_empty(self, x, y=None):
         return x[0] if x else y
 
+    def _get_int_from_string(self, num):
+        if num:
+            num = re.findall(
+                r'(\d+)',
+                num
+            )
+
+            try:
+                num = int(''.join(num))
+                return num
+            except ValueError:
+                self.log("Error to parse string value to int.", ERROR)
+
+        return 0
+
+    def _get_float_from_string(self, num):
+        if num:
+            num = self._is_empty(
+                re.findall(
+                    FLOATING_POINT_RGEX,
+                    num
+                ), 0.00
+            )
+            try:
+                num = float(num)
+            except ValueError:
+                self.log("Error to parse string value to float.", ERROR)
+
+        return num
+
     def _scrape_total_matches(self, response):
         """
         Overrides BaseProductsSpider method to scrape total result matches. total_matches_str
@@ -106,18 +136,7 @@ class AmazonBaseClass(BaseProductsSpider):
             ).re(unicode(self.total_matches_re))
         )
 
-        if count_matches:
-            total_matches = int(count_matches.replace(
-                ' ', '').replace(u'\xa0', '').replace(',', '').replace('.', ''))
-        else:
-            total_matches = None
-
-        if not total_matches:
-            total_matches = int(self._is_empty(
-                response.xpath(
-                    '//h2[@id="s-result-count"]/text()'
-                ).re(FLOATING_POINT_RGEX), 0
-            ))
+        total_matches = self._get_int_from_string(count_matches)
 
         return total_matches
 
@@ -412,7 +431,8 @@ class AmazonBaseClass(BaseProductsSpider):
                   '//div[@class="egcProdImageContainer"]' \
                   '/img[@class="egcDesignPreviewBG"]/@src |' \
                   '//img[@id="main-image"]/@src |' \
-                  '//*[@id="imgTagWrapperId"]/.//img/@data-old-hires'
+                  '//*[@id="imgTagWrapperId"]/.//img/@data-old-hires |' \
+                  '//img[@id="imgBlkFront"]/@src'
         if add_xpath:
             xpathes += ' |' + add_xpath
 
@@ -464,7 +484,8 @@ class AmazonBaseClass(BaseProductsSpider):
                   '//*[@id="artist-container"]/.//a/text() |' \
                   '//*[@id="byline"]/.//*[contains(@class,"author")]/a/text() |' \
                   '//div[@class="buying"]/.//a[contains(@href, "search-type=ss")]/text() |' \
-                  '//a[@id="ProductInfoArtistLink"]/text()'
+                  '//a[@id="ProductInfoArtistLink"]/text() |' \
+                  '//a[contains(@href, "field-author")]/'
         if add_xpath:
             xpathes += ' |' + add_xpath
 
@@ -506,7 +527,12 @@ class AmazonBaseClass(BaseProductsSpider):
             response.xpath(xpathes).extract(), None
         )
         if price_ss and price_ss.startswith('$'):
-            price_ss = price_ss.replace(' ', '').replace(',', '').strip('$')
+            price_ss = self._is_empty(
+                re.findall(
+                    FLOATING_POINT_RGEX,
+                    price_ss
+                )
+            )
             try:
                 price_ss = float(price_ss)
             except ValueError as exc:
@@ -661,8 +687,11 @@ class AmazonBaseClass(BaseProductsSpider):
                     self.log('Currency symbol not recognized: %s' % response.url,
                              level=WARNING)
             else:
-                price = self._is_empty(re.findall(r'[\d,.]+\d', price), '0.00')
-                price = price.replace(price_currency_view, '').replace(',', '')
+                price = self._is_empty(
+                    re.findall(
+                        FLOATING_POINT_RGEX,
+                        price), '0.00'
+                )
         else:
             price = '0.00'
 
@@ -687,7 +716,12 @@ class AmazonBaseClass(BaseProductsSpider):
         )
 
         if price_original:
-            price_original = price_original.replace('$', '').strip()
+            price_original = self._is_empty(
+                re.findall(
+                    FLOATING_POINT_RGEX,
+                    price_original
+                ), 0.00
+            )
             try:
                 price_original = float(price_original)
             except ValueError:
@@ -851,7 +885,7 @@ class AmazonBaseClass(BaseProductsSpider):
         if not total:
             return BuyerReviews(**self.ZERO_REVIEWS_VALUE)
 
-        buyer_reviews['num_of_reviews'] = int(total.replace(',', ''))
+        buyer_reviews['num_of_reviews'] = self._get_int_from_string(total)
 
         average = response.xpath(
             '//*[@id="summaryStars"]/a/@title |'
@@ -900,10 +934,12 @@ class AmazonBaseClass(BaseProductsSpider):
             response.xpath(
                 '//span[contains(@class, "totalReviewCount")]'
                 '/text()'
-            ).extract(), '').replace(",", "")
+            ).extract(), ''
+        )
 
+        num_of_reviews = self._get_int_from_string(num_of_reviews)
         if num_of_reviews:
-            buyer_reviews['num_of_reviews'] = int(num_of_reviews.strip())
+            buyer_reviews['num_of_reviews'] = num_of_reviews
         else:
             buyer_reviews = BuyerReviews(**self.ZERO_REVIEWS_VALUE)
 
@@ -912,14 +948,9 @@ class AmazonBaseClass(BaseProductsSpider):
                 '//div[contains(@class, "averageStarRatingNumerical")]//span/text()'
             ).extract(), 0.0
         )
-        average = self._is_empty(
-            re.findall(
-                FLOATING_POINT_RGEX,
-                average
-            ), 0.0
-        )
+        average = self._get_float_from_string(average)
 
-        buyer_reviews["average_rating"] = float(average.replace(',', '.'))
+        buyer_reviews["average_rating"] = average
 
         buyer_reviews["rating_by_star"] = {}
         buyer_reviews = self._get_rating_by_star(response, buyer_reviews)[0]
@@ -953,9 +984,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 is_perc = self._is_empty(tr.xpath(
                     'string(.//td[last()])').extract())
                 if number:
-                    number = int(
-                        number.replace(',', '')
-                    )
+                    number = self._get_int_from_string(number)
                     buyer_reviews['rating_by_star'][rating] = {}
                     if "%" in is_perc:
                         response.meta['is_perc'] = True
@@ -977,9 +1006,8 @@ class AmazonBaseClass(BaseProductsSpider):
                 number = div.xpath(
                     'string(.//div[contains(@class, "histoCount")])'
                 ).re(FLOATING_POINT_RGEX)[0]
-                buyer_reviews['rating_by_star'][rating]['total'] = int(
-                    number.replace(',', '')
-                )
+                buyer_reviews['rating_by_star'][rating]['total'] = \
+                    self._get_int_from_string(number)
         return buyer_reviews, table
 
     def _create_post_requests(self, response):
@@ -1038,9 +1066,9 @@ class AmazonBaseClass(BaseProductsSpider):
             r'Showing .+? of ([\d,\.]+) reviews', response.body)
         if num_of_reviews_for_star:
             num_of_reviews_for_star = num_of_reviews_for_star.group(1)
-            num_of_reviews_for_star = num_of_reviews_for_star\
-                .replace(',', '').replace('.', '')
-            rating_by_star[str(current_star_int)]['total'] = int(num_of_reviews_for_star)
+            rating_by_star[str(current_star_int)]['total'] = self._get_int_from_string(
+                num_of_reviews_for_star
+            )
         else:
             rating_by_star[str(current_star_int)]['total'] = 0
 
