@@ -18,16 +18,16 @@ import math,sys
 import json
 import urllib
 
-walmart_site_url = "http://www.walmart.com"
+amazon_site_url = "http://www.amazon.com"
 google_search_url = "http://www.bing.com/search?q={0}"
-success_results_file_path = "/home/mufasa/Documents/Workspace/Content Analytics/Misc/Brand & Style/walmart_product_list_by_brand_style.csv"
-failure_results_file_path = "/home/mufasa/Documents/Workspace/Content Analytics/Misc/Brand & Style/walmart_brand_style (failed).csv"
+success_results_file_path = "/home/mufasa/Documents/Workspace/Content Analytics/Misc/Brand & Style/amazon_product_list_by_brand_style.csv"
+failure_results_file_path = "/home/mufasa/Documents/Workspace/Content Analytics/Misc/Brand & Style/amazon_brand_style latest (failed).csv"
 
-f = open('/home/mufasa/Documents/Workspace/Content Analytics/Misc/Brand & Style/walmart_brand_style (failed).csv')
+f = open('/home/mufasa/Documents/Workspace/Content Analytics/Misc/Brand & Style/amazon_brand_style (failed).csv')
 csv_f = csv.reader(f)
 
 brand_style_list = list(csv_f)
-search_url_list = [[row[0], row[1], google_search_url.format("walmart+" + row[0] + "+" + row[1])] for row in brand_style_list]
+search_url_list = [[row[0], row[1], google_search_url.format("amazon+" + row[0] + "+" + row[1])] for row in brand_style_list]
 
 product_url_list_by_category = {}
 
@@ -46,33 +46,33 @@ for row in search_url_list:
     try:
         h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
+        a = requests.adapters.HTTPAdapter(max_retries=10)
+        b = requests.adapters.HTTPAdapter(max_retries=10)
         s.mount('http://', a)
         s.mount('https://', b)
-        category_html = html.fromstring(s.get(search_url, headers=h, timeout=5).text)
+        category_html = html.fromstring(s.get(search_url, headers=h, timeout=30).text)
     except:
         print "fail"
         continue
 
     url_list = category_html.xpath("//ol[@id='b_results']/li/h2/a/@href")
-    url_list = [url for url in url_list if url.startswith("http://www.walmart.com/ip/")]
+    url_list = [url for url in url_list if url.startswith("http://www.amazon.com/")]
 
     qualified_url_list = []
     is_search_failed = False
 
     for index, url in enumerate(url_list):
-        if not url.startswith(walmart_site_url):
-            url = walmart_site_url + url
+        if not url.startswith(amazon_site_url):
+            url = amazon_site_url + url
 
         try:
             h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
             s = requests.Session()
-            a = requests.adapters.HTTPAdapter(max_retries=3)
-            b = requests.adapters.HTTPAdapter(max_retries=3)
+            a = requests.adapters.HTTPAdapter(max_retries=10)
+            b = requests.adapters.HTTPAdapter(max_retries=10)
             s.mount('http://', a)
             s.mount('https://', b)
-            product_json = s.get("http://52.1.156.214/get_data?url=" + urllib.quote(url), headers=h, timeout=5).text
+            product_json = s.get("http://54.85.249.210/get_data?url=" + urllib.quote(url), headers=h, timeout=30).text
 
             is_qualified = False
             is_qualified = (brand.lower() in product_json.lower() and style.lower() in product_json.lower())
