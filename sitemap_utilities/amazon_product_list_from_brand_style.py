@@ -41,11 +41,11 @@ for row in search_url_list:
     try:
         h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
+        a = requests.adapters.HTTPAdapter(max_retries=10)
+        b = requests.adapters.HTTPAdapter(max_retries=10)
         s.mount('http://', a)
         s.mount('https://', b)
-        category_html = html.fromstring(s.get(search_url, headers=h, timeout=5).text)
+        category_html = html.fromstring(s.get(search_url, headers=h, timeout=30).text)
     except:
         print "fail"
         continue
@@ -54,9 +54,9 @@ for row in search_url_list:
         item_count = category_html.xpath("//h2[@id='s-result-count']/text()")[0].strip()
 
         if "of " in item_count:
-            item_count = int(re.findall('of (.*?) results', item_count, re.DOTALL)[0])
+            item_count = int(re.findall('of (.*?) result', item_count, re.DOTALL)[0].replace(",", ""))
         else:
-            item_count = int(re.findall('(.*?) results', item_count, re.DOTALL)[0])
+            item_count = int(re.findall('(.*?) result', item_count, re.DOTALL)[0].replace(",", ""))
     except:
         item_count = 0
 
@@ -76,11 +76,11 @@ for row in search_url_list:
         try:
             h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
             s = requests.Session()
-            a = requests.adapters.HTTPAdapter(max_retries=3)
-            b = requests.adapters.HTTPAdapter(max_retries=3)
+            a = requests.adapters.HTTPAdapter(max_retries=10)
+            b = requests.adapters.HTTPAdapter(max_retries=10)
             s.mount('http://', a)
             s.mount('https://', b)
-            product_json = s.get("http://52.1.156.214/get_data?url=" + urllib.quote(url), headers=h, timeout=5).text
+            product_json = s.get("http://54.85.249.210/get_data?url=" + urllib.quote(url), headers=h, timeout=30).text
 
             is_qualified = False
             is_qualified = (brand.lower() in product_json.lower() and style.lower() in product_json.lower())
@@ -115,200 +115,87 @@ for row in search_url_list:
     if is_search_failed:
         continue
 
-    if item_count > 1000:
-        min_price = 0
-        max_price = 1
+    for index in range(2, 10000):
+        if "?" not in search_url:
+            url_page_index = search_url + "?page=" + str(index)
+        else:
+            url_page_index = search_url + "&page=" + str(index)
 
-        while True:
-            print "price range: {0} - {1}".format(min_price, max_price)
-
-            for index in range(1, 10000):
-                if "?" not in search_url:
-                    url_page_index = search_url + "?page=" + str(index)
-                else:
-                    url_page_index = search_url + "&page=" + str(index)
-
-                if max_price > 0:
-                    url_page_index = url + "&min_price={0}&max_price={1}".format(min_price, max_price)
-                else:
-                    url_page_index = url_page_index + "&min_price={0}".format(min_price)
-
-                try:
-                    h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-                    s = requests.Session()
-                    a = requests.adapters.HTTPAdapter(max_retries=3)
-                    b = requests.adapters.HTTPAdapter(max_retries=3)
-                    s.mount('http://', a)
-                    s.mount('https://', b)
-                    category_html = html.fromstring(s.get(url_page_index, headers=h, timeout=5).text)
-                except:
-                    break
-
-                try:
-                    item_count = int(re.findall(r'\d+', category_html.xpath("//div[@class='result-summary-container']/text()")[0].replace(",", ""))[1])
-                except:
-                    item_count = 0
-
-                if item_count == 0:
-                    break
-
-                try:
-                    if int(category_html.xpath("//ul[@class='paginator-list']/li/a[@class='active']")[0].text_content().strip()) != index:
-                        break
-                except:
-                    break
-
-                url_list = category_html.xpath("//div[@id='tile-container']//div[@class='js-tile js-tile-landscape tile-landscape']//a[@class='js-product-title']/@href")
-                qualified_url_list = []
-                is_search_failed = False
-
-                for index, url in enumerate(url_list):
-                    if not url.startswith(amazon_site_url):
-                        url = amazon_site_url + url
-
-                    try:
-                        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-                        s = requests.Session()
-                        a = requests.adapters.HTTPAdapter(max_retries=3)
-                        b = requests.adapters.HTTPAdapter(max_retries=3)
-                        s.mount('http://', a)
-                        s.mount('https://', b)
-                        product_json = s.get("http://52.1.156.214/get_data?url=" + urllib.quote(url), headers=h, timeout=5).text
-
-                        is_qualified = False
-                        is_qualified = (brand.lower() in product_json.lower() and style.lower() in product_json.lower())
-
-                        if brand.lower() == "jms":
-                            is_qualified = (is_qualified or ("just my size" in product_json.lower() and style.lower() in product_json.lower()))
-
-                        if is_qualified:
-                            qualified_url_list.append(url)
-
-                            print brand + " " + style + " " + url
-
-                            product_json = json.loads(product_json)
-
-                            if product_json["page_attributes"]["related_products_urls"]:
-                                qualified_url_list.extend(product_json["page_attributes"]["related_products_urls"])
-
-                                for related_product_url in product_json["page_attributes"]["related_products_urls"]:
-                                    print brand + " " + style + " " + related_product_url
-                        else:
-                            is_search_failed = True
-                            break
-                    except:
-                        print "fail"
-                        continue
-
-                if qualified_url_list:
-                    product_url_list_by_category[category_name].extend(qualified_url_list)
-                else:
-                    is_search_failed = True
-
-                if is_search_failed:
-                    break
-
-            if max_price < 0:
-                break
-
-            if "?" not in search_url:
-                url_page_index = search_url + "?page=" + str(index)
-            else:
-                url_page_index = search_url + "&page=" + str(index)
-
-            url_page_index = url_page_index + "&min_price={0}".format(max_price)
-
+        try:
             h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
             s = requests.Session()
-            a = requests.adapters.HTTPAdapter(max_retries=3)
-            b = requests.adapters.HTTPAdapter(max_retries=3)
+            a = requests.adapters.HTTPAdapter(max_retries=10)
+            b = requests.adapters.HTTPAdapter(max_retries=10)
             s.mount('http://', a)
             s.mount('https://', b)
-            category_html = html.fromstring(s.get(url_page_index, headers=h, timeout=5).text)
-            item_count = int(re.findall(r'\d+', category_html.xpath("//div[@class='result-summary-container']/text()")[0].replace(",", ""))[1])
+            category_html = html.fromstring(s.get(url_page_index, headers=h, timeout=30).text)
+        except:
+            break
 
-            min_price = max_price
+        try:
+            item_count = category_html.xpath("//h2[@id='s-result-count']/text()")[0].strip()
 
-            if item_count > 1000:
-                max_price = max_price + 1
+            if "of " in item_count:
+                item_count = int(re.findall('of (.*?) result', item_count, re.DOTALL)[0])
             else:
-                max_price = -1
-    else:
-        for index in range(2, 10000):
-            if "?" not in search_url:
-                url_page_index = search_url + "?page=" + str(index)
-            else:
-                url_page_index = search_url + "&page=" + str(index)
+                item_count = int(re.findall('(.*?) result', item_count, re.DOTALL)[0])
+        except:
+            item_count = 0
+
+        if item_count == 0:
+            break
+
+        url_list = category_html.xpath("//ul[@id='s-results-list-atf']//a[@class='a-link-normal s-access-detail-page  a-text-normal']/@href")
+        qualified_url_list = []
+        is_search_failed = False
+
+        for index, url in enumerate(url_list):
+            if not url.startswith(amazon_site_url):
+                url = amazon_site_url + url
+
+            url = url[:url.find("/ref=")]
 
             try:
                 h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
                 s = requests.Session()
-                a = requests.adapters.HTTPAdapter(max_retries=3)
-                b = requests.adapters.HTTPAdapter(max_retries=3)
+                a = requests.adapters.HTTPAdapter(max_retries=10)
+                b = requests.adapters.HTTPAdapter(max_retries=10)
                 s.mount('http://', a)
                 s.mount('https://', b)
-                category_html = html.fromstring(s.get(url_page_index, headers=h, timeout=5).text)
-                url_list = category_html.xpath("//div[@id='tile-container']//div[@class='js-tile js-tile-landscape tile-landscape']//a[@class='js-product-title']/@href")
-            except:
-                break
+                product_json = s.get("http://54.85.249.210/get_data?url=" + urllib.quote(url), headers=h, timeout=30).text
 
-            if not url_list:
-                break
+                is_qualified = False
+                is_qualified = (brand.lower() in product_json.lower() and style.lower() in product_json.lower())
 
-            try:
-                if int(category_html.xpath("//ul[@class='paginator-list']/li/a[@class='active']")[0].text_content().strip()) != index:
+                if brand.lower() == "jms":
+                    is_qualified = (is_qualified or ("just my size" in product_json.lower() and style.lower() in product_json.lower()))
+
+                if is_qualified:
+                    qualified_url_list.append(url)
+
+                    print brand + " " + style + " " + url
+
+                    product_json = json.loads(product_json)
+
+                    if product_json["page_attributes"]["related_products_urls"]:
+                        qualified_url_list.extend(product_json["page_attributes"]["related_products_urls"])
+
+                        for related_product_url in product_json["page_attributes"]["related_products_urls"]:
+                            print brand + " " + style + " " + related_product_url
+                else:
+                    is_search_failed = True
                     break
             except:
-                break
+                print "fail"
+                continue
 
-            qualified_url_list = []
-            is_search_failed = False
+        if qualified_url_list:
+            product_url_list_by_category[category_name].extend(qualified_url_list)
+        else:
+            is_search_failed = True
 
-            for index, url in enumerate(url_list):
-                if not url.startswith(amazon_site_url):
-                    url = amazon_site_url + url
-
-                try:
-                    h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-                    s = requests.Session()
-                    a = requests.adapters.HTTPAdapter(max_retries=3)
-                    b = requests.adapters.HTTPAdapter(max_retries=3)
-                    s.mount('http://', a)
-                    s.mount('https://', b)
-                    product_json = s.get("http://52.1.156.214/get_data?url=" + urllib.quote(url), headers=h, timeout=5).text
-
-                    is_qualified = False
-                    is_qualified = (brand.lower() in product_json.lower() and style.lower() in product_json.lower())
-
-                    if brand.lower() == "jms":
-                        is_qualified = (is_qualified or ("just my size" in product_json.lower() and style.lower() in product_json.lower()))
-
-                    if is_qualified:
-                        qualified_url_list.append(url)
-
-                        print brand + " " + style + " " + url
-
-                        product_json = json.loads(product_json)
-
-                        if product_json["page_attributes"]["related_products_urls"]:
-                            qualified_url_list.extend(product_json["page_attributes"]["related_products_urls"])
-
-                            for related_product_url in product_json["page_attributes"]["related_products_urls"]:
-                                print brand + " " + style + " " + related_product_url
-                    else:
-                        is_search_failed = True
-                        break
-                except:
-                    print "fail"
-                    continue
-
-            if qualified_url_list:
-                product_url_list_by_category[category_name].extend(qualified_url_list)
-            else:
-                is_search_failed = True
-
-            if is_search_failed:
-                break
+        if is_search_failed:
+            continue
 
 if os.path.isfile(success_results_file_path):
     csv_file1 = open(success_results_file_path, 'a+')

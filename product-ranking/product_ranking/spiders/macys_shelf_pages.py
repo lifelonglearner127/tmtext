@@ -5,15 +5,16 @@ import urlparse
 
 import scrapy
 from scrapy.http import Request
+from scrapy import Selector
 
 from product_ranking.items import SiteProductItem
 
 is_empty = lambda x: x[0] if x else None
 
 
-class JCPenneyShelfPagesSpider(scrapy.Spider):
-    name = 'jcpenney_shelf_urls_products'
-    allowed_domains = ['jcpenney.com', 'www.jcpenney.com']
+class MacysShelfPagesSpider(scrapy.Spider):
+    name = 'macys_shelf_urls_products'
+    allowed_domains = ['macys.com', 'www1.macys.com', 'www.macys.com']
 
     current_page = 1
 
@@ -41,14 +42,11 @@ class JCPenneyShelfPagesSpider(scrapy.Spider):
     def get_urls(self, response):
         item = SiteProductItem()
         urls = response.xpath(
-            '//div[contains(@class, "product_description")]'
-            '//img[contains(@id, "ThumbnailImage")]/../../../a/@href'
+            '//span[contains(@id, "main_images_holder")]/../../a/@href'
         ).extract()
+
         urls = [urlparse.urljoin(response.url, x) if x.startswith('/') else x
                 for x in urls]
-        #print "-"*50
-        #print len(urls)
-        #print "-"*50
         assortment_url = {response.url: urls}
         item["assortment_url"] = assortment_url
         item['results_per_page'] = self._scrape_results_per_page(response)
@@ -56,15 +54,14 @@ class JCPenneyShelfPagesSpider(scrapy.Spider):
         return item
 
     def _scrape_results_per_page(self, response):
-        num = None
-        try:
-            num = response.xpath(
-                '//*[contains(text(), "items per page")]/..//strong//span/text()'
-            ).re('\d+')[0]
-        except IndexError:
-            self.log('Failed to get num of results')
-        if isinstance(num, (str, unicode)) and num.isdigit():
-            return int(num)
+        num = ''.join(
+            response.xpath(
+                '//*[contains(@id, "productCount")]/text()').extract()
+        ).strip()
+        if num:
+            num = num.strip()
+            if num.isdigit():
+                return int(num)
 
     def next_pagination_link(self, response):
         if self.current_page >= self.num_pages:
@@ -72,7 +69,8 @@ class JCPenneyShelfPagesSpider(scrapy.Spider):
         self.current_page += 1
 
         next_link = is_empty(
-            response.xpath('//a[contains(@title, "next page")]/@href').extract())
+            response.xpath('//a[contains(@class, "arrowRight")]/@href').extract()
+        )
 
         if next_link:
             url = urlparse.urljoin(response.url, next_link)

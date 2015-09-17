@@ -173,11 +173,16 @@ class WalmartVariants(object):
                     if not selected_variants:
                         isSelected = False
 
-                    variant_product_id = item['buyingOptions']['usItemId']
-                    variant_product_url = original_product_canonical_link[:original_product_canonical_link.rfind("/") + 1] + str(variant_product_id)
+                    try:
+                        variant_product_id = item['buyingOptions']['usItemId']
+                        variant_product_url = original_product_canonical_link[:original_product_canonical_link.rfind("/") + 1] + str(variant_product_id)
+                        stockstatus_for_variants["url"] = variant_product_url
+                        stockstatus_for_variants["in_stock"] = item['buyingOptions']['available']
+                    except Exception, e:
+                        stockstatus_for_variants["url"] = None
+                        stockstatus_for_variants["in_stock"] = False
+
                     stockstatus_for_variants["properties"] = properties
-                    stockstatus_for_variants["in_stock"] = item['buyingOptions']['available']
-                    stockstatus_for_variants["url"] = variant_product_url
                     stockstatus_for_variants["price"] = None
                     stockstatus_for_variants["selected"] = isSelected
                     stockstatus_for_variants_list.append(stockstatus_for_variants)
