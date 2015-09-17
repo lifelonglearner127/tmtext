@@ -37,7 +37,7 @@
     <ul>
         <li>Memory used: {{ used_memory }}</li>
         <li>Items in cache: {{ items_in_cache }}</li>
-        <li>Responses, returned from cache: {{ responses_from_cache }}</li>
+        <li>Responses, returned from cache: unique {{ responses_from_cache.0 }}, total {{ responses_from_cache.1 }}</li>
         <li>
             Most popular items for today:
             <ul>
