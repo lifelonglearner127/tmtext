@@ -485,7 +485,7 @@ class AmazonBaseClass(BaseProductsSpider):
                   '//*[@id="byline"]/.//*[contains(@class,"author")]/a/text() |' \
                   '//div[@class="buying"]/.//a[contains(@href, "search-type=ss")]/text() |' \
                   '//a[@id="ProductInfoArtistLink"]/text() |' \
-                  '//a[contains(@href, "field-author")]/'
+                  '//a[contains(@href, "field-author")]/text()'
         if add_xpath:
             xpathes += ' |' + add_xpath
 
@@ -508,6 +508,9 @@ class AmazonBaseClass(BaseProductsSpider):
             brand = guess_brand_from_first_words(title)
             if brand:
                 brand = [brand]
+
+        if isinstance(brand, list):
+            brand = [br for br in brand if br is not 'search results']
 
         brand = brand or ['NO BRAND']
 
