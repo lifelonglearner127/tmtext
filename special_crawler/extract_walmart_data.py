@@ -1629,6 +1629,28 @@ class WalmartScraper(Scraper):
         else:
             return 1
 
+    def _shipping(self):
+        flag = 'not available'
+
+        if self.tree_html.xpath('//meta[@name="Keywords"]'):
+            if not flag in html.tostring(self.tree_html):
+                return False
+            else:
+                return True
+        else:
+            shipping = self.tree_html.xpath(
+                '//div[@class="product-no-fulfillment Grid-col '
+                'u-size-6-12-l active"][1]/span/text()'
+                '[contains(.,"not available")] |'
+                '//span[@class="js-shipping-delivery-date-msg '
+                'delivery-date-msg"]/text()[contains(., "Not available")]'
+            )
+
+            if len(shipping) > 0:
+                return False
+            else:
+                return True
+
     def _no_image(self, url):
         """Overwrites the _no_image
         in the base class with an additional test.
@@ -2827,6 +2849,7 @@ class WalmartScraper(Scraper):
         "feature_count": _nr_features_from_tree, \
         "title_seo": _title_from_tree, \
         "rollback": _rollback, \
+        "shipping": _shipping, \
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title": _product_name_from_tree, \
         "in_stores": _in_stores, \
