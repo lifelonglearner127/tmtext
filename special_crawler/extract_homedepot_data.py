@@ -353,12 +353,9 @@ class HomeDepotScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        price = self.tree_html.xpath("//div[contains(@class, 'product_containerprice c show')]//span[@id='ajaxPrice']/text()")
+        self._extract_product_json()
 
-        if price:
-            return price[0].strip()
-
-        return None
+        return "$" + '{0:,}'.format(float(self.product_json["itemExtension"]["displayPrice"]))
 
     def _price_amount(self):
         self._extract_product_json()
@@ -366,12 +363,7 @@ class HomeDepotScraper(Scraper):
         return float(self.product_json["itemExtension"]["displayPrice"])
 
     def _price_currency(self):
-        price_currency = self.tree_html.xpath("//div[contains(@class, 'product_containerprice c show')]//meta[@itemprop='priceCurrency']/@content")
-
-        if price_currency:
-            return price_currency[0].strip()
-
-        return None
+        return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
 
     def _in_stores(self):
         self._extract_product_json()
