@@ -921,7 +921,7 @@ class SearchSpider(BaseSpider):
             product_name_holder = hxs.select("//h1[@class='productTitle']/text()").extract()
 
         if product_name_holder:
-            product_name = product_name_holder[0].strip()
+            product_name = "".join(product_name_holder).strip()
         else:
             product_name = None
 
