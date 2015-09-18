@@ -227,4 +227,4 @@ class SiteProductItem(Item):
 
     _statistics = Field()  # for server and spider stats (RAM, CPU, disk etc.)
 
-    is_not_available = Field()  # no longer available
+    no_longer_available = Field()  # no longer available, for Walmart

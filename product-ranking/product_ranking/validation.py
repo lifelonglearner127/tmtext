@@ -628,6 +628,9 @@ class BaseValidator(object):
     def _validate_sku(self, val):
         return True  # TODO: update
 
+    def _validate_no_longer_available(self, val):
+        return val in (True, False, None, '')
+
     def _get_failed_fields(self, data, add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)
         :param data: 2-dimensions list or str

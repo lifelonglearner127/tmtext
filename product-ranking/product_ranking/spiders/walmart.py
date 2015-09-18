@@ -264,7 +264,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         product = response.meta['product']
 
         not_available = self.parse_available(response)
-        cond_set_value(product, 'is_not_available', not_available)
+        cond_set_value(product, 'no_longer_available', not_available)
 
         wv = WalmartVariants()
         wv.setupSC(response)
