@@ -12,6 +12,7 @@ import mmh3 as MurmurHash
 import os
 
 from no_img_hash import fetch_bytes
+from socket import timeout
 
 from lxml import html, etree
 from itertools import chain
@@ -243,6 +244,7 @@ class Scraper():
     def __init__(self, **kwargs):
         self.product_page_url = kwargs['url']
         self.bot_type = kwargs['bot']
+        self.is_timeout = False
 
         # Set generic fields
         # directly (don't need to be computed by the scrapers)
@@ -379,7 +381,7 @@ class Scraper():
 
         for i in range(self.MAX_RETRIES):
             try:
-                contents = urllib2.urlopen(request).read()
+                contents = urllib2.urlopen(request, timeout=10).read()
 
             # handle urls with special characters
             except UnicodeEncodeError, e:
@@ -390,7 +392,10 @@ class Scraper():
 
             except IncompleteRead, e:
                 continue
-
+            except timeout:
+                self.is_timeout = True
+                self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                return
 
             try:
                 # replace NULL characters
@@ -455,7 +460,7 @@ class Scraper():
         results_dict = {}
 
         # if it's not a valid product page, abort
-        if self.not_a_product():
+        if self.is_timeout or self.not_a_product():
             return self.ERROR_RESPONSE
 
         for info in info_type_list:
