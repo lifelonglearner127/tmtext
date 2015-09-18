@@ -226,3 +226,5 @@ class SiteProductItem(Item):
     assortment_url = Field()
 
     _statistics = Field()  # for server and spider stats (RAM, CPU, disk etc.)
+
+    is_not_available = Field()  # no longer available
