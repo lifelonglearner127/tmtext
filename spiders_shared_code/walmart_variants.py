@@ -94,6 +94,7 @@ class WalmartVariants(object):
 
                 return variant_list
             except:
+                print "Walmart v1 variant passing issue"
                 return None
 
         if version == "Walmart v2":
@@ -192,6 +193,7 @@ class WalmartVariants(object):
                 else:
                     return stockstatus_for_variants_list
             except:
+                print "Walmart v2 variant passing issue"
                 return None
 
         return None
