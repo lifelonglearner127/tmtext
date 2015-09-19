@@ -2372,6 +2372,10 @@ class WalmartScraper(Scraper):
             if self.tree_html.xpath("//div[@class='PageTitle']/h1/text()") and "eGift Card" in self.tree_html.xpath("//div[@class='PageTitle']/h1/text()")[0]:
                 self.failure_type = "E-Card"
 
+        # we ignore incomplete product like http://www.walmart.com/ip/39783867
+        if re.findall(r"<!(-+) preparation (-+)>", html.tostring(self.tree_html)):
+            self.failure_type = "Incomplete"
+
         try:
             if "/cp/" in self._canonical_link():
                 self.failure_type = "Category page"
