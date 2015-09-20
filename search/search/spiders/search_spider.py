@@ -76,7 +76,7 @@ class SearchSpider(BaseSpider):
         # call specific init for each derived class
         self.init_sub()
 
-        self.version = "32bd05dca14e5e46c710b952137b3c2ff80899cb"
+        self.version = "6753c15d74e4e3ecb8f28865b463f9978b869225"
 
         self.product_url = product_url
         self.products_file = products_file
@@ -921,7 +921,7 @@ class SearchSpider(BaseSpider):
             product_name_holder = hxs.select("//h1[@class='productTitle']/text()").extract()
 
         if product_name_holder:
-            product_name = product_name_holder[0].strip()
+            product_name = "".join(product_name_holder).strip()
         else:
             product_name = None
 

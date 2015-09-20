@@ -19,6 +19,7 @@ from pytesseract import image_to_string
 sys.path.append(os.path.abspath('../search'))
 import captcha_solver
 import compare_images
+from socket import timeout
 
 from spiders_shared_code.amazon_variants import AmazonVariants
 
@@ -89,11 +90,14 @@ class AmazonScraper(Scraper):
                 else:
                     request = urllib2.Request(self.product_page_url.encode("utf-8"))
                 request.add_header('User-Agent', agent)
-                contents = urllib2.urlopen(request).read()
+                contents = urllib2.urlopen(request, timeout=10).read()
 
             except IncompleteRead, e:
                 continue
-
+            except timeout:
+                self.is_timeout = True
+                self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                return
 
             try:
                 # replace NULL characters

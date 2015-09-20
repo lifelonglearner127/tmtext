@@ -19,6 +19,7 @@ import sys
 class WalmartSpider(SearchSpider):
 
     name = "walmart"
+    handle_httpstatus_list = [520]
 
     # initialize fields specific to this derived spider
     def init_sub(self):
@@ -138,7 +139,7 @@ class WalmartSpider(SearchSpider):
             product_name_node = hxs.select("//h1[contains(@class, 'productTitle')]//text()").extract()
 
         if product_name_node:
-            product_name = product_name_node[0].strip()
+            product_name = "".join(product_name_node).strip()
         else:
             self.log("Error: No product name: " + str(response.url) + " for source product " + origin_url, level=log.ERROR)
             # TODO:is this ok? I think so

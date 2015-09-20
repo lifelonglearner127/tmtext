@@ -337,6 +337,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                                'shipping',
                                True)
 
+        sku = response.xpath('//*[@itemprop="sku"]/text()').extract()
+        if sku:
+            product['sku'] = sku[0]
+
         id = re.findall('\/(\d+)', response.url)
         response.meta['product_id'] = id[-1] if id else None
         # if id:

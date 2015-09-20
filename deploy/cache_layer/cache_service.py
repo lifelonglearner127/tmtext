@@ -165,8 +165,9 @@ class SqsCache(object):
 
     def get_total_cached_responses(self):
         """
-        return number of responses, which were returned from cache
+        returns tuple of 2 elements: unique elements, requested from cache and
+        total number of elements requested from cache
         """
-        return sum([_[1] for _ in self.db.zrange(
-            self.REDIS_CACHE_STATS, 0, -1, withscores=True, score_cast_func=int)
-        ])
+        data = self.db.zrange(self.REDIS_CACHE_STATS, 0, -1,
+                              withscores=True, score_cast_func=int)
+        return len(data), sum([_[1] for _ in data])

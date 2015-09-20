@@ -157,6 +157,7 @@ class SiteProductItem(Item):
     title = Field()  # String.
     upc = Field(serializer=scrapy_upc_serializer)  # Integer.
     model = Field()  # String, alphanumeric code.
+    sku = Field()  # product SKU, if any
     url = Field()  # String, URL.
     image_url = Field()  # String, URL.
     description = Field()  # String with HTML tags.

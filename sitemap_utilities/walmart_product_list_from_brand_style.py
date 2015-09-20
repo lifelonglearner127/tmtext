@@ -18,7 +18,7 @@ walmart_search_url = "http://www.walmart.com/search/?query="
 success_results_file_path = "/home/mufasa/Documents/Workspace/Content Analytics/Misc/Brand & Style/walmart_product_list_by_brand_style.csv"
 failure_results_file_path = "/home/mufasa/Documents/Workspace/Content Analytics/Misc/Brand & Style/walmart_brand_style (failed).csv"
 
-f = open('/home/mufasa/Documents/Workspace/Content Analytics/Misc/Brand & Style/walmart_brand_style (copy).csv')
+f = open('/home/mufasa/Documents/Workspace/Content Analytics/Misc/Brand & Style/walmart_brand_style.csv')
 csv_f = csv.reader(f)
 
 brand_style_list = list(csv_f)
@@ -41,11 +41,11 @@ for row in search_url_list:
     try:
         h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
+        a = requests.adapters.HTTPAdapter(max_retries=10)
+        b = requests.adapters.HTTPAdapter(max_retries=10)
         s.mount('http://', a)
         s.mount('https://', b)
-        category_html = html.fromstring(s.get(search_url, headers=h, timeout=5).text)
+        category_html = html.fromstring(s.get(search_url, headers=h, timeout=30).text)
     except:
         print "fail"
         continue
@@ -69,11 +69,11 @@ for row in search_url_list:
         try:
             h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
             s = requests.Session()
-            a = requests.adapters.HTTPAdapter(max_retries=3)
-            b = requests.adapters.HTTPAdapter(max_retries=3)
+            a = requests.adapters.HTTPAdapter(max_retries=10)
+            b = requests.adapters.HTTPAdapter(max_retries=10)
             s.mount('http://', a)
             s.mount('https://', b)
-            product_json = s.get("http://52.1.156.214/get_data?url=" + urllib.quote(url), headers=h, timeout=5).text
+            product_json = s.get("http://54.85.249.210/get_data?url=" + urllib.quote(url), headers=h, timeout=30).text
 
             is_qualified = False
             is_qualified = (brand.lower() in product_json.lower() and style.lower() in product_json.lower())
@@ -129,11 +129,11 @@ for row in search_url_list:
                 try:
                     h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
                     s = requests.Session()
-                    a = requests.adapters.HTTPAdapter(max_retries=3)
-                    b = requests.adapters.HTTPAdapter(max_retries=3)
+                    a = requests.adapters.HTTPAdapter(max_retries=10)
+                    b = requests.adapters.HTTPAdapter(max_retries=10)
                     s.mount('http://', a)
                     s.mount('https://', b)
-                    category_html = html.fromstring(s.get(url_page_index, headers=h, timeout=5).text)
+                    category_html = html.fromstring(s.get(url_page_index, headers=h, timeout=30).text)
                 except:
                     break
 
@@ -162,11 +162,11 @@ for row in search_url_list:
                     try:
                         h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
                         s = requests.Session()
-                        a = requests.adapters.HTTPAdapter(max_retries=3)
-                        b = requests.adapters.HTTPAdapter(max_retries=3)
+                        a = requests.adapters.HTTPAdapter(max_retries=10)
+                        b = requests.adapters.HTTPAdapter(max_retries=10)
                         s.mount('http://', a)
                         s.mount('https://', b)
-                        product_json = s.get("http://52.1.156.214/get_data?url=" + urllib.quote(url), headers=h, timeout=5).text
+                        product_json = s.get("http://52.1.156.214/get_data?url=" + urllib.quote(url), headers=h, timeout=30).text
 
                         is_qualified = False
                         is_qualified = (brand.lower() in product_json.lower() and style.lower() in product_json.lower())
@@ -213,11 +213,11 @@ for row in search_url_list:
 
             h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
             s = requests.Session()
-            a = requests.adapters.HTTPAdapter(max_retries=3)
-            b = requests.adapters.HTTPAdapter(max_retries=3)
+            a = requests.adapters.HTTPAdapter(max_retries=10)
+            b = requests.adapters.HTTPAdapter(max_retries=10)
             s.mount('http://', a)
             s.mount('https://', b)
-            category_html = html.fromstring(s.get(url_page_index, headers=h, timeout=5).text)
+            category_html = html.fromstring(s.get(url_page_index, headers=h, timeout=30).text)
             item_count = int(re.findall(r'\d+', category_html.xpath("//div[@class='result-summary-container']/text()")[0].replace(",", ""))[1])
 
             min_price = max_price
@@ -236,11 +236,11 @@ for row in search_url_list:
             try:
                 h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
                 s = requests.Session()
-                a = requests.adapters.HTTPAdapter(max_retries=3)
-                b = requests.adapters.HTTPAdapter(max_retries=3)
+                a = requests.adapters.HTTPAdapter(max_retries=10)
+                b = requests.adapters.HTTPAdapter(max_retries=10)
                 s.mount('http://', a)
                 s.mount('https://', b)
-                category_html = html.fromstring(s.get(url_page_index, headers=h, timeout=5).text)
+                category_html = html.fromstring(s.get(url_page_index, headers=h, timeout=30).text)
                 url_list = category_html.xpath("//div[@id='tile-container']//div[@class='js-tile js-tile-landscape tile-landscape']//a[@class='js-product-title']/@href")
             except:
                 break
@@ -264,11 +264,11 @@ for row in search_url_list:
                 try:
                     h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
                     s = requests.Session()
-                    a = requests.adapters.HTTPAdapter(max_retries=3)
-                    b = requests.adapters.HTTPAdapter(max_retries=3)
+                    a = requests.adapters.HTTPAdapter(max_retries=10)
+                    b = requests.adapters.HTTPAdapter(max_retries=10)
                     s.mount('http://', a)
                     s.mount('https://', b)
-                    product_json = s.get("http://52.1.156.214/get_data?url=" + urllib.quote(url), headers=h, timeout=5).text
+                    product_json = s.get("http://52.1.156.214/get_data?url=" + urllib.quote(url), headers=h, timeout=30).text
 
                     is_qualified = False
                     is_qualified = (brand.lower() in product_json.lower() and style.lower() in product_json.lower())
