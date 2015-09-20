@@ -631,10 +631,10 @@ class BaseValidator(object):
     def _validate_no_longer_available(self, val):
         return val in (True, False, None, '')
 
-    def _validate_shelf_name(self):
+    def _validate_shelf_name(self, val):
         return True  # TODO: update
 
-    def _validate_shelf_path(self):
+    def _validate_shelf_path(self, val):
         return True  # TODO: update
 
     def _get_failed_fields(self, data, add_row_index=False):
