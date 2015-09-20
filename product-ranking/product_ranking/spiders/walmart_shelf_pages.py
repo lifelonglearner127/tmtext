@@ -19,7 +19,7 @@ from .walmart import WalmartProductsSpider
 
 class WalmartShelfPagesSpider(WalmartProductsSpider):
     name = 'walmart_shelf_urls_products'
-    quantity = 9999
+    allowed_domains = ["walmart.com", "msn.com", 'api.walmartlabs.com']  # without this find_spiders() fails
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
