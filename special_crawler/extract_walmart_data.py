@@ -189,7 +189,7 @@ class WalmartScraper(Scraper):
         # set flag that videos where attemtped to be extracted
         self.extracted_video_urls = True
 
-        if self.is_bundle_product:
+        if self._version() == "Walmart v2" and self.is_bundle_product:
             return
 
         # if there is no video button, return no video
@@ -715,7 +715,7 @@ class WalmartScraper(Scraper):
 
     # extract walmart no
     def _site_id(self):
-        if self.is_bundle_product:
+        if self._version() == "Walmart v2" and self.is_bundle_product:
             product_info_json = self._extract_product_info_json()
             return product_info_json["analyticsData"]["productId"]
         else:
@@ -723,7 +723,7 @@ class WalmartScraper(Scraper):
 
     # extract walmart no
     def _walmart_no(self):
-        if self.is_bundle_product:
+        if self._version() == "Walmart v2" and self.is_bundle_product:
             product_info_json = self._extract_product_info_json()
             return product_info_json["analyticsData"]["productId"]
         else:
@@ -778,7 +778,7 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        if self.is_bundle_product:
+        if self._version() == "Walmart v2" and self.is_bundle_product:
             if not self._long_description():
                 try:
                     return self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]/div[contains(@class, 'js-ellipsis')]")[0].text_content().strip()
@@ -1101,6 +1101,9 @@ class WalmartScraper(Scraper):
         """
         if self._version() == "Walmart v1":
             try:
+                if self.is_bundle_product:
+                    return "$" + re.findall("\d+.\d+", self.tree_html.xpath("//div[@class='PricingInfo']")[0].text_content())[0]
+
                 body_raw = "" . join(self.tree_html.xpath("//form[@name='SelectProductForm']//script/text()")).strip()
                 body_clean = re.sub("\n", " ", body_raw)
                 body_jpart = re.findall("\{\ itemId.*?\}\s*\] }", body_clean)[0]
@@ -1754,7 +1757,7 @@ class WalmartScraper(Scraper):
             list of strings representing image urls
         """
 
-        if self.is_bundle_product:
+        if self._version() == "Walmart v2" and self.is_bundle_product:
             return self.tree_html.xpath("//div[contains(@class, 'choice-hero-non-carousel')]//img/@src")
         else:
             def _fix_relative_url(relative_url):
@@ -1865,7 +1868,7 @@ class WalmartScraper(Scraper):
         if self.product_info_json:
             return self.product_info_json
 
-        if self.is_bundle_product:
+        if self._version() == "Walmart v2" and self.is_bundle_product:
             product_info_json = self._find_between(html.tostring(self.tree_html), 'define("product/data",', ");\n")
             product_info_json = json.loads(product_info_json)
             self.product_info_json = product_info_json
@@ -1978,7 +1981,7 @@ class WalmartScraper(Scraper):
                 if int(store["isAvail"]) == 1:
                     return 1
 
-            if self.is_bundle_product:
+            if self._version() == "Walmart v2" and self.is_bundle_product:
                 body_dict = json.loads(self._find_between(html.tostring(self.tree_html), 'define("ads/data",', ');\n'))
 
                 if body_dict["inStore"] is True:
@@ -2290,6 +2293,10 @@ class WalmartScraper(Scraper):
             if "walmart.com" in self._find_between(html.tostring(self.tree_html), "sellerName:", ",").lower() and \
                             self._find_between(html.tostring(self.tree_html), "isBuyableOnWWW:", ",").strip() == "true":
                 return 1
+
+            if "WalmartMainBody DynamicMode wmBundleItemPage" in html.tostring(self.tree_html):
+                if "online" in (" " . join(self.tree_html.xpath("//tr[@id='WM_ROW']//div[@id='onlinePriceLabel']/text()"))).lower():
+                    return 1
         except:
             pass
 
@@ -2340,7 +2347,7 @@ class WalmartScraper(Scraper):
 
         if self._site_online():
             try:
-                if self.is_bundle_product:
+                if self._version() == "Walmart v2" and self.is_bundle_product:
                     if not self.product_info_json["analyticsData"]["onlineAvail"]:
                         return 1
                     else:
@@ -2359,7 +2366,8 @@ class WalmartScraper(Scraper):
 
     def _failure_type(self):
         # we ignore bundle product
-        if self.tree_html.xpath("//div[@class='js-about-bundle-wrapper']"):
+        if self.tree_html.xpath("//div[@class='js-about-bundle-wrapper']") or \
+                        "WalmartMainBody DynamicMode wmBundleItemPage" in html.tostring(self.tree_html):
             self.is_bundle_product = True
 
         # we ignore video product
