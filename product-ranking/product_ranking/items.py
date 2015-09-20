@@ -225,3 +225,8 @@ class SiteProductItem(Item):
     assortment_url = Field()
 
     _statistics = Field()  # for server and spider stats (RAM, CPU, disk etc.)
+
+    no_longer_available = Field()  # no longer available, for Walmart
+
+    shelf_name = Field()  # see https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c8
+    shelf_path = Field()
