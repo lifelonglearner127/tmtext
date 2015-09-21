@@ -30,7 +30,7 @@ class MacysSpider(SearchResultsSpider):
             # quit if there is no product name
             if product_name and product_url:
                 item['product_url'] = "http://www1.macys.com" + product_url[0]
-                item['product_name'] = product_name[0]
+                item['product_name'] = product_name[0].strip()
             else:
                 self.log("No product name: " + str(response.url) + " from product: " + response.meta['origin_url'], level=log.ERROR)
                 continue
