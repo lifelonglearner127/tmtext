@@ -86,3 +86,7 @@ def scale_instances(tasks_per_instance):
     group.set_capacity(updated_instances_count)
     group.update()
     print 'Done'
+
+
+if __name__ == '__main__':
+    scale_instances(12)
