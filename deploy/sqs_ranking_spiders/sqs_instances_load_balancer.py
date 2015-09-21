@@ -53,7 +53,7 @@ from boto.ec2.autoscale import AutoScaleConnection
 
 
 def get_sqs_tasks_count():
-    q_prefix = 'cache_sqs_ranking_spiders'
+    q_prefix = 'sqs_ranking_spiders'
     tasks_count = 0
     try:
         conn = boto.sqs.connect_to_region('us-east-1')
