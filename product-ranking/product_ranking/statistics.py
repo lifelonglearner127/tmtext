@@ -62,7 +62,10 @@ def get_cpu_usage_for_current_process():
         return 0
     cpu = current_process.cpu_percent(0.01)
     for child in current_process.children(recursive=True):
-        cpu += child.cpu_percent(0.01)
+        try:
+            cpu += child.cpu_percent(0.01)
+        except psutil.NoSuchProcess:
+            pass
     return cpu
 
 
