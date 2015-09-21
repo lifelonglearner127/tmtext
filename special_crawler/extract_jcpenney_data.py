@@ -413,7 +413,8 @@ class JcpenneyScraper(Scraper):
         b = requests.adapters.HTTPAdapter(max_retries=3)
         s.mount('http://', a)
         s.mount('https://', b)
-        contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
+        review_id = self._find_between(html.tostring(self.tree_html), 'reviewId:"', '",').strip()
+        contents = s.get(self.REVIEW_URL.format(review_id), headers=h, timeout=5).text
 
         try:
             start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
