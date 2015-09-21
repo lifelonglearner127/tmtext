@@ -1187,13 +1187,20 @@ class AmazonScraper(Scraper):
         if len(bn)>0  and bn[0]!="":
             return bn[0]
         fts = self._features()
-        for f in fts:
-            if f.find("Studio:")>=0 or f.find("Network:")>=0:
-                bn = f.split(':')[1]
-                return bn
+        if fts:
+            for f in fts:
+                if f.find("Studio:")>=0 or f.find("Network:")>=0:
+                    bn = f.split(':')[1]
+                    return bn
         bn=self.tree_html.xpath('//div[@id="ArtistLinkSection"]//text()')
         if len(bn)>0:
             return "".join(bn).strip()
+
+        brand = self.tree_html.xpath("//div[@id='brandByline_feature_div']//a[@id='brand']/@href")
+        if brand:
+            brand = brand[0]
+            brand = brand.split("/")[1].strip()
+            return brand
         return None
 
 
