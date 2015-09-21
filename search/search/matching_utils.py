@@ -708,7 +708,7 @@ class ProcessText():
     # normalize model numbers (remove dashes, lowercase)
     @staticmethod
     def normalize_modelnr(modelnr):
-        return re.sub("[\- ]", "", modelnr.lower())
+        return re.sub("[\- /]", "", modelnr.lower())
 
     # extract index of (first found) model number in list of words if any
     # return -1 if none found
