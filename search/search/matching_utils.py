@@ -309,10 +309,13 @@ class ProcessText():
             else:
                 product2_price = ""
             
-            log.msg("\nPRODUCT: " + product_name.decode("utf-8") + " URL: " + product2['origin_url'] + " MODEL: " + unicode(product_model) + " PRICE: " + unicode(product_price) + \
-                " BRAND: " + product1_brand.decode("utf-8") + \
-                "\nPRODUCT2: " + product2['product_name'].decode("utf-8") + " URL2: " + product2['product_url'] + " BRAND2: " + product2_brand.decode("utf-8") + " MODEL2: " + unicode(product2_model) + " PRICE2: " + unicode(product2_price) + \
+            try:
+                log.msg("\nPRODUCT: " + unicode(product_name) + " URL: " + product2['origin_url'] + " MODEL: " + unicode(product_model) + " PRICE: " + unicode(product_price) + \
+                " BRAND: " + unicode(product1_brand) + \
+                "\nPRODUCT2: " + unicode(product2['product_name']) + " URL2: " + product2['product_url'] + " BRAND2: " + unicode(product2_brand) + " MODEL2: " + unicode(product2_model) + " PRICE2: " + unicode(product2_price) + \
                 "\nSCORE: " + str(score) + " PRICE_PENLZ: " + unicode(price_score_penalization) + " THRESHOLD: " + str(threshold) + "\n", level=log.WARNING)
+            except:
+                log.msg("\nPRODUCT: --Error trying to log product info", level=log.WARNING)
 
             ###################
 
