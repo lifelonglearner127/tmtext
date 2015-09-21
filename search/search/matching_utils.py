@@ -732,14 +732,14 @@ class ProcessText():
     # extract model number from product url, for supported sites
     @staticmethod
     def extract_model_from_url(product_url):
-        r = re.match("https?://www\.([^/]*)\.com/.*", product_url)
+        r = re.match("https?://www1?\.([^/]*)\.com/.*", product_url)
         if not r:
             log.msg("Domain could not be extracted from URL " + product_url + " for extracting product model", level=log.DEBUG)
             return None
         domain = r.group(1)
-        # only walmart is supported
-        if domain not in ['walmart', 'wayfair']:
-            return None
+        # # only walmart is supported
+        # if domain not in ['walmart', 'wayfair']:
+        #     return None
         
         name_from_url = " ".join(product_url.split("/")[-1].split("-"))
         return ProcessText.extract_model_from_name(name_from_url)
