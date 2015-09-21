@@ -1234,13 +1234,13 @@ class SearchSpider(BaseSpider):
         if 'origin_brand' in response.meta:
             if response.meta['origin_brand']:
                 origin_brand = response.meta['origin_brand']
-        self.log("PRODUCT: " + response.meta['origin_name'].encode("utf-8") + " MODEL: " + response.meta['origin_model'].encode("utf-8") +\
-         " UPC: " + origin_upc.encode("utf-8") + " MANUFACTURER_CODE: " + origin_manufacturer_code.encode("utf-8") + \
-         " BRAND: " + origin_brand.encode("utf-8"), level=log.DEBUG)
+        self.log("PRODUCT: " + response.meta['origin_name'].decode("utf-8") + " MODEL: " + response.meta['origin_model'].decode("utf-8") +\
+         " UPC: " + origin_upc.decode("utf-8") + " MANUFACTURER_CODE: " + origin_manufacturer_code.decode("utf-8") + \
+         " BRAND: " + origin_brand.decode("utf-8"), level=log.DEBUG)
         self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
         self.log( "MATCHES: ", level=log.DEBUG)
         for item in items:
-            self.log( item['product_name'].encode("utf-8"), level=log.DEBUG)
+            self.log( item['product_name'].decode("utf-8"), level=log.DEBUG)
         self.log( '\n', level=log.DEBUG)
 
 
