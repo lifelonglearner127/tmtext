@@ -25,12 +25,13 @@ class KohlsScraper(Scraper):
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
-        self.review_json = None
         self.price_json = None
         self.failure_type = None
+        self.kv = KohlsVariants()
+
+        self.review_json = None
         self.review_list = None
         self.is_review_checked = False
-        self.kv = KohlsVariants()
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -317,6 +318,7 @@ class KohlsScraper(Scraper):
             price_json = price_json[:start_index] + item_product_id_text + price_json[end_index:]
             self.price_json = json.loads(price_json)
 
+
     def _average_review(self):
         if self._review_count() == 0:
             return None
@@ -368,7 +370,7 @@ class KohlsScraper(Scraper):
 
         try:
             start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
-            end_index = contents.find("}},", start_index) + 2
+            end_index = contents.find(",\nwidgetInitializers:initializers", start_index)
 
             self.review_json = contents[start_index:end_index]
             self.review_json = json.loads(self.review_json)

@@ -26,9 +26,9 @@ class JcpenneyScraper(Scraper):
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
+        self.review_json = None
         self.review_list = None
         self.is_review_checked = False
-        self.review_json = None
         self.price_json = None
         self.jv = JcpenneyVariants()
         self.is_analyze_media_contents = False
@@ -365,6 +365,7 @@ class JcpenneyScraper(Scraper):
         except:
             self.price_json = None
 
+
     def _average_review(self):
         if self._review_count() == 0:
             return None
@@ -415,7 +416,11 @@ class JcpenneyScraper(Scraper):
         contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
 
         try:
-            self.review_json = json.loads(self._find_between(contents, "webAnalyticsConfig:", ",\nwidgetInitializers:initializers,"))
+            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
+            end_index = contents.find(",\nwidgetInitializers:initializers", start_index)
+
+            self.review_json = contents[start_index:end_index]
+            self.review_json = json.loads(self.review_json)
         except:
             self.review_json = None
 
