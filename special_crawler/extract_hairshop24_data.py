@@ -205,12 +205,37 @@ class HairShop24Scraper(Scraper):
         return int(self.tree_html.xpath("//div[@class='product-shop']//span[@itemprop='ratingCount']/text()")[0].strip())
 
     def _max_review(self):
+        reviews = self._reviews()
+
+        if reviews:
+            for review in reversed(reviews):
+                if review[1] > 0:
+                    return review[0]
+
         return None
 
     def _min_review(self):
+        reviews = self._reviews()
+
+        if reviews:
+            for review in reviews:
+                if review[1] > 0:
+                    return review[0]
+
         return None
 
     def _reviews(self):
+        rating_star_list = self.tree_html.xpath("//dl[@class='reviews-list']/dt//div[@class='rating']/@style")
+
+        if rating_star_list:
+            review_list = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0]]
+
+            for rating_star in rating_star_list:
+                rating = int(int(re.findall(r'\d+', rating_star)[0]) / 20)
+                review_list[rating - 1][1] = review_list[rating - 1][1] + 1
+
+            return review_list
+
         return None
 
     ##########################################
