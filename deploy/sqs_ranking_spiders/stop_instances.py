@@ -119,7 +119,7 @@ def check_logs_status(file_path):
             break
     else:
         reason = 'No logs exist'
-        flag = True
+        flag = False
     return flag, reason
 
 
