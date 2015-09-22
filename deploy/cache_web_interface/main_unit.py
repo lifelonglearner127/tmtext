@@ -414,7 +414,7 @@ def stats():
             for q in CACHE_QUEUES_LIST.itervalues()]
         context['left_tasks_total'] = sum([q[1] for q in context['left_tasks']])
         #
-        cur_hour = datetime.datetime.now().hour
+        cur_hour = datetime.datetime.now().hour or 1
         context['avg_hour_task'] = '{0:.2f}'.format(
             context['today_executed_tasks'] / cur_hour)
         #
