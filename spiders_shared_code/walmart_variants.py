@@ -63,7 +63,7 @@ class WalmartVariants(object):
                             else:
                                 swatch_info["hero"] = 0
 
-                            if "imageUrl" in variant:
+                            if "imageUrl" in variant and "no-image" not in variant["imageUrl"]:
                                 swatch_info["thumb"] = 1
                             else:
                                 swatch_info["thumb"] = 0
