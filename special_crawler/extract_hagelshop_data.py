@@ -211,18 +211,43 @@ class HagelShopScraper(Scraper):
 
     def _average_review(self):
         if self._review_count() > 0:
-            return float(self.tree_html.xpath("//span[@itemprop='ratingCount']")[0].text_content().strip())
+            return float(self.tree_html.xpath("//span[@itemprop='ratingValue']")[0].text_content().strip())
 
     def _review_count(self):
         return int(self.tree_html.xpath("//span[@itemprop='ratingCount']")[0].text_content().strip())
 
     def _max_review(self):
+        reviews = self._reviews()
+
+        if reviews:
+            for review in reversed(reviews):
+                if review[1] > 0:
+                    return review[0]
+
         return None
 
     def _min_review(self):
+        reviews = self._reviews()
+
+        if reviews:
+            for review in reviews:
+                if review[1] > 0:
+                    return review[0]
+
         return None
 
     def _reviews(self):
+        rating_star_list = self.tree_html.xpath("//div[@id='product_tabs_review_tabbed_contents']//div[@id='customer-reviews']//div[@class='rating']/@style")
+
+        if rating_star_list:
+            review_list = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0]]
+
+            for rating_star in rating_star_list:
+                rating = int(int(re.findall(r'\d+', rating_star)[0]) / 20)
+                review_list[rating - 1][1] = review_list[rating - 1][1] + 1
+
+            return review_list
+
         return None
 
     ##########################################
@@ -275,10 +300,18 @@ class HagelShopScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        return self.tree_html.xpath("//ul[@itemprop='breadcrumb']//span[@itemprop='title']/text()")[1:]
+        categories = self.tree_html.xpath("//ul[@itemprop='breadcrumb']//span[@itemprop='title']/text()")[1:]
+
+        if categories:
+            return categories
+
+        return None
 
     def _category_name(self):
-        return self._categories()[-1]
+        if self._categories():
+            return self._categories()[-1]
+
+        return None
     
     def _brand(self):
         return self.tree_html.xpath("//span[@class='prod-brand']/img[@itemprop='logo']/@alt")[0].strip()
