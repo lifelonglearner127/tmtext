@@ -90,7 +90,7 @@ class AmazonScraper(Scraper):
                 else:
                     request = urllib2.Request(self.product_page_url.encode("utf-8"))
                 request.add_header('User-Agent', agent)
-                contents = urllib2.urlopen(request, timeout=10).read()
+                contents = urllib2.urlopen(request, timeout=20).read()
 
             except IncompleteRead, e:
                 continue
