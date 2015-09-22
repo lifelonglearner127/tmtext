@@ -1240,7 +1240,11 @@ class SearchSpider(BaseSpider):
         self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
         self.log( "MATCHES: ", level=log.DEBUG)
         for item in items:
-            self.log( item['product_name'].decode("utf-8"), level=log.DEBUG)
+            try:
+                self.log( item['product_name'].decode("utf-8"), level=log.DEBUG)
+            except UnicodeEncodeError, e:
+                self.log( item['product_name'], level=log.DEBUG)
+
         self.log( '\n', level=log.DEBUG)
 
 
