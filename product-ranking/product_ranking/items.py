@@ -211,6 +211,9 @@ class SiteProductItem(Item):
 
     shipping = Field()  # now for Walmart only; may change in the future
 
+    img_count = Field()   # now for Walmart only; may change in the future
+    video_count = Field()   # now for Walmart only; may change in the future
+
     _walmart_redirected = Field()  # for Walmart only; see #2126
     _walmart_original_id = Field()
     _walmart_current_id = Field()
