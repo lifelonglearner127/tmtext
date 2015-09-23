@@ -47,10 +47,14 @@ class SQS_Queue():
             if isinstance(message, basestring):
                 m.set_body(zlib.compress(message))
                 self.q.write(m)
+                print "successfully compressed"
         except NameError:
+            print "failed in compression"
+
             if isinstance(message, str):
                 m.set_body(zlib.compress(message))
                 self.q.write(m)
+
         if isinstance(message, list) | isinstance(message, tuple):
             for row in message:
                 m.set_body(zlib.compress(message))
@@ -64,7 +68,9 @@ class SQS_Queue():
                 if timeout else self.q.get_messages()
             m = rs[0]
             self.currentM = m
-            return zlib.decompress(m.get_body())
+            decompressed = zlib.decompress(m.get_body())
+            print "successfully decompressed"
+            return decompressed
         else:
             raise Exception("Incompleted message exists, consider issuing \"task_done\" before getting another message off the Queue. Message : %s"%self.currentM)
 
