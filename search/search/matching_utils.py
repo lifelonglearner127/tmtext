@@ -71,6 +71,9 @@ class ProcessText():
         # convert yards
         text = re.sub("[- ][yY]ards", "yd", text)
 
+        # convert pack (if it's preceded by space or dash and not followed by a letter)
+        text = re.sub("(?<=[- ])[pP]ack(?!([a-z]))", "pk", text)
+
         # replace w/ with 'with'. note: only lowercase w followd by / and space
         text = re.sub("w/(?= )", "with", text)
 
