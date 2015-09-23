@@ -1,9 +1,8 @@
 #!/bin/bash
 
-INPUT="walmart_champion"
-SITE="macys"
+INPUT="hanes_amazon_manual"
+SITE="kohls"
 
-for node in "$@"
-do
-vagrant ssh  node$node -c "screen -dm /bin/bash /home/ubuntu/shared_sshfs/run_crawler.sh $node $INPUT $SITE; sleep 5";
-done
+# separate argument list one on each line
+echo $@ | sed -e 's/[ ]/\n/g' | \
+	xargs -P10 -I% vagrant ssh node% -c "screen -dm /bin/bash /home/ubuntu/shared_sshfs/run_crawler.sh % $INPUT $SITE; sleep 5"
