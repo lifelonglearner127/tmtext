@@ -3,7 +3,6 @@ import json
 import lxml.html
 import re
 import yaml
-from pprint import pprint
 
 class WalmartVariants(object):
 
