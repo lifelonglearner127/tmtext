@@ -44,17 +44,16 @@ class SQS_Queue():
     def put(self, message):
         m = Message()
         try:
-            m.set_body(zlib.compress(message))
-            self.q.write(m)
-            print "successfully compressed"
-            return
+            if isinstance(message, basestring):
+                m.set_body(zlib.compress(message))
+                self.q.write(m)
+                print "successfully compressed"
         except NameError:
             print "failed in compression"
 
             if isinstance(message, str):
                 m.set_body(zlib.compress(message))
                 self.q.write(m)
-            return
 
         if isinstance(message, list) | isinstance(message, tuple):
             for row in message:
