@@ -25,7 +25,7 @@ class KohlsSpider(SearchProductSpider):
         hxs = HtmlXPathSelector(response)
 
         try:
-            item['product_name'] = hxs.xpath("//h1[@class='title productTitleName']//text()").extract()[0].strip()
+            item['product_name'] = hxs.xpath("//h1[starts-with(@class,'title')]//text()").extract()[0].strip()
         except:
             try:
                 item['product_name'] = hxs.xpath("//div[@class='pdp_title']//text()[normalize-space()!='']").extract()[0].strip()
