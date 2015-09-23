@@ -35,8 +35,8 @@ def scale_instances(tasks_per_instance):
         logger.info('No tasks left in queues')
         return
     logger.info('Num of tasks in queues %s', tasks_count)
-    tasks_per_instance *= 1.0  # convert to float
-    additional_instances_count = ceil(tasks_count/tasks_per_instance)
+    tasks_per_instance = float(tasks_per_instance)
+    additional_instances_count = int(ceil(tasks_count/tasks_per_instance))
     updated_instances_count = \
         group.desired_capacity + additional_instances_count
     # consider max allowed instances
