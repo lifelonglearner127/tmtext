@@ -25,7 +25,7 @@ class KohlsSpider(SearchProductSpider):
         hxs = HtmlXPathSelector(response)
 
         try:
-            item['product_name'] = hxs.xpath("//h1[@class='title productTitleName']/text()").extract()[0].strip()
+            item['product_name'] = hxs.xpath("//h1[@class='title productTitleName']//text()").extract()[0].strip()
         except:
             self.log("Error: No product name: " + str(response.url) + " from product: " + item['origin_url'], level=log.ERROR)
             # ignore products with no name
@@ -36,8 +36,8 @@ class KohlsSpider(SearchProductSpider):
         if price_node:
 
             try:
-                price_amount = price_node[0][0]
-                price_currency = "".join(price_node[0][1:])
+                price_currency = price_node[0][0]
+                price_amount = "".join(price_node[0][1:])
             
                 price_amount = re.sub(",","",price_amount)
 
