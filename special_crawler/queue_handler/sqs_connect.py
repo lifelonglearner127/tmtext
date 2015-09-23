@@ -57,7 +57,7 @@ class SQS_Queue():
 
         if isinstance(message, list) | isinstance(message, tuple):
             for row in message:
-                m.set_body(zlib.compress(message))
+                m.set_body(zlib.compress(row))
                 self.q.write(m)
 
     # Get an item from the queue
