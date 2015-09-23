@@ -30,9 +30,9 @@ class KohlsSpider(SearchProductSpider):
             try:
                 item['product_name'] = hxs.xpath("//div[@class='pdp_title']//text()[normalize-space()!='']").extract()[0].strip()
             except:
-            self.log("Error: No product name: " + str(response.url) + " from product: " + item['origin_url'], level=log.ERROR)
-            # ignore products with no name
-            return
+                self.log("Error: No product name: " + str(response.url) + " from product: " + item['origin_url'], level=log.ERROR)
+                # ignore products with no name
+                return
 
         price_node = hxs.select("//meta[@itemprop='price']/@content").extract()
 
