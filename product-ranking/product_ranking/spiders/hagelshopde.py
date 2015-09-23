@@ -18,7 +18,7 @@ class HagelshopProductSpider(BaseProductsSpider):
 
     name = 'hagelshop_products'
     allowed_domains = ["www.hagel-shop.de"]
-    per_page = 20
+    pages = 0
     SEARCH_URL = "http://www.hagel-shop.de/catalogsearch/result/?q={search_term}"
 
     def __init__(self, *args, **kwargs):
@@ -43,11 +43,41 @@ class HagelshopProductSpider(BaseProductsSpider):
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
+        # Parse category
+
+        # Parse title
+        title = self.parse_title(response)
+        cond_set_value(product, 'title', title)
+
+        # Parse related products
+
+
+        # Parse buyer reviews
+
+        # Parse out_of_stock
+
+        # Parse brand
+        brand = self.parse_brand(response)
+        cond_set_value(product, 'brand', brand)
 
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
+
+    def parse_brand(self, response):
+        brand = is_empty(response.xpath(''
+                                        '//span[@class="prod-brand"]/'
+                                        'img[@itemprop="logo"]/@alt').extract())
+
+        return brand
+
+    def parse_title(self, response):
+        title = is_empty(response.xpath(
+            '//div[@class="page-title product-name"]/'
+            'h1[@itemprop="name"]/text()').extract())
+
+        return title
 
     def parse_description(self, response):
         description = is_empty(
@@ -102,8 +132,6 @@ class HagelshopProductSpider(BaseProductsSpider):
             new_meta["reqs"] = reqs
         return req.replace(meta=new_meta)
 
-
-
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
@@ -112,23 +140,20 @@ class HagelshopProductSpider(BaseProductsSpider):
         Scraping number of resulted product links
         """
         try:
-            total_matches = is_empty(
-                response.xpath(
-                    '//div[@id="products_found"]/span/text()').extract())
-            print total_matches
+            total_matches = is_empty(response.xpath(
+                '//ul[@class="nav nav-list"]/li/'
+                'a/span/text()').extract())
 
-            total_matches = is_empty(re.findall(r'(\d+) products found', total_matches))
-
-            return int(total_matches)
-
+            total_matches = re.findall(r'(\d+)', total_matches)
+            return int(total_matches[0])
         except:
-
             return 0
 
     def _scrape_results_per_page(self, response):
         """
         Number of results on page
         """
+
         return self.per_page
 
 
@@ -138,27 +163,26 @@ class HagelshopProductSpider(BaseProductsSpider):
         """
 
         items = response.xpath(
-            '//input[@id="productTileImageUrl"]'
-        )
-
+            '//a[contains(@class, "product-image")]')
+        self.per_page = len(items)
         if items:
             for item in items:
                 link = is_empty(
-                    item.xpath('@value').extract()
+                    item.xpath('@href').extract()
                 )
                 res_item = SiteProductItem()
+
                 yield link, res_item
         else:
-            self.log("Found no product links in {url}".format(response.url), INFO)
+            self.log("Found no product links in {url}".format(url=response.url), INFO)
 
     def _scrape_next_results_page_link(self, response):
         url = is_empty(
-            response.xpath(
-                '//a[@class="next i-next"]/@href'
-            ).extract()
-        )
-
+            response.xpath('//div[@class="toolbar-bottom"]/div/div/ul/li/'
+                           'a[contains(@class, "next i-next")]/@href').extract()
+            )
         if url:
+            self.pages += 1
             return url
         else:
             self.log(
