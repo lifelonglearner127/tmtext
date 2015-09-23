@@ -76,7 +76,7 @@ class SearchSpider(BaseSpider):
         # call specific init for each derived class
         self.init_sub()
 
-        self.version = "6ea41b51480b007749f4f1a37f2aeb7ee51cbe85"
+        self.version = "eedbd352003fadbbe1cef1b1b60b5167d337fce7"
 
         self.product_url = product_url
         self.products_file = products_file
@@ -1240,7 +1240,11 @@ class SearchSpider(BaseSpider):
         self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
         self.log( "MATCHES: ", level=log.DEBUG)
         for item in items:
-            self.log( item['product_name'].decode("utf-8"), level=log.DEBUG)
+            try:
+                self.log( item['product_name'].decode("utf-8"), level=log.DEBUG)
+            except UnicodeEncodeError, e:
+                self.log( item['product_name'], level=log.DEBUG)
+
         self.log( '\n', level=log.DEBUG)
 
 

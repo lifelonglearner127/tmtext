@@ -46,8 +46,6 @@ class MacysSpider(SearchResultsSpider):
                 # if more than one match, it will get the first one
                 m = re.match("([a-zA-Z\.\s]+)?(\xa3|\$)([0-9]+\.?[0-9]*)", product_target_price)
                 if m:
-                    print "PRICE", product_target_price
-                    print "GROUP 3", m.group(1), m.group(2), m.group(3)
                     price = float(m.group(3))
                     currency = m.group(2)
                     item['product_target_price'] = Utils.convert_to_dollars(price, currency)

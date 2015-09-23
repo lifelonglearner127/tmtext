@@ -185,7 +185,10 @@ class ProcessText():
             else:
                 product2_brand = None
 
-            product1_brand = " ".join(ProcessText.normalize(product_brand))
+            if product_brand:
+                product1_brand = " ".join(ProcessText.normalize(product_brand))
+            else:
+                product1_brand = None
 
 
             # compute a term to penalize score woth for large price differences (above 100% of small price)
@@ -651,6 +654,7 @@ class ProcessText():
     # check if word is a likely candidate to represent a model number
     @staticmethod
     def is_model_number(word, min_length = 5):
+        exceptions = ['skamp', 'skimp']
 
         # eliminate words smaller than 4 letters (inclusively)
         if len(word) < min_length:
@@ -670,6 +674,7 @@ class ProcessText():
         
         if ((letters > 1 and numbers > 0) or numbers > 4 or (numbers >=4 and letters >=1) or\
         (letters > 3 and vowels < 2 and not ProcessText.is_dictionary_word(word))) \
+        and word not in exceptions \
         and nonwords==0 \
         and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz") and \
         not re.match("[0-9]{3,}[kmgt]b", word) and not re.match("[0-9]{3,}p", word) and not re.match("[0-9]{2,}hz", word) \
