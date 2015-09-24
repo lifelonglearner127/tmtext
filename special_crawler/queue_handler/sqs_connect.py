@@ -27,9 +27,11 @@ used item from the queue.
 
 """
 
-
+from boto.s3.connection import S3Connection
 from boto.sqs.message import Message
 import boto.sqs
+import uuid
+import json
 
 class SQS_Queue():
     # Connect to the SQS Queue
@@ -40,18 +42,27 @@ class SQS_Queue():
 
     # Add message/a list of messages to the queue
     # Messages are strings (or at least serialized to strings)
-    def put(self, message):
+    def put(self, sqs_message, s3_content):
         m = Message()
         try:
-            if isinstance(message, basestring):
-                m.set_body(message)
+            if isinstance(sqs_message, basestring):
+                sqs_message_json = dict(json.loads(sqs_message))
+                sqs_message_json["uuid"] = str(uuid.uuid4())
+                print sqs_message_json
+                m.set_body(json.dumps(sqs_message_json))
+                s3 = S3Connection('AKIAJPOFQWU54DCMDKLQ', '/aebM4IZ97NEwVnfS6Jys6sKVvDXa6eDZsB2X7gP')
+                bucket = s3.create_bucket('contentanalytcis.inc.ch.s3')  # bucket names must be unique
+                key = bucket.new_key(sqs_message_json["uuid"])
+                key.set_contents_from_string(s3_content)
+                key.set_acl('public-read')
+
                 self.q.write(m)
         except NameError:
-            if isinstance(message, str):
-                m.set_body(message)
+            if isinstance(sqs_message, str):
+                m.set_body(sqs_message)
                 self.q.write(m)
-        if isinstance(message, list) | isinstance(message, tuple):
-            for row in message:
+        if isinstance(sqs_message, list) | isinstance(sqs_message, tuple):
+            for row in sqs_message:
                 m.set_body(row)
                 self.q.write(m)
 
@@ -63,7 +74,13 @@ class SQS_Queue():
                 if timeout else self.q.get_messages()
             m = rs[0]
             self.currentM = m
-            return m.get_body()
+
+            sqs_message_json = json.loads(m.get_body())
+            print sqs_message_json
+            s3 = S3Connection('AKIAJPOFQWU54DCMDKLQ', '/aebM4IZ97NEwVnfS6Jys6sKVvDXa6eDZsB2X7gP')
+            key = s3.get_bucket('contentanalytcis.inc.ch.s3').get_key(sqs_message_json["uuid"])
+            s3_content = key.get_contents_as_string()
+            return s3_content
         else:
             raise Exception("Incompleted message exists, consider issuing \"task_done\" before getting another message off the Queue. Message : %s"%self.currentM)
 
