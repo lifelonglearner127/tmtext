@@ -30,7 +30,6 @@ used item from the queue.
 
 from boto.sqs.message import Message
 import boto.sqs
-import zlib
 
 class SQS_Queue():
     # Connect to the SQS Queue
@@ -45,19 +44,15 @@ class SQS_Queue():
         m = Message()
         try:
             if isinstance(message, basestring):
-                m.set_body(zlib.compress(message))
+                m.set_body(message)
                 self.q.write(m)
-                print "successfully compressed"
         except NameError:
-            print "failed in compression"
-
             if isinstance(message, str):
-                m.set_body(zlib.compress(message))
+                m.set_body(message)
                 self.q.write(m)
-
         if isinstance(message, list) | isinstance(message, tuple):
             for row in message:
-                m.set_body(zlib.compress(row))
+                m.set_body(row)
                 self.q.write(m)
 
     # Get an item from the queue
@@ -68,9 +63,7 @@ class SQS_Queue():
                 if timeout else self.q.get_messages()
             m = rs[0]
             self.currentM = m
-            decompressed = zlib.decompress(m.get_body())
-            print "successfully decompressed"
-            return decompressed
+            return m.get_body()
         else:
             raise Exception("Incompleted message exists, consider issuing \"task_done\" before getting another message off the Queue. Message : %s"%self.currentM)
 
