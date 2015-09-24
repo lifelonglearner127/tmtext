@@ -6,7 +6,7 @@
 #     http://doc.scrapy.org/topics/settings.html
 #
 
-import scrapy
+from scrapy import log
 
 BOT_NAME = 'search'
 
@@ -16,13 +16,15 @@ ITEM_PIPELINES = ['search.pipelines.URLsPipeline']
 #LOG_STDOUT = True
 LOG_ENABLED = False
 #LOG_FILE = "search_log.out"
-LOG_LEVEL=scrapy.log.WARNING
+LOG_LEVEL=log.WARNING
 DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
 HTTPCACHE_STORAGE = 'scrapy.contrib.downloadermiddleware.httpcache.FilesystemCacheStorage'
 HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.RFC2616Policy'
 
 DOWNLOAD_DELAY = 0.5
+
+DOWNLOAD_HANDLERS = {'s3': None,}
 
 import os
 homedir = os.getenv("HOME")
@@ -54,7 +56,7 @@ EXTENSIONS = {
 }
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36"
+USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36"
 
 # User agent rotation settings
 ROTATE_UA = True

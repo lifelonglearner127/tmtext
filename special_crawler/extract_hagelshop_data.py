@@ -11,26 +11,30 @@ import requests
 from extract_data import Scraper
 
 
-class HairShop24Scraper(Scraper):
+class HagelShopScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.hair-shop24.net/<product-name>.html"
-    REVIEW_URL = "http://homedepot.ugc.bazaarvoice.com/1999aa/{0}/reviews.djs?format=embeddedhtml"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.hagel-shop.de/<category-names>/<product-name>.html"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
+        # whether product has any webcollage media
         self.product_json = None
+        # whether product has any webcollage media
+        self.review_json = None
+        self.review_list = None
+        self.is_review_checked = False
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.hair-shop24.net/.*?$", self.product_page_url)
+        m = re.match(r"^http://www.hagel-shop.de/.*?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -42,15 +46,13 @@ class HairShop24Scraper(Scraper):
             False otherwise
         """
         try:
-            itemtype = self.tree_html.xpath('//div[@class="product-view"]/@itemtype')[0].strip()
+            itemtype = self.tree_html.xpath('//div[contains(@class, "product-view")]/@itemtype')[0].strip()
 
             if itemtype != "http://schema.org/Product":
                 raise Exception()
 
         except Exception:
             return True
-
-        self._extract_product_json()
 
         return False
 
@@ -71,13 +73,13 @@ class HairShop24Scraper(Scraper):
             return
 
         try:
-            product_json_text = self._find_between(html.tostring(self.tree_html), 'var spConfig = new Product.Config(', ');\n')
+            product_json_text = self._find_between(html.tostring(self.tree_html), "THD.PIP.products.primary = new THD.PIP.Product(", ");\r")
             self.product_json = json.loads(product_json_text)
         except:
             self.product_json = None
 
     def _canonical_link(self):
-        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0].strip()
+        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
         return canonical_link
 
@@ -88,18 +90,15 @@ class HairShop24Scraper(Scraper):
         return None
 
     def _product_id(self):
-        return self.product_json["productId"]
+        product_id = self.tree_html.xpath("//span[@itemprop='sku']/text()")[0].strip()
+        return product_id
 
     def _site_id(self):
-        return self.product_json["productId"]
+        product_id = self.tree_html.xpath("//span[@itemprop='sku']/text()")[0].strip()
+        return product_id
 
     def _status(self):
         return "success"
-
-
-
-
-
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -120,28 +119,33 @@ class HairShop24Scraper(Scraper):
         return None
 
     def _features(self):
+        features_label_list = self.tree_html.xpath("//table[@id='product-attribute-specs-table']/tbody/tr/th/text()")
+        features_value_list = self.tree_html.xpath("//table[@id='product-attribute-specs-table']/tbody/tr/td/text()")
+        features_list = []
+
+        for index, feature_label in enumerate(features_label_list):
+            features_list.append(feature_label.strip() + features_value_list[index].strip())
+
+        if features_list:
+            return features_list
+
         return None
 
     def _feature_count(self):
-        return 0
+        if self._features():
+            return len(self._features())
+
+        return None
 
     def _model_meta(self):
         return None
 
     def _description(self):
-        short_description = self.tree_html.xpath("//div[@id='product_tabs_description_contents']/div[@class='product-description-wrapper description-half']/div[@class='std']")[0].text_content().strip()
-
-        if short_description:
-            return short_description
-
-        return None
+        return self.tree_html.xpath("//div[@class='shortDescription']")[0].text_content().strip()
 
     def _long_description(self):
-        return None
+        return self.tree_html.xpath("//div[@id='product_tabs_description_tabbed_contents']/div[@class='std tabs-left']")[0].text_content().strip()
 
-    def _variants(self):
-        variant_text = self._find_between(html.tostring(self.tree_html), 'var spConfig = new Product.Config(', ');\n')
-        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -150,7 +154,8 @@ class HairShop24Scraper(Scraper):
         return None
 
     def _image_urls(self):        
-        image_urls = self.tree_html.xpath("//img[@itemprop='image']/@src")
+        image_urls = self.tree_html.xpath("//div[@class='more-views span5']/ul/li/a/img/@src")
+        image_urls = [url.replace("/thumbnail/60x60/", "/image/") for url in image_urls]
 
         if image_urls:
             return image_urls
@@ -158,10 +163,8 @@ class HairShop24Scraper(Scraper):
         return None
 
     def _image_count(self):
-        image_urls = self._image_urls()
-
-        if image_urls:
-            return len(image_urls)
+        if self._image_urls():
+            return len(self._image_urls())
 
         return 0
 
@@ -169,12 +172,20 @@ class HairShop24Scraper(Scraper):
         return None
 
     def _video_count(self):
+        videos = self._video_urls()
+
+        if videos:
+            return len(videos)
+
         return 0
 
     def _pdf_urls(self):
         return None
 
     def _pdf_count(self):
+        if self._pdf_urls():
+            return len(self._pdf_urls())
+
         return 0
 
     def _webcollage(self):
@@ -199,10 +210,11 @@ class HairShop24Scraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        return float(self.tree_html.xpath("//div[@class='product-shop']//meta[@itemprop='ratingValue']/@content")[0].strip())
+        if self._review_count() > 0:
+            return float(self.tree_html.xpath("//span[@itemprop='ratingValue']")[0].text_content().strip())
 
     def _review_count(self):
-        return int(self.tree_html.xpath("//div[@class='product-shop']//span[@itemprop='ratingCount']/text()")[0].strip())
+        return int(self.tree_html.xpath("//span[@itemprop='ratingCount']")[0].text_content().strip())
 
     def _max_review(self):
         reviews = self._reviews()
@@ -225,7 +237,7 @@ class HairShop24Scraper(Scraper):
         return None
 
     def _reviews(self):
-        rating_star_list = self.tree_html.xpath("//dl[@class='reviews-list']/dt//div[@class='rating']/@style")
+        rating_star_list = self.tree_html.xpath("//div[@id='product_tabs_review_tabbed_contents']//div[@id='customer-reviews']//div[@class='rating']/@style")
 
         if rating_star_list:
             review_list = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0]]
@@ -242,13 +254,13 @@ class HairShop24Scraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath("//div[@class='product-shop']//span[@itemprop='price']")[0].text_content().strip()
+        return self.tree_html.xpath("//span[@itemprop='price']")[0].text_content().strip()
 
     def _price_amount(self):
         return float(re.findall("\d+.\d+", self._price().replace(",", "."))[0])
 
     def _price_currency(self):
-        return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0].strip()
+        return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
 
     def _in_stores(self):
         return 0
@@ -258,7 +270,7 @@ class HairShop24Scraper(Scraper):
 
     def _site_online_out_of_stock(self):
         try:
-            if self.tree_html.xpath("//meta[@itemprop='availability']/@content")[0].strip() != 'http://schema.org/InStock':
+            if self.tree_html.xpath("//link[@itemprop='availability']/@href")[0].strip() != 'http://schema.org/InStock':
                 return 1
         except:
             pass
@@ -288,13 +300,21 @@ class HairShop24Scraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        return self.tree_html.xpath("//ul[@itemprop='breadcrumb']//span[@itemprop='name']/text()")[:-1]
+        categories = self.tree_html.xpath("//ul[@itemprop='breadcrumb']//span[@itemprop='title']/text()")[1:]
+
+        if categories:
+            return categories
+
+        return None
 
     def _category_name(self):
-        return self._categories()[-1]
+        if self._categories():
+            return self._categories()[-1]
+
+        return None
     
     def _brand(self):
-        return self.tree_html.xpath("//span[@itemprop='brand']/text()")[0].strip()
+        return self.tree_html.xpath("//span[@class='prod-brand']/img[@itemprop='logo']/@alt")[0].strip()
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -331,7 +351,6 @@ class HairShop24Scraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
-        "variants": _variants, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\

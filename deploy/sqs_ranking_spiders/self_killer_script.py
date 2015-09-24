@@ -92,7 +92,6 @@ def main():
     log_file = '/tmp/remote_instance_starter2.log'
     flag, reason = check_logs_status(log_file)
     if flag and reason:
-        os.system('rm %s' % log_file)
         s3_conn = boto.connect_s3()
         bucket = s3_conn.get_bucket(BUCKET_NAME)
         k = Key(bucket)
@@ -101,6 +100,7 @@ def main():
         time.sleep(70)
         # Try to upload logs prior to stop server
         os.system('python upload_logs_to_s3.py')
+        os.system('rm %s' % log_file)
         k.get_contents_to_filename(log_file_path)
         logger.warning("Instance with id=%s was terminated"
                    " due to reason='%s'. "

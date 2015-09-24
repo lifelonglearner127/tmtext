@@ -1058,6 +1058,9 @@ class WalmartScraper(Scraper):
     def _variants(self):
         return self.wv._variants()
 
+    def _swatches(self):
+        return self.wv._swatches()
+
     def _related_product_urls(self):
         page_raw_text = lxml.html.tostring(self.tree_html)
         startIndex = page_raw_text.find('"variantProducts":') + len('"variantProducts":')
@@ -2848,6 +2851,7 @@ class WalmartScraper(Scraper):
         "long_description": _long_description_wrapper, \
         "shelf_description": _shelf_description, \
         "variants": _variants, \
+        "swatches": _swatches, \
         "related_products_urls":  _related_product_urls, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \

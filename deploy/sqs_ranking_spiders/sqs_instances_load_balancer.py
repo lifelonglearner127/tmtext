@@ -1,6 +1,14 @@
+import logging
 from math import ceil
 import boto.sqs
 from boto.ec2.autoscale import AutoScaleConnection
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s, %(levelname)s] %(message)s',
+    filename='/tmp/load_balancer.log'
+)
+logger = logging.getLogger(__name__)
 
 
 def get_sqs_tasks_count():
@@ -11,7 +19,7 @@ def get_sqs_tasks_count():
         queues = conn.get_all_queues(prefix=q_prefix)
         tasks_count = sum(q.count() for q in queues)
     except Exception as e:
-        print e
+        logger.error('get_sqs_tasks_count error: %s', e)
     return tasks_count
 
 
@@ -20,26 +28,26 @@ def scale_instances(tasks_per_instance):
     group = conn.get_all_groups(names=['SCCluster1'])[0]
 
     if group.desired_capacity == group.max_size:
-        print 'Maximum number of instances reached'
+        logger.info('Maximum number of instances reached')
         return
     tasks_count = get_sqs_tasks_count()
     if not tasks_count:
-        print 'No tasks left in queues'
+        logger.info('No tasks left in queues')
         return
-    print 'Num of tasks in queues', tasks_count
-    tasks_per_instance *= 1.0  # convert to float
-    additional_instances_count = ceil(tasks_count/tasks_per_instance)
+    logger.info('Num of tasks in queues %s', tasks_count)
+    tasks_per_instance = float(tasks_per_instance)
+    additional_instances_count = int(ceil(tasks_count/tasks_per_instance))
     updated_instances_count = \
         group.desired_capacity + additional_instances_count
     # consider max allowed instances
     if updated_instances_count > group.max_size:
         updated_instances_count = group.max_size
-    print 'Updating group from %s to %s instances' % (
-        group.desired_capacity, updated_instances_count)
+    logger.info('Updating group from %s to %s instances',
+                group.desired_capacity, updated_instances_count)
     group.set_capacity(updated_instances_count)
     group.desired_capacity = updated_instances_count
     group.update()
-    print 'Done'
+    logger.info('Done\n')
 
 
 if __name__ == '__main__':

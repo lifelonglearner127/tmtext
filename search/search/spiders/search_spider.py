@@ -53,7 +53,7 @@ class SearchSpider(BaseSpider):
                        "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
                        "boots.com", "ocado.com", "tesco.com", "maplin.co.uk", "amazon.co.uk", "currys.co.uk", "pcworld.co.uk", "ebay.co.uk", \
                        "argos.co.uk", "ebuyer.com", "ebuyer.co.uk", "firebox.com", "rakuten.co.uk", "uk.rs-online.com", "screwfix.com",
-                       "macys.com"]
+                       "macys.com", "kohls.com"]
 
     # pass product as argument to constructor - either product name or product URL
     # arguments:
@@ -76,7 +76,7 @@ class SearchSpider(BaseSpider):
         # call specific init for each derived class
         self.init_sub()
 
-        self.version = "6ea41b51480b007749f4f1a37f2aeb7ee51cbe85"
+        self.version = "7b4981ccd856afaf50649c4ad2ad02aa1049156f"
 
         self.product_url = product_url
         self.products_file = products_file
@@ -158,7 +158,8 @@ class SearchSpider(BaseSpider):
                         "rakuten" : "http://www.rakuten.co.uk/search/%s/" % search_query, \
                         "rscomponents" : "http://uk.rs-online.com/web/c/?searchTerm=%s" % search_query, \
                         "screwfix" : "http://www.screwfix.com/search?search=%s" % search_query, \
-                        "macys" : "http://www1.macys.com/shop/search?keyword=%s" % search_query
+                        "macys" : "http://www1.macys.com/shop/search?keyword=%s" % search_query, \
+                        "kohls": "http://www.kohls.com/search.jsp?search=%s" % search_query
                         }
 
         return search_pages
@@ -1240,7 +1241,11 @@ class SearchSpider(BaseSpider):
         self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
         self.log( "MATCHES: ", level=log.DEBUG)
         for item in items:
-            self.log( item['product_name'].decode("utf-8"), level=log.DEBUG)
+            try:
+                self.log( item['product_name'].decode("utf-8"), level=log.DEBUG)
+            except UnicodeEncodeError, e:
+                self.log( item['product_name'], level=log.DEBUG)
+
         self.log( '\n', level=log.DEBUG)
 
 

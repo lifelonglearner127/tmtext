@@ -61,6 +61,7 @@ from extract_flipkart_data import FlipkartScraper
 from extract_pepperfry_data import PepperfryScraper
 from extract_cvs_data import CVSScraper
 from extract_hairshop24_data import HairShop24Scraper
+from extract_hagelshop_data import HagelShopScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -129,7 +130,8 @@ SUPPORTED_SITES = {
                     "flipkart": FlipkartScraper,
                     "pepperfry": PepperfryScraper,
                     "cvs": CVSScraper,
-                    "hairshop24": HairShop24Scraper
+                    "hairshop24": HairShop24Scraper,
+                    "hagelshop": HagelShopScraper
                     }
 
 # add logger
@@ -215,7 +217,8 @@ def extract_domain(url):
         return "deliverywalmart"
     if 'hair-shop24' in url:
         return "hairshop24"
-
+    if 'hagel-shop' in url:
+        return "hagelshop"
 
     m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)
     if m:

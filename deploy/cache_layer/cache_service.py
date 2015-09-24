@@ -17,6 +17,7 @@ class SqsCache(object):
     """
     interact with redis DB in terms of cache (put/get item to/from cache)
     """
+    CACHE_SETTINGS_PATH = 'settings'  # location of file with settings
     REDIS_CACHE_TIMESTAMP = 'cached_timestamps'  # zset, expiry for items
     REDIS_CACHE_KEY = 'cached_responses'  # hash, cached items
     REDIS_CACHE_STATS = 'cached_count'  # zset, to get most popular items
@@ -84,7 +85,7 @@ class SqsCache(object):
             return False
         # save some space using compress
         self.db.hset(self.REDIS_CACHE_KEY, uniq_key, compress(result))
-        res = self.db.zadd(self.REDIS_CACHE_TIMESTAMP, int(time()), uniq_key)
+        self.db.zadd(self.REDIS_CACHE_TIMESTAMP, int(time()), uniq_key)
         return True
 
     def delete_old_tasks(self, freshness):
@@ -112,6 +113,13 @@ class SqsCache(object):
         return \
             (self.db.zremrangebyrank(self.REDIS_CACHE_STATS, 0, -1),
              self.db.zremrangebyrank(self.REDIS_COMPLETED_TASKS, 0, -1))
+
+    def purge_cache(self):
+        """
+        removes all data, related to cache
+        """
+        self.db.delete(self.REDIS_CACHE_TIMESTAMP,
+                       self.REDIS_CACHE_KEY, self.REDIS_CACHE_STATS)
 
     def complete_task(self, task_str):
         task = json.loads(task_str)
@@ -171,3 +179,22 @@ class SqsCache(object):
         data = self.db.zrange(self.REDIS_CACHE_STATS, 0, -1,
                               withscores=True, score_cast_func=int)
         return len(data), sum([_[1] for _ in data])
+
+    def get_cache_settings(self):
+        """
+        returns dict with current settings
+        """
+        with open(self.CACHE_SETTINGS_PATH, 'r') as f:
+            s = f.read()
+        data = json.load(s or '""')
+        return data
+
+    def save_cache_settings(self, data):
+        """
+        saves settings dict to file
+        """
+        if not data:
+            return
+        with open(self.CACHE_SETTINGS_PATH, 'w') as f:
+            s = json.dumps(data)
+            f.write(s)

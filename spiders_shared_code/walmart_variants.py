@@ -20,6 +20,64 @@ class WalmartVariants(object):
        	text = re.sub("&nbsp;", " ", text).strip()
         return  re.sub(r'\s+', ' ', text)
 
+    def _swatches(self):
+        if self.tree_html.xpath("//meta[@name='keywords']/@content"):
+            version = "Walmart v2"
+        if self.tree_html.xpath("//meta[@name='Keywords']/@content"):
+            version = "Walmart v1"
+
+        if version == "Walmart v2":
+            try:
+                if getattr(self, 'response', None):
+                    # SC spiders sometimes fail to perform correct conversion
+                    # response.body -> lxml.html tree -> tostring
+                    page_raw_text = self.response.body
+                else:
+                    page_raw_text = lxml.html.tostring(self.tree_html)
+
+                startIndex = page_raw_text.find('"variantTypes":') + len('"variantTypes":')
+
+                if startIndex == -1:
+                    return None
+
+                endIndex = page_raw_text.find(',"variantProducts":', startIndex)
+
+                json_text = page_raw_text[startIndex:endIndex]
+                json_body = json.loads(json_text)
+
+                swatch_list = []
+
+                for attribute in json_body:
+                    if attribute["swatch"] == True:
+                        swatch_name = attribute["id"]
+
+                        if swatch_name == "actual_color":
+                            swatch_name = "color"
+
+                        for variant in attribute["variants"]:
+                            swatch_info = {}
+                            swatch_info[swatch_name] = variant["name"]
+
+                            if "imageAssets" in variant:
+                                swatch_info["hero"] = 1
+                            else:
+                                swatch_info["hero"] = 0
+
+                            if "imageUrl" in variant and "no-image" not in variant["imageUrl"]:
+                                swatch_info["thumb"] = 1
+                            else:
+                                swatch_info["thumb"] = 0
+
+                            swatch_list.append(swatch_info)
+
+                if swatch_list:
+                    return swatch_list
+            except:
+                print "Walmart v1 swatch passing issue"
+                return None
+
+        return None
+
     def _variants(self):
         if self.tree_html.xpath("//meta[@name='keywords']/@content"):
             version = "Walmart v2"
