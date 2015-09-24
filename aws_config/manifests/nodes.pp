@@ -48,7 +48,8 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
 	# python packages
 
 	package { 'scrapy':
-		ensure => present,
+    # ensure => present,
+		ensure => '1.0',
 		provider => 'pip',
 		require => [Package['python-pip'], Package['python-dev'], Package['libxslt1-dev']],
 	}
@@ -73,27 +74,27 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
 
 	# SSH
 
-	# ssh keys
-	file { "/home/ubuntu/.ssh":
-    	ensure => "directory",
-    	owner  => "ubuntu",
-    	group  => "ubuntu",
-    	mode   => 600,
-  	}
+	# # ssh keys
+	# file { "/home/ubuntu/.ssh":
+ #    	ensure => "directory",
+ #    	owner  => "ubuntu",
+ #    	group  => "ubuntu",
+ #    	mode   => 600,
+ #  	}
 
-	file { "/home/ubuntu/.ssh/id_rsa":
-		source => "puppet:///modules/common/id_rsa",
-		mode => 600,
-		owner => ubuntu,
-		group => ubuntu,
-	}
+	# file { "/home/ubuntu/.ssh/id_rsa":
+	# 	source => "puppet:///modules/common/id_rsa",
+	# 	mode => 600,
+	# 	owner => ubuntu,
+	# 	group => ubuntu,
+	# }
 
-	file { "/home/ubuntu/.ssh/id_rsa.pub":
-		source => "puppet:///modules/common/id_rsa.pub",
-		mode => 644,
-		owner => ubuntu,
-		group => ubuntu,
-	}
+	# file { "/home/ubuntu/.ssh/id_rsa.pub":
+	# 	source => "puppet:///modules/common/id_rsa.pub",
+	# 	mode => 644,
+	# 	owner => ubuntu,
+	# 	group => ubuntu,
+	# }
 
  #  ssh_authorized_key { "ssh_key":
  #    ensure => "present",
@@ -170,51 +171,4 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
     	group => root,
     	mode => 755
   	}
-
-  	# mount second partition
-
-  	exec { "create-mountpoint":
-  		command => "/bin/mkdir /mnt/part2",
-  		creates => "/mnt/part2",
-  		before => Mount["/mnt/part2"]
-  	}
-
-  	# # unmount partition from /mnt
-  	# exec {'umount-partition':
-  	# 	command => "/bin/umount /dev/xvdb",
-  	# }
-
-  	# mount { "/mnt":
-  	# 	device => "/dev/xvdb",
-  	# 	ensure => "unmounted",
-  	# 	before => Mount["/mnt/part2"]
-  	# }
-
-  	# mount on /mnt/part2 and add to /etc/fstab
-  	# !before this /mnt must be unmounted and its line deleted from fstab (it's in there by default)
-  	mount { "/mnt/part2":
-  		device => "/dev/xvdb",
-  		fstype => "auto",
-  		ensure => "mounted",
-  		options => "defaults,nobootwait,comment=cloudconfig",
-  		pass => 2,
-  		atboot => true,
-  		require => [Exec['create-mountpoint']], #Exec['umount-partition']]
-  	}
-
-  	# create cache folder in larger partition, symlink to cache in homedir
-	file{ "/mnt/part2/scrapy_cache":
-  		ensure => "directory",
-  		owner => "ubuntu",
-  		group => "ubuntu",
-  		require => Mount["/mnt/part2"]
-  	}
-
-  	file { "/home/ubuntu/.scrapy_cache":
-  		ensure => link,
-  		target => "/mnt/part2/scrapy_cache",
-  		owner => "ubuntu",
-  		group => "ubuntu",
-  	}
-
 }
