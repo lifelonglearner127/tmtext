@@ -158,6 +158,10 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         neck = _props.pop('neck') if 'neck' in _props else None
         lot = _props.pop('lot') if 'lot' in _props else None
         sleeve = _props.pop('sleeve') if 'sleeve' in _props else None
+        size = _props.pop('size') if 'size' in _props else None
+        waist = _props.pop('waist') if 'waist' in _props else None
+        inseam = _props.pop('inseam') if 'inseam' in _props else None
+
         # check if there are still some keys
         if _props.keys():
             self.log('Error: extra variants found, url %s' % response.url, WARNING)
@@ -206,6 +210,9 @@ _dync
         # TODO: moar `attribute_name` values!
         #_format_args['color'] = color if color else ''
         _format_args['color'] = ''
+        _format_args['size'] = size if size else ''
+        _format_args['waist'] = waist if waist else ''
+        _format_args['inseam'] = inseam if inseam else ''
         _format_args['neck'] = neck if neck else ''
         _format_args['sleeve'] = sleeve if sleeve else ''
         #_format_args['attribute_name'] = attribute_name if attribute_name else ''
@@ -221,14 +228,19 @@ _dync
             _arg, _value = line.rsplit('=', 1)
             post_data[_arg] = _value
 
-        import requests
-        result = requests.post(url, data=post_data,
-                               headers={'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8', 'X-Requested-With': 'XMLHttpRequest'}).text
-        from pprint import pprint
+        result = Request(
+            url,
+            body=json.dumps(post_data),
+            method='POST',
+            headers={
+                'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        )
 
-        if 'function()' in result or 'href' in result:
+        if 'function()' in result.body or 'href' in result.body:
             return
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             assert False, 'invalid Variants response'
 
         try:
@@ -236,7 +248,7 @@ _dync
         except Exception as e:
             print str(e)
             self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             return
         # find of such a combination is available
         if color:
@@ -246,7 +258,7 @@ _dync
                 if not color in _avail:
                     return False  # not defined; availability unknown
                 return _avail[color]
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
 
 
     def parse_product(self, response):
@@ -259,6 +271,7 @@ _dync
         jp.setupSC(response)
         prod['variants'] = jp._variants()
         for variant in prod['variants']:
+
             _variant_result = self._create_variant_request(product_id, response, variant)
             if _variant_result is not None:
                 variant['in_stock'] = _variant_result
