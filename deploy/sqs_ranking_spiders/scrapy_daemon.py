@@ -51,8 +51,8 @@ except ImportError:
     from repo.remote_instance_starter import QUEUES_LIST
     from product_ranking import statistics
 sys.path.insert(
-    3, os.path.join(REPO_BASE_PATH, 'special_crawler', 'queue_handler'))
-from sqs_connect import SQS_Queue
+    3, os.path.join(REPO_BASE_PATH, 'deploy', 'sqs_ranking_spiders'))
+from sqs_queue import SQS_Queue
 from cache_layer import REDIS_HOST, REDIS_PORT, INSTANCES_COUNTER_REDIS_KEY, \
     TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET
 

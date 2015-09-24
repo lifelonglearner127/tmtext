@@ -10,9 +10,8 @@ import logging.config
 import redis
 
 CWD = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(2, os.path.join(CWD, '..', '..', 'special_crawler',
-                                'queue_handler'))
-from sqs_connect import SQS_Queue
+sys.path.insert(2, os.path.join(CWD, '..', 'sqs_ranking_spiders'))
+from sqs_queue import SQS_Queue
 
 from cache_starter import log_settings
 from simmetrica_class import Simmetrica
