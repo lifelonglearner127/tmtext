@@ -8,6 +8,7 @@ import urllib
 
 from scrapy.http import Request
 from scrapy import Selector
+from scrapy.log import WARNING
 
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
@@ -148,18 +149,122 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
+    def _create_variant_request(self, pp_id, response, variant):
+        url = ('http://www.jcpenney.com/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp'
+               '?_DARGS=/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp')
+
+        _props = variant['properties'].copy()
+        color = _props.pop('color') if 'color' in _props else None
+        neck = _props.pop('neck') if 'neck' in _props else None
+        lot = _props.pop('lot') if 'lot' in _props else None
+        sleeve = _props.pop('sleeve') if 'sleeve' in _props else None
+        # check if there are still some keys
+        if _props.keys():
+            self.log('Error: extra variants found, url %s' % response.url, WARNING)
+            assert False, _props
+        raw_post_str = """
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.lotSKUSelectionChange=test
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.ppId={pp_id}
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.ppType={pp_type}
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.selectedLotValue={lot_value}
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.selectedSKUAttributeName={attribute_name}
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.shipToCountry=US
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.COLOR={color}
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.NECK_SIZE={neck}
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SLEEVE={sleeve}
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.sucessUrl=/jsp/browse/pp/graphical/graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&grView=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.lotSKUSelectionChange=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.ppId=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.ppType=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.selectedLotValue=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.selectedSKUAttributeName=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.shipToCountry=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.COLOR=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.NECK_SIZE=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SLEEVE=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.sucessUrl=
+_DARGS=/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp
+_dynSessConf=
+_dync
+"""
+        _format_args = {}
+        _format_args['pp_id'] = pp_id if pp_id else ''
+        _format_args['pp_type'] = 'regular'  # TODO: shouldn't this be constant?
+        _format_args['lot_value'] = lot if lot else ''
+        # get attribute name
+        """
+        attribute_name = None
+        #if color:
+        #    attribute_name = 'COLOR'
+        if sleeve:
+            attribute_name = 'SLEEVE'
+        elif neck:
+            attribute_name = 'NECK_SIZE'
+        elif lot:
+            attribute_name = 'Lot'
+        """
+        # TODO: moar `attribute_name` values!
+        #_format_args['color'] = color if color else ''
+        _format_args['color'] = ''
+        _format_args['neck'] = neck if neck else ''
+        _format_args['sleeve'] = sleeve if sleeve else ''
+        #_format_args['attribute_name'] = attribute_name if attribute_name else ''
+        _format_args['attribute_name'] = 'FULL'
+
+        raw_post_str = raw_post_str.format(**_format_args)
+
+        post_data = {}
+        _post_str = raw_post_str.strip().split('\n')
+        for line in _post_str:
+            if '=' not in line:
+                continue
+            _arg, _value = line.rsplit('=', 1)
+            post_data[_arg] = _value
+
+        import requests
+        result = requests.post(url, data=post_data,
+                               headers={'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8', 'X-Requested-With': 'XMLHttpRequest'}).text
+        from pprint import pprint
+
+        if 'function()' in result or 'href' in result:
+            return
+            import pdb; pdb.set_trace()
+            assert False, 'invalid Variants response'
+
+        try:
+            result = json.loads(result)
+        except Exception as e:
+            print str(e)
+            self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
+            import pdb; pdb.set_trace()
+            return
+        # find of such a combination is available
+        if color:
+            _avail = [a['options'] for a in result['skuOptions'] if a.get('key', None).lower() == 'color']
+            if _avail:
+                _avail = {k['option']: k['availability'] == 'true' for k in _avail[0]}
+                if not color in _avail:
+                    return False  # not defined; availability unknown
+                return _avail[color]
+        import pdb; pdb.set_trace()
+
+
     def parse_product(self, response):
         prod = response.meta['product']
         prod['url'] = response.url
 
+        product_id = is_empty(re.findall('ppId=([a-zA-Z0-9]+)&{0,1}', response.url))
+
         jp = JcpenneyVariants()
         jp.setupSC(response)
         prod['variants'] = jp._variants()
+        for variant in prod['variants']:
+            _variant_result = self._create_variant_request(product_id, response, variant)
+            if _variant_result is not None:
+                variant['in_stock'] = _variant_result
 
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
-
-        product_id = is_empty(re.findall('ppId=([a-zA-Z0-9]+)&{0,1}', response.url))
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
