@@ -7,6 +7,9 @@ import re
 class KohlsSpider(SearchProductSpider):
 
     name = "kohls"
+    # Kohls redirects some pages to their mobile version
+    custom_settings = {'REDIRECT_ENABLED' : False, 'DOWNLOAD_DELAY': 0.1}
+    handle_httpstatus_list = [403]
 
     # initialize fields specific to this derived spider
     def init_sub(self):
@@ -32,7 +35,7 @@ class KohlsSpider(SearchProductSpider):
             except:
                 self.log("Error: No product name: " + str(response.url) + " from product: " + item['origin_url'], level=log.ERROR)
                 # ignore products with no name
-                return
+                return None
 
         price_node = hxs.select("//meta[@itemprop='price']/@content").extract()
 
