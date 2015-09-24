@@ -140,22 +140,22 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
 
   	# git repo
 
-	# clone repo if it doesn't exist
-	exec {"clone-tmtext":
-		creates => "/home/ubuntu/tmtext",
-		cwd => "/home/ubuntu",
-		user => "ubuntu",
-		command => "/usr/bin/git clone -q git@bitbucket.org:dfeinleib/tmtext.git",
-		require => Package['git'],
-	}
+	# # clone repo if it doesn't exist
+	# exec {"clone-tmtext":
+	# 	creates => "/home/ubuntu/tmtext",
+	# 	cwd => "/home/ubuntu",
+	# 	user => "ubuntu",
+	# 	command => "/usr/bin/git clone -q git@bitbucket.org:dfeinleib/tmtext.git",
+	# 	require => Package['git'],
+	# }
 
-  	# startup script - pulling from repo
-  	file { "/home/ubuntu/startup_script.sh":
-    	source => "puppet:///modules/common/startup_script.sh",
-    	owner => root,
-    	group => root,
-    	mode => 777
-  	}
+ #  	# startup script - pulling from repo
+ #  	file { "/home/ubuntu/startup_script.sh":
+ #    	source => "puppet:///modules/common/startup_script.sh",
+ #    	owner => root,
+ #    	group => root,
+ #    	mode => 777
+ #  	}
 
     # add script to open sshfs
     file { "/home/ubuntu/sshfs_script.sh":
@@ -165,10 +165,10 @@ node 'node1', 'node2', 'node3', 'node4', 'node5', 'node6', 'node7', 'node8', 'no
       mode => 777
     }
 
-  	file { "/etc/rc.local":
-    	source => "puppet:///modules/common/rc.local",
-    	owner => root,
-    	group => root,
-    	mode => 755
-  	}
+  	# file { "/etc/rc.local":
+   #  	source => "puppet:///modules/common/rc.local",
+   #  	owner => root,
+   #  	group => root,
+   #  	mode => 755
+  	# }
 }
