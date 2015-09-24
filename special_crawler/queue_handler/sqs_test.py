@@ -13,20 +13,27 @@ import sys
 import time
 import json
 from sqs_connect import SQS_Queue
+import requests
+import urllib
 
 def runTests(scrape_queue_name, process_queue_name, url):
     print("RUNNING SQS TESTS")
+    base = "http://localhost/get_data?url=%s"
 
     sqs_scrape = SQS_Queue(scrape_queue_name)
 
     message = {'url':url, 
-               'site_id':5, 
+               'site_id':5,
                'server_name':'unit_test', 
                'product_id':384, 
-               'site':'walmart.com', 
+               'site':'walmart.com',
                'event':1}
 
-    sqs_scrape.put( json.dumps( message ))
+    output_text = requests.get(base%(urllib.quote(url))).text
+    output_json = json.loads(output_text)
+    s3_content = json.dumps(output_json)
+
+    sqs_scrape.put( json.dumps( message ), s3_content)
 
     print("SENT MESSAGE. WAITING FOR RESPONSE")
 
