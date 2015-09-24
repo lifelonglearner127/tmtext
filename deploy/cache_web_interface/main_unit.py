@@ -110,9 +110,9 @@ def stats():
             (q.split('_')[-1], sqs_conn.get_queue(q).count())
             for q in CACHE_QUEUES_LIST.itervalues()]
         context['left_tasks_total'] = sum([q[1] for q in context['left_tasks']])
-        cur_hour = datetime.datetime.now().hour or 1
+        cur_hour = datetime.datetime.now().hour
         context['avg_hour_task'] = '{0:.2f}'.format(
-            context['today_executed_tasks'] / cur_hour)
+            context['today_executed_tasks'] / (cur_hour or 1))
         hourly_tasks_stats = OrderedDict()
         for i in xrange(0, cur_hour+1, 1):
             key = '%s - %s' % (i, i+1)
