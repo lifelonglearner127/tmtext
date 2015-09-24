@@ -30,7 +30,7 @@ class JcpenneyValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
     optional_fields = []
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'description', 'special_pricing', 
+        'google_source_site', 'description', 'special_pricing',
         'bestseller_rank', 'model',
     ]
     ignore_log_errors = False  # don't check logs for errors?
@@ -159,9 +159,6 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         lot = _props.pop('lot') if 'lot' in _props else None
         sleeve = _props.pop('sleeve') if 'sleeve' in _props else None
         size = _props.pop('size') if 'size' in _props else None
-        waist = _props.pop('waist') if 'waist' in _props else None
-        inseam = _props.pop('inseam') if 'inseam' in _props else None
-
         # check if there are still some keys
         if _props.keys():
             self.log('Error: extra variants found, url %s' % response.url, WARNING)
@@ -175,6 +172,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.shipToCountry=US
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.COLOR={color}
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.NECK_SIZE={neck}
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SIZE={size}
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SLEEVE={sleeve}
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.sucessUrl=/jsp/browse/pp/graphical/graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&grView=
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.lotSKUSelectionChange=
@@ -185,6 +183,7 @@ _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.selecte
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.shipToCountry=
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.COLOR=
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.NECK_SIZE=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SIZE=
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SLEEVE=
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.sucessUrl=
 _DARGS=/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp
@@ -195,6 +194,7 @@ _dync
         _format_args['pp_id'] = pp_id if pp_id else ''
         _format_args['pp_type'] = 'regular'  # TODO: shouldn't this be constant?
         _format_args['lot_value'] = lot if lot else ''
+        _format_args['size'] = size if size else ''
         # get attribute name
         """
         attribute_name = None
@@ -210,13 +210,10 @@ _dync
         # TODO: moar `attribute_name` values!
         #_format_args['color'] = color if color else ''
         _format_args['color'] = ''
-        _format_args['size'] = size if size else ''
-        _format_args['waist'] = waist if waist else ''
-        _format_args['inseam'] = inseam if inseam else ''
         _format_args['neck'] = neck if neck else ''
         _format_args['sleeve'] = sleeve if sleeve else ''
         #_format_args['attribute_name'] = attribute_name if attribute_name else ''
-        _format_args['attribute_name'] = 'FULL'
+        _format_args['attribute_name'] = 'Lot'
 
         raw_post_str = raw_post_str.format(**_format_args)
 
@@ -228,28 +225,21 @@ _dync
             _arg, _value = line.rsplit('=', 1)
             post_data[_arg] = _value
 
-        result = Request(
-            url,
-            body=json.dumps(post_data),
-            method='POST',
-            headers={
-                'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        )
+        import requests
+        result = requests.post(url, data=post_data,
+                               headers={'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8', 'X-Requested-With': 'XMLHttpRequest'}).text
 
-        if 'function()' in result.body or 'href' in result.body:
+        if 'function()' in result:
             return
-            # import pdb; pdb.set_trace()
-            assert False, 'invalid Variants response'
 
         try:
             result = json.loads(result)
         except Exception as e:
             print str(e)
             self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
-            # import pdb; pdb.set_trace()
+            import pdb; pdb.set_trace()
             return
+
         # find of such a combination is available
         if color:
             _avail = [a['options'] for a in result['skuOptions'] if a.get('key', None).lower() == 'color']
@@ -258,8 +248,7 @@ _dync
                 if not color in _avail:
                     return False  # not defined; availability unknown
                 return _avail[color]
-        # import pdb; pdb.set_trace()
-
+        import pdb; pdb.set_trace()
 
     def parse_product(self, response):
         prod = response.meta['product']
@@ -271,7 +260,6 @@ _dync
         jp.setupSC(response)
         prod['variants'] = jp._variants()
         for variant in prod['variants']:
-
             _variant_result = self._create_variant_request(product_id, response, variant)
             if _variant_result is not None:
                 variant['in_stock'] = _variant_result
