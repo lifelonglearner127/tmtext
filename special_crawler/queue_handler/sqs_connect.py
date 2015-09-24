@@ -47,12 +47,11 @@ class SQS_Queue():
         try:
             if isinstance(sqs_message, basestring):
                 sqs_message_json = dict(json.loads(sqs_message))
-                sqs_message_json["uuid"] = str(uuid.uuid4())
                 print sqs_message_json
                 m.set_body(json.dumps(sqs_message_json))
                 s3 = S3Connection('AKIAJPOFQWU54DCMDKLQ', '/aebM4IZ97NEwVnfS6Jys6sKVvDXa6eDZsB2X7gP')
                 bucket = s3.create_bucket('contentanalytcis.inc.ch.s3')  # bucket names must be unique
-                key = bucket.new_key(sqs_message_json["uuid"])
+                key = bucket.new_key(sqs_message_json["url"])
                 key.set_contents_from_string(s3_content)
                 key.set_acl('public-read')
 
@@ -78,7 +77,7 @@ class SQS_Queue():
             sqs_message_json = json.loads(m.get_body())
             print sqs_message_json
             s3 = S3Connection('AKIAJPOFQWU54DCMDKLQ', '/aebM4IZ97NEwVnfS6Jys6sKVvDXa6eDZsB2X7gP')
-            key = s3.get_bucket('contentanalytcis.inc.ch.s3').get_key(sqs_message_json["uuid"])
+            key = s3.get_bucket('contentanalytcis.inc.ch.s3').get_key(sqs_message_json["url"])
             s3_content = key.get_contents_as_string()
             return s3_content
         else:
