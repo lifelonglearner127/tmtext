@@ -114,6 +114,13 @@ class SqsCache(object):
             (self.db.zremrangebyrank(self.REDIS_CACHE_STATS, 0, -1),
              self.db.zremrangebyrank(self.REDIS_COMPLETED_TASKS, 0, -1))
 
+    def purge_cache(self):
+        """
+        removes all data, related to cache
+        """
+        self.db.delete(self.REDIS_CACHE_TIMESTAMP,
+                       self.REDIS_CACHE_KEY, self.REDIS_CACHE_STATS)
+
     def complete_task(self, task_str):
         task = json.loads(task_str)
         key = '%s_%s' % (task.get('task_id'), task.get('server_name'))
