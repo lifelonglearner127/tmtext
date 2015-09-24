@@ -20,19 +20,6 @@ app = Flask(__name__)
 cache = SqsCache()
 
 
-@app.route('/update-settings', methods=['GET', 'POST'])
-def update_settings():
-    global s
-    if request.method == 'POST':
-        data = request.form
-        result_msg = s.update_settings(data)
-        return render_template('update_settings.html', result_msg=result_msg)
-    else:
-        current_settings = s.get_settings()
-        return render_template('update_settings.html',
-                               current_settings=current_settings)
-
-
 @app.route('/log_install_error', methods=['GET', 'POST'])
 def log_install_error():
     file_to_save_logs = '/tmp/install_errors.log'
