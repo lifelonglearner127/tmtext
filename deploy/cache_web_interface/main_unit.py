@@ -104,7 +104,10 @@ def stats():
         context['today_executed_tasks'] = cache.get_executed_tasks_count()
         context['last_hour_executed_tasks'] = cache.get_executed_tasks_count(
             for_last_hour=True)
-        context['responses_from_cache'] = cache.get_total_cached_responses()
+        context['responses_from_cache_url'] = \
+            cache.get_total_cached_responses(False)
+        context['responses_from_cache_term'] = \
+            cache.get_total_cached_responses(True)
         sqs_conn = boto.sqs.connect_to_region('us-east-1')
         context['left_tasks'] = [
             (q.split('_')[-1], sqs_conn.get_queue(q).count())
@@ -120,7 +123,10 @@ def stats():
         context['hourly_tasks_stats'] = hourly_tasks_stats
         context['used_memory'] = cache.get_used_memory()
         context['items_in_cache'] = cache.get_cached_tasks_count()
-        context['cache_most_popular'] = cache.get_most_popular_cached_items(10)
+        context['cache_most_popular_url'] = \
+            cache.get_most_popular_cached_items(10, False)
+        context['cache_most_popular_term'] = \
+            cache.get_most_popular_cached_items(10, True)
         return render_template('stats.html', **context)
     except Exception as e:
         return str(e)
