@@ -89,7 +89,7 @@ class SearchProductSpider(SearchSpider):
         # redirect pages, if handled, can return empty bodies
         # especially for kohls
         if not response.body:
-            log("Retried empty page", level=log.WARNING)
+            log("Retried empty page: " + response.url, level=log.WARNING)
             return Request(response.url, callback = self.parse_product, meta=response.meta)
 
         # try to avoid mobile versions

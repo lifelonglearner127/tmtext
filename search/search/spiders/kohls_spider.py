@@ -18,6 +18,9 @@ class KohlsSpider(SearchProductSpider):
         self.start_urls = [ "http://www.kohls.com" ]
 
     def extract_results(self, response):
+        if not response.body:
+            return []
+            
         hxs = HtmlXPathSelector(response)
 
         results_relative_urls = hxs.select("//div[@class='product-info']/h2/a/@href").extract()
