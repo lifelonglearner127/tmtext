@@ -6,7 +6,7 @@ import json
 import string
 import urllib
 
-from scrapy.http import Request
+from scrapy.http import Request, FormRequest
 from scrapy import Selector
 from scrapy.log import WARNING
 
@@ -149,7 +149,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
-    def _create_variant_request(self, pp_id, response, variant):
+    def _create_variant_request(self, pp_id, response, variant, variant_num):
         url = ('http://www.jcpenney.com/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp'
                '?_DARGS=/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp')
 
@@ -195,6 +195,8 @@ _dync
         _format_args['pp_type'] = 'regular'  # TODO: shouldn't this be constant?
         _format_args['lot_value'] = lot if lot else ''
         _format_args['size'] = size if size else ''
+
+        product = response.meta['product']
         # get attribute name
         """
         attribute_name = None
@@ -225,20 +227,40 @@ _dync
             _arg, _value = line.rsplit('=', 1)
             post_data[_arg] = _value
 
-        import requests
-        result = requests.post(url, data=post_data,
-                               headers={'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8', 'X-Requested-With': 'XMLHttpRequest'}).text
+        #import requests
+        #result = requests.post(url, data=post_data,
+        #                       headers={'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8', 'X-Requested-With': 'XMLHttpRequest'}).text
 
+        return FormRequest(
+            url,
+            formdata=post_data,
+            method='POST',
+            headers={
+                'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            meta={'pp_id': pp_id, 'variant': variant, 'variant_num': variant_num,
+                  'product': product},
+            callback=self._on_variant_response,
+            dont_filter=True
+        )
+
+    def _on_variant_response(self, response):
+        pp_id = response.meta['pp_id']
+        variant = response.meta['variant']
+        variant_num = response.meta['variant_num']
+        product = response.meta['product']
+        result = response.body
+        color = variant['properties'].get('color', None)
+        #import pdb; pdb.set_trace()
         if 'function()' in result:
+            variant['in_stock'] = None
             return
-
         try:
             result = json.loads(result)
         except Exception as e:
-            print str(e)
             self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
-            import pdb; pdb.set_trace()
-            return
+            variant['in_stock'] = None
 
         # find of such a combination is available
         if color:
@@ -246,23 +268,23 @@ _dync
             if _avail:
                 _avail = {k['option']: k['availability'] == 'true' for k in _avail[0]}
                 if not color in _avail:
-                    return False  # not defined; availability unknown
-                return _avail[color]
-        import pdb; pdb.set_trace()
+                    variant['in_stock'] = False
+                    return  # not defined; availability unknown
+                variant['in_stock'] = _avail[color]
+        yield product
 
     def parse_product(self, response):
         prod = response.meta['product']
         prod['url'] = response.url
+        prod['_subitem'] = True
 
         product_id = is_empty(re.findall('ppId=([a-zA-Z0-9]+)&{0,1}', response.url))
 
         jp = JcpenneyVariants()
         jp.setupSC(response)
         prod['variants'] = jp._variants()
-        for variant in prod['variants']:
-            _variant_result = self._create_variant_request(product_id, response, variant)
-            if _variant_result is not None:
-                variant['in_stock'] = _variant_result
+        for var_indx, variant in enumerate(prod['variants']):
+            yield self._create_variant_request(product_id, response, variant, var_indx)
 
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
@@ -276,16 +298,16 @@ _dync
             '//script/text()[contains(.,"reviewId")]'
         ).re('reviewId:\"(\d+)\",'))
         if review_id:
-            return Request(self.url_formatter.format(self.REVIEW_URL,
+            yield Request(self.url_formatter.format(self.REVIEW_URL,
                                                      product_id=review_id),
                            meta=new_meta, callback=self._parse_reviews,
                            dont_filter=True)
         elif product_id:
-            return Request(self.url_formatter.format(self.REVIEW_URL,
+            yield Request(self.url_formatter.format(self.REVIEW_URL,
                                                      product_id=product_id),
                            meta=new_meta, callback=self._parse_reviews,
                            dont_filter=True)
-        return prod
+        yield prod
 
     def _populate_from_html(self, response, product):
         if 'title' in product and product['title'] == '':
