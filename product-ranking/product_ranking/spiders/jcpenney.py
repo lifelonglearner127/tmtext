@@ -284,7 +284,8 @@ _dync
         jp.setupSC(response)
         prod['variants'] = jp._variants()
         for var_indx, variant in enumerate(prod['variants']):
-            yield self._create_variant_request(product_id, response, variant, var_indx)
+            if getattr(self, 'scrape_variants_with_extra_requests', None):
+                yield self._create_variant_request(product_id, response, variant, var_indx)
 
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
