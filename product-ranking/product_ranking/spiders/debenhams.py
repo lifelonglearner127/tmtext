@@ -128,16 +128,12 @@ class DebenhamsProductSpider(BaseProductsSpider):
         return department
 
     def _parse_category(self, response):
-        category = is_empty(
-            response.xpath('//span[@class="breadcrumb"]/a/text()').extract()
-        ).strip()
+        category = []
+        category_sel = response.xpath(
+                '//div[@class="breadcrumb_links"]/div/span/a/text()').extract()
 
-        subcategory = is_empty(
-            response.xpath('//span[@class="breadcrumb last"]/a/text()').extract()
-        ).strip()
-
-        if subcategory and category:
-            return [category, subcategory]
+        for cat in category_sel:
+            category.append(cat.strip())
 
         return category
 
