@@ -76,7 +76,7 @@ class SearchSpider(BaseSpider):
         # call specific init for each derived class
         self.init_sub()
 
-        self.version = "6679d17b3dbf3000fb1264c53fd5aca59e9caf75"
+        self.version = "43e3932f6a0f2eab4ca2922214587f04e084ce0c"
 
         self.product_url = product_url
         self.products_file = products_file
