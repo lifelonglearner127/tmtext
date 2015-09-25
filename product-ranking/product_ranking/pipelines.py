@@ -268,10 +268,14 @@ class MergeSubItems(object):
 
     @staticmethod
     def _get_output_filename():
-        cmd = ' '.join(sys.argv).split('-o ')
+        # TODO: better code for parsing command-line arguments
+        cmd = ' '.join(sys.argv).split(' -o ')
         if not cmd:
             return
-        return cmd[-1]  # TODO: what if this is NOT the last argument?!
+        cmd = cmd[-1].strip()
+        if ' ' in cmd:
+            cmd = cmd.split(' ', 1)[0].strip()
+        return cmd
 
     @staticmethod
     def _serializer(val):
