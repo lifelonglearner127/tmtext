@@ -2,6 +2,7 @@
 
 import collections
 import decimal
+import re
 
 from scrapy.item import Item, Field
 
@@ -44,6 +45,10 @@ class Price:
         if self.priceCurrency not in valid_currency_codes:
             raise ValueError('Invalid currency: %s' % priceCurrency)
         # Remove comma(s) in price string if needed (i.e: '1,254.09')
+        if isinstance(price, unicode):
+            price = price.encode('utf8')
+        price = str(price)
+        price = ''.join(s for s in price if s.isdigit() or s in [',', '.'])
         self.price = decimal.Decimal(str(price).replace(',', ''))
 
     def __repr__(self):
@@ -231,3 +236,5 @@ class SiteProductItem(Item):
 
     shelf_name = Field()  # see https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c8
     shelf_path = Field()
+
+    _subitem = Field()
