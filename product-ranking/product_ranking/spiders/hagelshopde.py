@@ -51,10 +51,11 @@ class HagelshopProductSpider(BaseProductsSpider):
 
         # Parse related products
 
-
         # Parse buyer reviews
 
         # Parse out_of_stock
+        in_stock = self.parse_stock(response)
+        cond_set_value(product, 'is_out_of_stock', in_stock)
 
         # Parse brand
         brand = self.parse_brand(response)
@@ -64,6 +65,18 @@ class HagelshopProductSpider(BaseProductsSpider):
             return self.send_next_request(reqs, response)
 
         return product
+
+    def parse_stock(self, response):
+        stock = is_empty(
+            response.xpath(
+                '//link[@itemprop="availability"]/@href').extract())
+
+        if stock == 'http://schema.org/OutOfStock':
+            in_stock = True
+        else:
+            in_stock = False
+
+        return in_stock
 
     def parse_brand(self, response):
         brand = is_empty(response.xpath(''
