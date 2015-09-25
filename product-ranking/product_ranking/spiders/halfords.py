@@ -287,9 +287,16 @@ class HalfordsProductSpider(BaseProductsSpider):
                 for item in variants_data:
                     image_url ='http://i1.adis.ws/i/washford/' + item['thumbNail'].replace('cdn/', '')
                     stock = item['inStock']
+                    if item['value2'] == '':
+                        color = None
+                        size = item['value1']
+                    else:
+                        color = item['value1']
+                        size = item['value2']
                     properties = {
-                        name: item['value1'],
-                        'image_url': image_url
+                        name: size,
+                        'image_url': image_url,
+                        'color': color
                     }
                     variants.append({
                         'in_stock': stock,
