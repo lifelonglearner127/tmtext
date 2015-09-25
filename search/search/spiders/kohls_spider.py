@@ -37,7 +37,10 @@ class KohlsSpider(SearchProductSpider):
                 try:
                     item['product_name'] = hxs.xpath("//h1[starts-with(@class,'title')]//text()").extract()[0].strip()
                 except:
-                    self.log("Error: No product name: " + str(response.url) + " from product: " + item['origin_url'], level=log.ERROR)
+                    # out of stock products return 404s with this text, not the actual product page
+                    out_of_stock = hxs.xpath("//strong[contains(text(),'out of stock')]").extract()
+                    if not out_of_stock:
+                        self.log("Error: No product name: " + str(response.url) + " from product: " + item['origin_url'], level=log.ERROR)
                     # ignore products with no name
                     return None
 
