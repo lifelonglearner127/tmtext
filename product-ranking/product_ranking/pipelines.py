@@ -260,6 +260,7 @@ class MergeSubItems(object):
            will collect and group the necessary data.
     """
     _mapper = {}
+    _subitem_mode = False
 
     def __init__(self):
         dispatcher.connect(self.spider_opened, signals.spider_opened)
@@ -283,15 +284,17 @@ class MergeSubItems(object):
         pass
 
     def spider_closed(self, spider):
-        output_fname = self._get_output_filename()
-        with open(output_fname, 'w') as fh:
-            for url, item in self._mapper.items():
-                fh.write(json.dumps(item, default=self._serializer)+'\n')
+        if self._subitem_mode:  # rewrite output only if we're in "subitem mode"
+            output_fname = self._get_output_filename()
+            with open(output_fname, 'w') as fh:
+                for url, item in self._mapper.items():
+                    fh.write(json.dumps(item, default=self._serializer)+'\n')
 
     def process_item(self, item, spider):
         _subitem = item.get('_subitem', None)
         if not _subitem:
             return item  # we don't need to merge sub-items
+        self._subitem_mode = True  # switch a flag if there's at least one item with "subitem mode" found
         if 'url' in item:  # sub-items: collect them and dump them on "on_close" call
             if not item['url'] in self._mapper:
                 self._mapper[item['url']] = {}
