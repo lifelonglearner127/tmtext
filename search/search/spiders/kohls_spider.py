@@ -20,7 +20,7 @@ class KohlsSpider(SearchProductSpider):
     def extract_results(self, response):
         if not response.body:
             return []
-            
+
         hxs = HtmlXPathSelector(response)
 
         results_relative_urls = hxs.select("//div[@class='product-info']/h2/a/@href").extract()
@@ -38,7 +38,7 @@ class KohlsSpider(SearchProductSpider):
                 item['product_name'] = hxs.xpath("//div[@class='pdp_title']//text()[normalize-space()!='']").extract()[0].strip()
             except:
                 try:
-                    item['product_name'] = hxs.xpath("//h1[starts-with(@class,'title')]//text()").extract()[0].strip()
+                    item['product_name'] = hxs.xpath("//h1//text()").extract()[0].strip()
                 except:
                     # out of stock products return 404s with this text, not the actual product page
                     out_of_stock = hxs.xpath("//strong[contains(text(),'out of stock')]").extract()
