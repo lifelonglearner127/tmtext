@@ -8,9 +8,9 @@ class KohlsSpider(SearchProductSpider):
 
     name = "kohls"
     # Kohls redirects some pages to their mobile version
-    custom_settings = {'REDIRECT_ENABLED' : False, 'DOWNLOAD_DELAY': 0.1}
+    custom_settings = {'REDIRECT_ENABLED' : False}
     # kohls sends a 404 if product is out of stock
-    handle_httpstatus_list = [404]
+    handle_httpstatus_list = [404, 302]
 
     # initialize fields specific to this derived spider
     def init_sub(self):

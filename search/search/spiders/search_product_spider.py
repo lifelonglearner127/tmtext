@@ -86,6 +86,21 @@ class SearchProductSpider(SearchSpider):
     # keep product pages left to parse in 'search_results' meta key, send back to parseResults_new when done with all
     def parse_product(self, response):
 
+        # redirect pages, if handled, can return empty bodies
+        # especially for kohls
+        if not response.body:
+            log("Retried empty page", level=log.WARNING)
+            return Request(response.url, callback = self.parse_product, meta=response.meta)
+
+        # try to avoid mobile versions
+        # especially for kohls
+        if response.url.startswith("http://m."):
+            meta = response.meta
+            meta['dont_redirect'] = True
+            url = re.sub("/m\.","/www.",response.url)
+            log("Retrying: redirecting mobile page to www page", level=log.WARNING)
+            return Request(url, callback=self.parse_product, meta=meta)
+
         items = response.meta['items']
 
         #site = response.meta['origin_site']
