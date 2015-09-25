@@ -48,7 +48,7 @@ class Price:
         if isinstance(price, unicode):
             price = price.encode('utf8')
         price = str(price)
-        price = ''.join(s for s in price if s.isdigit() or s == ',')
+        price = ''.join(s for s in price if s.isdigit() or s in [',', '.'])
         self.price = decimal.Decimal(str(price).replace(',', ''))
 
     def __repr__(self):
