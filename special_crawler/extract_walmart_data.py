@@ -1056,9 +1056,15 @@ class WalmartScraper(Scraper):
         return None
 
     def _variants(self):
+        if self._no_longer_available():
+            return None
+
         return self.wv._variants()
 
     def _swatches(self):
+        if self._no_longer_available():
+            return None
+
         return self.wv._swatches()
 
     def _related_product_urls(self):
