@@ -53,6 +53,10 @@ class HagelshopProductSpider(BaseProductsSpider):
 
         # Parse buyer reviews
 
+        # Parse upc
+        sku = self.parse_upc(response)
+        cond_set_value(product, 'sku', sku)
+
         # Parse out_of_stock
         in_stock = self.parse_stock(response)
         cond_set_value(product, 'is_out_of_stock', in_stock)
@@ -65,6 +69,12 @@ class HagelshopProductSpider(BaseProductsSpider):
             return self.send_next_request(reqs, response)
 
         return product
+
+    def parse_upc(self, response):
+        sku = is_empty(response.xpath(
+            '//span[@itemprop="sku"]/text()').extract())
+
+        return sku
 
     def parse_stock(self, response):
         stock = is_empty(
