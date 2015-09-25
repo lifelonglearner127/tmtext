@@ -267,11 +267,11 @@ class MergeSubItems(object):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
 
     @staticmethod
-    def _get_output_filename():
+    def _get_output_filename(spider):
         # TODO: better code for parsing command-line arguments
         cmd = ' '.join(sys.argv).split(' -o ')
-        if not cmd:
-            return
+        if not cmd or len(cmd) == 1:
+            return spider._crawler.settings.attributes['FEED_URI'].value
         cmd = cmd[-1].strip()
         if ' ' in cmd:
             cmd = cmd.split(' ', 1)[0].strip()
@@ -289,7 +289,7 @@ class MergeSubItems(object):
 
     def spider_closed(self, spider):
         if self._subitem_mode:  # rewrite output only if we're in "subitem mode"
-            output_fname = self._get_output_filename()
+            output_fname = self._get_output_filename(spider)
             with open(output_fname, 'w') as fh:
                 for url, item in self._mapper.items():
                     fh.write(json.dumps(item, default=self._serializer)+'\n')
