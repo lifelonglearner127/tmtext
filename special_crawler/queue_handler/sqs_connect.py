@@ -39,7 +39,6 @@ class SQS_Queue():
         self.conn = boto.sqs.connect_to_region(region)
         self.q = self.conn.get_queue(name)
         self.currentM = None
-        self.s3 = S3Connection('AKIAJPOFQWU54DCMDKLQ', '/aebM4IZ97NEwVnfS6Jys6sKVvDXa6eDZsB2X7gP')
 
     # Add message/a list of messages to the queue
     # Messages are strings (or at least serialized to strings)
@@ -48,11 +47,12 @@ class SQS_Queue():
         try:
             if isinstance(sqs_message, basestring):
                 m.set_body(sqs_message)
-#                self.s3 = S3Connection('AKIAJPOFQWU54DCMDKLQ', '/aebM4IZ97NEwVnfS6Jys6sKVvDXa6eDZsB2X7gP')
-                bucket = self.s3.create_bucket('contentanalytcis.inc.ch.s3')  # bucket names must be unique
+                '''
+                s3 = S3Connection('AKIAJPOFQWU54DCMDKLQ', '/aebM4IZ97NEwVnfS6Jys6sKVvDXa6eDZsB2X7gP')
+                bucket = s3.create_bucket('contentanalytcis.inc.ch.s3')  # bucket names must be unique
                 key = bucket.new_key(sqs_message["server_name"] + sqs_message["site"] + sqs_message["product_id"])
                 key.set_contents_from_string(s3_content)
-
+                '''
                 self.q.write(m)
         except NameError:
             print "**********************"
@@ -72,13 +72,16 @@ class SQS_Queue():
                 if timeout else self.q.get_messages()
             m = rs[0]
             self.currentM = m
+            '''
             sqs_message = json.loads(m.get_body())
-
-            bucket = self.s3.get_bucket('contentanalytcis.inc.ch.s3')  # bucket names must be unique
+            s3 = S3Connection('AKIAJPOFQWU54DCMDKLQ', '/aebM4IZ97NEwVnfS6Jys6sKVvDXa6eDZsB2X7gP')
+            bucket = s3.get_bucket('contentanalytcis.inc.ch.s3')  # bucket names must be unique
             key = bucket.get_key(sqs_message["server_name"] + sqs_message["site"] + sqs_message["product_id"])
             result_message = key.get_contents_as_string()
             bucket.delete_key(sqs_message["uuid"])
             return result_message
+            '''
+            return m.get_Body()
         else:
             raise Exception("Incompleted message exists, consider issuing \"task_done\" before getting another message off the Queue. Message : %s"%self.currentM)
 
