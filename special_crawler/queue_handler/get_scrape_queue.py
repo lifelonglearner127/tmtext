@@ -13,6 +13,7 @@ import json
 import requests
 import threading
 import urllib
+import uuid
 from datetime import datetime
 
 # initialize the logger
@@ -25,11 +26,11 @@ logger.addHandler(fh)
 # from config import scrape_queue_name
 
 queue_names = {
-    "Development": "dev_scrape",
-    "UnitTest": "unit_test_scrape",
-    "IntegrationTest": "integration_test_scrape",
+    "Development": "dev_scrape", 
+    "UnitTest": "unit_test_scrape", 
+    "IntegrationTest": "integration_test_scrape", 
     "RegressionTest": "test_scrape",
-    "Demo": "demo_scrape",
+    "Demo": "demo_scrape", 
     "Production": "production_scrape",
     "Walmartfullsite": "walmart-fullsite_scrape"}
 
@@ -44,7 +45,7 @@ def main( environment, scrape_queue_name, thread_id):
     # Continually pull off the SQS Scrape Queue
     while True:
         go_to_sleep = False
-
+        
         if sqs_scrape.count() == 0:
             go_to_sleep = True
 
@@ -83,6 +84,8 @@ def main( environment, scrape_queue_name, thread_id):
                     get_end = time.time()
 
                     # Add the processing fields to the return object and re-serialize it
+                    sqs_message = {}
+
                     try:
                         output_json = json.loads(output_text)
                     except Exception as e:
@@ -95,17 +98,24 @@ def main( environment, scrape_queue_name, thread_id):
                     if not "error" in output_json:
                         break
                     time.sleep( 1)
-
                 output_json['url'] = url
                 output_json['site_id'] = site_id
                 output_json['product_id'] = product_id
                 output_json['event'] = event
-                output_message = json.dumps( output_json)
+
+                sqs_message['url'] = url
+                sqs_message['site_id'] = site_id
+                sqs_message['product_id'] = product_id
+                sqs_message['event'] = event
+                sqs_message['uuid'] = uuid.uuid4().urn[9:]
+
+                sqs_message = json.dumps(sqs_message)
+                s3_content = json.dumps(output_json)
                 #print(output_message)
 
                 # Add the scraped page to the processing queue ...
                 sqs_process = SQS_Queue('%s_process'%server_name)
-                sqs_process.put( output_message)
+                sqs_process.put(sqs_message, s3_content)
                 # ... and remove it from the scrape queue
                 sqs_scrape.task_done()
 
@@ -121,7 +131,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         environment = sys.argv[1] # e.g., UnitTest, see dictionary of queue names
         queue_name = "no queue"
-
+        
         for k in queue_names:
             if environment == k:
                 queue_name = queue_names[k]
