@@ -362,7 +362,7 @@ def setup_virtual_env(scrapyd=True, web_runner=True, web_runner_web=True):
         _setup_virtual_env_web_runner_web()
 
 
-def get_repos(branch='master'):
+def get_repos(branch='sc_production'):
     '''Download and install the main source repository'''
     puts(green('Updating repositories'))
 
@@ -600,7 +600,7 @@ def _common_tasks():
     setup_cron()
 
 
-def deploy_scrapyd(restart_scrapyd=False, branch='master'):
+def deploy_scrapyd(restart_scrapyd=False, branch='sc_production'):
     _common_tasks()
     setup_virtual_env(web_runner=False, web_runner_web=False)
     get_repos(branch=branch)
@@ -611,7 +611,7 @@ def deploy_scrapyd(restart_scrapyd=False, branch='master'):
     _run_scrapyd()
 
 
-def deploy_web_runner(branch='master'):
+def deploy_web_runner(branch='sc_production'):
     _common_tasks()
     setup_virtual_env(scrapyd=False, web_runner_web=False)
     get_repos(branch=branch)
@@ -620,7 +620,7 @@ def deploy_web_runner(branch='master'):
     _run_web_runner()
 
 
-def deploy_web_runner_web(branch='master'):
+def deploy_web_runner_web(branch='sc_production'):
     _common_tasks()
     setup_virtual_env(scrapyd=False, web_runner=False)
     get_repos(branch=branch)
@@ -628,7 +628,7 @@ def deploy_web_runner_web(branch='master'):
     _run_web_runner_web()
 
 
-def deploy(restart_scrapyd=False, branch='master'):
+def deploy(restart_scrapyd=False, branch='sc_production'):
     _common_tasks()
     setup_virtual_env()
     get_repos(branch=branch)
