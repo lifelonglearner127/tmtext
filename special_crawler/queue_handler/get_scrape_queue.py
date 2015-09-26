@@ -114,7 +114,7 @@ def main( environment, scrape_queue_name, thread_id):
 
                 # Add the scraped page to the processing queue ...
                 sqs_process = SQS_Queue('%s_process'%server_name)
-                sqs_process.put(sqs_message, s3_content)
+                sqs_process.put(sqs_message)
                 # ... and remove it from the scrape queue
                 sqs_scrape.task_done()
 

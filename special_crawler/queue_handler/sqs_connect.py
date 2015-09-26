@@ -42,7 +42,7 @@ class SQS_Queue():
 
     # Add message/a list of messages to the queue
     # Messages are strings (or at least serialized to strings)
-    def put(self, sqs_message, s3_content=None):
+    def put(self, sqs_message):
         m = Message()
         try:
             if isinstance(sqs_message, basestring):
