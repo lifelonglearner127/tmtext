@@ -151,7 +151,7 @@ def get_branch_for_task(task_data):
 
 
 def switch_branch_if_required(metadata):
-    branch_name = metadata.get('branch_name')
+    branch_name = metadata.get('branch_name', 'sc_production')
     if branch_name:
         logger.info("Checkout to branch %s", branch_name)
         cmd = 'git checkout -f {branch} && git pull origin {branch} && '\
