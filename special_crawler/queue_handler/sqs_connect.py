@@ -47,7 +47,6 @@ class SQS_Queue():
         m = Message()
         try:
             if isinstance(sqs_message, basestring):
-                print sqs_message
                 m.set_body(sqs_message)
 #                self.s3 = S3Connection('AKIAJPOFQWU54DCMDKLQ', '/aebM4IZ97NEwVnfS6Jys6sKVvDXa6eDZsB2X7gP')
                 bucket = self.s3.create_bucket('contentanalytcis.inc.ch.s3')  # bucket names must be unique
