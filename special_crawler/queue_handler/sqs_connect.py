@@ -27,11 +27,10 @@ used item from the queue.
 
 """
 
-from boto.s3.connection import S3Connection
+
 from boto.sqs.message import Message
 import boto.sqs
 import zlib
-import json
 
 class SQS_Queue():
     # Connect to the SQS Queue
@@ -42,25 +41,18 @@ class SQS_Queue():
 
     # Add message/a list of messages to the queue
     # Messages are strings (or at least serialized to strings)
-    def put(self, sqs_message):
+    def put(self, message):
         m = Message()
         try:
-            if isinstance(sqs_message, basestring):
-                m.set_body(sqs_message)
-                '''
-                s3 = S3Connection('AKIAJPOFQWU54DCMDKLQ', '/aebM4IZ97NEwVnfS6Jys6sKVvDXa6eDZsB2X7gP')
-                bucket = s3.create_bucket('contentanalytcis.inc.ch.s3')  # bucket names must be unique
-                key = bucket.new_key(sqs_message["server_name"] + sqs_message["site"] + sqs_message["product_id"])
-                key.set_contents_from_string(s3_content)
-                '''
+            if isinstance(message, basestring):
+                m.set_body(zlib.compress(message))
                 self.q.write(m)
         except NameError:
-            print "**********************"
-            if isinstance(sqs_message, str):
-                m.set_body(sqs_message)
+            if isinstance(message, str):
+                m.set_body(message)
                 self.q.write(m)
-        if isinstance(sqs_message, list) | isinstance(sqs_message, tuple):
-            for row in sqs_message:
+        if isinstance(message, list) | isinstance(message, tuple):
+            for row in message:
                 m.set_body(row)
                 self.q.write(m)
 
@@ -72,16 +64,7 @@ class SQS_Queue():
                 if timeout else self.q.get_messages()
             m = rs[0]
             self.currentM = m
-            '''
-            sqs_message = json.loads(m.get_body())
-            s3 = S3Connection('AKIAJPOFQWU54DCMDKLQ', '/aebM4IZ97NEwVnfS6Jys6sKVvDXa6eDZsB2X7gP')
-            bucket = s3.get_bucket('contentanalytcis.inc.ch.s3')  # bucket names must be unique
-            key = bucket.get_key(sqs_message["server_name"] + sqs_message["site"] + sqs_message["product_id"])
-            result_message = key.get_contents_as_string()
-            bucket.delete_key(sqs_message["uuid"])
-            return result_message
-            '''
-            return m.get_Body()
+            return m.get_body()
         else:
             raise Exception("Incompleted message exists, consider issuing \"task_done\" before getting another message off the Queue. Message : %s"%self.currentM)
 

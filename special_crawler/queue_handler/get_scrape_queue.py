@@ -13,7 +13,6 @@ import json
 import requests
 import threading
 import urllib
-import uuid
 from datetime import datetime
 
 # initialize the logger
@@ -74,7 +73,7 @@ def main( environment, scrape_queue_name, thread_id):
                 server_name = message_json['server_name']
                 product_id = message_json['product_id']
                 event = message_json['event']
-
+                
                 logger.info("Received: thread %d server %s url %s" % ( thread_id, server_name, url))
 
                 for i in range(3):
@@ -84,8 +83,6 @@ def main( environment, scrape_queue_name, thread_id):
                     get_end = time.time()
 
                     # Add the processing fields to the return object and re-serialize it
-                    sqs_message = {}
-
                     try:
                         output_json = json.loads(output_text)
                     except Exception as e:
@@ -98,26 +95,20 @@ def main( environment, scrape_queue_name, thread_id):
                     if not "error" in output_json:
                         break
                     time.sleep( 1)
+
                 output_json['url'] = url
                 output_json['site_id'] = site_id
                 output_json['product_id'] = product_id
                 output_json['event'] = event
-
-                sqs_message['url'] = url
-                sqs_message['site_id'] = site_id
-                sqs_message['product_id'] = product_id
-                sqs_message['event'] = event
-
-                sqs_message = json.dumps(sqs_message)
-                s3_content = json.dumps(output_json)
+                output_message = json.dumps( output_json)
                 #print(output_message)
 
                 # Add the scraped page to the processing queue ...
                 sqs_process = SQS_Queue('%s_process'%server_name)
-                sqs_process.put(sqs_message)
+                sqs_process.put( output_message)
                 # ... and remove it from the scrape queue
                 sqs_scrape.task_done()
-
+                
                 logger.info("Sent: thread %d server %s url %s" % ( thread_id, server_name, url))
 
             except Exception as e:
