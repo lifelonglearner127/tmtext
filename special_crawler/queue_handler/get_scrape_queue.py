@@ -107,7 +107,6 @@ def main( environment, scrape_queue_name, thread_id):
                 sqs_message['site_id'] = site_id
                 sqs_message['product_id'] = product_id
                 sqs_message['event'] = event
-                sqs_message['uuid'] = uuid.uuid4().urn[9:]
 
                 sqs_message = json.dumps(sqs_message)
                 s3_content = json.dumps(output_json)
