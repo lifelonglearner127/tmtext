@@ -164,21 +164,25 @@ class JcpenneyVariants(object):
                 stockstatus_list_by_variation.append(dict(zip(sleeve_list, stockstatus_list)))
 
             #color attribute
+            product_id = re.search('prod\.jump\?ppId=(.+?)$', self.tree_html.xpath("//link[@rel='canonical']/@href")[0]).group(1)
             color_list = self.tree_html.xpath("//ul[@id='" + product_id + "COLOR']//li[contains(@id, '" + product_id + "')]/a/img/@alt")
+            visible_color_list = []
             color_li_list = self.tree_html.xpath("//ul[@id='" + product_id + "COLOR']//li[contains(@id, '" + product_id + "')]")
 
             if color_list:
                 stockstatus_list = []
 
-                for color_li in color_li_list:
-                    if "class" in color_li:
-                        stockstatus_list.append(color_li.attrib["class"])
-                    else:
-                        stockstatus_list.append("")
+                for index, color_li in enumerate(color_li_list):
+                    if "showColor('{0}','{1}',".format(product_id, color_list[index]) in html.tostring(self.tree_html):
+                        visible_color_list.append(color_list[index])
+                        if "class" in color_li:
+                            stockstatus_list.append(color_li.attrib["class"])
+                        else:
+                            stockstatus_list.append("")
 
                 variation_key_list.append("color")
-                variation_values_list.append(color_list)
-                stockstatus_list_by_variation.append(dict(zip(color_list, stockstatus_list)))
+                variation_values_list.append(visible_color_list)
+                stockstatus_list_by_variation.append(dict(zip(visible_color_list, stockstatus_list)))
 
             variation_combinations_values = list(itertools.product(*variation_values_list))
 
