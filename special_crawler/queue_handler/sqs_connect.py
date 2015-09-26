@@ -50,7 +50,7 @@ class SQS_Queue():
                 m.set_body(sqs_message)
 #                self.s3 = S3Connection('AKIAJPOFQWU54DCMDKLQ', '/aebM4IZ97NEwVnfS6Jys6sKVvDXa6eDZsB2X7gP')
                 bucket = self.s3.create_bucket('contentanalytcis.inc.ch.s3')  # bucket names must be unique
-                key = bucket.new_key(sqs_message["server_name"] + sqs_message["site_id"] + sqs_message["product_id"])
+                key = bucket.new_key(sqs_message["server_name"] + sqs_message["site"] + sqs_message["product_id"])
                 key.set_contents_from_string(s3_content)
 
                 self.q.write(m)
@@ -75,7 +75,7 @@ class SQS_Queue():
             sqs_message = json.loads(m.get_body())
 
             bucket = self.s3.get_bucket('contentanalytcis.inc.ch.s3')  # bucket names must be unique
-            key = bucket.get_key(sqs_message["server_name"] + sqs_message["site_id"] + sqs_message["product_id"])
+            key = bucket.get_key(sqs_message["server_name"] + sqs_message["site"] + sqs_message["product_id"])
             result_message = key.get_contents_as_string()
             bucket.delete_key(sqs_message["uuid"])
             return result_message
