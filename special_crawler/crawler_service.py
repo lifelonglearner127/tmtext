@@ -63,6 +63,7 @@ from extract_cvs_data import CVSScraper
 from extract_hairshop24_data import HairShop24Scraper
 from extract_hagelshop_data import HagelShopScraper
 from extract_levi_data import LeviScraper
+from extract_dockers_data import DockersScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -133,7 +134,8 @@ SUPPORTED_SITES = {
                     "cvs": CVSScraper,
                     "hairshop24": HairShop24Scraper,
                     "hagelshop": HagelShopScraper,
-                    "levi": LeviScraper
+                    "levi": LeviScraper,
+                    "dockers": DockersScraper
                     }
 
 # add logger
