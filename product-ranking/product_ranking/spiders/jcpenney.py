@@ -159,10 +159,11 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         lot = _props.pop('lot') if 'lot' in _props else None
         sleeve = _props.pop('sleeve') if 'sleeve' in _props else None
         size = _props.pop('size') if 'size' in _props else None
+        inseam = _props.pop('inseam') if 'inseam' in _props else None
+        waist = _props.pop('waist') if 'waist' in _props else None
         # check if there are still some keys
         if _props.keys():
             self.log('Error: extra variants found, url %s' % response.url, WARNING)
-            assert False, _props
         raw_post_str = """
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.lotSKUSelectionChange=test
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.ppId={pp_id}
@@ -171,6 +172,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.selectedSKUAttributeName={attribute_name}
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.shipToCountry=US
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.COLOR={color}
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.INSEAM={inseam}
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.WAIST={waist}
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.NECK_SIZE={neck}
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SIZE={size}
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SLEEVE={sleeve}
@@ -182,6 +185,8 @@ _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.selecte
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.selectedSKUAttributeName=
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.shipToCountry=
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.COLOR=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.INSEAM=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.WAIST=
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.NECK_SIZE=
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SIZE=
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SLEEVE=
@@ -195,6 +200,8 @@ _dync
         _format_args['pp_type'] = 'regular'  # TODO: shouldn't this be constant?
         _format_args['lot_value'] = lot if lot else ''
         _format_args['size'] = size if size else ''
+        _format_args['waist'] = waist if waist else ''
+        _format_args['inseam'] = inseam if inseam else ''
 
         product = response.meta['product']
         # get attribute name
