@@ -372,7 +372,7 @@ def get_repos(branch='sc_production'):
         run('cd %s && git clone %s && cd %s && git checkout %s'
             % (REPO_BASE_PATH, REPO_URL, repo_path, branch))
     else:
-        run('cd %s && git checkout %s && git pull' % (repo_path, branch))
+        run('cd %s && git fetch && git checkout %s && git pull' % (repo_path, branch))
 
 
 def _configure_scrapyd():
