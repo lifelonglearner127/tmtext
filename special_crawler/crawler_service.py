@@ -64,6 +64,7 @@ from extract_hairshop24_data import HairShop24Scraper
 from extract_hagelshop_data import HagelShopScraper
 from extract_levi_data import LeviScraper
 from extract_dockers_data import DockersScraper
+from extract_houseoffraser_data import HouseoffraserScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -135,7 +136,8 @@ SUPPORTED_SITES = {
                     "hairshop24": HairShop24Scraper,
                     "hagelshop": HagelShopScraper,
                     "levi": LeviScraper,
-                    "dockers": DockersScraper
+                    "dockers": DockersScraper,
+                    "houseoffraser": HouseoffraserScraper
                     }
 
 # add logger
