@@ -2224,15 +2224,6 @@ class WalmartScraper(Scraper):
 
             return prices
 
-    def _find_between(self, s, first, last):
-        try:
-            start = s.index(first) + len(first)
-            end = s.index(last, start)
-            return s[start:end]
-        except ValueError:
-            return ""
-
-
     def _marketplace_out_of_stock(self):
         """Extracts info on whether currently unavailable from any marketplace seller - binary
         Uses functions that work on both old page design and new design.

@@ -441,6 +441,13 @@ class Scraper():
             text = text.replace('\00','')
         return text
 
+    def _find_between(self, s, first, last):
+        try:
+            start = s.index(first) + len(first)
+            end = s.index(last, start)
+            return s[start:end]
+        except ValueError:
+            return ""
 
     # Extract product info given a list of the type of info needed.
     # Return dictionary containing type of info as keys and extracted info as values.

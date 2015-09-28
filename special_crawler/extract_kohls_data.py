@@ -33,6 +33,9 @@ class KohlsScraper(Scraper):
         self.review_list = None
         self.is_review_checked = False
 
+        self.variants = None
+        self.is_variant_checked = False
+
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
@@ -230,7 +233,17 @@ class KohlsScraper(Scraper):
         return 0
 
     def _variants(self):
-        return self.kv._variants()
+        if self.is_variant_checked:
+            return self.variants
+
+        self.is_variant_checked = True
+
+        self.variants = self.kv._variants()
+
+        return self.variants
+
+    def _swatches(self):
+        return self.kv.swatches()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -249,6 +262,16 @@ class KohlsScraper(Scraper):
         for index, url in enumerate(image_urls):
             if "?wid=" in url:
                 image_urls[index] = url[:url.find("?wid=")]
+
+        variants = self._variants()
+
+        if variants:
+            for variant in variants:
+                try:
+                    if variant["image_url"] and variant["image_url"] not in image_urls:
+                        image_urls.append(variant["image_url"])
+                except:
+                    pass
 
         if image_urls:
             return image_urls
@@ -500,6 +523,7 @@ class KohlsScraper(Scraper):
         "ingredients": _ingredients, \
         "ingredient_count": _ingredients_count,
         "variants": _variants,
+        "swatches": _swatches,
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
