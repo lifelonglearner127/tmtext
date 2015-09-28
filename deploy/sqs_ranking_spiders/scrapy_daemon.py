@@ -208,7 +208,7 @@ def increment_metric_counter(metric_name, redis_db):
                            "with exception '%s'", metric_name, e)
 
 
-def read_msg_from_sqs(queue_name_or_instance, timeout=None):
+def read_msg_from_sqs(queue_name_or_instance, timeout=None, attributes=None):
     if isinstance(queue_name_or_instance, (str, unicode)):
         sqs_queue = SQS_Queue(queue_name_or_instance)
     else:
@@ -223,7 +223,7 @@ def read_msg_from_sqs(queue_name_or_instance, timeout=None):
         return  # the queue is empty
     try:
         # Get message from SQS
-        message = sqs_queue.get(timeout)
+        message = sqs_queue.get(timeout, attributes)
     except IndexError as e:
         logger.warning("Failed to get message from queue. Maybe it's empty.")
         # This exception will most likely be triggered because you were
@@ -237,6 +237,8 @@ def read_msg_from_sqs(queue_name_or_instance, timeout=None):
         return
     try:
         message = json.loads(message)
+        # add attributes data to message, like date when message was sent
+        message['attributes'] = sqs_queue.get_attributes()
     except Exception, e:
         logger.error("Message was provided not in json format. %s.", str(e))
         return
@@ -1061,8 +1063,8 @@ class ScrapyTask(object):
     def is_finised_ok(self):
         return self.finished_ok
 
-    def get_cached_result(self):
-        res = get_task_result_from_cache(self.task_data)
+    def get_cached_result(self, queue_name):
+        res = get_task_result_from_cache(self.task_data, queue_name)
         if res:
             self.send_current_status_to_sqs('finished')
             dump_cached_data_into_sqs(
@@ -1117,7 +1119,7 @@ class ScrapyTask(object):
         put_file_into_s3(AMAZON_BUCKET_NAME, progress_fname)
 
 
-def get_task_result_from_cache(task):
+def get_task_result_from_cache(task, queue_name):
     """try to get cached result for some task"""
     task_id = task.get('task_id', 0)
     server = task.get('server_name', '')
@@ -1125,7 +1127,7 @@ def get_task_result_from_cache(task):
         logger.info('Ignoring cache result for task %s (%s).', task_id, server)
         return None
     url = CACHE_HOST + CACHE_URL_GET
-    data = dict(task=json.dumps(task))
+    data = dict(task=json.dumps(task), queue=queue_name)
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
                              headers={'Authorization': CACHE_AUTH})
@@ -1250,6 +1252,7 @@ def main():
         [logger.info(_.report()) for _ in tasks]
         logger.info('#'*10 + 'FINISH TASKS REPORT' + '#'*10)
 
+    attributes = 'SentTimestamp'  # additional data to get with sqs messages
     add_timeout = 30  # add to visibility timeout
     # names of the queues in SQS, ordered by priority
     q_keys = ['urgent', 'production', 'test', 'dev']
@@ -1263,7 +1266,8 @@ def main():
         if TEST_MODE:
             msg = test_read_msg_from_fs(TASK_QUEUE_NAME)
         else:
-            msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries+add_timeout)
+            msg = read_msg_from_sqs(
+                TASK_QUEUE_NAME, max_tries+add_timeout, attributes)
         max_tries -= 1
         if msg is None:  # no task
             # if failed to get task from current queue,
@@ -1354,15 +1358,15 @@ def prepare_test_data():
     tasks = [dict(
         task_id=4443, site='walmart', searchterms_str='iphone',
         server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 50}
+        cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
     ), dict(
         task_id=4444, site='amazon', searchterms_str='iphone',
         server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 1}
+        cmd_args={'quantity': 1}, attributes={'SentTimestamp': '1443426145373'}
     ), dict(
         task_id=4445, site='target', searchterms_str='iphone',
         server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 50}
+        cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
     )]
     files = [open('/tmp/' + q, 'w') for q in QUEUES_LIST.itervalues()]
     for fh in files:
