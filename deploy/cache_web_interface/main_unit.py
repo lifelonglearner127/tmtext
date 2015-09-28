@@ -127,6 +127,7 @@ def stats():
             cache.get_most_popular_cached_items(10, False)
         context['cache_most_popular_term'] = \
             cache.get_most_popular_cached_items(10, True)
+        context['urgent_stats'] = cache.get_urgent_stats()
         return render_template('stats.html', **context)
     except Exception as e:
         return str(e)
@@ -152,7 +153,8 @@ def get_cache_item():
     get item from sqs cache
     """
     task = request.form['task']
-    from_cache, result = cache.get_result(task)
+    queue = request.form['queue']
+    from_cache, result = cache.get_result(task, queue)
     if result:
         return make_response(result, 200)
     elif from_cache:

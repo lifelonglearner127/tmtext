@@ -32,15 +32,18 @@ class SQS_Queue():
 
     # Get an item from the queue
     # Note : it remains on the queue until you call task_done
-    def get(self, timeout=None):
+    def get(self, timeout=None, attributes=None):
         if self.currentM is None:
-            rs = self.q.get_messages(visibility_timeout=timeout) \
-                if timeout else self.q.get_messages()
+            rs = self.q.get_messages(
+                visibility_timeout=timeout, attributes=attributes)
             m = rs[0]
             self.currentM = m
             return m.get_body()
         else:
             raise Exception("Incompleted message exists, consider issuing \"task_done\" before getting another message off the Queue. Message : %s"%self.currentM)
+
+    def get_attributes(self):
+        return self.currentM.attributes
 
     # SQS won't remove an item from the queue until you tell it to
     # this is how you tell it to

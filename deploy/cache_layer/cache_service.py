@@ -2,7 +2,7 @@ import json
 from time import time, mktime
 from redis import StrictRedis
 from zlib import compress, decompress
-from datetime import date
+from datetime import date, datetime
 
 from cache_layer import REDIS_HOST, REDIS_PORT
 
@@ -24,6 +24,7 @@ class SqsCache(object):
     REDIS_CACHE_STATS_TERM = 'cached_count_term'  # zset
     REDIS_COMPLETED_TASKS = 'completed_tasks'  # zset, count completed tasks
     REDIS_INSTANCES_COUNTER = 'daily_sqs_instances_counter'
+    REDIS_URGENT_STATS = 'urgent_stats'
 
     def __init__(self, db=None):
         self.db = db if db else StrictRedis(REDIS_HOST, REDIS_PORT)
@@ -53,7 +54,7 @@ class SqsCache(object):
         res = ':'.join(res)
         return is_term, res
 
-    def get_result(self, task_str):
+    def get_result(self, task_str, queue):
         """
         retrieve cached result
         freshness in minutes
@@ -63,6 +64,13 @@ class SqsCache(object):
         is_term, uniq_key = self._task_to_key(task)
         if not uniq_key:
             return False, None
+        if queue.endswith('urgent'):  # save how long task was in the queue
+            sent_time = task_str.get('attributes', {}).get('SentTimestamp', '')
+            if sent_time:
+                sent_time = int(sent_time) / 1000
+                cur_time = time()
+                self.db.zadd(
+                    self.REDIS_URGENT_STATS, int(cur_time-sent_time), cur_time)
         score = self.db.zscore(self.REDIS_CACHE_TIMESTAMP, uniq_key)
         if not score:  # if not found item in cache
             return False, None
@@ -120,7 +128,8 @@ class SqsCache(object):
         return \
             (self.db.zremrangebyrank(self.REDIS_CACHE_STATS_URL, 0, -1),
              self.db.zremrangebyrank(self.REDIS_CACHE_STATS_TERM, 0, -1),
-             self.db.zremrangebyrank(self.REDIS_COMPLETED_TASKS, 0, -1))
+             self.db.zremrangebyrank(self.REDIS_COMPLETED_TASKS, 0, -1),
+             self.db.zremrangebyrank(self.REDIS_URGENT_STATS, 0, -1))
 
     def purge_cache(self):
         """
@@ -193,6 +202,23 @@ class SqsCache(object):
             key = self.REDIS_CACHE_STATS_URL
         data = self.db.zrange(key, 0, -1, withscores=True, score_cast_func=int)
         return len(data), sum([_[1] for _ in data])
+
+    def get_urgent_stats(self):
+        """
+        returns tuple of four items:
+          - item with lowest time stayed in queue
+          - item with biggest time stayed in queue
+          - average time, for which items stay in queue
+          - count of items, which were in queue more then hour
+         """
+        data = self.db.zrange(self.REDIS_URGENT_STATS, 0, -1,
+                              withscores=True, score_cast_func=int)
+        data_more_then_hour = self.db.zcount(
+            self.REDIS_URGENT_STATS, 60*60, 999999)
+        min_val = data[0]
+        max_val = data[-1]
+        avg_val = sum([d[1] for d in data]) / float(len(data))
+        return min_val, max_val, avg_val, data_more_then_hour
 
     def get_cache_settings(self):
         """
