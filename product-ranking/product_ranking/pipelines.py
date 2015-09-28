@@ -290,9 +290,10 @@ class MergeSubItems(object):
     def spider_closed(self, spider):
         if self._subitem_mode:  # rewrite output only if we're in "subitem mode"
             output_fname = self._get_output_filename(spider)
-            with open(output_fname, 'w') as fh:
-                for url, item in self._mapper.items():
-                    fh.write(json.dumps(item, default=self._serializer)+'\n')
+            if output_fname:
+                with open(output_fname, 'w') as fh:
+                    for url, item in self._mapper.items():
+                        fh.write(json.dumps(item, default=self._serializer)+'\n')
 
     def process_item(self, item, spider):
         _subitem = item.get('_subitem', None)

@@ -56,6 +56,7 @@ class WalmartVariants(object):
 
                         for variant in attribute["variants"]:
                             swatch_info = {}
+                            swatch_info["swatch_name"] = swatch_name
                             swatch_info[swatch_name] = variant["name"]
 
                             if "imageAssets" in variant:

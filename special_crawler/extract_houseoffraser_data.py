@@ -9,35 +9,33 @@ from lxml import html, etree
 import time
 import requests
 from extract_data import Scraper
-from spiders_shared_code.levi_variants import LeviVariants
 
-class LeviScraper(Scraper):
+
+class HouseoffraserScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.levi.com/US/en_US/<category-name>/p/<product-id>"
-    REVIEW_URL = "http://levistrauss.ugc.bazaarvoice.com/9090-en_us/{0}/reviews.djs?format=embeddedhtml"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.houseoffraser.co.uk/<product-name>/<product-id>,default,pd.html"
+    REVIEW_URL = "http://homedepot.ugc.bazaarvoice.com/1999aa/{0}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
         self.product_json = None
-        self.buy_stack_json = None
         # whether product has any webcollage media
         self.review_json = None
         self.review_list = None
         self.is_review_checked = False
-        self.lv = LeviVariants()
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.levi.com/US/en_US/.*/p/[a-zA-Z0-9\-]+$", self.product_page_url)
+        m = re.match(r"^http://www.houseoffraser.co.uk/.*?/[0-9]+,default,pd.html$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -49,17 +47,11 @@ class LeviScraper(Scraper):
             False otherwise
         """
         try:
-            self.lv.setupCH(self.tree_html)
-        except:
-            pass
-
-        try:
             itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
 
             if itemtype != "product":
                 raise Exception()
 
-            self._extract_product_json()
         except Exception:
             return True
 
@@ -74,16 +66,10 @@ class LeviScraper(Scraper):
             return
 
         try:
-            product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\n")
+            product_json_text = self._find_between(html.tostring(self.tree_html), "THD.PIP.products.primary = new THD.PIP.Product(", ");\r")
             self.product_json = json.loads(product_json_text)
         except:
             self.product_json = None
-
-        try:
-            buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
-            self.buy_stack_json = json.loads(buy_stack_json_text)
-        except:
-            self.buy_stack_json = None
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -97,10 +83,11 @@ class LeviScraper(Scraper):
         return None
 
     def _product_id(self):
-        return self.product_json["product"][0]["product_id"]
+        product_id = self.tree_html.xpath('//h2[@class="product_details"]//span[@itemprop="productID"]/text()')[0]
+        return product_id
 
     def _site_id(self):
-        return self.product_json["product"][0]["product_id"]
+        return None
 
     def _status(self):
         return "success"
@@ -114,44 +101,64 @@ class LeviScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
+        return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
 
     def _product_title(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
+        return self.tree_html.xpath("//h1[@class='product_title']/text()")[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
+        return self.tree_html.xpath("//meta[@property='og:title']/@content")[0].strip()
 
     def _model(self):
-        return self.tree_html.xpath("//meta[@itemprop='model']/@content")[0]
+        self._extract_product_json()
+
+        return self.product_json["info"]["modelNumber"]
 
     def _upc(self):
-        return None
+        print '\n\n\n\n\n'
+        scripts = self.tree_html.xpath('//script//text()')
+        for script in scripts:
+            var = re.findall(r'CI_ItemUPC=(.*?);', script)
+            print var
+            if len(var) > 0:
+                var = var[0]
+                break
+        var = re.findall(r'[0-9]+', str(var))[0]
+        return var
 
     def _features(self):
-        features_string = ""
+        features_td_list = self.tree_html.xpath('//table[contains(@class, "tablePod tableSplit")]//td')
+        features_list = []
 
-        for colorid in self.buy_stack_json["colorid"]:
-            features_string = self.buy_stack_json["colorid"][colorid]["fabric"]
-            break
+        for index, val in enumerate(features_td_list):
+            if (index + 1) % 2 == 0 and features_td_list[index - 1].xpath(".//text()")[0].strip():
+                features_list.append(features_td_list[index - 1].xpath(".//text()")[0].strip() + " " + features_td_list[index].xpath(".//text()")[0].strip())
 
-        features = features_string.split("<br>")
-
-        if features:
-            return features
+        if features_list:
+            return features_list
 
         return None
 
     def _feature_count(self):
-        features = self._features()
+        if self._features():
+            return len(self._features())
 
-        if features:
-            return len(features)
+        return None
 
-        return 0
+    def _model_meta(self):
+        return None
 
     def _description(self):
-        short_description = self.tree_html.xpath("//meta[@property='og:description']/@content")[0].strip()
+        description_block = self.tree_html.xpath("//div[contains(@class, 'main_description')]")[0]
+        short_description = ""
+
+        for description_item in description_block:
+            if description_item.tag == "ul":
+                break
+
+            short_description = short_description + html.tostring(description_item)
+
+        short_description = short_description.strip()
 
         if short_description:
             return short_description
@@ -159,13 +166,25 @@ class LeviScraper(Scraper):
         return None
 
     def _long_description(self):
-        for colorid in self.buy_stack_json["colorid"]:
-            return self.buy_stack_json["colorid"][colorid]["fabric"]
+        description_block = self.tree_html.xpath("//div[contains(@class, 'main_description')]")[0]
+        long_description = ""
+        long_description_start = False
+
+        for description_item in description_block:
+            if description_item.tag == "ul":
+                long_description_start = True
+
+            if long_description_start:
+                long_description = long_description + html.tostring(description_item)
+
+        long_description = long_description.strip()
+
+        if long_description:
+            return long_description
 
         return None
 
-    def _variants(self):
-        return self.lv._variants()
+
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -173,14 +192,17 @@ class LeviScraper(Scraper):
     def _mobile_image_same(self):
         return None
 
-    def _image_urls(self):
-        image_urls = []
+    def _image_urls(self):        
+        self._extract_product_json()
+        media_list = self.product_json["media"]["mediaList"]
+        image_list = []
 
-        for url in self.buy_stack_json["colorid"][self._product_id()]["altViews"]:
-            image_urls.append(self.buy_stack_json["colorid"][self._product_id()]["imageURL"] + url)
+        for media_item in media_list:
+            if media_item["mediaType"].startswith("IMAGE") and int(media_item["width"]) == 400:
+                image_list.append(media_item["location"])
 
-        if image_urls:
-            return image_urls
+        if image_list:
+            return image_list
 
         return None
 
@@ -191,15 +213,41 @@ class LeviScraper(Scraper):
         return 0
 
     def _video_urls(self):
+        self._extract_product_json()
+        media_list = self.product_json["media"]["mediaList"]
+        video_list = []
+
+        for media_item in media_list:
+            if "video" in media_item:
+                video_list.append(media_item["video"])
+
+        if video_list:
+            return video_list
+
         return None
 
     def _video_count(self):
+        videos = self._video_urls()
+
+        if videos:
+            return len(videos)
+
         return 0
 
     def _pdf_urls(self):
+        moreinfo = self.tree_html.xpath('//div[@id="moreinfo_wrapper"]')[0]
+        html = etree.tostring(moreinfo)
+        pdf_url_list = re.findall(r'(http://.*?\.pdf)', html)
+
+        if pdf_url_list:
+            return pdf_url_list
+
         return None
 
     def _pdf_count(self):
+        if self._pdf_urls():
+            return len(self._pdf_urls())
+
         return 0
 
     def _webcollage(self):
@@ -297,29 +345,42 @@ class LeviScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return "$" + str(self.product_json["product"][0]["online_price"])
+        self._extract_product_json()
+
+        return "$" + '{0:,}'.format(float(self.product_json["itemExtension"]["displayPrice"]))
 
     def _price_amount(self):
-        return float(self.product_json["product"][0]["online_price"])
+        self._extract_product_json()
+
+        return float(self.product_json["itemExtension"]["displayPrice"])
 
     def _price_currency(self):
-        return "USD"
+        return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
 
     def _in_stores(self):
+        self._extract_product_json()
+
+        if self.product_json["itemAvailability"]["availableInStore"] == True:
+            return 1
+
         return 0
 
     def _site_online(self):
+        self._extract_product_json()
+        '''
+        if self.product_json["itemAvailability"]["availableOnlineStore"] == True:
+            return 1
+        '''
         return 1
 
     def _site_online_out_of_stock(self):
-        out_of_stock = 1
+        self._extract_product_json()
 
-        for sku in self.buy_stack_json["sku"]:
-            if self.buy_stack_json["sku"][sku]["stock"] > 0:
-                out_of_stock = 0
-                break
+        for message in self.product_json["storeSkus"][0]["storeAvailability"]["itemAvilabilityMessages"]:
+            if message["messageValue"] == u'Out Of Stock Online':
+                return 1
 
-        return out_of_stock
+        return 0
 
     def _in_stores_out_of_stock(self):
         return 0
@@ -344,13 +405,24 @@ class LeviScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        return [self.product_json["page"]["page_department"], self.product_json["page"]["page_category"]]
+        scripts = self.tree_html.xpath('//script//text()')
+        for script in scripts:
+            jsonvar = re.findall(r'BREADCRUMB_JSON = (.*?);', script)
+            if len(jsonvar) > 0:
+                jsonvar = jsonvar[0]
+                break
+        jsonvar = json.loads(jsonvar)
+        all = jsonvar['bcEnsightenData']['contentSubCategory'].split(u'\u003e')
+        return all
 
     def _category_name(self):
-        return self.product_json["page"]["page_category"]
-
+        return self._categories()[-1]
+    
     def _brand(self):
-        return self.product_json["page"]["brand"]
+        self._extract_product_json()
+
+        return self.product_json["info"]["brandName"]
+
 
 
     ##########################################
@@ -385,9 +457,9 @@ class LeviScraper(Scraper):
         "upc" : _upc,\
         "features" : _features, \
         "feature_count" : _feature_count, \
+        "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
-        "variants": _variants, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\

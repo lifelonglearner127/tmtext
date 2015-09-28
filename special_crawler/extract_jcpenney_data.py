@@ -76,14 +76,6 @@ class JcpenneyScraper(Scraper):
 
         return False
 
-    def _find_between(self, s, first, last):
-        try:
-            start = s.index(first) + len(first)
-            end = s.index(last, start)
-            return s[start:end]
-        except ValueError:
-            return ""
-
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -170,6 +162,9 @@ class JcpenneyScraper(Scraper):
     def _variants(self):
         return self.jv._variants()
 
+    def _swatches(self):
+        return self.jv.swatches()
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -185,7 +180,15 @@ class JcpenneyScraper(Scraper):
         if not image_urls:
             return None
 
-        if len(image_urls) > 1:
+        swatches = self._swatches()
+
+        for swatch in swatches:
+            if swatch["hero_image"] not in image_urls:
+                image_urls.append(swatch["hero_image"])
+
+        if swatches:
+            return image_urls[2:]
+        elif len(image_urls) > 1:
             return image_urls[1:]
         else:
             return image_urls
@@ -541,7 +544,7 @@ class JcpenneyScraper(Scraper):
         "ingredients": _ingredients, \
         "ingredient_count": _ingredients_count,
         "variants": _variants,
-
+        "swatches": _swatches,
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \

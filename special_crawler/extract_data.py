@@ -397,7 +397,12 @@ class Scraper():
                 self.is_timeout = True
                 self.ERROR_RESPONSE["failure_type"] = "Timeout"
                 return
-
+            except urllib2.HTTPError, err:
+                if err.code == 404:
+                    self.ERROR_RESPONSE["failure_type"] = "HTTP 404 - Page Not Found"
+                    return
+                else:
+                    raise
             try:
                 # replace NULL characters
                 contents = self._clean_null(contents)
@@ -436,6 +441,13 @@ class Scraper():
             text = text.replace('\00','')
         return text
 
+    def _find_between(self, s, first, last):
+        try:
+            start = s.index(first) + len(first)
+            end = s.index(last, start)
+            return s[start:end]
+        except ValueError:
+            return ""
 
     # Extract product info given a list of the type of info needed.
     # Return dictionary containing type of info as keys and extracted info as values.
