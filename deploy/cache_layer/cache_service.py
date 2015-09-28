@@ -65,7 +65,7 @@ class SqsCache(object):
         if not uniq_key:
             return False, None
         if queue.endswith('urgent'):  # save how long task was in the queue
-            sent_time = task_str.get('attributes', {}).get('SentTimestamp', '')
+            sent_time = task.get('attributes', {}).get('SentTimestamp', '')
             if sent_time:
                 sent_time = int(sent_time) / 1000
                 cur_time = time()
@@ -215,9 +215,14 @@ class SqsCache(object):
                               withscores=True, score_cast_func=int)
         data_more_then_hour = self.db.zcount(
             self.REDIS_URGENT_STATS, 60*60, 999999)
-        min_val = data[0]
-        max_val = data[-1]
-        avg_val = sum([d[1] for d in data]) / float(len(data))
+        if data:
+            min_val = data[0][1]
+            max_val = data[-1][1]
+            avg_val = sum([d[1] for d in data]) / float(len(data))
+        else:
+            min_val = 0
+            max_val = 0
+            avg_val = 0
         return min_val, max_val, avg_val, data_more_then_hour
 
     def get_cache_settings(self):

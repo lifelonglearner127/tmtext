@@ -153,7 +153,12 @@ def get_cache_item():
     get item from sqs cache
     """
     task = request.form['task']
-    queue = request.form['queue']
+    try:
+        queue = request.form['queue']
+        if not queue:
+            raise Exception
+    except:
+        queue = ''
     from_cache, result = cache.get_result(task, queue)
     if result:
         return make_response(result, 200)
