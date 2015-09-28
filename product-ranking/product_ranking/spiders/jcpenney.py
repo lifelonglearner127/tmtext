@@ -161,6 +161,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         size = _props.pop('size') if 'size' in _props else None
         inseam = _props.pop('inseam') if 'inseam' in _props else None
         waist = _props.pop('waist') if 'waist' in _props else None
+        chest = _props.pop('chest') if 'chest' in _props else None
+        length = _props.pop('length') if 'length' in _props else None
         # check if there are still some keys
         if _props.keys():
             self.log('Error: extra variants found, url %s' % response.url, WARNING)
@@ -172,6 +174,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.selectedSKUAttributeName={attribute_name}
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.shipToCountry=US
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.COLOR={color}
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.CHEST={chest}
+/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.LENGTH={length}
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.INSEAM={inseam}
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.WAIST={waist}
 /com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.NECK_SIZE={neck}
@@ -190,6 +194,8 @@ _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSele
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.NECK_SIZE=
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SIZE=
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SLEEVE=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.CHEST=
+_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.LENGTH=
 _D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.sucessUrl=
 _DARGS=/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp
 _dynSessConf=
@@ -202,6 +208,8 @@ _dync
         _format_args['size'] = size if size else ''
         _format_args['waist'] = waist if waist else ''
         _format_args['inseam'] = inseam if inseam else ''
+        _format_args['chest'] = chest if chest else ''
+        _format_args['length'] = length if length else ''
 
         product = response.meta['product']
         # get attribute name
