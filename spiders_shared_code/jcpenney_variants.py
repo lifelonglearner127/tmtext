@@ -95,6 +95,40 @@ class JcpenneyVariants(object):
                 variation_values_list.append(size_list)
                 stockstatus_list_by_variation.append(dict(zip(size_list, stockstatus_list)))
 
+            #length attribute
+            length_list = self.tree_html.xpath("//ul[@id='" + product_id + "LENGTH']//li[@id='length']/a/@title")
+            length_li_list = self.tree_html.xpath("//ul[@id='" + product_id + "LENGTH']//li[@id='length']")
+
+            if length_list:
+                stockstatus_list = []
+
+                for length_li in length_li_list:
+                    if "class" in length_li.attrib:
+                        stockstatus_list.append(length_li.attrib["class"])
+                    else:
+                        stockstatus_list.append("")
+
+                variation_key_list.append("length")
+                variation_values_list.append(length_list)
+                stockstatus_list_by_variation.append(dict(zip(length_list, stockstatus_list)))
+
+            #chest attribute
+            chest_list = self.tree_html.xpath("//ul[@id='" + product_id + "CHEST']//li[@id='chest']/a/@title")
+            chest_li_list = self.tree_html.xpath("//ul[@id='" + product_id + "CHEST']//li[@id='chest']")
+
+            if chest_list:
+                stockstatus_list = []
+
+                for chest_li in chest_li_list:
+                    if "class" in chest_li.attrib:
+                        stockstatus_list.append(chest_li.attrib["class"])
+                    else:
+                        stockstatus_list.append("")
+
+                variation_key_list.append("chest")
+                variation_values_list.append(chest_list)
+                stockstatus_list_by_variation.append(dict(zip(chest_list, stockstatus_list)))
+
             #waist attribute
             waist_list = self.tree_html.xpath("//ul[@id='" + product_id + "WAIST']//li[@id='waist']/a/@title")
             waist_li_list = self.tree_html.xpath("//ul[@id='" + product_id + "WAIST']//li[@id='waist']")
