@@ -3,6 +3,7 @@ import json
 import lxml.html
 import itertools
 import re
+from pprint import pprint
 
 
 class MacysVariants(object):
@@ -33,6 +34,8 @@ class MacysVariants(object):
             size_list = []
             type_list = []
 
+            exists_map = {}
+
             for variant_item in variants_json:
                 stockstatus_for_variants = {}
                 properties = {}
@@ -55,6 +58,9 @@ class MacysVariants(object):
 
                 if not properties:
                     continue
+
+                color, size = properties['color'], properties['size']
+                exists_map[(color, size)] = True
 
                 if variation_combination in instock_variation_combinations_values:
                     continue
@@ -101,6 +107,7 @@ class MacysVariants(object):
             variation_combinations_values = list(itertools.product(*variation_values_list))
             variation_combinations_values = map(list, variation_combinations_values)
             outofstock_variation_combinations_values = [variation_combination for variation_combination in variation_combinations_values if variation_combination not in instock_variation_combinations_values]
+            outofstock_variation_combinations_values = list(itertools.ifilter(lambda x: (x[0], x[1]) not in exists_map, outofstock_variation_combinations_values))
 
             if outofstock_variation_combinations_values:
                 for variation_combination in outofstock_variation_combinations_values:
