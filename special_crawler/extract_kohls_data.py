@@ -263,13 +263,13 @@ class KohlsScraper(Scraper):
             if "?wid=" in url:
                 image_urls[index] = url[:url.find("?wid=")]
 
-        variants = self._variants()
+        swatches = self._swatches()
 
-        if variants:
-            for variant in variants:
+        if swatches:
+            for swatch in swatches:
                 try:
-                    if variant["image_url"] and variant["image_url"] not in image_urls:
-                        image_urls.append(variant["image_url"])
+                    if swatch["thumb_image"] and swatch["thumb_image"] not in image_urls:
+                        image_urls.append(swatch["thumb_image"])
                 except:
                     pass
 

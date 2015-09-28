@@ -26,6 +26,38 @@ class JcpenneyVariants(object):
         fmt = "jpg"
         return main_part.format(id=image_id, wid=wid, hei=hei, fmt=fmt)
 
+    def _find_between(self, s, first, last):
+        try:
+            start = s.index(first) + len(first)
+            end = s.index(last, start)
+            return s[start:end]
+        except ValueError:
+            return ""
+
+    def swatches(self):
+        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+        product_id = re.search('prod\.jump\?ppId=(.+?)$', canonical_link).group(1)
+
+        swatch_list = []
+
+        for swatch in self.tree_html.xpath("//div[@id='color_chooser_{0}']//a[@class='swatch']".format(product_id)):
+#            image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
+
+            image_id = self._find_between(swatch.xpath("./@onclick")[0], "'{}','".format(product_id), "')")
+            swatch_info = {}
+            swatch_info["swatch_name"] = "color"
+            swatch_info["color"] = swatch.xpath("./img/@alt")[0]
+            swatch_info["hero"] = 1
+            swatch_info["thumb"] = 1
+            swatch_info["hero_image"] = "http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % image_id
+            swatch_info["thumb_image"] = swatch.xpath("./img/@src")[0]
+            swatch_list.append(swatch_info)
+
+        if swatch_list:
+            return swatch_list
+
+        return None
+
     def _variants(self):
         try:
             canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]

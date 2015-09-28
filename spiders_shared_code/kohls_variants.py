@@ -40,7 +40,7 @@ class KohlsVariants(object):
             swatch_info["hero"] = 1
             swatch_info["thumb"] = 1
             swatch_info["hero_image"] = self._find_between(swatch.xpath("./@rel")[0], "", "?wid=")
-            swatch_info["thumb_image"] = self._find_between(swatch.xpath("./@style")[0], "background: url('", "?wid=")
+            swatch_info["thumb_image"] = self._find_between(swatch.xpath("./@style")[0], "background: url('", "')")
             swatch_list.append(swatch_info)
 
         if swatch_list:
