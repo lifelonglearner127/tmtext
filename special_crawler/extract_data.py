@@ -397,7 +397,12 @@ class Scraper():
                 self.is_timeout = True
                 self.ERROR_RESPONSE["failure_type"] = "Timeout"
                 return
-
+            except urllib2.HTTPError, err:
+                if err.code == 404:
+                    self.ERROR_RESPONSE["failure_type"] = "HTTP 404 - Page Not Found"
+                    return
+                else:
+                    raise
             try:
                 # replace NULL characters
                 contents = self._clean_null(contents)
