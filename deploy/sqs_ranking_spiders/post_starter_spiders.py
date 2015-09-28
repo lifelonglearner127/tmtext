@@ -48,7 +48,8 @@ def _create_http_proxies_list(fpath, host='tprox.contentanalyticsinc.com'):
 
 def git_checkout(branch):
     cmd = 'cd /home/spiders/repo/tmtext && ' \
-          'git checkout -f {0} && ' \
+          'git fetch && ' \
+          'git checkout {0} && ' \
           'git pull origin {0}'.format(branch)
     os.system(cmd)
 
