@@ -186,7 +186,9 @@ class JcpenneyScraper(Scraper):
             if swatch["hero_image"] not in image_urls:
                 image_urls.append(swatch["hero_image"])
 
-        if len(image_urls) > 1:
+        if swatches:
+            return image_urls[2:]
+        elif len(image_urls) > 1:
             return image_urls[1:]
         else:
             return image_urls
