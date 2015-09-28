@@ -1128,6 +1128,7 @@ def get_task_result_from_cache(task, queue_name):
         return None
     url = CACHE_HOST + CACHE_URL_GET
     data = dict(task=json.dumps(task), queue=queue_name)
+    logger.info('Checking cache with data: %s', data)
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
                              headers={'Authorization': CACHE_AUTH})
