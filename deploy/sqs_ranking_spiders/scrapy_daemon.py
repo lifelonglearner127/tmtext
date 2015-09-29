@@ -1302,7 +1302,7 @@ def main():
         # if started, remove from the queue and run
         task = ScrapyTask(queue, task_data, listener)
         # check for cached response
-        if task.get_cached_result(QUEUES_LIST):
+        if task.get_cached_result(TASK_QUEUE_NAME):
             # if found response in cache, upload data, delete task from sqs
             task.queue.task_done()
             cache_complete_task(task_data)
