@@ -578,8 +578,8 @@ class ScrapyTask(object):
             # maybe should be changed to product_url
             additional_part = 'single-product-url-request'
         job_name += '____' + additional_part + '____' + site
-        # job_name += '____' + site + '____' + get_random_hash()
-        return job_name
+        # truncate resulting string as file name limitation is 256 characters
+        return job_name[:200]
 
     def _parse_signal_settings(self, signal_settings):
         """
@@ -1128,7 +1128,6 @@ def get_task_result_from_cache(task, queue_name):
         return None
     url = CACHE_HOST + CACHE_URL_GET
     data = dict(task=json.dumps(task), queue=queue_name)
-    logger.info('Checking cache with data: %s', data)
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
                              headers={'Authorization': CACHE_AUTH})
