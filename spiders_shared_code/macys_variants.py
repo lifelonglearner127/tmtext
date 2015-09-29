@@ -3,7 +3,6 @@ import json
 import lxml.html
 import itertools
 import re
-from pprint import pprint
 
 
 class MacysVariants(object):
@@ -19,6 +18,8 @@ class MacysVariants(object):
 
     def _variants(self):
         try:
+            colors = self.tree_html.xpath('//img[@class="colorSwatch"]/@alt')
+            sizes = self.tree_html.xpath('//li[@class=" size"]/@title')
             page_raw_text = lxml.html.tostring(self.tree_html)
             product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0].strip()
             variants_json = json.loads(re.search('MACYS\.pdp\.upcmap\["' + product_id + '"\] = (.+?);\nMACYS\.pdp', page_raw_text).group(1))
@@ -33,16 +34,17 @@ class MacysVariants(object):
             color_list = []
             size_list = []
             type_list = []
-
             exists_map = {}
 
             for variant_item in variants_json:
+
                 stockstatus_for_variants = {}
                 properties = {}
                 variation_combination = []
 
                 if variant_item["color"] and variant_item["color"] != "No Color":
                     properties["color"] = variant_item["color"]
+
                     color_list.append(variant_item["color"])
                     variation_combination.append(variant_item["color"])
 
@@ -82,7 +84,8 @@ class MacysVariants(object):
 
                 stockstatus_for_variants["upc"] = variant_item["upc"]
 
-                stockstatus_for_variants_list.append(stockstatus_for_variants)
+                if color in colors:
+                    stockstatus_for_variants_list.append(stockstatus_for_variants)
 
             size_list = list(set(size_list))
             color_list = list(set(color_list))
@@ -104,10 +107,13 @@ class MacysVariants(object):
                 key_list.append("type")
                 variation_values_list.append(type_list)
 
-            variation_combinations_values = list(itertools.product(*variation_values_list))
+            def filter(x):
+                color, size = x
+                return color in colors
+
+            variation_combinations_values = list(itertools.ifilter(filter, itertools.product(*variation_values_list)))
             variation_combinations_values = map(list, variation_combinations_values)
             outofstock_variation_combinations_values = [variation_combination for variation_combination in variation_combinations_values if variation_combination not in instock_variation_combinations_values]
-            outofstock_variation_combinations_values = list(itertools.ifilter(lambda x: (x[0], x[1]) not in exists_map, outofstock_variation_combinations_values))
 
             if outofstock_variation_combinations_values:
                 for variation_combination in outofstock_variation_combinations_values:
