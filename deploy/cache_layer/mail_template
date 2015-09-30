@@ -24,3 +24,4 @@ Minimum time in queue: {{ urgent_stats.0 }}s
 Maximum time in queue: {{ urgent_stats.1 }}s
 Average time in queue: {{ urgent_stats.2 }}s
 Number of items that remained in queue more than 1 hour: {{ urgent_stats.3 }}
+Total records: {{ urgent_stats.4 }}

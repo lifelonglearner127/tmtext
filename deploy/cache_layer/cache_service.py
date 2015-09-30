@@ -67,7 +67,8 @@ class SqsCache(object):
         if queue.endswith('urgent'):  # save how long task was in the queue
             sent_time = task.get('attributes', {}).get('SentTimestamp', '')
             if sent_time:
-                sent_time = int(sent_time) / 1000
+                # amazon's time differs
+                sent_time = (int(sent_time) / 1000) - 10
                 cur_time = time()
                 self.db.zadd(
                     self.REDIS_URGENT_STATS, int(cur_time-sent_time), cur_time)
@@ -205,11 +206,12 @@ class SqsCache(object):
 
     def get_urgent_stats(self):
         """
-        returns tuple of four items:
+        returns tuple of five items:
           - item with lowest time stayed in queue
           - item with biggest time stayed in queue
           - average time, for which items stay in queue
           - count of items, which were in queue more then hour
+          - total amount of records in urgent statistics
          """
         data = self.db.zrange(self.REDIS_URGENT_STATS, 0, -1,
                               withscores=True, score_cast_func=int)
@@ -223,7 +225,7 @@ class SqsCache(object):
             min_val = 0
             max_val = 0
             avg_val = 0
-        return min_val, max_val, avg_val, data_more_then_hour
+        return min_val, max_val, avg_val, data_more_then_hour, len(data)
 
     def get_cache_settings(self):
         """
