@@ -36,8 +36,14 @@ for shelf_url in shelf_urls_list:
             if not page_html.xpath("//span[@id='productCount']/text()"):
                 break
 
-            urls = page_html.xpath("//div[@class='sku-title']//a/@href")
-            urls = ["http://www.bestbuy.com" + url for url in urls]
+            urls = page_html.xpath("//div[@class='shortDescription']/a/@href")
+
+            if not urls:
+                break
+
+            print len(url)
+
+            urls = ["http://www1.macys.com" + url for url in urls]
             url_list.extend(urls)
         print "success"
     except:
@@ -45,7 +51,7 @@ for shelf_url in shelf_urls_list:
 
 url_list = list(set(url_list))
 
-output_dir_path = "/home/mufasa/Documents/Workspace/Content Analytics/Misc/Bestbuy from Shelf/"
+output_dir_path = "/home/mufasa/Documents/Workspace/Content Analytics/Misc/Macys from Shelf/"
 
 try:
     if os.path.isfile(output_dir_path + "urls.csv"):
