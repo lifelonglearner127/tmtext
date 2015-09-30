@@ -66,7 +66,7 @@ from extract_levi_data import LeviScraper
 from extract_dockers_data import DockersScraper
 from extract_houseoffraser_data import HouseoffraserScraper
 from extract_boots_data import BootsScraper
-
+from extract_newlook_data import NewlookScraper
 from urllib2 import HTTPError
 import datetime
 import logging
@@ -139,7 +139,8 @@ SUPPORTED_SITES = {
                     "levi": LeviScraper,
                     "dockers": DockersScraper,
                     "houseoffraser": HouseoffraserScraper,
-                    "boots": BootsScraper
+                    "boots": BootsScraper,
+                    "newlook": NewlookScraper
                     }
 
 # add logger
