@@ -45,8 +45,10 @@ def delete_old_cache_data(cache):
     days = 7
     freshness = 24 * 60 * days
     res = cache.delete_old_tasks(freshness)
-    removed_cache_url, removed_cache_term, removed_resp = cache.clear_stats()
-    res = sum([res, removed_cache_url, removed_cache_term, removed_resp])
+    removed_cache_url, removed_cache_term, removed_resp, removed_urgent = \
+        cache.clear_stats()
+    res = sum([res, removed_cache_url, removed_cache_term,
+               removed_resp, removed_urgent])
     return res
 
 

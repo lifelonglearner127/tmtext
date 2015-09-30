@@ -54,6 +54,26 @@ class SqsCache(object):
         res = ':'.join(res)
         return is_term, res
 
+    def _parse_freshness(self, task):
+        allowed_values = ['day', 'hour', '30 minutes', '15 minutes']
+        limit = task.get('sqs_cache_time_limit', 'day')
+        if limit not in allowed_values:  # validate field
+            limit = 'day'
+        if limit == allowed_values[0]:
+            d = date.today()
+            return int(mktime(d.timetuple()))
+        # timetuple: [0]-year, [1]-month, [2]-day, [3]-hour, [4]-min,
+        #  [5]-sec, [6]-week day, [7]-year day, [8]-is dst
+        d = list(datetime.now().timetuple())
+        d[5] = 0  # seconds
+        if limit == allowed_values[1]:
+            d[4] = 0
+        elif limit == allowed_values[2]:
+            d[4] -= d[4] % 30
+        elif limit == allowed_values[3]:
+            d[4] -= d[4] % 15
+        return int(mktime(d))
+
     def get_result(self, task_str, queue):
         """
         retrieve cached result
@@ -75,9 +95,7 @@ class SqsCache(object):
         score = self.db.zscore(self.REDIS_CACHE_TIMESTAMP, uniq_key)
         if not score:  # if not found item in cache
             return False, None
-        # take only results, saved today
-        today = date.today()
-        freshness = int(mktime(today.timetuple()))
+        freshness = self._parse_freshness(task)
         if score < freshness:  # if item is too old
             return True, None
         item = self.db.hget(self.REDIS_CACHE_KEY, uniq_key)
