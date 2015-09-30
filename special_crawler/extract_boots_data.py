@@ -164,7 +164,7 @@ class BootsScraper(Scraper):
         return None
 
     def _image_urls(self):
-        return None
+        return self.tree_html.xpath("//meta[@property='og:image']/@content")
 
     def _image_count(self):
         if self._image_urls():
