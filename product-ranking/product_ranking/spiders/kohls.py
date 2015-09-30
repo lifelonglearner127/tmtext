@@ -72,10 +72,8 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
     use_proxies = True
 
-    SEARCH_URL = "http://www.kohls.com/search.jsp?" \
-                 "N=0&" \
-                 "search={search_term}&" \
-                 "WS={start}&S={sort_mode}"
+    SEARCH_URL = "http://www.kohls.com/search.jsp?search={search_term}&" \
+                 "submit-search=web-regular&S={sort_mode}&PPP=60&WS={start}"
 
     SORTING = None
 
@@ -392,37 +390,57 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                        dont_filter=True)
 
     def _scrape_product_links(self, response):
-        prod_blocks = response.xpath('//ul[@id="product-matrix"]/li')        
+        prod_blocks = response.xpath('//ul[@id="product-matrix"]/li')
 
-        for block in prod_blocks:
-            product = SiteProductItem()
+        if prod_blocks:
+            for block in prod_blocks:
+                product = SiteProductItem()
 
-            link = block.xpath('./a/@href').extract()[0]
+                link = block.xpath('./a/@href').extract()[0]
 
-            cond_set(
-                product,
-                'title',
-                block.xpath('.//div/div/h2/a/text()').extract())
+                cond_set(
+                    product,
+                    'title',
+                    block.xpath('.//div/div/h2/a/text()').extract())
 
-            cond_set(
-                product,
-                'image_url',
-                block.xpath('.//a/img/@src').extract())
+                cond_set(
+                    product,
+                    'image_url',
+                    block.xpath('.//a/img/@src').extract())
 
-            self._set_price(response, product)
+                self._set_price(response, product)
 
-            url = 'http://www.kohls.com'+link
-            cond_set_value(product, 'url', url)
+                url = 'http://www.kohls.com'+link
+                cond_set_value(product, 'url', url)
 
-            new_meta = response.meta.copy()
-            new_meta['product'] = product
-            new_meta['handle_httpstatus_list'] = [404]
+                new_meta = response.meta.copy()
+                new_meta['product'] = product
+                new_meta['handle_httpstatus_list'] = [404]
 
-            yield Request(
-                url,
-                callback=self.parse_product,
-                meta=new_meta,
-                errback=self._handle_product_page_error), product
+                yield Request(
+                    url,
+                    callback=self.parse_product,
+                    meta=new_meta,
+                    errback=self._handle_product_page_error), product
+        else:
+            prod_urls = re.findall(
+                r'"prodSeoURL"\s?:\s+\"(.+)\"',
+                response.body_as_unicode()
+            )
+            for prod_url in prod_urls:
+                product = SiteProductItem()
+
+                new_meta = response.meta.copy()
+                new_meta['product'] = product
+                new_meta['handle_httpstatus_list'] = [404]
+
+                url = 'http://www.' + self.allowed_domains[0] + prod_url
+
+                yield Request(
+                    url,
+                    callback=self.parse_product,
+                    meta=new_meta,
+                    errback=self._handle_product_page_error), product
 
     def _handle_product_page_error(self, failure):
         self.log('Request failed: %s' % failure.request)
@@ -438,10 +456,20 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             total = response.xpath(
                 '//div[@class="view-indicator"]/p/text()'
             ).re('\d{1,},?\d+')
+
             if total:
                 total_matches = int(total[1].replace(',', ''))
             else:
-                total_matches = 0
+                total_matches = is_empty(re.findall(
+                    r'"productInfo":\s+\{(?:.|\n)+"count":\s+(\d+)',
+                    response.body_as_unicode()
+                ), 0)
+
+                try:
+                    total_matches = int(total_matches)
+                except ValueError:
+                    total_matches = 0
+
             return total_matches
 
     def _scrape_next_results_page_link(self, response):
