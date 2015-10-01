@@ -11,7 +11,7 @@ from itertools import groupby
 
 from lxml import html, etree
 from extract_data import Scraper
-from spiders_shared_code.newlook_variants import NewlookVariants
+
 
 
 class NewlookScraper(Scraper):
@@ -20,7 +20,6 @@ class NewlookScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.newlook.com/shop/.*$"
-    REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -30,7 +29,7 @@ class NewlookScraper(Scraper):
         self.review_list = None
         self.is_review_checked = False
         self.price_json = None
-        self.jv = NewlookVariants()
+
         self.is_analyze_media_contents = False
         self.video_urls = None
         self.video_count = 0
@@ -47,7 +46,6 @@ class NewlookScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-
         m = re.match(r"^http://www.newlook.com/shop/.*$", self.product_page_url)
 
         return not not m
@@ -125,22 +123,6 @@ class NewlookScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        try:
-            description_block = self.tree_html.xpath("//div[@id='longCopyCont']//ul")[0]
-            long_description = description_block.text_content().strip()
-
-            if not long_description:
-                return None
-            else:
-                long_description = re.sub('\\n+', ' ', long_description).strip()
-                long_description = re.sub('\\t+', ' ', long_description).strip()
-                long_description = re.sub('\\r+', ' ', long_description).strip()
-                long_description = re.sub(' +', ' ', long_description).strip()
-
-                return long_description
-        except:
-            pass
-
         return None
 
     def _ingredients(self):
@@ -166,143 +148,34 @@ class NewlookScraper(Scraper):
             return len(self._image_urls())
         return 0
 
-    def analyze_media_contents(self):
-        if self.is_analyze_media_contents:
-            return
-
-        self.is_analyze_media_contents = True
-
-        page_raw_text = html.tostring(self.tree_html)
-
-        #check pdf
-        try:
-            pdf_url = re.search('href="(.+\.pdf?)"', page_raw_text).group(1)
-
-            if not pdf_url:
-                raise Exception
-
-            if not pdf_url.startswith("http://"):
-                pdf_url = "http://www.jcpenney.com" + pdf_url
-
-            self.pdf_urls = [pdf_url]
-            self.pdf_count = len(self.pdf_urls)
-        except:
-            pass
-
-        video_json = None
-
-        try:
-            video_json = ast.literal_eval(self._find_between(html.tostring(self.tree_html), "videoIds.push(", ");\nvar videoThumbsMap = "))
-        except:
-            video_json = None
-
-        #check media contents window existence
-        if self.tree_html.xpath("//a[@class='InvodoViewerLink']"):
-
-            media_contents_window_link = self.tree_html.xpath("//a[@class='InvodoViewerLink']/@onclick")[0]
-            media_contents_window_link = re.search("window\.open\('(.+?)',", media_contents_window_link).group(1)
-
-            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-
-            contents = requests.get(media_contents_window_link, headers=h).text
-
-            #check media contents
-            if "webapps.easy2.com" in media_contents_window_link:
-                try:
-                    media_content_raw_text = re.search('Demo.instance.data =(.+?)};\n', contents).group(1) + "}"
-                    media_content_json = json.loads(media_content_raw_text)
-
-                    video_lists = re.findall('"Path":"(.*?)",', media_content_raw_text)
-
-                    video_lists = [media_content_json["UrlAddOn"] + url for url in video_lists if url.strip().endswith(".flv") or url.strip().endswith(".mp4/")]
-                    video_lists = list(set(video_lists))
-
-                    if not video_lists:
-                        raise Exception
-
-                    self.video_urls = video_lists
-                    self.video_count = len(self.video_urls)
-                except:
-                    pass
-            elif "content.webcollage.net" in media_contents_window_link:
-                webcollage_link = re.search("document\.location\.replace\('(.+?)'\);", contents).group(1)
-                contents = requests.get(webcollage_link, headers=h).text
-                webcollage_page_tree = html.fromstring(contents)
-
-                try:
-                    webcollage_media_base_url = re.search('<div data-resources-base="(.+?)"', contents).group(1)
-
-                    videos_json = '{"videos":' + re.search('{"videos":(.*?)]}</div>', contents).group(1) + ']}'
-                    videos_json = json.loads(videos_json)
-
-                    video_lists = [webcollage_media_base_url + videos_json["videos"][0]["src"]["src"][1:]]
-                    self.wc_video = 1
-                    self.video_urls = video_lists
-                    self.video_count = len(self.video_urls)
-                except:
-                    pass
-
-                try:
-                    if webcollage_page_tree.xpath("//div[@class='wc-ms-navbar']//span[text()='360 Rotation']") or webcollage_page_tree.xpath("//div[@class='wc-ms-navbar']//span[text()='360/Zoom']"):
-                        self.wc_360 = 1
-                except:
-                    pass
-
-                try:
-                    if webcollage_page_tree.xpath("//ul[contains(@class, 'wc-rich-features')]"):
-                        self.wc_emc = 1
-                except:
-                    pass
-
-            elif "bcove.me" in media_contents_window_link:
-                try:
-                    brightcove_page_tree = html.fromstring(contents)
-                    video_lists = [brightcove_page_tree.xpath("//meta[@property='og:video']/@content")[0]]
-                    self.video_urls = video_lists
-                    self.video_count = len(self.video_urls)
-                except:
-                    pass
-
-        if video_json:
-            if not self.video_urls:
-                self.video_urls = [video_json['url']]
-                self.video_count = 1
-            else:
-                self.video_urls.append(video_json["url"])
-                self.video_count = self.video_count + 1
 
     def _video_urls(self):
-        self.analyze_media_contents()
-        return self.video_urls
+        return self.tree_html.xpath("//div[@id='thumbs']//li[contains(@class,'video')]/a/@href")
 
     def _video_count(self):
-        self.analyze_media_contents()
-        return self.video_count
+        return len(self._video_urls())
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
-        self.analyze_media_contents()
-        return self.pdf_urls
+        return None
 
     def _pdf_count(self):
-        self.analyze_media_contents()
-        return self.pdf_count
+        return 0
 
     def _wc_emc(self):
-        self.analyze_media_contents()
-        return self.wc_emc
+        return None
 
     def _wc_prodtour(self):
-        self.analyze_media_contents()
-        return self.wc_prodtour
+        return None
 
     def _wc_360(self):
-        self.analyze_media_contents()
-        return self.wc_360
+        v = self.tree_html.xpath("//a[contains(@class,'views_360')]")
+        if len(v) >0 :
+            return 1
+        return 0
 
     def _wc_video(self):
-        self.analyze_media_contents()
-        return self.wc_video
+        return 0
 
     def _wc_pdf(self):
         return None
