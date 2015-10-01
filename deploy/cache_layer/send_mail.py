@@ -23,6 +23,7 @@ def collect_data(cache):
     context['responses_from_cache_term'] = \
         cache.get_total_cached_responses(True)
     context['urgent_stats'] = cache.get_urgent_stats()
+    context['completed_stats'] = cache.get_completed_stats()
     return context
 
 

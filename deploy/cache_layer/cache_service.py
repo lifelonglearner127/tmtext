@@ -23,8 +23,15 @@ class SqsCache(object):
     REDIS_CACHE_STATS_URL = 'cached_count_url'  # zset
     REDIS_CACHE_STATS_TERM = 'cached_count_term'  # zset
     REDIS_COMPLETED_TASKS = 'completed_tasks'  # zset, count completed tasks
-    REDIS_INSTANCES_COUNTER = 'daily_sqs_instances_counter'
-    REDIS_URGENT_STATS = 'urgent_stats'
+    REDIS_INSTANCES_COUNTER = 'daily_sqs_instances_counter'  # int
+    REDIS_URGENT_STATS = 'urgent_stats'  # zset
+    REDIS_COMPLETED_COUNTER = 'completed_counter'  # hset
+    REDIS_COMPLETED_COUNTER_DICT = {
+        'url': 'url',
+        'url_cached': 'url_cached',
+        'term': 'term',
+        'term_cached': 'term_cached'
+    }
 
     def __init__(self, db=None):
         self.db = db if db else StrictRedis(REDIS_HOST, REDIS_PORT)
@@ -88,7 +95,7 @@ class SqsCache(object):
             sent_time = task.get('attributes', {}).get('SentTimestamp', '')
             if sent_time:
                 # amazon's time differs
-                sent_time = (int(sent_time) / 1000) - 10
+                sent_time = (int(sent_time) / 1000) - 11
                 cur_time = time()
                 self.db.zadd(
                     self.REDIS_URGENT_STATS, int(cur_time-sent_time), cur_time)
@@ -144,6 +151,7 @@ class SqsCache(object):
         return tuple of count of deleted items from cache and from tasks
         """
         self.db.delete(self.REDIS_INSTANCES_COUNTER)
+        self.db.delete(self.REDIS_COMPLETED_COUNTER)
         return \
             (self.db.zremrangebyrank(self.REDIS_CACHE_STATS_URL, 0, -1),
              self.db.zremrangebyrank(self.REDIS_CACHE_STATS_TERM, 0, -1),
@@ -157,9 +165,16 @@ class SqsCache(object):
         self.db.delete(self.REDIS_CACHE_TIMESTAMP, self.REDIS_CACHE_KEY,
                        self.REDIS_CACHE_STATS_URL, self.REDIS_CACHE_STATS_TERM)
 
-    def complete_task(self, task_str):
+    def complete_task(self, task_str, is_from_cache_str='false'):
         task = json.loads(task_str)
+        is_from_cache = json.loads(is_from_cache_str)
+        is_term, _ = self._task_to_key(task)
         key = '%s_%s' % (task.get('task_id'), task.get('server_name'))
+        key_counter = 'term' if is_term else 'url'
+        if is_from_cache:
+            key_counter += '_cached'
+        self.db.hincrby(self.REDIS_COMPLETED_COUNTER,
+                        self.REDIS_COMPLETED_COUNTER_DICT[key_counter])
         return self.db.zadd(self.REDIS_COMPLETED_TASKS, int(time()), key)
 
     def get_cached_tasks_count(self):
@@ -244,6 +259,21 @@ class SqsCache(object):
             max_val = 0
             avg_val = 0
         return min_val, max_val, avg_val, data_more_then_hour, len(data)
+
+    def get_completed_stats(self):
+        data = self.db.hgetall(self.REDIS_COMPLETED_COUNTER)
+        for key in self.REDIS_COMPLETED_COUNTER_DICT:
+            if key not in data or not data[key]:
+                data[key] = 0
+            else:
+                data[key] = int(data[key])
+        data['url_total'] = data['url'] + data['url_cached']
+        data['term_total'] = data['term'] + data['term_cached']
+        data['url_percent'] = (data['url_cached'] /
+                               (data['url_total'] or 1) * 100)
+        data['term_percent'] = (data['term_cached'] /
+                                (data['term_total'] or 1) * 100)
+        return data
 
     def get_cache_settings(self):
         """

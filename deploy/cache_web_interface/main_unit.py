@@ -128,6 +128,7 @@ def stats():
         context['cache_most_popular_term'] = \
             cache.get_most_popular_cached_items(10, True)
         context['urgent_stats'] = cache.get_urgent_stats()
+        context['completed_stats'] = cache.get_completed_stats()
         return render_template('stats.html', **context)
     except Exception as e:
         return str(e)
@@ -175,7 +176,8 @@ def complete_task():
     (when it was acquired from sqs, not when it was actually completed)
     """
     task = request.form['task']
-    cache.complete_task(task)
+    is_from_cache_str = request.form['is_from_cache']
+    cache.complete_task(task, is_from_cache_str)
     return make_response('', 200)
 # ###################################
 # ######### CACHE METHODS END #######
