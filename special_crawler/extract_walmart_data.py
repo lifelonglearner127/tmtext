@@ -1298,7 +1298,10 @@ class WalmartScraper(Scraper):
         if self._version() == "Walmart v2":
             if self.is_bundle_product:
                 product_info_json = self._extract_product_info_json()
-                return product_info_json["analyticsData"]["catPath"].split("/")
+                if type(product_info_json["analyticsData"]["catPath"]) == dict:
+                    return product_info_json["analyticsData"]["catPath"]["categoryPathName"].split("/")
+                else:
+                    return product_info_json["analyticsData"]["catPath"].split("/")
             else:
                 categories_list = self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")
                 if categories_list:
