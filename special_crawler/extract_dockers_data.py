@@ -8,7 +8,6 @@ import json
 from lxml import html, etree
 import time
 import requests
-import HTMLParser
 from extract_data import Scraper
 from spiders_shared_code.dockers_variants import DockersVariants
 

@@ -281,13 +281,30 @@ class LeviScraper(Scraper):
         except:
             self.review_json = None
 
-        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
-        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
-        reviews_by_mark = reviews_by_mark[:5]
-        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
+        offset = 0
+        review_count = 0
+        review_list = None
 
-        if not review_list:
-            review_list = None
+        if not self.review_json:
+            review_count = 0
+        else:
+            review_count = int(self.review_json["jsonData"]["attributes"]["numReviews"])
+            review_list = [[5, 0], [4, 0], [3, 0], [2, 0], [1, 0]]
+
+        while review_count > 0:
+            ratingValue = self._find_between(contents, '<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', "<\\/span>", offset)
+
+            if offset == 0:
+                offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">') + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
+                continue
+
+            offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', offset) + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
+
+            ratingValue = int(float(ratingValue))
+            review_list[5 - ratingValue][1] = review_list[5 - ratingValue][1] + 1
+
+
+            review_count = review_count - 1
 
         self.review_list = review_list
 
