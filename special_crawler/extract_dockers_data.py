@@ -114,13 +114,13 @@ class DockersScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/@content')[0]
+        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
 
     def _product_title(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/@content')[0]
+        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
 
     def _title_seo(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/@content')[0]
+        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
 
     def _model(self):
         return self.tree_html.xpath("//meta[@itemprop='model']/@content")[0]
