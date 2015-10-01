@@ -292,11 +292,14 @@ class LeviScraper(Scraper):
             review_list = [[5, 0], [4, 0], [3, 0], [2, 0], [1, 0]]
 
         while review_count > 0:
-            ratingValue = self._find_between(contents, '<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', "<\\/span>", offset)
+            ratingValue = self._find_between(contents, '<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', "<\\/span>", offset).strip()
 
             if offset == 0:
                 offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">') + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
                 continue
+
+            if not ratingValue:
+                break
 
             offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', offset) + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
 
