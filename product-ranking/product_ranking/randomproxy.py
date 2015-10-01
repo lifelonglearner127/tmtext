@@ -62,8 +62,8 @@ class RandomProxy(object):
 
     def process_request(self, request, spider):
         # Don't overwrite with a random one (server-side state for IP)
-        if 'proxy' in request.meta:
-            return
+        # if 'proxy' in request.meta:
+        #     return
         if not getattr(spider, 'use_proxies', None):
             log.msg('use_proxies is OFF for this spider - not using proxy...')
             return
