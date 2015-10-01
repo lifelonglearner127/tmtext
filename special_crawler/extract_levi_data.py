@@ -218,7 +218,7 @@ class LeviScraper(Scraper):
 
     def _no_image(self):
         return None
-    
+
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
@@ -280,16 +280,17 @@ class LeviScraper(Scraper):
             self.review_json = json.loads(self.review_json)
         except:
             self.review_json = None
+            return None
+
+        review_count = int(self.review_json["jsonData"]["attributes"]["numReviews"])
+
+        if review_count == 0:
+            return None
 
         offset = 0
-        review_count = 0
         review_list = None
 
-        if not self.review_json:
-            review_count = 0
-        else:
-            review_count = int(self.review_json["jsonData"]["attributes"]["numReviews"])
-            review_list = [[5, 0], [4, 0], [3, 0], [2, 0], [1, 0]]
+        review_list = [[5, 0], [4, 0], [3, 0], [2, 0], [1, 0]]
 
         while review_count > 0:
             ratingValue = self._find_between(contents, '<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', "<\\/span>", offset).strip()
