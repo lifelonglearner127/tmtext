@@ -269,10 +269,10 @@ class SqsCache(object):
                 data[key] = int(data[key])
         data['url_total'] = data['url'] + data['url_cached']
         data['term_total'] = data['term'] + data['term_cached']
-        data['url_percent'] = (data['url_cached'] /
-                               (data['url_total'] or 1) * 100)
-        data['term_percent'] = (data['term_cached'] /
-                                (data['term_total'] or 1) * 100)
+        data['url_percent'] = '%0.4s' % (float(data['url_cached']) /
+                                         (data['url_total'] or 1) * 100)
+        data['term_percent'] = '%0.4s' % (float(data['term_cached']) /
+                                          (data['term_total'] or 1) * 100)
         return data
 
     def get_cache_settings(self):
