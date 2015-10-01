@@ -1176,9 +1176,10 @@ def cache_complete_task(task, is_from_cache=False):
     url = CACHE_HOST + CACHE_URL_STATS
     data = dict(task=json.dumps(task), is_from_cache=json.dumps(is_from_cache))
     try:
-        requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                      headers={'Authorization': CACHE_AUTH})
-        logger.info('Updated completed task (%s).', task.get('task_id'))
+        resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
+                             headers={'Authorization': CACHE_AUTH})
+        logger.info('Updated completed task (%s), status %s.',
+                    task.get('task_id'), resp.status_code)
     except Exception as ex:
         logger.warning('Update completed task error: %s.', ex)
 
