@@ -441,9 +441,9 @@ class Scraper():
             text = text.replace('\00','')
         return text
 
-    def _find_between(self, s, first, last):
+    def _find_between(self, s, first, last, offset=0):
         try:
-            start = s.index(first) + len(first)
+            start = s.index(first, offset) + len(first)
             end = s.index(last, start)
             return s[start:end]
         except ValueError:
