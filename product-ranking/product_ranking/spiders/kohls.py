@@ -21,8 +21,6 @@ from spiders_shared_code.kohls_variants import KohlsVariants
 from product_ranking.validation import BaseValidator
 
 is_empty = lambda x, y="": x[0] if x else y
-ip = "http://101.227.252.130:8081"
-
 
 class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
     optional_fields = ['brand']
@@ -70,7 +68,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
     settings = KohlsValidatorSettings
 
-    use_proxies = True
+    # use_proxies = True
 
     SEARCH_URL = "http://www.kohls.com/search.jsp?search={search_term}&" \
                  "submit-search=web-regular&S={sort_mode}&PPP=60&WS={start}"
@@ -126,7 +124,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             )
             yield Request(
                 url,
-                meta={'search_term': st, 'remaining': self.quantity, "proxy": ip}
+                meta={'search_term': st, 'remaining': self.quantity}
             )
 
         if self.product_url:
@@ -134,7 +132,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod, "proxy": ip})
+                          meta={'product': prod})
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -155,7 +153,6 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         new_meta = response.meta.copy()
         new_meta['product'] = prod
         new_meta['product_id'] = product_id[0]
-        new_meta["proxy"] = ip
         return Request(self.url_formatter.format(self.REVIEW_URL,
             product_id=product_id[0]),
             meta=new_meta, callback=self._parse_reviews)
@@ -384,7 +381,6 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         new_meta = response.meta.copy()
         new_meta['product'] = product
-        new_meta["proxy"] = ip
         return Request(self.RELATED_URL.format(product_id=product_id),
                        meta=new_meta, callback=self._parse_related_products,
                        dont_filter=True)
