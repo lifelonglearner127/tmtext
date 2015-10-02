@@ -132,7 +132,7 @@ class NewlookScraper(Scraper):
         return 0
 
     def _variants(self):
-        return self.jv._variants()
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -230,7 +230,7 @@ class NewlookScraper(Scraper):
         return "GBP"
 
     def _owned(self):
-        return 0
+        return 1
 
     def _marketplace(self):
         return 0
@@ -262,7 +262,8 @@ class NewlookScraper(Scraper):
     def _brand(self):
         return None
 
-
+    def _click_and_collect(self):
+        return 1
     ##########################################
     ################ HELPER FUNCTIONS
     ##########################################
@@ -328,6 +329,7 @@ class NewlookScraper(Scraper):
         "in_stores" : _in_stores, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
+        "click_and_collect": _click_and_collect, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
