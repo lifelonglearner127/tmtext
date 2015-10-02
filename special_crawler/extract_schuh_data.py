@@ -35,7 +35,7 @@ class SchuhScraper(Scraper):
             False otherwise
         """
         try:
-            itemtype = self.tree_html.xpath("//div[@itemtype='http://schema.org/Product']")
+            itemtype = self.tree_html.xpath('//div[@itemtype="http://schema.org/Product"]')
 
             if not itemtype:
                 raise Exception()
@@ -58,14 +58,14 @@ class SchuhScraper(Scraper):
     ##########################################
 
     def _canonical_link(self):
-        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")
+        canonical_link = self.tree_html.xpath('//link[@rel="canonical"]/@href')
         return canonical_link
 
     def _url(self):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = self.tree_html.xpath("//span[@itemprop='sku']/text()")[0]
+        product_id = self.tree_html.xpath('//span[@itemprop="sku"]/text()')[0]
         return product_id
 
     def _site_id(self):
@@ -85,14 +85,18 @@ class SchuhScraper(Scraper):
         return self.tree_html.xpath('//link[@rel="alternate"]/@title')[0]
 
     def _features(self):
-        features = self.tree_html.xpath('//div[@itemprop="description"]/ul/li/text()')
+        features = self.tree_html.xpath('//div[@id="itemInfo"]/div//text()')
+        values = []
         features_list = []
 
         for i in features:
-            features_list.append(i)
+            if i != ' ':
+                values.append(i)
 
-        if features_list:
-            return features_list
+        for i in range(0, len(values) - 1, 2):
+            features_list.append(values[i].strip() + " " + values[i + 1].strip())
+
+        return features_list
 
     def _feature_count(self):
         if self._features():
@@ -101,12 +105,14 @@ class SchuhScraper(Scraper):
         return None
 
     def _description(self):
-        desc = self.tree_html.xpath("//div[@itemprop='description']/text()")
+        desc = self.tree_html.xpath('//div[@itemprop="description"]/text()')
         short_description = desc[0].strip()
         return short_description
 
     def _long_description(self):
-        desc = self.tree_html.xpath("//div[@itemprop='description']")[0]
+        desc = self.tree_html.xpath('//div[@itemprop="description"]')[0]
+        after_ul = self.tree_html.xpath('//div[@id="itemInfo"]/div')
+        after_ul_desc = ""
         long_description = ""
         long_description_start = False
 
@@ -118,6 +124,12 @@ class SchuhScraper(Scraper):
                 long_description = long_description + html.tostring(description_item)
 
         long_description = long_description.strip()
+
+        for i in after_ul:
+            after_ul_desc += html.tostring(i)
+
+        # after_ul_desc = after_ul_desc.strip()
+        long_description += after_ul_desc
 
         if long_description:
             return long_description
@@ -172,6 +184,70 @@ class SchuhScraper(Scraper):
         if count_int:
             return int(count_int.group(0))
 
+    def _max_review(self):
+        if self._review_count() == 0:
+            return None
+
+        for i, review in enumerate(self._reviews()):
+            if review[1] > 0:
+                return 5 - i
+
+    def _min_review(self):
+        if self._review_count() == 0:
+            return None
+
+        for i, review in enumerate(reversed(self._reviews())):
+            if review[1] > 0:
+                return i + 1
+
+    def _reviews(self):
+        if self._review_count() > 0:
+            mark = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+            id = self._product_id()
+            max_num = self._review_count()
+            startReview = 6
+            reviews = ""
+
+            first_five = self.tree_html.xpath('//ul[@id="reviews"]/li/div[1]/div/div/@data-icon')
+
+            for i in first_five:
+                if i == "*****":
+                    mark[5] += 1
+                elif i == "****$":
+                    mark[4] += 1
+                elif i == "****#":
+                    mark[4] += 1
+                elif i == "***##":
+                    mark[3] += 1
+                elif i == "**###":
+                    mark[2] += 1
+                elif i == "*####":
+                    mark[1] += 1
+
+            h = {'content-type': 'application/json'}
+
+            for i in xrange(startReview, max_num, 10):
+                data = {"iCode": id, "numReviews": i + 9, "startReview": i}
+                reviews += requests.post('http://www.schuh.co.uk/Service/getMoreReviews', headers=h, timeout=5, data=json.dumps(data)).text
+
+            other_makrs = re.findall(r'\w{4}-\w{4}=\\"(\*{1,5})[#\$]*\\"', reviews)
+
+            for i in other_makrs:
+                if i == "*****":
+                    mark[5] += 1
+                elif i == "****":
+                    mark[4] += 1
+                elif i == "***":
+                    mark[3] += 1
+                elif i == "**":
+                    mark[2] += 1
+                elif i == "*":
+                    mark[1] += 1
+
+            reviews_list = [[item, mark[item]] for item in sorted(mark.keys(),
+                                                                  reverse=True)]
+            return reviews_list
+
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
@@ -185,11 +261,17 @@ class SchuhScraper(Scraper):
         return float(price_int.group(0))
 
     def _price_currency(self):
-        return "EUR"
+        return "GBP"
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
+
+    def _categories(self):
+        return self.tree_html.xpath('//div[@itemprop="breadcrumb"]/a[last()]/text()')[0]
+
+    def _category_name(self):
+        return self.tree_html.xpath('//div[@itemprop="breadcrumb"]/a[last()]/text()')[0]
 
     def _brand(self):
         brands = self.tree_html.xpath('//span[@id="itemLogo"]//img/@title')
@@ -211,7 +293,7 @@ class SchuhScraper(Scraper):
         "status" : _status, \
 
         # CONTAINER : PRODUCT_INFO
-        'product_name' : _product_name, \
+        "product_name" : _product_name, \
         "product_title" : _product_title, \
         "features" : _features, \
         "feature_count" : _feature_count, \
@@ -227,6 +309,9 @@ class SchuhScraper(Scraper):
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \
         "average_review" : _average_review, \
+        "reviews" : _reviews, \
+        "max_review" : _max_review, \
+        "min_review" : _min_review, \
 
         # CONTAINER : SELLERS
         "price" : _price, \
@@ -234,5 +319,7 @@ class SchuhScraper(Scraper):
         "price_currency" : _price_currency, \
 
         # CONTAINER : CLASSIFICATION
+        "categories" : _categories, \
+        "category_name" : _category_name, \
         "brand" : _brand, \
     }
