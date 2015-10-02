@@ -36,6 +36,24 @@ class MaplinScraper(Scraper):
         m = re.match(r"^http://www\.maplin\.co\.uk/p/([a-zA-Z0-9\-]+)?$", self.product_page_url)
         return not not m
 
+    def not_a_product(self):
+        '''Overwrites parent class method that determines if current page
+        is not a product page.
+        Currently for Amazon it detects captcha validation forms,
+        and returns True if current page is one.
+        '''
+
+        try:
+            itemtype = self.tree_html.xpath('//div[@itemtype="http://schema.org/Product"]')
+
+            if not itemtype:
+                raise Exception()
+
+        except Exception:
+            return True
+
+        return False
+
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
