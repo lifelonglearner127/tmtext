@@ -10,12 +10,12 @@ def get_memory_usage_for_all_processes(max_processes=7):
         try:
             p = psutil.Process(pid)
             process_memory_percents = p.memory_percent()
+            if p.name() in process_dict:
+                process_dict[p.name()] += process_memory_percents
+            else:
+                process_dict[p.name()] = process_memory_percents
         except Exception as _:
             continue
-        if p.name() in process_dict:
-            process_dict[p.name()] += process_memory_percents
-        else:
-            process_dict[p.name()] = process_memory_percents
 
     process_list = process_dict.items()
     process_list = sorted(process_list, key=lambda k: k[1], reverse=True)
@@ -32,12 +32,12 @@ def get_cpu_usage_for_all_processes(max_processes=7):
             continue
         try:
             process_cpu_percents = p.cpu_percent(0.01)
+            if p.name() in process_dict:
+                process_dict[p.name()] += process_cpu_percents
+            else:
+                process_dict[p.name()] = process_cpu_percents
         except Exception as _:
             continue
-        if p.name() in process_dict:
-            process_dict[p.name()] += process_cpu_percents
-        else:
-            process_dict[p.name()] = process_cpu_percents
 
     process_list = process_dict.items()
     process_list = sorted(process_list, key=lambda k: k[1], reverse=True)

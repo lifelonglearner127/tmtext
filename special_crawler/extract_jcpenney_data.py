@@ -174,11 +174,7 @@ class JcpenneyScraper(Scraper):
     def _image_urls(self):
         image_ids = re.search('var imageName = "(.+?)";', html.tostring(self.tree_html)).group(1)
         image_ids = image_ids.split(",")
-
         image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
-
-        if not image_urls:
-            return None
 
         swatches = self._swatches()
 
@@ -186,12 +182,12 @@ class JcpenneyScraper(Scraper):
             if swatch["hero_image"] not in image_urls:
                 image_urls.append(swatch["hero_image"])
 
-        if swatches:
-            return image_urls[2:]
-        elif len(image_urls) > 1:
-            return image_urls[1:]
-        else:
+        image_urls = list(set(image_urls))
+
+        if image_urls:
             return image_urls
+
+        return None
 
     def _image_count(self):
         if self._image_urls():

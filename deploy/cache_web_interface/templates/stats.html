@@ -59,6 +59,28 @@
                 {% endfor %}
             </ul>
         </li>
+        <li>
+            Cache usage statistics:
+            <ul>
+                <li>total TERM tasks executed: {{ completed_stats.term_total }}</li>
+                <li>TERM tasks, returned from cache: {{ completed_stats.term_cached }} ({{ completed_stats.term_percent }}%)</li>
+                <li>total URL tasks executed: {{ completed_stats.url_total }}</li>
+                <li>URL tasks, returned from cache: {{ completed_stats.url_cached }} ({{ completed_stats.url_percent }}%)</li>
+            </ul>
+        </li>
+    </ul>
+</div>
+
+<div>
+    <h3>
+        Urgent queue stats
+    </h3>
+    <ul>
+        <li>Minimum time in queue: {{ urgent_stats.0 }}s</li>
+        <li>Maximum time in queue: {{ urgent_stats.1 }}s</li>
+        <li>Average time in queue: {{ urgent_stats.2 }}s</li>
+        <li>Number of items that remained in queue more than 1 hour: {{ urgent_stats.3 }}</li>
+        <li>Total records: {{ urgent_stats.4 }}</li>
     </ul>
 </div>
 

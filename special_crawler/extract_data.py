@@ -87,6 +87,7 @@ class Scraper():
             "supplement_fact_text_health",
             "rollback", # binary (0/1), whether product is rollback or not
             "shipping",
+            "free_pickup_today",
             "no_longer_available",
             "variants", # list of variants
             "swatches", # list of swatches
@@ -195,7 +196,7 @@ class Scraper():
                         "features", "feature_count", "model_meta", "description", "long_description", "shelf_description", "apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
-                        "rollback", "shipping", "no_longer_available", "manufacturer", "return_to"],
+                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
@@ -441,9 +442,9 @@ class Scraper():
             text = text.replace('\00','')
         return text
 
-    def _find_between(self, s, first, last):
+    def _find_between(self, s, first, last, offset=0):
         try:
-            start = s.index(first) + len(first)
+            start = s.index(first, offset) + len(first)
             end = s.index(last, start)
             return s[start:end]
         except ValueError:
