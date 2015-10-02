@@ -233,16 +233,7 @@ class SchuhScraper(Scraper):
             other_makrs = re.findall(r'\w{4}-\w{4}=\\"(\*{1,5})[#\$]*\\"', reviews)
 
             for i in other_makrs:
-                if i == "*****":
-                    mark[5] += 1
-                elif i == "****":
-                    mark[4] += 1
-                elif i == "***":
-                    mark[3] += 1
-                elif i == "**":
-                    mark[2] += 1
-                elif i == "*":
-                    mark[1] += 1
+                mark[len(i)] += 1
 
             reviews_list = [[item, mark[item]] for item in sorted(mark.keys(),
                                                                   reverse=True)]
