@@ -9,36 +9,33 @@ from lxml import html, etree
 import time
 import requests
 from extract_data import Scraper
-from spiders_shared_code.houseoffraser_variants import HouseOffRaserVariants
 
 
-class HouseoffraserScraper(Scraper):
+class ClarksCoUkScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.houseoffraser.co.uk/<product-name>/<product-id>,default,pd.html"
-    REVIEW_URL = "http://houseoffraser.ugc.bazaarvoice.com/6017-en_gb/{0}/reviews.djs?format=embeddedhtml"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.clarks.co.uk/p/<product-id>"
+    REVIEW_URL = "http://homedepot.ugc.bazaarvoice.com/1999aa/{0}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
         self.product_json = None
-        self.variation_json = None
         # whether product has any webcollage media
         self.review_json = None
         self.review_list = None
         self.is_review_checked = False
-        self.hv = HouseOffRaserVariants()
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.houseoffraser.co.uk/.*?/[0-9]+,default,pd.html$", self.product_page_url)
+        m = re.match(r"^http://www.clarks.co.uk/p/[0-9]+?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -50,13 +47,11 @@ class HouseoffraserScraper(Scraper):
             False otherwise
         """
         try:
-            itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
+            itemtype = self.tree_html.xpath('//div[@id="product" and @itemtype="http://schema.org/Product"]')
 
-            if itemtype != "product":
+            if not itemtype:
                 raise Exception()
 
-            self._extract_product_json()
-            self.hv.setupCH(self.tree_html)
         except Exception:
             return True
 
@@ -65,19 +60,6 @@ class HouseoffraserScraper(Scraper):
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
-
-    def _extract_product_json(self):
-        try:
-            product_json_text = self._find_between(html.tostring(self.tree_html), "var _DCSVariables = ", ";</script>")
-            self.product_json = json.loads(product_json_text)
-        except:
-            self.product_json = None
-
-        try:
-            variation_json_text = self._find_between(html.tostring(self.tree_html), "var variations = (", ").variations;")
-            self.variation_json = json.loads(variation_json_text)
-        except:
-            self.variation_json = None
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -91,30 +73,36 @@ class HouseoffraserScraper(Scraper):
         return None
 
     def _product_id(self):
-        return self.product_json["productSKU"]
+        product_id = self.tree_html.xpath('//input[@id="ProductId"]/@value')[0]
+        return product_id
 
     def _site_id(self):
-        return self.product_json["productID"]
+        product_id = self.tree_html.xpath('//input[@id="ProductId"]/@value')[0]
+        return product_id
 
     def _status(self):
         return "success"
-
-
-
-
-
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//span[@class='breadcrumb-product-title capitalize']/text()")[0].strip()
+        name = self.tree_html.xpath("//h1[@itemprop='name']/span[@class='name']/text()")[0].strip()
+        colour = self.tree_html.xpath("//h1[@itemprop='name']/span[@class='colour']/text()")[0].strip()
+
+        return name + " " + colour
 
     def _product_title(self):
-        return self.tree_html.xpath("//span[@class='breadcrumb-product-title capitalize']/text()")[0].strip()
+        name = self.tree_html.xpath("//h1[@itemprop='name']/span[@class='name']/text()")[0].strip()
+        colour = self.tree_html.xpath("//h1[@itemprop='name']/span[@class='colour']/text()")[0].strip()
+
+        return name + " " + colour
 
     def _title_seo(self):
-        return self.tree_html.xpath("//span[@class='breadcrumb-product-title capitalize']/text()")[0].strip()
+        name = self.tree_html.xpath("//h1[@itemprop='name']/span[@class='name']/text()")[0].strip()
+        colour = self.tree_html.xpath("//h1[@itemprop='name']/span[@class='colour']/text()")[0].strip()
+
+        return name + " " + colour
 
     def _model(self):
         return None
@@ -123,25 +111,37 @@ class HouseoffraserScraper(Scraper):
         return None
 
     def _features(self):
+        feature_rows = self.tree_html.xpath("//table[@class='shoe-features']//tr")
+        feature_list = []
+
+        for row in feature_rows:
+            feature_list.append(row.xpath("./th/text()")[0] + ": " + row.xpath("./td/text()")[0])
+
+        if feature_list:
+            return feature_list
+
         return None
 
     def _feature_count(self):
         if self._features():
             return len(self._features())
 
-        return 0
+        return None
 
     def _model_meta(self):
         return None
 
     def _description(self):
-        return self.tree_html.xpath("//div[@class='hof-description']//span[@itemprop='description']/text()")[0].strip()
+        description = self.tree_html.xpath("//div[@id='ProductDescription_0']")[0].text_content().strip()
+
+        if description:
+            return description
+
+        return None
 
     def _long_description(self):
-        return html.tostring(self.tree_html.xpath("//div[@class='hof-description']//span[@itemprop='description']/ul")[0])
+        return None
 
-    def _variants(self):
-        return self.hv._variants()
 
 
     ##########################################
@@ -151,14 +151,11 @@ class HouseoffraserScraper(Scraper):
         return None
 
     def _image_urls(self):        
-        image_list = []
-
-        for variation in self.variation_json["variations"]:
-            if self.variation_json["variations"][variation]["available"] == "true":
-                image_list.extend(self.variation_json["variations"][variation]["images"])
+        image_list = self._find_between(html.tostring(self.tree_html), "function(){imageUrls=", ";zoomImageUrls=")
+        image_list = json.loads(image_list)
+        image_list = ["http:" + url for url in image_list]
 
         if image_list:
-            image_list = list(set(image_list))
             return image_list
 
         return None
@@ -211,27 +208,22 @@ class HouseoffraserScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        if self._review_count() == 0:
-            return None
+        if self._review_count() >0:
+            return float(self.tree_html.xpath("//meta[@itemprop='ratingValue']/@content")[0])
 
-        average_review = round(float(self.review_json["jsonData"]["attributes"]["avgRating"]), 1)
-
-        if str(average_review).split('.')[1] == '0':
-            return int(average_review)
-        else:
-            return float(average_review)
+        return None
 
     def _review_count(self):
-        self._reviews()
+        if self.tree_html.xpath("//meta[@itemprop='reviewCount']/@content"):
+            return int(self.tree_html.xpath("//meta[@itemprop='reviewCount']/@content")[0])
 
-        if not self.review_json:
-            return 0
-
-        return int(self.review_json["jsonData"]["attributes"]["numReviews"])
+        return 0
 
     def _max_review(self):
         if self._review_count() == 0:
             return None
+
+        self._reviews()
 
         for i, review in enumerate(self.review_list):
             if review[1] > 0:
@@ -240,6 +232,8 @@ class HouseoffraserScraper(Scraper):
     def _min_review(self):
         if self._review_count() == 0:
             return None
+
+        self._reviews()
 
         for i, review in enumerate(reversed(self.review_list)):
             if review[1] > 0:
@@ -251,30 +245,14 @@ class HouseoffraserScraper(Scraper):
 
         self.is_review_checked = True
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
-        contents = s.get(self.REVIEW_URL.format(self._site_id()), headers=h, timeout=5).text
+        if self._review_count() == 0:
+            self.review_list = None
+            return None
 
-        try:
-            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
-            end_index = contents.find(",\nwidgetInitializers:initializers", start_index)
+        review_list = [[5, 0], [4, 0], [3, 0], [2, 0], [1, 0]]
 
-            self.review_json = contents[start_index:end_index]
-            self.review_json = json.loads(self.review_json)
-        except:
-            self.review_json = None
-
-        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
-        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
-        reviews_by_mark = reviews_by_mark[:5]
-        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
-
-        if not review_list:
-            review_list = None
+        for ratingValue in self.tree_html.xpath("//span[@itemprop='reviewRating']/meta[@itemprop='ratingValue']/@content"):
+            review_list[5 - int(ratingValue)][1] = review_list[5 - int(ratingValue)][1] + 1
 
         self.review_list = review_list
 
@@ -284,10 +262,10 @@ class HouseoffraserScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath("//span[@id='productPriceContainer']/p[@class='price']/text()")[0].strip()
+        return self.tree_html.xpath("//dd[@class='price the-normal-price']/text()")[0].strip()
 
     def _price_amount(self):
-        return float(re.findall("\d+.\d+", self._price())[0])
+        return float(self.tree_html.xpath("//span[@itemprop='offers']/meta[@itemprop='price']/@content")[0])
 
     def _price_currency(self):
         return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
@@ -299,8 +277,9 @@ class HouseoffraserScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
-        if self.tree_html.xpath("//meta[@id='semanticAvailability']/@content")[0].strip() == "OutOfStock":
-            return 1
+        if self.tree_html.xpath("//li[@class='instock-status']/text()"):
+            if self.tree_html.xpath("//li[@class='instock-status']/text()")[0].strip() == "Out of stock":
+                return 1
 
         return 0
 
@@ -327,15 +306,13 @@ class HouseoffraserScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        categories = self.tree_html.xpath("//ol[@class='hof-breadcrumbs clearfix pdp_breadcrumbs']/li/a[@itemprop='breadcrumb']/text()")
-
-        return categories[2:]
+        return [self._find_between(html.tostring(self.tree_html), ',product_category:"', '",')]
 
     def _category_name(self):
         return self._categories()[-1]
     
     def _brand(self):
-        return self.product_json["productBrand"]
+        return None
 
 
 
@@ -374,7 +351,6 @@ class HouseoffraserScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
-        "variants": _variants,
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
