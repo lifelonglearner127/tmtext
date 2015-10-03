@@ -35,7 +35,7 @@ ITEM_PIPELINES = {
     'product_ranking.pipelines.AddSearchTermInTitleFields': 300,
     'product_ranking.pipelines.CheckGoogleSourceSiteFieldIsCorrectJson': 400,
     'product_ranking.pipelines.WalmartRedirectedItemFieldReplace': 999,
-    'product_ranking.pipelines.MergeSubItems': 1200,
+    'product_ranking.pipelines.MergeSubItems': 1000,
     'product_ranking.pipelines.CollectStatistics': 1300
 }
 
@@ -74,7 +74,7 @@ MEMUSAGE_ENABLED = True
 
 
 # redefine log foramtter. DropItem exception provided with ERROR level
-LOG_FORMATTER = 'product_ranking.pipelines.PipelineFormatter'
+#LOG_FORMATTER = 'product_ranking.pipelines.PipelineFormatter'
 
 # Value to use for buyer_reviews if no reviews found
 ZERO_REVIEWS_VALUE = [0, 0.0, {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}]
@@ -98,9 +98,9 @@ DOWNLOADER_MIDDLEWARES = {
 
 _args_names = [arg.split('=')[0] if '=' in arg else arg for arg in sys.argv]
 if 'validate' in _args_names:
-    ITEM_PIPELINES = {
-        'product_ranking.validation.ValidatorPipeline': 100,
-    }
+    if not 'ITEM_PIPELINES' in globals():
+        ITEM_PIPELINES = {}
+    ITEM_PIPELINES['product_ranking.validation.ValidatorPipeline'] = 99
 
 if 'save_s3_cache' in _args_names:
     #DOWNLOADER_MIDDLEWARES['scrapy.contrib.downloadermiddleware.httpcache.HttpCacheMiddleware'] = 50

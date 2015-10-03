@@ -9,6 +9,7 @@ from lxml import html, etree
 import time
 import requests
 from extract_data import Scraper
+from spiders_shared_code.houseoffraser_variants import HouseOffRaserVariants
 
 
 class HouseoffraserScraper(Scraper):
@@ -30,6 +31,7 @@ class HouseoffraserScraper(Scraper):
         self.review_json = None
         self.review_list = None
         self.is_review_checked = False
+        self.hv = HouseOffRaserVariants()
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -54,6 +56,7 @@ class HouseoffraserScraper(Scraper):
                 raise Exception()
 
             self._extract_product_json()
+            self.hv.setupCH(self.tree_html)
         except Exception:
             return True
 
@@ -136,6 +139,10 @@ class HouseoffraserScraper(Scraper):
 
     def _long_description(self):
         return html.tostring(self.tree_html.xpath("//div[@class='hof-description']//span[@itemprop='description']/ul")[0])
+
+    def _variants(self):
+        return self.hv._variants()
+
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -367,6 +374,7 @@ class HouseoffraserScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
+        "variants": _variants,
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\

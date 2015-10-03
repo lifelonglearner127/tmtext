@@ -183,12 +183,13 @@ class KohlsVariants(object):
         swatches = self.swatches()
         for json_var in variants:
             json_var["image_url"] = None
-            for swatch in swatches:
-                if "Monogray" in json_var["properties"][swatch["swatch_name"]]:
-                    pass
-                if swatch[swatch["swatch_name"]] == json_var["properties"][swatch["swatch_name"]]:
-                    json_var["image_url"] = swatch["hero_image"]
-                    break
+            if swatches:
+                for swatch in swatches:
+                    if "Monogray" in json_var["properties"][swatch["swatch_name"]]:
+                        pass
+                    if swatch[swatch["swatch_name"]] == json_var["properties"][swatch["swatch_name"]]:
+                        json_var["image_url"] = swatch["hero_image"]
+                        break
 
         if variants:
             return variants

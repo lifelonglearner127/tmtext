@@ -66,6 +66,9 @@ from extract_levi_data import LeviScraper
 from extract_dockers_data import DockersScraper
 from extract_houseoffraser_data import HouseoffraserScraper
 from extract_schuh_data import SchuhScraper
+from extract_boots_data import BootsScraper
+from extract_clarkscouk_data import ClarksCoUkScraper
+
 
 from urllib2 import HTTPError
 import datetime
@@ -140,6 +143,8 @@ SUPPORTED_SITES = {
                     "dockers": DockersScraper,
                     "houseoffraser": HouseoffraserScraper,
                     "schuh": SchuhScraper,
+                    "boots": BootsScraper,
+                    "clarkscouk": ClarksCoUkScraper
                     }
 
 # add logger
@@ -229,6 +234,10 @@ def extract_domain(url):
         return "hagelshop"
     if "www.levi.com" in url:
         return "levi"
+    if "www.boots.com" in url:
+        return "boots"
+    if "www.clarks.co.uk" in url:
+        return "clarkscouk"
 
     m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)
     if m:

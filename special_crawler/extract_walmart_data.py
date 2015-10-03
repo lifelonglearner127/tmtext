@@ -1298,7 +1298,10 @@ class WalmartScraper(Scraper):
         if self._version() == "Walmart v2":
             if self.is_bundle_product:
                 product_info_json = self._extract_product_info_json()
-                return product_info_json["analyticsData"]["catPath"].split("/")
+                if type(product_info_json["analyticsData"]["catPath"]) == dict:
+                    return product_info_json["analyticsData"]["catPath"]["categoryPathName"].split("/")
+                else:
+                    return product_info_json["analyticsData"]["catPath"].split("/")
             else:
                 categories_list = self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")
                 if categories_list:
@@ -1671,6 +1674,32 @@ class WalmartScraper(Scraper):
                 return False
             else:
                 return True
+
+    def _free_pickup_today(self):
+        if self.tree_html.xpath("//div[contains(@class, 'pull-left offer-pickup-section')]") and "free pickup today" in self.tree_html.xpath("//div[contains(@class, 'pull-left offer-pickup-section')]")[0].text_content().lower():
+            self._extract_product_info_json()
+
+            if self.product_info_json:
+                free_pickup_today = []
+
+                for pickup_option in self.product_info_json["buyingOptions"]["pickupOptions"]:
+                    if pickup_option["available"] == True:
+                        pickup = {}
+                        pickup["Store Name"] = pickup_option["storeName"]
+                        pickup["City"] = pickup_option["city"]
+                        pickup["Distance"] = pickup_option["distance"]
+
+                        if "zipCode" in pickup_option:
+                            pickup["Zip Code"] = pickup_option["zipCode"]
+                        else:
+                            pickup["Zip Code"] = 94107
+
+                        pickup["Pick-up Today"] = True
+                        free_pickup_today.append(pickup)
+
+                return free_pickup_today
+
+        return None
 
     def _no_image(self, url):
         """Overwrites the _no_image
@@ -2872,6 +2901,7 @@ class WalmartScraper(Scraper):
         "title_seo": _title_from_tree, \
         "rollback": _rollback, \
         "shipping": _shipping, \
+        "free_pickup_today": _free_pickup_today, \
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title": _product_name_from_tree, \
         "in_stores": _in_stores, \

@@ -84,6 +84,9 @@ class SchuhScraper(Scraper):
     def _product_title(self):
         return self.tree_html.xpath('//link[@rel="alternate"]/@title')[0]
 
+    def _title_seo(self):
+        return self.tree_html.xpath('//link[@rel="alternate"]/@title')[0]
+
     def _features(self):
         features = self.tree_html.xpath('//div[@id="itemInfo"]/div//text()')
         values = []
@@ -254,6 +257,12 @@ class SchuhScraper(Scraper):
     def _price_currency(self):
         return "GBP"
 
+    def _site_online(self):
+        return 1
+
+    def _site_online_out_of_stock(self):
+        return 0
+
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
@@ -286,6 +295,7 @@ class SchuhScraper(Scraper):
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
         "product_title" : _product_title, \
+        "title_seo" : _title_seo, \
         "features" : _features, \
         "feature_count" : _feature_count, \
         "description" : _description, \
@@ -308,7 +318,8 @@ class SchuhScraper(Scraper):
         "price" : _price, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
-
+        "site_online": _site_online, \
+        "site_online_out_of_stock": _site_online_out_of_stock, \
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
         "category_name" : _category_name, \
