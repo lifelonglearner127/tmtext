@@ -230,6 +230,9 @@ class SchuhScraper(Scraper):
 
             h = {'content-type': 'application/json'}
 
+            if max_num > 100:
+                max_num = 100
+
             for i in xrange(startReview, max_num, 10):
                 data = {"iCode": id, "numReviews": i + 9, "startReview": i}
                 reviews += requests.post('http://www.schuh.co.uk/Service/getMoreReviews', headers=h, timeout=5, data=json.dumps(data)).text
