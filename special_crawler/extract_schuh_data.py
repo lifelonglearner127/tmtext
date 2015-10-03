@@ -69,7 +69,8 @@ class SchuhScraper(Scraper):
         return product_id
 
     def _site_id(self):
-        return None
+        product_id = self.tree_html.xpath('//span[@itemprop="sku"]/text()')[0]
+        return product_id
 
     def _status(self):
         return "success"
