@@ -1080,7 +1080,12 @@ class WalmartScraper(Scraper):
         variants_json = json.loads(json_text)
         item_id_list = []
 
+        primary_product_id = self._find_between(html.tostring(self.tree_html), '"primaryProductId":"', '"').strip()
+
         for item in variants_json:
+            if primary_product_id == item["id"]:
+                primary_product_id = str(item["buyingOptions"]["usItemId"])
+
             item_id_list.append(item["buyingOptions"]["usItemId"])
 
         item_id_list = list(set(item_id_list))
@@ -1090,9 +1095,11 @@ class WalmartScraper(Scraper):
 
         for variant_id in item_id_list:
             related_product_url = url[:url.rfind("/")] + "/" + str(variant_id)
-            related_product_urls.append(related_product_url)
 
-        related_product_urls.remove(self.product_page_url)
+            if primary_product_id in related_product_url:
+                related_product_urls.insert(0, related_product_url)
+            else:
+                related_product_urls.append(related_product_url)
 
         if related_product_urls:
             return related_product_urls
