@@ -1171,14 +1171,15 @@ def save_task_result_to_cache(task, output_path):
         return True
 
 
-def cache_complete_task(task):
+def cache_complete_task(task, is_from_cache=False):
     """send request to notice that task is completed (for statistics)"""
     url = CACHE_HOST + CACHE_URL_STATS
-    data = dict(task=json.dumps(task))
+    data = dict(task=json.dumps(task), is_from_cache=json.dumps(is_from_cache))
     try:
-        requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                      headers={'Authorization': CACHE_AUTH})
-        logger.info('Updated completed task (%s).', task.get('task_id'))
+        resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
+                             headers={'Authorization': CACHE_AUTH})
+        logger.info('Updated completed task (%s), status %s.',
+                    task.get('task_id'), resp.status_code)
     except Exception as ex:
         logger.warning('Update completed task error: %s.', ex)
 
@@ -1304,7 +1305,7 @@ def main():
         if task.get_cached_result(TASK_QUEUE_NAME):
             # if found response in cache, upload data, delete task from sqs
             task.queue.task_done()
-            cache_complete_task(task_data)
+            cache_complete_task(task_data, is_from_cache=True)
             del task
             continue
         if task.start():
@@ -1314,7 +1315,7 @@ def main():
                 'Task %s started successfully, removing it from the queue',
                 task.task_data.get('task_id'))
             task.queue.task_done()
-            cache_complete_task(task_data)
+            cache_complete_task(task_data, is_from_cache=False)
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
                          task.task_data.get('task_id', 0))

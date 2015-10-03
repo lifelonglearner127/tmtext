@@ -4,6 +4,7 @@ import urllib
 import re
 import sys
 import json
+import hashlib
 
 from lxml import html, etree
 import time
@@ -164,7 +165,23 @@ class BootsScraper(Scraper):
         return None
 
     def _image_urls(self):
-        return self.tree_html.xpath("//meta[@property='og:image']/@content")
+        image_urls = self.tree_html.xpath("//meta[@property='og:image']/@content")
+
+        if not image_urls:
+            return None
+
+        if "?wid=200&" in image_urls[0]:
+            image_urls[0] = image_urls[0][:image_urls[0].find("?wid=200&")]
+
+        for index in range(1, 100):
+            response = requests.get(image_urls[0] + "_" + str(index) + "?fit=constrain,1&wid=100&hei=100&fmt=jpg")
+
+            if hashlib.md5(response._content).hexdigest() == 'fd3151425e5ebaa10ce12692666ab8c9':
+                break
+
+            image_urls.append(image_urls[0] + "_" + str(index))
+
+        return image_urls
 
     def _image_count(self):
         if self._image_urls():
