@@ -150,10 +150,10 @@ class WalmartScraper(Scraper):
             string containing only product id
         """
         if self._version() == "Walmart v1":
-            product_id = self.product_page_url.split('/')[-1]
+            product_id = self._canonical_link().split('/')[-1]
             return product_id
         elif self._version() == "Walmart v2":
-            product_id = self.product_page_url.split('/')[-1]
+            product_id = self._canonical_link().split('/')[-1]
             return product_id
 
         return None
