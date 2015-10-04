@@ -541,7 +541,11 @@ class AmazonScraper(Scraper):
             tree = self.tree_html
 
         swatch_images = []
-        swatch_image_json = json.loads(self._find_between(html.tostring(self.tree_html), 'data["colorImages"] = ', ';\n'))
+
+        try:
+            swatch_image_json = json.loads(self._find_between(html.tostring(self.tree_html), 'data["colorImages"] = ', ';\n'))
+        except:
+            swatch_image_json = None
 
         if swatch_image_json:
             for color in swatch_image_json:

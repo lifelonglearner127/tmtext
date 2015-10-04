@@ -16,7 +16,7 @@
     <field name="long_description" version="1.1"></field>
     <field name="apluscontent_desc" version="1.1"></field>
     <field name="image_count" version="1.1"></field>
-    <field name="image_urls" version="1.5"></field>
+    <field name="image_urls" version="1.6"></field>
     <field name="video_count" version="1.1"></field>
     <field name="video_urls" version="1.1"></field>
     <field name="pdf_count" version="1.1"></field>
