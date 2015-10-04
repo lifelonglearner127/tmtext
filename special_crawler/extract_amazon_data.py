@@ -515,7 +515,17 @@ class AmazonScraper(Scraper):
             if "PKmb-play-button-overlay-thumb_.png" in url:
                 continue
 
-            origin_image_urls.append(url.replace(",50_.", ".").replace("._SS40_.", "."))
+            image_file_name = url.split("/")[-1]
+            offset_index_1 = image_file_name.find(".")
+            offset_index_2 = image_file_name.rfind(".")
+
+            if offset_index_1 == offset_index_2:
+                origin_image_urls.append(url)
+            else:
+                image_file_name = image_file_name[:offset_index_1] + image_file_name[offset_index_2:]
+                origin_image_urls.append(url[:url.rfind("/")] + "/" + image_file_name)
+
+        origin_image_urls = list(set(origin_image_urls))
 
         if not origin_image_urls:
             return None
@@ -529,39 +539,50 @@ class AmazonScraper(Scraper):
         if vurls==None: vurls=[]
         if tree == None:
             tree = self.tree_html
+
+        swatch_images = []
+        swatch_image_json = json.loads(self._find_between(html.tostring(self.tree_html), 'data["colorImages"] = ', ';\n'))
+
+        if swatch_image_json:
+            for color in swatch_image_json:
+                for image in swatch_image_json[color]:
+                    if "large" in image and image["large"].strip():
+                        swatch_images.append(image["large"])
+
+        image_url = swatch_images
         #The small images are to the left of the big image
-        image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
+        image_url.extend(tree.xpath("//span[@class='a-button-text']//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls])
 
         #The small images are below the big image
-        image_url = tree.xpath("//div[@id='thumbs-image']//img/@src")
+        image_url.extend(tree.xpath("//div[@id='thumbs-image']//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             res = [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls]
             return self._get_origin_image_urls_from_thumbnail_urls(res)
 
         #Amazon instant video
-        image_url = tree.xpath("//div[@class='dp-meta-icon-container']//img/@src")
+        image_url.extend(tree.xpath("//div[@class='dp-meta-icon-container']//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
-        image_url = tree.xpath("//td[@id='prodImageCell']//img/@src")
+        image_url.extend(tree.xpath("//td[@id='prodImageCell']//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
-        image_url = tree.xpath("//div[contains(@id,'thumb-container')]//img/@src")
+        image_url.extend(tree.xpath("//div[contains(@id,'thumb-container')]//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls])
 
-        image_url = tree.xpath("//div[contains(@class,'imageThumb')]//img/@src")
+        image_url.extend(tree.xpath("//div[contains(@class,'imageThumb')]//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
-        image_url = tree.xpath("//div[contains(@id,'coverArt')]//img/@src")
+        image_url.extend(tree.xpath("//div[contains(@id,'coverArt')]//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
-        image_url = tree.xpath('//img[@id="imgBlkFront"]')
+        image_url =tree.xpath('//img[@id="imgBlkFront"]')
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return ["inline image"]
 
