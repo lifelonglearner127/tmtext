@@ -24,7 +24,7 @@ class HairShop24Spider(BaseProductsSpider):
     * 'item'
     Sort items from largest to smallest
     """
-    name = 'hair-shop24_products'
+    name = 'hair_shop24_products'
 
     allowed_domains = ["hair-shop24.net"]
     start_urls = []
