@@ -231,7 +231,7 @@ class JcpenneyVariants(object):
 
             #color attribute
             product_id = re.search('prod\.jump\?ppId=(.+?)$', self.tree_html.xpath("//link[@rel='canonical']/@href")[0]).group(1)
-            color_list = self.tree_html.xpath("//ul[@id='" + product_id + "COLOR']//li[contains(@id, '" + product_id + "')]/a/img/@alt")
+            color_list = self.tree_html.xpath("//ul[@id='" + product_id + "COLOR']//li[contains(@id, '" + product_id + "')]/a/img/@name")
             visible_color_list = []
             color_li_list = self.tree_html.xpath("//ul[@id='" + product_id + "COLOR']//li[contains(@id, '" + product_id + "')]")
 

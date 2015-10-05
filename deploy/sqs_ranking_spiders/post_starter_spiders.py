@@ -60,7 +60,8 @@ def main():
     f.close()
     # put anything you want here...
     # add new PIP packages
-    git_checkout('sc_production')
+    # todo: enable line below after script call removed from scrapy settings
+    # git_checkout('sc_production')
     for package in INSTALL_PACKAGES:
         _install_pip_package(package)
 
