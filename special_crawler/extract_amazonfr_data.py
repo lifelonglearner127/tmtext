@@ -23,13 +23,13 @@ import compare_images
 
 from spiders_shared_code.amazon_variants import AmazonVariants
 
-class AmazonDEScraper(Scraper):
+class AmazonFRScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.de/[product-name]/dp/<product-id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.fr/[product-name]/dp/<product-id>"
 
     CB = captcha_solver.CaptchaBreakerWrapper()
     # special dir path to store the captchas, so that the service has permissions to create it on the scraper instances
@@ -138,7 +138,7 @@ class AmazonDEScraper(Scraper):
             self.tree_html = html.fromstring(contents)
 
     def check_url_format(self):
-        m = re.match(r"^http://www.amazon.de/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        m = re.match(r"^http://www.amazon.fr/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         self.scraper_version = "de"
 
         return not not m
@@ -168,7 +168,7 @@ class AmazonDEScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = re.match("^http://www.amazon.de/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+        product_id = re.match("^http://www.amazon.fr/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         return product_id
 
     def _site_id(self):
@@ -310,7 +310,7 @@ class AmazonDEScraper(Scraper):
 
         try:
             description = ""
-            block = self.tree_html.xpath("//h2[contains(text(),'Produktbeschreibungen')]/following-sibling::*")[0]
+            block = self.tree_html.xpath("//h2[contains(text(),'Informations sur le produit')]/following-sibling::*")[0]
 
             for item in block:
                 description = description + html.tostring(item)
@@ -462,10 +462,10 @@ class AmazonDEScraper(Scraper):
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
-        if canonical_link.startswith("http://www.amazon.de"):
+        if canonical_link.startswith("http://www.amazon.fr"):
             return canonical_link
         else:
-            return "http://www.amazon.de" + canonical_link
+            return "http://www.amazon.fr" + canonical_link
 
     #returns 1 if the mobile version is the same, 0 otherwise
     def _mobile_image_same(self):
@@ -700,15 +700,15 @@ class AmazonDEScraper(Scraper):
             average_review = self.tree_html.xpath("//div[@class='gry txtnormal acrRating']//text()")
         if len(average_review) == 0:
             average_review = self.tree_html.xpath("//div[@id='avgRating']//span//text()")
-        average_review = re.findall("([0-9]\.?[0-9]?) von 5 Sternen", average_review[0])[0]
+        average_review = re.findall("([0-9]\.?[0-9]?) \xe9toiles sur 5", average_review[0])[0]
         return self._tofloat(average_review)
 
     def _review_count(self):
         nr_reviews = self.tree_html.xpath("//span[@id='acrCustomerReviewText']//text()")
         if len(nr_reviews) > 0:
-            nr_review = re.findall("([0-9,]+) Kundenrezension", nr_reviews[0])
+            nr_review = re.findall("([0-9,]+) commentaires client", nr_reviews[0])
             if len(nr_review) == 0:
-                nr_review = re.findall("([0-9]+) Kundenrezension", nr_reviews[0])
+                nr_review = re.findall("([0-9]+) commentaires client", nr_reviews[0])
             if len(nr_review) > 0:
                 return self._toint(nr_review[0])
         nr_reviews = self.tree_html.xpath("//div[@class='fl gl5 mt3 txtnormal acrCount']//text()")
@@ -960,7 +960,7 @@ class AmazonDEScraper(Scraper):
                                 if seller_link[0].startswith("http://www.amazon."):
                                     seller_content = requests.get(seller_link[0], headers=h).text
                                 else:
-                                    seller_content = requests.get("http://www.amazon.de" + seller_link[0], headers=h).text
+                                    seller_content = requests.get("http://www.amazon.fr" + seller_link[0], headers=h).text
 
                                 seller_tree = html.fromstring(seller_content)
                                 seller_names = seller_tree.xpath("//h2[@id='s-result-count']/span/span//text()")

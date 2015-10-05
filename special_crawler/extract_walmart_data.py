@@ -150,10 +150,10 @@ class WalmartScraper(Scraper):
             string containing only product id
         """
         if self._version() == "Walmart v1":
-            product_id = self.product_page_url.split('/')[-1]
+            product_id = self._canonical_link().split('/')[-1]
             return product_id
         elif self._version() == "Walmart v2":
-            product_id = self.product_page_url.split('/')[-1]
+            product_id = self._canonical_link().split('/')[-1]
             return product_id
 
         return None
@@ -1080,7 +1080,12 @@ class WalmartScraper(Scraper):
         variants_json = json.loads(json_text)
         item_id_list = []
 
+        primary_product_id = self._find_between(html.tostring(self.tree_html), '"primaryProductId":"', '"').strip()
+
         for item in variants_json:
+            if primary_product_id == item["id"]:
+                primary_product_id = str(item["buyingOptions"]["usItemId"])
+
             item_id_list.append(item["buyingOptions"]["usItemId"])
 
         item_id_list = list(set(item_id_list))
@@ -1090,9 +1095,11 @@ class WalmartScraper(Scraper):
 
         for variant_id in item_id_list:
             related_product_url = url[:url.rfind("/")] + "/" + str(variant_id)
-            related_product_urls.append(related_product_url)
 
-        related_product_urls.remove(self.product_page_url)
+            if primary_product_id in related_product_url:
+                related_product_urls.insert(0, related_product_url)
+            else:
+                related_product_urls.append(related_product_url)
 
         if related_product_urls:
             return related_product_urls
@@ -1700,6 +1707,14 @@ class WalmartScraper(Scraper):
                 return free_pickup_today
 
         return None
+
+    def _buying_option(self):
+        self._extract_product_info_json()
+
+        if self.product_info_json and "buyingOptions" not in self.product_info_json:
+            return 0
+
+        return 1
 
     def _no_image(self, url):
         """Overwrites the _no_image
@@ -2902,6 +2917,7 @@ class WalmartScraper(Scraper):
         "rollback": _rollback, \
         "shipping": _shipping, \
         "free_pickup_today": _free_pickup_today, \
+        "buying_option": _buying_option, \
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title": _product_name_from_tree, \
         "in_stores": _in_stores, \

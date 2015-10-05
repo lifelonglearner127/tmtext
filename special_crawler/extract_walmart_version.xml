@@ -43,7 +43,7 @@
     <field name="reviews" version="1.6"></field>
     <field name="swatches" version="1.3"></field>
     <field name="video_count" version="1.1"></field>
-    <field name="video_urls" version="1.2"></field>
+    <field name="video_urls" version="1.3"></field>
     <field name="wc_360" version="1.1"></field>
     <field name="wc_emc" version="1.1"></field>
     <field name="wc_pdf" version="1.1"></field>
@@ -64,7 +64,7 @@
     <field name="site_id" version="1.2"></field>
     <field name="walmart_no" version="2.2"></field>
     <field name="product_id" version="1.2"></field>
-    <field name="related_products_urls" version="1.2"></field>
+    <field name="related_products_urls" version="1.3"></field>
     <field name="shelf_description" version="1.1"></field>
     <field name="supplement_facts" version="1.3"></field>
     <field name="supplement_fact_count" version="1.3"></field>
@@ -73,4 +73,5 @@
     <field name="shipping" version="1.1"></field>
     <field name="no_longer_available" version="1.1"></field>
     <field name="free_pickup_today" version="1.1"></field>
+    <field name="buying_option" version="1.1"></field>
 </fields>

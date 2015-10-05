@@ -65,9 +65,10 @@ from extract_hagelshop_data import HagelShopScraper
 from extract_levi_data import LeviScraper
 from extract_dockers_data import DockersScraper
 from extract_houseoffraser_data import HouseoffraserScraper
+from extract_schuh_data import SchuhScraper
 from extract_boots_data import BootsScraper
 from extract_clarkscouk_data import ClarksCoUkScraper
-
+from extract_amazonfr_data import AmazonFRScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -141,8 +142,10 @@ SUPPORTED_SITES = {
                     "levi": LeviScraper,
                     "dockers": DockersScraper,
                     "houseoffraser": HouseoffraserScraper,
+                    "schuh": SchuhScraper,
                     "boots": BootsScraper,
-                    "clarkscouk": ClarksCoUkScraper
+                    "clarkscouk": ClarksCoUkScraper,
+                    "amazonfr": AmazonFRScraper
                     }
 
 # add logger
@@ -236,6 +239,8 @@ def extract_domain(url):
         return "boots"
     if "www.clarks.co.uk" in url:
         return "clarkscouk"
+    if "amazon.fr" in url:
+        return "amazonfr"
 
     m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)
     if m:
