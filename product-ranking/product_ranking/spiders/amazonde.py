@@ -62,8 +62,8 @@ class AmazonDeValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'kaspersky total': [5, 250],
         'car navigator garmin': [5, 100],
         'yamaha drums midi': [2, 50],
-        'black men shoes size 8 red': [5, 70],
-        'car audio equalizer pioneer': [5, 120]
+        'black men shoes size 8 red': [5, 120],
+        'equalizer pioneer': [5, 300]
     }
 
 

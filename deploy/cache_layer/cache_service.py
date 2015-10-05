@@ -3,6 +3,7 @@ from time import time, mktime
 from redis import StrictRedis
 from zlib import compress, decompress
 from datetime import date, datetime
+from os.path import realpath, dirname
 
 from cache_layer import REDIS_HOST, REDIS_PORT
 
@@ -279,9 +280,10 @@ class SqsCache(object):
         """
         returns dict with current settings
         """
-        with open(self.CACHE_SETTINGS_PATH, 'r') as f:
+        path = '%s/%s' % (dirname(realpath(__file__)), self.CACHE_SETTINGS_PATH)
+        with open(path, 'r') as f:
             s = f.read()
-        data = json.load(s or '""')
+        data = json.loads(s or '{}')
         return data
 
     def save_cache_settings(self, data):
@@ -290,6 +292,7 @@ class SqsCache(object):
         """
         if not data:
             return
-        with open(self.CACHE_SETTINGS_PATH, 'w') as f:
+        path = '%s/%s' % (dirname(realpath(__file__)), self.CACHE_SETTINGS_PATH)
+        with open(path, 'w') as f:
             s = json.dumps(data)
             f.write(s)

@@ -37,6 +37,17 @@ def log_install_error():
     return 'ok'
 
 
+@app.route('/settings', methods=['GET', 'POST'])
+def update_settings():
+    data = dict()
+    if request.method == 'POST':
+        data = {k: v for k, v in request.form.items()}
+        cache.save_cache_settings(data)
+        data['result_msg'] = 'Changes saved'
+    data['form_fields'] = cache.get_cache_settings()
+    return render_template('update_settings.html', **data)
+
+
 @app.route('/killer')
 def get_killer_logs():
     """
@@ -185,5 +196,5 @@ def complete_task():
 
 
 if __name__ == '__main__':
-    app.debug = False
+    app.debug = True
     app.run()

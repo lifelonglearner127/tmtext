@@ -342,16 +342,32 @@ class MarksandspencerProductsSpider(BaseProductsSpider):
     def _scrape_product_links(self, response):
         links = response.xpath(
             "//h3/a[contains(@class, 'prodAnchor')]/@href").extract()
-
+        if not links:
+            links = response.xpath(
+                '//li/div[contains(@class, "detail")]/a/@href').extract()
         for link in links:
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
         next_page = "&pageChoice={now}"
         url = response.url
-        maximum = int(is_empty(response.xpath(
+        _max_page = response.xpath(
             "//legend[contains(@class, 'web-only')]/span[last()]/text()"
-        ).re(FLOATING_POINT_RGEX), 1))
+        ).re(FLOATING_POINT_RGEX)
+        if _max_page and isinstance(_max_page, (list, tuple)):
+            _max_page = _max_page[0]
+        if not _max_page:
+            _max_page  = response.xpath(
+                '//*[contains(@class, "pagination")]/legend[contains(text(), "/")]/text()'
+            ).extract()
+            if _max_page:
+                _max_page = _max_page[0].strip()
+                if _max_page.count('/') == 1:
+                    _max_page = _max_page.split('/')[1].strip()
+        if _max_page.isdigit():
+            maximum = int(_max_page)
+        else:
+            maximum = 0
         now = int(is_empty(re.findall("pageChoice=(\d+)", url), 1))
         if now >= maximum:
             return None

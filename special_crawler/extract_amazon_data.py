@@ -20,8 +20,9 @@ sys.path.append(os.path.abspath('../search'))
 import captcha_solver
 import compare_images
 from socket import timeout
-
+import random
 from spiders_shared_code.amazon_variants import AmazonVariants
+import datetime
 
 class AmazonScraper(Scraper):
 
@@ -75,7 +76,8 @@ class AmazonScraper(Scraper):
             print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
             agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
         else:
-            agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+      #      agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+            agent = getUserAgent()  #random User Agent
         request.add_header('User-Agent', agent)
 
         for i in range(self.MAX_RETRIES):
@@ -515,7 +517,17 @@ class AmazonScraper(Scraper):
             if "PKmb-play-button-overlay-thumb_.png" in url:
                 continue
 
-            origin_image_urls.append(url.replace(",50_.", ".").replace("._SS40_.", "."))
+            image_file_name = url.split("/")[-1]
+            offset_index_1 = image_file_name.find(".")
+            offset_index_2 = image_file_name.rfind(".")
+
+            if offset_index_1 == offset_index_2:
+                origin_image_urls.append(url)
+            else:
+                image_file_name = image_file_name[:offset_index_1] + image_file_name[offset_index_2:]
+                origin_image_urls.append(url[:url.rfind("/")] + "/" + image_file_name)
+
+        origin_image_urls = list(set(origin_image_urls))
 
         if not origin_image_urls:
             return None
@@ -529,39 +541,54 @@ class AmazonScraper(Scraper):
         if vurls==None: vurls=[]
         if tree == None:
             tree = self.tree_html
+
+        swatch_images = []
+
+        try:
+            swatch_image_json = json.loads(self._find_between(html.tostring(self.tree_html), 'data["colorImages"] = ', ';\n'))
+        except:
+            swatch_image_json = None
+
+        if swatch_image_json:
+            for color in swatch_image_json:
+                for image in swatch_image_json[color]:
+                    if "large" in image and image["large"].strip():
+                        swatch_images.append(image["large"])
+
+        image_url = swatch_images
         #The small images are to the left of the big image
-        image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
+        image_url.extend(tree.xpath("//span[@class='a-button-text']//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls])
 
         #The small images are below the big image
-        image_url = tree.xpath("//div[@id='thumbs-image']//img/@src")
+        image_url.extend(tree.xpath("//div[@id='thumbs-image']//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             res = [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls]
             return self._get_origin_image_urls_from_thumbnail_urls(res)
 
         #Amazon instant video
-        image_url = tree.xpath("//div[@class='dp-meta-icon-container']//img/@src")
+        image_url.extend(tree.xpath("//div[@class='dp-meta-icon-container']//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
-        image_url = tree.xpath("//td[@id='prodImageCell']//img/@src")
+        image_url.extend(tree.xpath("//td[@id='prodImageCell']//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
-        image_url = tree.xpath("//div[contains(@id,'thumb-container')]//img/@src")
+        image_url.extend(tree.xpath("//div[contains(@id,'thumb-container')]//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls])
 
-        image_url = tree.xpath("//div[contains(@class,'imageThumb')]//img/@src")
+        image_url.extend(tree.xpath("//div[contains(@class,'imageThumb')]//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
-        image_url = tree.xpath("//div[contains(@id,'coverArt')]//img/@src")
+        image_url.extend(tree.xpath("//div[contains(@id,'coverArt')]//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
-        image_url = tree.xpath('//img[@id="imgBlkFront"]')
+        image_url =tree.xpath('//img[@id="imgBlkFront"]')
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return ["inline image"]
 
@@ -1005,7 +1032,7 @@ class AmazonScraper(Scraper):
 
             for s in sells:
                 price = s.xpath('.//span[contains(@class,"olpOfferPrice")]//text()')
-                sname = s.xpath('.//p[contains(@class,"olpSellerName")]/span/a/text()')
+                sname = s.xpath('.//*[contains(@class,"olpSellerName")]/span/a/text()')
 
                 if len(price) > 0:
                     seller_price = self._tofloat(price[0])
@@ -1315,7 +1342,44 @@ class AmazonScraper(Scraper):
         "mobile_image_same" : _mobile_image_same, \
     }
 
-
+def getUserAgent():
+    platform = random.choice(['Macintosh', 'Windows', 'X11'])
+    if platform == 'Macintosh':
+        os  = random.choice(['68K', 'PPC'])
+    elif platform == 'Windows':
+        os  = random.choice(['Win3.11', 'WinNT3.51', 'WinNT4.0', 'Windows NT 5.0', 'Windows NT 5.1', 'Windows NT 5.2', 'Windows NT 6.0', 'Windows NT 6.1', 'Windows NT 6.2', 'Win95', 'Win98', 'Win 9x 4.90', 'WindowsCE'])
+    elif platform == 'X11':
+        os  = random.choice(['Linux i686', 'Linux x86_64'])
+    browser = random.choice(['chrome', 'firefox', 'ie'])
+    if browser == 'chrome':
+        webkit = str(random.randint(500, 599))
+        version = str(random.randint(0, 24)) + '.0' + str(random.randint(0, 1500)) + '.' + str(random.randint(0, 999))
+        return 'Mozilla/5.0 (' + os + ') AppleWebKit/' + webkit + '.0 (KHTML, live Gecko) Chrome/' + version + ' Safari/' + webkit
+    elif browser == 'firefox':
+        currentYear = datetime.date.today().year
+        year = str(random.randint(2000, currentYear))
+        month = random.randint(1, 12)
+        if month < 10:
+            month = '0' + str(month)
+        else:
+            month = str(month)
+        day = random.randint(1, 30)
+        if day < 10:
+            day = '0' + str(day)
+        else:
+            day = str(day)
+        gecko = year + month + day
+        version = random.choice(['1.0', '2.0', '3.0', '4.0', '5.0', '6.0', '7.0', '8.0', '9.0', '10.0', '11.0', '12.0', '13.0', '14.0', '15.0'])
+        return 'Mozilla/5.0 (' + os + '; rv:' + version + ') Gecko/' + gecko + ' Firefox/' + version
+    elif browser == 'ie':
+        version = str(random.randint(1, 10)) + '.0'
+        engine = str(random.randint(1, 5)) + '.0'
+        option = random.choice([True, False])
+        if option == True:
+            token = random.choice(['.NET CLR', 'SV1', 'Tablet PC', 'Win64; IA64', 'Win64; x64', 'WOW64']) + '; '
+        elif option == False:
+            token = ''
+        return 'Mozilla/5.0 (compatible; MSIE ' + version + '; ' + os + '; ' + token + 'Trident/' + engine + ')'
 
 
 
