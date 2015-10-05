@@ -1030,7 +1030,7 @@ class AmazonScraper(Scraper):
 
             for s in sells:
                 price = s.xpath('.//span[contains(@class,"olpOfferPrice")]//text()')
-                sname = s.xpath('.//p[contains(@class,"olpSellerName")]/span/a/text()')
+                sname = s.xpath('.//*[contains(@class,"olpSellerName")]/span/a/text()')
 
                 if len(price) > 0:
                     seller_price = self._tofloat(price[0])
