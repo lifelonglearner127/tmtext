@@ -270,11 +270,15 @@ def _start_spider_and_wait_for_finish(spider, url, max_wait=60*2):
         output_file.close()
     except:
         pass
-    run(
-        "scrapy crawl {spider} -a product_url={url} -o {output}".format(
-            spider=spider, url=url, output=output_file.name
-        )
-    )
+    # production or local machine?
+    if os.path.exists('/home/web_runner/virtual-environments/web-runner/bin/scrapy'):
+        cmd = ("cd /home/web_runner/repos/tmtext/product-ranking;"
+               " /home/web_runner/virtual-environments/web-runner/bin/scrapy"
+               " crawl {spider} -a product_url={url} -o {output} > /tmp/_flask_server_scrapy.log 2>&1")
+    else:
+        cmd = ("scrapy crawl {spider} -a product_url={url} -o {output}"
+               " > /tmp/_flask_server_scrapy.log 2>&1")
+    run(cmd.format(spider=spider, url=url, output=output_file.name))
     _total_slept = 0
     while 1:
         _total_slept += 1

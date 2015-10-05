@@ -98,7 +98,7 @@ def get_ssh_keys():
 
     local_original_mode = cuisine.is_local()
     cuisine.mode_local()
-    
+
     if not cuisine.dir_exists(LOCAL_CERT_PATH):
         local('mkdir -p ' + LOCAL_CERT_BASE_PATH)
         local('cd %s && git clone %s && cd %s'
@@ -336,6 +336,31 @@ def _setup_virtual_env_web_runner():
         run('pip install boto')
         run('pip install s3peat')
         run('pip install workerpool')
+        run('pip install fabric')
+        run('pip install cuisine')
+        run('pip install scrapy==0.24.4')
+        run('pip install scrapyd==1.0.1')
+        run('pip install service_identity')
+        run('pip install simplejson')
+        run('pip install requests')
+        run('pip install Pillow')
+        run('pip install pytesseract')
+        run('pip install boto')
+        run('pip install django')
+        run('pip install django-ses')
+        run('pip install django_adminplus')
+        run('pip install lxml')
+        run('pip install tldextract')
+        run('pip install s3peat')
+        run('pip install workerpool')
+        run('pip install boto')
+        run('pip install s3peat')
+        run('pip install sqlalchemy')
+        run('pip install psycopg2')
+        run('pip install hjson')
+        run('pip install pyyaml')
+        run('pip install python-dateutil')
+        run('pip install psutil')
 
 
 def _setup_virtual_env_web_runner_web():
@@ -635,6 +660,24 @@ def deploy(restart_scrapyd=False, branch='sc_production'):
     configure()
     install()
     run_servers(restart_scrapyd)
+
+
+def _restart_test_flask_uwsgi():
+    orig_user, orig_passw, orig_cert = env.user, env.password, env.key_filename
+    env.user, env.password, env.key_filename = \
+        SSH_SUDO_USER, SSH_SUDO_PASSWORD, SSH_SUDO_CERT
+    sudo('service uwsgi restart')
+    env.user, env.password, env.key_filename = \
+        orig_user, orig_passw, orig_cert
+
+
+def deploy_sc_test_server(branch='sc_production'):
+    _common_tasks()
+    setup_virtual_env()
+    get_repos(branch=branch)
+    configure()
+    install()
+    _restart_test_flask_uwsgi()
 
 
 def test_scrapy():
