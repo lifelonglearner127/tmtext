@@ -42,9 +42,8 @@ def send_mail(sender, receivers, subject, text):
 
 
 def delete_old_cache_data(cache):
-    # delete cached responses, older then 7 days
-    days = 7
-    freshness = 24 * 60 * days
+    # delete cached responses, older then 7 days (default value)
+    freshness = int(cache.get_cache_settings().get('hours_limit', '168'))
     res = cache.delete_old_tasks(freshness)
     removed_cache_url, removed_cache_term, removed_resp, removed_urgent = \
         cache.clear_stats()
