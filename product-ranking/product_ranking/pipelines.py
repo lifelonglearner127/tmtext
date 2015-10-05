@@ -9,6 +9,7 @@ import unittest
 import json
 import random
 import sys
+import os
 
 from scrapy import Selector
 from scrapy.exceptions import DropItem
@@ -16,6 +17,8 @@ from scrapy import logformatter
 from scrapy import log
 from scrapy.xlib.pydispatch import dispatcher
 from scrapy import signals
+from scrapy import log
+from scrapy import logformatter
 import tldextract
 try:
     import mock
@@ -23,6 +26,7 @@ except ImportError:
     pass  # Optional import for test.
 
 from .items import Price
+from .validation import _get_spider_output_filename
 
 STATISTICS_ENABLED = False
 STATISTICS_ERROR_MSG = None
@@ -31,15 +35,6 @@ try:
     STATISTICS_ENABLED = True
 except ImportError as e:
     STATISTICS_ERROR_MSG = str(e)
-
-
-class PipelineFormatter(logformatter.LogFormatter):
-    # redefine this method to change log level for DropItem exception
-    def dropped(self, item, exception, response, spider):
-        log_format = super(PipelineFormatter, self).dropped(
-            item, exception, response, spider)
-        log_format['level'] = log.ERROR
-        return log_format
 
 
 class CheckGoogleSourceSiteFieldIsCorrectJson(object):
@@ -287,12 +282,18 @@ class MergeSubItems(object):
     def spider_opened(self, spider):
         pass
 
+    def _dump_mapper_to_fname(self, fname):
+        with open(fname, 'w') as fh:
+            for url, item in self._mapper.items():
+                fh.write(json.dumps(item, default=self._serializer)+'\n')
+
     def spider_closed(self, spider):
         if self._subitem_mode:  # rewrite output only if we're in "subitem mode"
             output_fname = self._get_output_filename(spider)
-            with open(output_fname, 'w') as fh:
-                for url, item in self._mapper.items():
-                    fh.write(json.dumps(item, default=self._serializer)+'\n')
+            if output_fname:
+                self._dump_mapper_to_fname(output_fname)
+            _validation_filename = _get_spider_output_filename(spider)
+            self._dump_mapper_to_fname(_validation_filename)
 
     def process_item(self, item, spider):
         _subitem = item.get('_subitem', None)

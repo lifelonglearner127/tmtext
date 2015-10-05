@@ -9,35 +9,36 @@ from lxml import html, etree
 import time
 import requests
 from extract_data import Scraper
-from spiders_shared_code.dockers_variants import DockersVariants
+from spiders_shared_code.houseoffraser_variants import HouseOffRaserVariants
 
-class DockersScraper(Scraper):
+
+class HouseoffraserScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.dockers.com/US/en_US/<category-name>/p/<product-id>"
-    REVIEW_URL = "http://dockers.ugc.bazaarvoice.com/2080-en_us/{0}/reviews.djs?format=embeddedhtml"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.houseoffraser.co.uk/<product-name>/<product-id>,default,pd.html"
+    REVIEW_URL = "http://houseoffraser.ugc.bazaarvoice.com/6017-en_gb/{0}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
         self.product_json = None
-        self.buy_stack_json = None
+        self.variation_json = None
         # whether product has any webcollage media
         self.review_json = None
         self.review_list = None
         self.is_review_checked = False
-        self.dk = DockersVariants()
+        self.hv = HouseOffRaserVariants()
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.dockers.com/US/en_US/.*/p/[a-zA-Z0-9\-]+$", self.product_page_url)
+        m = re.match(r"^http://www.houseoffraser.co.uk/.*?/[0-9]+,default,pd.html$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -49,17 +50,13 @@ class DockersScraper(Scraper):
             False otherwise
         """
         try:
-            self.dk.setupCH(self.tree_html)
-        except:
-            pass
-
-        try:
             itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
 
             if itemtype != "product":
                 raise Exception()
 
             self._extract_product_json()
+            self.hv.setupCH(self.tree_html)
         except Exception:
             return True
 
@@ -70,20 +67,17 @@ class DockersScraper(Scraper):
     ##########################################
 
     def _extract_product_json(self):
-        if self.product_json:
-            return
-
         try:
-            product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\n")
+            product_json_text = self._find_between(html.tostring(self.tree_html), "var _DCSVariables = ", ";</script>")
             self.product_json = json.loads(product_json_text)
         except:
             self.product_json = None
 
         try:
-            buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
-            self.buy_stack_json = json.loads(buy_stack_json_text)
+            variation_json_text = self._find_between(html.tostring(self.tree_html), "var variations = (", ").variations;")
+            self.variation_json = json.loads(variation_json_text)
         except:
-            self.buy_stack_json = None
+            self.variation_json = None
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -97,10 +91,10 @@ class DockersScraper(Scraper):
         return None
 
     def _product_id(self):
-        return self.product_json["product"][0]["product_id"]
+        return self.product_json["productSKU"]
 
     def _site_id(self):
-        return self.product_json["product"][0]["product_id"]
+        return self.product_json["productID"]
 
     def _status(self):
         return "success"
@@ -114,58 +108,41 @@ class DockersScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
+        return self.tree_html.xpath("//span[@class='breadcrumb-product-title capitalize']/text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
+        return self.tree_html.xpath("//span[@class='breadcrumb-product-title capitalize']/text()")[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
+        return self.tree_html.xpath("//span[@class='breadcrumb-product-title capitalize']/text()")[0].strip()
 
     def _model(self):
-        return self.tree_html.xpath("//meta[@itemprop='model']/@content")[0]
+        return None
 
     def _upc(self):
         return None
 
     def _features(self):
-        features_string = ""
-
-        for colorid in self.buy_stack_json["colorid"]:
-            features_string = self.buy_stack_json["colorid"][colorid]["fabric"]
-            break
-
-        features = features_string.split("<br>")
-
-        if features:
-            return features
-
         return None
 
     def _feature_count(self):
-        features = self._features()
-
-        if features:
-            return len(features)
+        if self._features():
+            return len(self._features())
 
         return 0
 
-    def _description(self):
-        short_description = self.tree_html.xpath("//meta[@property='og:description']/@content")[0].strip()
-
-        if short_description:
-            return short_description
-
+    def _model_meta(self):
         return None
+
+    def _description(self):
+        return self.tree_html.xpath("//div[@class='hof-description']//span[@itemprop='description']/text()")[0].strip()
 
     def _long_description(self):
-        for colorid in self.buy_stack_json["colorid"]:
-            return self.buy_stack_json["colorid"][colorid]["fabric"]
-
-        return None
+        return html.tostring(self.tree_html.xpath("//div[@class='hof-description']//span[@itemprop='description']/ul")[0])
 
     def _variants(self):
-        return self.dk._variants()
+        return self.hv._variants()
+
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -173,14 +150,16 @@ class DockersScraper(Scraper):
     def _mobile_image_same(self):
         return None
 
-    def _image_urls(self):
-        image_urls = []
+    def _image_urls(self):        
+        image_list = []
 
-        for url in self.buy_stack_json["colorid"][self._product_id()]["altViews"]:
-            image_urls.append(self.buy_stack_json["colorid"][self._product_id()]["imageURL"] + url)
+        for variation in self.variation_json["variations"]:
+            if self.variation_json["variations"][variation]["available"] == "true":
+                image_list.extend(self.variation_json["variations"][variation]["images"])
 
-        if image_urls:
-            return image_urls
+        if image_list:
+            image_list = list(set(image_list))
+            return image_list
 
         return None
 
@@ -194,12 +173,20 @@ class DockersScraper(Scraper):
         return None
 
     def _video_count(self):
+        videos = self._video_urls()
+
+        if videos:
+            return len(videos)
+
         return 0
 
     def _pdf_urls(self):
         return None
 
     def _pdf_count(self):
+        if self._pdf_urls():
+            return len(self._pdf_urls())
+
         return 0
 
     def _webcollage(self):
@@ -270,7 +257,7 @@ class DockersScraper(Scraper):
         b = requests.adapters.HTTPAdapter(max_retries=3)
         s.mount('http://', a)
         s.mount('https://', b)
-        contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
+        contents = s.get(self.REVIEW_URL.format(self._site_id()), headers=h, timeout=5).text
 
         try:
             start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
@@ -280,35 +267,14 @@ class DockersScraper(Scraper):
             self.review_json = json.loads(self.review_json)
         except:
             self.review_json = None
-            return None
 
-        review_count = int(self.review_json["jsonData"]["attributes"]["numReviews"])
+        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
+        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
+        reviews_by_mark = reviews_by_mark[:5]
+        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
 
-        if review_count == 0:
-            return None
-
-        offset = 0
-        review_list = None
-
-        review_list = [[5, 0], [4, 0], [3, 0], [2, 0], [1, 0]]
-
-        while review_count > 0:
-            ratingValue = self._find_between(contents, '<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', "<\\/span>", offset).strip()
-
-            if offset == 0:
-                offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">') + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
-                continue
-
-            if not ratingValue:
-                break
-
-            offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', offset) + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
-
-            ratingValue = int(float(ratingValue))
-            review_list[5 - ratingValue][1] = review_list[5 - ratingValue][1] + 1
-
-
-            review_count = review_count - 1
+        if not review_list:
+            review_list = None
 
         self.review_list = review_list
 
@@ -318,13 +284,13 @@ class DockersScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return "$" + str(self.product_json["product"][0]["online_price"])
+        return self.tree_html.xpath("//span[@id='productPriceContainer']/p[@class='price']/text()")[0].strip()
 
     def _price_amount(self):
-        return float(self.product_json["product"][0]["online_price"])
+        return float(re.findall("\d+.\d+", self._price())[0])
 
     def _price_currency(self):
-        return "USD"
+        return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
 
     def _in_stores(self):
         return 0
@@ -333,14 +299,10 @@ class DockersScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
-        out_of_stock = 1
+        if self.tree_html.xpath("//meta[@id='semanticAvailability']/@content")[0].strip() == "OutOfStock":
+            return 1
 
-        for sku in self.buy_stack_json["sku"]:
-            if self.buy_stack_json["sku"][sku]["stock"] > 0:
-                out_of_stock = 0
-                break
-
-        return out_of_stock
+        return 0
 
     def _in_stores_out_of_stock(self):
         return 0
@@ -365,13 +327,16 @@ class DockersScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        return [self.product_json["page"]["page_department"], self.product_json["page"]["page_category"]]
+        categories = self.tree_html.xpath("//ol[@class='hof-breadcrumbs clearfix pdp_breadcrumbs']/li/a[@itemprop='breadcrumb']/text()")
+
+        return categories[2:]
 
     def _category_name(self):
-        return self.product_json["page"]["page_category"]
-
+        return self._categories()[-1]
+    
     def _brand(self):
-        return self.product_json["page"]["brand"]
+        return self.product_json["productBrand"]
+
 
 
     ##########################################
@@ -406,9 +371,10 @@ class DockersScraper(Scraper):
         "upc" : _upc,\
         "features" : _features, \
         "feature_count" : _feature_count, \
+        "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
-        "variants": _variants, \
+        "variants": _variants,
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\

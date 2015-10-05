@@ -20,6 +20,34 @@ class KohlsVariants(object):
         """ Call it from CH spiders """
         self.tree_html = tree_html
 
+    def _find_between(self, s, first, last):
+        try:
+            start = s.index(first) + len(first)
+            end = s.index(last, start)
+            return s[start:end]
+        except ValueError:
+            return ""
+
+    def swatches(self):
+        swatch_list = []
+
+        for swatch in self.tree_html.xpath("//div[@class='swatch-container-new']//a[starts-with(@class, 'swatch-')]"):
+            swatch_name = swatch.xpath("./@class")[0][7:]
+            id = swatch.xpath("./@id")[0]
+            swatch_info = {}
+            swatch_info["swatch_name"] = swatch_name
+            swatch_info[swatch_name] = id
+            swatch_info["hero"] = 1
+            swatch_info["thumb"] = 1
+            swatch_info["hero_image"] = self._find_between(swatch.xpath("./@rel")[0], "", "?wid=")
+            swatch_info["thumb_image"] = self._find_between(swatch.xpath("./@style")[0], "background: url('", "')")
+            swatch_list.append(swatch_info)
+
+        if swatch_list:
+            return swatch_list
+
+        return None
+
     def _variants(self):
         page_raw_text = html.tostring(self.tree_html)
         # scrape JSON variants
@@ -152,21 +180,15 @@ class KohlsVariants(object):
 
         variants = temp
 
-        # scrape HTML variants (to get images)
-        for var in self.tree_html.xpath(
-                '//div[contains(@itemtype, "roduct")]'):
-            sku = var.xpath('.//meta[contains(@itemprop, "sku")]/@content')
-            if not sku:
-                continue
-            sku = sku[0].strip()
-            img = var.xpath('.//meta[contains(@itemprop, "imageUrl")]/@content')
-            if not img:
-                continue
-            img = img[0].strip()
-            # find the appropriate JSON variant by matching SKUs
-            for json_var in variants:
-                if sku == json_var.get('skuId', ''):
-                    json_var['image_url'] = img
+        swatches = self.swatches()
+        for json_var in variants:
+            json_var["image_url"] = None
+            for swatch in swatches:
+                if "Monogray" in json_var["properties"][swatch["swatch_name"]]:
+                    pass
+                if swatch[swatch["swatch_name"]] == json_var["properties"][swatch["swatch_name"]]:
+                    json_var["image_url"] = swatch["hero_image"]
+                    break
 
         if variants:
             return variants

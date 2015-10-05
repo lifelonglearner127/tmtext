@@ -65,14 +65,6 @@ class LeviScraper(Scraper):
 
         return False
 
-    def _find_between(self, s, first, last):
-        try:
-            start = s.index(first) + len(first)
-            end = s.index(last, start)
-            return s[start:end]
-        except ValueError:
-            return ""
-
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -122,13 +114,13 @@ class LeviScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/@content')[0]
+        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
 
     def _product_title(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/@content')[0]
+        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
 
     def _title_seo(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/@content')[0]
+        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
 
     def _model(self):
         return self.tree_html.xpath("//meta[@itemprop='model']/@content")[0]
@@ -226,7 +218,7 @@ class LeviScraper(Scraper):
 
     def _no_image(self):
         return None
-    
+
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
@@ -288,14 +280,35 @@ class LeviScraper(Scraper):
             self.review_json = json.loads(self.review_json)
         except:
             self.review_json = None
+            return None
 
-        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
-        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
-        reviews_by_mark = reviews_by_mark[:5]
-        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
+        review_count = int(self.review_json["jsonData"]["attributes"]["numReviews"])
 
-        if not review_list:
-            review_list = None
+        if review_count == 0:
+            return None
+
+        offset = 0
+        review_list = None
+
+        review_list = [[5, 0], [4, 0], [3, 0], [2, 0], [1, 0]]
+
+        while review_count > 0:
+            ratingValue = self._find_between(contents, '<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', "<\\/span>", offset).strip()
+
+            if offset == 0:
+                offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">') + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
+                continue
+
+            if not ratingValue:
+                break
+
+            offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', offset) + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
+
+            ratingValue = int(float(ratingValue))
+            review_list[5 - ratingValue][1] = review_list[5 - ratingValue][1] + 1
+
+
+            review_count = review_count - 1
 
         self.review_list = review_list
 
