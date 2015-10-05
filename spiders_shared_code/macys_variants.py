@@ -130,7 +130,6 @@ class MacysVariants(object):
                     stockstatus_for_variants["selected"] = False
                     stockstatus_for_variants["price"] = price_amount
                     stockstatus_for_variants["in_stock"] = False
-                    stockstatus_for_variants["upc"] = None
 
                     stockstatus_for_variants_list.append(stockstatus_for_variants)
 
