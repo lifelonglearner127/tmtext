@@ -67,6 +67,7 @@ from extract_dockers_data import DockersScraper
 from extract_houseoffraser_data import HouseoffraserScraper
 from extract_schuh_data import SchuhScraper
 from extract_boots_data import BootsScraper
+from extract_newlook_data import NewlookScraper
 from extract_clarkscouk_data import ClarksCoUkScraper
 from extract_amazonfr_data import AmazonFRScraper
 
@@ -142,6 +143,8 @@ SUPPORTED_SITES = {
                     "levi": LeviScraper,
                     "dockers": DockersScraper,
                     "houseoffraser": HouseoffraserScraper,
+                    "boots": BootsScraper,
+                    "newlook": NewlookScraper,
                     "schuh": SchuhScraper,
                     "boots": BootsScraper,
                     "clarkscouk": ClarksCoUkScraper,
