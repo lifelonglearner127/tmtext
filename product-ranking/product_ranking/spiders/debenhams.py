@@ -261,7 +261,7 @@ class DebenhamsProductSpider(BaseProductsSpider):
 
                 image_url = 'http://debenhams.scene7.com/is/image/Debenhams/' \
                             '{upc}_{id}'.format(
-                                upc=product['upc'],
+                                upc=product.get('upc', None),
                                 id=var_data['part_number']
                             )
 
@@ -344,13 +344,16 @@ class DebenhamsProductSpider(BaseProductsSpider):
                 '//*[@id="products_found"]/span/text()'
             ).extract(), 0
         )
+        if not total_matches:
+            total_matches = is_empty(
+            response.css('.products_count ::text').extract(), 0
+        )
         total_matches = is_empty(
             re.findall(
                 r'(\d+) products found',
                 total_matches
             )
         )
-
         if total_matches:
             return int(total_matches)
         else:
