@@ -162,7 +162,7 @@ for csv_file_name in common_csv_files:
     all_product_list = list(set(recent_product_list + prev_product_list))
 
     if new_product_list:
-        csv_file = open(path_output + ('_' . join(str(x) for x in date_numbers)) + "/" + csv_file_name.split(".")[0] + "_new", 'w')
+        csv_file = open(path_output + ('_' . join(str(x) for x in date_numbers)) + "/" + csv_file_name.split(".")[0] + "_new.csv", 'w')
         csv_writer = csv.writer(csv_file)
 
         for product in new_product_list:
@@ -171,7 +171,7 @@ for csv_file_name in common_csv_files:
         csv_file.close()
 
     if all_product_list:
-        csv_file = open(path_output + ('_' . join(str(x) for x in date_numbers)) + "/" + csv_file_name.split(".")[0] + "_all", 'w')
+        csv_file = open(path_output + ('_' . join(str(x) for x in date_numbers)) + "/" + csv_file_name.split(".")[0] + "_all.csv", 'w')
         csv_writer = csv.writer(csv_file)
 
         for product in all_product_list:
