@@ -150,10 +150,10 @@ class WalmartScraper(Scraper):
             string containing only product id
         """
         if self._version() == "Walmart v1":
-            product_id = self.product_page_url.split('/')[-1]
+            product_id = self._canonical_link().split('/')[-1]
             return product_id
         elif self._version() == "Walmart v2":
-            product_id = self.product_page_url.split('/')[-1]
+            product_id = self._canonical_link().split('/')[-1]
             return product_id
 
         return None
@@ -1708,6 +1708,14 @@ class WalmartScraper(Scraper):
 
         return None
 
+    def _buying_option(self):
+        self._extract_product_info_json()
+
+        if self.product_info_json and "buyingOptions" not in self.product_info_json:
+            return 0
+
+        return 1
+
     def _no_image(self, url):
         """Overwrites the _no_image
         in the base class with an additional test.
@@ -2909,6 +2917,7 @@ class WalmartScraper(Scraper):
         "rollback": _rollback, \
         "shipping": _shipping, \
         "free_pickup_today": _free_pickup_today, \
+        "buying_option": _buying_option, \
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title": _product_name_from_tree, \
         "in_stores": _in_stores, \

@@ -114,7 +114,7 @@ class Scraper():
             "meta_tags",# a list of pairs of meta tag keys and values
             "meta_tag_count", # the number of meta tags in the source of the page
             "canonical_link", # canoncial link of the page
-
+            "buying_option",
             "image_hashes", # list of hash values of images as returned by _image_hash() function - list of strings (the same order as image_urls)
             "thumbnail", # thumbnail of the main product image on the page - tbd
             "manufacturer", # manufacturer info for this product
@@ -200,7 +200,7 @@ class Scraper():
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
-                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "variants", "swatches", "related_products_urls"], \
+                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "swatches", "related_products_urls"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "in_stock", \
