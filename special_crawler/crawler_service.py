@@ -144,7 +144,7 @@ SUPPORTED_SITES = {
                     "dockers": DockersScraper,
                     "houseoffraser": HouseoffraserScraper,
                     "boots": BootsScraper,
-                    "newlook": NewlookScraper
+                    "newlook": NewlookScraper,
                     "schuh": SchuhScraper,
                     "boots": BootsScraper,
                     "clarkscouk": ClarksCoUkScraper
