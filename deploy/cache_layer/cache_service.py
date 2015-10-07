@@ -96,7 +96,7 @@ class SqsCache(object):
             sent_time = task.get('attributes', {}).get('SentTimestamp', '')
             if sent_time:
                 # amazon's time differs
-                sent_time = (int(sent_time) / 1000) - 11
+                sent_time = (int(sent_time) / 1000)
                 cur_time = time()
                 self.db.zadd(
                     self.REDIS_URGENT_STATS, int(cur_time-sent_time), cur_time)
