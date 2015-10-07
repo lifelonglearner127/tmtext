@@ -70,6 +70,7 @@ from extract_boots_data import BootsScraper
 from extract_newlook_data import NewlookScraper
 from extract_clarkscouk_data import ClarksCoUkScraper
 from extract_amazonfr_data import AmazonFRScraper
+from extract_halfords_data import HalfordsScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -148,7 +149,8 @@ SUPPORTED_SITES = {
                     "schuh": SchuhScraper,
                     "boots": BootsScraper,
                     "clarkscouk": ClarksCoUkScraper,
-                    "amazonfr": AmazonFRScraper
+                    "amazonfr": AmazonFRScraper,
+                    "halfords": HalfordsScraper
                     }
 
 # add logger
