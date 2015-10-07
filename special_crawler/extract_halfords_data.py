@@ -145,7 +145,7 @@ class HalfordsScraper(Scraper):
 
         self.is_image_checked = True
 
-        productImageName = self._find_between(html.tostring(self.tree_html), "productImageName = '", "'")
+        productImageName = self._find_between(html.tostring(self.tree_html), "partNumber = '", "'")
 
         h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()
@@ -179,7 +179,7 @@ class HalfordsScraper(Scraper):
 
         self.is_video_checked = True
 
-        productImageName = self._find_between(html.tostring(self.tree_html), "productImageName = '", "'")
+        productImageName = self._find_between(html.tostring(self.tree_html), "partNumber = '", "'")
 
         h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()

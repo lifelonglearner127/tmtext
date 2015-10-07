@@ -263,6 +263,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         product = response.meta['product']
 
+        not_available = self.parse_available(response)
+        cond_set_value(product, 'no_longer_available', not_available)
+
         wv = WalmartVariants()
         wv.setupSC(response)
         product['variants'] = wv._variants()
@@ -383,6 +386,17 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 product['is_out_of_stock'] = True
 
         return self._start_related(response)
+
+    def parse_available(self, response):
+        available = is_empty(response.xpath(
+            '//div[@class="prod-no-buying-option"]/'
+            'div[@class="heading-d"]/text()').extract())
+
+        if available == 'This Item is no longer available':
+            not_available = True
+        else:
+            not_available = False
+        return not_available
 
     def _on_api_response(self, response):
         if hasattr(response, 'getErrorMessage'):
