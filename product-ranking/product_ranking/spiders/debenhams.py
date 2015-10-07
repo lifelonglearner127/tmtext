@@ -247,6 +247,8 @@ class DebenhamsProductSpider(BaseProductsSpider):
 
                 for attr, value in var_data['Attributes'].iteritems():
                     attr = attr.lower().split('_')
+                    if attr[0] == 'colour':
+                        attr[0] = 'color'
                     properties[attr[0]] = attr[1]
 
                 price = is_empty(
