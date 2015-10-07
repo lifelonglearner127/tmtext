@@ -27,7 +27,7 @@ csvout = open('/home/ana/code/tmtext/data/jetcom/merged.csv', 'wb')
 first = True
 
 with open("/home/ana/code/tmtext/data/jetcom/" + \
-    "crossretailer_additional_upcs/jetcom_crossretailer_additional_walmart_matches.csv") as inf:    
+    "upc_Jet_Amazon_Walmart_Analysis_Categories_Merged_Coupons_2015_08_24_REV10.02.2015_V1_Cross_Retailer_Price_Comparison_additional_upcs.csv") as inf:    
 
     reader = csv.DictReader(inf, delimiter=',', quoting=csv.QUOTE_MINIMAL, quotechar='"')
         
@@ -69,7 +69,7 @@ with open("/home/ana/code/tmtext/data/jetcom/" + \
                 # [data['Match_URL'], data['Target_Price'], data['Confidence'], data['UPC_match']]
             
             # add all old data to new data
-            old_data.update(data)
+            # old_data.update(data)
 
             # 
             # add just one new data field to new data
@@ -79,16 +79,16 @@ with open("/home/ana/code/tmtext/data/jetcom/" + \
             #     continue
             if data['Walmart.com UPC Match'] == '0':
                 data['Walmart.com Price'] = ''
-            # old_data = data
+            old_data = data
 
             #
-            # missing fields:
-            old_data['Jet.com Reported Amazon price'] = ''
+            # # missing fields:
+            # old_data['Jet.com Reported Amazon price'] = ''
 
-            old_data['Jet In Stock'] = old_data['94107-Jet In Stock']
-            old_data['Jet.com discount'] = old_data['94107-Jet.com discount']
-            old_data['Delivery in'] = old_data['94107-Delivery in']
-            old_data['Product name'] = old_data['Walmart']
+            # old_data['Jet In Stock'] = old_data['94107-Jet In Stock']
+            # old_data['Jet.com discount'] = old_data['94107-Jet.com discount']
+            # old_data['Delivery in'] = old_data['94107-Delivery in']
+            # old_data['Product name'] = old_data['Walmart']
 
 
             print ",".join(map(lambda x: json.dumps(x).encode("utf-8"), old_data.values()))
