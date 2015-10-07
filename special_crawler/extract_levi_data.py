@@ -74,7 +74,7 @@ class LeviScraper(Scraper):
             return
 
         try:
-            product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\n")
+            product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\r")
             self.product_json = json.loads(product_json_text)
         except:
             self.product_json = None

@@ -121,7 +121,6 @@ class KohlsVariants(object):
                     "color": color[len(color)-1],
                     "size": sizev,
                 },
-                'unavailable': False,
                 "selected": selected,
             }
             variants.append(obj)
@@ -149,14 +148,12 @@ class KohlsVariants(object):
 
                 obj = {
                     "skuId": None,
-                    "upc": None,
                     "price": None,
                     "in_stock": False,
                     "properties": {
                         "color": color,
                         "size": size,
                     },
-                    'unavailable': True,
                     "selected": False,
                 }
 

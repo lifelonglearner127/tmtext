@@ -176,20 +176,24 @@ class WalmartVariants(object):
                 json_body = json.loads(json_text)
 
                 variation_key_values_by_attributes = {}
-
+                variation_key_unav_by_attributes = {}
                 for variation_attribute in json_body:
+
                     variation_key_values = {}
+                    variation_key_unav = {}
                     variation_attribute_id = variation_attribute["id"]
 
                     if "variants" in variation_attribute:
                         for variation in variation_attribute["variants"]:
                             variation_key_values[variation["id"]] = variation["name"]
+                            variation_key_unav[variation["id"]] = (variation['status'] == 'not available')
 
                     variation_key_values_by_attributes[variation_attribute_id] = variation_key_values
-
+                    variation_key_unav_by_attributes[variation_attribute_id] = variation_key_unav
                 selected_variants = {}
 
                 for item in json_body:
+
                     if "variants" in item:
                         if "selectedValue" not in item:
                             selected_variants = None
@@ -226,6 +230,7 @@ class WalmartVariants(object):
                                 properties["color"] = variation_key_values_by_attributes[key][variants[key]["id"]]
                             else:
                                 properties[key] = variation_key_values_by_attributes[key][variants[key]["id"]]
+                            properties['unavailable'] = properties.get('unavailable', False) or variation_key_unav_by_attributes[key][variants[key]["id"]]
 
                             if selected_variants and selected_variants[key] != variation_key_values_by_attributes[key][variants[key]["id"]]:
                                 isSelected = False
@@ -252,6 +257,7 @@ class WalmartVariants(object):
                 else:
                     return stockstatus_for_variants_list
             except:
+
                 print "Walmart v2 variant passing issue"
                 return None
 
