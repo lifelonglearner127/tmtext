@@ -514,6 +514,9 @@ class AmazonScraper(Scraper):
         origin_image_urls = []
 
         for url in thumbnail_urls:
+            if url == u'http://ecx.images-amazon.com/images/I/31138xDam%2BL.jpg':
+                continue
+
             if "PKmb-play-button-overlay-thumb_.png" in url:
                 continue
 
@@ -990,6 +993,15 @@ class AmazonScraper(Scraper):
                 return 1
         a = self.tree_html.xpath('//div[@id="availability"]//a//text()')
         if len(a)>0 and a[0].find('seller')>=0: return 1
+
+        marketplace_sellers = self._marketplace_sellers()
+
+        if marketplace_sellers:
+            return 1
+
+        if self.tree_html.xpath("//div[@id='toggleBuyBox']//span[@class='a-button-text' and text()='Shop This Website']"):
+            return 1
+
         s = self._seller_from_tree()
         return s['marketplace']
 
@@ -1155,7 +1167,10 @@ class AmazonScraper(Scraper):
 
     def _site_online(self):
         # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
-        return 1
+        if self.tree_html.xpath("//input[@id='add-to-cart-button']"):
+            return 1
+
+        return 0
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
