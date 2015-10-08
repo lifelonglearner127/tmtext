@@ -27,7 +27,18 @@ all_product_url_list = []
 for category_url in category_url_list:
     print "Category: " + category_url
 
-    category_html = html.fromstring(requests.get(category_url).text)
+    try:
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=10)
+        b = requests.adapters.HTTPAdapter(max_retries=10)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        category_html = html.fromstring(s.get(category_url, headers=h, timeout=30).text)
+    except:
+        print "fail"
+        continue
+
     sub_category_url_list = category_html.xpath("//div[@id='categoryQuickLinks']//ul/li/a/@href")
 
     if not sub_category_url_list:
@@ -40,9 +51,29 @@ for category_url in category_url_list:
             offset_url = "start={0}&sz=300&spcl&ajaxsearchrefinement".format(page_index * 300)
 
             if "?" in sub_category_url:
-                sub_category_html = html.fromstring(requests.get(sub_category_url + "&" + offset_url).text)
+                try:
+                    h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+                    s = requests.Session()
+                    a = requests.adapters.HTTPAdapter(max_retries=10)
+                    b = requests.adapters.HTTPAdapter(max_retries=10)
+                    s.mount('http://', a)
+                    s.mount('https://', b)
+                    sub_category_html = html.fromstring(s.get(sub_category_url + "&" + offset_url, headers=h, timeout=30).text)
+                except:
+                    print "fail"
+                    continue
             else:
-                sub_category_html = html.fromstring(requests.get(sub_category_url + "?" + offset_url).text)
+                try:
+                    h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+                    s = requests.Session()
+                    a = requests.adapters.HTTPAdapter(max_retries=10)
+                    b = requests.adapters.HTTPAdapter(max_retries=10)
+                    s.mount('http://', a)
+                    s.mount('https://', b)
+                    sub_category_html = html.fromstring(s.get(sub_category_url + "?" + offset_url, headers=h, timeout=30).text)
+                except:
+                    print "fail"
+                    continue
 
             product_list = sub_category_html.xpath("//div[@class='product-description']/a/@href")
 
