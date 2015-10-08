@@ -217,16 +217,17 @@ class AmazonBaseClass(BaseProductsSpider):
 
             last_idx = idx
 
-        if len(links) < 1:
+        if not links:
             self.log("Found no product links.", WARNING)
 
-        for link, is_prime, is_prime_pantry in links:
-            prime = None
-            if is_prime:
-                prime = 'Prime'
-            if is_prime_pantry:
-                prime = 'PrimePantry'
-            yield link, SiteProductItem(prime=prime)
+        if links:
+            for link, is_prime, is_prime_pantry in links:
+                prime = None
+                if is_prime:
+                    prime = 'Prime'
+                if is_prime_pantry:
+                    prime = 'PrimePantry'
+                yield link, SiteProductItem(prime=prime)
 
     def _parse_single_product(self, response):
         """
