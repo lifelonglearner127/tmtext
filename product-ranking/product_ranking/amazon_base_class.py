@@ -19,6 +19,10 @@ from product_ranking.marketplace import Amazon_marketplace
 from spiders_shared_code.amazon_variants import AmazonVariants
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.amazon_modules import build_categories
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+
+
+is_empty = lambda x, y="": x[0] if x else y
 
 
 try:
@@ -54,19 +58,6 @@ class AmazonBaseClass(BaseProductsSpider):
                    'ref=cm_cr_pr_viewopt_sr'
     REVIEW_URL_2 = 'http://{domain}/product-reviews/{product_id}/' \
                    'ref=acr_dpx_see_all?ie=UTF8&showViewpoints=1'
-
-    ZERO_REVIEWS_STAR = {
-        '1': {'percentage': 0.0, 'total': 0},
-        '2': {'percentage': 0.0, 'total': 0},
-        '3': {'percentage': 0.0, 'total': 0},
-        '4': {'percentage': 0.0, 'total': 0},
-        '5': {'percentage': 0.0, 'total': 0}
-    }
-    ZERO_REVIEWS_VALUE = {
-        'num_of_reviews': 0,
-        'average_rating': 0.0,
-        'rating_by_star': ZERO_REVIEWS_STAR
-    }
 
     def __init__(self, captcha_retries='10', *args, **kwargs):
         super(AmazonBaseClass, self).__init__(
@@ -328,6 +319,10 @@ class AmazonBaseClass(BaseProductsSpider):
         upc = self._parse_upc(response)
         cond_set_value(product, 'upc', upc)
 
+        # Prime & PrimePantry
+        if not product.get('prime', None) and self._parse_prime_pantry(response):
+            product['prime'] = self._parse_prime_pantry(response)
+
         # Parse variants
         variants = self._parse_variants(response)
         product['variants'] = variants
@@ -383,6 +378,8 @@ class AmazonBaseClass(BaseProductsSpider):
         prod_id = re.findall(r'/dp?/(\w+)|product/(\w+)/', url)
         if not prod_id:
             prod_id = re.findall(r'/dp?/(\w+)|product/(\w+)', url)
+        if not prod_id:
+            prod_id = re.findall(r'([A-Z0-9]{4,20})', url)
         if isinstance(prod_id, (list, tuple)):
             prod_id = [s for s in prod_id if s][0]
         if isinstance(prod_id, (list, tuple)):
@@ -838,6 +835,12 @@ class AmazonBaseClass(BaseProductsSpider):
 
         return variants
 
+    def _parse_prime_pantry(self, response):
+        if response.css('#price img#pantry-badge').extract():
+            return 'PrimePantry'
+        if response.css('.feature i.a-icon-prime').extract():
+            return 'Prime'
+
     def _parse_last_buyer_review_date(self, response):
         if self._has_captcha(response):
             return self._handle_captcha(
@@ -875,136 +878,120 @@ class AmazonBaseClass(BaseProductsSpider):
         raise NotImplementedError
 
     def _parse_buyer_reviews(self, response):
-        """
-        Gets buyer reviews right from the product page.
-        """
-        meta = response.meta.copy()
-
-        # scrape new buyer reviews request (that will lead to a new page)
-        buyer_rev_link = self.REVIEW_URL_2.format(
-            product_id=meta['product_id'],
-            domain=self.allowed_domains[0]
-        )
-
         buyer_reviews = {}
 
-        total = self._is_empty(
-            response.xpath(
-                '//*[@id="summaryStars"] |'
-                '//div[@id="acr"]/div[@class="txtsmall"]/div[contains(@class,'
-                ' "acrCount")] |'
-                '//*[@id="acrCustomerReviewText"]/text() |'
-                '//*[@class="crAvgStars"]/a/text()'
-            ).re(FLOATING_POINT_RGEX)
-        )
+        total = response.xpath(
+            'string(//*[@id="summaryStars"])').re(FLOATING_POINT_RGEX)
         if not total:
-            return BuyerReviews(**self.ZERO_REVIEWS_VALUE)
-
-        buyer_reviews['num_of_reviews'] = self._get_int_from_string(total)
+            total = response.xpath(
+                'string(//div[@id="acr"]/div[@class="txtsmall"]'
+                '/div[contains(@class, "acrCount")])'
+            ).re(FLOATING_POINT_RGEX)
+            if not total:
+                return ZERO_REVIEWS_VALUE
+        buyer_reviews['num_of_reviews'] = int(total[0].replace(',', ''))
 
         average = response.xpath(
-            '//*[@id="summaryStars"]/a/@title |'
-            '//div[@id="acr"]/div[@class="txtsmall"]'
-            '/div[contains(@class, "acrRating")]/text()'
-        )
-        average = self._is_empty(average.extract(), '')
+            '//*[@id="summaryStars"]/a/@title')
+        if not average:
+            average = response.xpath(
+                '//div[@id="acr"]/div[@class="txtsmall"]'
+                '/div[contains(@class, "acrRating")]/text()'
+            )
+        average = average.extract()[0].replace('out of 5 stars','')
+        average = average.replace('von 5 Sternen', '').strip()
+        buyer_reviews['average_rating'] = float(average)
 
-        if average:
-            average = self._get_float_from_string(average)
-            buyer_reviews['average_rating'] = float(average)
+        buyer_reviews['rating_by_star'] = {}
+        buyer_reviews, table = self.get_rating_by_star(response, buyer_reviews)
 
-            buyer_reviews['rating_by_star'] = {}
-            buyer_reviews, table = self._get_rating_by_star(response, buyer_reviews)
+        if not buyer_reviews.get('rating_by_star'):
+            # scrape new buyer reviews request (that will lead to a new page)
+            buyer_rev_link = is_empty(response.xpath(
+                '//div[@id="revSum"]//a[contains(text(), "See all")' \
+                ' or contains(text(), "See the customer review")' \
+                ' or contains(text(), "See both customer reviews")]/@href'
+            ).extract())
+            # Amazon started to display broken (404) link - fix
+            if buyer_rev_link:
+                buyer_rev_link = re.search(r'.*product-reviews/[a-zA-Z0-9]+/',
+                                           buyer_rev_link)
+                if buyer_rev_link:
+                    buyer_rev_link = buyer_rev_link.group(0)
+            buyer_rev_req = Request(
+                url=buyer_rev_link,
+                callback=self.get_buyer_reviews_from_2nd_page
+            )
+            # now we can safely return Request
+            #  because it'll be re-crawled in the `parse_product` method
+            return buyer_rev_req
 
-            if buyer_reviews['rating_by_star'] or not response.meta.get('is_perc'):
-                return BuyerReviews(**buyer_reviews)
-
-        return Request(
-            url=buyer_rev_link,
-            callback=self.get_buyer_reviews_from_2nd_page
-        )
+        return BuyerReviews(**buyer_reviews)
 
     def get_buyer_reviews_from_2nd_page(self, response):
-        """
-        Gets buyer reviews from special separate buyer reviews page.
-        """
         if self._has_captcha(response):
             return self._handle_captcha(
                 response,
                 self.get_buyer_reviews_from_2nd_page
             )
-
-        meta = response.meta.copy()
-        product = meta["product"]
-        reqs = meta.get('reqs', [])
+        product = response.meta["product"]
         buyer_reviews = {}
         product["buyer_reviews"] = {}
+        buyer_reviews["num_of_reviews"] = is_empty(response.xpath(
+            '//span[contains(@class, "totalReviewCount")]/text()').extract(),
+        '').replace(",", "")
+        if not buyer_reviews['num_of_reviews']:
+            buyer_reviews['num_of_reviews'] = ZERO_REVIEWS_VALUE
+        average = is_empty(response.xpath(
+            '//div[contains(@class, "averageStarRatingNumerical")]//span/text()'
+        ).extract(), "")
 
-        num_of_reviews = self._is_empty(
-            response.xpath(
-                '//span[contains(@class, "totalReviewCount")]'
-                '/text()'
-            ).extract(), ''
-        )
+        buyer_reviews["average_rating"] = \
+            average.replace('out of 5 stars', '')
 
-        num_of_reviews = self._get_int_from_string(num_of_reviews)
-        if num_of_reviews:
-            buyer_reviews['num_of_reviews'] = num_of_reviews
+        buyer_reviews["rating_by_star"] = {}
+        buyer_reviews = self.get_rating_by_star(response, buyer_reviews)[0]
 
-            average = self._is_empty(
-                response.xpath(
-                    '//div[contains(@class, "averageStarRatingNumerical")]//span/text()'
-                ).extract(), 0.0
+        #print('*' * 20, 'parsing buyer reviews from', response.url)
+
+        if not buyer_reviews.get('rating_by_star'):
+            response.meta['product']['buyer_reviews'] = buyer_reviews
+            # if still no rating_by_star (probably the rating is percent-based)
+            return self._create_post_requests(response)
+            #return
+
+        product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
+
+        meta = {"product": product}
+        mkt_place_link = response.meta.get("mkt_place_link", None)
+        if mkt_place_link:
+            return Request(
+                url=mkt_place_link,
+                callback=self.parse_marketplace,
+                meta=meta,
+                dont_filter=True
             )
-            average = self._get_float_from_string(average)
-
-            buyer_reviews["average_rating"] = average
-
-            buyer_reviews["rating_by_star"] = {}
-            buyer_reviews = self._get_rating_by_star(response, buyer_reviews)[0]
-
-            if not buyer_reviews.get('rating_by_star') or response.meta.get('is_perc'):
-                response.meta['product']['buyer_reviews'] = buyer_reviews
-                # if still no rating_by_star (probably the rating is percent-based)
-                return self._create_post_requests(response)
-        else:
-            buyer_reviews = BuyerReviews(**self.ZERO_REVIEWS_VALUE)
-
-        product['buyer_reviews'] = buyer_reviews
-
-        if reqs:
-            return self.send_next_request(reqs, response)
 
         return product
 
-    def _get_rating_by_star(self, response, buyer_reviews):
-        """
-        Method to scrape star count from histogram table.
-        """
+    def get_rating_by_star(self, response, buyer_reviews):
         table = response.xpath(
-            '//table[@id="histogramTable"]/.//tr[@class="a-histogram-row"]'
-        )
-
+            '//table[@id="histogramTable"]'
+            '/tr[@class="a-histogram-row"]')
         if table:
-            for tr in table:
-                rating = self._is_empty(tr.xpath(
+            for tr in table: #td[last()]//text()').re('\d+')
+                rating = is_empty(tr.xpath(
                     'string(.//td[1])').re(FLOATING_POINT_RGEX))
-                number = self._is_empty(tr.xpath(
+                number = is_empty(tr.xpath(
                     'string(.//td[last()])').re(FLOATING_POINT_RGEX))
-                is_perc = self._is_empty(tr.xpath(
+                is_perc = is_empty(tr.xpath(
                     'string(.//td[last()])').extract())
+                if "%" in is_perc:
+                    break
                 if number:
-                    number = self._get_int_from_string(number)
-                    buyer_reviews['rating_by_star'][rating] = {}
-                    if "%" in is_perc:
-                        response.meta['is_perc'] = True
-                        buyer_reviews['rating_by_star'][rating]['total'] = 0.0
-                        buyer_reviews['rating_by_star'][rating]['percentage'] = format(
-                            number / 100, '.2f'
-                        )
-                    else:
-                        buyer_reviews['rating_by_star'][rating]['total'] = number
-                        buyer_reviews['rating_by_star'][rating]['percentage'] = 0
+                    buyer_reviews['rating_by_star'][rating] = int(
+                        number.replace(',', '')
+                    )
         else:
             table = response.xpath(
                 '//div[@id="revH"]/div/div[contains(@class, "fl")]'
@@ -1016,8 +1003,9 @@ class AmazonBaseClass(BaseProductsSpider):
                 number = div.xpath(
                     'string(.//div[contains(@class, "histoCount")])'
                 ).re(FLOATING_POINT_RGEX)[0]
-                buyer_reviews['rating_by_star'][rating]['total'] = \
-                    self._get_int_from_string(number)
+                buyer_reviews['rating_by_star'][rating] = int(
+                    number.replace(',', '')
+                )
         return buyer_reviews, table
 
     def _create_post_requests(self, response):
@@ -1037,7 +1025,6 @@ class AmazonBaseClass(BaseProductsSpider):
                 'scope': 'reviewsAjax0',
             }
             meta['_current_star'] = star
-            meta['product']['buyer_reviews']['counter'] = 0
 
             yield FormRequest(
                 url=self.REVIEW_URL_1.format(domain=self.allowed_domains[0]),
@@ -1047,54 +1034,43 @@ class AmazonBaseClass(BaseProductsSpider):
             )
 
     def _get_rating_by_star_by_individual_request(self, response):
-        """
-        Method to count number of reviews for each star.
-        """
-        meta = response.meta.copy()
-        reqs = meta.get('reqs')
-        product = meta['product']
-
-        counter = product['buyer_reviews']['counter']
-        product['buyer_reviews']['counter'] += 1
-
-        current_star = meta['_current_star']
+        product = response.meta['product']
+        mkt_place_link = response.meta.get("mkt_place_link")
+        current_star = response.meta['_current_star']
         current_star_int = [
             i+1 for i, _star in enumerate(self.buyer_reviews_stars)
             if _star == current_star
         ][0]
-
         br = product.get('buyer_reviews')
         if br:
             rating_by_star = br.get('rating_by_star')
         else:
+            if mkt_place_link:
+                return self.mkt_request(mkt_place_link, {"product": product})
             return product
-
         if not rating_by_star:
             rating_by_star = {}
-
         num_of_reviews_for_star = re.search(
             r'Showing .+? of ([\d,\.]+) reviews', response.body)
         if num_of_reviews_for_star:
             num_of_reviews_for_star = num_of_reviews_for_star.group(1)
-            rating_by_star[str(current_star_int)]['total'] = self._get_int_from_string(
-                num_of_reviews_for_star
-            )
-        else:
-            rating_by_star[str(current_star_int)]['total'] = 0
-
+            num_of_reviews_for_star = num_of_reviews_for_star\
+                .replace(',', '').replace('.', '')
+            rating_by_star[str(current_star_int)] \
+                = int(num_of_reviews_for_star)
         if not str(current_star_int) in rating_by_star.keys():
-            rating_by_star[str(current_star_int)]['total'] = 0
+            rating_by_star[str(current_star_int)] = 0
 
         product['buyer_reviews']['rating_by_star'] = rating_by_star
-
-        if counter >= 4:
+        if len(product['buyer_reviews']['rating_by_star']) >= 5:
+            product['buyer_reviews']['num_of_reviews'] \
+                = int(product['buyer_reviews']['num_of_reviews'])
+            product['buyer_reviews']['average_rating'] \
+                = float(product['buyer_reviews']['average_rating'])
             # ok we collected all marks for all stars - can return the product
-            del product['buyer_reviews']['counter']
             product['buyer_reviews'] = BuyerReviews(**product['buyer_reviews'])
-
-            if reqs:
-                return self.send_next_request(reqs, response)
-
+            if mkt_place_link:
+                return self.mkt_request(mkt_place_link, {"product": product})
             return product
 
     def send_next_request(self, reqs, response):
