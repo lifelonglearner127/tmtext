@@ -182,12 +182,13 @@ def slugify(s):
     return output
 
 
-def connect_to_redis_database(redis_host, redis_port):
+def connect_to_redis_database(redis_host, redis_port, timeout=10):
     if TEST_MODE:
         print 'Simulating connect to redis'
         return
     try:
-        db = redis.StrictRedis(host=redis_host, port=redis_port)
+        db = redis.StrictRedis(host=redis_host, port=redis_port,
+                               socket_timeout=timeout)
     except Exception as e:
         logger.warning("Failed connect to redis database with exception %s", e)
         db = None

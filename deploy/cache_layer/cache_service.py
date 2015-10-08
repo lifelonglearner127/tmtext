@@ -25,8 +25,9 @@ class SqsCache(object):
     REDIS_COMPLETED_TASKS = 'completed_tasks'  # zset, count completed tasks
     REDIS_INSTANCES_COUNTER = 'daily_sqs_instances_counter'
 
-    def __init__(self, db=None):
-        self.db = db if db else StrictRedis(REDIS_HOST, REDIS_PORT)
+    def __init__(self, db=None, timeout=10):
+        self.db = db if db else StrictRedis(REDIS_HOST, REDIS_PORT,
+                                            socket_timeout=timeout)
         # self.db = db if db else StrictRedis()  # for local
 
     def _task_to_key(self, task):
