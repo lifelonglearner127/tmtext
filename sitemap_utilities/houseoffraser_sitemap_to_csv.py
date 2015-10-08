@@ -37,7 +37,7 @@ for category_url in category_url_list:
         print "Sub category: " + sub_category_url
 
         for page_index in range(0, 10000):
-            offset_url = "start={0}&sz=30&spcl&ajaxsearchrefinement".format(page_index * 30)
+            offset_url = "start={0}&sz=300&spcl&ajaxsearchrefinement".format(page_index * 300)
 
             if "?" in sub_category_url:
                 sub_category_html = html.fromstring(requests.get(sub_category_url + "&" + offset_url).text)
@@ -59,7 +59,7 @@ try:
     if len(sys.argv) > 1:
         file_name = sys.argv[1] + ".csv"
     else:
-        file_name = "products.csv"
+        file_name = "houseoffraser.csv"
 
     if os.path.isfile(output_dir_path + file_name):
         csv_file = open(output_dir_path + file_name, 'a+')

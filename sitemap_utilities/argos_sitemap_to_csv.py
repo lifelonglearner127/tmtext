@@ -29,13 +29,13 @@ import csv
 import requests
 import xml.etree.ElementTree as ET
 
-snapdeal_product_sitemap_xml_links = ["http://www.argos.co.uk/product.xml", "http://www.argos.co.uk/product2.xml"]
+argos_product_sitemap_xml_links = ["http://www.argos.co.uk/product.xml", "http://www.argos.co.uk/product2.xml"]
 product_list = []
 output_dir_path = "/home/mufasa/Documents/Workspace/Content Analytics/Misc/Argos/products.csv"
 
-for sitemap_xml_link in snapdeal_product_sitemap_xml_links:
-    snapdeal_sitemap_xml = requests.get(sitemap_xml_link).text
-    product_list.extend(re.findall('<loc>(.*?)</loc>', snapdeal_sitemap_xml, re.DOTALL))
+for sitemap_xml_link in argos_product_sitemap_xml_links:
+    argos_sitemap_xml = requests.get(sitemap_xml_link).text
+    product_list.extend(re.findall('<loc>(.*?)</loc>', argos_sitemap_xml, re.DOTALL))
 
 product_list = list(set(product_list))
 
