@@ -378,11 +378,15 @@ class AmazonBaseClass(BaseProductsSpider):
 
         return product
 
-    def _parse_product_id(self, url):
-        prod_id = self._is_empty(
-            re.findall(r'/(?:dp?|product)/(\w+)/', url), ''
-        )
-
+    @staticmethod
+    def _parse_product_id(url):
+        prod_id = re.findall(r'/dp?/(\w+)|product/(\w+)/', url)
+        if not prod_id:
+            prod_id = re.findall(r'/dp?/(\w+)|product/(\w+)', url)
+        if isinstance(prod_id, (list, tuple)):
+            prod_id = [s for s in prod_id if s][0]
+        if isinstance(prod_id, (list, tuple)):
+            prod_id = [s for s in prod_id if s][0]
         return prod_id
 
     def _parse_title(self, response, add_xpath=None):
