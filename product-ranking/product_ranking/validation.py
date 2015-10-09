@@ -332,7 +332,7 @@ class BaseValidator(object):
         return True
 
     def _validate_special_pricing(self, val):
-        return val in (0, 1)
+        return val in (True, False, None)
 
     def _validate_ranking(self, val):
         if isinstance(val, int):

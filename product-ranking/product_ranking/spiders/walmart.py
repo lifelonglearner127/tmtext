@@ -367,9 +367,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         special_pricing = [
             r.strip() for r in special_pricing if len(r.strip())>0]
         if 'Rollback' in special_pricing:
-            product['special_pricing'] = 1
+            product['special_pricing'] = True
         else:
-            product['special_pricing'] = 0
+            product['special_pricing'] = False
 
         if not product.get('price'):
             cond_set_value(product, 'url', response.url)
@@ -1036,9 +1036,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 './/div[@class="tile-row"]'
                 '/span[@class="flag-rollback"]/text()'
             ).extract():
-                special_pricing = 1
+                special_pricing = True
             else:
-                special_pricing = 0
+                special_pricing = False
 
             if item.css('div.out-of-stock').xpath('text()').extract():
                 shelf_page_out_of_stock = True
