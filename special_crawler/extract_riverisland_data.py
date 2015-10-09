@@ -119,18 +119,43 @@ class RiverislandScraper(Scraper):
         return 0
 
     def _description(self):
-        description_block = self.tree_html.xpath("//div[@class='description-copy body-2']")
-        description = ""
-        if len(description_block)>0:
-            description = description_block[0].text_content().strip()
+        description_block = self.tree_html.xpath('//div[@class="description-copy body-2"]')[0]
+        short_description = ""
 
-        return description
+        for description_item in description_block:
+            if description_item.tag == "ul":
+                break
+
+            short_description = short_description + html.tostring(description_item)
+
+        short_description = short_description.strip()
+
+        if short_description:
+            return short_description
+
+        return None
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
+        description_block = self.tree_html.xpath('//div[@class="description-copy body-2"]')[0]
+        long_description = ""
+        long_description_start = False
+
+        for description_item in description_block:
+            if description_item.tag == "ul":
+                long_description_start = True
+
+            if long_description_start:
+                long_description = long_description + html.tostring(description_item)
+
+        long_description = long_description.strip()
+
+        if long_description:
+            return long_description
+
         return None
 
     def _ingredients(self):
@@ -199,7 +224,12 @@ class RiverislandScraper(Scraper):
         return htags_dict
 
     def _keywords(self):
-        return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0].strip()
+        keywords = self.tree_html.xpath('//meta[@name="keywords"]/@content')[0].strip()
+
+        if keywords:
+            return keywords
+
+        return None
 
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -224,9 +254,9 @@ class RiverislandScraper(Scraper):
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
+
     def _price(self):
         return self.tree_html.xpath('//div[@class="price headline"]/span//text()')[0].strip()
-
 
     def _price_amount(self):
         price = self._price()
