@@ -2,7 +2,7 @@ import os
 import sys
 import datetime
 from collections import OrderedDict
-from flask import Flask, request
+from flask import Flask, request, flash
 from flask import render_template, make_response
 import boto.ec2.autoscale
 import boto.sqs
@@ -46,6 +46,32 @@ def update_settings():
         data['result_msg'] = 'Changes saved'
     data['form_fields'] = cache.get_cache_settings()
     return render_template('update_settings.html', **data)
+
+
+@app.route('/clear_cache', methods=['GET', 'POST'])
+def clear_cache():
+    # dict: key is the form input name,
+    #  value is tuple with description and redis keys to remove
+    params = {
+        'cache_data': ('S3 keys to the cached data', [
+            cache.REDIS_CACHE_TIMESTAMP, cache.REDIS_CACHE_KEY]),
+        'cache_stats': ('Stats of most used cached items', [
+            cache.REDIS_CACHE_STATS_URL, cache.REDIS_CACHE_STATS_TERM,
+            cache.REDIS_COMPLETED_COUNTER]),
+        'sqs_stats': ('Stats of the sqs: count of tasks and instances', [
+            cache.REDIS_COMPLETED_TASKS, cache.REDIS_INSTANCES_COUNTER]),
+        'urgent_stats': ('Stats of the urgent queue', [
+            cache.REDIS_URGENT_STATS])
+    }
+    if request.method == 'POST':
+        keys_to_clear = []
+        for k, v in request.form.iteritems():
+            if k in params:
+                keys_to_clear += params[k][1]
+        cache.del_redis_keys(*keys_to_clear)
+        flash('Selected items were cleared, keys removed: %s' % keys_to_clear)
+
+    return render_template('clear_cache.html', fields=params)
 
 
 @app.route('/killer')
@@ -196,5 +222,6 @@ def complete_task():
 
 
 if __name__ == '__main__':
+    app.secret_key = '$%6^78967804^46#$%^$fdG'
     app.debug = True
     app.run()
