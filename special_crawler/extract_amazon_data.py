@@ -384,6 +384,9 @@ class AmazonScraper(Scraper):
     def _variants(self):
         return self.av._variants()
 
+    def _swatches(self):
+        return self.av._swatches()
+
     def _ingredients(self):
         page_raw_text = html.tostring(self.tree_html)
 
@@ -1296,6 +1299,7 @@ class AmazonScraper(Scraper):
         "long_description" : _long_description, \
         "apluscontent_desc" : _apluscontent_desc, \
         "variants": _variants, \
+        "swatches": _swatches, \
         "related_products_urls":  _related_product_urls, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
