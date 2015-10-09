@@ -16,6 +16,39 @@ class AmazonVariants(object):
         """ Call it from CH spiders """
         self.tree_html = tree_html
 
+    def _find_between(self, s, first, last, offset=0):
+        try:
+            start = s.index(first, offset) + len(first)
+            end = s.index(last, start)
+            return s[start:end]
+        except ValueError:
+            return ""
+
+    def _swatches(self):
+        swatch_images = []
+
+        try:
+            swatch_image_json = json.loads(self._find_between(lxml.html.tostring(self.tree_html), 'data["colorImages"] = ', ';\n'))
+        except:
+            swatch_image_json = None
+
+        swatch_list = []
+
+        for swatch in swatch_image_json:
+            swatch_info = {}
+            swatch_info["swatch_name"] = "color"
+            swatch_info["color"] = swatch
+            swatch_info["hero"] = len(swatch_image_json[swatch])
+            swatch_info["thumb"] = len(swatch_image_json[swatch])
+            swatch_info["hero_image"] = [image["large"] for image in swatch_image_json[swatch]]
+            swatch_info["thumb_image"] = [image["thumb"] for image in swatch_image_json[swatch]]
+            swatch_list.append(swatch_info)
+
+        if swatch_list:
+            return swatch_list
+
+        return None
+
     def _variants(self):
         try:
             original_product_canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
