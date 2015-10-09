@@ -71,6 +71,7 @@ from extract_newlook_data import NewlookScraper
 from extract_clarkscouk_data import ClarksCoUkScraper
 from extract_amazonfr_data import AmazonFRScraper
 from extract_halfords_data import HalfordsScraper
+from extract_homebase_data import HomebaseScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -150,7 +151,8 @@ SUPPORTED_SITES = {
                     "boots": BootsScraper,
                     "clarkscouk": ClarksCoUkScraper,
                     "amazonfr": AmazonFRScraper,
-                    "halfords": HalfordsScraper
+                    "halfords": HalfordsScraper,
+                    "homebase": HomebaseScraper
                     }
 
 # add logger
