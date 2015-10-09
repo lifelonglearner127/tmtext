@@ -229,6 +229,7 @@ def setup_packages():
     cuisine.package_ensure('tmux')
     cuisine.package_ensure('mc htop iotop nano')  # just for convenience
     cuisine.package_ensure('python-psycopg2 libpq-dev python-dev')
+    cuisine.package_ensure('libjpeg-dev')
     sudo('pip install virtualenv --upgrade')
     sudo('pip install pytesseract')
     sudo('pip install tldextract')

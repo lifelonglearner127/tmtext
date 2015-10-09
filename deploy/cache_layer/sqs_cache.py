@@ -30,10 +30,11 @@ SPIDERS_OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
 logger = None
 simmetrica = Simmetrica()
 
-def connect_to_redis_database():
+def connect_to_redis_database(timeout=10):
     db = redis.StrictRedis(
         host='sqs-cache.4a6nml.0001.use1.cache.amazonaws.com',
-        port=6379
+        port=6379,
+        socket_timeout=timeout  # if DB is down, everything won't freeze
     )
     #db = redis.StrictRedis(host='localhost', port=6379, db=0)
     return db
