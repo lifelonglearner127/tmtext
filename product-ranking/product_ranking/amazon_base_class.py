@@ -521,6 +521,10 @@ class AmazonBaseClass(BaseProductsSpider):
 
         brand = brand or ['NO BRAND']
 
+        if isinstance(brand, (list, tuple)):
+            if brand:
+                brand = brand[0]
+
         return brand
 
     def _parse_price_subscribe_save(self, response, add_xpath=None):
