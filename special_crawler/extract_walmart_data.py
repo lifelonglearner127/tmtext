@@ -47,7 +47,8 @@ class WalmartScraper(Scraper):
     BASE_URL_PDFREQ_WEBCOLLAGE = "http://content.webcollage.net/walmart/smart-button?ignore-jsp=true&ird=true&channel-product-id="
     # base URL for request for product reviews - formatted string
     BASE_URL_REVIEWSREQ = 'http://walmart.ugc.bazaarvoice.com/1336a/%20{0}/reviews.djs?format=embeddedhtml'
-
+    # base URL for product API
+    BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
@@ -1066,6 +1067,35 @@ class WalmartScraper(Scraper):
             return None
 
         return self.wv._swatches()
+
+    def _bundle(self):
+        return self.is_bundle_product
+
+    def _bundle_components(self):
+        product_id_list = self.tree_html.xpath("//div[@class='bundle-see-more-container']//a[@class='itemName']/@id")
+        product_id_list = [id.split("I")[1] for id in product_id_list]
+        product_id_list = list(set(product_id_list))
+
+        if product_id_list:
+            bundle_component_list = []
+
+            for id in product_id_list:
+                try:
+                    h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+                    s = requests.Session()
+                    a = requests.adapters.HTTPAdapter(max_retries=3)
+                    b = requests.adapters.HTTPAdapter(max_retries=3)
+                    s.mount('http://', a)
+                    s.mount('https://', b)
+                    product_json = json.loads(s.get(self.BASE_URL_PRODUCT_API.format(id), headers=h, timeout=5).text)
+                    bundle_component_list.append({"upc": product_json["analyticsData"]["upc"], "url": "http://www.walmart.com" + product_json["product"]["canonicalUrl"]})
+                except:
+                    continue
+
+            if bundle_component_list:
+                return bundle_component_list
+
+        return None
 
     def _related_product_urls(self):
         page_raw_text = lxml.html.tostring(self.tree_html)
@@ -2893,6 +2923,8 @@ class WalmartScraper(Scraper):
         "shelf_description": _shelf_description, \
         "variants": _variants, \
         "swatches": _swatches, \
+        "bundle": _bundle, \
+        "bundle_components": _bundle_components, \
         "related_products_urls":  _related_product_urls, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \

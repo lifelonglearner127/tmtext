@@ -5,7 +5,10 @@ from zlib import compress, decompress
 from datetime import date, datetime
 from os.path import realpath, dirname
 
-from cache_layer import REDIS_HOST, REDIS_PORT
+try:
+    from cache_layer import REDIS_HOST, REDIS_PORT
+except ImportError:
+    from . import REDIS_HOST, REDIS_PORT
 
 
 def chunks(l, n):
@@ -34,8 +37,9 @@ class SqsCache(object):
         'term_cached': 'term_cached'
     }
 
-    def __init__(self, db=None):
-        self.db = db if db else StrictRedis(REDIS_HOST, REDIS_PORT)
+    def __init__(self, db=None, timeout=10):
+        self.db = db if db else StrictRedis(REDIS_HOST, REDIS_PORT,
+                                            socket_timeout=timeout)
         # self.db = db if db else StrictRedis()  # for local
 
     def _task_to_key(self, task):
@@ -296,3 +300,6 @@ class SqsCache(object):
         with open(path, 'w') as f:
             s = json.dumps(data)
             f.write(s)
+
+    def del_redis_keys(self, *keys):
+        self.db.delete(*keys)
