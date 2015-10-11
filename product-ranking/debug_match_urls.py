@@ -37,6 +37,17 @@ def _parse_exclude_fields_from_arg(arg):
     return [f.strip() for f in arg.split(',')]
 
 
+def _list_diff(l1, l2):
+    result = []
+    for _l in l1:
+        if not _l in l2:
+            result.append(_l)
+    if _l in l2:
+        if not _l in l1:
+            result.append(_l)
+    return list(set(result))
+
+
 def _get_mismatching_fields(d1, d2, exclude_fields):
     result = []
     # check their length (missing fields?)
@@ -48,7 +59,7 @@ def _get_mismatching_fields(d1, d2, exclude_fields):
             if f not in keys1 or f not in keys2
         ]
     if keys1 != keys2:
-        return 'field_names'
+        return 'field_names: ' + str(_list_diff(keys1, keys2))
     # now compare values
     for k1, v1 in [(key,value) for key,value in d1.items()
                    if not key in exclude_fields]:
