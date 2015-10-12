@@ -521,9 +521,12 @@ class AmazonBaseClass(BaseProductsSpider):
 
         brand = brand or ['NO BRAND']
 
-        if isinstance(brand, (list, tuple)):
+        while isinstance(brand, (list, tuple)):
             if brand:
                 brand = brand[0]
+            else:
+                brand = None
+                break
 
         return brand
 
