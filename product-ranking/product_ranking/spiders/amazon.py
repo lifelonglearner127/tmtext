@@ -443,10 +443,18 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
                 return self.mkt_request(mkt_place_link, {"product": product})
             return product
 
-    def _get_asin_from_url(self, url):
-        match = re.search(r'/([A-Z0-9]{4,15})/', url)
-        if match:
-            return match.group(1)
+    @staticmethod
+    def _parse_product_id(url):
+        prod_id = re.findall(r'/dp?/(\w+)|product/(\w+)/', url)
+        if not prod_id:
+            prod_id = re.findall(r'/dp?/(\w+)|product/(\w+)', url)
+        if not prod_id:
+            prod_id = re.findall(r'([A-Z0-9]{4,20})', url)
+        if isinstance(prod_id, (list, tuple)):
+            prod_id = [s for s in prod_id if s][0]
+        if isinstance(prod_id, (list, tuple)):
+            prod_id = [s for s in prod_id if s][0]
+        return prod_id
 
     def _create_post_requests(self, response, asin):
         url = ('http://www.amazon.com/ss/customer-reviews/ajax/reviews/get/'
@@ -498,7 +506,7 @@ class AmazonProductsSpider(AmazonTests, BaseProductsSpider):
             response.meta['product']['buyer_reviews'] = buyer_reviews
             # if still no rating_by_star (probably the rating is percent-based)
             return self._create_post_requests(
-                response, self._get_asin_from_url(response.url))
+                response, self._parse_product_id(response.url))
             #return
 
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
