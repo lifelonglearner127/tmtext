@@ -54,7 +54,7 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         self.price_currency_view = '$'
 
         # Locale
-        self.locale = 'en_US'
+        self.locale = 'en-US'
 
     def _format_last_br_date(self, date):
         """
