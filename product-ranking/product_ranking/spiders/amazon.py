@@ -34,7 +34,7 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
 
 class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     name = 'amazon_products'
-    allowed_domains = ["amazon.com"]
+    allowed_domains = ["www.amazon.com"]
 
     user_agent = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:35.0) Gecko'
                   '/20100101 Firefox/35.0')

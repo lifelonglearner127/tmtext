@@ -169,13 +169,12 @@ class AmazonBaseClass(BaseProductsSpider):
         """
         Overrides BaseProductsSpider method to scrape product links.
         """
-        lis = response.xpath("//div[@id='resultsCol']/./ul/li |"
-                             "//div[@id='mainResults']/.//ul/li"
-                             "[contains(@id, 'result')] |"
-                             "//div[@id='atfResults']/.//ul/li"
-                             "[contains(@id, 'result')] |"
-                             "//div[@id='mainResults']/.//div"
-                             "[contains(@id, 'result')]")
+        lis = response.xpath(
+            "//div[@id='resultsCol']/./ul/li |"
+            "//div[@id='mainResults']/.//ul/li [contains(@id, 'result')] |"
+            "//div[@id='atfResults']/.//ul/li[contains(@id, 'result')] |"
+            "//div[@id='mainResults']/.//div[contains(@id, 'result')] |"
+            "//div[@id='btfResults']//ul/li[contains(@id, 'result')]")
         links = []
         last_idx = -1
 
@@ -207,6 +206,8 @@ class AmazonBaseClass(BaseProductsSpider):
                         ".//h3[@class='newaps']/a/@href"
                     ).extract()
                 )
+                if not link:
+                    continue
 
                 if 'slredirect' in link:
                     link = urlparse.urljoin(self.allowed_domains[0], link)
