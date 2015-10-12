@@ -143,6 +143,19 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
             product['department'], product['bestseller_rank'] \
                 = department.items()[0]
 
+    @staticmethod
+    def _parse_product_id(url):
+        prod_id = re.findall(r'/dp?/(\w+)|product/(\w+)/', url)
+        if not prod_id:
+            prod_id = re.findall(r'/dp?/(\w+)|product/(\w+)', url)
+        if not prod_id:
+            prod_id = re.findall(r'([A-Z0-9]{4,20})', url)
+        if isinstance(prod_id, (list, tuple)):
+            prod_id = [s for s in prod_id if s][0]
+        if isinstance(prod_id, (list, tuple)):
+            prod_id = [s for s in prod_id if s][0]
+        return prod_id
+
     def parse_product(self, response):
         prod = response.meta['product']
 
@@ -304,7 +317,7 @@ class AmazonCoUkProductsSpider(AmazonTests, BaseProductsSpider):
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
-        prod_id = is_empty(re.findall('/dp/([a-zA-Z0-9]+)', response.url))
+        prod_id = self._parse_product_id(response.url)
         new_meta['product_id'] = prod_id
 
         if mkt_place_link and "condition=" in mkt_place_link:

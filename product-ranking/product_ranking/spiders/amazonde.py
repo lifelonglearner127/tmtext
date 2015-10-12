@@ -113,10 +113,12 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
                 yield r
 
     @staticmethod
-    def parse_product_id(url):
+    def _parse_product_id(url):
         prod_id = re.findall(r'/dp?/(\w+)|product/(\w+)/', url)
         if not prod_id:
             prod_id = re.findall(r'/dp?/(\w+)|product/(\w+)', url)
+        if not prod_id:
+            prod_id = re.findall(r'([A-Z0-9]{4,20})', url)
         if isinstance(prod_id, (list, tuple)):
             prod_id = [s for s in prod_id if s][0]
         if isinstance(prod_id, (list, tuple)):
@@ -135,7 +137,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
         if not self._has_captcha(response):
             meta = response.meta.copy()
             response.meta['product'] = prod
-            prod_id = self.parse_product_id(response.url)
+            prod_id = self._parse_product_id(response.url)
             response.meta['product_id'] = prod_id
 
             self._populate_from_js(response, prod)
@@ -174,7 +176,7 @@ class AmazonProductsSpider(BaseValidator, BaseProductsSpider):
 
             meta = response.meta.copy()
             meta['product'] = prod
-            prod_id = self.parse_product_id(response.url)
+            prod_id = self._parse_product_id(response.url)
             meta['product_id'] = prod_id
             if mkt_place_link:
                 meta["mkt_place_link"] = mkt_place_link
