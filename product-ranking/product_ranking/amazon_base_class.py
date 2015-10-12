@@ -174,7 +174,8 @@ class AmazonBaseClass(BaseProductsSpider):
             "//div[@id='mainResults']/.//ul/li [contains(@id, 'result')] |"
             "//div[@id='atfResults']/.//ul/li[contains(@id, 'result')] |"
             "//div[@id='mainResults']/.//div[contains(@id, 'result')] |"
-            "//div[@id='btfResults']//ul/li[contains(@id, 'result')]")
+            "//div[@id='btfResults']//ul/li[contains(@id, 'result')]"
+            "[not(contains(@class,'s-hidden-sponsored-item'))]")
         links = []
         last_idx = -1
 
