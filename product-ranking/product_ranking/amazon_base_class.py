@@ -629,18 +629,23 @@ class AmazonBaseClass(BaseProductsSpider):
         :param add_xpath: Additional xpathes, so you don't need to change base class
         """
         xpathes = '//div[contains(@class, "content")]/ul/li/' \
-                  'b[contains(text(), "ASIN")]/../text() |' \
+                  'b[contains(text(), "Item model number")]/../text() |' \
                   '//table/tbody/tr/' \
                   'td[contains(@class, "label") and contains(text(), "ASIN")]/' \
                   '../td[contains(@class, "value")]/text() |' \
                   '//div[contains(@class, "content")]/ul/li/' \
                   'b[contains(text(), "ISBN-10")]/../text()'
+
         if add_xpath:
             xpathes += ' |' + add_xpath
 
         model = self._is_empty(
             response.xpath(xpathes).extract(), ''
         )
+        print (model)
+        if not model:
+            model = self._is_empty(response.xpath('//div[contains(@class, "content")]/ul/li/'
+                                   'b[contains(text(), "ASIN")]/../text()').extract())
 
         if not model:
             spans = response.xpath('//span[@class="a-text-bold"]')
@@ -778,11 +783,10 @@ class AmazonBaseClass(BaseProductsSpider):
             )[0]))
             for itm in response.css('.zg_hrsr_item')
         }
-        print (response.css('#SalesRank::text, #SalesRank .value'
-                            '::text').extract())
+
         prim = response.css('#SalesRank::text, #SalesRank .value'
                             '::text').re('#?([\d ,]+) .*in (.+)\(')
-        print (prim)
+
         if prim:
             prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
             ranks.update(prim)
