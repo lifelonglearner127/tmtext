@@ -793,13 +793,15 @@ class AmazonBaseClass(BaseProductsSpider):
                   '//div[@id="productDescription_feature_div"] |' \
                   '//div[contains(@class, "dv-simple-synopsis")] |' \
                   '//div[@class="bucket"]/div[@class="content"] |' \
-                  '//div[@id="bookDescription_feature_div"]/noscript |' \
-                  '//div[@id="featurebullets_feature_div"]'
+                  '//div[@id="bookDescription_feature_div"]/noscript'
 
         if add_xpath:
             xpathes += ' |' + add_xpath
 
         description = self._is_empty(response.xpath(xpathes).extract())
+        if not description:
+            description = self._is_empty(
+                response.css('#featurebullets_feature_div').extract())
         if not description:
             iframe_content = re.findall(
                 r'var iframeContent = "(.*)"', response.body
