@@ -483,7 +483,7 @@ class AmazonBaseClass(BaseProductsSpider):
                     self.log('Unable to parse image url from JS on {url}: {exc}'.format(
                         url=response.url, exc=exc), WARNING)
 
-        if not image :
+        if not image:
             # Images are not always on the same spot...
             img_jsons = response.xpath(
                 '//*[@id="landingImage"]/@data-a-dynamic-image'
@@ -492,6 +492,17 @@ class AmazonBaseClass(BaseProductsSpider):
             if img_jsons:
                 img_data = json.loads(img_jsons[0])
                 image = max(img_data.items(), key=lambda (_, size): size[0])
+
+        if 'base64' in image:
+            img_jsons = response.xpath(
+                '//*[@id="imgBlkFront"]/@data-a-dynamic-image | '
+                '//*[@id="landingImage"]/@data-a-dynamic-image'
+            ).extract()
+
+            if img_jsons:
+                img_data = json.loads(img_jsons[0])
+
+                image = max(img_data.items(), key=lambda (_, size): size[0])[0]
 
         return image
 
