@@ -840,7 +840,7 @@ class AmazonBaseClass(BaseProductsSpider):
                     desc = unquote(f[0])
                     description = [desc]
 
-        return description.strip()
+        return description.strip() if description else None
 
     def _parse_upc(self, response):
         """
