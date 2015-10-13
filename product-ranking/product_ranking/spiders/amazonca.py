@@ -22,7 +22,7 @@ class AmazoncaValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
         'transformator': [50, 300],
-        'kaspersky total': [3, 50],
+        'kaspersky total': [3, 7],
         'gold sold fold': [5, 200],  # spider should return from 5 to 200 products
         'yamaha drums midi': [5, 100],
         'black men shoes size 8 red': [5, 100],

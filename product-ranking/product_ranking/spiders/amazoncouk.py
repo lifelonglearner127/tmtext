@@ -26,7 +26,7 @@ class AmazoncoukValidatorSettings(object):  # do NOT set BaseValidatorSettings a
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
         'nothing_fou': [5, 50],
-        'kaspersky total': [5, 70],
+        'kaspersky total': [5, 45],
         'gold sold fold': [5, 200],  # spider should return from 5 to 200 products
         'yamaha drums midi': [5, 100],
         'black men shoes size 8 red stripes': [5, 80],

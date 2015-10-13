@@ -228,7 +228,10 @@ class AmazonBaseClass(BaseProductsSpider):
                     prime = 'Prime'
                 if is_prime_pantry:
                     prime = 'PrimePantry'
-                yield link, SiteProductItem(prime=prime)
+                prod = SiteProductItem(prime=prime)
+                yield Request(link, callback=self.parse_product,
+                              headers={'Referer': None},
+                              meta={'product': prod}), prod
 
     def _parse_single_product(self, response):
         """
@@ -357,14 +360,16 @@ class AmazonBaseClass(BaseProductsSpider):
 
         # Parse category
         category = self._parse_category(response)
-        cond_set_value(product, 'category', category)
+        # cond_set_value(product, 'category', category)
 
-        build_categories(product)
-
-        if category:
+        # build_categories(product)
+        category_rank = self._parse_category_rank(response)
+        cond_set_value(product, 'category', category_rank)
+        if category_rank:
             # Parse departments and bestseller rank
-            department = amazon_parse_department(category)
+            department = amazon_parse_department(category_rank)
             if department is not None:
+
                 department, bestseller_rank = department.items()[0]
 
                 cond_set_value(product, 'department', department)
@@ -387,6 +392,17 @@ class AmazonBaseClass(BaseProductsSpider):
         if isinstance(prod_id, (list, tuple)):
             prod_id = [s for s in prod_id if s][0]
         return prod_id
+
+    def _parse_category(self, response):
+        cat = response.xpath(
+            '//span[@class="a-list-item"]/'
+            'a[@class="a-link-normal a-color-tertiary"]/text()')
+
+        category = []
+        for cat_sel in cat:
+            category.append(cat_sel.extract().strip())
+
+        return category
 
     def _parse_title(self, response, add_xpath=None):
         """
@@ -750,11 +766,11 @@ class AmazonBaseClass(BaseProductsSpider):
 
         return price_original
 
-    def _parse_category(self, response):
+    def _parse_category_rank(self, response):
         """
         Parses product categories.
         """
-        category = {
+        ranks = {
             ' > '.join(map(
                 unicode.strip, itm.css('.zg_hrsr_ladder a::text').extract())
             ): int(re.sub('[ ,]', '', itm.css('.zg_hrsr_rank::text').re(
@@ -762,24 +778,18 @@ class AmazonBaseClass(BaseProductsSpider):
             )[0]))
             for itm in response.css('.zg_hrsr_item')
         }
-
-        prim_a = response.css('#SalesRank::text, #SalesRank .value::text').re(
-            '(\d+){0,1}\.{0,1}(\d+) .*en (.+)\('
-        )
-        prim = []
-        if prim_a:
-            if len(prim_a) > 1 and prim_a[0].isdigit() and prim_a[1].isdigit():
-                prim.append(prim_a[0] + prim_a[1])
-                prim.append(prim_a[2])
-            elif len(prim_a) > 1 and prim_a[0].isdigit():
-                prim[0].append(prim_a[0])
-                prim[1].append(prim_a[1])
+        print (response.css('#SalesRank::text, #SalesRank .value'
+                            '::text').extract())
+        prim = response.css('#SalesRank::text, #SalesRank .value'
+                            '::text').re('#?([\d ,]+) .*in (.+)\(')
+        print (prim)
         if prim:
             prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
-            category.update(prim)
-        category = [{'category': k, 'rank': v} for k, v in category.iteritems()]
+            ranks.update(prim)
 
-        return category
+        category_rank = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
+
+        return category_rank
 
     def _parse_description(self, response, add_xpath=None):
         """
@@ -814,7 +824,7 @@ class AmazonBaseClass(BaseProductsSpider):
                     desc = unquote(f[0])
                     description = [desc]
 
-        return description
+        return description.strip()
 
     def _parse_upc(self, response):
         """
