@@ -579,6 +579,8 @@ class AmazonBaseClass(BaseProductsSpider):
             ).extract()
             if price_ss:
                 price_ss = price_ss[0]
+        if not price_ss:
+            price_ss = None
         if price_ss and price_ss.startswith('$'):
             price_ss = self._is_empty(
                 re.findall(
