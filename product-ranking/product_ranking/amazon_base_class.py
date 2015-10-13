@@ -572,6 +572,13 @@ class AmazonBaseClass(BaseProductsSpider):
         price_ss = self._is_empty(
             response.xpath(xpathes).extract(), None
         )
+        if not price_ss:
+            price_ss = response.xpath(
+                '//*[contains(text(), "Subscribe & Save")]/'
+                '../../span[contains(@class, "a-label")]/span[contains(@class, "-price")]/text()'
+            ).extract()
+            if price_ss:
+                price_ss = price_ss[0]
         if price_ss and price_ss.startswith('$'):
             price_ss = self._is_empty(
                 re.findall(
