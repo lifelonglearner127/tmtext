@@ -210,7 +210,8 @@ class AmazonBaseClass(BaseProductsSpider):
                     continue
 
                 if 'slredirect' in link:
-                    link = urlparse.urljoin(self.allowed_domains[0], link)
+
+                    link = 'http://' + self.allowed_domains[0] + '/' + link
 
                 links.append((link, is_prime, is_prime_pantry))
             else:
@@ -482,7 +483,7 @@ class AmazonBaseClass(BaseProductsSpider):
                     self.log('Unable to parse image url from JS on {url}: {exc}'.format(
                         url=response.url, exc=exc), WARNING)
 
-        if not image:
+        if not image :
             # Images are not always on the same spot...
             img_jsons = response.xpath(
                 '//*[@id="landingImage"]/@data-a-dynamic-image'
@@ -642,7 +643,7 @@ class AmazonBaseClass(BaseProductsSpider):
         model = self._is_empty(
             response.xpath(xpathes).extract(), ''
         )
-        print (model)
+
         if not model:
             model = self._is_empty(response.xpath('//div[contains(@class, "content")]/ul/li/'
                                    'b[contains(text(), "ASIN")]/../text()').extract())
