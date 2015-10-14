@@ -20,14 +20,15 @@ from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.kohls_variants import KohlsVariants
 from product_ranking.validation import BaseValidator
 
+
 is_empty = lambda x, y="": x[0] if x else y
 
 class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
     optional_fields = ['brand']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'description', 'special_pricing', 
-        'bestseller_rank', 'model'
+        'google_source_site', 'special_pricing',
+        'bestseller_rank', 'model', 'image_url'
     ]
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = True  # ... duplicated requests?
@@ -35,13 +36,12 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
     test_requests = {
         'sdfsdgdf': 0,  # should return 'no products' or just 0 products
         'benny benassi': 0,
-        'red car': [20, 150],
-        'black stone': [120, 230],
-        'gone': [5, 80],
-        'green rose': [10, 100],
-        'long term black': [5, 50],
-        'low ceiling': [30, 120],
-        'Water Sandals': [5, 80],
+        'red car': [20, 120],
+        'black stone': [120, 190],
+        'gone': [5, 40],
+        'green rose': [10, 40],
+        'low ceiling': [30, 45],
+        'Water Sandals': [5, 35],
         'long night': [30, 120],
     }
 
@@ -165,18 +165,15 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(product, 'title', metadata.get('title'))
 
         populate_from_open_graph(response, product)
+        product['title'] = self.parse_title(response)
 
-        title = response.css('.productTitleName ::text').extract()
-        cond_set(product, 'title', title, conv=string.strip)
+        # title = response.css('.productTitleName ::text').extract()
+        # cond_set(product, 'title', title, conv=string.strip)
 
-        cond_set(
-            product,
-            'description',
-            response.xpath('//div[@class="Bdescription"]').extract(),
-            conv=string.strip
-        )
+        product['description'] = self.parse_description(response)
+        # cond_set_value(product, 'description', description)
 
-        cond_set(
+        cond_set_value(
             product,
             'image_url',
             response.xpath(
@@ -238,6 +235,21 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             'brand',
             (guess_brand_from_first_words(brand.strip()),2)
         )
+
+    def parse_title(self, response):
+        title = is_empty(response.xpath(
+            '//h1[@class="title productTitleName"]/text() | '
+            '//h1[@class="title"]/text() | //title/text()').extract())
+
+        return title
+
+    def parse_description(self, response):
+        description = is_empty(response.xpath(
+            '//div[@class="prod_description1"]/'
+            'div[@class="Bdescription"]/p/text() | '
+            '//meta[@name="description"]/@content').extract())
+
+        return description
 
     def _set_price(self, response, product):
         price = response.xpath(
