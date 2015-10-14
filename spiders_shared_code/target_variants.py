@@ -14,9 +14,28 @@ class TargetVariants(object):
         """ Call it from CH spiders """
         self.tree_html = tree_html
 
+    def _scrape_possible_variant_urls(self):
+        """ Returns possible variants (URLs) as scraped from HTML blocks (see #3930) """
+        result = []
+        for li in self.tree_html.cssselect('ul.swatches li'):
+            img_url = li.xpath('.//input[contains(@src, ".")]/@src')
+            if img_url:
+                result.append(img_url[0])
+        return result
+
+    @staticmethod
+    def _get_variant_id_from_image_url(url):
+        # like http://scene7.targetimg1.com/is/image/Target/10027805?wid=480&hei=480
+        url = url.rsplit('/', 1)[1]
+        url = url.split('?')[0]
+        return url
+
     def _variants(self):
         try:
             variation_combinations_values = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
+
+            possible_variant_urls = self._scrape_possible_variant_urls()
+            possible_variant_ids = [self._get_variant_id_from_image_url(url) for url in possible_variant_urls]
 
             if self.tree_html.xpath("//script[@type='text/blzscript' and contains(text(), 'Target.globals.refreshItems =')]/text()"):
                 stockstatus_for_variation_combinations = self.tree_html.xpath("//script[@type='text/blzscript' and contains(text(), 'Target.globals.refreshItems =')]/text()")[0]
@@ -58,9 +77,15 @@ class TargetVariants(object):
 
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
 
+            if possible_variant_urls:
+                for i, _variant in enumerate(stockstatus_for_variants_list):
+                    _url = _variant.get('image_url')
+                    if _url and self._get_variant_id_from_image_url(_url) not in possible_variant_ids:
+                        del stockstatus_for_variants_list[i]
+
             if not stockstatus_for_variants_list:
                 return None
             else:
                 return stockstatus_for_variants_list
-        except:
+        except Exception:
             return None
