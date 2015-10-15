@@ -227,14 +227,18 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
             product['related_products'] = related_products
 
-        brand = is_empty(response.xpath(
-            '//h1[contains(@class, "title")]/text()'
-        ).extract())
-        cond_set(
-            product,
-            'brand',
-            (guess_brand_from_first_words(brand.strip()),2)
-        )
+        brand = response.xpath('//meta[@itemprop="brand"]/@content').extract()
+        if brand:
+            product['brand'] = brand[0].strip()
+        else:
+            brand = is_empty(response.xpath(
+                '//h1[contains(@class, "title")]/text()'
+            ).extract())
+            cond_set(
+                product,
+                'brand',
+                (guess_brand_from_first_words(brand.strip()),2)
+            )
 
     def parse_title(self, response):
         title = is_empty(response.xpath(
@@ -303,7 +307,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                     title = is_empty(sel.xpath('./div/p/text()').extract())
                     related.append(
                         RelatedProduct(
-                            title=unicode.decode(title.replace("\xe9", "é").
+                            title=unicode.decode(title.replace("\xe9", "Ã©").
                                 replace("\xf6", "").replace("\xb0", "")),
                             url=urllib.unquote('http'+url.split('http')[-1])
                         ))
