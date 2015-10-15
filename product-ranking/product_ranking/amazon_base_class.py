@@ -956,7 +956,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 '/div[contains(@class, "acrRating")]/text()'
             )
         average = average.extract()[0].replace('out of 5 stars','')
-        average = average.replace('von 5 Sternen', '').strip()
+        average = average.replace('von 5 Sternen', '').replace('5つ星のうち','').replace('平均','').replace(' 星','').strip()
         buyer_reviews['average_rating'] = float(average)
 
         buyer_reviews['rating_by_star'] = {}
