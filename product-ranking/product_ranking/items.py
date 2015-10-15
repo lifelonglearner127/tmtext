@@ -238,3 +238,24 @@ class SiteProductItem(Item):
     shelf_path = Field()
 
     _subitem = Field()
+
+
+class DiscountCoupon(Item):
+    # Search metadata.
+    site = Field()  # String.
+    search_term = Field()  # String.
+    ranking = Field()  # Integer.
+    total_matches = Field()  # Integer.
+    results_per_page = Field()  # Integer.
+    scraped_results_per_page = Field()  # Integer.
+    search_term_in_title_exactly = Field()
+    search_term_in_title_partial = Field()
+    search_term_in_title_interleaved = Field()
+    _statistics = Field()
+
+    category = Field()  # (Jewelry, Home, etc.)
+    description = Field()  # (What it applies to (Riedel, Mattresses, etc.)
+    start_date = Field()  # (10/15/2015)
+    end_date = Field()  # (10/31/2015)
+    discount = Field()  # (Discount value or Percentage (20% OFF)
+    conditions = Field()  # (Applies to select items priced $50 or more...)
