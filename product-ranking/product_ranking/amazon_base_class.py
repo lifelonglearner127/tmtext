@@ -369,8 +369,10 @@ class AmazonBaseClass(BaseProductsSpider):
         if category_rank:
             # Parse departments and bestseller rank
             department = amazon_parse_department(category_rank)
-            if department is not None:
 
+            if department is None:
+                product['department'] = None
+            else:
                 department, bestseller_rank = department.items()[0]
 
                 cond_set_value(product, 'department', department)
