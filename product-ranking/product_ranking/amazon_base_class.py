@@ -935,7 +935,8 @@ class AmazonBaseClass(BaseProductsSpider):
             ).re(FLOATING_POINT_RGEX)
             if not total:
                 return ZERO_REVIEWS_VALUE
-        buyer_reviews['num_of_reviews'] = float(total[0].replace(',', ''))
+        buyer_reviews['num_of_reviews'] = int(total[0].replace(',', '').
+                                              replace('.', ''))
 
         average = response.xpath(
             '//*[@id="summaryStars"]/a/@title')
