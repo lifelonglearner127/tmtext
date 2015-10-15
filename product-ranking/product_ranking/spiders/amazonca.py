@@ -47,7 +47,7 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         self.total_matches_re = r'of\s?([\d,.\s?]+)'
 
         # Default price currency
-        self.price_currency = 'CDN'
+        self.price_currency = 'CAD'
         self.price_currency_view = '$'
 
         # Locale
