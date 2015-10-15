@@ -378,6 +378,14 @@ class AmazonBaseClass(BaseProductsSpider):
                 cond_set_value(product, 'department', department)
                 cond_set_value(product, 'bestseller_rank', bestseller_rank)
 
+        _avail = response.css('#availability ::text').extract()
+        _avail = ''.join(_avail)
+        if "nichtauflager" in _avail.lower().replace(' ', ''):
+            product['is_out_of_stock'] = True
+        else:
+            product['is_out_of_stock'] = False
+
+
         if reqs:
             return self.send_next_request(reqs, response)
 
