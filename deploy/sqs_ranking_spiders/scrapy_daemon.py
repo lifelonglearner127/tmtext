@@ -110,6 +110,7 @@ CACHE_HOST = 'http://sqs-metrics.contentanalyticsinc.com/'
 CACHE_URL_GET = 'get_cache'  # url to retrieve task cache from
 CACHE_URL_SAVE = 'save_cache'  # to save cached result to
 CACHE_URL_STATS = 'complete_task'  # to have some stats about completed tasks
+CACHE_URL_FAIL = 'fail_task'  # to manage broken tasks
 CACHE_AUTH = 'Basic YWRtaW46Q29udGVudDEyMzQ1'  # auth header value
 CACHE_TIMEOUT = 15  # 15 seconds request timeout
 # key in task data to not retrieve cached result
@@ -1172,6 +1173,33 @@ def save_task_result_to_cache(task, output_path):
         return True
 
 
+def log_failed_task(task):
+    """
+    log broken task
+    if this function returns True, task is considered
+    as failed max allowed times and should be removed
+    """
+    url = CACHE_HOST + CACHE_URL_FAIL
+    data = dict(task=json.dumps(task))
+    try:
+        resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
+                             headers={'Authorization': CACHE_AUTH})
+    except Exception as ex:
+        logger.warning(ex)
+        return False
+    if resp.status_code != 200:
+        logger.warning('Mark task as failed wrong response status code: %s, %s',
+                       resp.status_code, resp.text)
+        return False
+    # resp.text contains only 0 or 1 number,
+    #  1 indicating that task should be removed
+    try:
+        return json.loads(resp.text)
+    except ValueError as ex:
+        logger.warning('JSON conversion error: %s', ex)
+        return False
+
+
 def cache_complete_task(task, is_from_cache=False):
     """send request to notice that task is completed (for statistics)"""
     url = CACHE_HOST + CACHE_URL_STATS
@@ -1320,6 +1348,9 @@ def main():
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
                          task.task_data.get('task_id', 0))
+            # remove task from queue, if it failed many times
+            if log_failed_task(task.task_data):
+                task.queue.task_done()
             logger.error(task.report())
     if not tasks_taken:
         logger.warning('No any task messages were found.')
