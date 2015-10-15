@@ -216,6 +216,13 @@ def complete_task():
     is_from_cache_str = request.form['is_from_cache']
     cache.complete_task(task, is_from_cache_str)
     return make_response('', 200)
+
+
+@app.route('/fail_task', methods=['POST'])
+def fail_task():
+    task = request.form['task']
+    res = cache.fail_result(task)
+    return '1' if res else '0'
 # ###################################
 # ######### CACHE METHODS END #######
 # ###################################

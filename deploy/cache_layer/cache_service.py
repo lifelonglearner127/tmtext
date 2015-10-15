@@ -29,6 +29,8 @@ class SqsCache(object):
     REDIS_COMPLETED_TASKS = 'completed_tasks'  # zset, count completed tasks
     REDIS_INSTANCES_COUNTER = 'daily_sqs_instances_counter'  # int
     REDIS_URGENT_STATS = 'urgent_stats'  # zset
+    REDIS_FAILED_TASKS = 'failed_tasks'  # set, store failed tasks here
+    MAX_FAILED_TRIES = 3
     REDIS_COMPLETED_COUNTER = 'completed_counter'  # hset
     REDIS_COMPLETED_COUNTER_DICT = {
         'url': 'url',
@@ -86,6 +88,19 @@ class SqsCache(object):
             d[4] -= d[4] % 15
         return int(mktime(d))
 
+    def _check_task_failed(self, task, max_failed_attempts):
+        """
+        function returns True, if task with given parameters stored in failed
+        tasks set contains value equal to `max_failed_attempts` or more
+        """
+        task_id = task.get('task_id')
+        task_server = task.get('server_name')
+        if not task_server or not task_id:
+            return False
+        task_key = '%s_%s' % (task_server, task_id)
+        val = int(self.db.hget(self.REDIS_FAILED_TASKS, task_key) or '0')
+        return val >= max_failed_attempts
+
     def get_result(self, task_str, queue):
         """
         retrieve cached result
@@ -134,6 +149,20 @@ class SqsCache(object):
         self.db.zadd(self.REDIS_CACHE_TIMESTAMP, int(time()), uniq_key)
         return True
 
+    def fail_result(self, task_str):
+        """
+        store failed task and count of failed attempts
+        returns True, if task failed max allowed times
+        """
+        task = json.loads(task_str)
+        task_id = task.get('task_id')
+        task_server = task.get('server_name')
+        if not task_id or not task_server:  # not enough of data
+            return None
+        task_key = '%s_%s' % (task_server, task_id)
+        self.db.hincrby(self.REDIS_FAILED_TASKS, task_key, 1)
+        return self._check_task_failed(task, self.MAX_FAILED_TRIES)
+
     def delete_old_tasks(self, freshness):
         """
         :param freshness: value in minutes
@@ -155,8 +184,10 @@ class SqsCache(object):
         """
         return tuple of count of deleted items from cache and from tasks
         """
-        self.db.delete(self.REDIS_INSTANCES_COUNTER)
-        self.db.delete(self.REDIS_COMPLETED_COUNTER)
+        self.db.delete(self.REDIS_INSTANCES_COUNTER,
+                       self.REDIS_COMPLETED_COUNTER,
+                       self.REDIS_FAILED_TASKS)
+
         return \
             (self.db.zremrangebyrank(self.REDIS_CACHE_STATS_URL, 0, -1),
              self.db.zremrangebyrank(self.REDIS_CACHE_STATS_TERM, 0, -1),
