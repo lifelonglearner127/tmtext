@@ -563,8 +563,10 @@ class ScrapyTask(object):
         searchterms_str = self.task_data.get('searchterms_str', None)
         site = self.task_data['site']
         if isinstance(searchterms_str, (str, unicode)):
-            searchterms_str = searchterms_str.decode('utf8')
-        # job_name = datetime.datetime.utcnow().strftime('%d-%m-%Y')
+            try:
+                searchterms_str = searchterms_str.decode('utf8')
+            except UnicodeEncodeError:  # special chars may break
+                pass
         server_name = self.task_data['server_name']
         server_name = slugify(server_name)
         job_name = DATESTAMP + '____' + RANDOM_HASH + '____' + server_name+'--'
@@ -1350,6 +1352,10 @@ def main():
                          task.task_data.get('task_id', 0))
             # remove task from queue, if it failed many times
             if log_failed_task(task.task_data):
+                logger.warning('Removing task %s_%s from the queue due to too '
+                               'many failed tries.',
+                               task_data.get('server_name'),
+                               task_data.get('task_id'))
                 task.queue.task_done()
             logger.error(task.report())
     if not tasks_taken:
