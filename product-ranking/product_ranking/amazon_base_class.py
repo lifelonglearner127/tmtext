@@ -169,13 +169,12 @@ class AmazonBaseClass(BaseProductsSpider):
         """
         Overrides BaseProductsSpider method to scrape product links.
         """
-        lis = response.xpath("//div[@id='resultsCol']/./ul/li |"
-                             "//div[@id='mainResults']/.//ul/li"
-                             "[contains(@id, 'result')] |"
-                             "//div[@id='atfResults']/.//ul/li"
-                             "[contains(@id, 'result')] |"
-                             "//div[@id='mainResults']/.//div"
-                             "[contains(@id, 'result')]")
+        lis = response.xpath(
+            "//div[@id='resultsCol']/./ul/li |"
+            "//div[@id='mainResults']/.//ul/li [contains(@id, 'result')] |"
+            "//div[@id='atfResults']/.//ul/li[contains(@id, 'result')] |"
+            "//div[@id='mainResults']/.//div[contains(@id, 'result')] |"
+            "//div[@id='btfResults']//ul/li[contains(@id, 'result')]")
         links = []
         last_idx = -1
 
@@ -207,9 +206,12 @@ class AmazonBaseClass(BaseProductsSpider):
                         ".//h3[@class='newaps']/a/@href"
                     ).extract()
                 )
+                if not link:
+                    continue
 
                 if 'slredirect' in link:
-                    link = urlparse.urljoin(self.allowed_domains[0], link)
+
+                    link = 'http://' + self.allowed_domains[0] + '/' + link
 
                 links.append((link, is_prime, is_prime_pantry))
             else:
@@ -227,7 +229,10 @@ class AmazonBaseClass(BaseProductsSpider):
                     prime = 'Prime'
                 if is_prime_pantry:
                     prime = 'PrimePantry'
-                yield link, SiteProductItem(prime=prime)
+                prod = SiteProductItem(prime=prime)
+                yield Request(link, callback=self.parse_product,
+                              headers={'Referer': None},
+                              meta={'product': prod}), prod
 
     def _parse_single_product(self, response):
         """
@@ -356,18 +361,30 @@ class AmazonBaseClass(BaseProductsSpider):
 
         # Parse category
         category = self._parse_category(response)
-        cond_set_value(product, 'category', category)
+        # cond_set_value(product, 'category', category)
 
-        build_categories(product)
-
-        if category:
+        # build_categories(product)
+        category_rank = self._parse_category_rank(response)
+        cond_set_value(product, 'category', category_rank)
+        if category_rank:
             # Parse departments and bestseller rank
-            department = amazon_parse_department(category)
-            if department is not None:
+            department = amazon_parse_department(category_rank)
+
+            if department is None:
+                product['department'] = None
+            else:
                 department, bestseller_rank = department.items()[0]
 
                 cond_set_value(product, 'department', department)
                 cond_set_value(product, 'bestseller_rank', bestseller_rank)
+
+        _avail = response.css('#availability ::text').extract()
+        _avail = ''.join(_avail)
+        if "nichtauflager" in _avail.lower().replace(' ', ''):
+            product['is_out_of_stock'] = True
+        else:
+            product['is_out_of_stock'] = False
+
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -386,6 +403,17 @@ class AmazonBaseClass(BaseProductsSpider):
         if isinstance(prod_id, (list, tuple)):
             prod_id = [s for s in prod_id if s][0]
         return prod_id
+
+    def _parse_category(self, response):
+        cat = response.xpath(
+            '//span[@class="a-list-item"]/'
+            'a[@class="a-link-normal a-color-tertiary"]/text()')
+
+        category = []
+        for cat_sel in cat:
+            category.append(cat_sel.extract().strip())
+
+        return category
 
     def _parse_title(self, response, add_xpath=None):
         """
@@ -475,6 +503,17 @@ class AmazonBaseClass(BaseProductsSpider):
                 img_data = json.loads(img_jsons[0])
                 image = max(img_data.items(), key=lambda (_, size): size[0])
 
+        if 'base64' in image:
+            img_jsons = response.xpath(
+                '//*[@id="imgBlkFront"]/@data-a-dynamic-image | '
+                '//*[@id="landingImage"]/@data-a-dynamic-image'
+            ).extract()
+
+            if img_jsons:
+                img_data = json.loads(img_jsons[0])
+
+                image = max(img_data.items(), key=lambda (_, size): size[0])[0]
+
         return image
 
     def _parse_brand(self, response, add_xpath=None):
@@ -521,6 +560,13 @@ class AmazonBaseClass(BaseProductsSpider):
 
         brand = brand or ['NO BRAND']
 
+        while isinstance(brand, (list, tuple)):
+            if brand:
+                brand = brand[0]
+            else:
+                brand = None
+                break
+
         return brand
 
     def _parse_price_subscribe_save(self, response, add_xpath=None):
@@ -536,6 +582,15 @@ class AmazonBaseClass(BaseProductsSpider):
         price_ss = self._is_empty(
             response.xpath(xpathes).extract(), None
         )
+        if not price_ss:
+            price_ss = response.xpath(
+                '//*[contains(text(), "Subscribe & Save")]/'
+                '../../span[contains(@class, "a-label")]/span[contains(@class, "-price")]/text()'
+            ).extract()
+            if price_ss:
+                price_ss = price_ss[0]
+        if not price_ss:
+            price_ss = None
         if price_ss and price_ss.startswith('$'):
             price_ss = self._is_empty(
                 re.findall(
@@ -605,18 +660,23 @@ class AmazonBaseClass(BaseProductsSpider):
         :param add_xpath: Additional xpathes, so you don't need to change base class
         """
         xpathes = '//div[contains(@class, "content")]/ul/li/' \
-                  'b[contains(text(), "ASIN")]/../text() |' \
+                  'b[contains(text(), "Item model number")]/../text() |' \
                   '//table/tbody/tr/' \
                   'td[contains(@class, "label") and contains(text(), "ASIN")]/' \
                   '../td[contains(@class, "value")]/text() |' \
                   '//div[contains(@class, "content")]/ul/li/' \
                   'b[contains(text(), "ISBN-10")]/../text()'
+
         if add_xpath:
             xpathes += ' |' + add_xpath
 
         model = self._is_empty(
             response.xpath(xpathes).extract(), ''
         )
+
+        if not model:
+            model = self._is_empty(response.xpath('//div[contains(@class, "content")]/ul/li/'
+                                   'b[contains(text(), "ASIN")]/../text()').extract())
 
         if not model:
             spans = response.xpath('//span[@class="a-text-bold"]')
@@ -742,11 +802,11 @@ class AmazonBaseClass(BaseProductsSpider):
 
         return price_original
 
-    def _parse_category(self, response):
+    def _parse_category_rank(self, response):
         """
         Parses product categories.
         """
-        category = {
+        ranks = {
             ' > '.join(map(
                 unicode.strip, itm.css('.zg_hrsr_ladder a::text').extract())
             ): int(re.sub('[ ,]', '', itm.css('.zg_hrsr_rank::text').re(
@@ -755,23 +815,16 @@ class AmazonBaseClass(BaseProductsSpider):
             for itm in response.css('.zg_hrsr_item')
         }
 
-        prim_a = response.css('#SalesRank::text, #SalesRank .value::text').re(
-            '(\d+){0,1}\.{0,1}(\d+) .*en (.+)\('
-        )
-        prim = []
-        if prim_a:
-            if len(prim_a) > 1 and prim_a[0].isdigit() and prim_a[1].isdigit():
-                prim.append(prim_a[0] + prim_a[1])
-                prim.append(prim_a[2])
-            elif len(prim_a) > 1 and prim_a[0].isdigit():
-                prim[0].append(prim_a[0])
-                prim[1].append(prim_a[1])
+        prim = response.css('#SalesRank::text, #SalesRank .value'
+                            '::text').re('#?([\d ,]+) .*in (.+)\(')
+
         if prim:
             prim = {prim[1].strip(): int(re.sub('[ ,]', '', prim[0]))}
-            category.update(prim)
-        category = [{'category': k, 'rank': v} for k, v in category.iteritems()]
+            ranks.update(prim)
 
-        return category
+        category_rank = [{'category': k, 'rank': v} for k, v in ranks.iteritems()]
+
+        return category_rank
 
     def _parse_description(self, response, add_xpath=None):
         """
@@ -785,13 +838,15 @@ class AmazonBaseClass(BaseProductsSpider):
                   '//div[@id="productDescription_feature_div"] |' \
                   '//div[contains(@class, "dv-simple-synopsis")] |' \
                   '//div[@class="bucket"]/div[@class="content"] |' \
-                  '//div[@id="bookDescription_feature_div"]/noscript |' \
-                  '//div[@id="featurebullets_feature_div"]'
+                  '//div[@id="bookDescription_feature_div"]/noscript'
 
         if add_xpath:
             xpathes += ' |' + add_xpath
 
         description = self._is_empty(response.xpath(xpathes).extract())
+        if not description:
+            description = self._is_empty(
+                response.css('#featurebullets_feature_div').extract())
         if not description:
             iframe_content = re.findall(
                 r'var iframeContent = "(.*)"', response.body
@@ -804,7 +859,7 @@ class AmazonBaseClass(BaseProductsSpider):
                     desc = unquote(f[0])
                     description = [desc]
 
-        return description
+        return description.strip() if description else None
 
     def _parse_upc(self, response):
         """
@@ -890,7 +945,8 @@ class AmazonBaseClass(BaseProductsSpider):
             ).re(FLOATING_POINT_RGEX)
             if not total:
                 return ZERO_REVIEWS_VALUE
-        buyer_reviews['num_of_reviews'] = int(total[0].replace(',', ''))
+        buyer_reviews['num_of_reviews'] = int(total[0].replace(',', '').
+                                              replace('.', ''))
 
         average = response.xpath(
             '//*[@id="summaryStars"]/a/@title')
@@ -900,7 +956,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 '/div[contains(@class, "acrRating")]/text()'
             )
         average = average.extract()[0].replace('out of 5 stars','')
-        average = average.replace('von 5 Sternen', '').strip()
+        average = average.replace('von 5 Sternen', '').replace('5つ星のうち','').replace('平均','').replace(' 星','').strip()
         buyer_reviews['average_rating'] = float(average)
 
         buyer_reviews['rating_by_star'] = {}
