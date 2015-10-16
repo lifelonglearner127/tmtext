@@ -36,13 +36,14 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
     test_requests = {
         'sdfsdgdf': 0,  # should return 'no products' or just 0 products
         'benny benassi': 0,
-        'red car': [20, 120],
-        'black stone': [120, 190],
-        'gone': [5, 40],
-        'green rose': [10, 40],
-        'low ceiling': [30, 45],
-        'Water Sandals': [5, 35],
-        'long night': [30, 120],
+        'red car': [20, 80],
+        'black stone': [50, 109],
+        'ball': [5, 150],
+        'rose': [10, 70],
+        'long term black': [1, 12],
+        'selling': [15, 40],
+        'water proof': [50, 108],
+        'long night': [30, 90],
     }
 
 
@@ -76,7 +77,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
     SORTING = None
 
     SORT_MODES = {
-        'default': '',
+        'default': '1',
         'featured': '1',
         'new': '2',
         'best_sellers': '3',
@@ -101,6 +102,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                   "l=1"
 
     def __init__(self, sort_mode=None, *args, **kwargs):
+        self.start_pos = 0
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
@@ -440,6 +442,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                 response.body_as_unicode()
             )
             for prod_url in prod_urls:
+                self.per_page = len(prod_urls)
                 product = SiteProductItem()
 
                 new_meta = response.meta.copy()
@@ -485,7 +488,8 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             return total_matches
 
     def _scrape_next_results_page_link(self, response):
-        next_page = response.xpath('//a[@rel="next"]/@href').extract()
-        if next_page:
-            next_page = 'http://www.kohls.com'+next_page[0]
-            return next_page
+        self.start_pos += self.per_page
+        url = self.SEARCH_URL.format(search_term=self.searchterms[0],
+                                     start=self.start_pos,
+                                     sort_mode=self.SORTING or '')
+        return url
