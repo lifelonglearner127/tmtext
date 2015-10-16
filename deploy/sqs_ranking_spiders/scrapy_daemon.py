@@ -1037,10 +1037,16 @@ class ScrapyTask(object):
         start scrapy process, try to establish connection with it,
         terminate if fails
         """
-        start_time = datetime.datetime.utcnow()
-        self.start_date = start_time
-        self._start_scrapy_process()
-        first_signal = self._get_next_signal(start_time)
+        # it may break during task parsing, for example wrong server name or
+        # unsupported characters in the name os spider
+        try:
+            start_time = datetime.datetime.utcnow()
+            self.start_date = start_time
+            self._start_scrapy_process()
+            first_signal = self._get_next_signal(start_time)
+        except Exception as ex:
+            logger.warning('Error occured while starting scrapy: %s', ex)
+            return False
         try:
             self._run_signal(first_signal, start_time)
             return True
