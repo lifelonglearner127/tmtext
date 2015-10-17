@@ -98,7 +98,7 @@ class UltaProductSpider(BaseProductsSpider):
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
 
-        model = response.xpath('//p[@class="product-item-no"]/text()').re('\d+')[0]
+        model = response.css('.product-item-no ::text').re('\d{3,20}')[0]
         prod['model'] = model
         product_id = re.findall('\?productId=(.*)', response.url)
         price_url = 'http://www.ulta.com/browse/inc/productDetail_price.jsp?skuId={model}' \

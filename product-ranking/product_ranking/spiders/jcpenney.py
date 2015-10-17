@@ -167,40 +167,41 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         if _props.keys():
             self.log('Error: extra variants found, url %s' % response.url, WARNING)
         raw_post_str = """
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.lotSKUSelectionChange=test
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.ppId={pp_id}
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.ppType={pp_type}
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.selectedLotValue={lot_value}
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.selectedSKUAttributeName={attribute_name}
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.shipToCountry=US
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.COLOR={color}
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.CHEST={chest}
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.LENGTH={length}
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.INSEAM={inseam}
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.WAIST={waist}
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.NECK_SIZE={neck}
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SIZE={size}
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SLEEVE={sleeve}
-/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.sucessUrl=/jsp/browse/pp/graphical/graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&grView=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.lotSKUSelectionChange=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.ppId=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.ppType=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.selectedLotValue=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.selectedSKUAttributeName=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.shipToCountry=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.COLOR=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.INSEAM=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.WAIST=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.NECK_SIZE=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SIZE=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.SLEEVE=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.CHEST=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.skuSelectionMap.LENGTH=
-_D:/com/jcpenney/catalog/formhandler/GraphicalLotSKUSelectionFormHandler.sucessUrl=
+lotSKUSelectionChange=test
+ppId={pp_id}
+ppType={pp_type}
+selectedLotValue={lot_value}
+selectedSKUAttributeName={attribute_name}
+shipToCountry=US
+skuSelectionMap.COLOR={color}
+skuSelectionMap.CHEST={chest}
+skuSelectionMap.LENGTH={length}
+skuSelectionMap.INSEAM={inseam}
+skuSelectionMap.WAIST={waist}
+skuSelectionMap.NECK_SIZE={neck}
+skuSelectionMap.SIZE={size}
+skuSelectionMap.SLEEVE={sleeve}
+sucessUrl=/jsp/browse/pp/graphical/graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&grView=
+_D:lotSKUSelectionChange=
+_D:ppId=
+_D:ppType=
+_D:selectedLotValue=
+_D:selectedSKUAttributeName=
+_D:shipToCountry=
+_D:skuSelectionMap.COLOR=
+_D:skuSelectionMap.INSEAM=
+_D:skuSelectionMap.WAIST=
+_D:skuSelectionMap.NECK_SIZE=
+_D:skuSelectionMap.SIZE=
+_D:skuSelectionMap.SLEEVE=
+_D:skuSelectionMap.CHEST=
+_D:skuSelectionMap.LENGTH=
+_D:sucessUrl=
 _DARGS=/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp
 _dynSessConf=
 _dync
 """
+
         _format_args = {}
         _format_args['pp_id'] = pp_id if pp_id else ''
         _format_args['pp_type'] = 'regular'  # TODO: shouldn't this be constant?
