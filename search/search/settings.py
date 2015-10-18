@@ -19,8 +19,8 @@ ITEM_PIPELINES = ['search.pipelines.URLsPipeline']
 # LOG_LEVEL=log.WARNING
 DUPEFILTER_CLASS = 'scrapy.dupefilter.BaseDupeFilter'
 
-HTTPCACHE_STORAGE = 'scrapy.contrib.downloadermiddleware.httpcache.FilesystemCacheStorage'
-HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.RFC2616Policy'
+HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+# HTTPCACHE_POLICY = 'scrapy.extensions.httpcache.RFC2616Policy'
 
 DOWNLOAD_DELAY = 0.5
 
