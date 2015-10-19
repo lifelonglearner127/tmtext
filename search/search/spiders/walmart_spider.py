@@ -7,6 +7,7 @@ from scrapy.exceptions import CloseSpider
 from search.items import SearchItem
 from search.items import WalmartItem
 from search.spiders.search_spider import SearchSpider
+from search.spiders.search_product_spider import SearchProductSpider
 from scrapy import log
 
 from spiders_utils import Utils
@@ -16,7 +17,7 @@ import re
 import sys
 
 # spider derived from search spider to search for products on Walmart
-class WalmartSpider(SearchSpider):
+class WalmartSpider(SearchProductSpider):
 
     name = "walmart"
     handle_httpstatus_list = [520]
@@ -25,6 +26,100 @@ class WalmartSpider(SearchSpider):
     def init_sub(self):
         self.target_site = "walmart"
         self.start_urls = [ "http://www.walmart.com" ]
+
+    def extract_results(self, response):
+        hxs = HtmlXPathSelector(response)
+
+        # TODO: check this xpath and extractions
+        results = hxs.select("//h4[@class='tile-heading']/a")
+        product_urls = set()
+
+        # try xpath for old page version
+        if not results:
+             results = hxs.select("//div[@class='prodInfo']/div[@class='prodInfoBox']/a[@class='prodLink ListItemLink']")
+
+        for result in results:
+            product_url = result.select("@href").extract()[0]
+            product_url = Utils.add_domain(product_url, "http://www.walmart.com")
+            product_urls.add(product_url)
+
+        return list(product_urls)
+
+    def extract_product_data(self, response, item):
+        hxs = HtmlXPathSelector(response)
+
+        # assume new design of walmart product page
+        product_name_node = hxs.select("//h1[contains(@class, 'product-name')]//text()").extract()
+
+        if not product_name_node:
+            # assume old design
+            product_name_node = hxs.select("//h1[contains(@class, 'productTitle')]//text()").extract()
+
+        if product_name_node:
+            product_name = "".join(product_name_node).strip()
+        else:
+            self.log("Error: No product name: " + str(response.url) + " for source product " + origin_url, level=log.ERROR)
+            # TODO:is this ok? I think so
+            # return
+
+        if product_name_node:
+            item['product_name'] = product_name
+
+            # extract product model number
+            # TODO: use meta? works for both old and new?
+
+            # extract features table for new page version:
+            table_node = hxs.select("//div[@class='specs-table']/table").extract()
+
+            if not table_node:
+                # old page version:
+                table_node = hxs.select("//table[@class='SpecTable']").extract()
+
+            if table_node:
+                try:
+                    product_model = table_node.select(".//td[contains(text(),'Model')]/following-sibling::*/text()").extract()[0]
+                    item['product_model'] = product_model
+                except:
+                    pass
+
+            upc_node = hxs.select("//meta[@itemprop='productID']/@content")
+            if upc_node:
+                item['product_upc'] = [upc_node.extract()[0]]
+
+
+            brand_holder = hxs.select("//meta[@itemprop='brand']/@content").extract()
+            if brand_holder:
+                item['product_brand'] = brand_holder[0]
+
+            # extract price
+            # TODO: good enough for all pages? could also extract from page directly
+            price_holder = hxs.select("//meta[@itemprop='price']/@content").extract()
+            product_target_price = None
+            if price_holder:
+                product_target_price = price_holder[0].strip()
+
+            else:
+                product_target_price = "".join(hxs.select("//div[@itemprop='price']//text()").extract()).strip()
+
+            # if we can't find it like above try other things:
+            if product_target_price:
+                # remove commas separating orders of magnitude (ex 2,000)
+                product_target_price = re.sub(",","",product_target_price)
+                m = re.match("\$([0-9]+\.?[0-9]*)", product_target_price)
+                if m:
+                    item['product_target_price'] = float(m.group(1))
+                else:
+                    self.log("Didn't match product price: " + product_target_price + " " + response.url + "\n", level=log.WARNING)
+
+            else:
+                self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
+
+
+        return item
+
+
+# OUTDATED, used for inheritance directly from search_spider:
+
 
     def parseResults(self, response):
 
