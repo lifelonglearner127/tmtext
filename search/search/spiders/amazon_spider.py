@@ -51,18 +51,7 @@ class AmazonSpider(SearchSpider):
             return False
         if URL.startswith("http://www.amazon.co.uk/gp/slredirect/redirect.html"):
             return False
-        try:
-            # disable this for now. without user agent set, it only causes 500s. and it slows everything down. just return True for all
-            return True
-            request = urllib2.Request(URL)
-            request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0')
-            resp = urllib2.urlopen(request, timeout=5)
-            return (resp.getcode() != 404)
-        except Exception, e:
-            self.log("Error checking status code for " + URL + ": " + str(e), level=log.ERROR)
-            #TODO: this will probably cause some problems, but for now it's safer like this, because more frequently than not this exception is 503 and should be ignored
-            return True
-
+        return True
 
     # parse results page for amazon, extract info for all products returned by search (keep them in "meta")
     def parseResults(self, response):
