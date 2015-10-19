@@ -163,6 +163,9 @@ class SqsCache(object):
         self.db.hincrby(self.REDIS_FAILED_TASKS, task_key, 1)
         return self._check_task_failed(task, self.MAX_FAILED_TRIES)
 
+    def get_all_failed_results(self):
+        return self.db.hgetall(self.REDIS_FAILED_TASKS)
+
     def delete_old_tasks(self, freshness):
         """
         :param freshness: value in minutes
