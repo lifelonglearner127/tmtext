@@ -5,7 +5,9 @@ import re
 import json
 import string
 import urllib
+import itertools
 
+import requests
 from scrapy.http import Request, FormRequest
 from scrapy import Selector
 from scrapy.log import WARNING
@@ -19,7 +21,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
 from product_ranking.validation import BaseValidator
 from product_ranking.spiders import cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
-from spiders_shared_code.jcpenney_variants import JcpenneyVariants
+from spiders_shared_code.jcpenney_variants import JcpenneyVariants, extract_ajax_variants
 from product_ranking.validation import BaseValidator
 
 
@@ -149,7 +151,44 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
-    def _create_variant_request(self, pp_id, response, variant, variant_num):
+    dynamic_props = {}
+    processed_static_lots = []  # for variants
+
+    @staticmethod
+    def remove_old_static_variants_of_lot(variants, current_lot):
+        for _x in xrange(10):  # TODO: refactor
+            for var_indx, variant in enumerate(variants):
+                var_lot = variant.get('properties', {}).get('lot', None)
+                if var_lot and var_lot.lower() == current_lot.lower():
+                    del variants[var_indx]
+
+    @staticmethod
+    def append_new_dynamic_variants(variants, current_lot, new_structure):
+        all_pairs = []
+        for option_name, vals in new_structure.items():
+            for val in vals:
+                new_pair = [option_name, val]
+                if not new_pair in all_pairs:
+                    all_pairs.append(new_pair)
+        groupped_results = [
+            list(g) for k, g in itertools.groupby(all_pairs, lambda val: val[0])
+        ]
+        combined_results = list(itertools.product(*groupped_results))
+        all_properties = []
+        for combined_result in combined_results:
+            new_pair = {}.copy()
+            for prop_name, prop_value in combined_result:
+                new_pair[prop_name.lower()] = prop_value
+            if not new_pair in all_properties:
+                all_properties.append(new_pair)
+        for prop in all_properties:
+            new_variant = {'lot': current_lot, 'price': 'todo', 'in_stock': None,
+                           'selected': False, 'properties': prop}.copy()
+            if not new_variant in variants:
+                variants.append(new_variant)
+
+    def _ajax_variant_request(self, pp_id, response, variants, variant, variant_num,
+                              async=True, null_values=None):
         url = ('http://www.jcpenney.com/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp'
                '?_DARGS=/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp')
 
@@ -212,6 +251,10 @@ _dync
         _format_args['chest'] = chest if chest else ''
         _format_args['length'] = length if length else ''
 
+        if null_values and isinstance(null_values, (list, tuple)):
+            for null_value in null_values:
+                _format_args[null_value] = ''
+
         product = response.meta['product']
         # get attribute name
         """
@@ -247,28 +290,37 @@ _dync
         #result = requests.post(url, data=post_data,
         #                       headers={'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8', 'X-Requested-With': 'XMLHttpRequest'}).text
 
-        return FormRequest(
-            url,
-            formdata=post_data,
-            method='POST',
-            headers={
-                'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            meta={'pp_id': pp_id, 'variant': variant, 'variant_num': variant_num,
-                  'product': product},
-            callback=self._on_variant_response,
-            dont_filter=True
-        )
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+        if async:
+            return FormRequest(
+                url,
+                formdata=post_data,
+                method='POST',
+                headers=headers,
+                meta={'pp_id': pp_id, 'product': product, 'post_data': _format_args,
+                      'variants': variants, 'variant': variant, 'variant_num': variant_num},
+                callback=self._on_variant_response,
+                dont_filter=True
+            )
+        else:
+            # perform sync request
+            result = requests.post(url, data=post_data, headers=headers)
+            new_variants_structure = extract_ajax_variants(result.text)
+            return lot, new_variants_structure
+
 
     def _on_variant_response(self, response):
         pp_id = response.meta['pp_id']
         variant = response.meta['variant']
+        variants = response.meta['variants']
         variant_num = response.meta['variant_num']
         product = response.meta['product']
         result = response.body
+        post_data = response.meta['post_data']
         color = variant['properties'].get('color', None)
-        #import pdb; pdb.set_trace()
         if 'function()' in result:
             variant['in_stock'] = None
             return
@@ -299,9 +351,28 @@ _dync
         jp = JcpenneyVariants()
         jp.setupSC(response)
         prod['variants'] = jp._variants()
+        # perform blocking http request to scrape dynamic structure of variants,
+        # otherwise invalid variants get into the output file
+        processed_lots = []  # lots for which we collected dynamic variants
+        new_lot_structure = {}
         for var_indx, variant in enumerate(prod['variants']):
             if getattr(self, 'scrape_variants_with_extra_requests', None):
-                yield self._create_variant_request(product_id, response, variant, var_indx)
+                if variant.get('properties', {}).get('lot', '').lower() in processed_lots:
+                    continue
+                _lot, _dynamic_structure = self._ajax_variant_request(
+                    product_id, response, prod['variants'], variant, var_indx,
+                    async=False, null_values=['size']
+                )
+                processed_lots.append(variant.get('properties', {}).get('lot', '').lower())
+                new_lot_structure[_lot] = _dynamic_structure
+                if _lot:
+                    self.remove_old_static_variants_of_lot(prod['variants'], _lot)
+                    self.append_new_dynamic_variants(prod['variants'], _lot, _dynamic_structure)
+
+        for var_indx, variant in enumerate(prod['variants']):
+            if getattr(self, 'scrape_variants_with_extra_requests', None):
+                yield self._ajax_variant_request(
+                    product_id, response, prod['variants'], variant, var_indx)
 
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)

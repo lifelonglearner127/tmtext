@@ -7,6 +7,25 @@ from lxml import html, etree
 
 is_empty = lambda x, y=None: x[0] if x else y
 
+
+def extract_ajax_variants(html_content):
+    """ Some URLs dynamically update Variant properties, such
+        as size for this URL http://www.jcpenney.com/hanes-2-pk-fleece-pajama-pants-big-tall/prod.jump?ppId=pp5004370110
+    :param html_content:
+    :return:
+    """
+    new_options = {}
+    js = json.loads(html_content)
+    for ops in js['skuOptions']:
+        option_name = ops['key']
+        for key in ops['options']:
+            option_value = key.get('option')
+            if option_name not in new_options:
+                new_options[option_name] = []
+            new_options[option_name].append(option_value)
+    return new_options
+
+
 class JcpenneyVariants(object):
 
     def setupSC(self, response):
