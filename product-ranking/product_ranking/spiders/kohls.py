@@ -41,8 +41,8 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
         'ball': [5, 150],
         'rose': [10, 70],
         'long term black': [1, 12],
-        'selling': [15, 40],
-        'water proof': [50, 108],
+        'selling': [15, 152],
+        'water proof': [50, 80],
         'long night': [30, 90],
     }
 
@@ -72,7 +72,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
     # use_proxies = True
 
     SEARCH_URL = "http://www.kohls.com/search.jsp?search={search_term}&" \
-                 "submit-search=web-regular&S={sort_mode}&PPP=60&WS={start}"
+                 "submit-search=web-regular&S={sort_mode}&PPP=60&WS={start}&exp=c"
 
     SORTING = None
 
@@ -253,7 +253,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         description = is_empty(response.xpath(
             '//div[@class="prod_description1"]/'
             'div[@class="Bdescription"]/p/text() | '
-            '//meta[@name="description"]/@content').extract())
+            '//meta[@name="description"][string-length(@content)>0]/@content').extract())
 
         return description
 
@@ -443,8 +443,8 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             )
             for prod_url in prod_urls:
                 self.per_page = len(prod_urls)
-                product = SiteProductItem()
 
+                product = SiteProductItem()
                 new_meta = response.meta.copy()
                 new_meta['product'] = product
                 new_meta['handle_httpstatus_list'] = [404]
@@ -476,7 +476,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                 total_matches = int(total[1].replace(',', ''))
             else:
                 total_matches = is_empty(re.findall(
-                    r'"productInfo":\s+\{(?:.|\n)+"count":\s+(\d+)',
+                    r'"allProducts":\s+\{(?:.|\n)\s+"count":( \d+)',
                     response.body_as_unicode()
                 ), 0)
 
@@ -484,12 +484,16 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                     total_matches = int(total_matches)
                 except ValueError:
                     total_matches = 0
-
+            self.total = total_matches
             return total_matches
 
     def _scrape_next_results_page_link(self, response):
-        self.start_pos += self.per_page
-        url = self.SEARCH_URL.format(search_term=self.searchterms[0],
-                                     start=self.start_pos,
-                                     sort_mode=self.SORTING or '')
-        return url
+        if self.start_pos != self.total:
+            self.start_pos += self.per_page
+
+            url = self.SEARCH_URL.format(search_term=self.searchterms[0],
+                                         start=self.start_pos,
+                                         sort_mode=self.SORTING or '')
+            return url
+        else:
+            return
