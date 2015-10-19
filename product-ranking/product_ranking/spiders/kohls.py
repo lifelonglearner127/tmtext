@@ -27,7 +27,7 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
     optional_fields = ['brand']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'special_pricing',
+        'google_source_site', 'special_pricing', 'ranking',
         'bestseller_rank', 'model', 'image_url'
     ]
     ignore_log_errors = False  # don't check logs for errors?
@@ -36,14 +36,14 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
     test_requests = {
         'sdfsdgdf': 0,  # should return 'no products' or just 0 products
         'benny benassi': 0,
-        'red car': [20, 80],
-        'black stone': [50, 109],
+        'red car': [20, 140],
+        'black stone': [50, 200],
         'ball': [5, 150],
         'rose': [10, 70],
-        'long term black': [1, 12],
+        'long term black': [1, 50],
         'selling': [15, 152],
-        'water proof': [50, 80],
-        'long night': [30, 90],
+        'water proof': [50, 85],
+        'long night': [30, 150],
     }
 
 
