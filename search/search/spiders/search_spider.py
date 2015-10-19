@@ -915,11 +915,11 @@ class SearchSpider(BaseSpider):
 
     def parseURL_walmart(self, hxs):
 
-        product_name_holder = hxs.select("//h1[contains(@class, 'product-name')]/text()").extract()
+        product_name_holder = hxs.select("//h1[contains(@class, 'product-name')]//text()").extract()
 
         # try for old page version
         if not product_name_holder:
-            product_name_holder = hxs.select("//h1[@class='productTitle']/text()").extract()
+            product_name_holder = hxs.select("//h1[@class='productTitle']//text()").extract()
 
         if product_name_holder:
             product_name = "".join(product_name_holder).strip()
