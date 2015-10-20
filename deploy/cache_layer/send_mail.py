@@ -24,6 +24,7 @@ def collect_data(cache):
         cache.get_total_cached_responses(True)
     context['urgent_stats'] = cache.get_urgent_stats()
     context['completed_stats'] = cache.get_completed_stats()
+    context['failed_tasks'] = cache.get_all_failed_results()
     return context
 
 
