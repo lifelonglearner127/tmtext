@@ -43,11 +43,6 @@ import urllib
 class SearchSpider(BaseSpider):
 
     name = "search"
-    # amazon_cookie_header = "x-wl-uid=1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=; session-token=JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=; x-amz-captcha-1=1391100438353490; x-amz-captcha-2=+EDhq9rcotSRn783vYMxdQ==; csm-hit=337.71|1391093239619; ubid-main=188-7820618-3817319; session-id-time=2082787201l; session-id=177-0028713-4113141"
-    # amazon_cookies = {"x-wl-uid" : "1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=", \
-    # "session-token" : "JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=",\
-    # "x-amz-captcha-1" : "1391100438353490" , "x-amz-captcha-2" : "+EDhq9rcotSRn783vYMxdQ==", "csm-hit" : "337.71|1391093239619", "ubid-main" : "188-7820618-3817319",\
-    # "session-id-time" : "2082787201l", "session-id" : "177-0028713-4113141"}
 
     allowed_domains = ["amazon.com", "walmart.com", "bloomingdales.com", "overstock.com", "wayfair.com", "bestbuy.com", "toysrus.com",\
                        "bjs.com", "sears.com", "staples.com", "newegg.com", "ebay.com", "target.com", "sony.com", "samsung.com", \
@@ -71,12 +66,12 @@ class SearchSpider(BaseSpider):
     #                threshold - parameter for selecting results (the lower the value the more permissive the selection)
     def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, bestsellers_link = None, bestsellers_range = '0', \
         walmart_ids_file = None, output = 2, threshold = 1.0, \
-        outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None, cookies_file = None):#, by_id = False):
+        outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None):#, by_id = False):
 
         # call specific init for each derived class
         self.init_sub()
 
-        self.version = "051c55324fba0286dcb250a96e27ef03e0076774"
+        self.version = "debf48ca3a716cef4217ce8577b06300be6a76ed"
 
         self.product_url = product_url
         self.products_file = products_file
@@ -93,17 +88,6 @@ class SearchSpider(BaseSpider):
         self.use_proxy = use_proxy
         self.manufacturer_site = manufacturer_site
         #self.by_id = by_id
-
-        # set cookies
-        self.cookies_file = cookies_file
-        if cookies_file:
-            self.cookies = json.load(open(cookies_file, "r"))
-            self.amazon_cookies = self.cookies['amazon_cookies']
-            amazon_cookie_header = ""
-            for cookie in self.amazon_cookies:
-                amazon_cookie_header += cookie + "=" + self.amazon_cookies[cookie] + "; "
-            self.amazon_cookie_header = amazon_cookie_header
-
 
         # parseURL functions, one for each supported origin site
         self.parse_url_functions = {'staples' : self.parseURL_staples, \
@@ -265,13 +249,6 @@ class SearchSpider(BaseSpider):
             search_pages = self.build_search_pages(search_query)
 
             request = Request(search_pages[self.target_site], callback = self.parseResults)
-
-            # set amazon cookies
-            if (self.target_site == 'amazon' and self.cookies_file):
-                request.cookies = self.amazon_cookies
-                request.headers['Cookies'] = self.amazon_cookie_header
-                #request.meta['dont_merge_cookies'] = True
-                ## print "SET AMAZON COOKIES"
 
             request.meta['origin_name'] = self.product_name
             request.meta['query'] = search_query
@@ -763,13 +740,6 @@ class SearchSpider(BaseSpider):
 
             request1 = Request(page1, callback = self.parseResults)
 
-            # set amazon cookies
-            if (self.target_site == 'amazon' and self.cookies_file):
-                request1.cookies = self.amazon_cookies
-                request1.headers['Cookies'] = self.amazon_cookie_header
-                #request1.meta['dont_merge_cookies'] = True
-                ## print "SET AMAZON COOKIES"
-
             request1.meta['query'] = query1
             request1.meta['target_site'] = target_site
             
@@ -789,13 +759,6 @@ class SearchSpider(BaseSpider):
             page2 = search_pages2[target_site]
 
             request2 = Request(page2, callback = self.parseResults)
-
-            # set amazon cookies
-            if (self.target_site == 'amazon' and self.cookies_file):
-                request2.cookies = self.amazon_cookies
-                request2.headers['Cookies'] = self.amazon_cookie_header
-                #request1.meta['dont_merge_cookies'] = True
-                ## print "SET AMAZON COOKIES"
 
             request2.meta['query'] = query2
             request2.meta['target_site'] = target_site
@@ -915,11 +878,11 @@ class SearchSpider(BaseSpider):
 
     def parseURL_walmart(self, hxs):
 
-        product_name_holder = hxs.select("//h1[contains(@class, 'product-name')]/text()").extract()
+        product_name_holder = hxs.select("//h1[contains(@class, 'product-name')]//text()").extract()
 
         # try for old page version
         if not product_name_holder:
-            product_name_holder = hxs.select("//h1[@class='productTitle']/text()").extract()
+            product_name_holder = hxs.select("//h1[@class='productTitle']//text()").extract()
 
         if product_name_holder:
             product_name = "".join(product_name_holder).strip()

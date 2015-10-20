@@ -27,7 +27,7 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
     optional_fields = ['brand']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'special_pricing',
+        'google_source_site', 'special_pricing', 'ranking',
         'bestseller_rank', 'model', 'image_url'
     ]
     ignore_log_errors = False  # don't check logs for errors?
@@ -36,13 +36,14 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
     test_requests = {
         'sdfsdgdf': 0,  # should return 'no products' or just 0 products
         'benny benassi': 0,
-        'red car': [20, 120],
-        'black stone': [120, 190],
-        'gone': [5, 40],
-        'green rose': [10, 40],
-        'low ceiling': [30, 45],
-        'Water Sandals': [5, 35],
-        'long night': [30, 120],
+        'red car': [20, 140],
+        'black stone': [50, 200],
+        'red ball': [5, 150],
+        'green rose': [10, 100],
+        'long term black': [1, 50],
+        'yellow ion': [15, 100],
+        'water proof': [50, 85],
+        'long night': [30, 150],
     }
 
 
@@ -71,12 +72,12 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
     # use_proxies = True
 
     SEARCH_URL = "http://www.kohls.com/search.jsp?search={search_term}&" \
-                 "submit-search=web-regular&S={sort_mode}&PPP=60&WS={start}"
+                 "submit-search=web-regular&S={sort_mode}&PPP=60&WS={start}&exp=c"
 
     SORTING = None
 
     SORT_MODES = {
-        'default': '',
+        'default': '1',
         'featured': '1',
         'new': '2',
         'best_sellers': '3',
@@ -101,6 +102,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                   "l=1"
 
     def __init__(self, sort_mode=None, *args, **kwargs):
+        self.start_pos = 0
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
@@ -251,7 +253,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         description = is_empty(response.xpath(
             '//div[@class="prod_description1"]/'
             'div[@class="Bdescription"]/p/text() | '
-            '//meta[@name="description"]/@content').extract())
+            '//meta[@name="description"][string-length(@content)>0]/@content').extract())
 
         return description
 
@@ -440,8 +442,9 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                 response.body_as_unicode()
             )
             for prod_url in prod_urls:
-                product = SiteProductItem()
+                self.per_page = len(prod_urls)
 
+                product = SiteProductItem()
                 new_meta = response.meta.copy()
                 new_meta['product'] = product
                 new_meta['handle_httpstatus_list'] = [404]
@@ -473,7 +476,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                 total_matches = int(total[1].replace(',', ''))
             else:
                 total_matches = is_empty(re.findall(
-                    r'"productInfo":\s+\{(?:.|\n)+"count":\s+(\d+)',
+                    r'"allProducts":\s+\{(?:.|\n)\s+"count":( \d+)',
                     response.body_as_unicode()
                 ), 0)
 
@@ -481,11 +484,16 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                     total_matches = int(total_matches)
                 except ValueError:
                     total_matches = 0
-
+            self.total = total_matches
             return total_matches
 
     def _scrape_next_results_page_link(self, response):
-        next_page = response.xpath('//a[@rel="next"]/@href').extract()
-        if next_page:
-            next_page = 'http://www.kohls.com'+next_page[0]
-            return next_page
+        if self.start_pos != self.total:
+            self.start_pos += self.per_page
+
+            url = self.SEARCH_URL.format(search_term=self.searchterms[0],
+                                         start=self.start_pos,
+                                         sort_mode=self.SORTING or '')
+            return url
+        else:
+            return

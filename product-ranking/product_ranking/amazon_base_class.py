@@ -746,9 +746,8 @@ class AmazonBaseClass(BaseProductsSpider):
             return None
 
         price_currency_view = unicode(self.price_currency_view)
-        price = self._is_empty(
-            response.xpath(xpathes).extract(), ''
-        )
+        price = response.xpath(xpathes).extract()
+        price = self._is_empty([p for p in price if p.strip()], '')
 
         if price:
             if price_currency_view not in price:
