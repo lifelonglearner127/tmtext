@@ -54,13 +54,6 @@ class WayfairSpider(SearchSpider):
             if 'origin_url' in response.meta:
                 item['origin_url'] = response.meta['origin_url']
 
-            if 'origin_id' in response.meta:
-                request.meta['origin_id'] = response.meta['origin_id']
-                assert self.by_id
-            else:
-                assert not self.by_id
-
-
             items.add(item)
 
         response.meta['items'] = items

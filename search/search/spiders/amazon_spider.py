@@ -143,14 +143,6 @@ class AmazonSpider(SearchSpider):
         if 'origin_bestsellers_rank' in response.meta:
             item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
 
-
-        # if 'origin_id' in response.meta:
-        #     item['origin_id'] = response.meta['origin_id']
-        #     assert self.by_id
-        # else:
-        #     assert not self.by_id
-
-
         # extract product name
         #TODO: id='title' doesn't work for all, should I use a 'contains' or something?
         # extract titles that are not empty (ignoring whitespace)
