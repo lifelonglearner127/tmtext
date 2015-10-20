@@ -1,5 +1,11 @@
 from scrapy.selector import HtmlXPathSelector
 from scrapy.http import Request
+from scrapy.spider import BaseSpider
+from scrapy.http import TextResponse
+from scrapy.http import Response
+from scrapy.exceptions import CloseSpider
+from search.items import SearchItem
+from scrapy import log
 
 from spiders_utils import Utils
 from search.matching_utils import ProcessText
