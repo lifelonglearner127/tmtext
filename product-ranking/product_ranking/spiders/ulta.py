@@ -15,6 +15,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.spiders import cond_set_value
 
+is_empty = lambda x, y=None: x[0] if x else y
 
 class UltaProductSpider(BaseProductsSpider):
     """ ulta.com product ranking spider
@@ -101,15 +102,18 @@ class UltaProductSpider(BaseProductsSpider):
         model = response.css('.product-item-no ::text').re('\d{3,20}')[0]
         prod['model'] = model
         product_id = re.findall('\?productId=(.*)', response.url)
-        price_url = 'http://www.ulta.com/browse/inc/productDetail_price.jsp?skuId={model}' \
-                    '&productId={product_id}'
         new_meta = response.meta.copy()
         new_meta['product'] = prod
         new_meta['product_id'] = product_id[0]
         new_meta['initial_response'] = response
-        return Request(self.url_formatter.format(price_url,
-                                                 model=model, product_id=product_id[0]),
-                       meta=new_meta, callback=self._parse_price)
+
+        # Parse price
+        price = self._parse_price(response)
+        cond_set_value(prod, 'price', price)
+
+        return Request(url=self.RELATED_URL.format(product_id=product_id),
+                       meta=new_meta,
+                       callback=self._parse_related_products)
 
     def _populate_from_html(self, response, product):
         if 'title' in product and product['title'] == '':
@@ -158,24 +162,28 @@ class UltaProductSpider(BaseProductsSpider):
             product['is_in_store_only'] = False
 
     def _parse_price(self, response):
-        product = response.meta['product']
-        product_id = response.meta['product_id']
-        price = re.findall("\d+.?\d{0,2}", response.body_as_unicode())
-        if price:
-            if len(price) == 1:
-                price = float(price[0].replace(',', '.'))
-                product['price'] = Price(price=price, priceCurrency='USD')
-            else:
-                price = float(price[-1].replace(',', '.'))
-                product['price'] = Price(price=price, priceCurrency='USD')
-        else:
-            product['price'] = Price(price='0.0', priceCurrency='USD')
 
-        new_meta = response.meta.copy()
-        new_meta['product'] = product
-        return Request(url=self.RELATED_URL.format(product_id=product_id),
-                       meta=new_meta,
-                       callback=self._parse_related_products)
+        currency = is_empty(
+            response.xpath(
+                '//meta[@property="product:price:currency"]/@content').extract(),
+            'USD'
+        )
+
+        price = is_empty(
+            response.xpath(
+                '//meta[@property="product:price:amount"]/@content').extract())
+        if price:
+            price = is_empty(
+                re.findall(
+                    r'(\d+\.\d+)',
+                    price
+                ), 0.00
+            )
+
+        return Price(
+            price=float(price),
+            priceCurrency=currency
+        )
 
     def _parse_related_products(self, response):
         product = response.meta['product']
