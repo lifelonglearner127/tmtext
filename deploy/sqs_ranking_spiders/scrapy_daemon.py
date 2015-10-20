@@ -110,6 +110,7 @@ CACHE_HOST = 'http://sqs-metrics.contentanalyticsinc.com/'
 CACHE_URL_GET = 'get_cache'  # url to retrieve task cache from
 CACHE_URL_SAVE = 'save_cache'  # to save cached result to
 CACHE_URL_STATS = 'complete_task'  # to have some stats about completed tasks
+CACHE_URL_FAIL = 'fail_task'  # to manage broken tasks
 CACHE_AUTH = 'Basic YWRtaW46Q29udGVudDEyMzQ1'  # auth header value
 CACHE_TIMEOUT = 15  # 15 seconds request timeout
 # key in task data to not retrieve cached result
@@ -562,8 +563,10 @@ class ScrapyTask(object):
         searchterms_str = self.task_data.get('searchterms_str', None)
         site = self.task_data['site']
         if isinstance(searchterms_str, (str, unicode)):
-            searchterms_str = searchterms_str.decode('utf8')
-        # job_name = datetime.datetime.utcnow().strftime('%d-%m-%Y')
+            try:
+                searchterms_str = searchterms_str.decode('utf8')
+            except UnicodeEncodeError:  # special chars may break
+                pass
         server_name = self.task_data['server_name']
         server_name = slugify(server_name)
         job_name = DATESTAMP + '____' + RANDOM_HASH + '____' + server_name+'--'
@@ -1034,10 +1037,16 @@ class ScrapyTask(object):
         start scrapy process, try to establish connection with it,
         terminate if fails
         """
-        start_time = datetime.datetime.utcnow()
-        self.start_date = start_time
-        self._start_scrapy_process()
-        first_signal = self._get_next_signal(start_time)
+        # it may break during task parsing, for example wrong server name or
+        # unsupported characters in the name os spider
+        try:
+            start_time = datetime.datetime.utcnow()
+            self.start_date = start_time
+            self._start_scrapy_process()
+            first_signal = self._get_next_signal(start_time)
+        except Exception as ex:
+            logger.warning('Error occured while starting scrapy: %s', ex)
+            return False
         try:
             self._run_signal(first_signal, start_time)
             return True
@@ -1170,6 +1179,33 @@ def save_task_result_to_cache(task, output_path):
     else:
         logger.info('Saved cached result for task %s (%s).', task_id, server)
         return True
+
+
+def log_failed_task(task):
+    """
+    log broken task
+    if this function returns True, task is considered
+    as failed max allowed times and should be removed
+    """
+    url = CACHE_HOST + CACHE_URL_FAIL
+    data = dict(task=json.dumps(task))
+    try:
+        resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
+                             headers={'Authorization': CACHE_AUTH})
+    except Exception as ex:
+        logger.warning(ex)
+        return False
+    if resp.status_code != 200:
+        logger.warning('Mark task as failed wrong response status code: %s, %s',
+                       resp.status_code, resp.text)
+        return False
+    # resp.text contains only 0 or 1 number,
+    #  1 indicating that task should be removed
+    try:
+        return json.loads(resp.text)
+    except ValueError as ex:
+        logger.warning('JSON conversion error: %s', ex)
+        return False
 
 
 def cache_complete_task(task, is_from_cache=False):
@@ -1320,6 +1356,13 @@ def main():
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
                          task.task_data.get('task_id', 0))
+            # remove task from queue, if it failed many times
+            if log_failed_task(task.task_data):
+                logger.warning('Removing task %s_%s from the queue due to too '
+                               'many failed tries.',
+                               task_data.get('server_name'),
+                               task_data.get('task_id'))
+                task.queue.task_done()
             logger.error(task.report())
     if not tasks_taken:
         logger.warning('No any task messages were found.')

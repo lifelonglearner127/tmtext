@@ -38,7 +38,7 @@ class AmazonDeValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'iphone red edition': [50, 300],
         'xperia screen replacement': [5, 150],
         'ceiling fan industrial': [15, 90],
-        'kaspersky total': [5, 250],
+        'kaspersky total': [5, 69],
         'car navigator garmin': [5, 100],
         'yamaha drums midi': [2, 50],
         'black men shoes size 8 red': [5, 120],

@@ -84,5 +84,18 @@
     </ul>
 </div>
 
+<div>
+    <h3>
+        Failed tasks
+    </h3>
+    <ul>
+        {% for k, v in failed_tasks.items() %}
+            <li>{{ k }} ({{ v }} times)</li>
+        {% else %}
+            <li>No failed tasks for today</li>
+        {% endfor %}
+    </ul>
+</div>
+
 </body>
 </html>

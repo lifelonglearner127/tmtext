@@ -166,6 +166,7 @@ def stats():
             cache.get_most_popular_cached_items(10, True)
         context['urgent_stats'] = cache.get_urgent_stats()
         context['completed_stats'] = cache.get_completed_stats()
+        context['failed_tasks'] = cache.get_all_failed_results()
         return render_template('stats.html', **context)
     except Exception as e:
         return str(e)
@@ -216,6 +217,13 @@ def complete_task():
     is_from_cache_str = request.form['is_from_cache']
     cache.complete_task(task, is_from_cache_str)
     return make_response('', 200)
+
+
+@app.route('/fail_task', methods=['POST'])
+def fail_task():
+    task = request.form['task']
+    res = cache.fail_result(task)
+    return '1' if res else '0'
 # ###################################
 # ######### CACHE METHODS END #######
 # ###################################
