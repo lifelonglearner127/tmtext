@@ -173,7 +173,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         product['description'] = self.parse_description(response)
         # cond_set_value(product, 'description', description)
 
-        cond_set_value(
+        cond_set(
             product,
             'image_url',
             response.xpath(
