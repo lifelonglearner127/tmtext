@@ -15,6 +15,7 @@ import sys
 import json
 import csv
 import urllib
+import uuid
 
 # from selenium import webdriver
 # import time
@@ -102,6 +103,39 @@ class SearchSpider(BaseSpider):
         self.parse_bestsellers_functions = {'amazon' : self.parse_bestsellers_amazon, \
                                             'walmart' : self.parse_bestsellers_walmart
                                             }
+
+        '''this dictionary will store all input products, search requests and output products as they
+        flow thorugh the callbacks up to when the match is found
+        keys are uuids that represent an input product
+        values are dictionaries that have search queries as keys and candidates (items) as values
+        example:
+        {
+            'efaee91e83de41eba5e0e1ee36dd7d2a': {
+                'search_requests': [{
+                    '035000741288': []
+                }, {
+                    'b001kys2ua': []
+                }, {
+                    'b001kys2ua+colgate': []
+                }, {
+                    'colgate+total+whitening+toothpaste+twin+pk+two+6oz+tubes': []
+                }, {
+                    'colgate+tubes': []
+                }],
+                'origin_product': {
+                    'origin_model': 'B001KYS2UA',
+                    'origin_brand_extracted': 'colgate',
+                    'origin_name': 'Colgate Total Whitening Toothpaste Twin Pack (two 6oz tubes)',
+                    'origin_url': 'http://www.amazon.com/Colgate-Total-Whitening-Toothpaste-tubes/dp/B001KYS2UA',
+                    'origin_brand': 'Colgate',
+                    'origin_manufacturer_code': None,
+                    'origin_upc': ['035000741288'],
+                    'origin_price': 4.74
+                }
+            }
+        }
+        '''
+        self.search_results = {}
 
 
     def build_search_pages(self, search_query):
@@ -216,6 +250,21 @@ class SearchSpider(BaseSpider):
         # 2) product model (if available)
         # 3) product name
         # 4) parts of product's name
+        # 
+        
+        # generate id for current input product
+        product_identifier = uuid.uuid4().hex
+        origin_product = {}
+        origin_product['origin_url'] = product_url
+        origin_product['origin_name'] = product_name
+        origin_product['origin_model'] = product_model
+        origin_product['origin_upc'] = [product_upc]
+        if product_price:
+            origin_product['origin_price'] = product_price
+        origin_product['origin_brand'] = product_brand
+        origin_product['origin_brand_extracted'] = product_brand_extracted
+        origin_product['origin_manufacturer_code'] = product_manufacturer_code
+
 
         request = None
         pending_requests = []
@@ -231,6 +280,7 @@ class SearchSpider(BaseSpider):
 
             request0.meta['query'] = query0
             request0.meta['target_site'] = self.target_site
+            request0.meta['origin_product_id'] = product_identifier            
             
             if not request:
                 request = request0
@@ -251,6 +301,7 @@ class SearchSpider(BaseSpider):
 
             request1.meta['query'] = query1
             request1.meta['target_site'] = self.target_site
+            request1.meta['origin_product_id'] = product_identifier
             
             if not request:
                 request = request1
@@ -272,6 +323,7 @@ class SearchSpider(BaseSpider):
 
             request2.meta['query'] = query2
             request2.meta['target_site'] = self.target_site
+            request2.meta['origin_product_id'] = product_identifier
             
             if not request:
                 request = request2
@@ -289,6 +341,7 @@ class SearchSpider(BaseSpider):
 
             request3.meta['query'] = query3
             request3.meta['target_site'] = self.target_site
+            request3.meta['origin_product_id'] = product_identifier
 
             if not request:
                 request = request3
@@ -313,6 +366,7 @@ class SearchSpider(BaseSpider):
 
         request.meta['pending_requests'] = pending_requests
         request.meta['origin_url'] = product_url
+        request.meta['origin_product_id'] = product_identifier
 
         request.meta['origin_name'] = product_name
         request.meta['origin_model'] = product_model
@@ -322,6 +376,14 @@ class SearchSpider(BaseSpider):
         request.meta['origin_brand'] = product_brand
         request.meta['origin_brand_extracted'] = product_brand_extracted
         request.meta['origin_manufacturer_code'] = product_manufacturer_code
+
+
+        self.search_results[product_identifier] = {
+        'origin_product': origin_product,
+        'search_requests': [{r.meta['query']: []} for r in [request] + pending_requests]
+        }
+
+        print self.search_results
 
         return request
 
