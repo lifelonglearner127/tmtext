@@ -4,7 +4,6 @@ from scrapy.item import Item, Field
 
 class SearchItem(Item):
     product_name = Field() # name of the search result product
-#    origin_site = Field() # origin site of product
     product_url = Field() # url of result product page
     product_model = Field() # product model of product as extracted from its page or the results page (if found somewhere other that inside its name)
     product_upc = Field() # product UPC
@@ -17,7 +16,6 @@ class SearchItem(Item):
     bestsellers_rank = Field() # product rank in bestsellers list on target site
 
     origin_url = Field() # original product url
-#    origin_id = Field() # original (source) product id (for walmart products)
     origin_name = Field() # product name on origin site
     origin_model = Field() # original (source) product model
     origin_upc = Field() # original (source) product UPC
