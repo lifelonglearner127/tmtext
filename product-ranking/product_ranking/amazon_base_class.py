@@ -415,7 +415,9 @@ class AmazonBaseClass(BaseProductsSpider):
         for cat_sel in cat:
             category.append(cat_sel.extract().strip())
 
-        return category
+        if category:
+            return category
+
 
     def _parse_title(self, response, add_xpath=None):
         """
