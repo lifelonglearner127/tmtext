@@ -1,19 +1,19 @@
 from scrapy import Spider
 from re import match
-from datetime import datetime
+from dateutil.parser import parse as parse_date
 from product_ranking.items import DiscountCoupon
 from product_ranking.spiders import cond_set_value
 
 is_empty = lambda x: x[0] if x else None
 
 
-class MacysCouponsSpider(Spider):
-    name = 'macys_coupons_products'
-    allowed_domains = ['www1.macys.com']
-    DEFAULT_URL = 'http://www1.macys.com/shop/coupons-deals'
+class KohlsCouponsSpider(Spider):
+    name = 'kohls_coupons_products'
+    allowed_domains = ['www.kohls.com']
+    DEFAULT_URL = 'http://www.kohls.com/sale-event/coupons-deals.jsp'
 
     def __init__(self, *args, **kwargs):
-        super(MacysCouponsSpider, self).__init__(*args, **kwargs)
+        super(KohlsCouponsSpider, self).__init__(**kwargs)
         self.product_url = kwargs.get('product_url', self.DEFAULT_URL)
         self.user_agent = ("Mozilla/5.0 (X11; Linux i686 (x86_64)) "
                            "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -26,34 +26,27 @@ class MacysCouponsSpider(Spider):
         return url
 
     def _parse_coupons(self, response):
-        return response.xpath('//ul[@class="offers"]/li')
+        return response.css('.grid-box.d8x4.m8x5')
 
     def _parse_description(self, coupon):
-        return ' '.join(coupon.xpath('.//h2/text()').extract())
+        return is_empty(coupon.css('.td-header::text').extract())
 
     def _parse_discount(self, coupon):
-        return is_empty(
-            coupon.xpath('.//h2[@class="offerSubHeaderPromo"]/text()').
-            re('\d+%(?: or \d+%)?')
-        )
+        return ', '.join(coupon.css('.td-header::text').re('\$?\d+%?'))
 
     def _parse_conditions(self, coupon):
-        return is_empty(
-            coupon.xpath('.//h4[@class="description"]/text()').extract()
-        )
+        return is_empty(coupon.css('.td-copy::text').extract())
 
     def _parse_start_date(self, coupon):
         return None
 
     def _parse_end_date(self, coupon):
-        d = coupon.xpath('.//h5[@class="ftr_txt1"]/b/text()').extract()
+        d = coupon.css('.td-date::text').re('Ends (\w+ \d+)')
         if d:
-            return datetime.strptime(d[0], '%m/%d/%Y').date()
+            return parse_date(d[0]).date()
 
     def _parse_category(self, coupon):
-        return is_empty(
-            coupon.xpath('.//div[@class="header"]/text()').extract()
-        )
+        return is_empty(coupon.css('.td-subheader::text'))
 
     def parse(self, response):
         coupons = self._parse_coupons(response)
