@@ -228,6 +228,119 @@ class SearchSpider(BaseSpider):
 
         return products
 
+    def send_search_queries(self, product_upc, product_model, product_brand, product_name, product_url, product_price, product_brand_extracted, product_manufacturer_code, origin_manufacturer_code=None):
+        request = None
+        pending_requests = []
+
+        # 1) Search by UPC
+        if product_upc:
+            query0 = self.build_search_query(product_upc)
+            search_pages0 = self.build_search_pages(query0)
+            #page1 = search_pages1[self.target_site]
+            page0 = search_pages0[self.target_site]
+
+            request0 = Request(page0, callback = self.parseResults)
+
+            request0.meta['query'] = query0
+            request0.meta['target_site'] = self.target_site
+            
+            if not request:
+                request = request0
+            else:
+                pending_requests.append(request0)
+
+        
+
+        # 2) Search by model number
+        if product_model:
+
+            #TODO: model was extracted with ProcessText.extract_model_from_name(), without lowercasing, should I lowercase before adding it to query?
+            query1 = self.build_search_query(product_model)
+            search_pages1 = self.build_search_pages(query1)
+            page1 = search_pages1[self.target_site]
+
+            request1 = Request(page1, callback = self.parseResults)
+
+            request1.meta['query'] = query1
+            request1.meta['target_site'] = self.target_site
+            
+            if not request:
+                request = request1
+            else:
+                pending_requests.append(request1)
+
+        # 3) Search by model number + brand/first word
+        if product_model:
+
+            #TODO: model was extracted with ProcessText.extract_model_from_name(), without lowercasing, should I lowercase before adding it to query?
+            if product_brand:
+                query2 = self.build_search_query(product_model + " " + product_brand)
+            else:
+                query2 = self.build_search_query(product_model + " " + ProcessText.normalize(product_name)[0])
+            search_pages2 = self.build_search_pages(query2)
+            page2 = search_pages2[self.target_site]
+
+            request2 = Request(page2, callback = self.parseResults)
+
+            request2.meta['query'] = query2
+            request2.meta['target_site'] = self.target_site
+            
+            if not request:
+                request = request2
+            else:
+                pending_requests.append(request2)
+
+
+        # 4) Search by product full name
+        if product_name:
+            query3 = self.build_search_query(product_name)
+            search_pages3 = self.build_search_pages(query3)
+            #page2 = search_pages2[self.target_site]
+            page3 = search_pages3[self.target_site]
+            request3 = Request(page3, callback = self.parseResults)
+
+            request3.meta['query'] = query3
+            request3.meta['target_site'] = self.target_site
+
+            if not request:
+                request = request3
+            else:
+                pending_requests.append(request3)
+
+            # 5) Search by combinations of words in product's name
+            # create queries
+
+            for words in ProcessText.words_combinations(product_name, fast=self.fast):
+                query4 = self.build_search_query(" ".join(words))
+                search_pages4 = self.build_search_pages(query4)
+                #page3 = search_pages3[self.target_site]
+                page4 = search_pages4[self.target_site]
+                request4 = Request(page4, callback = self.parseResults)
+
+                request4.meta['query'] = query4
+                request4.meta['target_site'] = self.target_site
+
+
+                pending_requests.append(request4)
+
+        request.meta['pending_requests'] = pending_requests
+        #request.meta['origin_site'] = 
+        # product page from source site
+        #TODO: clean this URL? for walmart it added something with ?enlargedsearch=True
+        request.meta['origin_url'] = product_url
+
+        request.meta['origin_name'] = product_name
+        request.meta['origin_model'] = product_model
+        request.meta['origin_upc'] = [product_upc]
+        if product_price:
+            request.meta['origin_price'] = product_price
+        request.meta['origin_brand'] = product_brand
+        request.meta['origin_brand_extracted'] = product_brand_extracted
+        request.meta['origin_manufacturer_code'] = product_manufacturer_code
+
+        return request
+
+
     # parse input and build list of URLs to find matches for, send them to parseURL
     def parse(self, response):
 
@@ -311,117 +424,8 @@ class SearchSpider(BaseSpider):
                         product_brand_extracted = product_name_tokenized[0].lower()
 
 
-                request = None
-                pending_requests = []
-
-                # 1) Search by UPC
-                if product_upc:
-                    query0 = self.build_search_query(product_upc)
-                    search_pages0 = self.build_search_pages(query0)
-                    #page1 = search_pages1[self.target_site]
-                    page0 = search_pages0[self.target_site]
-
-                    request0 = Request(page0, callback = self.parseResults)
-
-                    request0.meta['query'] = query0
-                    request0.meta['target_site'] = self.target_site
-                    
-                    if not request:
-                        request = request0
-                    else:
-                        pending_requests.append(request0)
-
-                
-
-                # 2) Search by model number
-                if product_model:
-
-                    #TODO: model was extracted with ProcessText.extract_model_from_name(), without lowercasing, should I lowercase before adding it to query?
-                    query1 = self.build_search_query(product_model)
-                    search_pages1 = self.build_search_pages(query1)
-                    #page1 = search_pages1[self.target_site]
-                    page1 = search_pages1[self.target_site]
-
-                    request1 = Request(page1, callback = self.parseResults)
-
-                    request1.meta['query'] = query1
-                    request1.meta['target_site'] = self.target_site
-                    
-                    if not request:
-                        request = request1
-                    else:
-                        pending_requests.append(request1)
-
-                # 3) Search by model number + brand/first word
-                if product_model:
-
-                    #TODO: model was extracted with ProcessText.extract_model_from_name(), without lowercasing, should I lowercase before adding it to query?
-                    if product_brand:
-                        query2 = self.build_search_query(product_model + " " + product_brand)
-                    else:
-                        query2 = self.build_search_query(product_model + " " + ProcessText.normalize(product_name)[0])
-                    search_pages2 = self.build_search_pages(query2)
-                    page2 = search_pages2[self.target_site]
-
-                    request2 = Request(page2, callback = self.parseResults)
-
-                    request2.meta['query'] = query2
-                    request2.meta['target_site'] = self.target_site
-                    
-                    if not request:
-                        request = request2
-                    else:
-                        pending_requests.append(request2)
-
-
-                # 4) Search by product full name
-                if product_name:
-                    query3 = self.build_search_query(product_name)
-                    search_pages3 = self.build_search_pages(query3)
-                    #page2 = search_pages2[self.target_site]
-                    page3 = search_pages3[self.target_site]
-                    request3 = Request(page3, callback = self.parseResults)
-
-                    request3.meta['query'] = query3
-                    request3.meta['target_site'] = self.target_site
-
-                    if not request:
-                        request = request3
-                    else:
-                        pending_requests.append(request3)
-
-                    # 5) Search by combinations of words in product's name
-                    # create queries
-
-                    for words in ProcessText.words_combinations(product_name, fast=self.fast):
-                        query4 = self.build_search_query(" ".join(words))
-                        search_pages4 = self.build_search_pages(query4)
-                        #page3 = search_pages3[self.target_site]
-                        page4 = search_pages4[self.target_site]
-                        request4 = Request(page4, callback = self.parseResults)
-
-                        request4.meta['query'] = query4
-                        request4.meta['target_site'] = self.target_site
-
-
-                        pending_requests.append(request4)
-
-                request.meta['pending_requests'] = pending_requests
-                #request.meta['origin_site'] = 
-                # product page from source site
-                #TODO: clean this URL? for walmart it added something with ?enlargedsearch=True
-                request.meta['origin_url'] = product_url
-
-                request.meta['origin_name'] = product_name
-                request.meta['origin_model'] = product_model
-                request.meta['origin_upc'] = [product_upc]
-                if product_price:
-                    request.meta['origin_price'] = product_price
-                request.meta['origin_brand'] = product_brand
-                request.meta['origin_brand_extracted'] = product_brand_extracted
-                request.meta['origin_manufacturer_code'] = product_manufacturer_code
-
-                yield request
+            yield self.send_search_queries(product_upc, product_model, product_brand, product_name, \
+                product_url, product_price, product_brand_extracted, product_manufacturer_code)
 
         if self.bestsellers_link:
             origin_site = Utils.extract_domain(self.bestsellers_link)
@@ -644,7 +648,7 @@ class SearchSpider(BaseSpider):
             #TODO: restore commented code; if brand not found, try to search for it on every manufacturer site (build queries fo every supported site)
             # hardcode target site to sony`
             #self.target_site = 'sony'
-            #self.target_site = product_brand_extracted
+            self.target_site = product_brand_extracted
 
             #target_site = product_brand_extracted
 
@@ -701,124 +705,15 @@ class SearchSpider(BaseSpider):
         else:
             target_site = self.target_site
 
+        if 'origin_bestsellers_rank' in response.meta:
+            origin_bestsellers_rank = response.meta['origin_bestsellers_rank']
+        else:
+            origin_bestsellers_rank = None
+
         pending_requests = []
 
-        # 1) Search by UPC
-        if product_upc:
-            # TODO: search by multiple UPCs if there are more than 1?
-            query1 = self.build_search_query(product_upc)
-            search_pages1 = self.build_search_pages(query1)
-            #page1 = search_pages1[self.target_site]
-            page1 = search_pages1[target_site]
-
-            request1 = Request(page1, callback = self.parseResults)
-
-            request1.meta['query'] = query1
-            request1.meta['target_site'] = target_site
-            
-            if not request:
-                request = request1
-            else:
-                pending_requests.append(request1)
-
-
-        # 2) Search by model number
-        if product_model:
-
-            #TODO: model was extracted with ProcessText.extract_model_from_name(), without lowercasing, should I lowercase before adding it to query?
-            query2 = self.build_search_query(product_model)
-            search_pages2 = self.build_search_pages(query2)
-            #page1 = search_pages1[self.target_site]
-            page2 = search_pages2[target_site]
-
-            request2 = Request(page2, callback = self.parseResults)
-
-            request2.meta['query'] = query2
-            request2.meta['target_site'] = target_site
-            
-            if not request:
-                request = request2
-            else:
-                pending_requests.append(request2)
-
-        # 3) Search by model number + brand/first word
-        if product_model:
-
-            #TODO: model was extracted with ProcessText.extract_model_from_name(), without lowercasing, should I lowercase before adding it to query?
-            if product_brand:
-                query3 = self.build_search_query(product_model + " " + product_brand)
-            else:
-                query3 = self.build_search_query(product_model + " " + ProcessText.normalize(product_name)[0])
-            search_pages3 = self.build_search_pages(query3)
-            page3 = search_pages3[target_site]
-
-            request3 = Request(page3, callback = self.parseResults)
-
-            request3.meta['query'] = query3
-            request3.meta['target_site'] = target_site
-            
-            if not request:
-                request = request3
-            else:
-                pending_requests.append(request3)
-
-
-        # 4) Search by product full name
-        query4 = self.build_search_query(product_name)
-        search_pages4 = self.build_search_pages(query4)
-        #page2 = search_pages2[self.target_site]
-        page4 = search_pages4[target_site]
-        request4 = Request(page4, callback = self.parseResults)
-
-        request4.meta['query'] = query4
-        request4.meta['target_site'] = target_site
-
-        if not request:
-            request = request4
-        else:
-            pending_requests.append(request4)
-
-        # 5) Search by combinations of words in product's name
-        # create queries
-
-        for words in ProcessText.words_combinations(product_name, fast=self.fast):
-            query5 = self.build_search_query(" ".join(words))
-            search_pages5 = self.build_search_pages(query5)
-            page5 = search_pages5[target_site]
-            request5 = Request(page5, callback = self.parseResults)
-
-            request5.meta['query'] = query5
-            request5.meta['target_site'] = target_site
-
-
-            pending_requests.append(request5)
-
-        request.meta['pending_requests'] = pending_requests
-        #request.meta['origin_site'] = 
-        # product page from source site
-        #TODO: clean this URL? for walmart it added something with ?enlargedsearch=True
-        request.meta['origin_url'] = response.url
-
-        request.meta['origin_name'] = product_name
-        request.meta['origin_model'] = product_model
-        request.meta['origin_upc'] = [product_upc]
-        request.meta['origin_brand'] = product_brand
-        request.meta['origin_manufacturer_code'] = product_manufacturer_code
-        if product_price:
-            request.meta['origin_price'] = product_price
-        if 'origin_bestsellers_rank' in response.meta:
-            request.meta['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
-
-        # origin product brand as extracted from name (basically the first word in the name)
-        request.meta['origin_brand_extracted'] = product_brand_extracted
-
-        #self.target_site = product_brand_extracted
-        #TODO: should this be here??
-        target_site = product_brand_extracted
-
-        # print "SENDING REQUEST FOR ", product_name, response.url
-
-        yield request
+        yield self.send_search_queries(product_upc, product_model, product_brand, product_name, \
+            response.url, product_price, product_brand_extracted, product_manufacturer_code, origin_bestsellers_rank)
 
 
     ####################
