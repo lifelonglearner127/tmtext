@@ -27,8 +27,6 @@ import urllib
 #   scrapy crawl <site> -a product_url="<url>" [-a output="<option(1/2)>"] [-a threshold=<value>] [a outfile="<filename>""] [-a fast=0]
 #      -- or --
 #   scrapy crawl <site> -a product_urls_file="<filename>" [-a output="<option(1/2)>"] [-a threshold=value] [a outfile="<filename>"] [-a fast=0]
-#      -- or --
-#   scrapy crawl <site> -a walmart_ids_file="<filename>" [-a output="<option(1/2)>"] [-a threshold=value] [a outfile="<filename>"] [-a fast=0]
 # 
 # where <site> is the derived spider corresponding to the site to search on 
 #
@@ -65,8 +63,8 @@ class SearchSpider(BaseSpider):
     #                         7 - completely custom, using list of output fields in fields.json
     #                threshold - parameter for selecting results (the lower the value the more permissive the selection)
     def __init__(self, product_name = None, products_file = None, product_url = None, product_urls_file = None, bestsellers_link = None, bestsellers_range = '0', \
-        walmart_ids_file = None, output = 2, threshold = 1.0, \
-        outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None):#, by_id = False):
+        output = 2, threshold = 1.0, \
+        outfile = "search_results.csv", outfile2 = "not_matched.csv", fast = 0, use_proxy = False, manufacturer_site = None):
 
         # call specific init for each derived class
         self.init_sub()
@@ -80,14 +78,12 @@ class SearchSpider(BaseSpider):
         self.bestsellers_range = self.parse_bestsellers_range(bestsellers_range)
         self.output = int(output)
         self.product_urls_file = product_urls_file
-        self.walmart_ids_file = walmart_ids_file
         self.threshold = float(threshold)
         self.outfile = outfile
         self.outfile2 = outfile2
         self.fast = fast
         self.use_proxy = use_proxy
         self.manufacturer_site = manufacturer_site
-        #self.by_id = by_id
 
         # parseURL functions, one for each supported origin site
         self.parse_url_functions = {'staples' : self.parseURL_staples, \
@@ -463,28 +459,6 @@ class SearchSpider(BaseSpider):
                 request.meta['dont_redirect'] = True
             yield request
 
-        # if we have a file with Walmart ids, create a list of the ids there
-        if self.walmart_ids_file:
-            walmart_ids = []
-            f = open(self.walmart_ids_file, "r")
-            for line in f:
-                if "," in line:
-                    id_string = line.strip().split(",")[0]
-                else:
-                    id_string = line.strip()
-                if re.match("[0-9]+", id_string):
-                    walmart_ids.append(id_string)
-            f.close()        
-
-            self.by_id = True
-
-            for walmart_id in walmart_ids:
-                # create Walmart URLs based on these IDs
-                walmart_url = Utils.add_domain(walmart_id, "http://www.walmart.com/ip/")
-                request = Request(walmart_url, callback = self.parseURL)
-                #request.meta['origin_site'] = 'walmart'
-                yield request
-
     def parse_bestsellers_amazon(self, response):
         '''Parse input bestsellers link to extract all bestseller products,
         and pass them over to parseURL to start matching with these as
@@ -610,7 +584,6 @@ class SearchSpider(BaseSpider):
             m = re.match("(.*)\?enlargedSearch.*", item['origin_url'])
             if m:
                 item['origin_url'] = m.group(1)
-            #item['origin_id'] = self.extract_walmart_id(item['origin_url'])
 
 
             if self.name != 'manufacturer':
@@ -838,9 +811,6 @@ class SearchSpider(BaseSpider):
 
         # origin product brand as extracted from name (basically the first word in the name)
         request.meta['origin_brand_extracted'] = product_brand_extracted
-
-        # if self.by_id:
-        #     request.meta['origin_id'] = self.extract_walmart_id(response.url)
 
         #self.target_site = product_brand_extracted
         #TODO: should this be here??
@@ -1246,12 +1216,6 @@ class SearchSpider(BaseSpider):
                 if 'origin_bestsellers_rank' in response.meta:
                     request.meta['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
 
-                # if 'origin_id' in response.meta:
-                #     request.meta['origin_id'] = response.meta['origin_id']
-                #     assert self.by_id
-                # else:
-                #     assert not self.by_id
-
                 # used for result product URLs
                 if 'search_results' in response.meta:
                     request.meta['search_results'] = response.meta['search_results']
@@ -1328,11 +1292,6 @@ class SearchSpider(BaseSpider):
                     if 'origin_brand' in response.meta:
                         item['origin_brand'] = response.meta['origin_brand']
 
-                    # if 'origin_id' in response.meta:
-                    #     item['origin_id'] = response.meta['origin_id']
-                    #     assert self.by_id
-                    # else:
-                    #     assert not self.by_id
                     return [item]
 
                 return best_match
@@ -1346,12 +1305,6 @@ class SearchSpider(BaseSpider):
             
             item['origin_url'] = response.meta['origin_url']
             item['origin_name'] = response.meta['origin_name']
-
-            # if 'origin_id' in response.meta:
-            #     item['origin_id'] = response.meta['origin_id']
-            #     assert self.by_id
-            # else:
-            #     assert not self.by_id
 
             #TODO: uncomment below - it should not have been in if/else branch!
 
