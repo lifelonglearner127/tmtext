@@ -26,11 +26,6 @@ class AmazonSpider(SearchSpider):
 
     name = "amazon"
     handle_httpstatus_list = [404]
-    # cookie_header = "x-wl-uid=1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=; session-token=JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=; x-amz-captcha-1=1391100438353490; x-amz-captcha-2=+EDhq9rcotSRn783vYMxdQ==; csm-hit=337.71|1391093239619; ubid-main=188-7820618-3817319; session-id-time=2082787201l; session-id=177-0028713-4113141"
-    # cookies = {"x-wl-uid" : "1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=", \
-    # "session-token" : "JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=",\
-    # "x-amz-captcha-1" : "1391100438353490" , "x-amz-captcha-2" : "+EDhq9rcotSRn783vYMxdQ==", "csm-hit" : "337.71|1391093239619", "ubid-main" : "188-7820618-3817319",\
-    # "session-id-time" : "2082787201l", "session-id" : "177-0028713-4113141"}
 
     # initialize fields specific to this derived spider
     def init_sub(self):
@@ -96,10 +91,6 @@ class AmazonSpider(SearchSpider):
         # this way we avoid duplicates
         if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
             request = Request(product_urls.pop(), callback = self.parse_product_amazon, meta = response.meta)
-            if self.cookies_file:
-                request.cookies = self.amazon_cookies
-                request.headers['Cookies'] = self.amazon_cookie_header
-                #request.meta['dont_merge_cookies'] = True
             request.meta['items'] = items
 
             # this will be the new product_urls list with the first item popped
@@ -335,10 +326,6 @@ class AmazonSpider(SearchSpider):
         # if a next product url was found, send new request back to parse_product_url
         if next_product_url:
             request = Request(next_product_url, callback = self.parse_product_amazon, meta = response.meta)
-            if self.cookies_file:
-                request.cookies = self.amazon_cookies
-                request.headers['Cookies'] = self.amazon_cookie_header
-                #request.meta['dont_merge_cookies'] = True
             request.meta['items'] = items
             # eliminate next product from pending list (this will be the new list with the first item popped)
             request.meta['search_results'] = product_urls
