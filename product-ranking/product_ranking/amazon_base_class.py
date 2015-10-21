@@ -599,7 +599,6 @@ class AmazonBaseClass(BaseProductsSpider):
                 )
             )
             try:
-                print ('1', price_ss)
                 price_ss = float(price_ss)
             except ValueError as exc:
                 self.log(
@@ -608,7 +607,6 @@ class AmazonBaseClass(BaseProductsSpider):
                     ), WARNING
                 )
 
-        print ('ds', price_ss)
         if price_ss:
             price_ss = self._is_empty(
                 re.findall(
