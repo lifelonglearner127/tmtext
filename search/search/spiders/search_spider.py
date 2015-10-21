@@ -107,21 +107,43 @@ class SearchSpider(BaseSpider):
         '''this dictionary will store all input products, search requests and output products as they
         flow thorugh the callbacks up to when the match is found
         keys are uuids that represent an input product
-        values are dictionaries that have search queries as keys and candidates (items) as values
+        values are dictionaries that have search queries as keys and candidates as values
+        candidates will be separated into 2 lists: search results, that contain the search
+        result urls that have not been processed, and product items, that contain the already extracted items
         example:
         {
-            'efaee91e83de41eba5e0e1ee36dd7d2a': {
-                'search_requests': [{
-                    '035000741288': []
+            '27c54eaa28354c3db1c9f71ef161a2f0': {
+                'search_requests': {
+                    '035000741288': {
+                        'product_items': [],
+                        'search_results': []
+                    }
                 }, {
-                    'b001kys2ua': []
+                    'b001kys2ua': {
+                        'product_items': [],
+                        'search_results': []
+                    }
                 }, {
-                    'b001kys2ua+colgate': []
+                    'b001kys2ua+colgate': {
+                        'product_items': [],
+                        'search_results': []
+                    }
                 }, {
-                    'colgate+total+whitening+toothpaste+twin+pk+two+6oz+tubes': []
+                    'colgate+total+whitening+toothpaste+twin+pk+two+6oz+tubes': {
+                        'product_items': [],
+                        'search_results': []
+                    }
                 }, {
-                    'colgate+tubes': []
-                }],
+                    'colgate+total': {
+                        'product_items': [],
+                        'search_results': []
+                    }
+                }, {
+                    'toothpaste+total': {
+                        'product_items': [],
+                        'search_results': []
+                    }
+                },
                 'origin_product': {
                     'origin_model': 'B001KYS2UA',
                     'origin_brand_extracted': 'colgate',
@@ -134,8 +156,9 @@ class SearchSpider(BaseSpider):
                 }
             }
         }
+
         '''
-        self.search_results = {}
+        self.results = {}
 
 
     def build_search_pages(self, search_query):
@@ -254,13 +277,14 @@ class SearchSpider(BaseSpider):
         
         # generate id for current input product
         product_identifier = uuid.uuid4().hex
+        # the keys should be the same as the field names in SearchItem
         origin_product = {}
         origin_product['origin_url'] = product_url
         origin_product['origin_name'] = product_name
         origin_product['origin_model'] = product_model
         origin_product['origin_upc'] = [product_upc]
         if product_price:
-            origin_product['origin_price'] = product_price
+            origin_product['product_origin_price'] = product_price
         origin_product['origin_brand'] = product_brand
         origin_product['origin_brand_extracted'] = product_brand_extracted
         origin_product['origin_manufacturer_code'] = product_manufacturer_code
@@ -360,7 +384,7 @@ class SearchSpider(BaseSpider):
 
                 request4.meta['query'] = query4
                 request4.meta['target_site'] = self.target_site
-
+                request4.meta['origin_product_id'] = product_identifier
 
                 pending_requests.append(request4)
 
@@ -378,12 +402,14 @@ class SearchSpider(BaseSpider):
         request.meta['origin_manufacturer_code'] = product_manufacturer_code
 
 
-        self.search_results[product_identifier] = {
+        self.results[product_identifier] = {
         'origin_product': origin_product,
-        'search_requests': [{r.meta['query']: []} for r in [request] + pending_requests]
+        'search_requests': {
+            r.meta['query']:\
+             {'search_results': [], 'product_items': []}
+            for r in [request] + pending_requests
+            }
         }
-
-        print self.search_results
 
         return request
 
@@ -1064,6 +1090,10 @@ class SearchSpider(BaseSpider):
             del response.meta['parsed']
 
 
+        # origin_product_id = response.meta['origin_product_id']
+        # query = response.meta['query']
+
+
         ## print stuff
         if 'origin_upc' not in response.meta:
             origin_upc = ''
@@ -1226,3 +1256,11 @@ class SearchSpider(BaseSpider):
         m = re.match(".*/ip/([0-9]+)", url)
         if m:
             return m.group(1)
+
+    def remove_result_from_queue(self, uuid, url):
+        '''Remove search result from self.results
+        '''
+        # TODO: find more efficient way
+        for q in self.results[uuid]['search_requests']:
+            self.results[uuid]['search_requests'][q]['search_results'] = \
+                filter(lambda u: u!=url, self.results[uuid]['search_requests'][q]['search_results'])

@@ -32,19 +32,31 @@ class SearchResultsSpider(SearchSpider):
         else:
             items = set()
 
+        origin_product_id = response.meta['origin_product_id']
+        current_query = response.meta['query']
+
+        # all product urls from all queries
+        items2 = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['product_items'], \
+            self.results[origin_product_id]['search_requests']), [])
+
+        assert len(items) == len(items2)
+
         result_items = self.extract_result_products(response)
         for item in result_items:
             
-            # add url, name and model of product to be matched (from origin site)
-            item['origin_url'] = response.meta['origin_url']
-            item['origin_name'] = response.meta['origin_name']
+            # # add url, name and model of product to be matched (from origin site)
+            # item['origin_url'] = response.meta['origin_url']
+            # item['origin_name'] = response.meta['origin_name']
 
-            if 'origin_model' in response.meta:
-                item['origin_model'] = response.meta['origin_model']
-            if 'origin_upc' in response.meta:
-                item['origin_upc'] = response.meta['origin_upc']
-            if 'origin_brand' in response.meta:
-                item['origin_brand'] = response.meta['origin_brand']
+            # if 'origin_model' in response.meta:
+            #     item['origin_model'] = response.meta['origin_model']
+            # if 'origin_upc' in response.meta:
+            #     item['origin_upc'] = response.meta['origin_upc']
+            # if 'origin_brand' in response.meta:
+            #     item['origin_brand'] = response.meta['origin_brand']
+
+            for field in self.results[origin_product_id]['origin_product'].keys():
+                item[field] = self.results[origin_product_id]['origin_product'][field]
 
             # extract product model from name
             product_model_extracted = ProcessText.extract_model_from_name(item['product_name'])
@@ -54,7 +66,7 @@ class SearchResultsSpider(SearchSpider):
             
             # add result to items
             items.add(item)
-
+            self.results[origin_product_id]['search_requests'][current_query]['product_items'].append(item)
 
         # extract product info from product pages (send request to parse first URL in list)
         # add as meta all that was received as meta, will pass it on to reduceResults function in the end

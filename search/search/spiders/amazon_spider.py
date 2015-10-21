@@ -65,6 +65,22 @@ class AmazonSpider(SearchSpider):
         else:
             product_urls = response.meta['search_results']
 
+        origin_product_id = response.meta['origin_product_id']
+        current_query = response.meta['query']
+
+        # all product urls from all queries
+        items2 = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['product_items'], \
+            self.results[origin_product_id]['search_requests']), [])
+        # all product urls from all queries
+        product_urls2 = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['search_results'], \
+            self.results[origin_product_id]['search_requests']), [])
+        product_urls2 = set(product_urls2)
+
+        ############
+        # TEST
+        assert len(items) == len(items2)
+        assert len(product_urls) == len(product_urls2)
+
 
         # get search results for received results page and add them to product_urls to be parsed
         # Note: xpath below ignores Sponsored links (which is good)
@@ -80,6 +96,9 @@ class AmazonSpider(SearchSpider):
             product_url = Utils.add_domain(product_url, self.domain)
 
             product_urls.add(product_url)
+            product_urls2.add(product_url)
+            self.results[origin_product_id]['search_requests'][current_query]['search_results'].append(product_url)
+
 
         # extract product info from product pages (send request to parse first URL in list)
         # add as meta all that was received as meta, will pass it on to reduceResults function in the end
@@ -90,11 +109,14 @@ class AmazonSpider(SearchSpider):
         # otherwise send them back to parseResults and wait for the next query, save all product URLs in search_results
         # this way we avoid duplicates
         if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
-            request = Request(product_urls.pop(), callback = self.parse_product_amazon, meta = response.meta)
+            next_product_url = product_urls.pop() 
+            next_product_url2 = product_urls2.pop() 
+            request = Request(next_product_url, callback = self.parse_product_amazon, meta = response.meta)
             request.meta['items'] = items
 
             # this will be the new product_urls list with the first item popped
             request.meta['search_results'] = product_urls
+            self.remove_result_from_queue(origin_product_id, next_product_url2)
 
             return request
 
@@ -125,23 +147,45 @@ class AmazonSpider(SearchSpider):
         #site = response.meta['origin_site']
         origin_url = response.meta['origin_url']
 
+        origin_product_id = response.meta['origin_product_id']
+        current_query = response.meta['query']
+
         item = SearchItem()
         item['product_url'] = response.url
-        #item['origin_site'] = site
-        item['origin_url'] = origin_url
-        item['origin_name'] = response.meta['origin_name']
+        for field in self.results[origin_product_id]['origin_product'].keys():
+            item[field] = self.results[origin_product_id]['origin_product'][field]
+        
+        product_urls = response.meta['search_results']
 
-        if 'origin_model' in response.meta:
-            item['origin_model'] = response.meta['origin_model']
 
-        if 'origin_upc' in response.meta:
-            item['origin_upc'] = response.meta['origin_upc']
+        # all product urls from all queries
+        items2 = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['product_items'], \
+            self.results[origin_product_id]['search_requests']), [])
+        # all product urls from all queries
+        product_urls2 = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['search_results'], \
+            self.results[origin_product_id]['search_requests']), [])
+        product_urls2 = set(product_urls2)
 
-        if 'origin_brand' in response.meta:
-            item['origin_brand'] = response.meta['origin_brand']
+        ############
+        # TEST
+        assert len(items) == len(items2)
+        assert len(product_urls) == len(product_urls2)
 
-        if 'origin_bestsellers_rank' in response.meta:
-            item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
+
+        # item['origin_url'] = origin_url
+        # item['origin_name'] = response.meta['origin_name']
+
+        # if 'origin_model' in response.meta:
+        #     item['origin_model'] = response.meta['origin_model']
+
+        # if 'origin_upc' in response.meta:
+        #     item['origin_upc'] = response.meta['origin_upc']
+
+        # if 'origin_brand' in response.meta:
+        #     item['origin_brand'] = response.meta['origin_brand']
+
+        # if 'origin_bestsellers_rank' in response.meta:
+        #     item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
 
         # extract product name
         #TODO: id='title' doesn't work for all, should I use a 'contains' or something?
@@ -294,6 +338,7 @@ class AmazonSpider(SearchSpider):
 
             # add result to items
             items.add(item)
+            self.results[origin_product_id]['search_requests'][current_query]['product_items'].append(item)
 
 
         # print "STILL IN parse_product FOR", response.url
@@ -307,9 +352,15 @@ class AmazonSpider(SearchSpider):
         next_product_url = None
         if product_urls:
             next_product_url = product_urls.pop()
+            next_product_url2 = product_urls2.pop()
+            self.remove_result_from_queue(origin_product_id, next_product_url2)
+
         while (product_urls and not self.is_valid_url(next_product_url)):
             # print "404 FROM", next_product_url
             next_product_url = product_urls.pop()
+            next_product_url2 = product_urls2.pop()
+            self.remove_result_from_queue(origin_product_id, next_product_url2)
+
 
         # handle corner case of bad next product url
         if not product_urls and next_product_url and not self.is_valid_url(next_product_url):
