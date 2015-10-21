@@ -305,11 +305,12 @@ class DockersScraper(Scraper):
             offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', offset) + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
 
             ratingValue = int(float(ratingValue))
+            print(ratingValue)
             review_list[5 - ratingValue][1] = review_list[5 - ratingValue][1] + 1
+            print(review_list)
 
 
             review_count = review_count - 1
-
         self.review_list = review_list
 
         return self.review_list
