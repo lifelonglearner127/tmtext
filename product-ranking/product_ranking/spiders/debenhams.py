@@ -56,9 +56,9 @@ class DebenhamsProductSpider(BaseProductsSpider):
         department = self._parse_department(response)
         cond_set_value(product, 'department', department)
 
-        # Parse category
-        category = self._parse_category(response)
-        cond_set_value(product, 'category', category)
+        # Parse categories
+        categories = self._parse_categories(response)
+        cond_set_value(product, 'categories', categories)
 
         # Parse price
         price = self._parse_price(response)
@@ -127,15 +127,13 @@ class DebenhamsProductSpider(BaseProductsSpider):
 
         return department
 
-    def _parse_category(self, response):
-        category = []
-        category_sel = response.xpath(
+    def _parse_categories(self, response):
+        categories = []
+        categories_sel = response.xpath(
                 '//div[@class="breadcrumb_links"]/div/span/a/text()').extract()
-
-        for cat in category_sel:
-            category.append(cat.strip())
-
-        return category
+        for cat in categories_sel:
+            categories.append(cat.strip())
+        return categories
 
     def _parse_price(self, response):
         currency = is_empty(
