@@ -19,6 +19,7 @@ class DockersScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.dockers.com/US/en_US/<category-name>/p/<product-id>"
     REVIEW_URL = "http://dockers.ugc.bazaarvoice.com/2080-en_us/{0}/reviews.djs?format=embeddedhtml"
+    ADD_REVIEW_URL = "http://dockers.ugc.bazaarvoice.com/2080-en_us/{0}/reviews.djs?format=embeddedhtml&page={1}&"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -237,16 +238,16 @@ class DockersScraper(Scraper):
     def _review_count(self):
         self._reviews()
 
-        if not self.review_json:
+        if not self.glob_review_count:
             return 0
 
-        return int(self.review_json["jsonData"]["attributes"]["numReviews"])
+        return self.glob_review_count
 
     def _max_review(self):
         if self._review_count() == 0:
             return None
 
-        for i, review in enumerate(self.review_list):
+        for i, review in enumerate(self.rev_list):
             if review[1] > 0:
                 return 5 - i
 
@@ -254,12 +255,11 @@ class DockersScraper(Scraper):
         if self._review_count() == 0:
             return None
 
-        for i, review in enumerate(reversed(self.review_list)):
+        for i, review in enumerate(reversed(self.rev_list)):
             if review[1] > 0:
                 return i + 1
 
     def _reviews(self):
-
         h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()
         a = requests.adapters.HTTPAdapter(max_retries=3)
@@ -278,20 +278,44 @@ class DockersScraper(Scraper):
             self.review_json = None
             return None
 
-        review_count = int(self.review_json["jsonData"]["attributes"]["numReviews"])
-        if review_count == 0:
-            return None
+        offset = 0
+        number_of_passes = int(self.review_json["jsonData"]["attributes"]["numReviews"])
+
+        real_count = []
+        real_count += re.findall(r'<div class=\\"BVRRHeaderPagingControls\\">'
+                                 r'SHOWING \d+-\d+ OF (\d+)', contents)
+        review_count = int(real_count[0])
+        self.glob_review_count = int(real_count[0]) # for transfer to another method
+
+        if review_count > 8:
+            for index, i in enumerate(xrange(9, review_count + 1, 30)):
+                contents += s.get(self.ADD_REVIEW_URL.
+                                  format(self._product_id(), index + 2),
+                                  headers=h, timeout=5).text
 
         marks = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
-        unicode_value = []
-        unicode_value += re.findall(r'<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">(\d\.\d)', contents)
 
-        for value in unicode_value:
-            var = int(float(value))
-            marks[var] += 1
+        while number_of_passes > 0:
+            ratingValue = self._find_between(contents, '<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', "<\\/span>", offset).strip()
 
-        self.review_list = [[item, marks[item]] for item in sorted(marks.keys(), reverse=True)]
-        return self.review_list
+            if offset == 0:
+                offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">') + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
+                continue
+
+            if not ratingValue:
+                break
+
+            offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', offset) + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
+
+            if ratingValue.endswith('0'):
+                ratingValue = int(float(ratingValue))
+                marks[ratingValue] += 1
+
+            number_of_passes -= 1
+
+        self.rev_list = [[item, marks[item]] for item in sorted(marks.keys(),
+                                                                reverse=True)]
+        return self.rev_list
 
     ##########################################
     ############### CONTAINER : SELLERS
