@@ -52,19 +52,6 @@ class AmazonSpider(SearchSpider):
     def parseResults(self, response):
         hxs = HtmlXPathSelector(response)
 
-        # print "PARSE AMAZON FOR", response.meta['origin_url'], "RESULTS PAGE", response.url
-
-        if 'items' in response.meta:
-            itemsold = response.meta['items']
-        else:
-            itemsold = set()
-
-        # add product URLs to be parsed to this list
-        if 'search_results' not in response.meta:
-            product_urlsold = set()
-        else:
-            product_urlsold = response.meta['search_results']
-
         origin_product_id = response.meta['origin_product_id']
         current_query = response.meta['query']
 
@@ -75,13 +62,6 @@ class AmazonSpider(SearchSpider):
         product_urls = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['search_results'], \
             self.results[origin_product_id]['search_requests']), [])
         product_urls = set(product_urls)
-
-        ############
-        # TEST
-        assert len(items) == len(itemsold)
-        assert set(items) == itemsold
-        assert len(product_urls) == len(product_urlsold)
-
 
         # get search results for received results page and add them to product_urls to be parsed
         # Note: xpath below ignores Sponsored links (which is good)
@@ -96,8 +76,6 @@ class AmazonSpider(SearchSpider):
 
             product_url = Utils.add_domain(product_url, self.domain)
 
-            product_urls.add(product_url)
-            product_urlsold.add(product_url)
             self.results[origin_product_id]['search_requests'][current_query]['search_results'].append(product_url)
 
 
@@ -110,13 +88,9 @@ class AmazonSpider(SearchSpider):
         # otherwise send them back to parseResults and wait for the next query, save all product URLs in search_results
         # this way we avoid duplicates
         if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
-            next_product_urlold = product_urlsold.pop() 
             next_product_url = product_urls.pop() 
             request = Request(next_product_url, callback = self.parse_product_amazon, meta = response.meta)
-            request.meta['items'] = itemsold
-
-            # this will be the new product_urls list with the first item popped
-            request.meta['search_results'] = product_urlsold
+            # remove the urls you've just consumed
             self.remove_result_from_queue(origin_product_id, next_product_url)
 
             return request
@@ -126,27 +100,15 @@ class AmazonSpider(SearchSpider):
         # add to the response the URLs of the products to crawl we have so far, items (handles case when it was not created yet)
         # and field 'parsed' to indicate that the call was received from this method (was not the initial one)
         else:
-            response.meta['items'] = itemsold
             response.meta['parsed'] = True
-            response.meta['search_results'] = product_urlsold
             # only send the response we have as an argument, no need to make a new request
-
-            # print "RETURNING TO REDUCE RESULTS", response.meta['origin_url']
             return self.reduceResults(response)
 
     # extract product info from a product page for amazon
     # keep product pages left to parse in 'search_results' meta key, send back to parseResults_new when done with all
     def parse_product_amazon(self, response):
 
-        # print "PARSE AMAZON PRODUCT FOR", response.meta['origin_url'], response.url
-
-
         hxs = HtmlXPathSelector(response)
-
-        itemsold = response.meta['items']
-
-        #site = response.meta['origin_site']
-        # origin_url = response.meta['origin_url']
 
         origin_product_id = response.meta['origin_product_id']
         current_query = response.meta['query']
@@ -157,9 +119,6 @@ class AmazonSpider(SearchSpider):
         for field in self.results[origin_product_id]['origin_product'].keys():
             item[field] = self.results[origin_product_id]['origin_product'][field]
         
-        product_urlsold = response.meta['search_results']
-
-
         # all product urls from all queries
         items = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['product_items'], \
             self.results[origin_product_id]['search_requests']), [])
@@ -167,33 +126,6 @@ class AmazonSpider(SearchSpider):
         product_urls = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['search_results'], \
             self.results[origin_product_id]['search_requests']), [])
         product_urls = set(product_urls)
-
-        ############
-        # TEST
-        assert len(items) == len(itemsold)
-        assert set(items) == itemsold
-        assert len(product_urls) == len(product_urlsold)
-
-
-        # item['origin_url'] = origin_url
-        # item['origin_name'] = response.meta['origin_name']
-
-        # if 'origin_model' in response.meta:
-        #     item['origin_model'] = response.meta['origin_model']
-
-        # if 'origin_upc' in response.meta:
-        #     item['origin_upc'] = response.meta['origin_upc']
-
-        # if 'origin_brand' in response.meta:
-        #     item['origin_brand'] = response.meta['origin_brand']
-
-        # if 'origin_bestsellers_rank' in response.meta:
-        #     item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
-
-        # extract product name
-        #TODO: id='title' doesn't work for all, should I use a 'contains' or something?
-        # extract titles that are not empty (ignoring whitespace)
-        # eliminate "Amazon Prime Free Trial"
 
         #TODO: to test this
         #product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//div[@id='title_feature_div']//h1//text()[normalize-space()!='']").extract())
@@ -340,13 +272,9 @@ class AmazonSpider(SearchSpider):
 
 
             # add result to items
-            itemsold.add(item)
             self.results[origin_product_id]['search_requests'][current_query]['product_items'].append(item)
 
 
-        # print "STILL IN parse_product FOR", response.url
-
-        product_urlsold = response.meta['search_results']
         # TODO: second time i get product_urls from response.meta?
         #       should i set it again from self.results too?
 
@@ -357,13 +285,11 @@ class AmazonSpider(SearchSpider):
         next_product_url = None
         if product_urls:
             next_product_url = product_urls.pop()
-            next_product_urlold = product_urlsold.pop()
             self.remove_result_from_queue(origin_product_id, next_product_url)
 
         while (product_urls and not self.is_valid_url(next_product_url)):
             # print "404 FROM", next_product_url
             next_product_url = product_urls.pop()
-            next_product_urlold = product_urlsold.pop()
             self.remove_result_from_queue(origin_product_id, next_product_url)
 
 
@@ -374,9 +300,6 @@ class AmazonSpider(SearchSpider):
         # if a next product url was found, send new request back to parse_product_url
         if next_product_url:
             request = Request(next_product_url, callback = self.parse_product_amazon, meta = response.meta)
-            request.meta['items'] = itemsold
-            # eliminate next product from pending list (this will be the new list with the first item popped)
-            request.meta['search_results'] = product_urlsold
 
             return request
 
@@ -388,8 +311,5 @@ class AmazonSpider(SearchSpider):
             # (actually that the call was made from this method and was not the initial one, so it has to move on to the next request)
 
             response.meta['parsed'] = True
-            response.meta['items'] = itemsold
-
-            # print "RETURNING FROM PARSE AMAZON PRODUCT TO reduce_results FOR", response.meta['origin_url'], response.url
 
             return self.reduceResults(response)

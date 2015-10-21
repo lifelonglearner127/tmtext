@@ -389,18 +389,6 @@ class SearchSpider(BaseSpider):
                 pending_requests.append(request4)
 
         request.meta['pending_requests'] = pending_requests
-        # request.meta['origin_url'] = product_url
-        # request.meta['origin_product_id'] = product_identifier
-
-        # request.meta['origin_name'] = product_name
-        # request.meta['origin_model'] = product_model
-        # request.meta['origin_upc'] = [product_upc]
-        # if product_price:
-        #     request.meta['origin_price'] = product_price
-        # request.meta['origin_brand'] = product_brand
-        # request.meta['origin_brand_extracted'] = product_brand_extracted
-        # request.meta['origin_manufacturer_code'] = product_manufacturer_code
-
 
         self.results[product_identifier] = {
         'origin_product': origin_product,
@@ -1075,11 +1063,6 @@ class SearchSpider(BaseSpider):
     # and lastly select the best result by selecting the best match between the original product's name and the result products' names
     def reduceResults(self, response):
 
-        # print "IN REDUCE RESULTS"
-
-        itemsold = response.meta['items']
-        #site = response.meta['origin_site']
-
         #TODO: do we still need this?
         if 'parsed' not in response.meta:
 
@@ -1091,14 +1074,11 @@ class SearchSpider(BaseSpider):
 
 
         origin_product_id = response.meta['origin_product_id']
-        # query = response.meta['query']
 
         # all product urls from all queries
         # TODO: is this right??
         items = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['product_items'], \
             self.results[origin_product_id]['search_requests']), [])
-
-
 
         ## print stuff
         origin_product = self.results[response.meta['origin_product_id']]['origin_product']
@@ -1140,31 +1120,6 @@ class SearchSpider(BaseSpider):
 
                 # update pending requests
                 request.meta['pending_requests'] = pending_requests[1:]
-
-                request.meta['items'] = itemsold
-
-                #request.meta['origin_site'] = response.meta['origin_site']
-                # product page from source site
-                # request.meta['origin_url'] = response.meta['origin_url']
-                # request.meta['origin_name'] = response.meta['origin_name']
-                # request.meta['origin_model'] = response.meta['origin_model']
-                # if 'origin_price' in response.meta:
-                #     request.meta['origin_price'] = response.meta['origin_price']
-                # request.meta['origin_brand_extracted'] = response.meta['origin_brand_extracted']
-                # if 'origin_upc' in response.meta:
-                #     request.meta['origin_upc'] = response.meta['origin_upc']
-                # if 'origin_brand' in response.meta:
-                #     request.meta['origin_brand'] = response.meta['origin_brand']
-                # if 'threshold' in response.meta:
-                #     request.meta['threshold'] = response.meta['threshold']
-                # if 'origin_manufacturer_code' in response.meta:
-                #     request.meta['origin_manufacturer_code'] = response.meta['origin_manufacturer_code']
-                # if 'origin_bestsellers_rank' in response.meta:
-                #     request.meta['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
-
-                # used for result product URLs
-                if 'search_results' in response.meta:
-                    request.meta['search_results'] = response.meta['search_results']
 
                 return request
 
@@ -1245,7 +1200,6 @@ class SearchSpider(BaseSpider):
         else:
             # output item if match not found
             item = SearchItem()
-            #item['origin_site'] = site
 
             # print "DONE FOR ", response.meta['origin_name']
             

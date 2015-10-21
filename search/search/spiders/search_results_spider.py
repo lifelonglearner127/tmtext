@@ -27,11 +27,6 @@ class SearchResultsSpider(SearchSpider):
     def parseResults(self, response):
         hxs = HtmlXPathSelector(response)
 
-        if 'items' in response.meta:
-            itemsold = response.meta['items']
-        else:
-            itemsold = set()
-
         origin_product_id = response.meta['origin_product_id']
         current_query = response.meta['query']
 
@@ -39,21 +34,8 @@ class SearchResultsSpider(SearchSpider):
         items = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['product_items'], \
             self.results[origin_product_id]['search_requests']), [])
 
-        # assert len(items) == len(items2)
-
         result_items = self.extract_result_products(response)
         for item in result_items:
-            
-            # # add url, name and model of product to be matched (from origin site)
-            # item['origin_url'] = response.meta['origin_url']
-            # item['origin_name'] = response.meta['origin_name']
-
-            # if 'origin_model' in response.meta:
-            #     item['origin_model'] = response.meta['origin_model']
-            # if 'origin_upc' in response.meta:
-            #     item['origin_upc'] = response.meta['origin_upc']
-            # if 'origin_brand' in response.meta:
-            #     item['origin_brand'] = response.meta['origin_brand']
 
             for field in self.results[origin_product_id]['origin_product'].keys():
                 item[field] = self.results[origin_product_id]['origin_product'][field]
@@ -65,7 +47,6 @@ class SearchResultsSpider(SearchSpider):
 
             
             # add result to items
-            itemsold.add(item)
             self.results[origin_product_id]['search_requests'][current_query]['product_items'].append(item)
 
         # extract product info from product pages (send request to parse first URL in list)
@@ -74,8 +55,6 @@ class SearchResultsSpider(SearchSpider):
 
         # send the request back to reduceResults (with updated 'items') whether there are any more pending requests or not
         # if there are, reduceResults will send the next one back here, if not it will return the final result
-
-        response.meta['items'] = itemsold
 
         # and field 'parsed' to indicate that the call was received from this method (was not the initial one)
         #TODO: do we still need this?
