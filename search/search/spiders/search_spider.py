@@ -389,17 +389,17 @@ class SearchSpider(BaseSpider):
                 pending_requests.append(request4)
 
         request.meta['pending_requests'] = pending_requests
-        request.meta['origin_url'] = product_url
-        request.meta['origin_product_id'] = product_identifier
+        # request.meta['origin_url'] = product_url
+        # request.meta['origin_product_id'] = product_identifier
 
-        request.meta['origin_name'] = product_name
-        request.meta['origin_model'] = product_model
-        request.meta['origin_upc'] = [product_upc]
-        if product_price:
-            request.meta['origin_price'] = product_price
-        request.meta['origin_brand'] = product_brand
-        request.meta['origin_brand_extracted'] = product_brand_extracted
-        request.meta['origin_manufacturer_code'] = product_manufacturer_code
+        # request.meta['origin_name'] = product_name
+        # request.meta['origin_model'] = product_model
+        # request.meta['origin_upc'] = [product_upc]
+        # if product_price:
+        #     request.meta['origin_price'] = product_price
+        # request.meta['origin_brand'] = product_brand
+        # request.meta['origin_brand_extracted'] = product_brand_extracted
+        # request.meta['origin_manufacturer_code'] = product_manufacturer_code
 
 
         self.results[product_identifier] = {
@@ -1077,7 +1077,7 @@ class SearchSpider(BaseSpider):
 
         # print "IN REDUCE RESULTS"
 
-        items = response.meta['items']
+        itemsold = response.meta['items']
         #site = response.meta['origin_site']
 
         #TODO: do we still need this?
@@ -1090,24 +1090,31 @@ class SearchSpider(BaseSpider):
             del response.meta['parsed']
 
 
-        # origin_product_id = response.meta['origin_product_id']
+        origin_product_id = response.meta['origin_product_id']
         # query = response.meta['query']
+
+        # all product urls from all queries
+        # TODO: is this right??
+        items = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['product_items'], \
+            self.results[origin_product_id]['search_requests']), [])
+
 
 
         ## print stuff
-        if 'origin_upc' not in response.meta:
+        origin_product = self.results[response.meta['origin_product_id']]['origin_product']
+        if 'origin_upc' not in origin_product:
             origin_upc = ''
         else:
-            origin_upc = str(response.meta['origin_upc'])
-        if 'origin_manufacturer_code' not in response.meta:
+            origin_upc = str(origin_product['origin_upc'])
+        if 'origin_manufacturer_code' not in origin_product:
             origin_manufacturer_code = ''
         else:
-            origin_manufacturer_code = str(response.meta['origin_manufacturer_code'])
+            origin_manufacturer_code = str(origin_product['origin_manufacturer_code'])
         origin_brand = ''
-        if 'origin_brand' in response.meta:
-            if response.meta['origin_brand']:
-                origin_brand = response.meta['origin_brand']
-        self.log("PRODUCT: " + response.meta['origin_name'].decode("utf-8") + " MODEL: " + response.meta['origin_model'].decode("utf-8") +\
+        if 'origin_brand' in origin_product:
+            if origin_product['origin_brand']:
+                origin_brand = origin_product['origin_brand']
+        self.log("PRODUCT: " + origin_product['origin_name'].decode("utf-8") + " MODEL: " + origin_product['origin_model'].decode("utf-8") +\
          " UPC: " + origin_upc.decode("utf-8") + " MANUFACTURER_CODE: " + origin_manufacturer_code.decode("utf-8") + \
          " BRAND: " + origin_brand.decode("utf-8"), level=log.DEBUG)
         self.log( "QUERY: " + response.meta['query'], level=log.DEBUG)
@@ -1134,26 +1141,26 @@ class SearchSpider(BaseSpider):
                 # update pending requests
                 request.meta['pending_requests'] = pending_requests[1:]
 
-                request.meta['items'] = items
+                request.meta['items'] = itemsold
 
                 #request.meta['origin_site'] = response.meta['origin_site']
                 # product page from source site
-                request.meta['origin_url'] = response.meta['origin_url']
-                request.meta['origin_name'] = response.meta['origin_name']
-                request.meta['origin_model'] = response.meta['origin_model']
-                if 'origin_price' in response.meta:
-                    request.meta['origin_price'] = response.meta['origin_price']
-                request.meta['origin_brand_extracted'] = response.meta['origin_brand_extracted']
-                if 'origin_upc' in response.meta:
-                    request.meta['origin_upc'] = response.meta['origin_upc']
-                if 'origin_brand' in response.meta:
-                    request.meta['origin_brand'] = response.meta['origin_brand']
-                if 'threshold' in response.meta:
-                    request.meta['threshold'] = response.meta['threshold']
-                if 'origin_manufacturer_code' in response.meta:
-                    request.meta['origin_manufacturer_code'] = response.meta['origin_manufacturer_code']
-                if 'origin_bestsellers_rank' in response.meta:
-                    request.meta['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
+                # request.meta['origin_url'] = response.meta['origin_url']
+                # request.meta['origin_name'] = response.meta['origin_name']
+                # request.meta['origin_model'] = response.meta['origin_model']
+                # if 'origin_price' in response.meta:
+                #     request.meta['origin_price'] = response.meta['origin_price']
+                # request.meta['origin_brand_extracted'] = response.meta['origin_brand_extracted']
+                # if 'origin_upc' in response.meta:
+                #     request.meta['origin_upc'] = response.meta['origin_upc']
+                # if 'origin_brand' in response.meta:
+                #     request.meta['origin_brand'] = response.meta['origin_brand']
+                # if 'threshold' in response.meta:
+                #     request.meta['threshold'] = response.meta['threshold']
+                # if 'origin_manufacturer_code' in response.meta:
+                #     request.meta['origin_manufacturer_code'] = response.meta['origin_manufacturer_code']
+                # if 'origin_bestsellers_rank' in response.meta:
+                #     request.meta['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
 
                 # used for result product URLs
                 if 'search_results' in response.meta:
@@ -1177,29 +1184,29 @@ class SearchSpider(BaseSpider):
                     else:
                         threshold = self.threshold
 
-                    if 'origin_price' in response.meta:
-                        product_price = response.meta['origin_price']
+                    if 'origin_price' in origin_product:
+                        product_price = origin_product['origin_price']
                         ## print "PRICE:", product_price
                     else:
                         product_price = None
 
-                    if 'origin_upc' in response.meta:
-                        origin_upc = response.meta['origin_upc']
+                    if 'origin_upc' in origin_product:
+                        origin_upc = origin_product['origin_upc']
                     else:
                         origin_upc = None
 
-                    if 'origin_brand' in response.meta:
-                        origin_brand = response.meta['origin_brand']
+                    if 'origin_brand' in origin_product:
+                        origin_brand = origin_product['origin_brand']
                     else:
                         origin_brand = None
 
-                    if 'origin_manufacturer_code' in response.meta:
-                        origin_manufacturer_code = response.meta['origin_manufacturer_code']
+                    if 'origin_manufacturer_code' in origin_product:
+                        origin_manufacturer_code = origin_product['origin_manufacturer_code']
                     else:
                         origin_manufacturer_code = None
 
                         ## print "NO PRICE"
-                    best_match = ProcessText.similar(response.meta['origin_name'], response.meta['origin_model'],\
+                    best_match = ProcessText.similar(origin_product['origin_name'], origin_product['origin_model'],\
                      product_price, origin_upc, origin_manufacturer_code, origin_brand, items, threshold)
 
                     # #self.log( "ALL MATCHES: ", level=log.WARNING)                    
@@ -1217,19 +1224,19 @@ class SearchSpider(BaseSpider):
                     item = SearchItem()
                     #item['origin_site'] = site
                     
-                    item['origin_url'] = response.meta['origin_url']
-                    item['origin_name'] = response.meta['origin_name']
-                    if 'origin_model' in response.meta:
-                        item['origin_model'] = response.meta['origin_model']
+                    item['origin_url'] = origin_product['origin_url']
+                    item['origin_name'] = origin_product['origin_name']
+                    if 'origin_model' in origin_product:
+                        item['origin_model'] = origin_product['origin_model']
 
-                    if 'origin_upc' in response.meta:
-                        item['origin_upc'] = response.meta['origin_upc']
-                    if 'origin_manufacturer_code' in response.meta:
-                        item['origin_manufacturer_code'] = response.meta['origin_manufacturer_code']
-                    if 'origin_bestsellers_rank' in response.meta:
-                        item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
-                    if 'origin_brand' in response.meta:
-                        item['origin_brand'] = response.meta['origin_brand']
+                    if 'origin_upc' in origin_product:
+                        item['origin_upc'] = origin_product['origin_upc']
+                    if 'origin_manufacturer_code' in origin_product:
+                        item['origin_manufacturer_code'] = origin_product['origin_manufacturer_code']
+                    if 'origin_bestsellers_rank' in origin_product:
+                        item['origin_bestsellers_rank'] = origin_product['origin_bestsellers_rank']
+                    if 'origin_brand' in origin_product:
+                        item['origin_brand'] = origin_product['origin_brand']
 
                     return [item]
 
