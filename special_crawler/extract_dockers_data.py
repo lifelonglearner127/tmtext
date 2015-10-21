@@ -259,10 +259,6 @@ class DockersScraper(Scraper):
                 return i + 1
 
     def _reviews(self):
-        if self.is_review_checked:
-            return self.review_list
-
-        self.is_review_checked = True
 
         h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()
@@ -283,36 +279,18 @@ class DockersScraper(Scraper):
             return None
 
         review_count = int(self.review_json["jsonData"]["attributes"]["numReviews"])
-
         if review_count == 0:
             return None
 
-        offset = 0
-        review_list = None
+        marks = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+        unicode_value = []
+        unicode_value += re.findall(r'<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">(\d\.\d)', contents)
 
-        review_list = [[5, 0], [4, 0], [3, 0], [2, 0], [1, 0]]
+        for value in unicode_value:
+            var = int(float(value))
+            marks[var] += 1
 
-        while review_count > 0:
-            ratingValue = self._find_between(contents, '<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', "<\\/span>", offset).strip()
-
-            if offset == 0:
-                offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">') + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
-                continue
-
-            if not ratingValue:
-                break
-
-            offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', offset) + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
-
-            ratingValue = int(float(ratingValue))
-            print(ratingValue)
-            review_list[5 - ratingValue][1] = review_list[5 - ratingValue][1] + 1
-            print(review_list)
-
-
-            review_count = review_count - 1
-        self.review_list = review_list
-
+        self.review_list = [[item, marks[item]] for item in sorted(marks.keys(), reverse=True)]
         return self.review_list
 
     ##########################################
