@@ -29,10 +29,11 @@ class KohlsCouponsSpider(Spider):
         return response.css('.grid-box.d8x4.m8x5')
 
     def _parse_description(self, coupon):
-        return is_empty(coupon.css('.td-header::text').extract())
+        return ' '.join(coupon.css('.td-header::text, '
+                                   '.td-subheader::text').extract())
 
     def _parse_discount(self, coupon):
-        return ', '.join(coupon.css('.td-header::text').re('\$?\d+%?'))
+        return ', '.join(coupon.css('.td-header::text').re('\$?\d+(?:\.\d+)?%?'))
 
     def _parse_conditions(self, coupon):
         return is_empty(coupon.css('.td-copy::text').extract())
@@ -46,15 +47,17 @@ class KohlsCouponsSpider(Spider):
             return parse_date(d[0]).date()
 
     def _parse_category(self, coupon):
-        return is_empty(coupon.css('.td-subheader::text'))
+        return is_empty(coupon.css('.td-subheader::text').extract())
 
     def parse(self, response):
         coupons = self._parse_coupons(response)
 
         for coupon in coupons:
             item = DiscountCoupon()
-            cond_set_value(item, 'category', self._parse_category(coupon))
             cond_set_value(item, 'description', self._parse_description(coupon))
+            if not item['description']:  # all coupon details in image
+                continue
+            cond_set_value(item, 'category', self._parse_category(coupon))
             cond_set_value(item, 'discount', self._parse_discount(coupon))
             cond_set_value(item, 'conditions', self._parse_conditions(coupon))
             cond_set_value(item, 'start_date', self._parse_start_date(coupon))
