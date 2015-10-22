@@ -360,12 +360,12 @@ class AmazonBaseClass(BaseProductsSpider):
             reqs.append(marketplace_req)
 
         # Parse category
-        category = self._parse_category(response)
+        categories = self._parse_category(response)
         # cond_set_value(product, 'category', category)
 
         # build_categories(product)
         category_rank = self._parse_category_rank(response)
-        cond_set_value(product, 'category', category_rank)
+        cond_set_value(product, 'categories', categories)
         if category_rank:
             # Parse departments and bestseller rank
             department = amazon_parse_department(category_rank)
@@ -408,12 +408,16 @@ class AmazonBaseClass(BaseProductsSpider):
         cat = response.xpath(
             '//span[@class="a-list-item"]/'
             'a[@class="a-link-normal a-color-tertiary"]/text()')
+        if not cat:
+            cat = response.xpath('//li[@class="breadcrumb"]/a[@class="breadcrumb-link"]/text()')
 
         category = []
         for cat_sel in cat:
             category.append(cat_sel.extract().strip())
 
-        return category
+        if category:
+            return category
+
 
     def _parse_title(self, response, add_xpath=None):
         """
@@ -606,6 +610,14 @@ class AmazonBaseClass(BaseProductsSpider):
                         url=response.url, exc=exc
                     ), WARNING
                 )
+
+        if price_ss:
+            price_ss = self._is_empty(
+                re.findall(
+                    FLOATING_POINT_RGEX,
+                    price_ss
+                )
+            )
 
         return price_ss
 
@@ -955,7 +967,9 @@ class AmazonBaseClass(BaseProductsSpider):
                 '/div[contains(@class, "acrRating")]/text()'
             )
         average = average.extract()[0].replace('out of 5 stars','')
-        average = average.replace('von 5 Sternen', '').replace('5つ星のうち','').replace('平均','').replace(' 星','').strip()
+        average = average.replace('von 5 Sternen', '').replace('5つ星のうち','')\
+            .replace('平均','').replace(' 星','').replace('étoiles sur 5', '')\
+            .strip()
         buyer_reviews['average_rating'] = float(average)
 
         buyer_reviews['rating_by_star'] = {}

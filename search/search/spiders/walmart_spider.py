@@ -114,6 +114,15 @@ class WalmartSpider(SearchProductSpider):
             else:
                 self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
 
+            try:
+                item['product_category_tree'] = hxs.select("//li[@class='breadcrumb']/a/span[@itemprop='name']/text()").extract()[1:]
+            except:
+                pass
+
+            try:
+                item['product_keywords'] = hxs.select("//meta[@name='keywords']/@content").extract()[0]
+            except:
+                pass
 
         return item
 
