@@ -779,12 +779,18 @@ class SearchSpider(BaseSpider):
         else:
             product_brand = None
 
+        try:
+            product_category_tree = hxs.select("//li[@class='breadcrumb']/a/span[@itemprop='name']/text()").extract()[1:]
+        except:
+            product_category_tree = None
+
         product = {}
         product['origin_name'] = product_name
         product['origin_model'] = product_model
         product['product_origin_price'] = product_price
         product['origin_upc'] = upc
         product['origin_brand'] = product_brand
+        product['origin_category_tree'] = product_category_tree
         return product
 
     def parseURL_wayfair(self, hxs):
@@ -945,6 +951,12 @@ class SearchSpider(BaseSpider):
         else:
             self.log("Didn't find product price: (" + str(product_name) + ")\n", level=log.INFO)
 
+        try:
+            product_category_tree = \
+            filter(None, map(lambda c: c.strip(), hxs.select("//ul[li[@class='a-breadcrumb-divider']]/li/span[@class='a-list-item']/a/text()").extract()))
+        except Exception, e:
+            product_category_tree = None
+
         product = {}
         product['origin_name'] = product_name
         product['origin_model'] = product_model
@@ -952,6 +964,7 @@ class SearchSpider(BaseSpider):
         # TODO
         # product['origin_upc'] = upc
         product['origin_brand'] = brand
+        product['origin_category_tree'] = product_category_tree
         return product
 
     def parseURL_target(self, hxs):
@@ -1133,10 +1146,10 @@ class SearchSpider(BaseSpider):
                 filter(lambda u: u!=url, self.results[uuid]['search_requests'][q]['search_results'])
 
     def log_product_features(self, product):
-        for key in ('origin_name', 'origin_model', 'origin_upc', 'origin_manufacturer_code', 'origin_brand'):
+        for key in ('origin_name', 'origin_model', 'origin_upc', 'origin_manufacturer_code', 'origin_brand', 'origin_category_tree'):
             if key not in product or not product[key]:
                 product[key] = ''
 
         self.log("PRODUCT: " + product['origin_name'].decode("utf-8") + " MODEL: " + product['origin_model'].decode("utf-8") +\
          " UPC: " + str(product['origin_upc']).decode("utf-8") + " MANUFACTURER_CODE: " + product['origin_manufacturer_code'].decode("utf-8") + \
-         " BRAND: " + product['origin_brand'].decode("utf-8"), level=log.DEBUG)
+         " BRAND: " + product['origin_brand'].decode("utf-8") + " CATEGORIES: " + str(product['origin_category_tree']), level=log.DEBUG)

@@ -270,6 +270,11 @@ class AmazonSpider(SearchSpider):
             else:
                 self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
 
+            try:
+                item['product_category_tree'] = \
+                    filter(None, map(lambda c: c.strip(), hxs.select("//ul[li[@class='a-breadcrumb-divider']]/li/span[@class='a-list-item']/a/text()").extract()))
+            except:
+                pass
 
             # add result to items
             self.results[origin_product_id]['search_requests'][current_query]['product_items'].append(item)
