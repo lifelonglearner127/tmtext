@@ -222,7 +222,7 @@ class WalGreensProductsSpider(BaseProductsSpider):
                 product['price'] = Price(price=float(price[-1]),
                                          priceCurrency='USD')
 
-        messages = item['channelAvailability']
+        messages = item.get('channelAvailability', [])
         for mes in messages:
             if 'displayText' in mes:
                 if 'Not sold online' in mes['displayText']:
