@@ -408,12 +408,16 @@ class AmazonBaseClass(BaseProductsSpider):
         cat = response.xpath(
             '//span[@class="a-list-item"]/'
             'a[@class="a-link-normal a-color-tertiary"]/text()')
+        if not cat:
+            cat = response.xpath('//li[@class="breadcrumb"]/a[@class="breadcrumb-link"]/text()')
 
         category = []
         for cat_sel in cat:
             category.append(cat_sel.extract().strip())
 
-        return category
+        if category:
+            return category
+
 
     def _parse_title(self, response, add_xpath=None):
         """
@@ -963,7 +967,9 @@ class AmazonBaseClass(BaseProductsSpider):
                 '/div[contains(@class, "acrRating")]/text()'
             )
         average = average.extract()[0].replace('out of 5 stars','')
-        average = average.replace('von 5 Sternen', '').replace('5つ星のうち','').replace('平均','').replace(' 星','').strip()
+        average = average.replace('von 5 Sternen', '').replace('5つ星のうち','')\
+            .replace('平均','').replace(' 星','').replace('étoiles sur 5', '')\
+            .strip()
         buyer_reviews['average_rating'] = float(average)
 
         buyer_reviews['rating_by_star'] = {}
