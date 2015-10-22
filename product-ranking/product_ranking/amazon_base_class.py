@@ -360,12 +360,12 @@ class AmazonBaseClass(BaseProductsSpider):
             reqs.append(marketplace_req)
 
         # Parse category
-        category = self._parse_category(response)
+        categories = self._parse_category(response)
         # cond_set_value(product, 'category', category)
 
         # build_categories(product)
         category_rank = self._parse_category_rank(response)
-        cond_set_value(product, 'category', category_rank)
+        cond_set_value(product, 'categories', categories)
         if category_rank:
             # Parse departments and bestseller rank
             department = amazon_parse_department(category_rank)
@@ -606,6 +606,14 @@ class AmazonBaseClass(BaseProductsSpider):
                         url=response.url, exc=exc
                     ), WARNING
                 )
+
+        if price_ss:
+            price_ss = self._is_empty(
+                re.findall(
+                    FLOATING_POINT_RGEX,
+                    price_ss
+                )
+            )
 
         return price_ss
 
