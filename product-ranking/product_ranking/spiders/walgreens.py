@@ -3,6 +3,7 @@ from __future__ import division, absolute_import, unicode_literals
 import urlparse
 import json
 import re
+import string
 
 from scrapy.http import Request
 
@@ -139,6 +140,14 @@ class WalGreensProductsSpider(BaseProductsSpider):
         title = response.xpath('//h2[@id="productName"]/text()').extract()
         if title:
             prod['title'] = title[0].strip()
+        else:
+            #title = response.css('h1#productName ::text').extract()
+            title = response.xpath('//h1[@id="productName"]').extract()
+            cond_set(prod, 'title', title)
+
+        if prod['title']:
+            prod['title'] = ''.join([c for c in prod['title']
+                                     if c in string.printable and c != '\n'])
 
         img_url = response.xpath(
             '//img[@id="main-product-image"]/@src').extract()
