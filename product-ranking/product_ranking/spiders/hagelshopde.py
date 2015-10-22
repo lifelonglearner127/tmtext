@@ -31,6 +31,10 @@ class HagelshopProductSpider(BaseProductsSpider):
         meta = response.meta.copy()
         product = meta['product']
 
+        # locale
+        locale = 'de_DE'
+        product['locale'] = locale
+
         # Parse image_url
         image = self.parse_image_url(response)
         cond_set_value(product, 'image_url', image)
@@ -43,13 +47,13 @@ class HagelshopProductSpider(BaseProductsSpider):
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
-        # Parse category
-
         # Parse title
         title = self.parse_title(response)
         cond_set_value(product, 'title', title)
 
         # Parse related products
+        related_products = self.parse_related_products(response)
+        product['related_products'] = related_products
 
         # Parse buyer reviews
         buyer_reviews = self.parse_buyer_review(response)
@@ -71,6 +75,24 @@ class HagelshopProductSpider(BaseProductsSpider):
             return self.send_next_request(reqs, response)
 
         return product
+
+    def parse_related_products(self, response):
+        related_products = []
+        items = response.xpath(
+            '//ul[@class="products-grid"]/li/div[@class="thumbnail"]')
+
+        for item in items:
+            url = is_empty(item.xpath('a/@href').extract())
+            title = is_empty(items.xpath('a/@title').extract())
+
+            if url and title:
+                related_products.append(RelatedProduct(
+                            title=title,
+                            url=url
+                            )
+                    )
+
+        return related_products
 
     def parse_buyer_review(self, response):
         rating_by_star = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
