@@ -52,6 +52,8 @@ class HagelshopProductSpider(BaseProductsSpider):
         # Parse related products
 
         # Parse buyer reviews
+        buyer_reviews = self.parse_buyer_review(response)
+        cond_set_value(product, 'buyer_reviews', buyer_reviews)
 
         # Parse upc
         sku = self.parse_upc(response)
@@ -69,6 +71,45 @@ class HagelshopProductSpider(BaseProductsSpider):
             return self.send_next_request(reqs, response)
 
         return product
+
+    def parse_buyer_review(self, response):
+        rating_by_star = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+        stars = response.xpath(
+            '//div[@id="customer-reviews"]/ol/li/table[@class="ratings-list"]/'
+            'tbody/tr/td/div[@class="rating-box"]/div[@class="rating"]/'
+            '@style').extract()
+
+        points = []
+        for star in stars:
+            point = re.findall(r'(\d+)', star)
+
+            if point[0] == '100':
+                points.append(5)
+            elif point[0] == '80':
+                points.append(4)
+            elif point[0] == '60':
+                points.append(3)
+            elif point[0] == '40':
+                points.append(2)
+            elif point[0] == '20':
+                points.append(1)
+        for point in points:
+            rating_by_star[str(point)] += 1
+
+        average_rating = float(sum(points))/len(points)
+        num_of_reviews = len(points)
+
+        if rating_by_star:
+            buyer_reviews = {
+                    'num_of_reviews': int(num_of_reviews),
+                    'average_rating': float(average_rating),
+                    'rating_by_star': rating_by_star
+            }
+        else:
+            buyer_reviews = self.ZERO_REVIEWS_VALUE
+
+        return BuyerReviews(**buyer_reviews)
+
 
     def parse_upc(self, response):
         sku = is_empty(response.xpath(
