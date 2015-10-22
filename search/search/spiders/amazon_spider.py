@@ -276,6 +276,11 @@ class AmazonSpider(SearchSpider):
             except:
                 pass
 
+            try:
+                item['product_keywords'] = hxs.select("//meta[@name='keywords']/@content").extract()[0]
+            except:
+                pass
+
             # add result to items
             self.results[origin_product_id]['search_requests'][current_query]['product_items'].append(item)
 

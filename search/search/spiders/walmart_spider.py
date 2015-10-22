@@ -119,6 +119,11 @@ class WalmartSpider(SearchProductSpider):
             except:
                 pass
 
+            try:
+                item['product_keywords'] = hxs.select("//meta[@name='keywords']/@content").extract()[0]
+            except:
+                pass
+
         return item
 
 

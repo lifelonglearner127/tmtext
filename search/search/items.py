@@ -11,6 +11,7 @@ class SearchItem(Item):
     product_asin = Field() # product DPCI. Identifier specific to amazon.com
     product_brand = Field() # product brand as extracted from special element in product page
     product_category_tree = Field() # product cateogory tree - list of categories, from top level to lowest level
+    product_keywords = Field() # product keywords (from page source, meta elements)
 
     manufacturer_code = Field() # product code on manufacturer site. e.g.: product code on maplin.co.uk (when maplin is manufacturer), 
                                 # "manufacturer reference" on amazon.co.uk
@@ -25,6 +26,7 @@ class SearchItem(Item):
     origin_brand = Field() # original (source) product brand
     origin_brand_extracted = Field() # source product brand - as extracted from product name: not guaranteed to be correct
     origin_category_tree = Field() # source product cateogory tree - list of categories, from top level to lowest level
+    origin_keywords = Field() # source product keywords (from page source, meta elements)
     
     origin_manufacturer_code = Field() # product code on manufacturer site.
                                        #  e.g.: product code on maplin.co.uk, "manufacturer reference" on amazon.co.uk

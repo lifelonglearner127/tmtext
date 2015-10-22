@@ -784,6 +784,12 @@ class SearchSpider(BaseSpider):
         except:
             product_category_tree = None
 
+        try:
+            keywords = hxs.select("//meta[@name='keywords']/@content").extract()[0]
+        except:
+            keywords = None
+
+
         product = {}
         product['origin_name'] = product_name
         product['origin_model'] = product_model
@@ -791,6 +797,7 @@ class SearchSpider(BaseSpider):
         product['origin_upc'] = upc
         product['origin_brand'] = product_brand
         product['origin_category_tree'] = product_category_tree
+        product['origin_keywords'] = keywords
         return product
 
     def parseURL_wayfair(self, hxs):
@@ -889,6 +896,7 @@ class SearchSpider(BaseSpider):
 
     def parseURL_amazon(self, hxs):
         # works for amazon.com and amazon.co.uk
+        # no implementation for amazon.co.uk for: category tree, keywords
         product_name = product_model = price = None
 
         product_name_node = hxs.select('//h1[@id="title"]/span[@id="productTitle"]/text()').extract()
@@ -957,6 +965,11 @@ class SearchSpider(BaseSpider):
         except Exception, e:
             product_category_tree = None
 
+        try:
+            keywords = hxs.select("//meta[@name='keywords']/@content").extract()[0]
+        except:
+            keywords = None
+
         product = {}
         product['origin_name'] = product_name
         product['origin_model'] = product_model
@@ -965,6 +978,7 @@ class SearchSpider(BaseSpider):
         # product['origin_upc'] = upc
         product['origin_brand'] = brand
         product['origin_category_tree'] = product_category_tree
+        product['origin_keywords'] = keywords
         return product
 
     def parseURL_target(self, hxs):
