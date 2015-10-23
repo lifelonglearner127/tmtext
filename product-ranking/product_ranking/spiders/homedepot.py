@@ -30,7 +30,7 @@ def is_num(s):
 
 
 class HomedepotValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand', 'price']
+    optional_fields = ['brand', 'price', 'model']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
         'google_source_site', 'description', 'special_pricing', 
