@@ -189,8 +189,6 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _ajax_variant_request(self, pp_id, response, variants, variant, variant_num,
                               async=True, null_values=None):
-        url = ('http://www.jcpenney.com/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp'
-               '?_DARGS=/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp')
 
         _props = variant['properties'].copy()
         color = _props.pop('color') if 'color' in _props else None
@@ -205,41 +203,6 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         # check if there are still some keys
         if _props.keys():
             self.log('Error: extra variants found, url %s' % response.url, WARNING)
-        raw_post_str = """
-lotSKUSelectionChange=test
-ppId={pp_id}
-ppType={pp_type}
-selectedLotValue={lot_value}
-selectedSKUAttributeName={attribute_name}
-shipToCountry=US
-skuSelectionMap.COLOR={color}
-skuSelectionMap.CHEST={chest}
-skuSelectionMap.LENGTH={length}
-skuSelectionMap.INSEAM={inseam}
-skuSelectionMap.WAIST={waist}
-skuSelectionMap.NECK_SIZE={neck}
-skuSelectionMap.SIZE={size}
-skuSelectionMap.SLEEVE={sleeve}
-sucessUrl=/jsp/browse/pp/graphical/graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&grView=
-_D:lotSKUSelectionChange=
-_D:ppId=
-_D:ppType=
-_D:selectedLotValue=
-_D:selectedSKUAttributeName=
-_D:shipToCountry=
-_D:skuSelectionMap.COLOR=
-_D:skuSelectionMap.INSEAM=
-_D:skuSelectionMap.WAIST=
-_D:skuSelectionMap.NECK_SIZE=
-_D:skuSelectionMap.SIZE=
-_D:skuSelectionMap.SLEEVE=
-_D:skuSelectionMap.CHEST=
-_D:skuSelectionMap.LENGTH=
-_D:sucessUrl=
-_DARGS=/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp
-_dynSessConf=
-_dync
-"""
 
         _format_args = {}
         _format_args['pp_id'] = pp_id if pp_id else ''
@@ -274,40 +237,44 @@ _dync
         _format_args['neck'] = neck if neck else ''
         _format_args['sleeve'] = sleeve if sleeve else ''
         #_format_args['attribute_name'] = attribute_name if attribute_name else ''
-        _format_args['attribute_name'] = 'Lot'
+        _format_args['attribute_name'] = re.search(r'lotSKUAttributes\[\'(\w+)\']=\'\[(\w+),',
+                        response.body_as_unicode()).group(2)
 
-        raw_post_str = raw_post_str.format(**_format_args)
+        # print re.search(r'lotSKUAttributes\[\'(\w+)\']=\'\[(\w+),',
+        #                 response.body_as_unicode()).group(2)
 
-        post_data = {}
-        _post_str = raw_post_str.strip().split('\n')
-        for line in _post_str:
-            if '=' not in line:
-                continue
-            _arg, _value = line.rsplit('=', 1)
-            post_data[_arg] = _value
+        size_url = ('http://www.jcpenney.com/jsp/browse/pp/graphical/'
+                    'graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&'
+                    'grView=&_dyncharset=UTF-8'
+                    '&selectedSKUAttributeName={attribute_name}&'
+                    '_D%3AselectedSKUAttributeName=+&'
+                    'sucessUrl=%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
+                    '2FgraphicalSKUOptions.jsp%3FfromEditBag%3D%26fromEditFav%3D%26grView%'
+                    '3D&_D%3AsucessUrl=+&ppType=regular&_D%'
+                    '3AppType=+&shipToCountry=US&_D%'
+                    '3AshipToCountry=+&ppId={pp_id}&_D%'
+                    '3AppId=+&selectedLotValue={lot_value}&_D%'
+                    '3AselectedLotValue=+&skuSelectionMap.{attribute_name}='
+                    '&_D%3AskuSelectionMap.SIZE=+&skuSelectionMap.COLOR='
+                    '&_D%3AskuSelectionMap.COLOR=+&_DARGS=%'
+                    '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
+                    '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
 
-        #import requests
-        #result = requests.post(url, data=post_data,
-        #                       headers={'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8', 'X-Requested-With': 'XMLHttpRequest'}).text
+        proxies = {
+            "http": "http://proxyuser:57M8wD06P4K0Z7u@54.173.237.10:3128",
+            }
 
-        headers = {
-            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-            'X-Requested-With': 'XMLHttpRequest'
-        }
         if async:
-            return FormRequest(
-                url,
-                formdata=post_data,
-                method='POST',
-                headers=headers,
+             return Request(
+                size_url,
                 meta={'pp_id': pp_id, 'product': product, 'post_data': _format_args,
                       'variants': variants, 'variant': variant, 'variant_num': variant_num},
                 callback=self._on_variant_response,
-                dont_filter=True
-            )
+             )
         else:
             # perform sync request
-            result = requests.post(url, data=post_data, headers=headers)
+            result = requests.get(size_url, proxies=proxies)
+
             new_variants_structure = extract_ajax_variants(result.text)
             return lot, new_variants_structure
 
@@ -336,6 +303,7 @@ _dync
             if _avail:
                 _avail = {k['option']: k['availability'] == 'true' for k in _avail[0]}
                 if not color in _avail:
+
                     variant['in_stock'] = False
                     return  # not defined; availability unknown
                 variant['in_stock'] = _avail[color]
@@ -370,6 +338,7 @@ _dync
                     self.append_new_dynamic_variants(prod['variants'], _lot, _dynamic_structure)
 
         for var_indx, variant in enumerate(prod['variants']):
+
             if getattr(self, 'scrape_variants_with_extra_requests', None):
                 yield self._ajax_variant_request(
                     product_id, response, prod['variants'], variant, var_indx)
