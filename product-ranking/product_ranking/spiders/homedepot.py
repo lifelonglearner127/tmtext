@@ -30,7 +30,7 @@ def is_num(s):
 
 
 class HomedepotValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand', 'price', 'model']
+    optional_fields = ['brand', 'price']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
         'google_source_site', 'description', 'special_pricing', 
@@ -130,14 +130,16 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
                     price=price[0]
                 )
 
-        cond_set(
-            product,
-            'model',
-            response.xpath(
-                "//h2[@class='internetNo']"
-                "/span[@itemprop='productID']/text()").extract(),
-            conv=str
-        )
+        try:
+            product['model'] = response.css(
+                '.product_details.modelNo ::text'
+            ).extract()[0].replace('Model', '').replace('#', '').strip()
+        except IndexError:
+            pass
+
+        internet_no = response.css('#product_internet_number ::text').extract()
+        if internet_no:
+            internet_no = internet_no[0]
 
         upc = is_empty(re.findall(
             "ItemUPC=\'(\d+)\'", response.body))
@@ -182,6 +184,7 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
             new_meta = response.meta.copy()
             new_meta['product'] = product
             new_meta['handle_httpstatus_list'] = [404]
+            new_meta['internet_no'] = internet_no
             return Request(
                 certona_url,
                 self._parse_certona,
@@ -189,28 +192,28 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
                 priority=1000,
             )
 
-        if product.get("model"):
+        if internet_no:
             return Request(
-                url=self.REVIEWS_URL % (product.get("model"),),
+                url=self.REVIEWS_URL % internet_no,
                 callback=self.parse_buyer_reviews,
                 meta={"product": product},
                 dont_filter=True,
             )
 
-        return self._gen_variants_requests(response, product, skus)
+        return self._gen_variants_requests(response, product, skus, internet_no)
 
-    def _gen_variants_requests(self, response, product, skus):
+    def _gen_variants_requests(self, response, product, skus, internet_no):
         reqs = []
 
         for sku in skus:
             # if sku:
             #     sku = sku[len(sku)-1]
             new_product = product.copy()
-            new_product['model'] = str(sku)
 
             new_meta = response.meta.copy()
             new_meta['product'] = new_product
             new_meta['handle_httpstatus_list'] = [404]
+            new_meta['internet_no'] = internet_no
             url = self.DETAILS_URL % sku
             reqs.append(Request(
                 url,
@@ -255,6 +258,7 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _parse_certona(self, response):
         product = response.meta['product']
+        internet_no = response.meta.get('internet_no', None)
 
         if response.status == 404:
             # No further pages were found.
@@ -296,15 +300,15 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
         skus = response.meta.get('skus', None)
 
         if not skus:
-            if product.get("model"):
+            if internet_no:
                 return Request(
-                    url=self.REVIEWS_URL % (product.get("model"),),
+                    url=self.REVIEWS_URL % internet_no,
                     callback=self.parse_buyer_reviews,
                     meta={"product": product},
                     dont_filter=True,
                 )
             return product
-        return self._gen_variants_requests(response, product, skus)
+        return self._gen_variants_requests(response, product, skus, internet_no)
 
     def _parse_skudetails(self, response):
         product = response.meta['product']
@@ -345,10 +349,10 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
         except (ValueError, KeyError, IndexError):
             self.log("Failed to parse SKU details.", DEBUG)
 
-
-        if product.get("model"):
+        internet_no = product.meta.get('internet_no', None)
+        if internet_no:
             return Request(
-                url=self.REVIEWS_URL % (product.get("model"),),
+                url=self.REVIEWS_URL % internet_no,
                 callback=self.parse_buyer_reviews,
                 meta={"product": product},
                 dont_filter=True,
