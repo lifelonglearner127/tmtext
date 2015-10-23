@@ -181,9 +181,36 @@ class JetProductsSpider(BaseProductsSpider):
         cond_set(
             product, "title", response.xpath(
                 "//div[contains(@class, 'content')]"
-                "/div[contains(@class, 'title')]"
+                "//div[contains(@class, 'title')]"
             ).extract()
         )
+
+        sample = response.xpath('//script[contains(text(), "jet.__variants")]')\
+            .extract()
+
+        size_list = []
+        sku_list = []
+        variants_list = []
+
+        data_line = re.search(r'jet.__variants = (.*)', sample[0]).group(1)
+        size_list += re.findall(r'"Size":"(.*?)"', data_line)
+        sku_list += re.findall(r'"sku":"(.*?)"', data_line)
+
+        for index, i in enumerate(size_list):
+            test_list = {}
+            properties = {}
+
+            properties['size'] = i.split(",")[0]
+
+            line = i.split(",")[1]
+            properties['count'] = re.search(r'(\d+)', line).group(0)
+
+            properties['sku'] = sku_list[index]
+            test_list['properties'] = properties
+
+            variants_list.append(test_list)
+
+        product['variants'] = variants_list
 
         response.meta['model'] = is_empty(
             response.xpath("//div[contains(@class, 'products')]"
@@ -220,6 +247,10 @@ class JetProductsSpider(BaseProductsSpider):
                 "/div[contains(@class, 'half')]"
             ).extract()
         )
+
+        upc = re.search('"upc":"(\d+)"', response.body)
+        if upc:
+            product['upc'] = upc.group(1)
 
         product["locale"] = "en_US"
 
