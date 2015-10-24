@@ -151,6 +151,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         ).extract()
         prod = response.meta['product']
 
+        if 'sorry, that item is no longer available' \
+                in response.body_as_unicode().lower():
+            prod['not_found'] = True
+            return prod
+
         tv = TargetVariants()
         tv.setupSC(response)
         prod['variants'] = tv._variants()
