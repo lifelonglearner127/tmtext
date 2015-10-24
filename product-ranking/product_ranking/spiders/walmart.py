@@ -252,16 +252,20 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         return reqs
 
     def parse_product(self, response):
+        product = response.meta.get("product")
+
+        if "we can't find the product you are looking for" \
+                in response.body_as_unicode().lower():
+            product['not_found'] = True
+            return product
+
         if response.status in self.default_hhl:
-            product = response.meta.get("product")
             product.update({"locale":'en-US'})
             return product
         if self._search_page_error(response):
             self.log(
                 "Got 404 when coming from %r." % response.request.url, ERROR)
             return
-
-        product = response.meta['product']
 
         not_available = self.parse_available(response)
         cond_set_value(product, 'no_longer_available', not_available)
