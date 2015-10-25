@@ -146,16 +146,24 @@ class ProcessText():
     # return most similar product from a list to a target product (by their names)
     # if none is similar enough, return None
     # arguments:
-    #            product_name - name of target product
-    #            product_model - model number of target product, if available (as extracted from somewhere on the page other than its name)
-    #            products2 - list of product items for products to search through
-    #            param - threshold for accepting a product name as similar or not (float between 0-1)
+    #            candidates - list of product items for products to search through, SearchItem objects
+    #            param - threshold for accepting a product as similar or not (float between 0-1)
     
     @staticmethod
-    def similar(product_name, product_model, product_price, product_upc, product1_mancode, product_brand, products2, param):
+    def similar(candidates, param):
         result = None
         products_found = []
-        for product2 in products2:
+        for product2 in candidates:
+
+            # origin product features
+            product_name = product2['origin_name']
+            product_model = product2['origin_model']
+            product_price = product2['product_origin_price']
+            product_upc = product2['origin_upc']
+            product1_mancode = product2['origin_manufacturer_code']
+            product_brand = product2['origin_brand']
+
+
 
             words1 = ProcessText.normalize(product_name)
             words2 = ProcessText.normalize(product2['product_name'])

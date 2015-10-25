@@ -56,9 +56,9 @@ class DebenhamsProductSpider(BaseProductsSpider):
         department = self._parse_department(response)
         cond_set_value(product, 'department', department)
 
-        # Parse category
-        category = self._parse_category(response)
-        cond_set_value(product, 'category', category)
+        # Parse categories
+        categories = self._parse_categories(response)
+        cond_set_value(product, 'categories', categories)
 
         # Parse price
         price = self._parse_price(response)
@@ -127,20 +127,13 @@ class DebenhamsProductSpider(BaseProductsSpider):
 
         return department
 
-    def _parse_category(self, response):
-        category = is_empty(
-            response.xpath('//meta[@property="category"]/@content').extract(),
-            ''
-        )
-        subcategory = is_empty(
-            response.xpath('//meta[@property="subcategory"]/@content').extract(),
-            ''
-        )
-
-        if subcategory and category:
-            return [category, subcategory]
-
-        return category
+    def _parse_categories(self, response):
+        categories = []
+        categories_sel = response.xpath(
+                '//div[@class="breadcrumb_links"]/div/span/a/text()').extract()
+        for cat in categories_sel:
+            categories.append(cat.strip())
+        return categories
 
     def _parse_price(self, response):
         currency = is_empty(
@@ -209,12 +202,7 @@ class DebenhamsProductSpider(BaseProductsSpider):
         )
 
         if upc:
-            upc = is_empty(
-                re.findall(
-                    r'(\d{12})+',
-                    upc
-                )
-            )
+            upc = upc.split('_')[0]
 
         return upc
 
@@ -343,19 +331,10 @@ class DebenhamsProductSpider(BaseProductsSpider):
         """
         total_matches = is_empty(
             response.xpath(
-                '//*[@id="products_found"]/span/text()'
+                '//span[@class="products_count"]/text()'
             ).extract(), 0
         )
-        if not total_matches:
-            total_matches = is_empty(
-            response.css('.products_count ::text').extract(), 0
-        )
-        total_matches = is_empty(
-            re.findall(
-                r'(\d+) products found',
-                total_matches
-            )
-        )
+
         if total_matches:
             return int(total_matches)
         else:

@@ -2,7 +2,7 @@ import json
 from time import time, mktime
 from redis import StrictRedis
 from zlib import compress, decompress
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from os.path import realpath, dirname
 
 try:
@@ -28,6 +28,7 @@ class SqsCache(object):
     REDIS_CACHE_STATS_TERM = 'cached_count_term'  # zset
     REDIS_COMPLETED_TASKS = 'completed_tasks'  # zset, count completed tasks
     REDIS_INSTANCES_COUNTER = 'daily_sqs_instances_counter'  # int
+    REDIS_INSTANCES_HISTORY = 'sqs_instances_history'  # zset
     REDIS_URGENT_STATS = 'urgent_stats'  # zset
     REDIS_FAILED_TASKS = 'failed_tasks'  # set, store failed tasks here
     MAX_FAILED_TRIES = 3
@@ -88,19 +89,6 @@ class SqsCache(object):
             d[4] -= d[4] % 15
         return int(mktime(d))
 
-    def _check_task_failed(self, task, max_failed_attempts):
-        """
-        function returns True, if task with given parameters stored in failed
-        tasks set contains value equal to `max_failed_attempts` or more
-        """
-        task_id = task.get('task_id')
-        task_server = task.get('server_name')
-        if not task_server or not task_id:
-            return False
-        task_key = '%s_%s' % (task_server, task_id)
-        val = int(self.db.hget(self.REDIS_FAILED_TASKS, task_key) or '0')
-        return val >= max_failed_attempts
-
     def get_result(self, task_str, queue):
         """
         retrieve cached result
@@ -160,8 +148,8 @@ class SqsCache(object):
         if not task_id or not task_server:  # not enough of data
             return None
         task_key = '%s_%s' % (task_server, task_id)
-        self.db.hincrby(self.REDIS_FAILED_TASKS, task_key, 1)
-        return self._check_task_failed(task, self.MAX_FAILED_TRIES)
+        new_val = self.db.hincrby(self.REDIS_FAILED_TASKS, task_key, 1)
+        return new_val >= self.MAX_FAILED_TRIES
 
     def get_all_failed_results(self):
         return self.db.hgetall(self.REDIS_FAILED_TASKS)
@@ -337,3 +325,17 @@ class SqsCache(object):
 
     def del_redis_keys(self, *keys):
         self.db.delete(*keys)
+
+    def save_today_instances_count(self):
+        cnt = int(self.db.get(self.REDIS_INSTANCES_COUNTER) or '0')
+        today = int(mktime(date.today().timetuple()))  # get today's timestamp
+        # score is current day timestamp, name is instances count
+        return self.db.zadd(self.REDIS_INSTANCES_HISTORY, today, cnt)
+
+    def get_instances_history(self, days):
+        date_offset = date.today() - timedelta(days=days)
+        offset = int(mktime(date_offset.timetuple()))
+        data = self.db.zrevrangebyscore(self.REDIS_INSTANCES_HISTORY,
+                                        9999999999, offset,
+                                        withscores=True, score_cast_func=int)
+        return dict([reversed(d) for d in data])

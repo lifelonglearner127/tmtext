@@ -631,6 +631,9 @@ class BaseValidator(object):
     def _validate_no_longer_available(self, val):
         return val in (True, False, None, '')
 
+    def _validate_not_found(self, val):
+        return val in (True, False, None, '')
+
     def _validate_shelf_name(self, val):
         return True  # TODO: update
 

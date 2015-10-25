@@ -1,6 +1,7 @@
 import os
 import sys
 import datetime
+import json
 from collections import OrderedDict
 from flask import Flask, request, flash
 from flask import render_template, make_response
@@ -172,6 +173,16 @@ def stats():
         return str(e)
 
 
+@app.route('/autoscale_history', methods=['GET', 'POST'])
+def autoscale_history():
+    if request.method == 'GET':
+        return render_template('autoscale_history.html')
+    days = int(request.form.get('days', '0'))
+    data = cache.get_instances_history(days)
+    resp = make_response(json.dumps(data))
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
+
 # ###################################
 # ####### CACHE METHODS START #######
 # ###################################
@@ -231,5 +242,5 @@ def fail_task():
 
 if __name__ == '__main__':
     app.secret_key = '$%6^78967804^46#$%^$fdG'
-    app.debug = True
+    app.debug = False
     app.run()

@@ -23,27 +23,23 @@ class SearchProductSpider(SearchSpider):
 
     def parseResults(self, response):
 
-        #site = response.meta['origin_site']
-        origin_name = response.meta['origin_name']
-        origin_model = response.meta['origin_model']
+        origin_product_id = response.meta['origin_product_id']
+        current_query = response.meta['query']
 
-        # if this comes from a previous request, get last request's items and add to them the results
+        origin_name = self.results[origin_product_id]['origin_product']['origin_name']
+        origin_url = self.results[origin_product_id]['origin_product']['origin_url']
 
-        if 'items' in response.meta:
-            items = response.meta['items']
-        else:
-            items = set()
-
-        # add product URLs to be parsed to this list
-        if 'search_results' not in response.meta:
-            product_urls = set()
-        else:
-            product_urls = response.meta['search_results']
-
+        # all product urls from all queries
+        items = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['product_items'], \
+            self.results[origin_product_id]['search_requests']), [])
+        # all product urls from all queries
+        product_urls = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['search_results'], \
+            self.results[origin_product_id]['search_requests']), [])
+        product_urls = set(product_urls)
 
         results = self.extract_results(response)
         for result in results:
-            product_urls.add(result)
+            self.results[origin_product_id]['search_requests'][current_query]['search_results'].append(result)
  
         # extract product info from product pages (send request to parse first URL in list)
         # add as meta all that was received as meta, will pass it on to reduceResults function in the end
@@ -54,11 +50,9 @@ class SearchProductSpider(SearchSpider):
         # otherwise send them back to parseResults and wait for the next query, save all product URLs in search_results
         # this way we avoid duplicates
         if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
-            request = Request(product_urls.pop(), callback = self.parse_product, meta = response.meta)
-            request.meta['items'] = items
-
-            # this will be the new product_urls list with the first item popped
-            request.meta['search_results'] = product_urls
+            next_product_url = product_urls.pop() 
+            request = Request(next_product_url, callback = self.parse_product, meta = response.meta)
+            self.remove_result_from_queue(origin_product_id, next_product_url)
 
             return request
 
@@ -67,9 +61,8 @@ class SearchProductSpider(SearchSpider):
         # add to the response the URLs of the products to crawl we have so far, items (handles case when it was not created yet)
         # and field 'parsed' to indicate that the call was received from this method (was not the initial one)
         else:
-            response.meta['items'] = items
             response.meta['parsed'] = True
-            response.meta['search_results'] = product_urls
+
             # only send the response we have as an argument, no need to make a new request
 
             # print "RETURNING TO REDUCE RESULTS", response.meta['origin_url']
@@ -101,32 +94,29 @@ class SearchProductSpider(SearchSpider):
             self.log("Retrying: redirecting mobile page to www page", level=log.WARNING)
             return Request(url, callback=self.parse_product, meta=meta)
 
-        items = response.meta['items']
-
-        #site = response.meta['origin_site']
-        origin_url = response.meta['origin_url']
+        origin_product_id = response.meta['origin_product_id']
+        current_query = response.meta['query']
+        origin_url = self.results[origin_product_id]['origin_product']['origin_url']
 
         item = SearchItem()
         item['product_url'] = response.url
-        #item['origin_site'] = site
-        item['origin_url'] = origin_url
-        item['origin_name'] = response.meta['origin_name']
+        for field in self.results[origin_product_id]['origin_product'].keys():
+            item[field] = self.results[origin_product_id]['origin_product'][field]
+        
 
-        if 'origin_model' in response.meta:
-            item['origin_model'] = response.meta['origin_model']
-        if 'origin_upc' in response.meta:
-            item['origin_upc'] = response.meta['origin_upc']
-        if 'origin_brand' in response.meta:
-            item['origin_brand'] = response.meta['origin_brand']
+        # all product urls from all queries
+        items = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['product_items'], \
+            self.results[origin_product_id]['search_requests']), [])
+        # all product urls from all queries
+        product_urls = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['search_results'], \
+            self.results[origin_product_id]['search_requests']), [])
+        product_urls = set(product_urls)
 
         item = self.extract_product_data(response, item)
 
         # add result to items (if it was successful)
         if item:
-            items.add(item)
-
-
-        product_urls = response.meta['search_results']
+            self.results[origin_product_id]['search_requests'][current_query]['product_items'].append(item)
 
         # try to send request to parse next product, try until url for next product url is valid (response not 404)
         # this is needed because if next product url is not valid, this request will not be sent and all info about this match (stored in request meta) will be lost
@@ -136,13 +126,11 @@ class SearchProductSpider(SearchSpider):
         if product_urls:
             next_product_url = product_urls.pop()
 
-
         # if a next product url was found, send new request back to parse_product_url
         if next_product_url:
             request = Request(next_product_url, callback = self.parse_product, meta = response.meta)
-            request.meta['items'] = items
             # eliminate next product from pending list (this will be the new list with the first item popped)
-            request.meta['search_results'] = product_urls
+            self.remove_result_from_queue(origin_product_id, next_product_url)
 
             return request
 
@@ -154,7 +142,6 @@ class SearchProductSpider(SearchSpider):
             # (actually that the call was made from this method and was not the initial one, so it has to move on to the next request)
 
             response.meta['parsed'] = True
-            response.meta['items'] = items
 
             return self.reduceResults(response)
 
@@ -172,5 +159,3 @@ class SearchProductSpider(SearchSpider):
         (name, brand, price, model, upc etc)
         '''
         return item
-
-
