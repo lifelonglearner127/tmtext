@@ -217,7 +217,10 @@ class JetProductsSpider(BaseProductsSpider):
 
             properties['size'] = i.split(",")[0]
 
-            line = i.split(",")[1]
+            try:
+                line = i.split(",")[1]
+            except IndexError:
+                continue
             properties['count'] = re.search(r'(\d+)', line).group(0)
 
             properties['sku'] = sku_list[index]
