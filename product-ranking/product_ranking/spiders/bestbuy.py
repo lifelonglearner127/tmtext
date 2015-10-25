@@ -20,6 +20,13 @@ class BestBuyProductSpider(ProductsSpider):
         super(BestBuyProductSpider, self).__init__(*args, **kwargs)
         self.url_formatter.defaults['page'] = 1
 
+    def parse_product(self, response):
+        product = response.meta['product']
+        if 'this item is no longer available' in response.body_as_unicode().lower():
+            product['not_found'] = True
+            return product
+        return super(BestBuyProductSpider, self).parse_product(response)
+
     def _scrape_total_matches(self, response):
         matches = response.css('.ui-state-active [data-facet-value=All]::text')
         if not matches:
