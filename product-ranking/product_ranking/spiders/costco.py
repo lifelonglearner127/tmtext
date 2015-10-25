@@ -93,7 +93,11 @@ class CostcoProductsSpider(BaseProductsSpider):
                 return int(count)
             return 0
         except IndexError:
-            return 0
+            count = response.xpath(
+                '//*[@id="secondary_content_wrapper"]'
+                '//span[contains(text(), "Showing results")]/text()'
+            ).extract()
+            return int(count[0].split(' of ')[1].replace('.', '').strip())
 
     def _scrape_product_links(self, response):
         links = response.xpath(
