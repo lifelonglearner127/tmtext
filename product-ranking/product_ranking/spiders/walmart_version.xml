@@ -42,4 +42,5 @@
     <field name="response_code" version="1.0"></field>
     <field name="sku" version="1.0"></field>
     <field name="no_longer_available" version="1.0"></field>
+    <field name="not_found" version="1.0"></field>
 </fields>

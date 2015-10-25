@@ -173,10 +173,25 @@ class JetProductsSpider(BaseProductsSpider):
             for req in super(JetProductsSpider, self).start_requests():
                 yield req
 
+    def redirected_from_product_to_main_page(self, response):
+        """ Returns True if the spider was redirected from a product page
+             to the main website page (//jet.com).
+            Means "not_found" product. """
+        history = response.meta.get('redirect_urls', None)
+        if history:
+            current_url = response.url.replace('/', '').replace('https:', '')\
+                .replace('http:', '').replace('www.', '')
+            if current_url == 'jet.com':
+                return True
+
     def parse_product(self, response):
         meta = response.meta.copy()
         product = meta['product']
         reqs = []
+
+        if self.redirected_from_product_to_main_page(response):
+            product['not_found'] = True
+            return product
 
         cond_set(
             product, "title", response.xpath(
@@ -202,7 +217,10 @@ class JetProductsSpider(BaseProductsSpider):
 
             properties['size'] = i.split(",")[0]
 
-            line = i.split(",")[1]
+            try:
+                line = i.split(",")[1]
+            except IndexError:
+                continue
             properties['count'] = re.search(r'(\d+)', line).group(0)
 
             properties['sku'] = sku_list[index]
