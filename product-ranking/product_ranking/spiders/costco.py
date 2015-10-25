@@ -26,6 +26,10 @@ class CostcoProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         prod = response.meta['product']
 
+        if response.xpath('//h1[text()="Product Not Found"]'):
+            prod['not_found'] = True
+            return prod
+
         model = response.xpath('//div[@id="product-tab1"]//text()').re(
             'Model[\W\w\s]*')
         if len(model) > 0:
