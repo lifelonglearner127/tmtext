@@ -1,5 +1,7 @@
 import logging
 from math import ceil
+import random
+
 import boto.sqs
 from boto.ec2.autoscale import AutoScaleConnection
 
@@ -23,9 +25,9 @@ def get_sqs_tasks_count():
     return tasks_count
 
 
-def scale_instances(tasks_per_instance):
+def scale_instances(tasks_per_instance, groups_names=('SCCluster1', 'SCCluster2', 'SCCluster3')):
     conn = AutoScaleConnection()
-    group = conn.get_all_groups(names=['SCCluster1'])[0]
+    group = conn.get_all_groups(names=[random.choice(groups_names)])[0]
 
     if group.desired_capacity == group.max_size:
         logger.info('Maximum number of instances reached')
@@ -36,7 +38,7 @@ def scale_instances(tasks_per_instance):
         return
     logger.info('Num of tasks in queues %s', tasks_count)
     tasks_per_instance = float(tasks_per_instance)
-    additional_instances_count = int(ceil(tasks_count/tasks_per_instance))
+    additional_instances_count = int(ceil(tasks_count/tasks_per_instance) / len(groups_names))
     updated_instances_count = \
         group.desired_capacity + additional_instances_count
     # consider max allowed instances
