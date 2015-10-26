@@ -165,9 +165,13 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     @staticmethod
     def append_new_dynamic_variants(variants, current_lot, new_structure):
         all_pairs = []
+        in_stock = []
         for option_name, vals in new_structure.items():
             for val in vals:
-                new_pair = [option_name, val]
+                if [option_name][0] != 'in_stock':
+                    new_pair = [option_name, val]
+                else:
+                    in_stock.append([option_name, val])
                 if not new_pair in all_pairs:
                     all_pairs.append(new_pair)
         groupped_results = [
@@ -176,14 +180,17 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         combined_results = list(itertools.product(*groupped_results))
         all_properties = []
         for combined_result in combined_results:
-            print combined_result
+
             new_pair = {}.copy()
             for prop_name, prop_value in combined_result:
                 new_pair[prop_name.lower()] = prop_value
             if not new_pair in all_properties:
                 all_properties.append(new_pair)
         for prop in all_properties:
-            new_variant = {'lot': current_lot, 'price': 'todo', 'in_stock': None,
+            for k, v in in_stock[0][1].iteritems():
+                if k in prop.values():
+                    stock = v
+            new_variant = {'lot': current_lot, 'price': 'todo', 'in_stock': True if 'true' in stock else False,
                            'selected': False, 'properties': prop}.copy()
             if not new_variant in variants:
                 variants.append(new_variant)
@@ -220,7 +227,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                 _format_args[null_value] = ''
 
         product = response.meta['product']
-        attribute_name = re.search(r'lotSKUAttributes\[\'(\w+)\']=\'\[(\w+),',
+        attribute_name = re.findall(r'lotSKUAttributes\[\'.*\']=\'\[(\w+)',
                                    response.body_as_unicode())
 
         # get attribute name
@@ -239,7 +246,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         _format_args['color'] = ''
         _format_args['neck'] = neck if neck else ''
         _format_args['sleeve'] = sleeve if sleeve else ''
-        _format_args['attribute_name'] = attribute_name.group(2)\
+        _format_args['attribute_name'] = attribute_name[0] \
             if attribute_name else 'Lot'
 
         size_url = ('http://www.jcpenney.com/jsp/browse/pp/graphical/'

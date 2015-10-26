@@ -15,20 +15,18 @@ def extract_ajax_variants(html_content):
     :return:
     """
     new_options = {}
+    availability = {}
     js = json.loads(html_content)
     for ops in js['skuOptions']:
         option_name = ops['key']
         for key in ops['options']:
-            if key.get('availability') == "true":
-                availability = True
-            else:
-                availability = False
+            availability[key.get('option')] = key.get('availability')
             option_value = key.get('option')
             if option_name not in new_options:
                 new_options[option_name] = []
-                # new_options['in_stock'] = []
+                new_options['in_stock'] = []
             new_options[option_name].append(option_value)
-            # new_options['in_stock'].append(availability)
+            new_options['in_stock'].append(availability)
 
     return new_options
 
