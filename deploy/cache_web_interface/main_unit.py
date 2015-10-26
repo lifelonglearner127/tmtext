@@ -183,6 +183,7 @@ def autoscale_history():
     resp.headers['Content-Type'] = 'application/json'
     return resp
 
+
 # ###################################
 # ####### CACHE METHODS START #######
 # ###################################
