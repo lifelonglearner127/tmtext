@@ -1,0 +1,22 @@
+<!doctype html>
+<title>Matches</title>
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+<div class=page>
+  <h2>Do they match?</h2>
+  
+<table>
+  <tr>
+  <td>{{matches[0]}}</td><td>{{matches[1]}}</td>
+  <tr>
+  <td><iframe width="750" height="500" src="http://localhost:5000/page/{{matches[0]}}"></iframe></td>
+  <td><iframe width="750" height="500" src="http://localhost:5000/page/{{matches[1]}}"></iframe></td>
+  </tr>
+  </tr>
+<table>
+
+<a href="http://localhost:5000/workbench"> Next >>> </a>
+  {% for message in get_flashed_messages() %}
+    <div class=flash>{{ message }}</div>
+  {% endfor %}
+  {% block body %}{% endblock %}
+</div>
