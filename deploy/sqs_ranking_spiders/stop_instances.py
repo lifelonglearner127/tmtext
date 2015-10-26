@@ -74,9 +74,11 @@ def get_all_group_instances_and_conn(groups_names=('SCCluster1', 'SCCluster2', '
     global autoscale_conn
     autoscale_conn = conn
     ec2 = boto.ec2.connect_to_region('us-east-1')
-    group = conn.get_all_groups(names=[random.choice(groups_names)])[0]
+    selected_group_name = random.choice(groups_names)
+    logger.info('Selected autoscale group: %s' % selected_group_name)
+    group = conn.get_all_groups(names=[selected_group_name])[0]
     if not group.instances:
-        logger.info("No working instances in the currently selected group")
+        logger.info("No working instances in selected group %s" % selected_group_name)
         upload_logs_to_s3()
         sys.exit()
     instance_ids = [i.instance_id for i in group.instances]
