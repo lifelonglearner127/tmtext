@@ -26,9 +26,9 @@ def extract_ajax_variants(html_content):
             option_value = key.get('option')
             if option_name not in new_options:
                 new_options[option_name] = []
-                new_options['in_stock'] = []
+                # new_options['in_stock'] = []
             new_options[option_name].append(option_value)
-            new_options['in_stock'].append(availability)
+            # new_options['in_stock'].append(availability)
 
     return new_options
 

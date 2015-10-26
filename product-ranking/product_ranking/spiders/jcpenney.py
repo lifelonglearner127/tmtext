@@ -176,6 +176,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         combined_results = list(itertools.product(*groupped_results))
         all_properties = []
         for combined_result in combined_results:
+            print combined_result
             new_pair = {}.copy()
             for prop_name, prop_value in combined_result:
                 new_pair[prop_name.lower()] = prop_value
@@ -219,6 +220,9 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                 _format_args[null_value] = ''
 
         product = response.meta['product']
+        attribute_name = re.search(r'lotSKUAttributes\[\'(\w+)\']=\'\[(\w+),',
+                                   response.body_as_unicode())
+
         # get attribute name
         """
         attribute_name = None
@@ -232,16 +236,11 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             attribute_name = 'Lot'
         """
         # TODO: moar `attribute_name` values!
-        #_format_args['color'] = color if color else ''
         _format_args['color'] = ''
         _format_args['neck'] = neck if neck else ''
         _format_args['sleeve'] = sleeve if sleeve else ''
-        #_format_args['attribute_name'] = attribute_name if attribute_name else ''
-        _format_args['attribute_name'] = re.search(r'lotSKUAttributes\[\'(\w+)\']=\'\[(\w+),',
-                        response.body_as_unicode()).group(2)
-
-        # print re.search(r'lotSKUAttributes\[\'(\w+)\']=\'\[(\w+),',
-        #                 response.body_as_unicode()).group(2)
+        _format_args['attribute_name'] = attribute_name.group(2)\
+            if attribute_name else 'Lot'
 
         size_url = ('http://www.jcpenney.com/jsp/browse/pp/graphical/'
                     'graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&'
@@ -255,11 +254,10 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '3AshipToCountry=+&ppId={pp_id}&_D%'
                     '3AppId=+&selectedLotValue={lot_value}&_D%'
                     '3AselectedLotValue=+&skuSelectionMap.{attribute_name}='
-                    '&_D%3AskuSelectionMap.SIZE=+&skuSelectionMap.COLOR='
+                    '&_D%3AskuSelectionMap.{attribute_name}=+&skuSelectionMap.COLOR='
                     '&_D%3AskuSelectionMap.COLOR=+&_DARGS=%'
                     '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
                     '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
-
 
         if async:
              return Request(
@@ -277,13 +275,9 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
 
     def _on_variant_response(self, response):
-        pp_id = response.meta['pp_id']
         variant = response.meta['variant']
-        variants = response.meta['variants']
-        variant_num = response.meta['variant_num']
         product = response.meta['product']
         result = response.body
-        post_data = response.meta['post_data']
         color = variant['properties'].get('color', None)
         if 'function()' in result:
             variant['in_stock'] = None
