@@ -233,6 +233,7 @@ class SiteProductItem(Item):
     _statistics = Field()  # for server and spider stats (RAM, CPU, disk etc.)
 
     no_longer_available = Field()  # no longer available, for Walmart
+    not_found = Field()  # product not found (sometimes that's just 404 server error)
 
     shelf_name = Field()  # see https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c8
     shelf_path = Field()

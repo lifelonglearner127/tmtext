@@ -37,8 +37,8 @@ class TargetVariants(object):
             possible_variant_urls = self._scrape_possible_variant_urls()
             possible_variant_ids = [self._get_variant_id_from_image_url(url) for url in possible_variant_urls]
 
-            if self.tree_html.xpath("//script[@type='text/blzscript' and contains(text(), 'Target.globals.refreshItems =')]/text()"):
-                stockstatus_for_variation_combinations = self.tree_html.xpath("//script[@type='text/blzscript' and contains(text(), 'Target.globals.refreshItems =')]/text()")[0]
+            if self.tree_html.xpath("//script[contains(text(), 'Target.globals.refreshItems =')]/text()"):
+                stockstatus_for_variation_combinations = self.tree_html.xpath("//script[contains(text(), 'Target.globals.refreshItems =')]/text()")[0]
                 start_index = stockstatus_for_variation_combinations.find("Target.globals.refreshItems =") + len("Target.globals.refreshItems =")
                 stockstatus_for_variation_combinations = stockstatus_for_variation_combinations[start_index:]
                 stockstatus_for_variation_combinations = json.loads(stockstatus_for_variation_combinations)

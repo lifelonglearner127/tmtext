@@ -36,4 +36,5 @@
     <field name="date_of_last_question" version="1.1"></field>
     <field name="recent_questions" version="1.1"></field>
     <field name="special_pricing" version="1.1"></field>
+    <field name="not_found" version="1.0"></field>
 </fields>

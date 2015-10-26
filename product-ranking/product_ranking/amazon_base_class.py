@@ -59,6 +59,8 @@ class AmazonBaseClass(BaseProductsSpider):
     REVIEW_URL_2 = 'http://{domain}/product-reviews/{product_id}/' \
                    'ref=acr_dpx_see_all?ie=UTF8&showViewpoints=1'
 
+    handle_httpstatus_list = [404]
+
     def __init__(self, captcha_retries='10', *args, **kwargs):
         super(AmazonBaseClass, self).__init__(
             site_name=self.allowed_domains[0],
@@ -266,6 +268,16 @@ class AmazonBaseClass(BaseProductsSpider):
         meta = response.meta.copy()
         product = meta['product']
         reqs = []
+
+        if response.status == 404:
+            product['response_code'] = 404
+            product['not_found'] = True
+            return product
+
+        if 'the Web address you entered is not a functioning page on our site' \
+                in response.body_as_unicode().lower():
+            product['not_found'] = True
+            return product
 
         if self._has_captcha(response):
             return self._handle_captcha(
