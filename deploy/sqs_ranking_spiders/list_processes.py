@@ -29,7 +29,7 @@ def get_all_group_instances_and_conn():
     global autoscale_conn
     autoscale_conn = conn
     ec2 = boto.ec2.connect_to_region('us-east-1')
-    group = conn.get_all_groups(names=['SCCluster1'])[0]
+    group = conn.get_all_groups(names=['SCCluster1'])[0]  # TODO: add more groups - gather data for all of them?
     if not group.instances:
         sys.exit()
     instance_ids = [i.instance_id for i in group.instances]
@@ -55,4 +55,5 @@ def main():
         print ' '*4, processes
 
 if __name__ == '__main__':
+    assert False, 'this script is no longer working, see TODO'
     main()
