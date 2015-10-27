@@ -29,7 +29,14 @@
 <div>
     <h3>Sqs stats</h3>
     <ul>
-        <li>Working instances: {{ running_instances }}</li>
+        <li>
+            Working instances:  {{ running_instances }}
+            <ul>
+                {% for k, v in running_instances_info.items() %}
+                    <li>{{ k }} - {{ v }}</li>
+                {% endfor %}
+            </ul>
+        </li>
         <li>Today started instances: {{ today_instances }}</li>
         <li>Today executed tasks: {{ today_executed_tasks }}</li>
         <li>Last hour executed tasks: {{ last_hour_executed_tasks }}</li>

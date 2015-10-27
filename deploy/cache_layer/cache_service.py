@@ -329,7 +329,8 @@ class SqsCache(object):
     def save_today_instances_count(self, instances_num=None):
         cnt = instances_num or self.db.get(self.REDIS_INSTANCES_COUNTER)
         cnt = int(cnt or '0')
-        today = int(mktime(date.today().timetuple()))  # get today's timestamp
+        today = date.today() - timedelta(days=1)
+        today = int(mktime(today.timetuple()))  # get today's timestamp
         # score is current day timestamp, name is instances count
         return self.db.zadd(self.REDIS_INSTANCES_HISTORY, today, cnt)
 
