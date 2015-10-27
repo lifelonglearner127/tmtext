@@ -1,7 +1,6 @@
 import re
 import urlparse
 
-import scrapy
 from scrapy.http import Request
 
 from product_ranking.items import SiteProductItem
@@ -13,8 +12,6 @@ is_empty = lambda x: x[0] if x else None
 class JCPenneyShelfPagesSpider(JcpenneyProductsSpider):
     name = 'jcpenney_shelf_urls_products'
     allowed_domains = ['jcpenney.com', 'www.jcpenney.com']
-
-    current_page = 1
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
@@ -29,17 +26,16 @@ class JCPenneyShelfPagesSpider(JcpenneyProductsSpider):
         return {'remaining': 99999, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
+        super(JCPenneyShelfPagesSpider, self).__init__(*args, **kwargs)
         self._setup_class_compatibility()
         self.product_url = kwargs['product_url']
-
         if "num_pages" in kwargs:
             self.num_pages = int(kwargs['num_pages'])
         else:
-            self.num_pages = 1  # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
-
+            self.num_pages = 1
         self.user_agent = "Mozilla/5.0 (X11; Linux i686 (x86_64))" \
-            " AppleWebKit/537.36 (KHTML, like Gecko)" \
-            " Chrome/37.0.2062.120 Safari/537.36"
+                          " AppleWebKit/537.36 (KHTML, like Gecko)" \
+                          " Chrome/37.0.2062.120 Safari/537.36"
 
     @staticmethod
     def valid_url(url):
@@ -59,9 +55,12 @@ class JCPenneyShelfPagesSpider(JcpenneyProductsSpider):
         urls = [urlparse.urljoin(response.url, x) if x.startswith('/') else x
                 for x in urls]
 
-        sample = response.xpath('//div[@id="breadcrumb"]/ul/li//text()').extract()
+        sample = response.xpath('//div[@id="breadcrumb"]/'
+                                'ul/li//text()').extract()
         shelf_categories = [i.strip() for i in sample if i.strip() and i != '>']
         shelf_category = shelf_categories[-1] if shelf_categories else None
+
+        urls = ["".join(i.replace('http://www.jcpenney.com', '')) for i in urls]
 
         for url in urls:
             item = SiteProductItem()
@@ -69,13 +68,14 @@ class JCPenneyShelfPagesSpider(JcpenneyProductsSpider):
                 item['shelf_name'] = shelf_categories
             if shelf_category:
                 item['shelf_path'] = shelf_category
-            yield 'http://www.jcpenney.com' + url, item
+            yield url, item
 
     def _scrape_next_results_page_link(self, response):
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1
-        return super(JCPenneyShelfPagesSpider, self)._scrape_next_results_page_link(response)
+        return super(JCPenneyShelfPagesSpider,
+                     self)._scrape_next_results_page_link(response)
 
     def parse_product(self, response):
         product = response.meta['product']
