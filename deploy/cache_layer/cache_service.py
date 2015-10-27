@@ -332,7 +332,8 @@ class SqsCache(object):
         today = date.today() - timedelta(days=1)
         today = int(mktime(today.timetuple()))  # get today's timestamp
         # score is current day timestamp, name is instances count
-        return self.db.zadd(self.REDIS_INSTANCES_HISTORY, today, cnt)
+        return self.db.zadd(self.REDIS_INSTANCES_HISTORY, today,
+                            '%s:%s' % (today, cnt))
 
     def get_instances_history(self, days):
         date_offset = date.today() - timedelta(days=days+1)
@@ -340,4 +341,5 @@ class SqsCache(object):
         data = self.db.zrevrangebyscore(self.REDIS_INSTANCES_HISTORY,
                                         9999999999, offset,
                                         withscores=True, score_cast_func=int)
-        return dict([reversed(d) for d in data])
+        res = {d[1]: d[0].split(':')[-1] for d in data}
+        return res
