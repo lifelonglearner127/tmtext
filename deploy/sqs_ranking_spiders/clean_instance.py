@@ -12,6 +12,7 @@ if __name__ == '__main__':
         '/tmp/stop_instances.log',
         '/tmp/check_file_post_starter_root',
         '/tmp/check_file_post_starter_spiders',
+        '/tmp/instances_killer_logs.log',
     ]
     # delete all in temporary folder
     for f in file_list:
