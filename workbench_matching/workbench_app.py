@@ -7,6 +7,7 @@ from lxml import html
 
 app = Flask(__name__)
 urls = []
+MAX_RETRIES = 3
 
 def import_matches(matches_path = "/home/ana/code/tmtext/data/opd_round3/walmart_amazon_28.08_matches.csv"):
     global urls
@@ -34,12 +35,28 @@ def display_match():
 def serve_page(url):
     req = urllib2.Request(url)
     req.add_header('User Agent', 'Mozilla')
-    # req.add_header("Range", "bytes=500-999")
-    resp = urllib2.urlopen(req)
-    # return 
+    
+    try:    
+        resp = urllib2.urlopen(req)
+    except:
+        resp = None
+
+    # retry if failed
+    retries = 0
+    while (not resp or resp.code != 200) and retries < MAX_RETRIES:
+        try:
+            resp = urllib2.urlopen(req)
+        except:
+            resp = None
+        retries += 1
+        print "RETRYING"
+
+    if not resp:
+        return "ERROR"
+
     body = remove_scripts(resp.read())
+
     response = Response(body)
-    # resp.headers['Access-Control-Allow-Origin'] = 'http://www.walmart.com'
     return response
 
 def remove_scripts(body):
@@ -49,4 +66,4 @@ def remove_scripts(body):
     return html.tostring(root)
 
 if __name__ == '__main__':
-    app.run(debug = True, threaded = True)
+    app.run(port = 8080, threaded = True)
