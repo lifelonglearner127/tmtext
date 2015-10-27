@@ -74,14 +74,15 @@ def mark_as_running():
         fh.write('1')
 
 
-def pull_repo():
+def pull_repo(branch):
     """ Clones or pulls the repo """
     if os.path.exists('%s' % os.path.expanduser(REPO_BASE_PATH)):
-        cmd = 'cd %s; git pull 2>&1' % os.path.expanduser(REPO_BASE_PATH)
+        cmd = 'cd %s; git checkout %s; git pull 2>&1' % (
+            os.path.expanduser(REPO_BASE_PATH), branch)
         p = Popen(cmd, shell=True, stdout=PIPE)
     else:
-        cmd = 'cd %s && git clone %s 2>&1' % (
-            os.path.dirname(REPO_BASE_PATH), REPO_URL)
+        cmd = 'cd %s && git clone %s 2>&1 && git checkout %s' % (
+            os.path.dirname(REPO_BASE_PATH), REPO_URL, branch)
         p = Popen(cmd, shell=True, stdout=PIPE)
     logger.info("Run %s", cmd)
     logger.info("Git:%s", p.stdout.read().strip())
@@ -139,7 +140,7 @@ if __name__ == '__main__':
     # if stop_flag_exists_at_url(FLAG_URL):
         sys.exit()
     mark_as_running()
-    pull_repo()
+    pull_repo('sc_production')
     wait_until_post_starter_script_executed('post_starter_root.py')
     wait_until_post_starter_script_executed('post_starter_spiders.py')
     start_scrapy_daemon()
