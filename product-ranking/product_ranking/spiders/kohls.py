@@ -43,7 +43,7 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
         'long term black': [1, 50],
         'yellow ion': [15, 100],
         'water proof': [50, 85],
-        'long night': [30, 150],
+        'long night': [30, 200],
     }
 
 
