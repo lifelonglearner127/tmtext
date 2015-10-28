@@ -129,7 +129,7 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
     def parse_product(self, response):
         product = response.meta['product']
         cond_set(product, 'title', response.xpath(
-            "//h1[@id='productTitle']//text()").extract(),
+            '//div[@id="productName"]/text()').extract(),
             conv=string.strip)
         price = response.xpath(
             "//div[@class='singleTierPrice']/span[@itemprop='price']"
