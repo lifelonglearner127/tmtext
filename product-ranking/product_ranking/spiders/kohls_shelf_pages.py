@@ -31,6 +31,7 @@ class KohlsShelfPagesSpider(KohlsProductsSpider):
         return {'remaining': 99999, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
+        super(KohlsShelfPagesSpider, self).__init__(*args, **kwargs)
         self._setup_class_compatibility()
         self.product_url = kwargs['product_url']
 
@@ -58,12 +59,20 @@ class KohlsShelfPagesSpider(KohlsProductsSpider):
                 r'"prodSeoURL"\s?:\s+\"(.+)\"',
                 response.body_as_unicode()
             )
-        print(prod_urls)
+
+        sample = ['http://www.kohls.com' + i for i in prod_urls]
+
+        for i in sample:
+            product = SiteProductItem()
+            yield i, product
 
     def _scrape_next_results_page_link(self, response):
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1
-        return super(KohlsProductsSpider,
+        return super(KohlsShelfPagesSpider,
                      self)._scrape_next_results_page_link(response)
 
+    def parse_product(self, response):
+        product = response.meta['product']
+        return super(KohlsShelfPagesSpider, self).parse_product(response)
