@@ -2,6 +2,7 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 import json
+import hjson
 import re
 import string
 import urllib
@@ -164,13 +165,8 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
         skus = []
         if metadata:
             metadata = metadata[0]
-            jsmeta = json.loads(metadata.replace(
-                'label:"', '"label":"').replace(
-                'guid: "', '"guid":"').replace(
-                ",]", "]")
-            )
+            jsmeta = hjson.loads(metadata)
             try:
-                #skus = jsmeta['attributeDefinition']['attributeLookup']
                 skus = [jsmeta["attributeDefinition"]["defaultSku"]]
                 response.meta['skus'] = skus
                 metaname = jsmeta['attributeDefinition']['attributeListing'][0][
