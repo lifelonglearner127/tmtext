@@ -165,13 +165,10 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     @staticmethod
     def append_new_dynamic_variants(variants, current_lot, new_structure):
         all_pairs = []
-        in_stock = []
+
         for option_name, vals in new_structure.items():
             for val in vals:
-                if [option_name][0] != 'in_stock':
-                    new_pair = [option_name, val]
-                else:
-                    in_stock.append([option_name, val])
+                new_pair = [option_name, val]
                 if not new_pair in all_pairs:
                     all_pairs.append(new_pair)
         groupped_results = [
@@ -187,10 +184,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             if not new_pair in all_properties:
                 all_properties.append(new_pair)
         for prop in all_properties:
-            for k, v in in_stock[0][1].iteritems():
-                if k in prop.values():
-                    stock = v
-            new_variant = {'lot': current_lot, 'price': 'todo', 'in_stock': True if 'true' in stock else False,
+            new_variant = {'lot': current_lot, 'price': 'todo', 'in_stock': "Nodfgvdfgd",
                            'selected': False, 'properties': prop}.copy()
             if not new_variant in variants:
                 variants.append(new_variant)
@@ -260,19 +254,20 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '3AppType=+&shipToCountry=US&_D%'
                     '3AshipToCountry=+&ppId={pp_id}&_D%'
                     '3AppId=+&selectedLotValue={lot_value}&_D%'
-                    '3AselectedLotValue=+&skuSelectionMap.{attribute_name}='
-                    '&_D%3AskuSelectionMap.{attribute_name}=+&skuSelectionMap.COLOR='
+                    '3AselectedLotValue=+&skuSelectionMap.{attribute_name}={size}'
+                    '&_D%3AskuSelectionMap.{attribute_name}=+&skuSelectionMap.COLOR={color}'
                     '&_D%3AskuSelectionMap.COLOR=+&_DARGS=%'
                     '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
                     '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
 
         if async:
-             return Request(
+            return Request(
                 size_url,
-                meta={'pp_id': pp_id, 'product': product, 'post_data': _format_args,
-                      'variants': variants, 'variant': variant, 'variant_num': variant_num},
+                meta={'product': product, 'variants': variants, 'variant': variant, 'variant_num': variant_num},
                 callback=self._on_variant_response,
-             )
+                dont_filter=True
+            )
+
         else:
             # perform sync request
             result = requests.get(size_url)
