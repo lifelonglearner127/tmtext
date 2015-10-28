@@ -190,8 +190,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                 variants.append(new_variant)
 
     def _ajax_variant_request(self, pp_id, response, variants, variant, variant_num,
-                              async=True, null_values=None):
-
+                              async=True,  null_values=None, Lot=''):
         _props = variant['properties'].copy()
         color = _props.pop('color') if 'color' in _props else None
         neck = _props.pop('neck') if 'neck' in _props else None
@@ -242,6 +241,11 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         _format_args['sleeve'] = sleeve if sleeve else ''
         _format_args['attribute_name'] = attribute_name[0] \
             if attribute_name else 'Lot'
+        new_lot = _format_args['lot_value']
+        if not new_lot:
+            new_lot = Lot.title()
+
+        _format_args['new_lot'] = new_lot if new_lot else ''
 
         size_url = ('http://www.jcpenney.com/jsp/browse/pp/graphical/'
                     'graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&'
@@ -258,7 +262,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '3AshipToCountry=+&'
                     'ppId={pp_id}&_D%'
                     '3AppId=+&'
-                    'selectedLotValue={lot_value}&_D%'
+                    'selectedLotValue={new_lot}&_D%'
                     '3AselectedLotValue=+'
                     '&skuSelectionMap.{attribute_name}={size}'
                     '&_D%3AskuSelectionMap.{attribute_name}'
@@ -277,12 +281,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             )
 
         else:
-
-            proxies = {
-            "http": "http://proxyuser:57M8wD06P4K0Z7u@54.173.237.10:3128",
-            }
             # perform sync request
-            result = requests.get(size_url, proxies=proxies)
+            result = requests.get(size_url)
 
             new_variants_structure = extract_ajax_variants(result.text)
             return lot, new_variants_structure
@@ -327,18 +327,17 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         # otherwise invalid variants get into the output file
         processed_lots = []  # lots for which we collected dynamic variants
         new_lot_structure = {}
+        p_l = 0
         for var_indx, variant in enumerate(prod['variants']):
             if getattr(self, 'scrape_variants_with_extra_requests', None):
-                if variant.get('properties', {}).get('lot', '').lower() or variant.get('lot', '').lower() in processed_lots:
+                if variant.get('properties', {}).get('lot', '').lower() in processed_lots:
                     continue
+
                 _lot, _dynamic_structure = self._ajax_variant_request(
                     product_id, response, prod['variants'], variant, var_indx,
                     async=False, null_values=['size']
                 )
-                if variant.get('properties', {}).get('lot', '').lower():
-                    processed_lots.append(variant.get('properties', {}).get('lot', '').lower())
-                else:
-                    processed_lots.append(variant.get('lot', '').lower())
+                processed_lots.append(variant.get('properties', {}).get('lot', '').lower())
                 new_lot_structure[_lot] = _dynamic_structure
                 if _lot:
                     self.remove_old_static_variants_of_lot(prod['variants'], _lot)
@@ -346,9 +345,16 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
         for var_indx, variant in enumerate(prod['variants']):
             if getattr(self, 'scrape_variants_with_extra_requests', None):
-
+                if processed_lots:
+                    lot_id = processed_lots[p_l]
+                    p_l += 1
+                    if p_l >= len(processed_lots):
+                        p_l = 0
+                else:
+                    lot_id = ''
                 yield self._ajax_variant_request(
-                    product_id, response, prod['variants'], variant, var_indx)
+                    product_id, response, prod['variants'], variant, var_indx,
+                    Lot=lot_id)
 
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
