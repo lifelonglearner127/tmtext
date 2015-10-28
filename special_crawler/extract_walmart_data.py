@@ -1708,7 +1708,8 @@ class WalmartScraper(Scraper):
                 return True
         except:
             pass
-
+        if self.tree_html.xpath('//*[contains(@class, "invalid") and contains(text(), "tem not available")]'):
+            return True
         return False
 
     def _shipping(self):
