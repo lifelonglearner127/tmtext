@@ -184,7 +184,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             if not new_pair in all_properties:
                 all_properties.append(new_pair)
         for prop in all_properties:
-            new_variant = {'lot': current_lot, 'price': 'todo', 'in_stock': "Nodfgvdfgd",
+            new_variant = {'lot': current_lot, 'price': 'todo', 'in_stock': None,
                            'selected': False, 'properties': prop}.copy()
             if not new_variant in variants:
                 variants.append(new_variant)
@@ -249,13 +249,20 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '&selectedSKUAttributeName={attribute_name}&'
                     '_D%3AselectedSKUAttributeName=+&'
                     'sucessUrl=%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
-                    '2FgraphicalSKUOptions.jsp%3FfromEditBag%3D%26fromEditFav%3D%26grView%'
-                    '3D&_D%3AsucessUrl=+&ppType=regular&_D%'
-                    '3AppType=+&shipToCountry=US&_D%'
-                    '3AshipToCountry=+&ppId={pp_id}&_D%'
-                    '3AppId=+&selectedLotValue={lot_value}&_D%'
-                    '3AselectedLotValue=+&skuSelectionMap.{attribute_name}={size}'
-                    '&_D%3AskuSelectionMap.{attribute_name}=+&skuSelectionMap.COLOR={color}'
+                    '2FgraphicalSKUOptions.jsp'
+                    '%3FfromEditBag%3D%26fromEditFav%3D%26grView%'
+                    '3D&_D%3AsucessUrl=+'
+                    '&ppType=regular&_D%'
+                    '3AppType=+&'
+                    'shipToCountry=US&_D%'
+                    '3AshipToCountry=+&'
+                    'ppId={pp_id}&_D%'
+                    '3AppId=+&'
+                    'selectedLotValue={lot_value}&_D%'
+                    '3AselectedLotValue=+'
+                    '&skuSelectionMap.{attribute_name}={size}'
+                    '&_D%3AskuSelectionMap.{attribute_name}'
+                    '=+&skuSelectionMap.COLOR={color}'
                     '&_D%3AskuSelectionMap.COLOR=+&_DARGS=%'
                     '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
                     '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
@@ -263,14 +270,19 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         if async:
             return Request(
                 size_url,
-                meta={'product': product, 'variants': variants, 'variant': variant, 'variant_num': variant_num},
+                meta={'product': product, 'variants': variants,
+                      'variant': variant, 'variant_num': variant_num},
                 callback=self._on_variant_response,
                 dont_filter=True
             )
 
         else:
+
+            proxies = {
+            "http": "http://proxyuser:57M8wD06P4K0Z7u@54.173.237.10:3128",
+            }
             # perform sync request
-            result = requests.get(size_url)
+            result = requests.get(size_url, proxies=proxies)
 
             new_variants_structure = extract_ajax_variants(result.text)
             return lot, new_variants_structure
@@ -296,7 +308,6 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             if _avail:
                 _avail = {k['option']: k['availability'] == 'true' for k in _avail[0]}
                 if not color in _avail:
-
                     variant['in_stock'] = False
                     return  # not defined; availability unknown
                 variant['in_stock'] = _avail[color]
@@ -318,21 +329,24 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         new_lot_structure = {}
         for var_indx, variant in enumerate(prod['variants']):
             if getattr(self, 'scrape_variants_with_extra_requests', None):
-                if variant.get('properties', {}).get('lot', '').lower() in processed_lots:
+                if variant.get('properties', {}).get('lot', '').lower() or variant.get('lot', '').lower() in processed_lots:
                     continue
                 _lot, _dynamic_structure = self._ajax_variant_request(
                     product_id, response, prod['variants'], variant, var_indx,
                     async=False, null_values=['size']
                 )
-                processed_lots.append(variant.get('properties', {}).get('lot', '').lower())
+                if variant.get('properties', {}).get('lot', '').lower():
+                    processed_lots.append(variant.get('properties', {}).get('lot', '').lower())
+                else:
+                    processed_lots.append(variant.get('lot', '').lower())
                 new_lot_structure[_lot] = _dynamic_structure
                 if _lot:
                     self.remove_old_static_variants_of_lot(prod['variants'], _lot)
                     self.append_new_dynamic_variants(prod['variants'], _lot, _dynamic_structure)
 
         for var_indx, variant in enumerate(prod['variants']):
-
             if getattr(self, 'scrape_variants_with_extra_requests', None):
+
                 yield self._ajax_variant_request(
                     product_id, response, prod['variants'], variant, var_indx)
 
