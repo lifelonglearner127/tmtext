@@ -241,13 +241,54 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         _format_args['sleeve'] = sleeve if sleeve else ''
         _format_args['attribute_name'] = attribute_name[0] \
             if attribute_name else 'Lot'
+        _format_args['attribute_name_value'] = attribute_name[0].lower() \
+            if attribute_name else 'size'
         new_lot = _format_args['lot_value']
         if not new_lot:
             new_lot = Lot.title()
-
         _format_args['new_lot'] = new_lot if new_lot else ''
+        _format_args['param'] = _format_args[_format_args['attribute_name_value']]
 
         size_url = ('http://www.jcpenney.com/jsp/browse/pp/graphical/'
+                    'graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&'
+                    'grView=&_dyncharset=UTF-8'
+                    '&selectedSKUAttributeName={attribute_name}&'
+                    '_D%3AselectedSKUAttributeName=+&'
+                    'sucessUrl=%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
+                    '2FgraphicalSKUOptions.jsp'
+                    '%3FfromEditBag%3D%26fromEditFav%3D%26grView%'
+                    '3D&_D%3AsucessUrl=+'
+                    '&ppType=regular&_D%'
+                    '3AppType=+&'
+                    'shipToCountry=US&_D%'
+                    '3AshipToCountry=+&'
+                    'ppId={pp_id}&_D%'
+                    '3AppId=+&'
+                    'selectedLotValue={new_lot}&_D%'
+                    '3AselectedLotValue=+'
+                    '&skuSelectionMap.SIZE={size}'
+                    '&skuSelectionMap.WAIST={waist}'
+                    '&skuSelectionMap.INSEAM={inseam}'
+                    '&skuSelectionMap.CHEST={chest}'
+                    '&skuSelectionMap.NECK={neck}'
+                    '&skuSelectionMap.SLEEVE={sleeve}'
+                    '&_D%3AskuSelectionMap.{attribute_name}'
+                    '=+&skuSelectionMap.COLOR={color}'
+                    '&_D%3AskuSelectionMap.COLOR=+&_DARGS=%'
+                    '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
+                    '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
+
+        if async:
+            return Request(
+                size_url,
+                meta={'product': product, 'variants': variants,
+                      'variant': variant, 'variant_num': variant_num},
+                callback=self._on_variant_response,
+                dont_filter=True
+            )
+
+        else:
+            size_url = ('http://www.jcpenney.com/jsp/browse/pp/graphical/'
                     'graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&'
                     'grView=&_dyncharset=UTF-8'
                     '&selectedSKUAttributeName={attribute_name}&'
@@ -271,16 +312,6 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
                     '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
 
-        if async:
-            return Request(
-                size_url,
-                meta={'product': product, 'variants': variants,
-                      'variant': variant, 'variant_num': variant_num},
-                callback=self._on_variant_response,
-                dont_filter=True
-            )
-
-        else:
             # perform sync request
             result = requests.get(size_url)
 
@@ -330,21 +361,29 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         p_l = 0
         for var_indx, variant in enumerate(prod['variants']):
             if getattr(self, 'scrape_variants_with_extra_requests', None):
+
                 if variant.get('properties', {}).get('lot', '').lower() in processed_lots:
                     continue
-
                 _lot, _dynamic_structure = self._ajax_variant_request(
                     product_id, response, prod['variants'], variant, var_indx,
                     async=False, null_values=['size']
                 )
-                processed_lots.append(variant.get('properties', {}).get('lot', '').lower())
+                if variant.get('properties', {}).get('lot', '').lower():
+                    processed_lots.append(variant.get('properties', {}).get('lot', '').lower())
+                else:
+                    processed_lots.append(variant.get('lot', '').lower())
+
                 new_lot_structure[_lot] = _dynamic_structure
                 if _lot:
                     self.remove_old_static_variants_of_lot(prod['variants'], _lot)
                     self.append_new_dynamic_variants(prod['variants'], _lot, _dynamic_structure)
-
+        try:
+            processed_lots[1] = processed_lots[0]
+        except:
+            pass
         for var_indx, variant in enumerate(prod['variants']):
             if getattr(self, 'scrape_variants_with_extra_requests', None):
+
                 if processed_lots:
                     lot_id = processed_lots[p_l]
                     p_l += 1
