@@ -214,7 +214,7 @@ class SqsCache(object):
         """
         get count of started instances for current day
         """
-        return self.db.get('daily_sqs_instances_counter')
+        return self.db.get(self.REDIS_INSTANCES_COUNTER)
 
     def get_executed_tasks_count(self, hours_from=None, hours_to=None,
                                  for_last_hour=False):
@@ -326,16 +326,20 @@ class SqsCache(object):
     def del_redis_keys(self, *keys):
         self.db.delete(*keys)
 
-    def save_today_instances_count(self):
-        cnt = int(self.db.get(self.REDIS_INSTANCES_COUNTER) or '0')
-        today = int(mktime(date.today().timetuple()))  # get today's timestamp
+    def save_today_instances_count(self, instances_num=None):
+        cnt = instances_num or self.db.get(self.REDIS_INSTANCES_COUNTER)
+        cnt = int(cnt or '0')
+        today = date.today() - timedelta(days=1)
+        today = int(mktime(today.timetuple()))  # get today's timestamp
         # score is current day timestamp, name is instances count
-        return self.db.zadd(self.REDIS_INSTANCES_HISTORY, today, cnt)
+        return self.db.zadd(self.REDIS_INSTANCES_HISTORY, today,
+                            '%s:%s' % (today, cnt))
 
     def get_instances_history(self, days):
-        date_offset = date.today() - timedelta(days=days)
+        date_offset = date.today() - timedelta(days=days+1)
         offset = int(mktime(date_offset.timetuple()))
         data = self.db.zrevrangebyscore(self.REDIS_INSTANCES_HISTORY,
                                         9999999999, offset,
                                         withscores=True, score_cast_func=int)
-        return dict([reversed(d) for d in data])
+        res = {d[1]: d[0].split(':')[-1] for d in data}
+        return res

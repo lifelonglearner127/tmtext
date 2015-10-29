@@ -41,7 +41,7 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     allowed_domains = ["www.amazon.co.uk"]
 
     settings = AmazoncoukValidatorSettings
-    use_proxies = True
+    #use_proxies = True
     handle_httpstatus_list = [502, 503, 504]
 
     def __init__(self, captcha_retries='20', *args, **kwargs):

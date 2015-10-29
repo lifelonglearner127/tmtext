@@ -17,7 +17,11 @@
                     var keys = Object.keys(resp);
                     for (var i=0; i<keys.length; i++) {
                         var date = new Date(parseInt(keys[i]) * 1000);
-                        labels.push(date.getUTCFullYear() +"/"+ (date.getUTCMonth()+1)+"/"+ date.getUTCDate());
+                        labels.push(
+                                date.getUTCFullYear() + "/"
+                                + (date.getUTCMonth()+1) + "/"
+                                + date.getUTCDate()
+                        );
                         data.push(resp[keys[i]]);
                     }
                     var chartData = {
@@ -43,6 +47,7 @@
                     var myLineChart = new Chart(ctx).Line(chartData, options);
                 });
             });
+            $('.date-select').change();
         });
     </script>
 </head>
@@ -51,7 +56,7 @@
     <select class="date-select">
         <option>Days:</option>
         <option value="1">1 day</option>
-        <option value="7">Week</option>
+        <option value="7" selected="selected">Week</option>
         <option value="30">Month</option>
     </select>
 </div>

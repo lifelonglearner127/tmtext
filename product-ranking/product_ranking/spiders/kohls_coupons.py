@@ -33,10 +33,15 @@ class KohlsCouponsSpider(Spider):
                                    '.td-subheader::text').extract())
 
     def _parse_discount(self, coupon):
-        return ', '.join(coupon.css('.td-header::text').re('\$?\d+(?:\.\d+)?%?'))
+        return ', '.join(
+            #coupon.css('.td-header::text').re('\$?\d+(?:\.\d+)?(?:\-\d+)?%?')
+            coupon.css('.td-header::text').re('\$\d+|\d+(?:\-\d+)?%')
+        )
 
     def _parse_conditions(self, coupon):
-        return is_empty(coupon.css('.td-copy::text').extract())
+        # return ' '.join(coupon.css('.td-copy::text').extract())
+        return ' '.join(coupon.xpath('.//*[contains(@class,"td-copy")][1]'
+                                     '/text()').extract())
 
     def _parse_start_date(self, coupon):
         return None
@@ -55,8 +60,6 @@ class KohlsCouponsSpider(Spider):
         for coupon in coupons:
             item = DiscountCoupon()
             cond_set_value(item, 'description', self._parse_description(coupon))
-            if not item['description']:  # all coupon details in image
-                continue
             cond_set_value(item, 'category', self._parse_category(coupon))
             cond_set_value(item, 'discount', self._parse_discount(coupon))
             cond_set_value(item, 'conditions', self._parse_conditions(coupon))

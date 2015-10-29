@@ -395,11 +395,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         available = is_empty(response.xpath(
             '//div[@class="prod-no-buying-option"]/'
             'div[@class="heading-d"]/text()').extract())
-
         if available == 'This Item is no longer available':
             not_available = True
         else:
             not_available = False
+        if response.xpath('//*[contains(@class, "invalid")'
+                          ' and contains(text(), "tem not available")]'):
+            not_available = True
         return not_available
 
     def _on_api_response(self, response):
@@ -683,11 +685,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 "//div[@class='product-subhead-section']"
                 "/a[@id='WMItemBrandLnk']/text()").extract())
 
-        cond_set(
-            product, 'image_url',
-            response.xpath('//img[contains(@class, "product-image")]/@src'),
-            ""
-        )
+        try:
+            cond_set(
+                product, 'image_url',
+                response.xpath('//img[contains(@class, "product-image")]/@src'),
+                ""
+            )
+        except TypeError:
+            pass
         if not product.get('image_url', None):
             product['image_url'] = is_empty(response.xpath(
                     '//meta[@property="og:image"]/@content').extract(), "")
