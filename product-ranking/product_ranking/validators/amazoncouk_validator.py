@@ -20,7 +20,7 @@ class AmazoncoukValidatorSettings(object):  # do NOT set BaseValidatorSettings a
         'avira 2': [20, 300],
     }
 
-    test_url = {
+    test_urls = {
 
         'http://www.amazon.co.uk/WOMEN-SLEEVE-TARTAN-SWING-FLARED/dp/B00NE6XKC2/ref=sr_1_4?ie=UTF8&qid=1446201186&sr=8-4&keywords=dress',
         'http://www.amazon.co.uk/R%C3%A9my-Martin-Fine-Champagne-Cognac/dp/B003ZINCGS/ref=sr_1_1?ie=UTF8&qid=1446201421&sr=8-1&keywords=brandy',

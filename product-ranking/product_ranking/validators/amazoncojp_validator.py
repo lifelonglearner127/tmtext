@@ -22,7 +22,7 @@ class AmazoncojpValidatorSettings(object):  # do NOT set BaseValidatorSettings a
         'batteries 330v': [40, 270]
     }
 
-    test_url = {
+    test_urls = {
 
         'http://www.amazon.co.jp/DRESS-%E3%83%89%E3%83%AC%E3%82%B9-2015%E5%B9%B4-11-%E6%9C%88%E5%8F%B7/dp/B014TC1J4A/ref=sr_1_2?ie=UTF8&qid=1446199786&sr=8-2&keywords=dress',
         'http://www.amazon.co.jp/RED%E3%83%AA%E3%82%BF%E3%83%BC%E3%83%B3%E3%82%BA-DVD-%E3%83%96%E3%83%AB%E3%83%BC%E3%82%B9%E3%83%BB%E3%82%A6%E3%82%A3%E3%83%AA%E3%82%B9/dp/B00S5E5W0G/ref=sr_1_6?ie=UTF8&qid=1446199854&sr=8-6&keywords=red',

@@ -19,7 +19,7 @@ class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
         'voltmeter': [50, 250]
     }
 
-    test_url = {
+    test_urls = {
         'http://www.walmart.com/ip/George-Women-s-Surplice-Long-Sleeve-Wrap-Dress/45456935',
         'http://www.walmart.com/ip/Clean-Clear-R-Foaming-Facial-Cleanser-Sensitive-Skin-Cleansers-8-Fl-Oz/10801463',
         'http://www.walmart.com/ip/Signature-by-Levi-Strauss-Co.-Modern-Bootcut-Jeans/24430481',

@@ -21,7 +21,7 @@ class AmazonfrValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'car audio equalizer': [5, 150]
     }
 
-    test_url = {
+    test_urls = {
         'http://www.amazon.fr/gp/product/B0114DA5XS/ref=s9_simh_gw_p193_d10_i3?pf_rd_m=A1X6FK5RDHNB96&pf_rd_s=desktop-1&pf_rd_r=0P8MKW77PCWS1T8EB5JJ&pf_rd_t=36701&pf_rd_p=577191447&pf_rd_i=desktop',
         'http://www.amazon.fr/CRAVOG-V-Neck-Backless-Evening-Pleated/dp/B00WHJKUN4/ref=sr_1_1?s=apparel&ie=UTF8&qid=1446202565&sr=1-1&keywords=dress',
         'http://www.amazon.fr/Desigual-Malta-Neograb-port%C3%A9-main/dp/B00VCAVO0W/ref=lp_7002798031_1_2?s=shoes&ie=UTF8&qid=1446202630&sr=1-2',

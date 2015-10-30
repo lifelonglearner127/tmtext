@@ -20,7 +20,7 @@ class AmazonDeValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'car audio equalizer pioneer': [5, 120]
     }
 
-    test_url = {
+    test_urls = {
         'http://www.amazon.de/gp/product/B0013PUS26/ref=s9_simh_gw_p241_d9_i2?pf_rd_m=A3JWKAKR8XB7XF&pf_rd_s=desktop-1&pf_rd_r=0SZC4ZDZKMNPNBFK95TA&pf_rd_t=36701&pf_rd_p=585296347&pf_rd_i=desktop',
         'http://www.amazon.de/TOSKANA-BRAUT-Brautjungfern-Abendkleider-Ballkleider-36-Silber/dp/B00UOSDZUU/ref=sr_1_4?s=apparel&ie=UTF8&qid=1446202127&sr=1-4&keywords=dress',
         'http://www.amazon.de/TRIXES-3mm-10-schwarzer-Ohrdehner-Set-Dehnstab/dp/B00DGRG5JE/ref=sr_1_4?s=apparel&ie=UTF8&qid=1446202197&sr=1-4&keywords=digi',

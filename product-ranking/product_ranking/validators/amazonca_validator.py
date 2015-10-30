@@ -20,7 +20,7 @@ class AmazoncaValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'programming product best': [5, 100],
     }
 
-test_url = {
+test_urls = {
     'http://www.amazon.ca/Vince-Camuto-Womens-Sleeve-Organza/dp/B00WMERBOA/ref=sr_1_4?ie=UTF8&qid=1444651527&sr=8-4&keywords=dress',
     'http://www.amazon.ca/Clean-Expanded-Alejandro-Junger-ebook/dp/B007MAU5UG/ref=sr_1_3?ie=UTF8&qid=1446197943&sr=8-3&keywords=clean',
     'http://www.amazon.ca/Red-Blu-ray-Digital-Copy-Bilingual/dp/B00F41OB5A/ref=sr_1_3?ie=UTF8&qid=1446198440&sr=8-3&keywords=red',
