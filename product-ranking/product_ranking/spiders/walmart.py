@@ -402,6 +402,15 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if response.xpath('//*[contains(@class, "invalid")'
                           ' and contains(text(), "tem not available")]'):
             not_available = True
+        if response.xpath('//*[contains(@class, "invalid")'
+                          ' and contains(text(), "no longer available")]'):
+            not_available = True
+        if response.xpath('//*[contains(@class, "NotAvailable")'
+                          ' and contains(text(), "ot Available")]'):
+            not_available = True
+        if response.xpath('//*[contains(@class, "heading")'
+                          ' and contains(text(), "nformation unavailable")]'):
+            not_available = True
         return not_available
 
     def _on_api_response(self, response):
@@ -1157,13 +1166,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         product = response.meta['product']
         data = json.loads(response.body_as_unicode())
         sel = Selector(text=data['reviewsHtml'])
-
-        cond_set(
-            product,
-            'last_buyer_review_date',
-            sel.xpath(
-                '//span[contains(@class, "customer-review-date")]/text()'
-            ).extract()
-        )
+        lbrd = sel.xpath('//span[contains(@class, "customer-review-date")]'
+                         '/text()').extract()
+        if lbrd:
+            lbrd = datetime.strptime(lbrd[0].strip(), '%m/%d/%Y')
+            product['last_buyer_review_date'] = lbrd.strftime('%d/%m/%Y')
 
         return product
