@@ -36,7 +36,7 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
     test_requests = {
         'sdfsdgdf': 0,  # should return 'no products' or just 0 products
         'benny benassi': 0,
-        'red car': [20, 140],
+        'red car': [100, 200],
         'black stone': [50, 200],
         'red ball': [5, 150],
         'green rose': [10, 100],

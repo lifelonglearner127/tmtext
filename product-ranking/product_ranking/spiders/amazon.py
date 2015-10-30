@@ -24,10 +24,10 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
         'samsung t9500 battery 2600 li-ion warranty': [30, 250],
         'electric bicycle parts wheel': [100, 350],
         'ceiling fan industrial white system': [5, 100],
-        'kaspersky total': [20, 35],
+        'kaspersky total': [20, 200],
         'car navigator garmin maps 44LM': [1, 20],
         'yamaha drums midi': [50, 300],
-        'black men shoes size 8  red stripes': [50, 300],
+        'black men shoes size 8  red stripes': [200, 500],
         'car audio equalizer pioneer mp3': [20, 150]
     }
 
