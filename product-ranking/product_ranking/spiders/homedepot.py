@@ -345,7 +345,7 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
         except (ValueError, KeyError, IndexError):
             self.log("Failed to parse SKU details.", DEBUG)
 
-        internet_no = product.meta.get('internet_no', None)
+        internet_no = response.meta.get('internet_no', None)
         if internet_no:
             return Request(
                 url=self.REVIEWS_URL % internet_no,
