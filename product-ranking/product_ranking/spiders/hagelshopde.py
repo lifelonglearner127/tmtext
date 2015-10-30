@@ -81,20 +81,33 @@ class HagelshopProductSpider(BaseProductsSpider):
         return product
 
     def parse_related_products(self, response):
-        related_products = []
-        items = response.xpath(
+        related_products = {
+            'also_liked': [],
+            'recommended': []
+        }
+        recommended = response.xpath(
             '//ul[@class="products-grid"]/li/div[@class="thumbnail"]')
 
-        for item in items:
+        for item in recommended:
             url = is_empty(item.xpath('a/@href').extract())
-            title = is_empty(items.xpath('a/@title').extract())
+            title = is_empty(item.xpath('a/@title').extract())
 
             if url and title:
-                related_products.append(RelatedProduct(
-                            title=title,
-                            url=url
-                            )
-                    )
+                prod = RelatedProduct(url=url, title=title)
+                related_products['recommended'].append(prod)
+
+
+        also_liked = response.xpath(
+            '//ul[@class="products-grid row-fluid"]/li[@class="item"]/div[@class="thumbnail"]')
+
+        for item in also_liked:
+            url = is_empty(item.xpath('a/@href').extract())
+            title = is_empty(item.xpath('a/@title').extract())
+
+            if url and title:
+                prod = RelatedProduct(url=url, title=title)
+                related_products['also_liked'].append(prod)
+
 
         return related_products
 
