@@ -14,32 +14,33 @@ from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 from product_ranking.validation import BaseValidator
 from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.validators.asda_validator import AsdaValidatorSettings
 
 is_empty = lambda x, y=None: x[0] if x else y
 
 
-class AsdaValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand', 'image_url']
-    ignore_fields = [
-        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'description', 'special_pricing', 
-        'bestseller_rank',
-    ]
-    ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = True  # ... duplicated requests?
-    ignore_log_filtered = True  # ... filtered requests?
-    test_requests = {
-        'qlkjwehjqwdfahsdfh': 0,  # should return 'no products' or just 0 products
-        '!': 0,
-        'eat': [20, 150],
-        'dress': [2, 40],
-        'red pepper': [10, 80],
-        'chilly pepper': [5, 130],
-        'breakfast': [70, 1000],
-        'vodka': [30, 150],
-        'water proof': [10, 100],
-        'sillver': [70, 190],
-    }
+# class AsdaValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+#     optional_fields = ['brand', 'image_url']
+#     ignore_fields = [
+#         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+#         'google_source_site', 'description', 'special_pricing',
+#         'bestseller_rank',
+#     ]
+#     ignore_log_errors = False  # don't check logs for errors?
+#     ignore_log_duplications = True  # ... duplicated requests?
+#     ignore_log_filtered = True  # ... filtered requests?
+#     test_requests = {
+#         'qlkjwehjqwdfahsdfh': 0,  # should return 'no products' or just 0 products
+#         '!': 0,
+#         'eat': [20, 150],
+#         'dress': [2, 40],
+#         'red pepper': [10, 80],
+#         'chilly pepper': [5, 130],
+#         'breakfast': [70, 1000],
+#         'vodka': [30, 150],
+#         'water proof': [10, 100],
+#         'sillver': [70, 190],
+#     }
 
 
 class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
