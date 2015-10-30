@@ -483,7 +483,8 @@ class AmazonBaseClass(BaseProductsSpider):
                   '/img[@class="egcDesignPreviewBG"]/@src |' \
                   '//img[@id="main-image"]/@src |' \
                   '//*[@id="imgTagWrapperId"]/.//img/@data-old-hires |' \
-                  '//img[@id="imgBlkFront"]/@src'
+                  '//img[@id="imgBlkFront"]/@src |' \
+                  '//img[@class="masrw-main-image"]/@src'
         if add_xpath:
             xpathes += ' |' + add_xpath
 
@@ -943,7 +944,7 @@ class AmazonBaseClass(BaseProductsSpider):
             date = self._format_last_br_date(date)
             if date:
                 cond_set_value(product, 'last_buyer_review_date',
-                               date.strftime('%d/%m/%Y'))
+                               date.strftime('%m/%d/%Y'))
 
         if reqs:
             return self.send_next_request(reqs, response)

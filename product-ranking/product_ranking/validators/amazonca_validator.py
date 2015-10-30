@@ -22,5 +22,12 @@ class AmazoncaValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
 
 test_url = {
     'http://www.amazon.ca/Vince-Camuto-Womens-Sleeve-Organza/dp/B00WMERBOA/ref=sr_1_4?ie=UTF8&qid=1444651527&sr=8-4&keywords=dress',
+    'http://www.amazon.ca/Clean-Expanded-Alejandro-Junger-ebook/dp/B007MAU5UG/ref=sr_1_3?ie=UTF8&qid=1446197943&sr=8-3&keywords=clean',
+    'http://www.amazon.ca/Red-Blu-ray-Digital-Copy-Bilingual/dp/B00F41OB5A/ref=sr_1_3?ie=UTF8&qid=1446198440&sr=8-3&keywords=red',
+    'http://www.amazon.ca/Pura-dor-Prevention-Premium-Organic/dp/B0079R6BD2/ref=sr_1_2?ie=UTF8&qid=1446198963&sr=8-2&keywords=shampoo',
+    'http://www.amazon.ca/MKM-APPS-Wifi-Password-Hacker/dp/B00KJNKRS8/ref=sr_1_2?ie=UTF8&qid=1446198494&sr=8-2&keywords=wifi',
+    'http://www.amazon.ca/Levis-Womens-Perfectly-Slimming-Straight/dp/B00W6WOTW0/ref=sr_1_sc_2?ie=UTF8&qid=1446199052&sr=8-2-spell&keywords=jeanse',
+    'http://www.amazon.ca/Opteka-OSG14-Universal-Honeycomb-External/dp/B004BFXBXI/ref=sr_1_4?ie=UTF8&qid=1446199112&sr=8-4&keywords=grid',
+    'http://www.amazon.ca/CRF-950Z-2-Stage-Pitcher-Replacement-Filter/dp/B000067DZX/ref=sr_1_3?ie=UTF8&qid=1446199161&sr=8-3&keywords=pur',
 
 }

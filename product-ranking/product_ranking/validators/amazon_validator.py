@@ -24,7 +24,6 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
     test_urls = {
         'http://www.amazon.com/Fallout-Vault-Dwellers-Survival-Collectors/dp/0744016312/ref=sr_1_5/183-3389897-3704802?'
         's=books&ie=UTF8&qid=1438956241&sr=1-5&keywords=book',
-        'http://www.amazon.com/Red-Bruce-Willis/dp/B004HWYTP4/ref=sr_1_1?ie=UTF8&qid=1439192141&sr=8-1&keywords=red',
         'http://www.amazon.com/pediped-Flex-Ann-Mary-Jane/dp/B00RY8466U/ref=lp_3420851011_1_1?s=apparel&ie=UTF8&'
         'qid=1439192177&sr=1-1',
         'http://www.amazon.com/gp/product/B0083KGXGY/ref=s9_hps_bw_g504_i4?pf_rd_m=ATVPDKIKX0DER&'

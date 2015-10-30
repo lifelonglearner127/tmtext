@@ -19,3 +19,15 @@ class AmazoncoukValidatorSettings(object):  # do NOT set BaseValidatorSettings a
         'apple ipod nano sold': [100, 300],
         'avira 2': [20, 300],
     }
+
+    test_url = {
+
+        'http://www.amazon.co.uk/WOMEN-SLEEVE-TARTAN-SWING-FLARED/dp/B00NE6XKC2/ref=sr_1_4?ie=UTF8&qid=1446201186&sr=8-4&keywords=dress',
+        'http://www.amazon.co.uk/R%C3%A9my-Martin-Fine-Champagne-Cognac/dp/B003ZINCGS/ref=sr_1_1?ie=UTF8&qid=1446201421&sr=8-1&keywords=brandy',
+        'http://www.amazon.co.uk/Lucy-Bee-Virgin-Organic-Coconut/dp/B00BS9JGK2/ref=zg_bs_grocery_3',
+        'http://www.amazon.co.uk/Barratt-Original-Milk-Teeth-gram/dp/B005MJX5C4/ref=sr_1_1?s=grocery&ie=UTF8&qid=1446201706&sr=1-1&keywords=teeth',
+        'http://www.amazon.co.uk/Vampire-Teeth-1-kilo-bag/dp/B004701W1A/ref=sr_1_5?s=grocery&ie=UTF8&qid=1446201706&sr=1-5&keywords=teeth',
+        'http://www.amazon.co.uk/Lilys-Kitchen-Organic-Fish-Dinner/dp/B005VBPA9E/ref=sr_1_1?s=grocery&ie=UTF8&qid=1446201848&sr=1-1&keywords=dinner',
+        'http://www.amazon.co.uk/Doves-Farm-Gluten-Brown-Bread/dp/B006MVUP7Y/ref=sr_1_2?s=grocery&ie=UTF8&qid=1446201908&sr=1-2-spons&keywords=bread+flour&psc=1'
+
+    }

@@ -19,3 +19,14 @@ class AmazonDeValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'black men shoes size 8 red': [5, 70],
         'car audio equalizer pioneer': [5, 120]
     }
+
+    test_url = {
+        'http://www.amazon.de/gp/product/B0013PUS26/ref=s9_simh_gw_p241_d9_i2?pf_rd_m=A3JWKAKR8XB7XF&pf_rd_s=desktop-1&pf_rd_r=0SZC4ZDZKMNPNBFK95TA&pf_rd_t=36701&pf_rd_p=585296347&pf_rd_i=desktop',
+        'http://www.amazon.de/TOSKANA-BRAUT-Brautjungfern-Abendkleider-Ballkleider-36-Silber/dp/B00UOSDZUU/ref=sr_1_4?s=apparel&ie=UTF8&qid=1446202127&sr=1-4&keywords=dress',
+        'http://www.amazon.de/TRIXES-3mm-10-schwarzer-Ohrdehner-Set-Dehnstab/dp/B00DGRG5JE/ref=sr_1_4?s=apparel&ie=UTF8&qid=1446202197&sr=1-4&keywords=digi',
+        'http://www.amazon.de/Levis-Herren-Original-Straight-Carson/dp/B00LPGAV0M/ref=sr_1_2?s=apparel&ie=UTF8&qid=1446202245&sr=1-2&keywords=jeans',
+        'http://www.amazon.de/GOGGLE-BRILLE-SCHWARZ-OFFROAD-MOTOCROSS/dp/B00M9LE04K/ref=sr_1_19?s=apparel&ie=UTF8&qid=1446202291&sr=1-19&keywords=cross',
+        'http://www.amazon.de/Maxomorra-Fleece-Winterm%C3%BCtze-Apple-Tree/dp/B013UQXE8A/ref=sr_1_2?s=apparel&ie=UTF8&qid=1446202339&sr=1-2&keywords=tree',
+        'http://www.amazon.de/BOSS-Hugo-Boss-Herren-Geschenkset/dp/B00XJU9PYK/ref=sr_1_10?m=A3JWKAKR8XB7XF&s=apparel&ie=UTF8&qid=1446202398&sr=1-10',
+
+    }
