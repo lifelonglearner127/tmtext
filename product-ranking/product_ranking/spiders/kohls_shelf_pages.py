@@ -1,12 +1,5 @@
-import os.path
 import re
-import urlparse
-import requests
-import json
-
-import scrapy
 from scrapy.http import Request
-from scrapy import Selector
 
 from product_ranking.items import SiteProductItem
 from .kohls import KohlsProductsSpider
@@ -16,7 +9,9 @@ is_empty = lambda x: x[0] if x else None
 
 class KohlsShelfPagesSpider(KohlsProductsSpider):
     name = 'kohls_shelf_urls_products'
-    allowed_domains = ['kohls.com', 'www.kohls.com']
+    allowed_domains = ['kohls.com',
+                       'www.kohls.com',
+                       'kohls.ugc.bazaarvoice.com']
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
@@ -60,11 +55,20 @@ class KohlsShelfPagesSpider(KohlsProductsSpider):
                 response.body_as_unicode()
             )
 
-        sample = ['http://www.kohls.com' + i for i in prod_urls]
+        urls = ['http://www.kohls.com' + i for i in prod_urls]
+        breadcrumb = response.xpath('//title/text()').extract()
 
-        for i in sample:
-            product = SiteProductItem()
-            yield i, product
+        shelf_categories = breadcrumb[0].split()[:-2]
+        shelf_categories = [i for i in reversed(shelf_categories)]
+        shelf_category = shelf_categories[-1] if shelf_categories else None
+
+        for url in urls:
+            item = SiteProductItem()
+            if shelf_category:
+                item['shelf_name'] = shelf_category
+            if shelf_categories:
+                item['shelf_path'] = shelf_categories
+            yield url, item
 
     def _scrape_next_results_page_link(self, response):
         if self.current_page >= self.num_pages:
@@ -74,5 +78,4 @@ class KohlsShelfPagesSpider(KohlsProductsSpider):
                      self)._scrape_next_results_page_link(response)
 
     def parse_product(self, response):
-        product = response.meta['product']
         return super(KohlsShelfPagesSpider, self).parse_product(response)
