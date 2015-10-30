@@ -10,11 +10,14 @@ import socket
 import os
 
 import scrapy.log
+import sys
 from scrapy.log import ERROR, WARNING, INFO
 from scrapy.http import Request
 from scrapy.spider import Spider
 
 from product_ranking.items import SiteProductItem
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 # Regular expression to match integer or floating point number with optional comma:
 # 1; 12; 1,132,334; 1.05; 1,123.09
