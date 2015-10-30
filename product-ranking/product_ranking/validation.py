@@ -271,7 +271,7 @@ class BaseValidator(object):
     def _validate_brand(self, val):
         if not bool(val.strip()):  # empty
             return False
-        if len(val.strip()) > 30:  # too long
+        if len(val.strip()) > 35:  # too long
             return False
         if val.strip().count(u' ') > 5:  # too many spaces
             return False
