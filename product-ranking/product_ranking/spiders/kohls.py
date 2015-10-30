@@ -24,7 +24,7 @@ from product_ranking.validation import BaseValidator
 is_empty = lambda x, y="": x[0] if x else y
 
 class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand']
+    optional_fields = ['brand', 'description']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
         'google_source_site', 'special_pricing', 'ranking',

@@ -608,7 +608,7 @@ class BaseValidator(object):
         if not val:
             return True
         try:
-            _ = datetime.datetime.strptime(val, "%m/%d/%Y")
+            _ = datetime.datetime.strptime(val, "%d/%m/%Y")
         except Exception, e:
             return False
         return True
