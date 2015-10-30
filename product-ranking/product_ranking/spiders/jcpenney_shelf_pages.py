@@ -78,5 +78,4 @@ class JCPenneyShelfPagesSpider(JcpenneyProductsSpider):
                      self)._scrape_next_results_page_link(response)
 
     def parse_product(self, response):
-        product = response.meta['product']
         return super(JCPenneyShelfPagesSpider, self).parse_product(response)
