@@ -98,7 +98,7 @@ def stats():
     try:
         context = dict()
         conn = boto.ec2.autoscale.AutoScaleConnection()
-        group = conn.get_all_groups(names=['SCCluster1'])[0]
+        group = conn.get_all_groups(names=['SCCluster1'])[0]  # TODO: select a group on page or show info for all of the groups
         context['running_instances'] = len(group.instances)
         context['today_instances'] = cache.get_today_instances()
         context['today_executed_tasks'] = cache.get_executed_tasks_count()

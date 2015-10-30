@@ -32,9 +32,9 @@ class MacysCouponsSpider(Spider):
         return ' '.join(coupon.xpath('.//h2/text()').extract())
 
     def _parse_discount(self, coupon):
-        return is_empty(
+        return ', '.join(
             coupon.xpath('.//h2[@class="offerSubHeaderPromo"]/text()').
-            re('\d+%(?: or \d+%)?')
+            re('\d+\%')
         )
 
     def _parse_conditions(self, coupon):

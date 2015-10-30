@@ -173,17 +173,62 @@ class JetProductsSpider(BaseProductsSpider):
             for req in super(JetProductsSpider, self).start_requests():
                 yield req
 
+    def redirected_from_product_to_main_page(self, response):
+        """ Returns True if the spider was redirected from a product page
+             to the main website page (//jet.com).
+            Means "not_found" product. """
+        history = response.meta.get('redirect_urls', None)
+        if history:
+            current_url = response.url.replace('/', '').replace('https:', '')\
+                .replace('http:', '').replace('www.', '')
+            if current_url == 'jet.com':
+                return True
+
     def parse_product(self, response):
         meta = response.meta.copy()
         product = meta['product']
         reqs = []
 
+        if self.redirected_from_product_to_main_page(response):
+            product['not_found'] = True
+            return product
+
         cond_set(
             product, "title", response.xpath(
                 "//div[contains(@class, 'content')]"
-                "/div[contains(@class, 'title')]"
+                "//div[contains(@class, 'title')]"
             ).extract()
         )
+
+        sample = response.xpath('//script[contains(text(), "jet.__variants")]')\
+            .extract()
+
+        size_list = []
+        sku_list = []
+        variants_list = []
+
+        data_line = re.search(r'jet.__variants = (.*)', sample[0]).group(1)
+        size_list += re.findall(r'"Size":"(.*?)"', data_line)
+        sku_list += re.findall(r'"sku":"(.*?)"', data_line)
+
+        for index, i in enumerate(size_list):
+            test_list = {}
+            properties = {}
+
+            properties['size'] = i.split(",")[0]
+
+            try:
+                line = i.split(",")[1]
+            except IndexError:
+                continue
+            properties['count'] = re.search(r'(\d+)', line).group(0)
+
+            properties['sku'] = sku_list[index]
+            test_list['properties'] = properties
+
+            variants_list.append(test_list)
+
+        product['variants'] = variants_list
 
         response.meta['model'] = is_empty(
             response.xpath("//div[contains(@class, 'products')]"
@@ -220,6 +265,10 @@ class JetProductsSpider(BaseProductsSpider):
                 "/div[contains(@class, 'half')]"
             ).extract()
         )
+
+        upc = re.search('"upc":"(\d+)"', response.body)
+        if upc:
+            product['upc'] = upc.group(1)
 
         product["locale"] = "en_US"
 

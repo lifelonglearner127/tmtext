@@ -346,6 +346,15 @@ class BaseValidator(object):
             return False
         if not str(val).strip().startswith('{'):
             return False
+        if val:
+            if isinstance(val, (str, unicode)):
+                val = json.loads(val)
+            if val:
+                _v, _k = val.items()[0]
+                if not isinstance(_v, (str, unicode)):
+                    return False
+                if not isinstance(_k, list):
+                    return False
         return True
 
     def _validate_results_per_page(self, val):
@@ -392,9 +401,6 @@ class BaseValidator(object):
         return True
 
     def _validate_buyer_reviews(self, val):
-        # print 'VAL', val
-        # import pdb
-        # pdb.set_trace()
         if val in (0, True, False, ''):
             return True
         if isinstance(val, basestring):
@@ -496,7 +502,11 @@ class BaseValidator(object):
         return False
 
     def _validate_categories(self, val):
-        #TODO: better validator
+        if not val:
+            return True
+        for v in val:
+            if not isinstance(v, (str, unicode)):
+                return False
         return True
 
     def _validate_bestseller_rank(self, val):
@@ -559,7 +569,7 @@ class BaseValidator(object):
             except:
                 return False
         for v in val:
-            if not 'date' in [k.lower() for k in v.keys()]:
+            if not any(['date' in k.lower() for k in v.keys()]):
                 return False
         return True
 
@@ -595,7 +605,13 @@ class BaseValidator(object):
         return True  # we will not validate this field for now
 
     def _validate_last_buyer_review_date(self, val):
-        return True  # TODO: implement
+        if not val:
+            return True
+        try:
+            _ = datetime.datetime.strptime(val, "%m/%d/%Y")
+        except Exception, e:
+            return False
+        return True
 
     def _validate_price_subscribe_save(self, val):
         if not val:
@@ -623,12 +639,15 @@ class BaseValidator(object):
         return True  # TODO: update
 
     def _validate__statistics(self, val):
-        return True  # TODO: update
+        return True
 
     def _validate_sku(self, val):
         return True  # TODO: update
 
     def _validate_no_longer_available(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_not_found(self, val):
         return val in (True, False, None, '')
 
     def _validate_shelf_name(self, val):
