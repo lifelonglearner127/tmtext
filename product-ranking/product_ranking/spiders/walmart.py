@@ -402,6 +402,15 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if response.xpath('//*[contains(@class, "invalid")'
                           ' and contains(text(), "tem not available")]'):
             not_available = True
+        if response.xpath('//*[contains(@class, "invalid")'
+                          ' and contains(text(), "no longer available")]'):
+            not_available = True
+        if response.xpath('//*[contains(@class, "NotAvailable")'
+                          ' and contains(text(), "ot Available")]'):
+            not_available = True
+        if response.xpath('//*[contains(@class, "heading")'
+                          ' and contains(text(), "nformation unavailable")]'):
+            not_available = True
         return not_available
 
     def _on_api_response(self, response):
