@@ -1104,7 +1104,7 @@ class WalmartScraper(Scraper):
         return self.is_bundle_product
 
     def _bundle_components(self):
-        product_id_list = self.tree_html.xpath("//div[@class='bundle-see-more-container']//a[@class='itemName']/@id")
+        product_id_list = self.tree_html.xpath("//div[@class='bundle-see-more-container']//div[@class='clearfix greybar-body']/@id")
         product_id_list = [id.split("I")[1] for id in product_id_list]
         product_id_list = list(set(product_id_list))
 
