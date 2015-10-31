@@ -2177,7 +2177,7 @@ class WalmartScraper(Scraper):
         prices = []
         sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
 
-        if self._primary_seller().lower() == "walmart.com":
+        if self._primary_seller().lower() in ["walmart.com", "walmart store"]:
             for seller in sellers_dict:
                 if seller["sellerName"] != "Walmart.com":
                     prices.append(float(seller["price"]))
