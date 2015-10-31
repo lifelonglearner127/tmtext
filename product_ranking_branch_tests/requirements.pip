@@ -31,3 +31,4 @@ wheel==0.24.0
 zope.deprecation==4.1.2
 zope.interface==4.1.2
 numpy==1.9.2
+jsonfield
