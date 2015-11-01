@@ -32,6 +32,7 @@ sys.path.insert(1, os.path.join(CWD, '..', '..', '..'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 from tests_app.models import Spider, TestRun, Report
+from utils import test_run_to_dirname
 
 
 ENABLE_CACHE = False
@@ -53,78 +54,43 @@ def run(command, shell=None):
     return stdout, stderr
 
 
-def spider_is_running(name, search_term=None):
-    """ Checks if the given spider with name `name` is running.
-        Optional arg `search_term` will narrow filtering,
-        assuming we want to check that the spider with specified
-        `name` AND `search_term` is running
-    """
-    if isinstance(name, unicode):
-        name = name.encode('utf8')
-    if search_term is None:
-        all_processes = run('ps aux | grep scrapy')
-    else:
-        all_processes = run('ps aux | grep scrapy | grep "%s"' % search_term)
-    all_processes = ''.join(all_processes)
-    for proc_line in all_processes.split('\n'):
-        if ' '+name in proc_line:
-            if ' crawl ' in proc_line:
-                return True
+def _create_proj_dir(test_run):
+    dirname = test_run_to_dirname(test_run)
+    if not dirname.endswith('/'):
+        dirname += '/'
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
+    return dirname
 
 
-def list_spiders():
-    """ Returns all the spider names and filenames
-    :return:
-    """
-    spiders_dir = os.path.join(SPIDER_ROOT, 'product_ranking', 'spiders')
-    for fname in os.listdir(spiders_dir):
-        _full_fname = os.path.join(spiders_dir, fname)
-        if not os.path.isfile(_full_fname):
-            continue
-        with open(_full_fname, 'r') as fh:
-            spider_content = fh.read()
-        spider_content = spider_content.replace(' ', '').replace('"', "'")
-        spider_name = re.search("name=\'([\w_]+_products)\'", spider_content)
-        if spider_name:
-            yield fname, spider_name.group(1)
+def _get_branches_dirs(test_run):
+    base_dir = _create_proj_dir(test_run)
+    dir1 = os.path.join(base_dir, test_run.branch1)
+    dir2 = os.path.join(base_dir, test_run.branch2)
+    return dir1, dir2
 
 
-def wait_until_spider_finishes(spider):
-    if spider_is_running(spider.name):
-        time.sleep(1)
-
-
-def run_spider(spider, search_term, time_marker):
-    """ Executes spider
-    :param spider: DB spider instance
-    :param search_term: str, request to search
-    :param time_marker: datetime
-    :return: str, path to the temporary file
-    """
-    global ENABLE_CACHE
-    old_cwd = os.getcwd()
-    os.chdir(os.path.join(SPIDER_ROOT))
-    # add `-a quantity=10 -a enable_cache=1` below for easider debugging
-    scrapy_path = '/home/web_runner/virtual-environments/web-runner/bin/scrapy'
-    if not os.path.exists(scrapy_path):
-        scrapy_path = 'scrapy'
-    cmd = r'%s crawl %s -a searchterms_str="%s" -a validate=1' % (
-        scrapy_path, spider.name, search_term)
-    if ENABLE_CACHE:
-        cmd += ' -a enable_cache=1'
-    if isinstance(time_marker, (datetime.date, datetime.datetime)):
-        time_marker = slugify(str(time_marker))
-    _log_filename = '/tmp/%s__%s__%s.log' % (
-        spider.name, slugify(search_term), time_marker)
-    cmd += ' -s LOG_FILE=%s' % _log_filename
-    cmd = str(cmd)  # avoid TypeError: must be encoded string without NULL ...
-    subprocess.Popen(shlex.split(cmd), stdout=open(os.devnull, 'w')).wait()
-    os.chdir(old_cwd)
-    return _log_filename
+def prepare_git_branches(test_run, copy_files=True):
+    """ Creates 2 dirs under base path; each dir contains complete project
+        with the specific branches """
+    dir1, dir2 = _get_branches_dirs(test_run)
+    if not os.path.exists(dir1):
+        os.makedirs(dir1)
+    if not os.path.exists(dir2):
+        os.makedirs(dir2)
+    # clone & checkout first dir
+    this_repo_dir = os.path.abspath(os.path.join(CWD, '..', '..', '..', '..'))
+    cmd_copy = 'cp -r "%s/." "%s"'
+    cmd_fetch = 'cd %s; git fetch --all && git checkout %s && git pull origin %s'
+    if copy_files:
+        os.system(cmd_copy % (this_repo_dir, dir1))
+        os.system(cmd_copy % (this_repo_dir, dir2))
+    os.system(cmd_fetch % (dir1, test_run.branch1, test_run.branch1))
+    os.system(cmd_fetch % (dir2, test_run.branch2, test_run.branch2))
 
 
 def test_match(test_run):
-    pass
+    prepare_git_branches(test_run, copy_files=False)
     # TODO: git fetch --all
     # TODO: git checkout test_run.branch1
     # TODO: run crawl  scrapy crawl myspider -s LOG_FILE=scrapy.log   (override settings: request_delay=0.01; local_cache=enabled; local_cache_path=...;)
@@ -140,7 +106,7 @@ class Command(BaseCommand):
         # get a test run to check
         test_runs = TestRun.objects.filter(status='stopped').order_by('when_started')[0:10]
         for tr in test_runs:
-            test_match(tr)
             print 'Going to check test run %s' % tr
+            test_match(tr)
         if not test_runs:
             print 'No test runs to check'

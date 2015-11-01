@@ -1,8 +1,13 @@
+import os
+import sys
+
 from django.db import models
 
 from jsonfield import JSONField  # pip install jsonfield
 from multiselectfield import MultiSelectField
 
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
 from utils import get_sc_fields, generate_spider_choices
 
 
