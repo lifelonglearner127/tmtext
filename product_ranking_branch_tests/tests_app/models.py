@@ -1,9 +1,4 @@
-import datetime
-
 from django.db import models
-from django.db.models import Q
-from django.core.urlresolvers import reverse_lazy
-from django.utils import timezone
 
 from jsonfield import JSONField  # pip install jsonfield
 from multiselectfield import MultiSelectField
@@ -52,7 +47,9 @@ class TestRun(models.Model):
     strip_get_args = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return 'For [%s], started %s' % (self.spider.name, self.when_started)
+        return 'Branches [%s - %s], Spider [%s], started %s, %s' % (
+            self.branch1, self.branch2, self.spider.name, self.when_started,
+            self.status.upper())
 
 
 class Report(models.Model):
