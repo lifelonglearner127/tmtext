@@ -59,6 +59,7 @@ class TestRun(models.Model):
 
 class Report(models.Model):
     testrun = models.ForeignKey(TestRun, related_name="testrun_reports")
+    searchterm = models.ForeignKey(SearchTerm, related_name="searchterm_reports")
 
     total_urls = models.IntegerField(blank=True, null=True, help_text="Do not fill")
     matched_urls = models.IntegerField(blank=True, null=True, help_text="Do not fill")
@@ -68,3 +69,6 @@ class Report(models.Model):
 
     def __unicode__(self):
         return 'Test run %s' % (self.testrun.__unicode__().lower())
+
+    class Meta:
+        unique_together = ['testrun', 'searchterm']
