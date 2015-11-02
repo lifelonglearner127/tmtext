@@ -98,7 +98,7 @@ class HagelshopProductSpider(BaseProductsSpider):
 
 
         also_liked = response.xpath(
-            '//ul[@class="products-grid row-fluid"]/li[@class="item"]/div[@class="thumbnail"]')
+            '//div[@class="thumbnail"]/div[@class="caption"]/div[@class="product-name"]')
 
         for item in also_liked:
             url = is_empty(item.xpath('a/@href').extract())
