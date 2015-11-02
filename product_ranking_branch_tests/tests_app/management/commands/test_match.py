@@ -191,7 +191,7 @@ class Command(BaseCommand):
                 status = 'passed'
                 if tr_reports[0].not_enough_matched_urls():
                     status = 'failed'
-                if tr_reports[0].diffst_found():
+                if tr_reports[0].diffs_found():
                     status = 'failed'
             else:
                 status = 'failed'
