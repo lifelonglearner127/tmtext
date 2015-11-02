@@ -22,7 +22,11 @@ class TargetValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
     }
 
     test_urls = {
-        '',
-        '',
+        'http://www.target.com/p/striped-ruched-midi-dress-mossimo/-/A-16860280#prodSlot=medium_1_1&term=dress',
+        'http://www.target.com/p/woven-challis-maxi-dress-mossimo-supply-co/-/A-16645319#prodSlot=medium_1_7&term=dress',
+        'http://www.target.com/p/women-s-woven-scallop-a-line-dress-isani/-/A-16711290#prodSlot=medium_1_13&term=dress',
+        'http://www.target.com/p/women-s-shirt-dress-merona/-/A-17257480#prodSlot=medium_1_19&term=dress',
+        'http://www.target.com/p/lattice-back-paisley-shift-dress-3hearts/-/A-18759199#prodSlot=medium_1_23&term=dress',
+        'http://www.target.com/p/xhil-belted-shift-dress-rust/-/A-18781135#prodSlot=medium_1_34&term=dress'
 
     }

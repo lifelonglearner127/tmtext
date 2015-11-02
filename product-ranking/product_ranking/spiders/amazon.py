@@ -9,30 +9,6 @@ from product_ranking.amazon_base_class import AmazonBaseClass
 from product_ranking.validators.amazon_validator import AmazonValidatorSettings
 
 
-# class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-#     optional_fields = ['model', 'brand', 'price', 'bestseller_rank',
-#                        'buyer_reviews']
-#     ignore_fields = [
-#         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-#         'google_source_site', 'description', 'special_pricing'
-#     ]
-#     ignore_log_errors = False  # don't check logs for errors?
-#     ignore_log_duplications = True  # ... duplicated requests?
-#     ignore_log_filtered = True  # ... filtered requests?
-#     test_requests = {
-#         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
-#         'nothing_found_1234654654': 0,
-#         'samsung t9500 battery 2600 li-ion warranty': [30, 250],
-#         'electric bicycle parts wheel': [100, 350],
-#         'ceiling fan industrial white system': [5, 100],
-#         'kaspersky total': [20, 200],
-#         'car navigator garmin maps 44LM': [1, 20],
-#         'yamaha drums midi': [50, 300],
-#         'black men shoes size 8  red stripes': [200, 500],
-#         'car audio equalizer pioneer mp3': [20, 150]
-#     }
-
-
 class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     name = 'amazon_products'
     allowed_domains = ["www.amazon.com"]

@@ -22,12 +22,12 @@ class AsdaValidatorSettings(object):  # do NOT set BaseValidatorSettings as pare
     }
 
     test_urls = {
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
+        'http://groceries.asda.com/product/semi-skimmed-milk/asda-fresh-milk-semi-skimmed/20504',
+        'http://groceries.asda.com/product/semi-skimmed-milk/asda-fresh-milk-semi-skimmed/23423',
+        'http://groceries.asda.com/product/thin-pizza/asda-chosen-by-you-extra-thin-crispy-ham-pineapple-pizza/910001906209',
+        'http://groceries.asda.com/product/thin-pizza/goodfellas-stonebaked-thin-meatball-marinara-pizza/910001904475',
+        'http://groceries.asda.com/product/thin-pizza/goodfellas-stonebaked-extra-thin-vegetable-goats-cheese-pizza/910001174716',
+        'http://groceries.asda.com/product/canned-ciders/strongbow-cloudy-apple-cider/910002079201',
+        'http://groceries.asda.com/product/canned-ciders/blackthorn-cider/910001158269',
+        'http://groceries.asda.com/product/canned-ciders/hawksridge-cider/910001801592',
     }

@@ -46,9 +46,15 @@ try:
     from product_ranking import statistics
 except ImportError:
     # we're in /home/spiders/repo
-    from repo.remote_instance_starter import REPO_BASE_PATH, logging, \
-        AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
-    from repo.remote_instance_starter import QUEUES_LIST
+    # from repo.remote_instance_starter import REPO_BASE_PATH, logging, \
+    #     AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+    # from repo.remote_instance_starter import QUEUES_LIST
+    REPO_BASE_PATH = 0
+    logging = ''
+    AMAZON_BUCKET_NAME = ''
+    AMAZON_ACCESS_KEY = ''
+    AMAZON_SECRET_KEY = ''
+    QUEUES_LIST = ''
     from product_ranking import statistics
 sys.path.insert(
     3, os.path.join(REPO_BASE_PATH, 'deploy', 'sqs_ranking_spiders'))

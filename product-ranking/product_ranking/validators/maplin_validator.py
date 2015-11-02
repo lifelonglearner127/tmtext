@@ -23,6 +23,12 @@ class MaplinValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
 
     test_urls = {
 
-        '',
-        '',
+        'http://www.maplin.co.uk/p/nilfisk-multi-20t-1400w-20l-wet-and-dry-vacuum-cleaner-230v-n46qh',
+        'http://www.maplin.co.uk/p/car-vacuum-12v-wet-and-dry-r01wl',
+        'http://www.maplin.co.uk/p/einhell-th-vc1820s-wet-and-dry-vacuum-20-litre-1250-watt-240-volt-r30rh',
+        'http://www.maplin.co.uk/p/12-wet-and-dry-screen-cleaning-wipes-n77cx',
+        'http://www.maplin.co.uk/p/dewalt-d21570k-127mm-dry-diamond-drill-2-speed-1300-watt-230-volt-r37hh',
+        'http://www.maplin.co.uk/p/first-alert-600g-dry-powder-fire-extinguisher-n27qg',
+        'http://www.maplin.co.uk/p/marcrist-pg750x-dry-diamond-tile-drill-8mm-r31gq',
+        'http://www.maplin.co.uk/p/milwaukee-dd-2-160xe-diamond-drill-162mm-capacity-dry-1500-watt-240-volt-r37hk',
     }
