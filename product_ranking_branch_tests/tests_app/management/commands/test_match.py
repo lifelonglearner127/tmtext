@@ -31,7 +31,8 @@ sys.path.insert(1, os.path.join(CWD, '..', '..', '..'))
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-from tests_app.models import Spider, TestRun, Report, ReportSearchterm
+from tests_app.models import Spider, TestRun, Report, ReportSearchterm,\
+    LocalCache
 from utils import test_run_to_dirname, get_output_fname
 
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', 'product-ranking'))
@@ -96,15 +97,51 @@ def prepare_git_branches(test_run, copy_files=True, force=True):
     os.system(cmd_fetch % (dir2, force, test_run.branch2, force, test_run.branch2, force))
 
 
+def get_cache(searchterm, test_run, delete_expired=True):
+    """ Returns valid cache for the specified searchterm and spider
+    if it exists; None otherwise
+    """
+    cache = LocalCache.objects.filter(
+        searchterm=searchterm, test_run=test_run, spider=test_run.spider
+    ).order_by('-when_created')
+    if delete_expired:
+        for c in cache:
+            if not c.is_valid():
+                shutil.rmtree(c.get_path())
+                print '    removing expired cache %s' % c
+                c.delete()
+    cache = LocalCache.objects.filter(
+        searchterm=searchterm, test_run=test_run, spider=test_run.spider
+    ).order_by('-when_created')
+    if cache and os.path.exists(cache[0].get_path()):
+        print '    returning cache %s' % cache[0]
+        return cache[0]
+    else:
+        # file path does not exist - create new cache
+        cache = LocalCache.objects.create(
+            searchterm=searchterm, test_run=test_run, spider=test_run.spider)
+        print '    created new cache %s' % cache
+        return cache
+
+
+def create_cache_path_if_doesnt_exist(cache):
+    if not os.path.exists(cache.get_path()):
+        print '    created cache path %s' % cache.get_path()
+        os.makedirs(cache.get_path())
+
+
 def test_match(test_run):
-    prepare_git_branches(test_run, copy_files=True, force=True)
+    prepare_git_branches(test_run, copy_files=False, force=True)
     # TODO: add cache management!
     # TODO: run crawl  scrapy crawl myspider -s LOG_FILE=scrapy.log   (override settings: request_delay=0.01; local_cache=enabled; local_cache_path=...;)
     cmd = ('cd "{branch_dir}/product-ranking/"; scrapy crawl {spider_name}'
            ' -a searchterms_str="{searchterm}" -a quantity={quantity}'
+           ' -a enable_cache=True -s HTTPCACHE_DIR="{cache_dir}"'
            ' -s DOWNLOAD_DELAY=0.05 -o {output_path}')
     report = Report.objects.create(testrun=test_run)
     for searchterm in test_run.spider.searchterms.all():
+        cache = get_cache(searchterm, test_run)
+        create_cache_path_if_doesnt_exist(cache)
         print '    executing spider %s for ST %s' % (
             test_run.spider.name, searchterm.searchterm)
         output1 = get_output_fname(searchterm, test_run, test_run.branch1)
@@ -113,12 +150,12 @@ def test_match(test_run):
             branch_dir=_get_branches_dirs(test_run)[0],
             spider_name=test_run.spider.name,
             searchterm=searchterm.searchterm, quantity=searchterm.quantity,
-            output_path=output1))
+            cache_dir=cache.get_path(), output_path=output1))
         os.system(cmd.format(
             branch_dir=_get_branches_dirs(test_run)[1],
             spider_name=test_run.spider.name,
             searchterm=searchterm.searchterm, quantity=searchterm.quantity,
-            output_path=output2))
+            cache_dir=cache.get_path(), output_path=output2))
         if test_run.exclude_fields is None:
             test_run.exclude_fields = []
         diff = match(

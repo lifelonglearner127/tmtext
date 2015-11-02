@@ -1,10 +1,13 @@
 import os
 import sys
+import datetime
 
 from django.db import models
+from django.utils.timezone import now
 
 from jsonfield import JSONField  # pip install jsonfield
 from multiselectfield import MultiSelectField
+from slugify import slugify
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
@@ -106,3 +109,33 @@ class ReportSearchterm(models.Model):
     def __unicode__(self):
         return '[%s] [%s]' % (self.report.__unicode__().lower(),
                               self.searchterm.__unicode__())
+
+
+class LocalCache(models.Model):
+    searchterm = models.ForeignKey(SearchTerm)
+    test_run = models.ForeignKey(TestRun)
+    spider = models.ForeignKey(Spider)
+    when_created = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self, max_hours=12):
+        if not self.when_created:
+            return
+        if (now() - self.when_created).total_seconds() / 60 / 60 > max_hours:
+            return False
+        return True
+
+    def get_cache_identifier(self):
+        _st = self.searchterm.searchterm
+        _quantity = self.searchterm.quantity
+        if isinstance(_st, unicode):
+            _st = _st.encode('utf8')
+        _spider = self.spider.name
+        return (_spider + '__' + slugify(_st) + '__' + str(_quantity)
+                + '__' + str(self.test_run.pk))
+
+    def get_path(self, base_path='~/_sc_tests_cache/'):
+        base_path = os.path.expanduser(base_path)
+        return os.path.join(base_path, self.get_cache_identifier())
+
+    def __unicode__(self):
+        return '%s - %s - %s' % (self.searchterm, self.spider, self.when_created)
