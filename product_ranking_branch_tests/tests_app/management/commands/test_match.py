@@ -131,7 +131,7 @@ def create_cache_path_if_doesnt_exist(cache):
 
 
 def test_match(test_run):
-    prepare_git_branches(test_run, copy_files=False, force=True)
+    prepare_git_branches(test_run, copy_files=True, force=True)
     # TODO: add cache management!
     # TODO: run crawl  scrapy crawl myspider -s LOG_FILE=scrapy.log   (override settings: request_delay=0.01; local_cache=enabled; local_cache_path=...;)
     cmd = ('cd "{branch_dir}/product-ranking/"; scrapy crawl {spider_name}'
