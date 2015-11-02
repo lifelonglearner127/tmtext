@@ -49,7 +49,12 @@ class ReportsView(AdminOnlyMixin, ListView):
         return context
 
 
-class ReportView(AdminOnlyMixin, DetailView):
-    template_name = 'report.html'
-    context_object_name = 'report'
-    model = Report
+class DiffsView(AdminOnlyMixin, TemplateView):
+    template_name = 'diffs.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(DiffsView, self).get_context_data(**kwargs)
+        report_searchterm = ReportSearchterm.objects.get(
+            pk=self.kwargs['report_searchterm'])
+        context['searchterm'] = report_searchterm
+        return context

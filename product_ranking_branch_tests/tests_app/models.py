@@ -11,6 +11,11 @@ sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
 from utils import get_sc_fields, generate_spider_choices
 
 
+DEFAULT_EXCLUDE_FIELDS = [
+    '_statistics'
+]
+
+
 class SearchTerm(models.Model):
     searchterm = models.CharField(max_length=100)
     quantity = models.IntegerField(default=300)
@@ -45,7 +50,8 @@ class TestRun(models.Model):
 
     exclude_fields = MultiSelectField(
         choices=[(k,k) for k in sorted(get_sc_fields())],
-        null=True, blank=True)
+        null=True, blank=True,
+        default=DEFAULT_EXCLUDE_FIELDS)
     skip_urls = models.CharField(
         max_length=150, blank=True, null=True,
         help_text="All URLs containing this pattern will be skipped")

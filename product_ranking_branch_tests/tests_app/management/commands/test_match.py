@@ -97,7 +97,7 @@ def prepare_git_branches(test_run, copy_files=True, force=True):
 
 
 def test_match(test_run):
-    prepare_git_branches(test_run, copy_files=False, force=True)
+    prepare_git_branches(test_run, copy_files=True, force=True)
     # TODO: add cache management!
     # TODO: run crawl  scrapy crawl myspider -s LOG_FILE=scrapy.log   (override settings: request_delay=0.01; local_cache=enabled; local_cache_path=...;)
     cmd = ('cd "{branch_dir}/product-ranking/"; scrapy crawl {spider_name}'
@@ -109,8 +109,6 @@ def test_match(test_run):
             test_run.spider.name, searchterm.searchterm)
         output1 = get_output_fname(searchterm, test_run, test_run.branch1)
         output2 = get_output_fname(searchterm, test_run, test_run.branch2)
-        # TODO: uncomment lines below
-        """
         os.system(cmd.format(
             branch_dir=_get_branches_dirs(test_run)[0],
             spider_name=test_run.spider.name,
@@ -121,7 +119,8 @@ def test_match(test_run):
             spider_name=test_run.spider.name,
             searchterm=searchterm.searchterm, quantity=searchterm.quantity,
             output_path=output2))
-        """
+        if test_run.exclude_fields is None:
+            test_run.exclude_fields = []
         diff = match(
             f1=output1, f2=output2,
             fields2exclude=test_run.exclude_fields,
@@ -132,7 +131,11 @@ def test_match(test_run):
         report_searchterm = ReportSearchterm.objects.create(
             report=report, searchterm=searchterm, total_urls=diff['total_urls'],
             matched_urls=diff['matched_urls'], diffs=diff['diff'])
-    # TODO: match output files
+
+
+def cleanup_files(test_run):
+    for _dir in _get_branches_dirs(test_run):
+        shutil.rmtree(_dir)
 
 
 class Command(BaseCommand):
@@ -143,6 +146,20 @@ class Command(BaseCommand):
         test_runs = TestRun.objects.filter(status='stopped').order_by('when_started')[0:10]
         for tr in test_runs:
             print 'Going to check test run %s' % tr
+            tr.status = 'running'
+            tr.save()
             test_match(tr)
+            tr_reports = tr.testrun_reports.all().order_by('-when_created')
+            if tr_reports:
+                status = 'passed'
+                if tr_reports[0].not_enough_matched_urls():
+                    status = 'failed'
+                if tr_reports[0].diffst_found():
+                    status = 'failed'
+            else:
+                status = 'failed'
+            tr.status = status
+            tr.save()
+            cleanup_files(tr)
         if not test_runs:
             print 'No test runs to check'

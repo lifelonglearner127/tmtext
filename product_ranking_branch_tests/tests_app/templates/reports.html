@@ -43,13 +43,14 @@
                             {% endif %}
 
                             {% if not searchterm.not_enough_matched_urls and searchterm.diffs %}
-                                - <span style='color:red'>ERROR: {{ searchterm.diffs|length }} diffs found</span>
+                                - <a href="{% url 'diffs_view' report_searchterm=searchterm.pk %}"><span style='color:red'>
+                                  ERROR: {{ searchterm.diffs|length }} diffs found</span></a>
                             {% endif %}
                         </li>
                         {% endfor %}
                     </ul>
                 </td>
-                <td><a target="_blank" href="/admin/tests_app/testrun/{{ report.testrun.pk }}/">TestRun[{{ report.testrun.pk }}]</a></td>
+                <td><a target="_blank" href="/admin/tests_app/testrun/{{ report.testrun.pk }}/">TestRun</a></td>
             </tr>
         {% endfor %}
     </table>

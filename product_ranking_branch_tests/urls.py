@@ -18,7 +18,7 @@ urlpatterns = patterns('',
 
     url(r'^$', SpidersView.as_view(), name="spiders_view"),
     url(r'^reports/(?P<spider>[a-zA-Z_]+)/$', ReportsView.as_view(), name="reports_view"),
-    url(r'^reports/(?P<report>[0-9]+)/$', ReportView.as_view(), name="report_view"),
+    url(r'^diffs/(?P<report_searchterm>[0-9]+)/$', DiffsView.as_view(), name="diffs_view"),
 )
 
 if settings.DEBUG:
