@@ -58,7 +58,25 @@ class TestRun(models.Model):
 
 
 class Report(models.Model):
+    when_created = models.DateTimeField(auto_now_add=True)
     testrun = models.ForeignKey(TestRun, related_name="testrun_reports")
+
+    def not_enough_matched_urls(self):
+        for searchterm in self.report_searchterms.all():
+            if searchterm.not_enough_matched_urls():
+                return True
+
+    def diffs_found(self):
+        for searchterm in self.report_searchterms.all():
+            if searchterm.diffs:
+                return True
+
+    def __unicode__(self):
+        return 'Test run %s' % (self.testrun.__unicode__().lower())
+
+
+class ReportSearchterm(models.Model):
+    report = models.ForeignKey(Report, related_name="report_searchterms")
     searchterm = models.ForeignKey(SearchTerm, related_name="searchterm_reports")
 
     total_urls = models.IntegerField(blank=True, null=True, help_text="Do not fill")
@@ -67,8 +85,18 @@ class Report(models.Model):
 
     when_created = models.DateTimeField(auto_now_add=True)
 
-    def __unicode__(self):
-        return 'Test run %s' % (self.testrun.__unicode__().lower())
+    def not_enough_matched_urls(self):
+        """ Returns True if the number of matched URLs is too low
+            (so the report is not precise enough)
+        """
+        if self.total_urls is not None and self.matched_urls is not None:
+            if self.matched_urls < self.total_urls / 2:
+                return True
+        if self.matched_urls == 0:
+            return True
+        if self.matched_urls and self.matched_urls < 10:
+            return True
 
-    class Meta:
-        unique_together = ['testrun', 'searchterm']
+    def __unicode__(self):
+        return '[%s] [%s]' % (self.report.__unicode__().lower(),
+                              self.searchterm.__unicode__())

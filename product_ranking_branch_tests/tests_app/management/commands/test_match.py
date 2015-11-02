@@ -31,7 +31,7 @@ sys.path.insert(1, os.path.join(CWD, '..', '..', '..'))
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
-from tests_app.models import Spider, TestRun, Report
+from tests_app.models import Spider, TestRun, Report, ReportSearchterm
 from utils import test_run_to_dirname, get_output_fname
 
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', 'product-ranking'))
@@ -103,6 +103,7 @@ def test_match(test_run):
     cmd = ('cd "{branch_dir}/product-ranking/"; scrapy crawl {spider_name}'
            ' -a searchterms_str="{searchterm}" -a quantity={quantity}'
            ' -s DOWNLOAD_DELAY=0.05 -o {output_path}')
+    report = Report.objects.create(testrun=test_run)
     for searchterm in test_run.spider.searchterms.all():
         print '    executing spider %s for ST %s' % (
             test_run.spider.name, searchterm.searchterm)
@@ -128,8 +129,8 @@ def test_match(test_run):
             skip_urls=test_run.skip_urls,
             print_output=False
         )
-        report = Report.objects.get_or_create(
-            testrun=test_run, searchterm=searchterm, total_urls=diff['total_urls'],
+        report_searchterm = ReportSearchterm.objects.create(
+            report=report, searchterm=searchterm, total_urls=diff['total_urls'],
             matched_urls=diff['matched_urls'], diffs=diff['diff'])
     # TODO: match output files
 
