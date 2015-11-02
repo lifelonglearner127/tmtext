@@ -19,9 +19,13 @@
             <tr>
                 <td>
                     {% if report.not_enough_matched_urls or report.diffs_found %}
-                        <span style="color:red">Failed</span>
+                        <span style="color:red; font-weight: bold">Failed</span>
+                    {% elif report.testrun.status == 'running' %}
+                        Running
+                    {% elif report.testrun.status == 'stopped' %}
+                        Created
                     {% else %}
-                        <span style="color:green">Passed</span>
+                        <span style="color:green; font-weight: bold">Passed</span>
                     {% endif %}
                 </td>
                 <td>{{ report.when_created }}</td>
