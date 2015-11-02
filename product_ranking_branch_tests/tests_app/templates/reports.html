@@ -41,10 +41,12 @@
                             {% if searchterm.not_enough_matched_urls %}
                                 - <span style='font-size: 11px'>ERROR: Not enough matched urls!</span>
                             {% endif %}
-
                             {% if not searchterm.not_enough_matched_urls and searchterm.diffs %}
                                 - <a href="{% url 'diffs_view' report_searchterm=searchterm.pk %}"><span style='color:red'>
                                   ERROR: {{ searchterm.diffs|length }} diffs found</span></a>
+                            {% endif %}
+                            {% if not searchterm.not_enough_matched_urls and not searchterm.diffs %}
+                                - <span style="color:green">No issues found</span>
                             {% endif %}
                         </li>
                         {% endfor %}
