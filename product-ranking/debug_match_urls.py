@@ -25,7 +25,7 @@ def parse_cmd_args():
     return parser.parse_args()
 
 
-def strip_get_args(url):
+def _strip_get_args(url):
     return url.rsplit('/', 1)[0]
 
 
@@ -50,6 +50,10 @@ def _list_diff(l1, l2):
 
 def _get_mismatching_fields(d1, d2, exclude_fields):
     result = []
+    if d1.keys() is None or d2.keys() is None:
+        return []
+    if exclude_fields is None:
+        exclude_fields = []
     # check their length (missing fields?)
     keys1 = set([key for key in d1.keys() if not key in exclude_fields])
     keys2 = set([key for key in d2.keys() if not key in exclude_fields])
@@ -127,8 +131,12 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
 
     f1 = open(f1).readlines()
     f2 = open(f2).readlines()
-    f1 = [json.loads(l.strip()) for l in f1 if l.strip()]
-    f2 = [json.loads(l.strip()) for l in f2 if l.strip()]
+
+    try:
+        f1 = [json.loads(l.strip()) for l in f1 if l.strip()]
+        f2 = [json.loads(l.strip()) for l in f2 if l.strip()]
+    except ValueError:
+        return {'diff': [], 'total_urls': 0, 'matched_urls': 0}
 
     result_mismatched = []
 
@@ -137,7 +145,7 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
             continue
         url1 = json1['url']
         if strip_get_args:
-            url1 = strip_get_args(url1)
+            url1 = _strip_get_args(url1)
 
         total_urls += 1
 
@@ -152,7 +160,7 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
                 continue
             url2 = json2['url']
             if strip_get_args:
-                url2 = strip_get_args(url2)
+                url2 = _strip_get_args(url2)
             if url1 == url2:
                 matched_urls += 1
                 mis_fields = _get_mismatching_fields(json1, json2,
