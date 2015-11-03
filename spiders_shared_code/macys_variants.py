@@ -19,6 +19,9 @@ class MacysVariants(object):
     def _variants(self):
         try:
             colors = self.tree_html.xpath('//img[@class="colorSwatch"]/@alt')
+            if not colors:
+                colors = self.tree_html.xpath('//*[contains(@class, "productColor")]/text()')
+
             sizes = self.tree_html.xpath('//li[@class=" size"]/@title')
             page_raw_text = lxml.html.tostring(self.tree_html)
             product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0].strip()

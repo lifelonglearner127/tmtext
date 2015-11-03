@@ -38,11 +38,11 @@ deploy () {
     fab -H keywords18.contentanalyticsinc.com set_production deploy:branch=sc_production,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
     fab -H keywords19.contentanalyticsinc.com set_production deploy:branch=sc_production,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
     fab -H keywords20.contentanalyticsinc.com set_production deploy:branch=sc_production,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
-    fab -H keywords21-clorox.contentanalyticsinc.com set_production deploy:branch=sc_production,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
     fab -H keywords22.contentanalyticsinc.com set_production deploy:branch=sc_production,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
     fab -H keywords23.contentanalyticsinc.com set_production deploy:branch=sc_production,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
 
     fab -H keywords24.contentanalyticsinc.com set_production deploy:branch=sc_production,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
+
     fab -H keywords25.contentanalyticsinc.com set_production deploy:branch=sc_production,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
     fab -H keywords26-maplin.contentanalyticsinc.com set_production deploy:branch=sc_production,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
     fab -H keywords27-maplin.contentanalyticsinc.com set_production deploy:branch=sc_production,restart_scrapyd=True -u ubuntu -i ../../../ssh_certificates//ubuntu_id_rsa &
