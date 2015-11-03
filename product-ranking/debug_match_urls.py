@@ -98,6 +98,8 @@ def print_human_friendly(
 
 def collect_human_friendly(results, exclude_fields):
     output = []
+    if exclude_fields is None:
+        exclude_fields = []
     for element in results:
         if isinstance(element, dict):
             field, vals = element.items()[0]
