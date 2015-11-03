@@ -182,12 +182,6 @@ class WalmartScraper(Scraper):
         #      return false cause no rich media at all?
         return True
 
-    def _filter_out_wrong_videos(self):
-        urls = getattr(self, "video_urls", [])
-        if isinstance(urls, list):
-            urls = [u for u in urls if not 'SellPointsVideos' in u]
-            self.video_urls = urls
-
     def _extract_video_urls(self):
         """Extracts video URL for a given walmart product
         and puts them in instance variable.
@@ -229,7 +223,6 @@ class WalmartScraper(Scraper):
                     for wcobj_link in wcobj_links:
                         if wcobj_link.endswith(".flv"):
                             self.video_urls.append(wcobj_link)
-                            self._filter_out_wrong_videos()
 
         # webcollage video info
         request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
@@ -262,7 +255,6 @@ class WalmartScraper(Scraper):
                 if len(jsonVideo['videos']) > 0:
                     for video_info in jsonVideo['videos']:
                         self.video_urls.append(video_base_path + video_info['src']['src'])
-                        self._filter_out_wrong_videos()
 
                 sIndex = eIndex
 
@@ -291,7 +283,6 @@ class WalmartScraper(Scraper):
                     self.has_sellpoints_media = True
                     self.has_video = True
                     self.video_urls.append(video_url_candidate)
-                    self._filter_out_wrong_videos()
                     break
 
         # check sellpoints media if webcollage media doesn't exist
@@ -323,41 +314,18 @@ class WalmartScraper(Scraper):
                 contents = s.get("http://www.walmart.com/product/idml/video/" +
                                  str(self._extract_product_id()) + "/WebcollageVideos", headers=h, timeout=5).text
 
-##                if not contents:
-##                    self.video_urls = None
-##                    return
-                if contents:
-                    tree = html.fromstring(contents)
-                    video_json = json.loads(tree.xpath("//div[@class='wc-json-data']/text()")[0])
-                    video_relative_path = video_json["videos"][0]["sources"][0]["src"]
-                    video_base_path = tree.xpath("//table[@class='wc-gallery-table']/@data-resources-base")[0]
-                    self.video_urls.append(video_base_path + video_relative_path)
-                    self._filter_out_wrong_videos()
-                    self.has_video = True
+                if not contents:
+                    self.video_urls = None
+                    return
+
+                tree = html.fromstring(contents)
+                video_json = json.loads(tree.xpath("//div[@class='wc-json-data']/text()")[0])
+                video_relative_path = video_json["videos"][0]["sources"][0]["src"]
+                video_base_path = tree.xpath("//table[@class='wc-gallery-table']/@data-resources-base")[0]
+                self.video_urls.append(video_base_path + video_relative_path)
+                self.has_video = True
             else:
                 self.video_urls = None
-        if self.tree_html.xpath("//div[starts-with(@class,'js-idml-video-container')]"):
-            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-            s = requests.Session()
-            a = requests.adapters.HTTPAdapter(max_retries=3)
-            b = requests.adapters.HTTPAdapter(max_retries=3)
-            s.mount('http://', a)
-            s.mount('https://', b)
-            vlnk ="http://www.walmart-content.com/product/idml/video/" + str(self._extract_product_id()) + "/SellPointsVideos"
-            response = s.get(vlnk, headers=h, timeout=15)
-            if response != 'Error' and response.ok:
-                contents=response.content
-                if contents != "":
-                    tree = html.fromstring(contents)
-                    vidcon = tree.xpath("//div[@id='iframe-video-content']")
-                    if len(vidcon) > 0:
-                        self.has_video = True
-                        if self.video_urls != None:
-                            self.video_urls.append(vlnk)
-                        else:
-                            self.video_urls = [vlnk]
-                        self._filter_out_wrong_videos()
-
 
     def _video_urls(self):
         """Extracts video URLs for a given walmart product

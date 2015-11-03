@@ -73,6 +73,7 @@ from extract_amazonfr_data import AmazonFRScraper
 from extract_halfords_data import HalfordsScraper
 from extract_homebase_data import HomebaseScraper
 from extract_riverisland_data import RiverislandScraper
+from extract_mothercare_data import MotherCareScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -153,7 +154,8 @@ SUPPORTED_SITES = {
                     "amazonfr": AmazonFRScraper,
                     "halfords": HalfordsScraper,
                     "homebase": HomebaseScraper,
-                    "riverisland": RiverislandScraper
+                    "riverisland": RiverislandScraper,
+                    "mothercare": MotherCareScraper,
                     }
 
 # add logger
