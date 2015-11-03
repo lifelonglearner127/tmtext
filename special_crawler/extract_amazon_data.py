@@ -550,16 +550,16 @@ class AmazonScraper(Scraper):
 
         swatch_images = []
 
-##        try:
-##            swatch_image_json = json.loads(self._find_between(html.tostring(self.tree_html), 'data["colorImages"] = ', ';\n'))
-##        except:
-##            swatch_image_json = None
-##
-##        if swatch_image_json:
-##            for color in swatch_image_json:
-##                for image in swatch_image_json[color]:
-##                    if "large" in image and image["large"].strip():
-##                        swatch_images.append(image["large"])
+        try:
+            swatch_image_json = json.loads(self._find_between(html.tostring(self.tree_html), 'data["colorImages"] = ', ';\n'))
+
+            if swatch_image_json:
+                for color in swatch_image_json:
+                    for image in swatch_image_json[color]:
+                        if "large" in image and image["large"].strip():
+                            swatch_images.append(image["large"])
+        except:
+            swatch_image_json = None
 
         image_url = swatch_images
         #The small images are to the left of the big image
