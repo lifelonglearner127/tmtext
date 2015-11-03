@@ -3,6 +3,7 @@ from time import time, mktime
 from redis import StrictRedis
 from zlib import compress, decompress
 from datetime import date, datetime, timedelta
+from collections import OrderedDict
 from os.path import realpath, dirname
 
 try:
@@ -341,5 +342,6 @@ class SqsCache(object):
         data = self.db.zrevrangebyscore(self.REDIS_INSTANCES_HISTORY,
                                         9999999999, offset,
                                         withscores=True, score_cast_func=int)
-        res = {d[1]: d[0].split(':')[-1] for d in data}
+        res = [(d[1], d[0].split(':')[-1]) for d in data]
+        res = OrderedDict(res)
         return res

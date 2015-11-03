@@ -43,7 +43,12 @@
                     canvas.attr('height', 400);
                     canvas.appendTo($('#myChart').empty());
                     var ctx = canvas[0].getContext("2d");
-                    var options = {};
+                    var options = {
+                        scaleOverride : true,
+                        scaleSteps : 15,
+                        scaleStepWidth : 100,
+                        scaleStartValue : 2000
+                    };
                     var myLineChart = new Chart(ctx).Line(chartData, options);
                 });
             });
