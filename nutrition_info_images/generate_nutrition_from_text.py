@@ -13,6 +13,9 @@ def quitting(thing):
     thing.quit()
 
 def screenshot_element(urls, element_xpaths, image_name="nutrition", outdir="/tmp/nutrition_facts_screenshots/"):
+    '''Returns dictionary with input urls and paths to the screenshots of the nutrition info
+    '''
+    saved_screenshots = []
     with quitting(webdriver.Firefox()) as driver:
         for url in urls:
             driver.implicitly_wait(5)
@@ -62,7 +65,10 @@ def screenshot_element(urls, element_xpaths, image_name="nutrition", outdir="/tm
 
                 from random import random
                 idx = int(random() * 1000)
-                cropped.save(outdir + image_name + '_cropped%d.png' % idx)
+                outpath = outdir + image_name + '_cropped%d.png' % idx
+                cropped.save(outpath)
+                saved_screenshots.append({'url' : url, 'screenshot': outpath})
+    return saved_screenshots
 
 if __name__=='__main__':
     screenshot_element([sys.argv[1]], ("//div[@class='nutrition-section']", "//div[@class='NutFactsSIPT']"))

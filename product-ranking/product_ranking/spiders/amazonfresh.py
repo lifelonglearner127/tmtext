@@ -1,5 +1,6 @@
 from __future__ import division, absolute_import, unicode_literals
 
+import urllib
 import urlparse
 import re
 
@@ -7,8 +8,7 @@ from scrapy.http import Request
 from scrapy import FormRequest
 from scrapy.log import ERROR
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
-    MarketplaceSeller
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults, cond_set_value
@@ -103,9 +103,10 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
             else:
                 other_products = []
             if seller:
-                prod["marketplace"] = MarketplaceSeller(
-                    seller=seller[0], other_products=other_products
-                )
+                prod["marketplace"] = [{
+                    "name": seller[0], 
+                    "price": prod["price"],
+                }]
 
         des = response.xpath('//div[@id="productDescription"]').extract()
         cond_set(prod, 'description', des)
@@ -136,6 +137,7 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
                 br = BuyerReviews(num_of_reviews, avg, {})
                 prod['buyer_reviews'] = br
         cond_set_value(prod, 'buyer_reviews', ZERO_REVIEWS_VALUE)
+
         return prod
 
     def _search_page_error(self, response):

@@ -6,5 +6,6 @@ Debian packages dependencies:
 - python-scipy (if installation with pip doesn't work)
 - libfreetype6-dev libpng-dev (for matplotlib); also
     `ln -s /usr/include/freetype2/ft2build.h /usr/include/`
+- tesseract-ocr
 
 Python dependencies can be found in requirements.txt

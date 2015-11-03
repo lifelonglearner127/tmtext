@@ -43,12 +43,14 @@ class URLsPipeline(object):
             if int(spider.output) == 5:
                 titles.append("Product_Name")
                 titles.append("Original_URL")
+                # titles.append("Target_Price")
 
             # TODO: uncomment.
             # if int(spider.output) == 3:
             #     titles.append("Original_product_name")
             #     titles.append("Original_product_model")
-            titles.append("Match_URL")
+            if int(spider.output != 7):
+                titles.append("Match_URL")
 
             if int(spider.output) == 6:
                 titles.append("Original_Bestsellers_Rank")
@@ -64,8 +66,16 @@ class URLsPipeline(object):
                 titles.append("Product_images")
                 titles.append("Product_videos")
 
-            if int(spider.output) >= 3:
+            if int(spider.output) >= 3 and int(spider.output) <= 6:
+                titles.append("UPC_match")
+                titles.append("Model_match")
                 titles.append("Confidence")
+
+            if int(spider.output == 7):
+                with open("fields.json") as out_fields:
+                    fields = json.loads(out_fields.read())["output_fields"]
+                    self.fields = fields
+                titles += self.fields
 
             self.file.write(",".join(titles) + "\n")
 
@@ -96,9 +106,16 @@ class URLsPipeline(object):
                 fields = [item['origin_upc'][0], json.dumps(item['origin_name'])]
             else:
                 if option == 5:
-                    fields = [json.dumps(item['origin_name']), item['origin_url']]
+                    if 'product_target_price' not in item:
+                        price = ""
+                    else:
+                        price = item['product_target_price']
+                    fields = [json.dumps(item['origin_name']), item['origin_url']]#, str(price)]
                 else:
-                    fields = [item['origin_url']]
+                    if option != 7:
+                        fields = [item['origin_url']]
+                    else:
+                        fields = []
 
             # TODO. uncomment
             # # if output type is 3, add additional fields
@@ -111,9 +128,10 @@ class URLsPipeline(object):
 
             # if a match was found add it to the fields to be output
             #TODO: this includes the comma at the end of the line even with no results
-            if 'product_url' in item:
-                fields.append(item['product_url'])
-            elif option>=3:
+            if option != 7:
+                if 'product_url' in item:
+                    fields.append(item['product_url'])
+            elif (option>=3 and option <= 6):
                 fields.append("")
             #fields.append(item['product_url'] if 'product_url' in item else "")
             
@@ -125,7 +143,7 @@ class URLsPipeline(object):
 
             
             # if output type is 3, add additional fields
-            if option >= 3:
+            if option >= 3 and option <= 6:
 
                 # TODO: uncomment.
                 # # if there was a match (there is a 'product_url', there should also be a 'product_name')
@@ -138,7 +156,17 @@ class URLsPipeline(object):
                 # fields.append(item['product_model'] if 'product_model' in item else "")
 
                 # format confidence score on a total of 5 characters and 2 decimal points 
+                fields.append(str(item['UPC_match'] if 'UPC_match' in item else ""))
+                fields.append(str(item['model_match'] if 'model_match' in item else ""))
                 fields.append(str("%5.2f" % item['confidence']) if 'confidence' in item else "")
+
+            if option == 7:
+                fields += map(lambda f:
+                    "" if f not in item
+                    else json.dumps(item[f]) if ('name' in f and f in item)
+                    else str("%5.2f" % item['confidence']) if (f == 'confidence' and 'confidence' in item)
+                    else str(item[f]),
+                    self.fields)
 
             # construct line from fields list
             line = ",".join(map(lambda x: x.encode("utf-8"), fields)) + "\n"

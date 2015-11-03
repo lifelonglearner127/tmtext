@@ -19,17 +19,44 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 from spiders_shared_code.target_variants import TargetVariants
-
+from product_ranking.validation import BaseValidator
 
 
 is_empty = lambda x, y=None: x[0] if x else y
 
 
-class TargetProductSpider(BaseProductsSpider):
+class TargetValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+    optional_fields = ['brand', 'price']
+    ignore_fields = [
+        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'google_source_site', 'description', 'special_pricing', "model", 
+        "bestseller_rank",
+    ]
+    ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = True  # ... duplicated requests?
+    ignore_log_filtered = True  # ... filtered requests?
+    test_requests = {
+        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
+        'nothing_found_1234654654': 0,
+        'sold': [15, 150],
+        'cola': [60, 210],
+        'vacation': [50, 175],
+        'sort': [7, 100],
+        'navigator': [10, 110],
+        'manager': [15, 130],
+        'IPhone-6': [1, 50],
+        'air conditioner': [60, 170],
+    }
+
+
+class TargetProductSpider(BaseValidator, BaseProductsSpider):
     name = 'target_products'
     allowed_domains = ["target.com", "recs.richrelevance.com",
                        'api.bazaarvoice.com']
     start_urls = ["http://www.target.com/"]
+
+    settings = TargetValidatorSettings
+
     # TODO: support new currencies if you're going to scrape target.canada
     #  or any other target.* different from target.com!
     SEARCH_URL = "http://www.target.com/s?searchTerm={search_term}"
@@ -124,12 +151,22 @@ class TargetProductSpider(BaseProductsSpider):
         ).extract()
         prod = response.meta['product']
 
+        if 'sorry, that item is no longer available' \
+                in response.body_as_unicode().lower():
+            prod['not_found'] = True
+            return prod
+
         tv = TargetVariants()
         tv.setupSC(response)
         prod['variants'] = tv._variants()
 
         price = is_empty(response.xpath(
             '//p[contains(@class, "price")]/span/text()').extract())
+        if not price:
+            price = is_empty(response.xpath(
+                '//*[contains(@class, "price")]'
+                '/*[contains(@itemprop, "price")]/text()'
+            ).extract())
         if price:
             price = is_empty(re.findall("\d+\.{0,1}\d+", price))
             if price:
@@ -141,9 +178,9 @@ class TargetProductSpider(BaseProductsSpider):
         special_pricing = is_empty(response.xpath(
             '//li[contains(@class, "eyebrow")]//text()').extract())
         if special_pricing == "TEMP PRICE CUT":
-            prod['special_pricing'] = 1
+            prod['special_pricing'] = True
         else:
-            prod['special_pricing'] = 0
+            prod['special_pricing'] = False
 
         if 'url' not in prod:
             prod['url'] = response.url
@@ -699,8 +736,13 @@ class TargetProductSpider(BaseProductsSpider):
     def _scrape_next_results_page_link_html(self, response):
         next_page = response.xpath(
             "//div[@id='pagination1']/div[@class='col2']"
-            "/ul[@class='pagination1']/li[@class='next']/a/@href").extract()
+            "/ul[@class='pagination1']/li[@class='next']/a/@href |"
+            "//li[contains(@class, 'pagination--next')]/a/@href"
+        ).extract()
         if next_page:
+            search = "?searchTerm=%s" % self.searchterms[0].replace(" ", "+")
+            if search in next_page[0] and "page=" in next_page[0]:
+                return next_page[0]
             next_page = next_page[0]
             return self._gen_next_request(response, next_page)
 

@@ -26,11 +26,6 @@ class AmazonSpider(SearchSpider):
 
     name = "amazon"
     handle_httpstatus_list = [404]
-    # cookie_header = "x-wl-uid=1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=; session-token=JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=; x-amz-captcha-1=1391100438353490; x-amz-captcha-2=+EDhq9rcotSRn783vYMxdQ==; csm-hit=337.71|1391093239619; ubid-main=188-7820618-3817319; session-id-time=2082787201l; session-id=177-0028713-4113141"
-    # cookies = {"x-wl-uid" : "1Y9x3Q0Db5VX3Xvh1wKV9kdGsDEeLDkceSgPK5Hq+AhrYZKCWSHWq6CeCiAwA7BsYZQ58tkG8c3c=", \
-    # "session-token" : "JPU0C93JOc0DMIZwsQTlpZFJAADURltK2s5Cm22nmFGmaGRwiOPKdvd+ALLsrWay07GVVQtBquy/KpNSTFb5e0HfWeHAq92jFhXz5nQouwyqMLtEC3MUu2TWkIRGps4ppDXQfMP/r96gq0QfRR8EdPogbQ9RzEXoIKf3tj3klxeO2mT6xVQBTfpMPbQHQtv8uyFjWgkLtp6upe4eWorbpd/KyWlBSQXD4eiyfQLIC480TxbOvCBmDhGBOqf6Hk0Nprh2OO2EfrI=",\
-    # "x-amz-captcha-1" : "1391100438353490" , "x-amz-captcha-2" : "+EDhq9rcotSRn783vYMxdQ==", "csm-hit" : "337.71|1391093239619", "ubid-main" : "188-7820618-3817319",\
-    # "session-id-time" : "2082787201l", "session-id" : "177-0028713-4113141"}
 
     # initialize fields specific to this derived spider
     def init_sub(self):
@@ -51,36 +46,22 @@ class AmazonSpider(SearchSpider):
             return False
         if URL.startswith("http://www.amazon.co.uk/gp/slredirect/redirect.html"):
             return False
-        try:
-            # disable this for now. without user agent set, it only causes 500s. and it slows everything down. just return True for all
-            return True
-            request = urllib2.Request(URL)
-            request.add_header('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0')
-            resp = urllib2.urlopen(request, timeout=5)
-            return (resp.getcode() != 404)
-        except Exception, e:
-            self.log("Error checking status code for " + URL + ": " + str(e), level=log.ERROR)
-            #TODO: this will probably cause some problems, but for now it's safer like this, because more frequently than not this exception is 503 and should be ignored
-            return True
-
+        return True
 
     # parse results page for amazon, extract info for all products returned by search (keep them in "meta")
     def parseResults(self, response):
         hxs = HtmlXPathSelector(response)
 
-        # print "PARSE AMAZON FOR", response.meta['origin_url'], "RESULTS PAGE", response.url
+        origin_product_id = response.meta['origin_product_id']
+        current_query = response.meta['query']
 
-        if 'items' in response.meta:
-            items = response.meta['items']
-        else:
-            items = set()
-
-        # add product URLs to be parsed to this list
-        if 'search_results' not in response.meta:
-            product_urls = set()
-        else:
-            product_urls = response.meta['search_results']
-
+        # all product urls from all queries
+        items = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['product_items'], \
+            self.results[origin_product_id]['search_requests']), [])
+        # all product urls from all queries
+        product_urls = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['search_results'], \
+            self.results[origin_product_id]['search_requests']), [])
+        product_urls = set(product_urls)
 
         # get search results for received results page and add them to product_urls to be parsed
         # Note: xpath below ignores Sponsored links (which is good)
@@ -95,7 +76,8 @@ class AmazonSpider(SearchSpider):
 
             product_url = Utils.add_domain(product_url, self.domain)
 
-            product_urls.add(product_url)
+            self.results[origin_product_id]['search_requests'][current_query]['search_results'].append(product_url)
+
 
         # extract product info from product pages (send request to parse first URL in list)
         # add as meta all that was received as meta, will pass it on to reduceResults function in the end
@@ -106,15 +88,10 @@ class AmazonSpider(SearchSpider):
         # otherwise send them back to parseResults and wait for the next query, save all product URLs in search_results
         # this way we avoid duplicates
         if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
-            request = Request(product_urls.pop(), callback = self.parse_product_amazon, meta = response.meta)
-            if self.cookies_file:
-                request.cookies = self.amazon_cookies
-                request.headers['Cookies'] = self.amazon_cookie_header
-                #request.meta['dont_merge_cookies'] = True
-            request.meta['items'] = items
-
-            # this will be the new product_urls list with the first item popped
-            request.meta['search_results'] = product_urls
+            next_product_url = product_urls.pop() 
+            request = Request(next_product_url, callback = self.parse_product_amazon, meta = response.meta)
+            # remove the urls you've just consumed
+            self.remove_result_from_queue(origin_product_id, next_product_url)
 
             return request
 
@@ -123,55 +100,32 @@ class AmazonSpider(SearchSpider):
         # add to the response the URLs of the products to crawl we have so far, items (handles case when it was not created yet)
         # and field 'parsed' to indicate that the call was received from this method (was not the initial one)
         else:
-            response.meta['items'] = items
             response.meta['parsed'] = True
-            response.meta['search_results'] = product_urls
             # only send the response we have as an argument, no need to make a new request
-
-            # print "RETURNING TO REDUCE RESULTS", response.meta['origin_url']
             return self.reduceResults(response)
 
     # extract product info from a product page for amazon
     # keep product pages left to parse in 'search_results' meta key, send back to parseResults_new when done with all
     def parse_product_amazon(self, response):
 
-        # print "PARSE AMAZON PRODUCT FOR", response.meta['origin_url'], response.url
-
-
         hxs = HtmlXPathSelector(response)
 
-        items = response.meta['items']
-
-        #site = response.meta['origin_site']
-        origin_url = response.meta['origin_url']
+        origin_product_id = response.meta['origin_product_id']
+        current_query = response.meta['query']
+        origin_url = self.results[origin_product_id]['origin_product']['origin_url']
 
         item = SearchItem()
         item['product_url'] = response.url
-        #item['origin_site'] = site
-        item['origin_url'] = origin_url
-        item['origin_name'] = response.meta['origin_name']
-
-        if 'origin_model' in response.meta:
-            item['origin_model'] = response.meta['origin_model']
-
-        if 'origin_upc' in response.meta:
-            item['origin_upc'] = response.meta['origin_upc']
-
-        if 'origin_bestsellers_rank' in response.meta:
-            item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
-
-
-        # if 'origin_id' in response.meta:
-        #     item['origin_id'] = response.meta['origin_id']
-        #     assert self.by_id
-        # else:
-        #     assert not self.by_id
-
-
-        # extract product name
-        #TODO: id='title' doesn't work for all, should I use a 'contains' or something?
-        # extract titles that are not empty (ignoring whitespace)
-        # eliminate "Amazon Prime Free Trial"
+        for field in self.results[origin_product_id]['origin_product'].keys():
+            item[field] = self.results[origin_product_id]['origin_product'][field]
+        
+        # all product urls from all queries
+        items = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['product_items'], \
+            self.results[origin_product_id]['search_requests']), [])
+        # all product urls from all queries
+        product_urls = sum(map(lambda q: self.results[origin_product_id]['search_requests'][q]['search_results'], \
+            self.results[origin_product_id]['search_requests']), [])
+        product_urls = set(product_urls)
 
         #TODO: to test this
         #product_name = filter(lambda x: not x.startswith("Amazon Prime"), hxs.select("//div[@id='title_feature_div']//h1//text()[normalize-space()!='']").extract())
@@ -244,7 +198,8 @@ class AmazonSpider(SearchSpider):
 
             # extract product model number
             model_number_holder = hxs.select("""//tr[@class='item-model-number']/td[@class='value']/text() |
-             //li/b/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/text()""").extract()
+             //li/b/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/text() |
+             //span/text()[normalize-space()='Item model number:']/parent::node()/parent::node()/span[2]/text()""").extract()
             if model_number_holder:
                 item['product_model'] = model_number_holder[0].strip()
             # if no product model explicitly on the page, try to extract it from name
@@ -315,14 +270,23 @@ class AmazonSpider(SearchSpider):
             else:
                 self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
 
+            try:
+                item['product_category_tree'] = \
+                    filter(None, map(lambda c: c.strip(), hxs.select("//ul[li[@class='a-breadcrumb-divider']]/li/span[@class='a-list-item']/a/text()").extract()))
+            except:
+                pass
+
+            try:
+                item['product_keywords'] = hxs.select("//meta[@name='keywords']/@content").extract()[0]
+            except:
+                pass
 
             # add result to items
-            items.add(item)
+            self.results[origin_product_id]['search_requests'][current_query]['product_items'].append(item)
 
 
-        # print "STILL IN parse_product FOR", response.url
-
-        product_urls = response.meta['search_results']
+        # TODO: second time i get product_urls from response.meta?
+        #       should i set it again from self.results too?
 
         # try to send request to parse next product, try until url for next product url is valid (response not 404)
         # this is needed because if next product url is not valid, this request will not be sent and all info about this match (stored in request meta) will be lost
@@ -331,9 +295,13 @@ class AmazonSpider(SearchSpider):
         next_product_url = None
         if product_urls:
             next_product_url = product_urls.pop()
+            self.remove_result_from_queue(origin_product_id, next_product_url)
+
         while (product_urls and not self.is_valid_url(next_product_url)):
             # print "404 FROM", next_product_url
             next_product_url = product_urls.pop()
+            self.remove_result_from_queue(origin_product_id, next_product_url)
+
 
         # handle corner case of bad next product url
         if not product_urls and next_product_url and not self.is_valid_url(next_product_url):
@@ -342,13 +310,6 @@ class AmazonSpider(SearchSpider):
         # if a next product url was found, send new request back to parse_product_url
         if next_product_url:
             request = Request(next_product_url, callback = self.parse_product_amazon, meta = response.meta)
-            if self.cookies_file:
-                request.cookies = self.amazon_cookies
-                request.headers['Cookies'] = self.amazon_cookie_header
-                #request.meta['dont_merge_cookies'] = True
-            request.meta['items'] = items
-            # eliminate next product from pending list (this will be the new list with the first item popped)
-            request.meta['search_results'] = product_urls
 
             return request
 
@@ -360,8 +321,5 @@ class AmazonSpider(SearchSpider):
             # (actually that the call was made from this method and was not the initial one, so it has to move on to the next request)
 
             response.meta['parsed'] = True
-            response.meta['items'] = items
-
-            # print "RETURNING FROM PARSE AMAZON PRODUCT TO reduce_results FOR", response.meta['origin_url'], response.url
 
             return self.reduceResults(response)

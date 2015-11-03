@@ -197,10 +197,14 @@ class TargetScraper(Scraper):
         return None
 
     def _image_urls(self):
-        image_url = self.tree_html.xpath("//ul[@id='carouselContainer']//li//img/@src")
-        if len(image_url) < 1:
-            image_url = self.tree_html.xpath("//div[@class='HeroPrimContainer']//a//img//@src")
-        return image_url
+        image_urls = self.tree_html.xpath("//ul[@id='carouselContainer']//li//img/@src")
+
+        if not image_urls:
+            image_urls = self.tree_html.xpath("//div[@class='HeroPrimContainer']//a//img//@src")
+
+        image_urls = [url.replace("wid=60&hei=60?qlt=85", "wid=480&hei=480") for url in image_urls]
+
+        return image_urls
 
     def _image_count(self):
         image_urls = self._image_urls()
@@ -336,7 +340,7 @@ class TargetScraper(Scraper):
                     if max_ratingval == None or review['RatingValue'] > max_ratingval:
                         if review['Count'] > 0:
                             max_ratingval = review['RatingValue']
-                    self.reviews.append(["%s star(s)" % review['RatingValue'], review['Count']])
+                    self.reviews.append([int(review['RatingValue']), int(review['Count'])])
 
                 self.min_score = min_ratingval
                 self.max_score = max_ratingval

@@ -1,12 +1,12 @@
 import os
 import sys
-import datetime
 import json
 import time
 import multiprocessing as mp
 import logging
 import logging.config
 import subprocess
+import random
 
 
 import boto
@@ -68,14 +68,17 @@ BUCKET_KEY = 'instances_killer_logs'
 TOTAL_WAS_TERMINATED = 0
 autoscale_conn = None
 
-def get_all_group_instances_and_conn():
+
+def get_all_group_instances_and_conn(groups_names=('SCCluster1', 'SCCluster2', 'SCCluster3')):
     conn = AutoScaleConnection()
     global autoscale_conn
     autoscale_conn = conn
     ec2 = boto.ec2.connect_to_region('us-east-1')
-    group = conn.get_all_groups(names=['SCCluster1'])[0]
+    selected_group_name = random.choice(groups_names)
+    logger.info('Selected autoscale group: %s' % selected_group_name)
+    group = conn.get_all_groups(names=[selected_group_name])[0]
     if not group.instances:
-        logger.info("No any working instances at the group 'SCCluster1'")
+        logger.info("No working instances in selected group %s" % selected_group_name)
         upload_logs_to_s3()
         sys.exit()
     instance_ids = [i.instance_id for i in group.instances]
@@ -95,36 +98,32 @@ def check_is_scrapy_daemon_not_running(ssh_key, inst_ip):
 
 
 def check_logs_status(file_path):
+    """
+    returns tuple of two elements,
+    if first element is True, then instance finished work and can be stopped,
+    second element is finish reason string
+    """
     flag = False
     reason = ''
-    if os.path.getsize(file_path) > 3072:
-        try:
-            f = open(file_path,'r')
-        except IOError:
-            return flag, reason # error - can't open the log file
-        else:
-            f.seek(0, 2)
-            fsize = f.tell()
-            f.seek(max(fsize-3072, 0), 0)
-            lines = f.readlines()
-            f.close()
-            for line in lines:
-                if 'Spider default output:' in line or \
-                        'Simmetrica events have been pushed...' in line:
-                    reason = "Task was finished"
-                    flag = True
-                elif 'Spider failed to start.' in line:
-                    reason = "Spider failed to start"
-                    flag = True
-            if fsize > 8000:
-                m1 = 'No any task messages were found at the queue'
-                m2 = 'Try to get task message from queue'
-                if m1 in lines[-1] and m2 in lines[-2]:
-                    reason = "No any tasks were received for long time"
-                    flag = True
+    try:
+        f = open(file_path)
+    except IOError:
+        return flag, reason
+    last_lines = f.readlines()[-20:]  # read last lines
+    end_marker_ok = 'Scrapy daemon finished'
+    end_marker_fail = 'Finished with error'
+    for line in last_lines:
+        if end_marker_ok in line:
+            flag = True
+            reason = 'Task was finished'
+            break
+        elif end_marker_fail in line:
+            flag = True
+            reason = 'Task failed with errors'
+            break
     else:
-        reason = "No logs exist"
-        flag = True
+        reason = 'No logs exist'
+        flag = False
     return flag, reason
 
 
@@ -149,8 +148,8 @@ def stop_if_required(inst_ip, inst_id):
     proc = mp.Process(target=os.system, args=(run_cmd,))
     proc.start()
     checker = 0
-    # it will give 60 seconds to downloads logs.
-    while checker < 60:
+    # it will give 5 minutes to downloads logs.
+    while checker < 60*5:
         if proc.is_alive():
             checker += 1
             time.sleep(1)
@@ -158,16 +157,19 @@ def stop_if_required(inst_ip, inst_id):
             break
     else:
         proc.terminate()
+        logger.error('Failed to download logs, instance %s (%s), terminating.',
+                     inst_ip, inst_id)
         return True
     try:
         flag, reason = check_logs_status(tmp_file)
-    except:
+    except Exception as e:
+        logger.exception(e)
         return True
     print(inst_id, inst_ip, flag, reason)
     if flag:
         if reason == 'No logs exist':
             return True
-        if reason == 'Task was finished':
+        if reason in ['Task was finished', 'Task failed with errors']:
             time.sleep(30)
         teminate_instance_and_log_it(inst_ip, inst_id, reason)
     else:
@@ -175,7 +177,7 @@ def stop_if_required(inst_ip, inst_id):
 
 
 def update_unresponded_dict_or_terminate_instance(inst_ip, inst_id,
-                                                  unresponded):
+                                                  unresponded, state_code=None):
     if inst_id in unresponded.keys():
         last_time = unresponded[inst_id][1]
         # if instance not responded for 32 minutes already
@@ -238,7 +240,8 @@ def main():
             update_unresponded_dict_or_terminate_instance(
                 instance.ip_address,
                 instance.id,
-                unresponded
+                unresponded,
+                instance.state_code
             )
         else:
             inst_ip = instance.ip_address
@@ -248,7 +251,8 @@ def main():
                 update_unresponded_dict_or_terminate_instance(
                     inst_ip,
                     inst_id,
-                    unresponded
+                    unresponded,
+                    instance.state_code
                 )
     delete_old_unresponded_hosts(unresponded)
     with open(not_responded_hosts, 'w') as f:

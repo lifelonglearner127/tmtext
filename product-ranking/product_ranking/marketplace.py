@@ -100,7 +100,7 @@ class Amazon_marketplace(object):
 
             if not name.strip():
                 name = self.is_empty(seller.xpath(
-                    "//p[contains(@class, 'Name')]/span[last()]/text()"
+                    ".//p[contains(@class, 'Name')]/span[last()]/text()"
                 ).extract(), "")
                 name = self.is_empty(re.findall("\((.*)\)", name), "")
 
@@ -237,17 +237,20 @@ class Amazon_marketplace(object):
                 is_already_have = True
                 break
 
-        path_to = os.path.dirname(os.path.abspath(__file__))
+        path_to = os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__))
+        ) + '/'
+
         if not is_already_have:
             if "amazon" in self.get_image_text(file_path):
                 cr["name"] = self.set_seller_amazon()
                 os.rename(
-                    path_to + "/../" + self.NEW_IMG_FOLDER + file_name, 
-                    path_to + "/../" + self.IMG_FOLDER + file_name 
+                    self.NEW_IMG_FOLDER + file_name,
+                    self.IMG_FOLDER + file_name
                 )
 
-        if isfile(path_to + "/../" + self.NEW_IMG_FOLDER + file_name):
-            os.remove(path_to + "/../" + self.NEW_IMG_FOLDER + file_name)
+        if isfile(path_to + self.NEW_IMG_FOLDER + file_name):
+            os.remove(self.NEW_IMG_FOLDER + file_name)
  
         if not cr.get("name"):
             cr["name"] = []

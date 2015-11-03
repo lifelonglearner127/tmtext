@@ -12,6 +12,7 @@ import mmh3 as MurmurHash
 import os
 
 from no_img_hash import fetch_bytes
+from socket import timeout
 
 from lxml import html, etree
 from itertools import chain
@@ -68,7 +69,8 @@ class Scraper():
             "feature_count", # number of features of product, int
             "model_meta", # model from meta, string
             "description", # short description / entire description if no short available, string
-            "long_description", # long description / null if description above is entire description, string
+            "long_description", # long description / null if description above is entire description,
+            "shelf_description",
             "apluscontent_desc", #aplus description
             "ingredients", # list of ingredients - list of strings
             "ingredient_count", # number of ingredients - integer
@@ -80,8 +82,18 @@ class Scraper():
                                # containing drug facts
             "drug_fact_count", # number of drug facts (of elements in the drug_facts list) - integer
             "drug_fact_text_health", # indicate drug fact text status - 0: not exists, 1: exists but partially, 2: exists and perfect.
+            "supplement_facts",
+            "supplement_fact_count",
+            "supplement_fact_text_health",
             "rollback", # binary (0/1), whether product is rollback or not
+            "shipping",
+            "free_pickup_today",
+            "no_longer_available",
             "variants", # list of variants
+            "swatches", # list of swatches
+            "related_products_urls",
+            "bundle",
+            "bundle_components",
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
@@ -104,7 +116,7 @@ class Scraper():
             "meta_tags",# a list of pairs of meta tag keys and values
             "meta_tag_count", # the number of meta tags in the source of the page
             "canonical_link", # canoncial link of the page
-
+            "buying_option",
             "image_hashes", # list of hash values of images as returned by _image_hash() function - list of strings (the same order as image_urls)
             "thumbnail", # thumbnail of the main product image on the page - tbd
             "manufacturer", # manufacturer info for this product
@@ -132,6 +144,7 @@ class Scraper():
             "marketplace", # whether product can be found on marketplace, 1/0
             "marketplace_sellers", # sellers on marketplace (or equivalent) selling item, list of strings
             "marketplace_lowest_price", # string
+            'primary_seller', # primary seller
             "in_stock", # binary (0/1), whether product can be bought from the site, from any seller
             "site_online", # the item is sold by the site and delivered directly, irrespective of availability - binary
             "site_online_in_stock", # currently available from the site - binary
@@ -182,16 +195,17 @@ class Scraper():
     # TODO: add one for root? to make sure nothing new appears in root either?
     DICT_STRUCTURE = {
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
-                        "features", "feature_count", "model_meta", "description", "long_description","apluscontent_desc",
-                        "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts", "drug_fact_count", "drug_fact_text_health", "rollback",
-                        "manufacturer", "return_to"],
+                        "features", "feature_count", "model_meta", "description", "long_description", "shelf_description", "apluscontent_desc",
+                        "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
+                        "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
+                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
-                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "variants"], \
+                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
-                    "marketplace", "marketplace_sellers", "marketplace_lowest_price", "in_stock", \
+                    "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "in_stock", \
                     "site_online", "site_online_in_stock", "site_online_out_of_stock", "marketplace_in_stock", \
                     "marketplace_out_of_stock", "marketplace_prices", "in_stores_in_stock", \
                     "in_stores_out_of_stock", "online_only"],
@@ -206,7 +220,8 @@ class Scraper():
         "event" : None,
         "date": None,
         "status": None,
-        "failure_type": None
+        "failure_type": None,
+        "owned": None
     }
 
     def load_image_hashes():
@@ -233,6 +248,7 @@ class Scraper():
     def __init__(self, **kwargs):
         self.product_page_url = kwargs['url']
         self.bot_type = kwargs['bot']
+        self.is_timeout = False
 
         # Set generic fields
         # directly (don't need to be computed by the scrapers)
@@ -369,7 +385,7 @@ class Scraper():
 
         for i in range(self.MAX_RETRIES):
             try:
-                contents = urllib2.urlopen(request).read()
+                contents = urllib2.urlopen(request, timeout=20).read()
 
             # handle urls with special characters
             except UnicodeEncodeError, e:
@@ -380,8 +396,16 @@ class Scraper():
 
             except IncompleteRead, e:
                 continue
-
-
+            except timeout:
+                self.is_timeout = True
+                self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                return
+            except urllib2.HTTPError, err:
+                if err.code == 404:
+                    self.ERROR_RESPONSE["failure_type"] = "HTTP 404 - Page Not Found"
+                    return
+                else:
+                    raise
             try:
                 # replace NULL characters
                 contents = self._clean_null(contents)
@@ -420,6 +444,13 @@ class Scraper():
             text = text.replace('\00','')
         return text
 
+    def _find_between(self, s, first, last, offset=0):
+        try:
+            start = s.index(first, offset) + len(first)
+            end = s.index(last, start)
+            return s[start:end]
+        except ValueError:
+            return ""
 
     # Extract product info given a list of the type of info needed.
     # Return dictionary containing type of info as keys and extracted info as values.
@@ -445,7 +476,7 @@ class Scraper():
         results_dict = {}
 
         # if it's not a valid product page, abort
-        if self.not_a_product():
+        if self.is_timeout or self.not_a_product():
             return self.ERROR_RESPONSE
 
         for info in info_type_list:

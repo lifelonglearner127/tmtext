@@ -4,20 +4,20 @@ from scrapy.item import Item, Field
 
 class SearchItem(Item):
     product_name = Field() # name of the search result product
-#    origin_site = Field() # origin site of product
     product_url = Field() # url of result product page
     product_model = Field() # product model of product as extracted from its page or the results page (if found somewhere other that inside its name)
     product_upc = Field() # product UPC
     product_dpci = Field() # product DPCI. Identifier specific to target.com
     product_asin = Field() # product DPCI. Identifier specific to amazon.com
     product_brand = Field() # product brand as extracted from special element in product page
+    product_category_tree = Field() # product cateogory tree - list of categories, from top level to lowest level
+    product_keywords = Field() # product keywords (from page source, meta elements)
 
     manufacturer_code = Field() # product code on manufacturer site. e.g.: product code on maplin.co.uk (when maplin is manufacturer), 
                                 # "manufacturer reference" on amazon.co.uk
     bestsellers_rank = Field() # product rank in bestsellers list on target site
 
     origin_url = Field() # original product url
-#    origin_id = Field() # original (source) product id (for walmart products)
     origin_name = Field() # product name on origin site
     origin_model = Field() # original (source) product model
     origin_upc = Field() # original (source) product UPC
@@ -25,6 +25,8 @@ class SearchItem(Item):
     origin_asin = Field() # original (source) product DPCI. Identifier specific to amazon.com
     origin_brand = Field() # original (source) product brand
     origin_brand_extracted = Field() # source product brand - as extracted from product name: not guaranteed to be correct
+    origin_category_tree = Field() # source product cateogory tree - list of categories, from top level to lowest level
+    origin_keywords = Field() # source product keywords (from page source, meta elements)
     
     origin_manufacturer_code = Field() # product code on manufacturer site.
                                        #  e.g.: product code on maplin.co.uk, "manufacturer reference" on amazon.co.uk
@@ -37,6 +39,8 @@ class SearchItem(Item):
     product_videos = Field() # for manufacturer spider: nr of product videos on target (manufacturer) site
 
     confidence = Field() # score in percent indicating confidence in match
+    UPC_match = Field() # binary field (1/0) indicating if there was a match between UPCs
+    model_match = Field() # binary field (1/0) indicating if there was a match between model numbers
 
 # items used in walmart_fullurls spider to match walmart ids to their product pages full URLs
 class WalmartItem(Item):

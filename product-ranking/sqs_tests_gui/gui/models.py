@@ -2,6 +2,7 @@ import os
 import sys
 
 from django.db import models
+from django.utils import timezone
 
 
 CWD = os.path.dirname(os.path.abspath(__file__))
@@ -32,6 +33,17 @@ def get_log_filename(job):
     if not isinstance(job, int):
         job = job.pk
     return '/%s/log.log' % job
+
+
+def get_progress_filename(job):
+    """ Returns local progress logs relative to MEDIA """
+    try:
+        job = int(job)
+    except TypeError:
+        pass
+    if not isinstance(job, int):
+        job = job.pk
+    return '/%s/progress.progress' % job
 
 
 class Job(models.Model):
@@ -82,8 +94,15 @@ class Job(models.Model):
     server_name = models.CharField(max_length=100, default='test_server')
     branch_name = models.CharField(
         max_length=100, blank=True, null=True,
-        help_text='Branch to use at the instance(s); leave blank for master'
+        help_text='Branch to use at the instance(s); leave blank for sc_production'
     )
+
+    save_s3_cache = models.BooleanField(
+        default=False, help_text='Upload raw cache to S3?')
+    #load_s3_cache = models.DateField(  # DISABLED for now!
+    #    blank=True, null=True, default=timezone.now().date(),
+    #    help_text='Load raw cache from S3'
+    #)
 
     mode = models.CharField(
         max_length=100, choices=cache_choices, default=cache_choices[0])
@@ -105,3 +124,17 @@ class Job(models.Model):
         elif self.mode == 'cache':
             return settings.TEST_CACHE_QUEUE
 
+
+class JobGrouperCache(models.Model):
+    """ Group automatically incoming created jobs in a single piece
+        (for products_url only). In other words, groups product_url into
+        products_url
+    """
+    spider = models.CharField(max_length=100, db_index=True)
+    product_url = models.URLField(max_length=500)
+    extra_args = models.TextField(blank=True, null=True)  # for other args,JSON
+    created = models.DateTimeField(auto_now_add=True, db_index=True,
+                                   blank=True, null=True)
+
+    def __unicode__(self):
+        return u'%s: %s: %s' % (self.spider, self.product_url, self.created)

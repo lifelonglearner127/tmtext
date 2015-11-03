@@ -36,6 +36,24 @@ class MaplinScraper(Scraper):
         m = re.match(r"^http://www\.maplin\.co\.uk/p/([a-zA-Z0-9\-]+)?$", self.product_page_url)
         return not not m
 
+    def not_a_product(self):
+        '''Overwrites parent class method that determines if current page
+        is not a product page.
+        Currently for Amazon it detects captcha validation forms,
+        and returns True if current page is one.
+        '''
+
+        try:
+            itemtype = self.tree_html.xpath('//div[@itemtype="http://schema.org/Product"]')
+
+            if not itemtype:
+                raise Exception()
+
+        except Exception:
+            return True
+
+        return False
+
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -124,8 +142,16 @@ class MaplinScraper(Scraper):
         return None
 
     def _image_urls(self):
-        image_url = self.tree_html.xpath("//ul[@id='carousel_alternate']//img/@src")
-        return image_url
+        image_urls = []
+        rows = self.tree_html.xpath("//ul[@id='carousel_alternate']//li/a/@data-cloudzoom")
+        for row in rows:
+            jsn = json.loads(row)
+            try:
+                image_urls.append(jsn["zoomImage"])
+            except:
+                pass
+        # image_url = self.tree_html.xpath("//ul[@id='carousel_alternate']//img/@src")
+        return image_urls
 
     def _image_count(self):
         image_urls = self._image_urls()

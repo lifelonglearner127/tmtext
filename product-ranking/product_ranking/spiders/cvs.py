@@ -6,7 +6,7 @@ import urllib
 import urlparse
 
 from scrapy import Request
-from scrapy.log import ERROR
+from scrapy.log import ERROR, WARNING
 
 from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider
@@ -125,7 +125,7 @@ class CvsProductsSpider(BaseProductsSpider):
         else:
             self.log(
                 "Failed to find 'total matches' for %s" % response.url,
-                ERROR
+                WARNING
             )
         return None
 
@@ -135,8 +135,9 @@ class CvsProductsSpider(BaseProductsSpider):
             return urlparse.urljoin(response.url, url)
 
         links = response.xpath(
-            "//div[@class='product']/div[@class='innerBox']/"
-            "div[@class='productSection1']/a/@href"
+            "//div[contains(@class, 'product')]/"
+            "div[contains(@class, 'innerBox')]/"
+            "div[contains(@class, 'productSection1')]/a/@href"
         ).extract()
 
         brands = response.meta.get('brands', set())
@@ -144,7 +145,7 @@ class CvsProductsSpider(BaseProductsSpider):
             "//ul[@id='Brand']/li/label/span/a/text()").re(r'\s+(.*)\s\(.*\)'))
 
         if not links:
-            self.log("Found no product links.", ERROR)
+            self.log("Found no product links.", WARNING)
 
         for link in links:
             prod_item = SiteProductItem()
@@ -162,12 +163,16 @@ class CvsProductsSpider(BaseProductsSpider):
 
         current_page_num = int(query_string.get("pageNum", [1])[0])
 
-        last_page_num = max(
+        _vals = [
             int(value.strip())
             for value in response.xpath(
                 '//form[@id="topForm"]/*/text()').extract()
             if is_num(value)
-        )
+        ]
+        if not _vals:
+            last_page_num = 1
+        else:
+            last_page_num = max(_vals)
 
         if current_page_num == last_page_num:
             link = None  # No next page.

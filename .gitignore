@@ -53,3 +53,4 @@ product-ranking/product_ranking/settings_local.py
 *.sqlit*
 django.errors
 _http_cache
+_http_s3_cache

@@ -5,6 +5,7 @@ import sys
 import datetime
 import zipfile
 import subprocess
+import tempfile
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
@@ -14,7 +15,8 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 #sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
 
 from settings import MEDIA_ROOT
-from gui.models import Job, get_data_filename, get_log_filename
+from gui.models import Job, get_data_filename, get_log_filename,\
+    get_progress_filename
 
 
 sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',
@@ -60,9 +62,16 @@ def num_of_running_instances(file_path):
 def list_amazon_bucket(bucket=AMAZON_BUCKET_NAME,
                        local_fname=LOCAL_AMAZON_LIST_CACHE):
     filez = list_files_in_bucket(AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, bucket)
-    with open(local_fname, 'w') as fh:
+    # dump to a temporary file and replace the original one then
+    tmp_file = tempfile.NamedTemporaryFile(mode='rb', delete=False)
+    tmp_file.close()
+
+    with open(tmp_file.name, 'w') as fh:
         for f in filez:
             fh.write(str(f)+'\n')
+    if os.path.exists(local_fname):
+        os.unlink(local_fname)
+    os.rename(tmp_file.name, local_fname)
 
 
 def get_filenames_for_task_id(task_id, server_name,
@@ -90,11 +99,22 @@ def rename_first_file_with_extension(base_dir, new_fname, extension='.csv'):
             return
 
 
+def _unzip_local_file(fname, new_fname, ext):
+    if zipfile.is_zipfile(fname):
+        unzip_file(fname, unzip_path=fname)
+        os.remove(fname)
+        rename_first_file_with_extension(
+            os.path.dirname(fname),
+            new_fname,
+            ext
+        )
+
+
 class Command(BaseCommand):
     help = 'Updates 10 random jobs, downloading their files if ready'
 
     def handle(self, *args, **options):
-        if num_of_running_instances('update_jobs.py') > 1:
+        if num_of_running_instances('update_jobs') > 1:
             print 'an instance of the script is already running...'
             sys.exit()
         jobs = Job.objects.filter(
@@ -109,47 +129,92 @@ class Command(BaseCommand):
             if not isinstance(amazon_fnames, (list, tuple)):  # generator?
                 amazon_fnames = list(amazon_fnames)
             amazon_data_file = [f for f in amazon_fnames if '.csv' in f]
+            amazon_json_data_file = [f for f in amazon_fnames if '.jl' in f]
             amazon_log_file = [f for f in amazon_fnames if '.log' in f]
-            if not amazon_data_file or not amazon_log_file:
-                continue
-            amazon_data_file = amazon_data_file[0]
-            amazon_log_file = amazon_log_file[0]
-            print 'For job with task ID %s we found amazon fname [%s]' % (
-                job.task_id, amazon_data_file)
-            full_local_data_path = MEDIA_ROOT + get_data_filename(job)
-            full_local_log_path = MEDIA_ROOT + get_log_filename(job)
-            if not os.path.exists(os.path.dirname(full_local_data_path)):
-                os.makedirs(os.path.dirname(full_local_data_path))
-            if not os.path.exists(os.path.dirname(full_local_log_path)):
-                os.makedirs(os.path.dirname(full_local_log_path))
-            download_s3_file(AMAZON_BUCKET_NAME, amazon_data_file,
-                             full_local_data_path)
-            download_s3_file(AMAZON_BUCKET_NAME, amazon_log_file,
-                             full_local_log_path)
-            if zipfile.is_zipfile(full_local_data_path):
-                unzip_file(full_local_data_path,
-                           unzip_path=full_local_data_path)
-                os.remove(full_local_data_path)
-                rename_first_file_with_extension(
-                    os.path.dirname(full_local_data_path),
-                    'data_file.csv',
-                    '.csv'
-                )
-            if zipfile.is_zipfile(full_local_log_path):
-                unzip_file(full_local_log_path,
-                           unzip_path=full_local_log_path)
-                os.remove(full_local_log_path)
-                rename_first_file_with_extension(
-                    os.path.dirname(full_local_data_path),
-                    'log.log',
-                    '.log'
-                )
-            with open(full_local_log_path, 'r') as fh:
-                cont = fh.read()
-                if not "'finish_reason': 'finished'" in cont:
-                    job.status = 'failed'
+            amazon_progress_file = [f for f in amazon_fnames
+                                    if '.progress' in f]
+
+            amazon_data_file = amazon_data_file[0] if amazon_data_file else []
+            amazon_json_data_file = amazon_json_data_file[0]\
+                if amazon_json_data_file else []
+            amazon_log_file = amazon_log_file[0] if amazon_log_file else []
+            amazon_progress_file = amazon_progress_file[0]\
+                if amazon_progress_file else []
+
+            print
+            print '=' * 79
+            print 'Processing JOB', job.__dict__
+            print 'Data file', amazon_data_file
+            print 'Log file', amazon_log_file
+            print 'Progress file', amazon_progress_file
+
+            if amazon_progress_file:
+                job.status = 'in progress'
+                job.save()
+
+            if amazon_progress_file:
+                full_local_prog_path = MEDIA_ROOT + get_progress_filename(job)
+                if not os.path.exists(os.path.dirname(full_local_prog_path)):
+                    os.makedirs(os.path.dirname(full_local_prog_path))
+                download_s3_file(AMAZON_BUCKET_NAME, amazon_progress_file,
+                                 full_local_prog_path)
+                _unzip_local_file(full_local_prog_path, 'progress.progress',
+                                  '.progress')
+
+            if amazon_log_file:
+                full_local_log_path = MEDIA_ROOT + get_log_filename(job)
+                if not os.path.exists(os.path.dirname(full_local_log_path)):
+                    os.makedirs(os.path.dirname(full_local_log_path))
+                download_s3_file(AMAZON_BUCKET_NAME, amazon_log_file,
+                                 full_local_log_path)
+                _unzip_local_file(full_local_log_path, 'log.log', 'log')
+                with open(full_local_log_path, 'r') as fh:
+                    cont = fh.read()
+                    if not "'finish_reason': 'finished'" in cont:
+                        job.status = 'failed'
+                        job.save()
+                        continue
+
+            if amazon_data_file:
+                print 'For job with task ID %s we found amazon fname [%s]' % (
+                    job.task_id, amazon_data_file)
+                full_local_data_path = MEDIA_ROOT + get_data_filename(job)
+                if not os.path.exists(os.path.dirname(full_local_data_path)):
+                    os.makedirs(os.path.dirname(full_local_data_path))
+                download_s3_file(AMAZON_BUCKET_NAME, amazon_data_file,
+                                 full_local_data_path)
+                _unzip_local_file(full_local_data_path, 'data_file.csv', '.csv')
+                if zipfile.is_zipfile(full_local_data_path):
+                    unzip_file(full_local_data_path,
+                               unzip_path=full_local_data_path)
+                    os.remove(full_local_data_path)
+                    rename_first_file_with_extension(
+                        os.path.dirname(full_local_data_path),
+                        'data_file.csv',
+                        '.csv'
+                    )
+
+            if not amazon_data_file and amazon_json_data_file:  # CSV conversion failed?
+                print 'For job with task ID %s we found amazon fname [%s]' % (
+                    job.task_id, amazon_json_data_file)
+                full_local_data_path = MEDIA_ROOT + get_data_filename(job)
+                if not os.path.exists(os.path.dirname(full_local_data_path)):
+                    os.makedirs(os.path.dirname(full_local_data_path))
+                download_s3_file(AMAZON_BUCKET_NAME, amazon_json_data_file,
+                                 full_local_data_path)
+                _unzip_local_file(full_local_data_path, 'data_file.csv', '.csv')
+                if zipfile.is_zipfile(full_local_data_path):
+                    unzip_file(full_local_data_path,
+                               unzip_path=full_local_data_path)
+                    os.remove(full_local_data_path)
+                    rename_first_file_with_extension(
+                        os.path.dirname(full_local_data_path),
+                        'data_file.csv',
+                        '.csv'
+                    )
+
+            if amazon_data_file or amazon_json_data_file:
+                if amazon_log_file:  # log file should exist for successful jobs
+                    job.status = 'finished'
+                    job.finished = now()
                     job.save()
-                    continue
-            job.status = 'finished'
-            job.finished = now()
-            job.save()

@@ -178,6 +178,7 @@ class BaseValidatorSettings(object):
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = False  # ... duplicated requests?
     ignore_log_filtered = False  # ... filtered requests?
+    ignore_log_duplications_and_ranking_gaps = False  # ranking issues + dupls.
 
     # Test requests {request: [min_products; max_products], ...}
     # The requests below are for example purposes only!
@@ -331,7 +332,7 @@ class BaseValidator(object):
         return True
 
     def _validate_special_pricing(self, val):
-        return val in (0, 1)
+        return val in (True, False, None)
 
     def _validate_ranking(self, val):
         if isinstance(val, int):
@@ -345,6 +346,15 @@ class BaseValidator(object):
             return False
         if not str(val).strip().startswith('{'):
             return False
+        if val:
+            if isinstance(val, (str, unicode)):
+                val = json.loads(val)
+            if val:
+                _v, _k = val.items()[0]
+                if not isinstance(_v, (str, unicode)):
+                    return False
+                if not isinstance(_k, list):
+                    return False
         return True
 
     def _validate_results_per_page(self, val):
@@ -391,9 +401,6 @@ class BaseValidator(object):
         return True
 
     def _validate_buyer_reviews(self, val):
-        # print 'VAL', val
-        # import pdb
-        # pdb.set_trace()
         if val in (0, True, False, ''):
             return True
         if isinstance(val, basestring):
@@ -482,24 +489,25 @@ class BaseValidator(object):
                     return False
         return True
 
-    # Category field. Added.
     def _validate_category(self, val):
-
         if val in (None, ''):
             return True
-
+        if isinstance(val, basestring):
+            try:
+                val = json.loads(val)
+            except Exception as e:
+                return False
         if isinstance(val, (tuple, list)):
-
-            if not val:
-                return True
-
-            for v in val:
-                if isinstance(v, dict):
-                    if v.get('category') and v.get('rank'):
-                        return True
-                    return False
-
+            return True
         return False
+
+    def _validate_categories(self, val):
+        if not val:
+            return True
+        for v in val:
+            if not isinstance(v, (str, unicode)):
+                return False
+        return True
 
     def _validate_bestseller_rank(self, val):
         if isinstance(val, int):
@@ -561,7 +569,7 @@ class BaseValidator(object):
             except:
                 return False
         for v in val:
-            if not 'date' in [k.lower() for k in v.keys()]:
+            if not any(['date' in k.lower() for k in v.keys()]):
                 return False
         return True
 
@@ -595,6 +603,61 @@ class BaseValidator(object):
 
     def _validate__walmart_original_oos(self, val):
         return True  # we will not validate this field for now
+
+    def _validate_last_buyer_review_date(self, val):
+        if not val:
+            return True
+        try:
+            _ = datetime.datetime.strptime(val, "%d/%m/%Y")
+        except Exception, e:
+            return False
+        return True
+
+    def _validate_price_subscribe_save(self, val):
+        if not val:
+            return True
+        if re.match(r'^[\d\.]+$', str(val)):
+            return True
+
+    def _validate_price_original(self, val):
+        if not val:
+            return True
+        if re.match(r'^[\d\.]+$', str(val)):
+            return True
+
+    def _validate_response_code(self, val):
+        if not val:
+            return True
+        if val.isdigit():
+            if 0 < val < 999:
+                return True
+
+    def _validate_assortment_url(self, val):
+        return True
+
+    def _validate_deliver_in(self, val):
+        return True  # TODO: update
+
+    def _validate__statistics(self, val):
+        return True
+
+    def _validate_sku(self, val):
+        return True  # TODO: update
+
+    def _validate_no_longer_available(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_not_found(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_shelf_name(self, val):
+        return True  # TODO: update
+
+    def _validate_shelf_path(self, val):
+        return True  # TODO: update
+
+    def _validate__subitem(self, val):
+        return val in (True, False, None, '')
 
     def _get_failed_fields(self, data, add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)
@@ -733,6 +796,11 @@ class BaseValidator(object):
             if 'DUPLICATIONS' in log_issues:
                 found_issues.update(
                     OrderedDict(log_issues='duplicated requests found'))
+
+        if getattr(self.settings, 'ignore_log_duplications_and_ranking_gaps', None):
+            # remove notifications about missing products and duplications
+            found_issues.pop('ranking', None)
+            found_issues.pop('log_issues', None)
 
         if not self.settings.ignore_log_filtered:
             if 'FILTERED' in log_issues:

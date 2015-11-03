@@ -23,6 +23,7 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
 from spiders_shared_code.walmart_variants import WalmartVariants
+from spiders_shared_code.walmart_categories import WalmartCategoryParser
 
 
 is_empty = lambda x, y="": x[0] if x else y
@@ -77,13 +78,14 @@ class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = False  # ... duplicated requests?
     ignore_log_filtered = False  # ... filtered requests?
+    ignore_log_duplications_and_ranking_gaps = True
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_123': 0,
-        'chrysler 300c': [10, 150],
-        'swiming dress': [50, 250],
-        'macbook air thunderbolt': [10, 150],
-        'hexacore': [50, 250],
+        'vodka': [50, 250],
+        'taker': [100, 500],
+        'socket 775': [10, 150],
+        'hexacore': [50, 700],
         '300c': [50, 250],
         'muay': [50, 200],
         '14-pack': [1, 100],
@@ -173,7 +175,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod},
+                          meta={'product': prod, 'handle_httpstatus_list': [404]},
                           dont_filter=True)
 
     def get_sponsored_links(self, response):
@@ -250,8 +252,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         return reqs
 
     def parse_product(self, response):
+        product = response.meta.get("product")
+
+        if "we can't find the product you are looking for" \
+                in response.body_as_unicode().lower():
+            product['not_found'] = True
+            return product
+
         if response.status in self.default_hhl:
-            product = response.meta.get("product")
             product.update({"locale":'en-US'})
             return product
         if self._search_page_error(response):
@@ -259,7 +267,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 "Got 404 when coming from %r." % response.request.url, ERROR)
             return
 
-        product = response.meta['product']
+        not_available = self.parse_available(response)
+        cond_set_value(product, 'no_longer_available', not_available)
+
+        wv = WalmartVariants()
+        wv.setupSC(response)
+        product['variants'] = wv._variants()
 
         if self.sponsored_links:
             product["sponsored_links"] = self.sponsored_links
@@ -275,6 +288,18 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if 'brand' not in product:
             cond_set_value(product, 'brand', u'NO BRAND')
         self._gen_related_req(response)
+
+        # parse category and department
+        wcp = WalmartCategoryParser()
+        wcp.setupSC(response)
+        try:
+            product['categories'] = wcp._categories_hierarchy()
+        except Exception as e:
+            self.log('Category not parsed: '+str(e), WARNING)
+        try:
+            product['department'] = wcp._category()
+        except Exception as e:
+            self.log('No department to parse: '+str(e), WARNING)
 
         model = is_empty(
             response.xpath('//tr[@class="js-product-specs-row"]/'
@@ -319,6 +344,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                                'shipping',
                                True)
 
+        sku = response.xpath('//*[@itemprop="sku"]/text()').extract()
+        if sku:
+            product['sku'] = sku[0]
+
         id = re.findall('\/(\d+)', response.url)
         response.meta['product_id'] = id[-1] if id else None
         # if id:
@@ -342,9 +371,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         special_pricing = [
             r.strip() for r in special_pricing if len(r.strip())>0]
         if 'Rollback' in special_pricing:
-            product['special_pricing'] = 1
+            product['special_pricing'] = True
         else:
-            product['special_pricing'] = 0
+            product['special_pricing'] = False
 
         if not product.get('price'):
             cond_set_value(product, 'url', response.url)
@@ -354,17 +383,53 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             '//*[contains(@class, "NotAvailable")]'
             '[contains(@style, "block")]/text()'
         ).extract()
+        if not _na_text:
+            _na_text = response.css('#WMNotAvailableLine ::text').extract()
         if _na_text:
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
 
-        wv = WalmartVariants()
-        wv.setupSC(response)
-        product['variants'] = wv._variants()
-
         return self._start_related(response)
 
+    def parse_available(self, response):
+        available = is_empty(response.xpath(
+            '//div[@class="prod-no-buying-option"]/'
+            'div[@class="heading-d"]/text()').extract())
+        if available == 'This Item is no longer available':
+            not_available = True
+        else:
+            not_available = False
+        if response.xpath('//*[contains(@class, "invalid")'
+                          ' and contains(text(), "tem not available")]'):
+            not_available = True
+        if response.xpath('//*[contains(@class, "invalid")'
+                          ' and contains(text(), "no longer available")]'):
+            not_available = True
+        if response.xpath('//*[contains(@class, "NotAvailable")'
+                          ' and contains(text(), "ot Available")]'):
+            not_available = True
+        if response.xpath('//*[contains(@class, "heading")'
+                          ' and contains(text(), "nformation unavailable")]'):
+            not_available = True
+        return not_available
+
     def _on_api_response(self, response):
+        if hasattr(response, 'getErrorMessage'):
+            if response.getErrorMessage():
+                # API request failed
+                with open('/tmp/walmart_api_requests_failed.log', 'a') as fh:
+                    fh.write(str(datetime.utcnow())+'\n')
+                _response_from_parse_single_product = getattr(
+                    self, '_response_from_parse_single_product', None)
+                if _response_from_parse_single_product:
+                    if not 'product' in _response_from_parse_single_product.meta:
+                        _response_from_parse_single_product.meta['product'] = {}
+                    _response_from_parse_single_product.meta['product'][
+                        '_walmart_original_oos'] = True
+                    yield self.parse_product(_response_from_parse_single_product)
+                    return
+
+        # if API request succeed
         original_id = response.meta['original_id']
         current_id = response.meta['current_id']
         original_response = response.meta['original_response_']
@@ -380,6 +445,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 = j.get('stock', '').lower() == 'not available'
             product['_walmart_original_price'] \
                 = j.get('price', j.get('salePrice'))
+            product['upc'] = j.get('upc', product.get('upc', ''))  # set original item UPC
         original_response.meta['product'] = product
         yield self.parse_product(original_response)
 
@@ -389,14 +455,30 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         meta['original_id'] = original_id
         meta['current_id'] = current_id
         meta['original_response_'] = original_response
+        self._response_from_parse_single_product = original_response  # needed for FailedRequest
         return Request(
             url=api_url % (original_id, api_key),
-            callback=self._on_api_response, meta=meta
+            callback=self._on_api_response, meta=meta,
+            errback=self._on_api_response
         )
 
     def _parse_single_product(self, response):
+        if response.status == 404:
+            if 'product' not in response.meta:
+                product = SiteProductItem()
+            else:
+                product = response.meta['product']
+            product['response_code'] = 404
+            if not 'url' in product:
+                product['url'] = getattr(self, 'product_url', '')
+            yield product
+            return
+
         original_parent_id = _get_walmart_original_redirect_item_id(response)
         current_id = get_walmart_id_from_url(response.url)
+        if str(original_parent_id) == str(current_id):
+            # there was redirect but the IDs are the same, so it's the same product
+            original_parent_id = None
         # store current ID to identify it later to match the products
         if 'product' not in response.meta:
             response.meta['product'] = {}
@@ -612,11 +694,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 "//div[@class='product-subhead-section']"
                 "/a[@id='WMItemBrandLnk']/text()").extract())
 
-        cond_set(
-            product, 'image_url',
-            response.xpath('//img[contains(@class, "product-image")]/@src'),
-            ""
-        )
+        try:
+            cond_set(
+                product, 'image_url',
+                response.xpath('//img[contains(@class, "product-image")]/@src'),
+                ""
+            )
+        except TypeError:
+            pass
         if not product.get('image_url', None):
             product['image_url'] = is_empty(response.xpath(
                     '//meta[@property="og:image"]/@content').extract(), "")
@@ -883,11 +968,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                             )
         except KeyError:
             pass
-        try:
-            cond_set_value(
-                product, 'upc', data['analyticsData']['upc'], conv=unicode)
-        except (ValueError, KeyError):
-            pass  # Not really a UPC.
+        if not product.get('upc', None):
+            try:
+                cond_set_value(
+                    product, 'upc', data['analyticsData']['upc'], conv=unicode)
+            except (ValueError, KeyError):
+                pass  # Not really a UPC.
         try:
             cond_set_value(
                 product,
@@ -968,9 +1054,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 './/div[@class="tile-row"]'
                 '/span[@class="flag-rollback"]/text()'
             ).extract():
-                special_pricing = 1
+                special_pricing = True
             else:
-                special_pricing = 0
+                special_pricing = False
 
             if item.css('div.out-of-stock').xpath('text()').extract():
                 shelf_page_out_of_stock = True
@@ -1080,13 +1166,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         product = response.meta['product']
         data = json.loads(response.body_as_unicode())
         sel = Selector(text=data['reviewsHtml'])
-
-        cond_set(
-            product,
-            'last_buyer_review_date',
-            sel.xpath(
-                '//span[contains(@class, "customer-review-date")]/text()'
-            ).extract()
-        )
+        lbrd = sel.xpath('//span[contains(@class, "customer-review-date")]'
+                         '/text()').extract()
+        if lbrd:
+            lbrd = datetime.strptime(lbrd[0].strip(), '%m/%d/%Y')
+            product['last_buyer_review_date'] = lbrd.strftime('%d/%m/%Y')
 
         return product

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Sqs and cache stats</title>
+</head>
+<body>
+
+<div>
+    <h3>Sqs stats</h3>
+    <ul>
+        <li>Working instances: {{ running_instances }}</li>
+        <li>Today started instances: {{ today_instances }}</li>
+        <li>Today executed tasks: {{ today_executed_tasks }}</li>
+        <li>Last hour executed tasks: {{ last_hour_executed_tasks }}</li>
+        <li>Task left in queues: {{ left_tasks_total }}
+            <ul>
+                {% for k, v in left_tasks %}
+                    <li>{{ k }} - {{ v }}</li>
+                {% endfor %}
+            </ul>
+        </li>
+        <li>Avg executed tasks per hour: {{ avg_hour_task }}</li>
+        <li>
+            Tasks statistics:
+            <ul>
+                {% for k, v in hourly_tasks_stats.items() %}
+                    <li>{{ k }} hours - {{ v }} tasks</li>
+                {% endfor %}
+            </ul>
+        </li>
+    </ul>
+</div>
+
+<div>
+    <h3>Cache stats</h3>
+    <ul>
+        <li>Memory used: {{ used_memory }}</li>
+        <li>Items in cache: {{ items_in_cache }}</li>
+        <li>URL responses, returned from cache: unique {{ responses_from_cache_url.0 }}, total {{ responses_from_cache_url.1 }}</li>
+        <li>TERM responses, returned from cache: unique {{ responses_from_cache_term.0 }}, total {{ responses_from_cache_term.1 }}</li>
+        <li>
+            Most popular URL items for today:
+            <ul>
+                {% for k, v in cache_most_popular_url %}
+                    <li>{{ k }} - {{ v }} times</li>
+                {% else %}
+                    <li>No items</li>
+                {% endfor %}
+            </ul>
+        </li>
+        <li>
+            Most popular TERM items for today:
+            <ul>
+                {% for k, v in cache_most_popular_term %}
+                    <li>{{ k }} - {{ v }} times</li>
+                {% else %}
+                    <li>No items</li>
+                {% endfor %}
+            </ul>
+        </li>
+    </ul>
+</div>
+
+</body>
+</html>

@@ -6,6 +6,7 @@ from scrapy.http import Response
 from scrapy.exceptions import CloseSpider
 from search.items import SearchItem
 from search.spiders.search_spider import SearchSpider
+from search.spiders.search_results_spider import SearchResultsSpider
 from scrapy import log
 
 from spiders_utils import Utils
@@ -14,7 +15,7 @@ from search.matching_utils import ProcessText
 import re
 import sys
 
-class BestbuySpider(SearchSpider):
+class BestbuySpider(SearchResultsSpider):
 
     name = "bestbuy"
 
@@ -23,23 +24,11 @@ class BestbuySpider(SearchSpider):
         self.target_site = "bestbuy"
         self.start_urls = [ "http://www.bestbuy.com" ]
 
-    def parseResults(self, response):
+    def extract_result_products(self, response):
 
         hxs = HtmlXPathSelector(response)
 
-        #site = response.meta['origin_site']
-        origin_name = response.meta['origin_name']
-        origin_model = response.meta['origin_model']
-        origin_url = response.meta['origin_url']
-
-        # if this comes from a previous request, get last request's items and add to them the results
-
-        if 'items' in response.meta:
-            items = response.meta['items']
-        else:
-            items = set()
-
-
+        items = []
         results = hxs.select("//div[@class='list-item-info']/div[@class='sku-title']/h4/a")
 
         for result in results:
@@ -73,8 +62,6 @@ class BestbuySpider(SearchSpider):
                 price = float(price)
                 item['product_target_price'] = price
 
-            items.add(item)
+            items.append(item)
 
-        response.meta['items'] = items
-        response.meta['parsed'] = items
-        return self.reduceResults(response)
+        return items

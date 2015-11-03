@@ -17,12 +17,6 @@ Vagrant.configure("2") do |config|
       shell.inline = "apt-get update; apt-get install -y puppet"
   end
 
-  config.vm.provision :puppet do |puppet|
-    puppet.manifests_path="manifests"
-    puppet.manifest_file="nodes.pp"
-    puppet.module_path="modules"
-  end
-
   # read aws key info from file
   file = File.read('aws_key.json')
   data_hash = JSON.parse(file)
@@ -44,44 +38,19 @@ Vagrant.configure("2") do |config|
       override.ssh.private_key_path = ENV["HOME"] + "/.ssh/Ana.pem"
     end
 
-  config.vm.define :node1 do |n1|
-    n1.vm.hostname="node1"
-  end
+    (1..10).each do |i|
+      config.vm.define "node#{i}" do |node|
+          node.vm.hostname="node#{i}"
+          node.vm.provision :shell, inline: "echo '127.0.1.1 node#{i}' | sudo tee -a /etc/hosts"
+          node.vm.provision :shell, inline: "echo 'node#{i}' | sudo tee /etc/hostname"
+          node.vm.provision :shell, inline: "sudo hostname node#{i}"
+      end
+    end
 
-  config.vm.define :node2 do |n2|
-    n2.vm.hostname="node2"
-  end
-
-  config.vm.define :node3 do |n3|
-    n3.vm.hostname="node3"
-  end
-
-  config.vm.define :node4 do |n4|
-    n4.vm.hostname="node4"
-  end
-
-  config.vm.define :node5 do |n5|
-    n5.vm.hostname="node5"
-  end
-
-  config.vm.define :node6 do |n6|
-    n6.vm.hostname="node6"
-  end
-
-  config.vm.define :node7 do |n7|
-    n7.vm.hostname="node7"
-  end
-
-  config.vm.define :node8 do |n8|
-    n8.vm.hostname="node8"
-  end
-
-  config.vm.define :node9 do |n9|
-    n9.vm.hostname="node9"
-  end
-
-  config.vm.define :node10 do |n10|
-    n10.vm.hostname="node10"
+  config.vm.provision :puppet do |puppet|
+    puppet.manifests_path="manifests"
+    puppet.manifest_file="nodes.pp"
+    puppet.module_path="modules"
   end
 
 end

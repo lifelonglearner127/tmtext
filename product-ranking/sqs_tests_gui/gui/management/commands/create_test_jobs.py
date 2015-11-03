@@ -3,6 +3,7 @@
 import os
 import sys
 import random
+import datetime
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -34,13 +35,14 @@ def _create_job(i):
             'amazonde_products'
     ]
     Job.objects.create(
-        name='bulk created task ' + str(i),
+        name='bulk created task %s - %s' % (
+            datetime.datetime.utcnow().strftime("%Y.%m.%d"), i),
         spider=random.choice(sites),
         search_term=random.choice(search_terms),
-        quantity=random.randrange(300,400),
+        quantity=random.randrange(50, 1000),
         task_id=random.randrange(100000, 900000),
         mode='no cache',
-        branch_name='tor_proxies'
+        branch_name=''
     )
 
 

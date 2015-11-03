@@ -8,6 +8,7 @@ import cv2.cv as cv
 import urllib2
 from numpy import array as nparray, median as npmedian
 from sklearn.externals import joblib
+from extract_text import extract_text
 
 # toggle between CV_HOUGH_STANDARD and CV_HOUGH_PROBILISTIC
 USE_STANDARD = False
@@ -122,6 +123,7 @@ def extract_features(filename, is_url=False):
             # print abs(verticals[i] - verticals[i-1])
             differences.append(abs(verticals[i] - verticals[i-1]))
 
+    print filename
     print "average_slope:", average_slope
     print "median_slope:", median_slope
     print "average_tilt:", average_tilt
@@ -224,19 +226,22 @@ def get_examples_from_screenshots():
 
 
 def get_examples_from_files():
-    examples_file = '/home/ana/code/tmtext/nutrition_info_images/nutrition_images_training.csv'
+    files = ['/home/ana/code/tmtext/nutrition_info_images/nutrition_images_training.csv',
+                '/home/ana/code/tmtext/nutrition_info_images/drug_images_training.csv',
+                '/home/ana/code/tmtext/nutrition_info_images/nutrition_images_test.csv']
     examples = []
-    with open(examples_file) as f:
-        # skip headers line
-        f.readline()
-        ireader = csv.reader(f)
-        for row in ireader:
-            label_raw = row[1]
-            image = row[0]
-            label = 'TP' if label_raw == '1' else 'TN'
-            average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_lines = extract_features(image, is_url=True)
-            example = {'name': image, 'label': label, 'coords': (average_slope, average_differences, nr_lines)}
-            examples.append(example)
+    for examples_file in files:
+        with open(examples_file) as f:
+            # skip headers line
+            f.readline()
+            ireader = csv.reader(f)
+            for row in ireader:
+                label_raw = row[1]
+                image = row[0]
+                label = 'TP' if label_raw == '1' else 'TN'
+                average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_lines = extract_features(image, is_url=True)
+                example = {'name': image, 'label': label, 'coords': (average_slope, average_differences, nr_lines)}
+                examples.append(example)
     return examples
 
 
@@ -281,7 +286,7 @@ def read_images_set(path="nutrition_images_training.csv"):
     labels = []
     names = []
     with open(path) as f:
-        reader = csv.reader(f, delimiter=',')
+        reader = csv.reader(f, delimiter=',', quotechar='"')
         # omit headers
         f.readline()
         for row in reader:
@@ -330,6 +335,9 @@ def predict(test_set, clf=None, from_serialized_file=None):
         predicted_examples.append((imgs[idx], predicted[0]))
     return predicted_examples
 
+def load_classifier(path="serialized_classifier/nutrition_image_classifier.pkl"):
+    return joblib.load(path)
+
 def predict_one(image, clf=None, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=False):
     '''Predicts label (text image/not) for an input image.
     :param image: image url or path
@@ -338,7 +346,7 @@ def predict_one(image, clf=None, from_serialized_file="serialized_classifier/nut
     :param is_url: image is a url, not a file path on disk
     :return: predicted label
     '''
-    if from_serialized_file:
+    if not clf and from_serialized_file:
         clf = joblib.load(from_serialized_file)
     average_slope, median_slope, average_tilt, median_tilt, median_differences, average_differences, nr_straight_lines = \
     extract_features(image, is_url=is_url)
@@ -354,18 +362,21 @@ def classifier_main():
     # trained, clf = train(training_set1, serialize_file="serialized_classifier/nutrition_image_classifier.pkl")
 
     screenshots_set = read_images_set_from_screenshots()
-    goodq_set = read_images_set("nutrition_images_goodq.csv") 
+    goodq_set = read_images_set("nutrition_images_goodq.csv")
+    drug_and_supplement_set = read_images_set("drug_images_training.csv")
     training_set2 = [l[:100] for l in screenshots_set]
     training_set3 = [l[:20] for l in goodq_set]
+    training_set4 = drug_and_supplement_set
 
-    training_set = [l[0]+l[1] for l in zip(training_set1,training_set2)]
+    training_set = [l[0]+l[1] for l in zip(training_set1,training_set4)]
 
     trained, clf = train(training_set, serialize_file="serialized_classifier/nutrition_image_classifier.pkl")
 
     test_set1 = read_images_set("nutrition_images_test.csv")
     test_set2 = [l[100:] for l in screenshots_set]
     test_set3 = [l[20:] for l in goodq_set]
-    test_set = [l[0]+l[1] for l in zip(test_set1,test_set2)]
+    test_set4 = read_images_set("drug_images_test.csv")
+    test_set = [l[0]+l[1] for l in zip(test_set1,test_set4)]
 
     imgs, examples, labels = test_set
     nr_predicted = 0
@@ -400,17 +411,104 @@ def classifier_main():
 
     plt.show()
 
-def classifier_predict_one(image_url):
+def classifier_predict_one(image_url, clf=None):
     if image_url.startswith("http"):
         is_url = True
     else:
         is_url = False
-    predicted = predict_one(image_url, None, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=is_url)
+    predicted = predict_one(image_url, clf, from_serialized_file="serialized_classifier/nutrition_image_classifier.pkl", is_url=is_url)
     return predicted[0]
+
+def predict_textimage_type(image_url):
+    '''Decides if text image is nutrition facts image,
+    drug facts image or supplement facts image,
+    by trying to extract the text in the image
+    Returns one of 4 values (strings):
+    nutrition_facts, drug_facts, supplement_facts, 
+    or None if type could not be determined
+    '''
+
+    text = extract_text(image_url, is_url=True)
+
+    if 'nutrition' in text.lower().split():
+        return "nutrition_facts"
+
+    if 'drug' in text.lower().split():
+        return "drug_facts"
+
+    if 'supplement' in text.lower().split():
+        return "supplement_facts"
+
+    return None
+
+def cross_validate(test_set, folds=10):
+    '''Validates the classifier by using 10-fold cross-validation.
+    Splits the data in 10 parts, iteratively trains on 9 of them and
+    tests on the 10th.
+    Final accuracy is the average of accuracies for each of the 10 tests.
+    :param test_set: input data to validate on, tuple of lists:
+    images, features and labels, as returned by read_images_set.
+    :returns: accuracy (float)
+    '''
+
+    test_sets = []
+    imgs, examples, labels = test_set
+    # split data into 10 parts
+    lg = len(imgs)
+    for i in range(folds):
+        test_sets.append((imgs[ i*lg/folds : (i+1)*lg/folds ],
+            examples[ i*lg/folds : (i+1)*lg/folds ],
+            labels[ i*lg/folds : (i+1)*lg/folds ]))
+
+    nr_accurate = 0
+    nr_total = 0
+
+    for rnd in range(folds):
+        training_set = [[],[],[]]
+        for i in range(folds):
+            if i != rnd:
+                training_set[0] = training_set[0] + test_sets[i][0]
+                training_set[1] = training_set[1] + test_sets[i][1]
+                training_set[2] = training_set[2] + test_sets[i][2]
+
+        # if there's only one kind of label, skip this set
+        if 0 not in training_set[2] or 1 not in training_set[2]:
+            print "Skipped validation fold because not enough labels"
+            continue
+
+        # train new classifier with this training set
+        imgs, clf = train(training_set)
+
+        # test
+        imgs, examples, labels = test_sets[rnd]
+        for idx, example in enumerate(examples):
+                predicted = clf.predict(example)
+                # print imgs[idx], labels[idx], predicted
+                if labels[idx] == predicted:
+                    nr_accurate += 1
+                else:
+                    print "Inaccurate:", imgs[idx]
+                nr_total += 1
+        print "nr_accurate", nr_accurate, "/", nr_total
+
+
+    accuracy = float(nr_accurate)/nr_total
+
+    print "Accuracy: {0:.2f}%".format(accuracy*100)
+    return accuracy
+
 
 if __name__ == '__main__':
     # extract_features_main()
     if len(sys.argv) <= 1:
         classifier_main()
+        # 
+        # # cross-validate
+        # in_set1 = read_images_set("nutrition_images_training.csv")
+        # in_set2 = read_images_set("nutrition_images_test.csv")
+        # in_set3 = read_images_set("nutrition_images_goodq.csv")
+        # in_set4 = read_images_set("drug_images_training.csv")
+        # in_set = [l[0]+l[1]+l[2]+l[3] for l in zip(in_set1,in_set2,in_set3,in_set4)]
+        # print cross_validate(in_set, 418)
     else:
         print classifier_predict_one(sys.argv[1])

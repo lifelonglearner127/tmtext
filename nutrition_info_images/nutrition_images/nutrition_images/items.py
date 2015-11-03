@@ -16,3 +16,7 @@ class NutritionImagesItem(scrapy.Item):
     distance_average = scrapy.Field()
     nr_lines = scrapy.Field()
     is_likely_text = scrapy.Field()
+
+class ScreenshotItem(scrapy.Item):
+    text = scrapy.Field()
+    path = scrapy.Field()
