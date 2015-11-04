@@ -1,30 +1,9 @@
-
-# This file takes the given spider and performs its check.
-# If no spidername given, it'll check a random spider
-#
-
-#assert False, 'read todo!'
-# TODO:
-# 1) alerts (special page + emails?)
-# 2) better admin (list_fields, filters, status colors, all that stuff)
-# 3) cron jobs file
-# 4) removing old test runs and their files!
-# 5) overall reports - just a page with list of spiders with status 'ok' and 'not ok'
-#       (basically, testers will need to review the whole spider)
-# 6) redirect page to go to #5 - like /spider-checks/costco_products/
-
 import sys
 import os
-import re
 import shutil
-import time
 import subprocess
-import shlex
-import datetime
 
 from django.core.management.base import BaseCommand
-from django.utils import timezone
-from django.utils.text import slugify
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..', '..', '..'))
@@ -37,25 +16,6 @@ from utils import test_run_to_dirname, get_output_fname
 
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', 'product-ranking'))
 from debug_match_urls import match
-
-
-ENABLE_CACHE = False
-
-
-def run(command, shell=None):
-    """ Runs the given command and returns its output """
-    out_stream = subprocess.PIPE
-    err_stream = subprocess.PIPE
-
-    if shell is not None:
-        p = subprocess.Popen(command, shell=True, stdout=out_stream,
-                             stderr=err_stream, executable=shell)
-    else:
-        p = subprocess.Popen(command, shell=True, stdout=out_stream,
-                             stderr=err_stream)
-    (stdout, stderr) = p.communicate()
-
-    return stdout, stderr
 
 
 def _create_proj_dir(test_run):
@@ -180,8 +140,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # get a test run to check
-        test_runs = TestRun.objects.filter(status='stopped').order_by('when_started')[0:10]
-        for tr in test_runs:
+        test_runs = TestRun.objects.filter(status='stopped').order_by('when_started')
+        if test_runs:
+            tr = test_runs[0]
             print 'Going to check test run %s' % tr
             tr.status = 'running'
             tr.save()
@@ -198,5 +159,5 @@ class Command(BaseCommand):
             tr.status = status
             tr.save()
             cleanup_files(tr)
-        if not test_runs:
+        else:
             print 'No test runs to check'
