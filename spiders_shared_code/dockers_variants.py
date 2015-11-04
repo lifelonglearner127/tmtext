@@ -73,3 +73,30 @@ class DockersVariants(object):
                 return variant_list
 
         return None
+
+    def _swatches(self):
+        buy_stack_json = None
+
+        try:
+            buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
+            buy_stack_json = json.loads(buy_stack_json_text)
+        except:
+            buy_stack_json = None
+
+        if buy_stack_json:
+            swatch_list = []
+
+            for swatch in buy_stack_json["colorid"]:
+                swatch_info = {}
+                swatch_info["swatch_name"] = "color"
+                swatch_info["color"] = buy_stack_json["colorid"][swatch]["finish"]["title"]
+                swatch_info["hero"] = 1
+                swatch_info["thumb"] = 1
+                swatch_info["hero_image"] = [buy_stack_json["colorid"][swatch]["imageURL"] + altView for altView in buy_stack_json["colorid"][swatch]["altViewsMain"]]
+                swatch_info["thumb_image"] = buy_stack_json["colorid"][swatch]["swatch"]
+                swatch_list.append(swatch_info)
+
+            if swatch_list:
+                return swatch_list
+
+        return None
