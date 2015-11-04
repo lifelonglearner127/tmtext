@@ -1,6 +1,7 @@
 import os
 import sys
 import datetime
+import json
 from collections import OrderedDict
 from flask import Flask, request, flash
 from flask import render_template, make_response
@@ -135,8 +136,11 @@ def stats():
     try:
         context = dict()
         conn = boto.ec2.autoscale.AutoScaleConnection()
-        group = conn.get_all_groups(names=['SCCluster1'])[0]
-        context['running_instances'] = len(group.instances)
+        groups = conn.get_all_groups(
+            names=['SCCluster1', 'SCCluster2', 'SCCluster3'])
+        instances = {group.name: len(group.instances) for group in groups}
+        context['running_instances'] = sum(instances.itervalues())
+        context['running_instances_info'] = instances
         context['today_instances'] = cache.get_today_instances()
         context['today_executed_tasks'] = cache.get_executed_tasks_count()
         context['last_hour_executed_tasks'] = cache.get_executed_tasks_count(
@@ -170,6 +174,17 @@ def stats():
         return render_template('stats.html', **context)
     except Exception as e:
         return str(e)
+
+
+@app.route('/autoscale_history', methods=['GET', 'POST'])
+def autoscale_history():
+    if request.method == 'GET':
+        return render_template('autoscale_history.html')
+    days = int(request.form.get('days', '0'))
+    data = cache.get_instances_history(days)
+    resp = make_response(json.dumps(data))
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
 
 
 # ###################################
@@ -231,5 +246,5 @@ def fail_task():
 
 if __name__ == '__main__':
     app.secret_key = '$%6^78967804^46#$%^$fdG'
-    app.debug = True
+    app.debug = False
     app.run()

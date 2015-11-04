@@ -2,7 +2,8 @@ import json
 from time import time, mktime
 from redis import StrictRedis
 from zlib import compress, decompress
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+from collections import OrderedDict
 from os.path import realpath, dirname
 
 try:
@@ -28,6 +29,7 @@ class SqsCache(object):
     REDIS_CACHE_STATS_TERM = 'cached_count_term'  # zset
     REDIS_COMPLETED_TASKS = 'completed_tasks'  # zset, count completed tasks
     REDIS_INSTANCES_COUNTER = 'daily_sqs_instances_counter'  # int
+    REDIS_INSTANCES_HISTORY = 'sqs_instances_history'  # zset
     REDIS_URGENT_STATS = 'urgent_stats'  # zset
     REDIS_FAILED_TASKS = 'failed_tasks'  # set, store failed tasks here
     MAX_FAILED_TRIES = 3
@@ -213,7 +215,7 @@ class SqsCache(object):
         """
         get count of started instances for current day
         """
-        return self.db.get('daily_sqs_instances_counter')
+        return self.db.get(self.REDIS_INSTANCES_COUNTER)
 
     def get_executed_tasks_count(self, hours_from=None, hours_to=None,
                                  for_last_hour=False):
@@ -324,3 +326,22 @@ class SqsCache(object):
 
     def del_redis_keys(self, *keys):
         self.db.delete(*keys)
+
+    def save_today_instances_count(self, instances_num=None):
+        cnt = instances_num or self.db.get(self.REDIS_INSTANCES_COUNTER)
+        cnt = int(cnt or '0')
+        today = date.today() - timedelta(days=1)
+        today = int(mktime(today.timetuple()))  # get today's timestamp
+        # score is current day timestamp, name is instances count
+        return self.db.zadd(self.REDIS_INSTANCES_HISTORY, today,
+                            '%s:%s' % (today, cnt))
+
+    def get_instances_history(self, days):
+        date_offset = date.today() - timedelta(days=days+1)
+        offset = int(mktime(date_offset.timetuple()))
+        data = self.db.zrevrangebyscore(self.REDIS_INSTANCES_HISTORY,
+                                        9999999999, offset,
+                                        withscores=True, score_cast_func=int)
+        res = [(d[1], d[0].split(':')[-1]) for d in data]
+        res = OrderedDict(res)
+        return res

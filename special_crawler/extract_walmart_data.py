@@ -1072,7 +1072,7 @@ class WalmartScraper(Scraper):
         return self.is_bundle_product
 
     def _bundle_components(self):
-        product_id_list = self.tree_html.xpath("//div[@class='bundle-see-more-container']//a[@class='itemName']/@id")
+        product_id_list = self.tree_html.xpath("//div[@class='bundle-see-more-container']//div[@class='clearfix greybar-body']/@id")
         product_id_list = [id.split("I")[1] for id in product_id_list]
         product_id_list = list(set(product_id_list))
 
@@ -1683,11 +1683,15 @@ class WalmartScraper(Scraper):
 
     def _no_longer_available(self):
         try:
-            if "This Item is no longer available" in self.tree_html.xpath("//div[@class='prod-no-buying-option']/div[@class='heading-d']/text()")[0]:
+            txt = self.tree_html.xpath("//div[@class='prod-no-buying-option']/div[@class='heading-d']/text()")[0]
+            if "Information unavailable" in txt or "This Item is no longer available" in txt:
                 return True
         except:
             pass
-
+        if self.tree_html.xpath('//*[contains(@class, "invalid") and contains(text(), "tem not available")]'):
+            return True
+        if self.tree_html.xpath('//*[contains(@class, "NotAvailable") and contains(text(), "ot Available")]'):
+            return True
         return False
 
     def _shipping(self):
@@ -2141,7 +2145,7 @@ class WalmartScraper(Scraper):
         prices = []
         sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
 
-        if self._primary_seller().lower() == "walmart.com":
+        if self._primary_seller().lower() in ["walmart.com", "walmart store"]:
             for seller in sellers_dict:
                 if seller["sellerName"] != "Walmart.com":
                     prices.append(float(seller["price"]))

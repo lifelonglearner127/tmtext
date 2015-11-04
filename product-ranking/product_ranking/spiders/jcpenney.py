@@ -18,7 +18,6 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.validation import BaseValidator
 from product_ranking.spiders import cond_set_value
-from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.jcpenney_variants import JcpenneyVariants
 from product_ranking.validation import BaseValidator
 
@@ -41,11 +40,11 @@ class JcpenneyValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'benny benassi': 0,
         'water proof': [110, 210],
         'peace': [10, 70],
-        'hot': [80, 180],
+        'hot': [100, 300],
         'drink': [30, 130],
         'term': [30, 130],
         'tiny': [10, 80],
-        'selling': [1, 30],
+        'selling': [20, 100],
         'night': [40, 140],
     }
 

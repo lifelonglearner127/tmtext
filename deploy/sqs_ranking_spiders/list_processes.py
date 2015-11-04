@@ -29,10 +29,12 @@ def get_all_group_instances_and_conn():
     global autoscale_conn
     autoscale_conn = conn
     ec2 = boto.ec2.connect_to_region('us-east-1')
-    group = conn.get_all_groups(names=['SCCluster1'])[0]
-    if not group.instances:
+    groups = conn.get_all_groups(
+        names=['SCCluster1', 'SCCluster2', 'SCCluster3'])
+    instances = [instance for group in groups for instance in group]
+    if not instances:
         sys.exit()
-    instance_ids = [i.instance_id for i in group.instances]
+    instance_ids = [instance.instance_id for instance in instances]
     instances = ec2.get_only_instances(instance_ids)
     return instances, conn
 
@@ -55,4 +57,5 @@ def main():
         print ' '*4, processes
 
 if __name__ == '__main__':
+    assert False, 'this script is no longer working, see TODO'
     main()

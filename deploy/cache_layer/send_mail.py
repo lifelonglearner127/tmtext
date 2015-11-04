@@ -54,6 +54,11 @@ def delete_old_cache_data(cache):
     return res
 
 
+def save_instances_number(cache, context):
+    data = context.get('total_instances', 0)
+    return cache.save_today_instances_count(data)
+
+
 def main():
     cache = SqsCache()
     with open('settings') as f:
@@ -63,8 +68,10 @@ def main():
     receivers = s_data['report_mail']
     today = date.today()
     subject = 'SQS cache daily report for %s' % today.strftime('%A, %Y-%m-%d')
-    content = generate_mail_message(collect_data(cache))
+    context = collect_data(cache)
+    content = generate_mail_message(context)
     send_mail(sender, receivers, subject, content)
+    save_instances_number(cache, context)
     res = delete_old_cache_data(cache)
     print 'Deleted %s total records from cache.' % res
 
