@@ -869,6 +869,12 @@ class WalmartScraper(Scraper):
         # TODO: maybe these extractor functions are being called too many times.
         #       maybe reimplement this using state - an instance variable containing
         #       both descriptions (extracted at once)
+
+        try:
+            self.tree_html.xpath ("//div[@class='js-ellipsis module']")[0].remove(self.tree_html.xpath("//div[@class='js-ellipsis module']/p[@class='product-description-disclaimer']")[0])
+        except:
+            pass
+
         try:
             short_description = self._short_description_from_tree()
         except:
@@ -1015,6 +1021,11 @@ class WalmartScraper(Scraper):
 
         # assume new page format
         # extractor function may throw exception if extraction fails
+        try:
+            self.tree_html.xpath ("//div[@class='js-ellipsis module']")[0].remove(self.tree_html.xpath("//div[@class='js-ellipsis module']/p[@class='product-description-disclaimer']")[0])
+        except:
+            pass
+
         try:
             long_description_new = self._long_description_from_tree()
         except Exception:
