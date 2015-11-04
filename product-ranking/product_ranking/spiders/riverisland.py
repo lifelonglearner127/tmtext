@@ -116,7 +116,6 @@ class RiverislandProductsSpider(BaseProductsSpider):
         elif no_results_message in response.body_as_unicode():
             self.log('No results found', ERROR)
 
-
     def parse_product(self, response):
         product = response.meta['product']
 
