@@ -1421,6 +1421,19 @@ def prepare_test_data():
         fh.close()
 
 
+def log_free_disk_space():
+    """mostly for debugging purposes, shows result of 'df -h' system command"""
+    cmd = 'df -h'
+    p = Popen(cmd, shell=True, stdout=PIPE)
+    res = p.communicate()
+    if res[0]:
+        res = res[0]
+    else:
+        res = res[1]
+    logger.warning('Disk usage statisticks:')
+    logger.warning(res)
+
+
 if __name__ == '__main__':
     if 'test' in [a.lower().strip() for a in sys.argv]:
         TEST_MODE = True
@@ -1436,7 +1449,9 @@ if __name__ == '__main__':
 
     try:
         main()
+        log_free_disk_space()
     except Exception as e:
+        log_free_disk_space()
         logger.exception(e)
         logger.error('Finished with error.')  # write fail finish marker
         try:
