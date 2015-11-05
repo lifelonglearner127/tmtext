@@ -2,6 +2,7 @@
 
 import collections
 import decimal
+import re
 
 from scrapy.item import Item, Field
 
@@ -44,6 +45,10 @@ class Price:
         if self.priceCurrency not in valid_currency_codes:
             raise ValueError('Invalid currency: %s' % priceCurrency)
         # Remove comma(s) in price string if needed (i.e: '1,254.09')
+        if isinstance(price, unicode):
+            price = price.encode('utf8')
+        price = str(price)
+        price = ''.join(s for s in price if s.isdigit() or s in [',', '.'])
         self.price = decimal.Decimal(str(price).replace(',', ''))
 
     def __repr__(self):
@@ -157,6 +162,7 @@ class SiteProductItem(Item):
     title = Field()  # String.
     upc = Field(serializer=scrapy_upc_serializer)  # Integer.
     model = Field()  # String, alphanumeric code.
+    sku = Field()  # product SKU, if any
     url = Field()  # String, URL.
     image_url = Field()  # String, URL.
     description = Field()  # String with HTML tags.
@@ -178,6 +184,7 @@ class SiteProductItem(Item):
     bestseller_rank = Field()
     department = Field()  # now for Amazons only; may change in the future
     category = Field()  # now for Amazons only; may change in the future
+    categories = Field() # now for amazon and maybe walmart
 
     # Calculated data.
     search_term_in_title_partial = Field()  # Bool
@@ -200,13 +207,17 @@ class SiteProductItem(Item):
     date_of_last_question = Field()  # now for Walmart only
     recent_questions = Field()  # now for Walmart only; may change in the future
 
-    special_pricing = Field()  # 1/0 for TPC, Rollback; target, walmart
+    special_pricing = Field()  # True/False/None for TPC, Rollback; target, walmart
 
     price_subscribe_save = Field()  # Amazon
+    price_original = Field()  # a price without discount (if applicable)
 
     variants = Field()
 
     shipping = Field()  # now for Walmart only; may change in the future
+
+    img_count = Field()   # now for Walmart only; may change in the future
+    video_count = Field()   # now for Walmart only; may change in the future
 
     _walmart_redirected = Field()  # for Walmart only; see #2126
     _walmart_original_id = Field()
@@ -218,4 +229,37 @@ class SiteProductItem(Item):
 
     response_code = Field()  # for 404, 500 etc.
 
-    last_buyer_review_date = Field()
+    deliver_in = Field()  # now for Jet.com only;
+
+    assortment_url = Field()
+
+    _statistics = Field()  # for server and spider stats (RAM, CPU, disk etc.)
+
+    no_longer_available = Field()  # no longer available, for Walmart
+    not_found = Field()  # product not found (sometimes that's just 404 server error)
+
+    shelf_name = Field()  # see https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c8
+    shelf_path = Field()
+
+    _subitem = Field()
+
+
+class DiscountCoupon(Item):
+    # Search metadata.
+    site = Field()  # String.
+    search_term = Field()  # String.
+    ranking = Field()  # Integer.
+    total_matches = Field()  # Integer.
+    results_per_page = Field()  # Integer.
+    scraped_results_per_page = Field()  # Integer.
+    search_term_in_title_exactly = Field()
+    search_term_in_title_partial = Field()
+    search_term_in_title_interleaved = Field()
+    _statistics = Field()
+
+    category = Field()  # (Jewelry, Home, etc.)
+    description = Field()  # (What it applies to (Riedel, Mattresses, etc.)
+    start_date = Field()  # (10/15/2015)
+    end_date = Field()  # (10/31/2015)
+    discount = Field()  # (Discount value or Percentage (20% OFF)
+    conditions = Field()  # (Applies to select items priced $50 or more...)
