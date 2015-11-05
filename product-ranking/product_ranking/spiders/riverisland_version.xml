@@ -8,7 +8,7 @@
     <field name="scraped_results_per_page" version="1.1"></field>
     <field name="is_single_result" version="1.1"></field>
     <field name="title" version="1.1"></field>
-    <field name="model" version="1.1"></field>
+    <field name="sku" version="1.1"></field>
     <field name="url" version="1.1"></field>
     <field name="image_url" version="1.1"></field>
     <field name="description" version="1.1"></field>
@@ -23,4 +23,5 @@
     <field name="search_term_in_title_exactly" version="1.1"></field>
     <field name="search_term_in_title_interleaved" version="1.1"></field>
     <field name="is_mobile_agent" version="1.1"></field>
+    <field name="variants" version="1.1"></field>
 </fields>

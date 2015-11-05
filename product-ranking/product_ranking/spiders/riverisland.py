@@ -181,6 +181,33 @@ class RiverislandProductsSpider(BaseProductsSpider):
 
         cond_set_value(product, 'locale', 'en-GB')
 
+        sample = response.xpath('//select[@id="SizeKey"]/option/text()').extract()
+        variants = []
+
+        for index, i in enumerate(sample):
+            if index > 0:
+                var = i.replace('Size ', '')
+                variants.append(var.strip())
+
+        variant_list = []
+        for variant in variants:
+            variant_item = {}
+            properties = {}
+
+            if 'out of stock' in variant:
+                properties['size'] = variant.replace(' (out of stock)', '')
+            else:
+                properties['size'] = variant
+
+            variant_item['price'] = price[0].replace(u'\xa3', '').strip()
+            variant_item['in_sock'] = False if 'out of stock' in variant else True
+            variant_item['properties'] = properties
+            variant_item['selected'] = False
+
+            variant_list.append(variant_item)
+
+        product['variants'] = variant_list
+
         return product
 
     def _parse_related(self, response):
