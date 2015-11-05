@@ -24,7 +24,7 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
 from product_ranking.validation import BaseValidator
 from spiders_shared_code.walmart_variants import WalmartVariants
 from spiders_shared_code.walmart_categories import WalmartCategoryParser
-
+from spiders_shared_code.walmart_extra_data import WalmartExtraData
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -360,6 +360,16 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         #    }
 
         #    return Request(url=url, meta=meta, callback=self.get_questions)
+        
+        url = response.url
+        response_html = lxml.html.fromstring(response.body_as_unicode())
+        walmart_ed = WalmartExtraData(response=response_html, url = url)
+
+        im_count = walmart_ed._image_count()
+        cond_set_value(product, 'img_count', im_count)
+
+        v_count = walmart_ed._video_count()
+        cond_set_value(product, 'video_count', v_count)
 
         if re.search(
                 "only available .{0,20} Walmart store",
@@ -1021,6 +1031,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             '//div[@class="js-tile tile-landscape"] | '
             '//div[contains(@class, "js-tile js-tile-landscape")]'
         )
+        if not items:
+            items = response.xpath('//div[contains(@class, "js-tile")]')
 
         if not items:
             self.log("Found no product links in %r." % response.url, INFO)
