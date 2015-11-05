@@ -71,7 +71,7 @@ class MacysProductsSpider(ProductsSpider):
             prod['url'] = self.product_url
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod})
+                          meta={'product': prod}, dont_filter=True)
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
