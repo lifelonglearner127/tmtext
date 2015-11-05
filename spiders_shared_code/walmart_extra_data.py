@@ -5,6 +5,7 @@ from lxml import html
 import re
 import json
 import requests
+from special_crawler.extract_data import Scraper
 
 class WalmartExtraData(object):
 
@@ -16,6 +17,14 @@ class WalmartExtraData(object):
     BASE_URL_VIDEOREQ_SELLPOINTS = "http://www.walmart.com/product/idml/video/%s/SellPointsVideos"
     # base URL for request containing video URL from sellpoints
     BASE_URL_VIDEOREQ_SELLPOINTS_NEW = "http://www.walmart-content.com/product/idml/video/%s/SellPointsVideos"
+    # base URL for request containing pdf URL from webcollage
+    BASE_URL_PDFREQ_WEBCOLLAGE = "http://content.webcollage.net/walmart/smart-button?ignore-jsp=true&ird=true&channel-product-id="
+    # base URL for request for product reviews - formatted string
+    BASE_URL_REVIEWSREQ = 'http://walmart.ugc.bazaarvoice.com/1336a/%20{0}/reviews.djs?format=embeddedhtml'
+    # base URL for product API
+    BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
+
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
 
     def __init__(self, *args, **kwargs):
@@ -24,14 +33,50 @@ class WalmartExtraData(object):
 
         self.tree_html = kwargs['response']
 
+        # walmart extra fields shared with SC
+        self.extra_fields = None
+        # whether product has any webcollage media
+        self.has_webcollage_media = False
         # whether product has any sellpoints media
         self.has_sellpoints_media = False
         # product videos (to be used for "video_urls", "video_count", and "webcollage")
         self.video_urls = None
         # whether videos were extracted
         self.extracted_video_urls = False
+        # product pdfs (to be used for "pdf_urls", "pdf_count", and "webcollage")
+        self.pdf_urls = None
+        # whether videos were extracted
+        self.extracted_pdf_urls = False
+
+        # whether product has any pdfs
+        self.has_pdf = False
         # whether product has any videos
         self.has_video = False
+
+        # whether webcollage 360 view were extracted
+        self.extracted_webcollage_360_view = False
+        # whether product has webcollage 360 view
+        self.has_webcollage_360_view = False
+
+        # whether webcollage emc view were extracted
+        self.extracted_webcollage_emc_view = False
+        # whether product has webcollage emc view
+        self.has_webcollage_emc_view = False
+
+        # whether webcollage video view were extracted
+        self.extracted_webcollage_video_view = False
+        # whether product has webcollage video view
+        self.has_webcollage_video_view = False
+
+        # whether webcollage pdf view were extracted
+        self.extracted_webcollage_pdf = False
+        # whether product has webcollage pdf view
+        self.has_webcollage_pdf = False
+
+        # whether webcollage product tour view were extracted
+        self.extracted_webcollage_product_tour_view = False
+        # whether product has webcollage product tour view
+        self.has_webcollage_product_tour_view = False
 
         # javascript function found in a script tag
         # containing various info on the product.
@@ -40,9 +85,12 @@ class WalmartExtraData(object):
 
         self.failure_type = None
 
-        self.is_bundle_product = False
-        
-    def image_count(self):
+        self.review_json = None
+        self.review_list = None
+        self.is_review_checked = False
+        self.is_legacy_review = False
+
+    def _image_count(self):
         """Counts number of (valid) images found
         for this product (not including images saying "no image available")
         Returns:
@@ -114,6 +162,13 @@ class WalmartExtraData(object):
         else:
             return qualified_image_list
 
+    def _is_bundle_product(self):
+        if self.tree_html.xpath("//div[@class='js-about-bundle-wrapper']") or \
+                        "WalmartMainBody DynamicMode wmBundleItemPage" in html.tostring(self.tree_html):
+            return True
+
+        return False
+
     def _image_urls_new(self):
         """Extracts image urls for this product.
         Works on new version of walmart pages.
@@ -121,7 +176,7 @@ class WalmartExtraData(object):
             list of strings representing image urls
         """
 
-        if self._version() == "Walmart v2" and self.is_bundle_product:
+        if self._version() == "Walmart v2" and self._is_bundle_product():
             return self.tree_html.xpath("//div[contains(@class, 'choice-hero-non-carousel')]//img/@src")
         else:
             def _fix_relative_url(relative_url):
@@ -198,7 +253,11 @@ class WalmartExtraData(object):
             return self._image_urls_new()
 
     def _no_image(self, url):
-        """Returns True if image in url is a "no image"
+        """Overwrites the _no_image
+        in the base class with an additional test.
+        Then calls the base class no_image.
+
+        Returns True if image in url is a "no image"
         image, False if not
         """
 
@@ -206,7 +265,8 @@ class WalmartExtraData(object):
         if re.match(".*no.image\..*", url):
             return True
         else:
-            return False
+            scraper = Scraper()
+            return scraper._no_image(url)
 
     def _extract_product_info_json(self):
         """Extracts body of javascript function
@@ -219,7 +279,7 @@ class WalmartExtraData(object):
         if self.product_info_json:
             return self.product_info_json
 
-        if self._version() == "Walmart v2" and self.is_bundle_product:
+        if self._version() == "Walmart v2" and self._is_bundle_product():
             product_info_json = self._find_between(html.tostring(self.tree_html), 'define("product/data",', ");\n")
             product_info_json = json.loads(product_info_json)
             self.product_info_json = product_info_json
@@ -233,7 +293,7 @@ class WalmartExtraData(object):
 
             return self.product_info_json
 
-    def video_count(self):
+    def _video_count(self):
         """Whether product has video
         To be replaced with function that actually counts
         number of videos for this product
@@ -242,8 +302,7 @@ class WalmartExtraData(object):
             0 if product doesn't have video
         """
 
-        if not self.extracted_video_urls:
-            self._extract_video_urls()
+        self._extract_video_urls()
 
         if not self.video_urls:
             if self.has_video:
@@ -258,10 +317,13 @@ class WalmartExtraData(object):
         and puts them in instance variable.
         """
 
+        if self.extracted_video_urls:
+            return
+
         # set flag that videos where attemtped to be extracted
         self.extracted_video_urls = True
 
-        if self._version() == "Walmart v2" and self.is_bundle_product:
+        if self._version() == "Walmart v2" and self._is_bundle_product():
             return
 
         # if there is no video button, return no video
@@ -390,11 +452,8 @@ class WalmartExtraData(object):
                     return
 
                 tree = html.fromstring(contents)
-                if tree.xpath("//div[@class='wc-json-data']/text()"):
-                    video_json = json.loads(tree.xpath("//div[@class='wc-json-data']/text()")[0])
-                    video_relative_path = video_json["videos"][0]["sources"][0]["src"]
-                else:
-                    video_relative_path = ''
+                video_json = json.loads(tree.xpath("//div[@class='wc-json-data']/text()")[0])
+                video_relative_path = video_json["videos"][0]["sources"][0]["src"]
                 video_base_path = tree.xpath("//table[@class='wc-gallery-table']/@data-resources-base")[0]
                 self.video_urls.append(video_base_path + video_relative_path)
                 self.has_video = True
@@ -455,3 +514,14 @@ class WalmartExtraData(object):
 
         # we could not decide
         return None
+
+    def _video_urls(self):
+        """Extracts video URLs for a given walmart product
+        Returns:
+            list of strings containing the video urls
+            or None if none found
+        """
+
+        self._extract_video_urls()
+
+        return self.video_urls
