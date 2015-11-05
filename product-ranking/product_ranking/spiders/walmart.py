@@ -365,10 +365,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         response_html = lxml.html.fromstring(response.body_as_unicode())
         walmart_ed = WalmartExtraData(response=response_html, url = url)
 
-        im_count = walmart_ed.image_count()
+        im_count = walmart_ed._image_count()
         cond_set_value(product, 'img_count', im_count)
 
-        v_count = walmart_ed.video_count()
+        v_count = walmart_ed._video_count()
         cond_set_value(product, 'video_count', v_count)
 
         if re.search(
