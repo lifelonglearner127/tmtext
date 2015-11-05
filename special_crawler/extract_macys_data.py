@@ -207,6 +207,9 @@ class MacysScraper(Scraper):
     def _variants(self):
         return self.mv._variants()
 
+    def _swatches(self):
+        return self.mv._swatches()
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -222,7 +225,7 @@ class MacysScraper(Scraper):
             for r in image_urls:
                 img = r.split(":")
                 if len(img) >= 2:
-                    image_url_primary.append("http://slimages.macys.com/is/image/MCY/products/%s" % img[1].replace('"','').replace("'",""))
+                    image_url_primary.append("http://slimages.macysassets.com/is/image/MCY/products/%s" % img[1].replace('"','').replace("'",""))
 
         image_url_additional = []
         image_url_tmp = re.findall(r"MACYS.pdp.additionalImages\[" + self._product_id() + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
@@ -233,7 +236,7 @@ class MacysScraper(Scraper):
                 if len(img) >= 2:
                     imgs = img[1].replace('"','').replace("'","").split(",")
                     for r in imgs:
-                        image_url_additional.append("http://slimages.macys.com/is/image/MCY/products/%s" % r)
+                        image_url_additional.append("http://slimages.macysassets.com/is/image/MCY/products/%s" % r)
 
         image_url_imageZoomer = []
         image_url_tmp = re.findall(r"MACYS.pdp.imageZoomer = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
@@ -242,7 +245,7 @@ class MacysScraper(Scraper):
             if len(m) > 0:
                 image_urls = m[0].split(',')
                 for r in image_urls:
-                    image_url_imageZoomer.append("http://slimages.macys.com/is/image/MCY/products/%s" % r)
+                    image_url_imageZoomer.append("http://slimages.macysassets.com/is/image/MCY/products/%s" % r)
 
         image_url = self.tree_html.xpath("//div[@id='imageZoomer']//div[contains(@class,'main-view-holder')]/img/@src")
         image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
@@ -509,6 +512,7 @@ class MacysScraper(Scraper):
         "upc" : _upc, \
         "long_description" : _long_description, \
         "variants" : _variants, \
+        "swatches" : _swatches, \
         # CONTAINER : PAGE_ATTRIBUTES
         "pdf_urls" : _pdf_urls, \
         "pdf_count" : _pdf_count, \

@@ -1021,6 +1021,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             '//div[@class="js-tile tile-landscape"] | '
             '//div[contains(@class, "js-tile js-tile-landscape")]'
         )
+        if not items:
+            items = response.xpath('//div[contains(@class, "js-tile")]')
 
         if not items:
             self.log("Found no product links in %r." % response.url, INFO)
