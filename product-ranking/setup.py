@@ -18,7 +18,6 @@ setup(
             os.walk('monitoring'),
             os.walk('../product_ranking_auto_tests'),
             os.walk('spiders_shared_code'),  # TODO: test!
-            os.walk('special_crawler')
         )
     ],
     install_requires=[
