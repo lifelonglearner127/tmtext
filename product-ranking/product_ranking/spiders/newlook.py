@@ -126,7 +126,7 @@ class NewlookProductsSpider(BaseProductsSpider):
 
         cond_set(
             product,
-            'model',
+            'sku',
             response.css(".prod_info #product-info p "
                 "span[itemprop=productID]::text").extract(),
             conv=string.strip,
@@ -139,17 +139,15 @@ class NewlookProductsSpider(BaseProductsSpider):
                 "span.promovalue::text").extract()
         else:
             price = price_now
-
         cond_set(
             product,
-            'price', price,            
+            'price', price,
             conv=string.strip,
         )
         if price:
             product['price'] = Price(
-                price=product['price'].replace(u'\u20ac', '').\
-                replace(',', '.').strip(),
-                priceCurrency='EUR')
+                price=product['price'].replace('\xa3', '').strip(),
+                priceCurrency='GBP')
 
         cond_set_value(product, 'locale', 'en_EU')
 
