@@ -124,9 +124,7 @@ class RiverislandProductsSpider(BaseProductsSpider):
         cond_set(
             product,
             'title',
-            response.css(
-                ".product-details-container>div>h1::text"
-            ).extract(),
+            response.xpath('//meta[@property="og:title"]/@content').extract(),
             conv=string.strip)
 
         if not product.get('brand', None):
@@ -150,13 +148,13 @@ class RiverislandProductsSpider(BaseProductsSpider):
         cond_set_value(product, 'description', "\n".join(
             x.strip() for x in prod_description.extract() if x.strip()))
 
-        model = response.css(
+        sku = response.css(
             ".product-details-container .caption-2::text").extract()
-        if model:
-            model = re.findall('\d+', model[0])
+        if sku:
+            sku = re.findall('\d+', sku[0])
         else:
-            model = None
-        cond_set(product, 'model', model, string.strip)
+            sku = None
+        cond_set(product, 'sku', sku, string.strip)
 
         price_now = response.css(
             ".product-details-container .right-side .price .sale::text"
