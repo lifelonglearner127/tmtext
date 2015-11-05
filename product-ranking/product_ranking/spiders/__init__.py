@@ -198,6 +198,7 @@ class BaseProductsSpider(Spider):
                  site_name=None,
                  product_url=None, products_url=None,
                  user_agent=None,
+                 scrape_variants_with_extra_requests=True,
                  *args, **kwargs):
         if user_agent is None or user_agent not in self.USER_AGENTS.keys():
             self.log("Not available user agent type or it wasn't set."
@@ -207,6 +208,17 @@ class BaseProductsSpider(Spider):
         if user_agent:
             self.user_agent = self.USER_AGENTS[user_agent]
             self.user_agent_key = user_agent
+
+        if scrape_variants_with_extra_requests in (0, '0', 'false', 'False', False, None):
+            self.scrape_variants_with_extra_requests = False
+        else:
+            self.scrape_variants_with_extra_requests = True
+
+        if product_url is None:  # searchterms mode
+            # see https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3585#c10
+            self.scrape_variants_with_extra_requests = False
+        else:
+            self.scrape_variants_with_extra_requests = True
 
         try:
             self.server_ip = socket.gethostbyname(socket.gethostname())

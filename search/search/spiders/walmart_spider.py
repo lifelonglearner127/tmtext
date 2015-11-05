@@ -7,6 +7,7 @@ from scrapy.exceptions import CloseSpider
 from search.items import SearchItem
 from search.items import WalmartItem
 from search.spiders.search_spider import SearchSpider
+from search.spiders.search_product_spider import SearchProductSpider
 from scrapy import log
 
 from spiders_utils import Utils
@@ -16,7 +17,7 @@ import re
 import sys
 
 # spider derived from search spider to search for products on Walmart
-class WalmartSpider(SearchSpider):
+class WalmartSpider(SearchProductSpider):
 
     name = "walmart"
     handle_httpstatus_list = [520]
@@ -26,110 +27,26 @@ class WalmartSpider(SearchSpider):
         self.target_site = "walmart"
         self.start_urls = [ "http://www.walmart.com" ]
 
-    def parseResults(self, response):
-
-
+    def extract_results(self, response):
         hxs = HtmlXPathSelector(response)
-
-        #site = response.meta['origin_site']
-        origin_name = response.meta['origin_name']
-        origin_model = response.meta['origin_model']
-
-        # if this comes from a previous request, get last request's items and add to them the results
-
-        if 'items' in response.meta:
-            items = response.meta['items']
-        else:
-            items = set()
-
-        # add product URLs to be parsed to this list
-        if 'search_results' not in response.meta:
-            product_urls = set()
-        else:
-            product_urls = response.meta['search_results']
-
 
         # TODO: check this xpath and extractions
         results = hxs.select("//h4[@class='tile-heading']/a")
+        product_urls = set()
 
         # try xpath for old page version
         if not results:
              results = hxs.select("//div[@class='prodInfo']/div[@class='prodInfoBox']/a[@class='prodLink ListItemLink']")
 
         for result in results:
-
             product_url = result.select("@href").extract()[0]
             product_url = Utils.add_domain(product_url, "http://www.walmart.com")
             product_urls.add(product_url)
 
- 
-        # extract product info from product pages (send request to parse first URL in list)
-        # add as meta all that was received as meta, will pass it on to reduceResults function in the end
-        # also send as meta the entire results list (the product pages URLs), will receive callback when they have all been parsed
+        return list(product_urls)
 
-        # send the request further to parse product pages only if we gathered all the product URLs from all the queries 
-        # (there are no more pending requests)
-        # otherwise send them back to parseResults and wait for the next query, save all product URLs in search_results
-        # this way we avoid duplicates
-        if product_urls and ('pending_requests' not in response.meta or not response.meta['pending_requests']):
-            request = Request(product_urls.pop(), callback = self.parse_product_walmart, meta = response.meta)
-            request.meta['items'] = items
-
-            # this will be the new product_urls list with the first item popped
-            request.meta['search_results'] = product_urls
-
-            return request
-
-        # if there were no results, the request will never get back to reduceResults
-        # so send it from here so it can parse the next queries
-        # add to the response the URLs of the products to crawl we have so far, items (handles case when it was not created yet)
-        # and field 'parsed' to indicate that the call was received from this method (was not the initial one)
-        else:
-            response.meta['items'] = items
-            response.meta['parsed'] = True
-            response.meta['search_results'] = product_urls
-            # only send the response we have as an argument, no need to make a new request
-
-            # print "RETURNING TO REDUCE RESULTS", response.meta['origin_url']
-            return self.reduceResults(response)
-
-
-        # relevant for extracting products from results page only
-        # - deprecated
-        # response.meta['items'] = items
-        # response.meta['parsed'] = items
-        # return self.reduceResults(response)
-    
-    # extract product info from a product page for walmart
-    # keep product pages left to parse in 'search_results' meta key, send back to parseResults_new when done with all
-    def parse_product_walmart(self, response):
-
-        # fix response, it ocasionally has NUL characters which ruin the parsing
-        cleaned_body = response.body.replace('\00','')
-        fixed_response = HtmlResponse(url=response.url, body=cleaned_body)
-
-
-        hxs = HtmlXPathSelector(fixed_response)
-
-        items = response.meta['items']
-
-        #site = response.meta['origin_site']
-        origin_url = response.meta['origin_url']
-
-        item = SearchItem()
-        item['product_url'] = response.url
-        #item['origin_site'] = site
-        item['origin_url'] = origin_url
-        item['origin_name'] = response.meta['origin_name']
-
-        if 'origin_model' in response.meta:
-            item['origin_model'] = response.meta['origin_model']
-        if 'origin_upc' in response.meta:
-            item['origin_upc'] = response.meta['origin_upc']
-        if 'origin_brand' in response.meta:
-            item['origin_brand'] = response.meta['origin_brand']
-        if 'origin_bestsellers_rank' in response.meta:
-            item['origin_bestsellers_rank'] = response.meta['origin_bestsellers_rank']
+    def extract_product_data(self, response, item):
+        hxs = HtmlXPathSelector(response)
 
         # assume new design of walmart product page
         product_name_node = hxs.select("//h1[contains(@class, 'product-name')]//text()").extract()
@@ -197,42 +114,17 @@ class WalmartSpider(SearchSpider):
             else:
                 self.log("Didn't find product price: " + response.url + "\n", level=log.INFO)
 
+            try:
+                item['product_category_tree'] = hxs.select("//li[@class='breadcrumb']/a/span[@itemprop='name']/text()").extract()[1:]
+            except:
+                pass
 
-            # add result to items
-            items.add(item)
+            try:
+                item['product_keywords'] = hxs.select("//meta[@name='keywords']/@content").extract()[0]
+            except:
+                pass
 
-
-        product_urls = response.meta['search_results']
-
-        # try to send request to parse next product, try until url for next product url is valid (response not 404)
-        # this is needed because if next product url is not valid, this request will not be sent and all info about this match (stored in request meta) will be lost
-
-        # find first valid next product url
-        next_product_url = None
-        if product_urls:
-            next_product_url = product_urls.pop()
-
-
-        # if a next product url was found, send new request back to parse_product_url
-        if next_product_url:
-            request = Request(next_product_url, callback = self.parse_product_walmart, meta = response.meta)
-            request.meta['items'] = items
-            # eliminate next product from pending list (this will be the new list with the first item popped)
-            request.meta['search_results'] = product_urls
-
-            return request
-
-        # if no next valid product url was found
-        else:
-            # we are done, send a the response back to reduceResults (no need to make a new request)
-            # add as meta newly added items
-            # also add 'parsed' field to indicate that the parsing of all products was completed and they cand be further used
-            # (actually that the call was made from this method and was not the initial one, so it has to move on to the next request)
-
-            response.meta['parsed'] = True
-            response.meta['items'] = items
-
-            return self.reduceResults(response)
+        return item
 
 
 # spider that receives a list of Walmart product ids (or of Walmart URLs of the type http://www.walmart.com/<id>)

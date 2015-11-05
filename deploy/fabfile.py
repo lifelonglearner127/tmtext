@@ -98,7 +98,7 @@ def get_ssh_keys():
 
     local_original_mode = cuisine.is_local()
     cuisine.mode_local()
-    
+
     if not cuisine.dir_exists(LOCAL_CERT_PATH):
         local('mkdir -p ' + LOCAL_CERT_BASE_PATH)
         local('cd %s && git clone %s && cd %s'
@@ -229,6 +229,7 @@ def setup_packages():
     cuisine.package_ensure('tmux')
     cuisine.package_ensure('mc htop iotop nano')  # just for convenience
     cuisine.package_ensure('python-psycopg2 libpq-dev python-dev')
+    cuisine.package_ensure('libjpeg-dev')
     sudo('pip install virtualenv --upgrade')
     sudo('pip install pytesseract')
     sudo('pip install tldextract')
@@ -336,6 +337,31 @@ def _setup_virtual_env_web_runner():
         run('pip install boto')
         run('pip install s3peat')
         run('pip install workerpool')
+        run('pip install fabric')
+        run('pip install cuisine')
+        run('pip install scrapy==0.24.4')
+        run('pip install scrapyd==1.0.1')
+        run('pip install service_identity')
+        run('pip install simplejson')
+        run('pip install requests')
+        run('pip install Pillow')
+        run('pip install pytesseract')
+        run('pip install boto')
+        run('pip install django')
+        run('pip install django-ses')
+        run('pip install django_adminplus')
+        run('pip install lxml')
+        run('pip install tldextract')
+        run('pip install s3peat')
+        run('pip install workerpool')
+        run('pip install boto')
+        run('pip install s3peat')
+        run('pip install sqlalchemy')
+        run('pip install psycopg2')
+        run('pip install hjson')
+        run('pip install pyyaml')
+        run('pip install python-dateutil')
+        run('pip install psutil')
 
 
 def _setup_virtual_env_web_runner_web():
@@ -362,7 +388,7 @@ def setup_virtual_env(scrapyd=True, web_runner=True, web_runner_web=True):
         _setup_virtual_env_web_runner_web()
 
 
-def get_repos(branch='master'):
+def get_repos(branch='sc_production'):
     '''Download and install the main source repository'''
     puts(green('Updating repositories'))
 
@@ -372,7 +398,7 @@ def get_repos(branch='master'):
         run('cd %s && git clone %s && cd %s && git checkout %s'
             % (REPO_BASE_PATH, REPO_URL, repo_path, branch))
     else:
-        run('cd %s && git checkout %s && git pull' % (repo_path, branch))
+        run('cd %s && git fetch && git checkout %s && git pull' % (repo_path, branch))
 
 
 def _configure_scrapyd():
@@ -600,7 +626,7 @@ def _common_tasks():
     setup_cron()
 
 
-def deploy_scrapyd(restart_scrapyd=False, branch='master'):
+def deploy_scrapyd(restart_scrapyd=False, branch='sc_production'):
     _common_tasks()
     setup_virtual_env(web_runner=False, web_runner_web=False)
     get_repos(branch=branch)
@@ -611,7 +637,7 @@ def deploy_scrapyd(restart_scrapyd=False, branch='master'):
     _run_scrapyd()
 
 
-def deploy_web_runner(branch='master'):
+def deploy_web_runner(branch='sc_production'):
     _common_tasks()
     setup_virtual_env(scrapyd=False, web_runner_web=False)
     get_repos(branch=branch)
@@ -620,7 +646,7 @@ def deploy_web_runner(branch='master'):
     _run_web_runner()
 
 
-def deploy_web_runner_web(branch='master'):
+def deploy_web_runner_web(branch='sc_production'):
     _common_tasks()
     setup_virtual_env(scrapyd=False, web_runner=False)
     get_repos(branch=branch)
@@ -628,13 +654,31 @@ def deploy_web_runner_web(branch='master'):
     _run_web_runner_web()
 
 
-def deploy(restart_scrapyd=False, branch='master'):
+def deploy(restart_scrapyd=False, branch='sc_production'):
     _common_tasks()
     setup_virtual_env()
     get_repos(branch=branch)
     configure()
     install()
     run_servers(restart_scrapyd)
+
+
+def _restart_test_flask_uwsgi():
+    orig_user, orig_passw, orig_cert = env.user, env.password, env.key_filename
+    env.user, env.password, env.key_filename = \
+        SSH_SUDO_USER, SSH_SUDO_PASSWORD, SSH_SUDO_CERT
+    sudo('service uwsgi restart')
+    env.user, env.password, env.key_filename = \
+        orig_user, orig_passw, orig_cert
+
+
+def deploy_sc_test_server(branch='sc_production'):
+    _common_tasks()
+    setup_virtual_env()
+    get_repos(branch=branch)
+    configure()
+    install()
+    _restart_test_flask_uwsgi()
 
 
 def test_scrapy():

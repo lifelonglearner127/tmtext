@@ -47,7 +47,8 @@ class WalmartScraper(Scraper):
     BASE_URL_PDFREQ_WEBCOLLAGE = "http://content.webcollage.net/walmart/smart-button?ignore-jsp=true&ird=true&channel-product-id="
     # base URL for request for product reviews - formatted string
     BASE_URL_REVIEWSREQ = 'http://walmart.ugc.bazaarvoice.com/1336a/%20{0}/reviews.djs?format=embeddedhtml'
-
+    # base URL for product API
+    BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
@@ -150,10 +151,10 @@ class WalmartScraper(Scraper):
             string containing only product id
         """
         if self._version() == "Walmart v1":
-            product_id = self.product_page_url.split('/')[-1]
+            product_id = self._canonical_link().split('/')[-1]
             return product_id
         elif self._version() == "Walmart v2":
-            product_id = self.product_page_url.split('/')[-1]
+            product_id = self._canonical_link().split('/')[-1]
             return product_id
 
         return None
@@ -868,6 +869,12 @@ class WalmartScraper(Scraper):
         # TODO: maybe these extractor functions are being called too many times.
         #       maybe reimplement this using state - an instance variable containing
         #       both descriptions (extracted at once)
+
+        try:
+            self.tree_html.xpath ("//div[@class='js-ellipsis module']")[0].remove(self.tree_html.xpath("//div[@class='js-ellipsis module']/p[@class='product-description-disclaimer']")[0])
+        except:
+            pass
+
         try:
             short_description = self._short_description_from_tree()
         except:
@@ -1015,6 +1022,11 @@ class WalmartScraper(Scraper):
         # assume new page format
         # extractor function may throw exception if extraction fails
         try:
+            self.tree_html.xpath ("//div[@class='js-ellipsis module']")[0].remove(self.tree_html.xpath("//div[@class='js-ellipsis module']/p[@class='product-description-disclaimer']")[0])
+        except:
+            pass
+
+        try:
             long_description_new = self._long_description_from_tree()
         except Exception:
             long_description_new = None
@@ -1056,7 +1068,45 @@ class WalmartScraper(Scraper):
         return None
 
     def _variants(self):
+        if self._no_longer_available():
+            return None
+
         return self.wv._variants()
+
+    def _swatches(self):
+        if self._no_longer_available():
+            return None
+
+        return self.wv._swatches()
+
+    def _bundle(self):
+        return self.is_bundle_product
+
+    def _bundle_components(self):
+        product_id_list = self.tree_html.xpath("//div[@class='bundle-see-more-container']//div[@class='clearfix greybar-body']/@id")
+        product_id_list = [id.split("I")[1] for id in product_id_list]
+        product_id_list = list(set(product_id_list))
+
+        if product_id_list:
+            bundle_component_list = []
+
+            for id in product_id_list:
+                try:
+                    h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+                    s = requests.Session()
+                    a = requests.adapters.HTTPAdapter(max_retries=3)
+                    b = requests.adapters.HTTPAdapter(max_retries=3)
+                    s.mount('http://', a)
+                    s.mount('https://', b)
+                    product_json = json.loads(s.get(self.BASE_URL_PRODUCT_API.format(id), headers=h, timeout=5).text)
+                    bundle_component_list.append({"upc": product_json["analyticsData"]["upc"], "url": "http://www.walmart.com" + product_json["product"]["canonicalUrl"]})
+                except:
+                    continue
+
+            if bundle_component_list:
+                return bundle_component_list
+
+        return None
 
     def _related_product_urls(self):
         page_raw_text = lxml.html.tostring(self.tree_html)
@@ -1071,7 +1121,12 @@ class WalmartScraper(Scraper):
         variants_json = json.loads(json_text)
         item_id_list = []
 
+        primary_product_id = self._find_between(html.tostring(self.tree_html), '"primaryProductId":"', '"').strip()
+
         for item in variants_json:
+            if primary_product_id == item["id"]:
+                primary_product_id = str(item["buyingOptions"]["usItemId"])
+
             item_id_list.append(item["buyingOptions"]["usItemId"])
 
         item_id_list = list(set(item_id_list))
@@ -1081,9 +1136,11 @@ class WalmartScraper(Scraper):
 
         for variant_id in item_id_list:
             related_product_url = url[:url.rfind("/")] + "/" + str(variant_id)
-            related_product_urls.append(related_product_url)
 
-        related_product_urls.remove(self.product_page_url)
+            if primary_product_id in related_product_url:
+                related_product_urls.insert(0, related_product_url)
+            else:
+                related_product_urls.append(related_product_url)
 
         if related_product_urls:
             return related_product_urls
@@ -1289,7 +1346,10 @@ class WalmartScraper(Scraper):
         if self._version() == "Walmart v2":
             if self.is_bundle_product:
                 product_info_json = self._extract_product_info_json()
-                return product_info_json["analyticsData"]["catPath"].split("/")
+                if type(product_info_json["analyticsData"]["catPath"]) == dict:
+                    return product_info_json["analyticsData"]["catPath"]["categoryPathName"].split("/")
+                else:
+                    return product_info_json["analyticsData"]["catPath"].split("/")
             else:
                 categories_list = self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")
                 if categories_list:
@@ -1634,11 +1694,15 @@ class WalmartScraper(Scraper):
 
     def _no_longer_available(self):
         try:
-            if "This Item is no longer available" in self.tree_html.xpath("//div[@class='prod-no-buying-option']/div[@class='heading-d']/text()")[0]:
+            txt = self.tree_html.xpath("//div[@class='prod-no-buying-option']/div[@class='heading-d']/text()")[0]
+            if "Information unavailable" in txt or "This Item is no longer available" in txt:
                 return True
         except:
             pass
-
+        if self.tree_html.xpath('//*[contains(@class, "invalid") and contains(text(), "tem not available")]'):
+            return True
+        if self.tree_html.xpath('//*[contains(@class, "NotAvailable") and contains(text(), "ot Available")]'):
+            return True
         return False
 
     def _shipping(self):
@@ -1662,6 +1726,40 @@ class WalmartScraper(Scraper):
                 return False
             else:
                 return True
+
+    def _free_pickup_today(self):
+        if self.tree_html.xpath("//div[contains(@class, 'pull-left offer-pickup-section')]") and "free pickup today" in self.tree_html.xpath("//div[contains(@class, 'pull-left offer-pickup-section')]")[0].text_content().lower():
+            self._extract_product_info_json()
+
+            if self.product_info_json:
+                free_pickup_today = []
+
+                for pickup_option in self.product_info_json["buyingOptions"]["pickupOptions"]:
+                    if pickup_option["available"] == True:
+                        pickup = {}
+                        pickup["Store Name"] = pickup_option["storeName"]
+                        pickup["City"] = pickup_option["city"]
+                        pickup["Distance"] = pickup_option["distance"]
+
+                        if "zipCode" in pickup_option:
+                            pickup["Zip Code"] = pickup_option["zipCode"]
+                        else:
+                            pickup["Zip Code"] = 94107
+
+                        pickup["Pick-up Today"] = True
+                        free_pickup_today.append(pickup)
+
+                return free_pickup_today
+
+        return None
+
+    def _buying_option(self):
+        self._extract_product_info_json()
+
+        if self.product_info_json and "buyingOptions" not in self.product_info_json:
+            return 0
+
+        return 1
 
     def _no_image(self, url):
         """Overwrites the _no_image
@@ -2058,7 +2156,7 @@ class WalmartScraper(Scraper):
         prices = []
         sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
 
-        if self._primary_seller().lower() == "walmart.com":
+        if self._primary_seller().lower() in ["walmart.com", "walmart store"]:
             for seller in sellers_dict:
                 if seller["sellerName"] != "Walmart.com":
                     prices.append(float(seller["price"]))
@@ -2214,15 +2312,6 @@ class WalmartScraper(Scraper):
                 return None
 
             return prices
-
-    def _find_between(self, s, first, last):
-        try:
-            start = s.index(first) + len(first)
-            end = s.index(last, start)
-            return s[start:end]
-        except ValueError:
-            return ""
-
 
     def _marketplace_out_of_stock(self):
         """Extracts info on whether currently unavailable from any marketplace seller - binary
@@ -2848,6 +2937,9 @@ class WalmartScraper(Scraper):
         "long_description": _long_description_wrapper, \
         "shelf_description": _shelf_description, \
         "variants": _variants, \
+        "swatches": _swatches, \
+        "bundle": _bundle, \
+        "bundle_components": _bundle_components, \
         "related_products_urls":  _related_product_urls, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
@@ -2871,6 +2963,8 @@ class WalmartScraper(Scraper):
         "title_seo": _title_from_tree, \
         "rollback": _rollback, \
         "shipping": _shipping, \
+        "free_pickup_today": _free_pickup_today, \
+        "buying_option": _buying_option, \
         # TODO: I think this causes the method to be called twice and is inoptimal
         "product_title": _product_name_from_tree, \
         "in_stores": _in_stores, \

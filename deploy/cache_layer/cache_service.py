@@ -17,14 +17,17 @@ class SqsCache(object):
     """
     interact with redis DB in terms of cache (put/get item to/from cache)
     """
+    CACHE_SETTINGS_PATH = 'settings'  # location of file with settings
     REDIS_CACHE_TIMESTAMP = 'cached_timestamps'  # zset, expiry for items
     REDIS_CACHE_KEY = 'cached_responses'  # hash, cached items
-    REDIS_CACHE_STATS = 'cached_count'  # zset, to get most popular items
+    REDIS_CACHE_STATS_URL = 'cached_count_url'  # zset
+    REDIS_CACHE_STATS_TERM = 'cached_count_term'  # zset
     REDIS_COMPLETED_TASKS = 'completed_tasks'  # zset, count completed tasks
     REDIS_INSTANCES_COUNTER = 'daily_sqs_instances_counter'
 
-    def __init__(self, db=None):
-        self.db = db if db else StrictRedis(REDIS_HOST, REDIS_PORT)
+    def __init__(self, db=None, timeout=10):
+        self.db = db if db else StrictRedis(REDIS_HOST, REDIS_PORT,
+                                            socket_timeout=timeout)
         # self.db = db if db else StrictRedis()  # for local
 
     def _task_to_key(self, task):
@@ -35,6 +38,7 @@ class SqsCache(object):
         if not isinstance(task, dict):
             return None
         res = []
+        is_term = False  # if task is for search terms
         keys_to_check = {'site': 'site', 'url': 'url', 'urls': 'urls',
                          'searchterms_str': 'term',
                          'with_best_seller_ranking': 'bsr',
@@ -42,11 +46,13 @@ class SqsCache(object):
         for key in sorted(keys_to_check.keys()):
             val = task.get(key)
             if val is not None:
+                if key == 'searchterms_str':
+                    is_term = True
                 res.append('%s-%s' % (keys_to_check[key], val))
         for key in sorted(task.get('cmd_args', {}).keys()):
             res.append('%s-%s' % (key, task['cmd_args'][key]))
         res = ':'.join(res)
-        return res
+        return is_term, res
 
     def get_result(self, task_str):
         """
@@ -55,7 +61,7 @@ class SqsCache(object):
         returns tuple (is_item_found_in_cache, item_or_None)
         """
         task = json.loads(task_str)
-        uniq_key = self._task_to_key(task)
+        is_term, uniq_key = self._task_to_key(task)
         if not uniq_key:
             return False, None
         score = self.db.zscore(self.REDIS_CACHE_TIMESTAMP, uniq_key)
@@ -69,7 +75,10 @@ class SqsCache(object):
         item = self.db.hget(self.REDIS_CACHE_KEY, uniq_key)
         if not item:
             return False, None
-        self.db.zincrby(self.REDIS_CACHE_STATS, uniq_key, 1)
+        if is_term:
+            self.db.zincrby(self.REDIS_CACHE_STATS_TERM, uniq_key, 1)
+        else:
+            self.db.zincrby(self.REDIS_CACHE_STATS_URL, uniq_key, 1)
         item = decompress(item)
         return True, item
 
@@ -79,12 +88,12 @@ class SqsCache(object):
         returns True if success
         """
         task = json.loads(task_str)
-        uniq_key = self._task_to_key(task)
+        is_term, uniq_key = self._task_to_key(task)
         if not uniq_key:
             return False
         # save some space using compress
         self.db.hset(self.REDIS_CACHE_KEY, uniq_key, compress(result))
-        res = self.db.zadd(self.REDIS_CACHE_TIMESTAMP, int(time()), uniq_key)
+        self.db.zadd(self.REDIS_CACHE_TIMESTAMP, int(time()), uniq_key)
         return True
 
     def delete_old_tasks(self, freshness):
@@ -110,8 +119,16 @@ class SqsCache(object):
         """
         self.db.delete(self.REDIS_INSTANCES_COUNTER)
         return \
-            (self.db.zremrangebyrank(self.REDIS_CACHE_STATS, 0, -1),
+            (self.db.zremrangebyrank(self.REDIS_CACHE_STATS_URL, 0, -1),
+             self.db.zremrangebyrank(self.REDIS_CACHE_STATS_TERM, 0, -1),
              self.db.zremrangebyrank(self.REDIS_COMPLETED_TASKS, 0, -1))
+
+    def purge_cache(self):
+        """
+        removes all data, related to cache
+        """
+        self.db.delete(self.REDIS_CACHE_TIMESTAMP, self.REDIS_CACHE_KEY,
+                       self.REDIS_CACHE_STATS_URL, self.REDIS_CACHE_STATS_TERM)
 
     def complete_task(self, task_str):
         task = json.loads(task_str)
@@ -153,21 +170,46 @@ class SqsCache(object):
             return self.db.zcount(
                 self.REDIS_COMPLETED_TASKS, time_from, time_to)
 
-    def get_most_popular_cached_items(self, cnt=10):
+    def get_most_popular_cached_items(self, cnt=10, is_term=False):
         """
         gets 10 most popular items in cache
         """
-        return self.db.zrevrangebyscore(self.REDIS_CACHE_STATS,
-                                        9999, 0, 0, cnt, True, int)
+        if is_term:
+            key = self.REDIS_CACHE_STATS_TERM
+        else:
+            key = self.REDIS_CACHE_STATS_URL
+        return self.db.zrevrangebyscore(key, 9999, 0, 0, cnt, True, int)
 
     def get_used_memory(self):
         return self.db.info().get('used_memory_human')
 
-    def get_total_cached_responses(self):
+    def get_total_cached_responses(self, is_term=False):
         """
         returns tuple of 2 elements: unique elements, requested from cache and
         total number of elements requested from cache
         """
-        data = self.db.zrange(self.REDIS_CACHE_STATS, 0, -1,
-                              withscores=True, score_cast_func=int)
+        if is_term:
+            key = self.REDIS_CACHE_STATS_TERM
+        else:
+            key = self.REDIS_CACHE_STATS_URL
+        data = self.db.zrange(key, 0, -1, withscores=True, score_cast_func=int)
         return len(data), sum([_[1] for _ in data])
+
+    def get_cache_settings(self):
+        """
+        returns dict with current settings
+        """
+        with open(self.CACHE_SETTINGS_PATH, 'r') as f:
+            s = f.read()
+        data = json.load(s or '""')
+        return data
+
+    def save_cache_settings(self, data):
+        """
+        saves settings dict to file
+        """
+        if not data:
+            return
+        with open(self.CACHE_SETTINGS_PATH, 'w') as f:
+            s = json.dumps(data)
+            f.write(s)

@@ -26,6 +26,38 @@ class JcpenneyVariants(object):
         fmt = "jpg"
         return main_part.format(id=image_id, wid=wid, hei=hei, fmt=fmt)
 
+    def _find_between(self, s, first, last):
+        try:
+            start = s.index(first) + len(first)
+            end = s.index(last, start)
+            return s[start:end]
+        except ValueError:
+            return ""
+
+    def swatches(self):
+        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
+        product_id = re.search('prod\.jump\?ppId=(.+?)$', canonical_link).group(1)
+
+        swatch_list = []
+
+        for swatch in self.tree_html.xpath("//div[@id='color_chooser_{0}']//a[@class='swatch']".format(product_id)):
+#            image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
+
+            image_id = self._find_between(swatch.xpath("./@onclick")[0], "'{}','".format(product_id), "')")
+            swatch_info = {}
+            swatch_info["swatch_name"] = "color"
+            swatch_info["color"] = swatch.xpath("./img/@name")[0]
+            swatch_info["hero"] = 1
+            swatch_info["thumb"] = 1
+            swatch_info["hero_image"] = "http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % image_id
+            swatch_info["thumb_image"] = swatch.xpath("./img/@src")[0]
+            swatch_list.append(swatch_info)
+
+        if swatch_list:
+            return swatch_list
+
+        return None
+
     def _variants(self):
         try:
             canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -94,6 +126,40 @@ class JcpenneyVariants(object):
                 variation_key_list.append("size")
                 variation_values_list.append(size_list)
                 stockstatus_list_by_variation.append(dict(zip(size_list, stockstatus_list)))
+
+            #length attribute
+            length_list = self.tree_html.xpath("//ul[@id='" + product_id + "LENGTH']//li[@id='length']/a/@title")
+            length_li_list = self.tree_html.xpath("//ul[@id='" + product_id + "LENGTH']//li[@id='length']")
+
+            if length_list:
+                stockstatus_list = []
+
+                for length_li in length_li_list:
+                    if "class" in length_li.attrib:
+                        stockstatus_list.append(length_li.attrib["class"])
+                    else:
+                        stockstatus_list.append("")
+
+                variation_key_list.append("length")
+                variation_values_list.append(length_list)
+                stockstatus_list_by_variation.append(dict(zip(length_list, stockstatus_list)))
+
+            #chest attribute
+            chest_list = self.tree_html.xpath("//ul[@id='" + product_id + "CHEST']//li[@id='chest']/a/@title")
+            chest_li_list = self.tree_html.xpath("//ul[@id='" + product_id + "CHEST']//li[@id='chest']")
+
+            if chest_list:
+                stockstatus_list = []
+
+                for chest_li in chest_li_list:
+                    if "class" in chest_li.attrib:
+                        stockstatus_list.append(chest_li.attrib["class"])
+                    else:
+                        stockstatus_list.append("")
+
+                variation_key_list.append("chest")
+                variation_values_list.append(chest_list)
+                stockstatus_list_by_variation.append(dict(zip(chest_list, stockstatus_list)))
 
             #waist attribute
             waist_list = self.tree_html.xpath("//ul[@id='" + product_id + "WAIST']//li[@id='waist']/a/@title")
@@ -164,21 +230,25 @@ class JcpenneyVariants(object):
                 stockstatus_list_by_variation.append(dict(zip(sleeve_list, stockstatus_list)))
 
             #color attribute
-            color_list = self.tree_html.xpath("//ul[@id='" + product_id + "COLOR']//li[contains(@id, '" + product_id + "')]/a/img/@alt")
+            product_id = re.search('prod\.jump\?ppId=(.+?)$', self.tree_html.xpath("//link[@rel='canonical']/@href")[0]).group(1)
+            color_list = self.tree_html.xpath("//ul[@id='" + product_id + "COLOR']//li[contains(@id, '" + product_id + "')]/a/img/@name")
+            visible_color_list = []
             color_li_list = self.tree_html.xpath("//ul[@id='" + product_id + "COLOR']//li[contains(@id, '" + product_id + "')]")
 
             if color_list:
                 stockstatus_list = []
 
-                for color_li in color_li_list:
-                    if "class" in color_li:
-                        stockstatus_list.append(color_li.attrib["class"])
-                    else:
-                        stockstatus_list.append("")
+                for index, color_li in enumerate(color_li_list):
+                    if "showColor('{0}','{1}',".format(product_id, color_list[index]) in html.tostring(self.tree_html):
+                        visible_color_list.append(color_list[index])
+                        if "class" in color_li:
+                            stockstatus_list.append(color_li.attrib["class"])
+                        else:
+                            stockstatus_list.append("")
 
                 variation_key_list.append("color")
-                variation_values_list.append(color_list)
-                stockstatus_list_by_variation.append(dict(zip(color_list, stockstatus_list)))
+                variation_values_list.append(visible_color_list)
+                stockstatus_list_by_variation.append(dict(zip(visible_color_list, stockstatus_list)))
 
             variation_combinations_values = list(itertools.product(*variation_values_list))
 

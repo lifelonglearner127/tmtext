@@ -6,6 +6,7 @@ import multiprocessing as mp
 import logging
 import logging.config
 import subprocess
+import random
 
 
 import boto
@@ -67,14 +68,17 @@ BUCKET_KEY = 'instances_killer_logs'
 TOTAL_WAS_TERMINATED = 0
 autoscale_conn = None
 
-def get_all_group_instances_and_conn():
+
+def get_all_group_instances_and_conn(groups_names=('SCCluster1', 'SCCluster2', 'SCCluster3')):
     conn = AutoScaleConnection()
     global autoscale_conn
     autoscale_conn = conn
     ec2 = boto.ec2.connect_to_region('us-east-1')
-    group = conn.get_all_groups(names=['SCCluster1'])[0]
+    selected_group_name = random.choice(groups_names)
+    logger.info('Selected autoscale group: %s' % selected_group_name)
+    group = conn.get_all_groups(names=[selected_group_name])[0]
     if not group.instances:
-        logger.info("No any working instances at the group 'SCCluster1'")
+        logger.info("No working instances in selected group %s" % selected_group_name)
         upload_logs_to_s3()
         sys.exit()
     instance_ids = [i.instance_id for i in group.instances]
@@ -119,7 +123,7 @@ def check_logs_status(file_path):
             break
     else:
         reason = 'No logs exist'
-        flag = True
+        flag = False
     return flag, reason
 
 
@@ -153,10 +157,13 @@ def stop_if_required(inst_ip, inst_id):
             break
     else:
         proc.terminate()
+        logger.error('Failed to download logs, instance %s (%s), terminating.',
+                     inst_ip, inst_id)
         return True
     try:
         flag, reason = check_logs_status(tmp_file)
-    except:
+    except Exception as e:
+        logger.exception(e)
         return True
     print(inst_id, inst_ip, flag, reason)
     if flag:
@@ -170,7 +177,7 @@ def stop_if_required(inst_ip, inst_id):
 
 
 def update_unresponded_dict_or_terminate_instance(inst_ip, inst_id,
-                                                  unresponded):
+                                                  unresponded, state_code=None):
     if inst_id in unresponded.keys():
         last_time = unresponded[inst_id][1]
         # if instance not responded for 32 minutes already
@@ -233,7 +240,8 @@ def main():
             update_unresponded_dict_or_terminate_instance(
                 instance.ip_address,
                 instance.id,
-                unresponded
+                unresponded,
+                instance.state_code
             )
         else:
             inst_ip = instance.ip_address
@@ -243,7 +251,8 @@ def main():
                 update_unresponded_dict_or_terminate_instance(
                     inst_ip,
                     inst_id,
-                    unresponded
+                    unresponded,
+                    instance.state_code
                 )
     delete_old_unresponded_hosts(unresponded)
     with open(not_responded_hosts, 'w') as f:

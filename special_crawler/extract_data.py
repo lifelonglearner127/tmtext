@@ -87,9 +87,13 @@ class Scraper():
             "supplement_fact_text_health",
             "rollback", # binary (0/1), whether product is rollback or not
             "shipping",
+            "free_pickup_today",
             "no_longer_available",
             "variants", # list of variants
+            "swatches", # list of swatches
             "related_products_urls",
+            "bundle",
+            "bundle_components",
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
@@ -112,7 +116,7 @@ class Scraper():
             "meta_tags",# a list of pairs of meta tag keys and values
             "meta_tag_count", # the number of meta tags in the source of the page
             "canonical_link", # canoncial link of the page
-
+            "buying_option",
             "image_hashes", # list of hash values of images as returned by _image_hash() function - list of strings (the same order as image_urls)
             "thumbnail", # thumbnail of the main product image on the page - tbd
             "manufacturer", # manufacturer info for this product
@@ -194,11 +198,11 @@ class Scraper():
                         "features", "feature_count", "model_meta", "description", "long_description", "shelf_description", "apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
-                        "rollback", "shipping", "no_longer_available", "manufacturer", "return_to"],
+                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
-                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "variants", "related_products_urls"], \
+                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "in_stock", \
@@ -381,7 +385,7 @@ class Scraper():
 
         for i in range(self.MAX_RETRIES):
             try:
-                contents = urllib2.urlopen(request, timeout=10).read()
+                contents = urllib2.urlopen(request, timeout=20).read()
 
             # handle urls with special characters
             except UnicodeEncodeError, e:
@@ -396,7 +400,12 @@ class Scraper():
                 self.is_timeout = True
                 self.ERROR_RESPONSE["failure_type"] = "Timeout"
                 return
-
+            except urllib2.HTTPError, err:
+                if err.code == 404:
+                    self.ERROR_RESPONSE["failure_type"] = "HTTP 404 - Page Not Found"
+                    return
+                else:
+                    raise
             try:
                 # replace NULL characters
                 contents = self._clean_null(contents)
@@ -435,6 +444,13 @@ class Scraper():
             text = text.replace('\00','')
         return text
 
+    def _find_between(self, s, first, last, offset=0):
+        try:
+            start = s.index(first, offset) + len(first)
+            end = s.index(last, start)
+            return s[start:end]
+        except ValueError:
+            return ""
 
     # Extract product info given a list of the type of info needed.
     # Return dictionary containing type of info as keys and extracted info as values.

@@ -31,6 +31,9 @@ class HalfordsProductSpider(BaseProductsSpider):
     BUYER_REVIEWS_URL = "http://halfords.ugc.bazaarvoice.com/4028-redes/{product_id}/" \
                         "reviews.djs?format=embeddedhtml"
 
+    IMG_URL = "http://i1.adis.ws/s/washford/684906_is.js?deep=true&" \
+              "timestamp=1442469600000&arg=%{cat_code}_is%27&func=amp.jsonReturn"
+
     _SORT_MODES = {
         'price asc': 'price-low-to-high',
         'price desc': 'price-high-to-low',
@@ -92,6 +95,13 @@ class HalfordsProductSpider(BaseProductsSpider):
         # Set variants
         variants = self._parse_variants(response)
         cond_set_value(product, 'variants', variants)
+        # variant_request = Request(
+        #     url=self.IMG_URL.format(cat_code=cat_code),
+        #     callback=self.info_variant_parse,
+        #     dont_filter=True,
+        # )
+
+        # reqs.append(variant_request)
 
         #  Set stock status
         is_out_of_stock = self._parse_stock_status(response)
@@ -273,10 +283,20 @@ class HalfordsProductSpider(BaseProductsSpider):
                     return []
 
                 variants = []
+
                 for item in variants_data:
+                    image_url ='http://i1.adis.ws/i/washford/' + item['thumbNail'].replace('cdn/', '')
                     stock = item['inStock']
+                    if item['value2'] == '':
+                        color = None
+                        size = item['value1']
+                    else:
+                        color = item['value1']
+                        size = item['value2']
                     properties = {
-                        name: item['value1']
+                        name: size,
+                        'image_url': image_url,
+                        'color': color
                     }
                     variants.append({
                         'in_stock': stock,

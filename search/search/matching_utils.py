@@ -71,6 +71,9 @@ class ProcessText():
         # convert yards
         text = re.sub("[- ][yY]ards", "yd", text)
 
+        # convert pack (if it's preceded by space or dash and not followed by a letter)
+        text = re.sub("(?<=[- ])[pP]ack(?!([a-z]))", "pk", text)
+
         # replace w/ with 'with'. note: only lowercase w followd by / and space
         text = re.sub("w/(?= )", "with", text)
 
@@ -143,16 +146,24 @@ class ProcessText():
     # return most similar product from a list to a target product (by their names)
     # if none is similar enough, return None
     # arguments:
-    #            product_name - name of target product
-    #            product_model - model number of target product, if available (as extracted from somewhere on the page other than its name)
-    #            products2 - list of product items for products to search through
-    #            param - threshold for accepting a product name as similar or not (float between 0-1)
+    #            candidates - list of product items for products to search through, SearchItem objects
+    #            param - threshold for accepting a product as similar or not (float between 0-1)
     
     @staticmethod
-    def similar(product_name, product_model, product_price, product_upc, product1_mancode, product_brand, products2, param):
+    def similar(candidates, param):
         result = None
         products_found = []
-        for product2 in products2:
+        for product2 in candidates:
+
+            # origin product features
+            product_name = product2['origin_name']
+            product_model = product2['origin_model']
+            product_price = product2['product_origin_price']
+            product_upc = product2['origin_upc']
+            product1_mancode = product2['origin_manufacturer_code']
+            product_brand = product2['origin_brand']
+
+
 
             words1 = ProcessText.normalize(product_name)
             words2 = ProcessText.normalize(product2['product_name'])
@@ -185,7 +196,10 @@ class ProcessText():
             else:
                 product2_brand = None
 
-            product1_brand = " ".join(ProcessText.normalize(product_brand))
+            if product_brand:
+                product1_brand = " ".join(ProcessText.normalize(product_brand))
+            else:
+                product1_brand = None
 
 
             # compute a term to penalize score woth for large price differences (above 100% of small price)
@@ -309,10 +323,13 @@ class ProcessText():
             else:
                 product2_price = ""
             
-            log.msg("\nPRODUCT: " + unicode(product_name) + " URL: " + product2['origin_url'] + " MODEL: " + unicode(product_model) + " PRICE: " + unicode(product_price) + \
+            try:
+                log.msg("\nPRODUCT: " + unicode(product_name) + " URL: " + product2['origin_url'] + " MODEL: " + unicode(product_model) + " PRICE: " + unicode(product_price) + \
                 " BRAND: " + unicode(product1_brand) + \
                 "\nPRODUCT2: " + unicode(product2['product_name']) + " URL2: " + product2['product_url'] + " BRAND2: " + unicode(product2_brand) + " MODEL2: " + unicode(product2_model) + " PRICE2: " + unicode(product2_price) + \
                 "\nSCORE: " + str(score) + " PRICE_PENLZ: " + unicode(price_score_penalization) + " THRESHOLD: " + str(threshold) + "\n", level=log.WARNING)
+            except:
+                log.msg("\nPRODUCT: --Error trying to log product info", level=log.WARNING)
 
             ###################
 
@@ -648,6 +665,7 @@ class ProcessText():
     # check if word is a likely candidate to represent a model number
     @staticmethod
     def is_model_number(word, min_length = 5):
+        exceptions = ['skamp', 'skimp']
 
         # eliminate words smaller than 4 letters (inclusively)
         if len(word) < min_length:
@@ -667,6 +685,7 @@ class ProcessText():
         
         if ((letters > 1 and numbers > 0) or numbers > 4 or (numbers >=4 and letters >=1) or\
         (letters > 3 and vowels < 2 and not ProcessText.is_dictionary_word(word))) \
+        and word not in exceptions \
         and nonwords==0 \
         and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz") and \
         not re.match("[0-9]{3,}[kmgt]b", word) and not re.match("[0-9]{3,}p", word) and not re.match("[0-9]{2,}hz", word) \
@@ -708,7 +727,7 @@ class ProcessText():
     # normalize model numbers (remove dashes, lowercase)
     @staticmethod
     def normalize_modelnr(modelnr):
-        return re.sub("[\- ]", "", modelnr.lower())
+        return re.sub("[\- /]", "", modelnr.lower())
 
     # extract index of (first found) model number in list of words if any
     # return -1 if none found
@@ -732,14 +751,14 @@ class ProcessText():
     # extract model number from product url, for supported sites
     @staticmethod
     def extract_model_from_url(product_url):
-        r = re.match("https?://www\.([^/]*)\.com/.*", product_url)
+        r = re.match("https?://www1?\.([^/]*)\.com/.*", product_url)
         if not r:
             log.msg("Domain could not be extracted from URL " + product_url + " for extracting product model", level=log.DEBUG)
             return None
         domain = r.group(1)
-        # only walmart is supported
-        if domain not in ['walmart', 'wayfair']:
-            return None
+        # # only walmart is supported
+        # if domain not in ['walmart', 'wayfair']:
+        #     return None
         
         name_from_url = " ".join(product_url.split("/")[-1].split("-"))
         return ProcessText.extract_model_from_name(name_from_url)

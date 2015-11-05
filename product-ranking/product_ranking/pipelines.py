@@ -8,11 +8,17 @@ import string
 import unittest
 import json
 import random
+import sys
+import os
 
 from scrapy import Selector
 from scrapy.exceptions import DropItem
 from scrapy import logformatter
 from scrapy import log
+from scrapy.xlib.pydispatch import dispatcher
+from scrapy import signals
+from scrapy import log
+from scrapy import logformatter
 import tldextract
 try:
     import mock
@@ -20,6 +26,7 @@ except ImportError:
     pass  # Optional import for test.
 
 from .items import Price
+from .validation import _get_spider_output_filename
 
 STATISTICS_ENABLED = False
 STATISTICS_ERROR_MSG = None
@@ -28,15 +35,6 @@ try:
     STATISTICS_ENABLED = True
 except ImportError as e:
     STATISTICS_ERROR_MSG = str(e)
-
-
-class PipelineFormatter(logformatter.LogFormatter):
-    # redefine this method to change log level for DropItem exception
-    def dropped(self, item, exception, response, spider):
-        log_format = super(PipelineFormatter, self).dropped(
-            item, exception, response, spider)
-        log_format['level'] = log.ERROR
-        return log_format
 
 
 class CheckGoogleSourceSiteFieldIsCorrectJson(object):
@@ -248,6 +246,65 @@ class FilterNonPartialSearchTermInTitleTest(unittest.TestCase):
         assert not item['search_term_in_title_interleaved']
         assert not item['search_term_in_title_exactly']
 
+
+class MergeSubItems(object):
+    """ A quote: You can't have the same item being filled in parallel requests.
+        You either need to make sure the item is passed along in a chain like fashion,
+         with each callback returning a request for the next page of information with
+          the partially filled item in meta, or you need to write a pipeline that
+           will collect and group the necessary data.
+    """
+    _mapper = {}
+    _subitem_mode = False
+
+    def __init__(self):
+        dispatcher.connect(self.spider_opened, signals.spider_opened)
+        dispatcher.connect(self.spider_closed, signals.spider_closed)
+
+    @staticmethod
+    def _get_output_filename(spider):
+        # TODO: better code for parsing command-line arguments
+        cmd = ' '.join(sys.argv).split(' -o ')
+        if not cmd or len(cmd) == 1:
+            return spider._crawler.settings.attributes['FEED_URI'].value
+        cmd = cmd[-1].strip()
+        if ' ' in cmd:
+            cmd = cmd.split(' ', 1)[0].strip()
+        return cmd
+
+    @staticmethod
+    def _serializer(val):
+        if isinstance(val, type(MergeSubItems)):  # class
+            return val.__dict__
+        else:
+            return str(val)
+
+    def spider_opened(self, spider):
+        pass
+
+    def _dump_mapper_to_fname(self, fname):
+        with open(fname, 'w') as fh:
+            for url, item in self._mapper.items():
+                fh.write(json.dumps(item, default=self._serializer)+'\n')
+
+    def spider_closed(self, spider):
+        if self._subitem_mode:  # rewrite output only if we're in "subitem mode"
+            output_fname = self._get_output_filename(spider)
+            if output_fname:
+                self._dump_mapper_to_fname(output_fname)
+            _validation_filename = _get_spider_output_filename(spider)
+            self._dump_mapper_to_fname(_validation_filename)
+
+    def process_item(self, item, spider):
+        _subitem = item.get('_subitem', None)
+        if not _subitem:
+            return item  # we don't need to merge sub-items
+        self._subitem_mode = True  # switch a flag if there's at least one item with "subitem mode" found
+        if 'url' in item:  # sub-items: collect them and dump them on "on_close" call
+            if not item['url'] in self._mapper:
+                self._mapper[item['url']] = {}
+            self._mapper[item['url']].update(item)
+            raise DropItem('Multiple Sub-Items found')
 
 class CollectStatistics(object):
     """ Gathers server and spider statistics, such as RAM, HDD, CPU etc. """

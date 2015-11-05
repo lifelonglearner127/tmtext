@@ -30,7 +30,7 @@ class MacysSpider(SearchResultsSpider):
             # quit if there is no product name
             if product_name and product_url:
                 item['product_url'] = "http://www1.macys.com" + product_url[0]
-                item['product_name'] = product_name[0]
+                item['product_name'] = product_name[0].strip()
             else:
                 self.log("No product name: " + str(response.url) + " from product: " + response.meta['origin_url'], level=log.ERROR)
                 continue
@@ -46,8 +46,6 @@ class MacysSpider(SearchResultsSpider):
                 # if more than one match, it will get the first one
                 m = re.match("([a-zA-Z\.\s]+)?(\xa3|\$)([0-9]+\.?[0-9]*)", product_target_price)
                 if m:
-                    print "PRICE", product_target_price
-                    print "GROUP 3", m.group(1), m.group(2), m.group(3)
                     price = float(m.group(3))
                     currency = m.group(2)
                     item['product_target_price'] = Utils.convert_to_dollars(price, currency)

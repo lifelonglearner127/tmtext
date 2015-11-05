@@ -51,8 +51,8 @@ except ImportError:
     from repo.remote_instance_starter import QUEUES_LIST
     from product_ranking import statistics
 sys.path.insert(
-    3, os.path.join(REPO_BASE_PATH, 'special_crawler', 'queue_handler'))
-from sqs_connect import SQS_Queue
+    3, os.path.join(REPO_BASE_PATH, 'deploy', 'sqs_ranking_spiders'))
+from sqs_queue import SQS_Queue
 from cache_layer import REDIS_HOST, REDIS_PORT, INSTANCES_COUNTER_REDIS_KEY, \
     TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET
 
@@ -110,6 +110,7 @@ CACHE_HOST = 'http://sqs-metrics.contentanalyticsinc.com/'
 CACHE_URL_GET = 'get_cache'  # url to retrieve task cache from
 CACHE_URL_SAVE = 'save_cache'  # to save cached result to
 CACHE_URL_STATS = 'complete_task'  # to have some stats about completed tasks
+CACHE_URL_FAIL = 'fail_task'  # to manage broken tasks
 CACHE_AUTH = 'Basic YWRtaW46Q29udGVudDEyMzQ1'  # auth header value
 CACHE_TIMEOUT = 15  # 15 seconds request timeout
 # key in task data to not retrieve cached result
@@ -151,13 +152,13 @@ def get_branch_for_task(task_data):
 
 
 def switch_branch_if_required(metadata):
-    branch_name = metadata.get('branch_name')
+    branch_name = metadata.get('branch_name', 'sc_production')
     if branch_name:
         logger.info("Checkout to branch %s", branch_name)
         cmd = 'git checkout -f {branch} && git pull origin {branch} && '\
-              'git checkout master -- task_id_generator.py && '\
-              'git checkout master -- remote_instance_starter.py && '\
-              'git checkout master -- upload_logs_to_s3.py'
+              'git checkout sc_production -- task_id_generator.py && '\
+              'git checkout sc_production -- remote_instance_starter.py && '\
+              'git checkout sc_production -- upload_logs_to_s3.py'
         cmd = cmd.format(branch=branch_name)
         logger.info("Run '%s'", cmd)
         os.system(cmd)
@@ -182,12 +183,13 @@ def slugify(s):
     return output
 
 
-def connect_to_redis_database(redis_host, redis_port):
+def connect_to_redis_database(redis_host, redis_port, timeout=10):
     if TEST_MODE:
         print 'Simulating connect to redis'
         return
     try:
-        db = redis.StrictRedis(host=redis_host, port=redis_port)
+        db = redis.StrictRedis(host=redis_host, port=redis_port,
+                               socket_timeout=timeout)
     except Exception as e:
         logger.warning("Failed connect to redis database with exception %s", e)
         db = None
@@ -208,7 +210,7 @@ def increment_metric_counter(metric_name, redis_db):
                            "with exception '%s'", metric_name, e)
 
 
-def read_msg_from_sqs(queue_name_or_instance, timeout=None):
+def read_msg_from_sqs(queue_name_or_instance, timeout=None, attributes=None):
     if isinstance(queue_name_or_instance, (str, unicode)):
         sqs_queue = SQS_Queue(queue_name_or_instance)
     else:
@@ -223,7 +225,7 @@ def read_msg_from_sqs(queue_name_or_instance, timeout=None):
         return  # the queue is empty
     try:
         # Get message from SQS
-        message = sqs_queue.get(timeout)
+        message = sqs_queue.get(timeout, attributes)
     except IndexError as e:
         logger.warning("Failed to get message from queue. Maybe it's empty.")
         # This exception will most likely be triggered because you were
@@ -237,6 +239,8 @@ def read_msg_from_sqs(queue_name_or_instance, timeout=None):
         return
     try:
         message = json.loads(message)
+        # add attributes data to message, like date when message was sent
+        message['attributes'] = sqs_queue.get_attributes()
     except Exception, e:
         logger.error("Message was provided not in json format. %s.", str(e))
         return
@@ -559,8 +563,10 @@ class ScrapyTask(object):
         searchterms_str = self.task_data.get('searchterms_str', None)
         site = self.task_data['site']
         if isinstance(searchterms_str, (str, unicode)):
-            searchterms_str = searchterms_str.decode('utf8')
-        # job_name = datetime.datetime.utcnow().strftime('%d-%m-%Y')
+            try:
+                searchterms_str = searchterms_str.decode('utf8')
+            except UnicodeEncodeError:  # special chars may break
+                pass
         server_name = self.task_data['server_name']
         server_name = slugify(server_name)
         job_name = DATESTAMP + '____' + RANDOM_HASH + '____' + server_name+'--'
@@ -576,8 +582,9 @@ class ScrapyTask(object):
             # maybe should be changed to product_url
             additional_part = 'single-product-url-request'
         job_name += '____' + additional_part + '____' + site
-        # job_name += '____' + site + '____' + get_random_hash()
-        return job_name
+        job_name = job_name.replace('(', '').replace(')', '')
+        # truncate resulting string as file name limitation is 256 characters
+        return job_name[:200]
 
     def _parse_signal_settings(self, signal_settings):
         """
@@ -1031,10 +1038,16 @@ class ScrapyTask(object):
         start scrapy process, try to establish connection with it,
         terminate if fails
         """
-        start_time = datetime.datetime.utcnow()
-        self.start_date = start_time
-        self._start_scrapy_process()
-        first_signal = self._get_next_signal(start_time)
+        # it may break during task parsing, for example wrong server name or
+        # unsupported characters in the name os spider
+        try:
+            start_time = datetime.datetime.utcnow()
+            self.start_date = start_time
+            self._start_scrapy_process()
+            first_signal = self._get_next_signal(start_time)
+        except Exception as ex:
+            logger.warning('Error occured while starting scrapy: %s', ex)
+            return False
         try:
             self._run_signal(first_signal, start_time)
             return True
@@ -1061,8 +1074,8 @@ class ScrapyTask(object):
     def is_finised_ok(self):
         return self.finished_ok
 
-    def get_cached_result(self):
-        res = get_task_result_from_cache(self.task_data)
+    def get_cached_result(self, queue_name):
+        res = get_task_result_from_cache(self.task_data, queue_name)
         if res:
             self.send_current_status_to_sqs('finished')
             dump_cached_data_into_sqs(
@@ -1117,7 +1130,7 @@ class ScrapyTask(object):
         put_file_into_s3(AMAZON_BUCKET_NAME, progress_fname)
 
 
-def get_task_result_from_cache(task):
+def get_task_result_from_cache(task, queue_name):
     """try to get cached result for some task"""
     task_id = task.get('task_id', 0)
     server = task.get('server_name', '')
@@ -1125,7 +1138,7 @@ def get_task_result_from_cache(task):
         logger.info('Ignoring cache result for task %s (%s).', task_id, server)
         return None
     url = CACHE_HOST + CACHE_URL_GET
-    data = dict(task=json.dumps(task))
+    data = dict(task=json.dumps(task), queue=queue_name)
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
                              headers={'Authorization': CACHE_AUTH})
@@ -1169,14 +1182,42 @@ def save_task_result_to_cache(task, output_path):
         return True
 
 
-def cache_complete_task(task):
-    """send request to notice that task is completed (for statistics)"""
-    url = CACHE_HOST + CACHE_URL_STATS
+def log_failed_task(task):
+    """
+    log broken task
+    if this function returns True, task is considered
+    as failed max allowed times and should be removed
+    """
+    url = CACHE_HOST + CACHE_URL_FAIL
     data = dict(task=json.dumps(task))
     try:
-        requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                      headers={'Authorization': CACHE_AUTH})
-        logger.info('Updated completed task (%s).', task.get('task_id'))
+        resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
+                             headers={'Authorization': CACHE_AUTH})
+    except Exception as ex:
+        logger.warning(ex)
+        return False
+    if resp.status_code != 200:
+        logger.warning('Mark task as failed wrong response status code: %s, %s',
+                       resp.status_code, resp.text)
+        return False
+    # resp.text contains only 0 or 1 number,
+    #  1 indicating that task should be removed
+    try:
+        return json.loads(resp.text)
+    except ValueError as ex:
+        logger.warning('JSON conversion error: %s', ex)
+        return False
+
+
+def cache_complete_task(task, is_from_cache=False):
+    """send request to notice that task is completed (for statistics)"""
+    url = CACHE_HOST + CACHE_URL_STATS
+    data = dict(task=json.dumps(task), is_from_cache=json.dumps(is_from_cache))
+    try:
+        resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
+                             headers={'Authorization': CACHE_AUTH})
+        logger.info('Updated completed task (%s), status %s.',
+                    task.get('task_id'), resp.status_code)
     except Exception as ex:
         logger.warning('Update completed task error: %s.', ex)
 
@@ -1250,6 +1291,7 @@ def main():
         [logger.info(_.report()) for _ in tasks]
         logger.info('#'*10 + 'FINISH TASKS REPORT' + '#'*10)
 
+    attributes = 'SentTimestamp'  # additional data to get with sqs messages
     add_timeout = 30  # add to visibility timeout
     # names of the queues in SQS, ordered by priority
     q_keys = ['urgent', 'production', 'test', 'dev']
@@ -1263,7 +1305,8 @@ def main():
         if TEST_MODE:
             msg = test_read_msg_from_fs(TASK_QUEUE_NAME)
         else:
-            msg = read_msg_from_sqs(TASK_QUEUE_NAME, max_tries+add_timeout)
+            msg = read_msg_from_sqs(
+                TASK_QUEUE_NAME, max_tries+add_timeout, attributes)
         max_tries -= 1
         if msg is None:  # no task
             # if failed to get task from current queue,
@@ -1297,10 +1340,10 @@ def main():
         # if started, remove from the queue and run
         task = ScrapyTask(queue, task_data, listener)
         # check for cached response
-        if task.get_cached_result():
+        if task.get_cached_result(TASK_QUEUE_NAME):
             # if found response in cache, upload data, delete task from sqs
             task.queue.task_done()
-            cache_complete_task(task_data)
+            cache_complete_task(task_data, is_from_cache=True)
             del task
             continue
         if task.start():
@@ -1310,10 +1353,17 @@ def main():
                 'Task %s started successfully, removing it from the queue',
                 task.task_data.get('task_id'))
             task.queue.task_done()
-            cache_complete_task(task_data)
+            cache_complete_task(task_data, is_from_cache=False)
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
                          task.task_data.get('task_id', 0))
+            # remove task from queue, if it failed many times
+            if log_failed_task(task.task_data):
+                logger.warning('Removing task %s_%s from the queue due to too '
+                               'many failed tries.',
+                               task_data.get('server_name'),
+                               task_data.get('task_id'))
+                task.queue.task_done()
             logger.error(task.report())
     if not tasks_taken:
         logger.warning('No any task messages were found.')
@@ -1354,15 +1404,15 @@ def prepare_test_data():
     tasks = [dict(
         task_id=4443, site='walmart', searchterms_str='iphone',
         server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 50}
+        cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
     ), dict(
         task_id=4444, site='amazon', searchterms_str='iphone',
         server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 1}
+        cmd_args={'quantity': 1}, attributes={'SentTimestamp': '1443426145373'}
     ), dict(
         task_id=4445, site='target', searchterms_str='iphone',
         server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 50}
+        cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
     )]
     files = [open('/tmp/' + q, 'w') for q in QUEUES_LIST.itervalues()]
     for fh in files:

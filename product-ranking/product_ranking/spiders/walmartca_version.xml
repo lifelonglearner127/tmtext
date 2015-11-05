@@ -32,4 +32,5 @@
     <field name="special_pricing" version="1.0"></field>
     <field name="variants" version="1.0"></field>
     <field name="shelf_page_out_of_stock" version="1.0"></field>
+    <field name="last_buyer_review_date" version="1.1"></field>
 </fields>

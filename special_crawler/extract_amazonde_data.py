@@ -795,7 +795,7 @@ class AmazonDEScraper(Scraper):
     ##########################################
     def _price_amount(self):
         price = self._price()
-        price = price.replace(",", "")
+        price = price.replace(",", ".")
         price_amount = re.findall(r"[\d\.]+", price)[0]
         return float(price_amount)
 

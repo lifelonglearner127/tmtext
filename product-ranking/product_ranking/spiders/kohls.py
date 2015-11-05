@@ -20,16 +20,15 @@ from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.kohls_variants import KohlsVariants
 from product_ranking.validation import BaseValidator
 
-is_empty = lambda x, y="": x[0] if x else y
-ip = "http://101.227.252.130:8081"
 
+is_empty = lambda x, y="": x[0] if x else y
 
 class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand']
+    optional_fields = ['brand', 'description']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'description', 'special_pricing', 
-        'bestseller_rank', 'model'
+        'google_source_site', 'special_pricing', 'ranking',
+        'bestseller_rank', 'model', 'image_url'
     ]
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = True  # ... duplicated requests?
@@ -37,14 +36,14 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
     test_requests = {
         'sdfsdgdf': 0,  # should return 'no products' or just 0 products
         'benny benassi': 0,
-        'red car': [20, 150],
-        'black stone': [120, 230],
-        'gone': [5, 80],
+        'red car': [100, 200],
+        'black stone': [50, 200],
+        'red ball': [5, 150],
         'green rose': [10, 100],
-        'long term black': [5, 50],
-        'low ceiling': [30, 120],
-        'Water Sandals': [5, 80],
-        'long night': [30, 120],
+        'long term black': [1, 50],
+        'yellow ion': [15, 100],
+        'water proof': [50, 85],
+        'long night': [30, 200],
     }
 
 
@@ -70,17 +69,15 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
     settings = KohlsValidatorSettings
 
-    use_proxies = True
+    # use_proxies = True
 
-    SEARCH_URL = "http://www.kohls.com/search.jsp?" \
-                 "N=0&" \
-                 "search={search_term}&" \
-                 "WS={start}&S={sort_mode}"
+    SEARCH_URL = "http://www.kohls.com/search.jsp?search={search_term}&" \
+                 "submit-search=web-regular&S={sort_mode}&PPP=60&WS={start}&exp=c"
 
     SORTING = None
 
     SORT_MODES = {
-        'default': '',
+        'default': '1',
         'featured': '1',
         'new': '2',
         'best_sellers': '3',
@@ -105,6 +102,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                   "l=1"
 
     def __init__(self, sort_mode=None, *args, **kwargs):
+        self.start_pos = 0
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
@@ -128,7 +126,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             )
             yield Request(
                 url,
-                meta={'search_term': st, 'remaining': self.quantity, "proxy": ip}
+                meta={'search_term': st, 'remaining': self.quantity}
             )
 
         if self.product_url:
@@ -136,7 +134,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod, "proxy": ip})
+                          meta={'product': prod})
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -157,7 +155,6 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         new_meta = response.meta.copy()
         new_meta['product'] = prod
         new_meta['product_id'] = product_id[0]
-        new_meta["proxy"] = ip
         return Request(self.url_formatter.format(self.REVIEW_URL,
             product_id=product_id[0]),
             meta=new_meta, callback=self._parse_reviews)
@@ -170,16 +167,13 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(product, 'title', metadata.get('title'))
 
         populate_from_open_graph(response, product)
+        product['title'] = self.parse_title(response)
 
-        title = response.css('.productTitleName ::text').extract()
-        cond_set(product, 'title', title, conv=string.strip)
+        # title = response.css('.productTitleName ::text').extract()
+        # cond_set(product, 'title', title, conv=string.strip)
 
-        cond_set(
-            product,
-            'description',
-            response.xpath('//div[@class="Bdescription"]').extract(),
-            conv=string.strip
-        )
+        product['description'] = self.parse_description(response)
+        # cond_set_value(product, 'description', description)
 
         cond_set(
             product,
@@ -235,14 +229,33 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
             product['related_products'] = related_products
 
-        brand = is_empty(response.xpath(
-            '//h1[contains(@class, "title")]/text()'
-        ).extract())
-        cond_set(
-            product,
-            'brand',
-            (guess_brand_from_first_words(brand.strip()),2)
-        )
+        brand = response.xpath('//meta[@itemprop="brand"]/@content').extract()
+        if brand:
+            product['brand'] = brand[0].strip()
+        else:
+            brand = is_empty(response.xpath(
+                '//h1[contains(@class, "title")]/text()'
+            ).extract())
+            cond_set(
+                product,
+                'brand',
+                (guess_brand_from_first_words(brand.strip()),2)
+            )
+
+    def parse_title(self, response):
+        title = is_empty(response.xpath(
+            '//h1[@class="title productTitleName"]/text() | '
+            '//h1[@class="title"]/text() | //title/text()').extract())
+
+        return title
+
+    def parse_description(self, response):
+        description = is_empty(response.xpath(
+            '//div[@class="prod_description1"]/'
+            'div[@class="Bdescription"]/p/text() | '
+            '//meta[@name="description"][string-length(@content)>0]/@content').extract())
+
+        return description
 
     def _set_price(self, response, product):
         price = response.xpath(
@@ -296,7 +309,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                     title = is_empty(sel.xpath('./div/p/text()').extract())
                     related.append(
                         RelatedProduct(
-                            title=unicode.decode(title.replace("\xe9", "é").
+                            title=unicode.decode(title.replace("\xe9", "Ã©").
                                 replace("\xf6", "").replace("\xb0", "")),
                             url=urllib.unquote('http'+url.split('http')[-1])
                         ))
@@ -386,43 +399,63 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         new_meta = response.meta.copy()
         new_meta['product'] = product
-        new_meta["proxy"] = ip
         return Request(self.RELATED_URL.format(product_id=product_id),
                        meta=new_meta, callback=self._parse_related_products,
                        dont_filter=True)
 
     def _scrape_product_links(self, response):
-        prod_blocks = response.xpath('//ul[@id="product-matrix"]/li')        
+        prod_blocks = response.xpath('//ul[@id="product-matrix"]/li')
 
-        for block in prod_blocks:
-            product = SiteProductItem()
+        if prod_blocks:
+            for block in prod_blocks:
+                product = SiteProductItem()
 
-            link = block.xpath('./a/@href').extract()[0]
+                link = block.xpath('./a/@href').extract()[0]
 
-            cond_set(
-                product,
-                'title',
-                block.xpath('.//div/div/h2/a/text()').extract())
+                cond_set(
+                    product,
+                    'title',
+                    block.xpath('.//div/div/h2/a/text()').extract())
 
-            cond_set(
-                product,
-                'image_url',
-                block.xpath('.//a/img/@src').extract())
+                cond_set(
+                    product,
+                    'image_url',
+                    block.xpath('.//a/img/@src').extract())
 
-            self._set_price(response, product)
+                self._set_price(response, product)
 
-            url = 'http://www.kohls.com'+link
-            cond_set_value(product, 'url', url)
+                url = 'http://www.kohls.com'+link
+                cond_set_value(product, 'url', url)
 
-            new_meta = response.meta.copy()
-            new_meta['product'] = product
-            new_meta['handle_httpstatus_list'] = [404]
+                new_meta = response.meta.copy()
+                new_meta['product'] = product
+                new_meta['handle_httpstatus_list'] = [404]
 
-            yield Request(
-                url,
-                callback=self.parse_product,
-                meta=new_meta,
-                errback=self._handle_product_page_error), product
+                yield Request(
+                    url,
+                    callback=self.parse_product,
+                    meta=new_meta,
+                    errback=self._handle_product_page_error), product
+        else:
+            prod_urls = re.findall(
+                r'"prodSeoURL"\s?:\s+\"(.+)\"',
+                response.body_as_unicode()
+            )
+            for prod_url in prod_urls:
+                self.per_page = len(prod_urls)
+
+                product = SiteProductItem()
+                new_meta = response.meta.copy()
+                new_meta['product'] = product
+                new_meta['handle_httpstatus_list'] = [404]
+
+                url = 'http://www.' + self.allowed_domains[0] + prod_url
+
+                yield Request(
+                    url,
+                    callback=self.parse_product,
+                    meta=new_meta,
+                    errback=self._handle_product_page_error), product
 
     def _handle_product_page_error(self, failure):
         self.log('Request failed: %s' % failure.request)
@@ -438,14 +471,29 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             total = response.xpath(
                 '//div[@class="view-indicator"]/p/text()'
             ).re('\d{1,},?\d+')
+
             if total:
                 total_matches = int(total[1].replace(',', ''))
             else:
-                total_matches = 0
+                total_matches = is_empty(re.findall(
+                    r'"allProducts":\s+\{(?:.|\n)\s+"count":( \d+)',
+                    response.body_as_unicode()
+                ), 0)
+
+                try:
+                    total_matches = int(total_matches)
+                except ValueError:
+                    total_matches = 0
+            self.total = total_matches
             return total_matches
 
     def _scrape_next_results_page_link(self, response):
-        next_page = response.xpath('//a[@rel="next"]/@href').extract()
-        if next_page:
-            next_page = 'http://www.kohls.com'+next_page[0]
-            return next_page
+        if self.start_pos != self.total:
+            self.start_pos += self.per_page
+
+            url = self.SEARCH_URL.format(search_term=self.searchterms[0],
+                                         start=self.start_pos,
+                                         sort_mode=self.SORTING or '')
+            return url
+        else:
+            return

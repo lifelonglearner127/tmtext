@@ -10,9 +10,8 @@ import logging.config
 import redis
 
 CWD = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(2, os.path.join(CWD, '..', '..', 'special_crawler',
-                                'queue_handler'))
-from sqs_connect import SQS_Queue
+sys.path.insert(2, os.path.join(CWD, '..', 'sqs_ranking_spiders'))
+from sqs_queue import SQS_Queue
 
 from cache_starter import log_settings
 from simmetrica_class import Simmetrica
@@ -31,10 +30,11 @@ SPIDERS_OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
 logger = None
 simmetrica = Simmetrica()
 
-def connect_to_redis_database():
+def connect_to_redis_database(timeout=10):
     db = redis.StrictRedis(
         host='sqs-cache.4a6nml.0001.use1.cache.amazonaws.com',
-        port=6379
+        port=6379,
+        socket_timeout=timeout  # if DB is down, everything won't freeze
     )
     #db = redis.StrictRedis(host='localhost', port=6379, db=0)
     return db

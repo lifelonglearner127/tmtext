@@ -94,7 +94,7 @@ class Job(models.Model):
     server_name = models.CharField(max_length=100, default='test_server')
     branch_name = models.CharField(
         max_length=100, blank=True, null=True,
-        help_text='Branch to use at the instance(s); leave blank for master'
+        help_text='Branch to use at the instance(s); leave blank for sc_production'
     )
 
     save_s3_cache = models.BooleanField(

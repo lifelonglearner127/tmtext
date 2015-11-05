@@ -6,8 +6,9 @@ import json
 import string
 import urllib
 
-from scrapy.http import Request
+from scrapy.http import Request, FormRequest
 from scrapy import Selector
+from scrapy.log import WARNING
 
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
@@ -29,7 +30,7 @@ class JcpenneyValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
     optional_fields = []
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'description', 'special_pricing', 
+        'google_source_site', 'description', 'special_pricing',
         'bestseller_rank', 'model',
     ]
     ignore_log_errors = False  # don't check logs for errors?
@@ -40,11 +41,11 @@ class JcpenneyValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'benny benassi': 0,
         'water proof': [110, 210],
         'peace': [10, 70],
-        'hot': [80, 180],
+        'hot': [100, 300],
         'drink': [30, 130],
         'term': [30, 130],
         'tiny': [10, 80],
-        'selling': [1, 30],
+        'selling': [20, 100],
         'night': [40, 140],
     }
 
@@ -148,18 +149,162 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
+    def _create_variant_request(self, pp_id, response, variant, variant_num):
+        url = ('http://www.jcpenney.com/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp'
+               '?_DARGS=/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp')
+
+        _props = variant['properties'].copy()
+        color = _props.pop('color') if 'color' in _props else None
+        neck = _props.pop('neck') if 'neck' in _props else None
+        lot = _props.pop('lot') if 'lot' in _props else None
+        sleeve = _props.pop('sleeve') if 'sleeve' in _props else None
+        size = _props.pop('size') if 'size' in _props else None
+        inseam = _props.pop('inseam') if 'inseam' in _props else None
+        waist = _props.pop('waist') if 'waist' in _props else None
+        chest = _props.pop('chest') if 'chest' in _props else None
+        length = _props.pop('length') if 'length' in _props else None
+        # check if there are still some keys
+        if _props.keys():
+            self.log('Error: extra variants found, url %s' % response.url, WARNING)
+        raw_post_str = """
+lotSKUSelectionChange=test
+ppId={pp_id}
+ppType={pp_type}
+selectedLotValue={lot_value}
+selectedSKUAttributeName={attribute_name}
+shipToCountry=US
+skuSelectionMap.COLOR={color}
+skuSelectionMap.CHEST={chest}
+skuSelectionMap.LENGTH={length}
+skuSelectionMap.INSEAM={inseam}
+skuSelectionMap.WAIST={waist}
+skuSelectionMap.NECK_SIZE={neck}
+skuSelectionMap.SIZE={size}
+skuSelectionMap.SLEEVE={sleeve}
+sucessUrl=/jsp/browse/pp/graphical/graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&grView=
+_D:lotSKUSelectionChange=
+_D:ppId=
+_D:ppType=
+_D:selectedLotValue=
+_D:selectedSKUAttributeName=
+_D:shipToCountry=
+_D:skuSelectionMap.COLOR=
+_D:skuSelectionMap.INSEAM=
+_D:skuSelectionMap.WAIST=
+_D:skuSelectionMap.NECK_SIZE=
+_D:skuSelectionMap.SIZE=
+_D:skuSelectionMap.SLEEVE=
+_D:skuSelectionMap.CHEST=
+_D:skuSelectionMap.LENGTH=
+_D:sucessUrl=
+_DARGS=/dotcom/jsp/browse/pp/graphical/graphicalLotSKUSelection.jsp
+_dynSessConf=
+_dync
+"""
+
+        _format_args = {}
+        _format_args['pp_id'] = pp_id if pp_id else ''
+        _format_args['pp_type'] = 'regular'  # TODO: shouldn't this be constant?
+        _format_args['lot_value'] = lot if lot else ''
+        _format_args['size'] = size if size else ''
+        _format_args['waist'] = waist if waist else ''
+        _format_args['inseam'] = inseam if inseam else ''
+        _format_args['chest'] = chest if chest else ''
+        _format_args['length'] = length if length else ''
+
+        product = response.meta['product']
+        # get attribute name
+        """
+        attribute_name = None
+        #if color:
+        #    attribute_name = 'COLOR'
+        if sleeve:
+            attribute_name = 'SLEEVE'
+        elif neck:
+            attribute_name = 'NECK_SIZE'
+        elif lot:
+            attribute_name = 'Lot'
+        """
+        # TODO: moar `attribute_name` values!
+        #_format_args['color'] = color if color else ''
+        _format_args['color'] = ''
+        _format_args['neck'] = neck if neck else ''
+        _format_args['sleeve'] = sleeve if sleeve else ''
+        #_format_args['attribute_name'] = attribute_name if attribute_name else ''
+        _format_args['attribute_name'] = 'Lot'
+
+        raw_post_str = raw_post_str.format(**_format_args)
+
+        post_data = {}
+        _post_str = raw_post_str.strip().split('\n')
+        for line in _post_str:
+            if '=' not in line:
+                continue
+            _arg, _value = line.rsplit('=', 1)
+            post_data[_arg] = _value
+
+        #import requests
+        #result = requests.post(url, data=post_data,
+        #                       headers={'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8', 'X-Requested-With': 'XMLHttpRequest'}).text
+
+        return FormRequest(
+            url,
+            formdata=post_data,
+            method='POST',
+            headers={
+                'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            meta={'pp_id': pp_id, 'variant': variant, 'variant_num': variant_num,
+                  'product': product},
+            callback=self._on_variant_response,
+            dont_filter=True
+        )
+
+    def _on_variant_response(self, response):
+        pp_id = response.meta['pp_id']
+        variant = response.meta['variant']
+        variant_num = response.meta['variant_num']
+        product = response.meta['product']
+        result = response.body
+        color = variant['properties'].get('color', None)
+        #import pdb; pdb.set_trace()
+        if 'function()' in result:
+            variant['in_stock'] = None
+            return
+        try:
+            result = json.loads(result)
+        except Exception as e:
+            self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
+            variant['in_stock'] = None
+
+        # find of such a combination is available
+        if color:
+            _avail = [a['options'] for a in result['skuOptions'] if a.get('key', None).lower() == 'color']
+            if _avail:
+                _avail = {k['option']: k['availability'] == 'true' for k in _avail[0]}
+                if not color in _avail:
+                    variant['in_stock'] = False
+                    return  # not defined; availability unknown
+                variant['in_stock'] = _avail[color]
+        yield product
+
     def parse_product(self, response):
         prod = response.meta['product']
         prod['url'] = response.url
+        prod['_subitem'] = True
+
+        product_id = is_empty(re.findall('ppId=([a-zA-Z0-9]+)&{0,1}', response.url))
 
         jp = JcpenneyVariants()
         jp.setupSC(response)
         prod['variants'] = jp._variants()
+        for var_indx, variant in enumerate(prod['variants']):
+            if getattr(self, 'scrape_variants_with_extra_requests', None):
+                yield self._create_variant_request(product_id, response, variant, var_indx)
 
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
-
-        product_id = is_empty(re.findall('ppId=([a-zA-Z0-9]+)&{0,1}', response.url))
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
@@ -170,16 +315,16 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             '//script/text()[contains(.,"reviewId")]'
         ).re('reviewId:\"(\d+)\",'))
         if review_id:
-            return Request(self.url_formatter.format(self.REVIEW_URL,
+            yield Request(self.url_formatter.format(self.REVIEW_URL,
                                                      product_id=review_id),
                            meta=new_meta, callback=self._parse_reviews,
                            dont_filter=True)
         elif product_id:
-            return Request(self.url_formatter.format(self.REVIEW_URL,
+            yield Request(self.url_formatter.format(self.REVIEW_URL,
                                                      product_id=product_id),
                            meta=new_meta, callback=self._parse_reviews,
                            dont_filter=True)
-        return prod
+        yield prod
 
     def _populate_from_html(self, response, product):
         if 'title' in product and product['title'] == '':

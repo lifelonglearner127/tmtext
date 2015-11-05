@@ -60,6 +60,20 @@ from extract_deliverywalmart_data import DeliveryWalmartScraper
 from extract_flipkart_data import FlipkartScraper
 from extract_pepperfry_data import PepperfryScraper
 from extract_cvs_data import CVSScraper
+from extract_hairshop24_data import HairShop24Scraper
+from extract_hagelshop_data import HagelShopScraper
+from extract_levi_data import LeviScraper
+from extract_dockers_data import DockersScraper
+from extract_houseoffraser_data import HouseoffraserScraper
+from extract_schuh_data import SchuhScraper
+from extract_boots_data import BootsScraper
+from extract_newlook_data import NewlookScraper
+from extract_clarkscouk_data import ClarksCoUkScraper
+from extract_amazonfr_data import AmazonFRScraper
+from extract_halfords_data import HalfordsScraper
+from extract_homebase_data import HomebaseScraper
+from extract_riverisland_data import RiverislandScraper
+from extract_mothercare_data import MotherCareScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -128,6 +142,20 @@ SUPPORTED_SITES = {
                     "flipkart": FlipkartScraper,
                     "pepperfry": PepperfryScraper,
                     "cvs": CVSScraper,
+                    "hairshop24": HairShop24Scraper,
+                    "hagelshop": HagelShopScraper,
+                    "levi": LeviScraper,
+                    "dockers": DockersScraper,
+                    "houseoffraser": HouseoffraserScraper,
+                    "boots": BootsScraper,
+                    "newlook": NewlookScraper,
+                    "schuh": SchuhScraper,
+                    "clarkscouk": ClarksCoUkScraper,
+                    "amazonfr": AmazonFRScraper,
+                    "halfords": HalfordsScraper,
+                    "homebase": HomebaseScraper,
+                    "riverisland": RiverislandScraper,
+                    "mothercare": MotherCareScraper,
                     }
 
 # add logger
@@ -211,7 +239,18 @@ def extract_domain(url):
         return 'nextcouk'
     if 'delivery.walmart' in url:
         return "deliverywalmart"
-
+    if 'hair-shop24' in url:
+        return "hairshop24"
+    if 'hagel-shop' in url:
+        return "hagelshop"
+    if "www.levi.com" in url:
+        return "levi"
+    if "www.boots.com" in url:
+        return "boots"
+    if "www.clarks.co.uk" in url:
+        return "clarkscouk"
+    if "amazon.fr" in url:
+        return "amazonfr"
 
     m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)
     if m:
