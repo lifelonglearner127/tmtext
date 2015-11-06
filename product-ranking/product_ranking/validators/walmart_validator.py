@@ -10,11 +10,11 @@ class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_123': 0,
         'vodka': [50, 250],
-        'taker': [100, 500],
-        'macbook air thunderbolt': [10, 150],
-        'hexacore': [50, 250],
-        '300c': [50, 250],
-        'muay': [50, 200],
+        'taker storage': [5, 50],
+        'waterpik': [10, 100],
+        'hexacore video': [5, 100],
+        '300c': [50, 200],
+        'muay pads': [3, 50],
         '14-pack': [1, 100],
         'voltmeter': [50, 250]
     }
@@ -22,7 +22,10 @@ class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
     test_urls = {
         'http://www.walmart.com/ip/George-Women-s-Surplice-Long-Sleeve-Wrap-Dress/45456935',
         'http://www.walmart.com/ip/Clean-Clear-R-Foaming-Facial-Cleanser-Sensitive-Skin-Cleansers-8-Fl-Oz/10801463',
-        'http://www.walmart.com/ip/Signature-by-Levi-Strauss-Co.-Modern-Bootcut-Jeans/24430481',
+        'http://www.walmart.com/ip/Atkins-Endulge-Peanut-Butter-Cups-5ct/11028012?action=product_interest&action_type='
+        'title&item_id=11028012&placement_id=irs-2-m3&strategy=PWVUB&visitor_id&category=&client_guid='
+        '7a8b77ee-6f4a-48a0-b0b5-4eedc0ce6983&customer_id_enc&config_id=2&parent_item_id=11028011&parent_anchor_item_id='
+        '11028011&guid=9e227f42-cb31-4451-85b6-29137ca949f5&bucket_id=irsbucketdefault&beacon_version=1.0.1&findingMethod=p13n',
         'http://www.walmart.com/ip/Atkins-Day-Break-Strawberry-Banana-Shakes-4ct/16401683',
         'http://www.walmart.com/ip/Netgear-N150-Wireless-Router/11084824',
         'http://www.walmart.com/ip/Premiertek-PowerLink-Wireless-802.11b-g-n-USB-2.0-Adapter/16480821',
