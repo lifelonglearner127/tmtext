@@ -583,7 +583,7 @@ class ScrapyTask(object):
             # maybe should be changed to product_url
             additional_part = 'single-product-url-request'
         job_name += '____' + additional_part + '____' + site
-        job_name = sub('\(|\)|&|;', '', job_name)
+        job_name = sub("\(|\)|&|;|'", "", job_name)
         # truncate resulting string as file name limitation is 256 characters
         return job_name[:200]
 
