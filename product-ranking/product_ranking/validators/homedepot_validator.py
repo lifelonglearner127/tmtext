@@ -3,7 +3,7 @@ class HomedepotValidatorSettings(object):  # do NOT set BaseValidatorSettings as
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
         'google_source_site', 'description', 'special_pricing',
-        'bestseller_rank',
+        'bestseller_rank'
     ]
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = True  # ... duplicated requests?
@@ -12,11 +12,11 @@ class HomedepotValidatorSettings(object):  # do NOT set BaseValidatorSettings as
         'sdfsdgdf': 0,  # should return 'no products' or just 0 products
         'benny benassi': 0,
         'red car': [20, 150],
-        'red stone': [40, 150],
-        'musci': [110, 210],
-        'funky': [10, 110],
-        'bunny': [7, 90],
-        'soldering iron': [30, 120],
+        'red bow': [20, 150],
+        'musci': [10, 210],
+        'funky': [10, 80],
+        'bunny': [7, 70],
+        'soldering iron': [30, 70],
         'burger': [1, 40],
         'hold': [30, 200],
     }
