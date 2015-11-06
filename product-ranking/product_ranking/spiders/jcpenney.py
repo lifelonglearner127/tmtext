@@ -268,7 +268,7 @@ _dync
         result = response.body
         color = variant['properties'].get('color', None)
         #import pdb; pdb.set_trace()
-        if 'function()' in result:
+        if u'function()' in response.body_as_unicode():
             variant['in_stock'] = None
             return
         try:
