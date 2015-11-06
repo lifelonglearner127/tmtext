@@ -146,10 +146,39 @@ class NewlookProductsSpider(BaseProductsSpider):
         )
         if price:
             product['price'] = Price(
-                price=product['price'].replace('\xa3', '').strip(),
-                priceCurrency='GBP')
+                price=product['price'].replace('\u20ac',
+                                               '').replace(',', '.').strip(),
+                priceCurrency='EUR')
 
         cond_set_value(product, 'locale', 'en_EU')
+
+        stock_status = response.xpath('///select[@id="size_standard"]'
+                                      '/option/@class').extract()
+        sku_vatiants = response.xpath('//select[@id="size_standard"]'
+                                      '/option[position() > 1]'
+                                      '/@data-sku').extract()
+        size = response.xpath('//select[@name="size_standard"]'
+                              '/option/@value').extract()
+        count = response.xpath('//select[@name="size_standard"]'
+                               '/option[position() > 1]/@data-stock').extract()
+
+        variant_list = []
+        for index, i in enumerate(stock_status):
+            variant_item = {}
+            properties = {}
+
+            variant_item['in_sock'] = True if 'in_stock' in i else False
+            variant_item['price'] = price[0].replace(u'\u20ac', '').\
+                replace(',', '.').strip()
+
+            properties['size'] = size[index]
+            properties['count'] = count[index]
+            properties['sku'] = sku_vatiants[index]
+
+            variant_item['properties'] = properties
+            variant_list.append(variant_item)
+
+        product['variants'] = variant_list
 
         return product
 
