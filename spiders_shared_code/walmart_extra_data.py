@@ -510,3 +510,5 @@ class WalmartExtraData(object):
         self._extract_video_urls()
 
         return self.video_urls
+
+    #TODO: To alter the structure of the module. The call requests only from spiders, query processing module.
