@@ -17,8 +17,8 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
         'kaspersky total': [20, 100],
         'car navigator garmin maps 44LM': [1, 20],
         'yamaha drums midi': [50, 300],
-        'black men shoes size 8  red stripes': [50, 300],
-        'car audio equalizer pioneer mp3': [40, 150]
+        'black men shoes size 8  red stripes': [40, 100],
+        'car audio equalizer pioneer mp3': [20, 100]
     }
 
     test_urls = [
