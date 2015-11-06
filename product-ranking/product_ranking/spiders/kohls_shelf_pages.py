@@ -39,6 +39,13 @@ class KohlsShelfPagesSpider(KohlsProductsSpider):
             " AppleWebKit/537.36 (KHTML, like Gecko)" \
             " Chrome/37.0.2062.120 Safari/537.36"
 
+        # variants are switched off by default, see Bugzilla 3982#c11
+        self.scrape_variants_with_extra_requests = False
+        if 'scrape_variants_with_extra_requests' in kwargs:
+            scrape_variants_with_extra_requests = kwargs['scrape_variants_with_extra_requests']
+            if scrape_variants_with_extra_requests in (1, '1', 'true', 'True', True):
+                self.scrape_variants_with_extra_requests = True
+
     @staticmethod
     def valid_url(url):
         if not re.findall("http(s){0,1}\:\/\/", url):

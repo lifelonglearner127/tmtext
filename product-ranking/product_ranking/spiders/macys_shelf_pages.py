@@ -37,8 +37,7 @@ class MacysShelfPagesSpider(MacysProductsSpider):
         """ Needed to prepare first request.meta vars to use """
         return {'remaining': 99999, 'search_term': ''}.copy()
 
-    def __init__(self, scrape_variants_with_extra_requests=False, *args,
-                 **kwargs):
+    def __init__(self, *args, **kwargs):
         super(MacysShelfPagesSpider, self).__init__(*args, **kwargs)
         self.product_url = kwargs['product_url']
         self._setup_class_compatibility()
@@ -52,11 +51,12 @@ class MacysShelfPagesSpider(MacysProductsSpider):
                           " AppleWebKit/537.36 (KHTML, like Gecko)" \
                           " Chrome/37.0.2062.120 Safari/537.36"
 
-        if scrape_variants_with_extra_requests in (
-        0, '0', 'false', 'False', False, None):
-            self.scrape_variants_with_extra_requests = False
-        else:
-            self.scrape_variants_with_extra_requests = True
+        # variants are switched off by default, see Bugzilla 3982#c11
+        self.scrape_variants_with_extra_requests = False
+        if 'scrape_variants_with_extra_requests' in kwargs:
+            scrape_variants_with_extra_requests = kwargs['scrape_variants_with_extra_requests']
+            if scrape_variants_with_extra_requests in (1, '1', 'true', 'True', True):
+                self.scrape_variants_with_extra_requests = True
 
     def start_requests(self):
         yield Request(url=self.valid_url(self.product_url),
