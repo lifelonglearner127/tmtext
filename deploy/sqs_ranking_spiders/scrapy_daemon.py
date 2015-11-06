@@ -10,6 +10,7 @@ import string
 import redis
 import boto
 import requests
+from re import sub
 from boto.utils import get_instance_metadata
 from boto.s3.key import Key
 from collections import OrderedDict
@@ -582,7 +583,7 @@ class ScrapyTask(object):
             # maybe should be changed to product_url
             additional_part = 'single-product-url-request'
         job_name += '____' + additional_part + '____' + site
-        job_name = job_name.replace('(', '').replace(')', '')
+        job_name = sub('\(|\)|&|;', '', job_name)
         # truncate resulting string as file name limitation is 256 characters
         return job_name[:200]
 
