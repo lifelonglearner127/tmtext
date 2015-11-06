@@ -5,6 +5,10 @@ from lxml import html
 import re
 import json
 import requests
+import mmh3 as MurmurHash
+import os
+
+from special_crawler.no_img_hash import fetch_bytes
 from special_crawler.extract_data import Scraper
 
 class WalmartExtraData(object):
@@ -26,69 +30,22 @@ class WalmartExtraData(object):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
-
     def __init__(self, *args, **kwargs):
-
         self.product_page_url = kwargs['url']
-
         self.tree_html = kwargs['response']
 
-        # walmart extra fields shared with SC
-        self.extra_fields = None
-        # whether product has any webcollage media
-        self.has_webcollage_media = False
+        # no image hash values
+        self.NO_IMAGE_HASHES = self.load_image_hashes()
         # whether product has any sellpoints media
         self.has_sellpoints_media = False
         # product videos (to be used for "video_urls", "video_count", and "webcollage")
         self.video_urls = None
         # whether videos were extracted
         self.extracted_video_urls = False
-        # product pdfs (to be used for "pdf_urls", "pdf_count", and "webcollage")
-        self.pdf_urls = None
-        # whether videos were extracted
-        self.extracted_pdf_urls = False
-
-        # whether product has any pdfs
-        self.has_pdf = False
         # whether product has any videos
         self.has_video = False
-
-        # whether webcollage 360 view were extracted
-        self.extracted_webcollage_360_view = False
-        # whether product has webcollage 360 view
-        self.has_webcollage_360_view = False
-
-        # whether webcollage emc view were extracted
-        self.extracted_webcollage_emc_view = False
-        # whether product has webcollage emc view
-        self.has_webcollage_emc_view = False
-
-        # whether webcollage video view were extracted
-        self.extracted_webcollage_video_view = False
-        # whether product has webcollage video view
-        self.has_webcollage_video_view = False
-
-        # whether webcollage pdf view were extracted
-        self.extracted_webcollage_pdf = False
-        # whether product has webcollage pdf view
-        self.has_webcollage_pdf = False
-
-        # whether webcollage product tour view were extracted
-        self.extracted_webcollage_product_tour_view = False
-        # whether product has webcollage product tour view
-        self.has_webcollage_product_tour_view = False
-
-        # javascript function found in a script tag
-        # containing various info on the product.
-        # Currently used for seller info (but useful for others as well)
+        # product json embeded in page html
         self.product_info_json = None
-
-        self.failure_type = None
-
-        self.review_json = None
-        self.review_list = None
-        self.is_review_checked = False
-        self.is_legacy_review = False
 
     def _image_count(self):
         """Counts number of (valid) images found
@@ -265,8 +222,36 @@ class WalmartExtraData(object):
         if re.match(".*no.image\..*", url):
             return True
         else:
-            scraper = Scraper()
-            return scraper._no_image(url)
+            first_hash = self._image_hash(url)
+            if first_hash in self.NO_IMAGE_HASHES:
+                print "not an image"
+                return True
+            else:
+                return False
+
+    def _image_hash(self, image_url):
+        """Computes hash for an image.
+        To be used in _no_image, and for value of _image_hashes
+        returned by scraper.
+        Returns string representing hash of image.
+
+        :param image_url: url of image to be hashed
+        """
+        return str(MurmurHash.hash(fetch_bytes(image_url)))
+
+    def load_image_hashes(self):
+        '''Read file with image hashes list
+        Return list of image hashes found in file
+        '''
+        path = '../special_crawler/no_img_list.json'
+        no_img_list = []
+        if os.path.isfile(path):
+            f = open(path, 'r')
+            s = f.read()
+            if len(s) > 1:
+                no_img_list = json.loads(s)
+            f.close()
+        return no_img_list
 
     def _extract_product_info_json(self):
         """Extracts body of javascript function

@@ -656,6 +656,12 @@ class BaseValidator(object):
     def _validate_shelf_path(self, val):
         return True  # TODO: update
 
+    def _validate_img_count(self, val):
+        return val is None or val in range(0, 999)
+
+    def _validate_video_count(self, val):
+        return val is None or val in range(0, 999)
+
     def _validate__subitem(self, val):
         return val in (True, False, None, '')
 
