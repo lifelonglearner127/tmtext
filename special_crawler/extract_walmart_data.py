@@ -1876,7 +1876,8 @@ class WalmartScraper(Scraper):
             images_carousel = []
 
             for item in pinfo_dict['imageAssets']:
-                images_carousel.append(item['versions']['hero'])
+                if item['versions']['hero'].startswith("http://i5.walmartimages.com"):
+                    images_carousel.append(item['versions']['hero'])
 
             if images_carousel:
                 # if there's only one image, check to see if it's a "no image"
