@@ -122,7 +122,7 @@ if 'load_s3_cache' in _args_names:
 
 if 'enable_cache' in _args_names:  # for local development purposes only!
     HTTPCACHE_ENABLED = True
-    HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.DummyPolicy'
+    HTTPCACHE_POLICY = 'cache.CustomCachePolicy'
     HTTPCACHE_STORAGE = 'product_ranking.cache.CustomFilesystemCacheStorage'
     HTTPCACHE_EXPIRATION_SECS = 0  # forever
     HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_cache')
@@ -179,7 +179,6 @@ def _check_if_proxies_available(http_proxy_path, timeout=10):
         except ReqProxyError:
             print('proxy %s - failed to fetch host %s' % (prox, h))
 
-
 PROXY_LIST = os.path.join(CWD, 'http_proxies.txt')
 PROXY_LIST2 = '/tmp/http_proxies.txt'
 if not os.path.exists(PROXY_LIST) and os.path.exists(PROXY_LIST2):
@@ -193,7 +192,6 @@ if (os.path.exists(PROXY_LIST)
 else:
     log.msg('NOT USING PROXIES')
     print('NOT USING PROXIES')
-
 
 # shared CH and SC code
 sys.path.append(os.path.join(CWD, '..', '..'))
