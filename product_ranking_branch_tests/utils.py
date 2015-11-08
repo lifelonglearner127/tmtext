@@ -40,3 +40,12 @@ def get_output_fname(searchterm, test_run, branch):
         st_slug = st_slug.encode('utf8')
     return os.path.join(test_run_path, branch,
                         '%s_%i.jl' % (st_slug, searchterm.quantity))
+
+
+def get_log_fname(searchterm, test_run, branch):
+    test_run_path = test_run_to_dirname(test_run)
+    st_slug = searchterm.searchterm
+    if isinstance(st_slug, unicode):
+        st_slug = st_slug.encode('utf8')
+    return os.path.join(test_run_path, branch,
+                        '%s_%i.log' % (st_slug, searchterm.quantity))

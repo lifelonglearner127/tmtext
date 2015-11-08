@@ -12,7 +12,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
 from tests_app.models import Spider, TestRun, Report, ReportSearchterm,\
     LocalCache
-from utils import test_run_to_dirname, get_output_fname
+from utils import test_run_to_dirname, get_output_fname, get_log_fname
 
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', 'product-ranking'))
 from debug_match_urls import match
@@ -97,7 +97,7 @@ def test_match(test_run):
     cmd = ('cd "{branch_dir}/product-ranking/"; scrapy crawl {spider_name}'
            ' -a searchterms_str="{searchterm}" -a quantity={quantity}'
            ' -a enable_cache=True -s HTTPCACHE_DIR="{cache_dir}"'
-           ' -s DOWNLOAD_DELAY=0.05 -o {output_path}')
+           ' -s DOWNLOAD_DELAY=0.05 -s LOG_FILE={log_path} -o {output_path}')
     report = Report.objects.create(testrun=test_run)
     for searchterm in test_run.spider.searchterms.all():
         cache = get_cache(searchterm, test_run)
@@ -106,16 +106,18 @@ def test_match(test_run):
             test_run.spider.name, searchterm.searchterm)
         output1 = get_output_fname(searchterm, test_run, test_run.branch1)
         output2 = get_output_fname(searchterm, test_run, test_run.branch2)
+        log1 = get_log_fname(searchterm, test_run, test_run.branch1)
+        log2 = get_log_fname(searchterm, test_run, test_run.branch2)
         os.system(cmd.format(
             branch_dir=_get_branches_dirs(test_run)[0],
             spider_name=test_run.spider.name,
             searchterm=searchterm.searchterm, quantity=searchterm.quantity,
-            cache_dir=cache.get_path(), output_path=output1))
+            cache_dir=cache.get_path(), output_path=output1, log_path=log1))
         os.system(cmd.format(
             branch_dir=_get_branches_dirs(test_run)[1],
             spider_name=test_run.spider.name,
             searchterm=searchterm.searchterm, quantity=searchterm.quantity,
-            cache_dir=cache.get_path(), output_path=output2))
+            cache_dir=cache.get_path(), output_path=output2, log_path=log2))
         if test_run.exclude_fields is None:
             test_run.exclude_fields = []
         diff = match(
