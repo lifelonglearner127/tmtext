@@ -18,7 +18,6 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.validation import BaseValidator
 from product_ranking.spiders import cond_set_value
-from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.jcpenney_variants import JcpenneyVariants
 from product_ranking.validation import BaseValidator
 
@@ -269,7 +268,7 @@ _dync
         result = response.body
         color = variant['properties'].get('color', None)
         #import pdb; pdb.set_trace()
-        if 'function()' in result:
+        if u'function()' in response.body_as_unicode():
             variant['in_stock'] = None
             return
         try:

@@ -19,6 +19,9 @@ class MacysVariants(object):
     def _variants(self):
         try:
             colors = self.tree_html.xpath('//img[@class="colorSwatch"]/@alt')
+            if not colors:
+                colors = self.tree_html.xpath('//*[contains(@class, "productColor")]/text()')
+
             sizes = self.tree_html.xpath('//li[@class=" size"]/@title')
             page_raw_text = lxml.html.tostring(self.tree_html)
             product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0].strip()
@@ -139,3 +142,33 @@ class MacysVariants(object):
                 return stockstatus_for_variants_list
         except:
             return None
+
+    def _swatches(self):
+        swatch_list = []
+
+        product_id = None
+
+        try:
+            product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
+        except:
+            product_id = self.tree_html.xpath("//input[@id='productId']/@value")[0]
+
+        color_list = re.findall(r"MACYS.pdp.primaryImages\[" + product_id + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        color_list = color_list[0].split(",")
+
+        for swatch in color_list:
+            swatch_name = "color"
+            color = swatch.split(":")[0].replace('"', '')
+            image_path = swatch.split(":")[1].replace('"', '')
+
+            swatch_info = {}
+            swatch_info["swatch_name"] = swatch_name
+            swatch_info[swatch_name] = color
+            swatch_info["hero"] = 1
+            swatch_info["hero_image"] = "http://slimages.macysassets.com/is/image/MCY/products/" + image_path
+            swatch_list.append(swatch_info)
+
+        if swatch_list:
+            return swatch_list
+
+        return None

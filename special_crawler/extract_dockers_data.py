@@ -168,6 +168,9 @@ class DockersScraper(Scraper):
     def _variants(self):
         return self.dk._variants()
 
+    def _swatches(self):
+        return self.dk._swatches()
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -412,6 +415,7 @@ class DockersScraper(Scraper):
         "description" : _description, \
         "long_description" : _long_description, \
         "variants": _variants, \
+        "swatches": _swatches, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\

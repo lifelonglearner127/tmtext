@@ -22,6 +22,9 @@ def collect_data(cache):
         cache.get_total_cached_responses(False)
     context['responses_from_cache_term'] = \
         cache.get_total_cached_responses(True)
+    context['urgent_stats'] = cache.get_urgent_stats()
+    context['completed_stats'] = cache.get_completed_stats()
+    context['failed_tasks'] = cache.get_all_failed_results()
     return context
 
 
@@ -40,13 +43,20 @@ def send_mail(sender, receivers, subject, text):
 
 
 def delete_old_cache_data(cache):
-    # delete cached responses, older then 7 days
-    days = 7
-    freshness = 24 * 60 * days
+    # delete cached responses, older then 7 days (default value)
+    freshness = int(cache.get_cache_settings().get('hours_limit', '168'))
+    freshness *= 60  # convert into minutes
     res = cache.delete_old_tasks(freshness)
-    removed_cache_url, removed_cache_term, removed_resp = cache.clear_stats()
-    res = sum([res, removed_cache_url, removed_cache_term, removed_resp])
+    removed_cache_url, removed_cache_term, removed_resp, removed_urgent = \
+        cache.clear_stats()
+    res = sum([res, removed_cache_url, removed_cache_term,
+               removed_resp, removed_urgent])
     return res
+
+
+def save_instances_number(cache, context):
+    data = context.get('total_instances', 0)
+    return cache.save_today_instances_count(data)
 
 
 def main():
@@ -58,8 +68,10 @@ def main():
     receivers = s_data['report_mail']
     today = date.today()
     subject = 'SQS cache daily report for %s' % today.strftime('%A, %Y-%m-%d')
-    content = generate_mail_message(collect_data(cache))
+    context = collect_data(cache)
+    content = generate_mail_message(context)
     send_mail(sender, receivers, subject, content)
+    save_instances_number(cache, context)
     res = delete_old_cache_data(cache)
     print 'Deleted %s total records from cache.' % res
 

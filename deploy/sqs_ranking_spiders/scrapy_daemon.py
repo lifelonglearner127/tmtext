@@ -10,6 +10,7 @@ import string
 import redis
 import boto
 import requests
+from re import sub
 from boto.utils import get_instance_metadata
 from boto.s3.key import Key
 from collections import OrderedDict
@@ -582,6 +583,7 @@ class ScrapyTask(object):
             # maybe should be changed to product_url
             additional_part = 'single-product-url-request'
         job_name += '____' + additional_part + '____' + site
+        job_name = sub("\(|\)|&|;|'", "", job_name)
         # truncate resulting string as file name limitation is 256 characters
         return job_name[:200]
 
@@ -1420,6 +1422,19 @@ def prepare_test_data():
         fh.close()
 
 
+def log_free_disk_space():
+    """mostly for debugging purposes, shows result of 'df -h' system command"""
+    cmd = 'df -h'
+    p = Popen(cmd, shell=True, stdout=PIPE)
+    res = p.communicate()
+    if res[0]:
+        res = res[0]
+    else:
+        res = res[1]
+    logger.warning('Disk usage statisticks:')
+    logger.warning(res)
+
+
 if __name__ == '__main__':
     if 'test' in [a.lower().strip() for a in sys.argv]:
         TEST_MODE = True
@@ -1435,7 +1450,9 @@ if __name__ == '__main__':
 
     try:
         main()
+        log_free_disk_space()
     except Exception as e:
+        log_free_disk_space()
         logger.exception(e)
         logger.error('Finished with error.')  # write fail finish marker
         try:

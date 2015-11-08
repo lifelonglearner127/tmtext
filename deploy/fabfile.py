@@ -298,6 +298,8 @@ def _setup_virtual_env_scrapyd():
         run('pip install pyyaml')
         run('pip install python-dateutil')
         run('pip install psutil')
+        run('pip install mmh3')
+        run('pip install flask')
 
     _setup_simmetrica_monitoring()
 

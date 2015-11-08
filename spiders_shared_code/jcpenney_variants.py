@@ -46,7 +46,7 @@ class JcpenneyVariants(object):
             image_id = self._find_between(swatch.xpath("./@onclick")[0], "'{}','".format(product_id), "')")
             swatch_info = {}
             swatch_info["swatch_name"] = "color"
-            swatch_info["color"] = swatch.xpath("./img/@alt")[0]
+            swatch_info["color"] = swatch.xpath("./img/@name")[0]
             swatch_info["hero"] = 1
             swatch_info["thumb"] = 1
             swatch_info["hero_image"] = "http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % image_id
