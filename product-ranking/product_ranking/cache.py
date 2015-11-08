@@ -152,7 +152,7 @@ class CustomCachePolicy(DummyPolicy):
         gzip_line_start = '\037\213'
         if response.body.startswith(gzip_line_start):
             body = gz.gunzip(response.body)
-            if '.images-amazon.com/captcha/' in body:
-                return False
+        if '.images-amazon.com/captcha/' in body:
+            return False
         return super(CustomCachePolicy, self).should_cache_response(
             response, request)
