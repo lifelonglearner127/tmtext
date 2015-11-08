@@ -98,6 +98,8 @@ def test_match(test_run):
            ' -a searchterms_str="{searchterm}" -a quantity={quantity}'
            ' -a enable_cache=True -s HTTPCACHE_DIR="{cache_dir}"'
            ' -s DOWNLOAD_DELAY=0.05 -s LOG_FILE={log_path} -o {output_path}')
+    if 'amazon' in test_run.spider.name:
+        cmd = cmd.replace('enable_cache=True', '')  # TODO: fix cache!
     report = Report.objects.create(testrun=test_run)
     for searchterm in test_run.spider.searchterms.all():
         cache = get_cache(searchterm, test_run)
@@ -108,16 +110,23 @@ def test_match(test_run):
         output2 = get_output_fname(searchterm, test_run, test_run.branch2)
         log1 = get_log_fname(searchterm, test_run, test_run.branch1)
         log2 = get_log_fname(searchterm, test_run, test_run.branch2)
+        if 'amazon' in test_run.spider.name:  # TODO: fix cache and remove this block
+            cmd += ' &'
         os.system(cmd.format(
             branch_dir=_get_branches_dirs(test_run)[0],
             spider_name=test_run.spider.name,
             searchterm=searchterm.searchterm, quantity=searchterm.quantity,
             cache_dir=cache.get_path(), output_path=output1, log_path=log1))
+        if 'amazon' in test_run.spider.name:  # TODO: fix cache and remove this block
+            cmd += ' &'
         os.system(cmd.format(
             branch_dir=_get_branches_dirs(test_run)[1],
             spider_name=test_run.spider.name,
             searchterm=searchterm.searchterm, quantity=searchterm.quantity,
             cache_dir=cache.get_path(), output_path=output2, log_path=log2))
+        if 'amazon' in test_run.spider.name:  # TODO: fix cache and remove this block
+            import time
+            time.sleep(3*60)
         if test_run.exclude_fields is None:
             test_run.exclude_fields = []
         diff = match(
