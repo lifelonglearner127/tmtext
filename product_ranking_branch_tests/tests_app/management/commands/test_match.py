@@ -99,7 +99,7 @@ def test_match(test_run):
            ' -a enable_cache=True -s HTTPCACHE_DIR="{cache_dir}"'
            ' -s DOWNLOAD_DELAY=0.05 -s LOG_FILE={log_path} -o {output_path}')
     if 'amazon' in test_run.spider.name:
-        cmd = cmd.replace('enable_cache=True', '')  # TODO: fix cache!
+        cmd = cmd.replace('-a enable_cache=True', '')  # TODO: fix cache!
     report = Report.objects.create(testrun=test_run)
     for searchterm in test_run.spider.searchterms.all():
         cache = get_cache(searchterm, test_run)
@@ -118,7 +118,7 @@ def test_match(test_run):
             searchterm=searchterm.searchterm, quantity=searchterm.quantity,
             cache_dir=cache.get_path(), output_path=output1, log_path=log1))
         if 'amazon' in test_run.spider.name:  # TODO: fix cache and remove this block
-            cmd += ' &'
+            cmd = cmd[0:-1]
         os.system(cmd.format(
             branch_dir=_get_branches_dirs(test_run)[1],
             spider_name=test_run.spider.name,
