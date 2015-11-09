@@ -24,7 +24,7 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
 from product_ranking.validation import BaseValidator
 from spiders_shared_code.walmart_variants import WalmartVariants
 from spiders_shared_code.walmart_categories import WalmartCategoryParser
-#from spiders_shared_code.walmart_extra_data import WalmartExtraData
+from spiders_shared_code.walmart_extra_data import WalmartExtraData
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -105,7 +105,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     FIXME: Currently we redirect infinitely, which could be a problem.
     """
     name = 'walmart_products'
-    allowed_domains = ["walmart.com", "msn.com", 'api.walmartlabs.com']
+    allowed_domains = ["walmart.com", "msn.com", 'api.walmartlabs.com',
+                       'walmart-content.com', 'json.webcollage.net']
 
     default_hhl = [404, 500, 502, 520]
 
@@ -143,6 +144,17 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
     user_agent = 'default'
+
+    # base URL for request containing video URL from webcollage
+    BASE_URL_VIDEOREQ_WEBCOLLAGE = "http://json.webcollage.net/apps/json/walmart?callback=jsonCallback&environment-id=live&cpi="
+    # base URL for request containing video URL from webcollage
+    BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW = "http://www.walmart-content.com/product/idml/video/%s/WebcollageVideos"
+    # base URL for request containing video URL from sellpoints
+    BASE_URL_VIDEOREQ_SELLPOINTS = "http://www.walmart.com/product/idml/video/%s/SellPointsVideos"
+    # base URL for request containing video URL from sellpoints
+    BASE_URL_VIDEOREQ_SELLPOINTS_NEW = "http://www.walmart-content.com/product/idml/video/%s/SellPointsVideos"
+
+    video_urls = []
 
     def __init__(self, search_sort='best_match', zipcode='94117',
                  *args, **kwargs):
@@ -390,7 +402,140 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
 
+        url = response.url
+        response_html = lxml.html.fromstring(response.body_as_unicode())
+        self.walmart_ed = WalmartExtraData(response=response_html, url=url)
+        product['img_count'] = self.walmart_ed._image_count()
+        self.walmart_ed._video_urls()
+
+        return self.video_urls_first_request(response)
+
+    # def choice_of_request(self):
+    #     """
+    #     Method specifies the query to send. The solution adopted
+    #     by a number of parameters: version, _has_video_button,
+    #     _is_bundle_product,
+    #     :return: some method
+    #     """
+    #     version = self.walmart_ed._version()
+
+    def video_urls_first_request(self, response):
+        emc_link = response.xpath("//iframe[contains(@class,"
+                                  "'js-marketing-content-iframe')]"
+                                  "/@src").extract()
+        if emc_link:
+            emc_link = "http:" + emc_link[0]
+            print(emc_link)
+            return Request(url=emc_link, callback=self.video_urls_flv,
+                           meta=response.meta)
+        else:
+            return self.video_urls_webcollage_new_request(response)
+
+    def video_urls_flv(self, response):
+        # TODO: Find items to check
+        wcobj_links = response.xpath("//img[contains(@class, "
+                                     "'wc-media')]/@wcobj").extract()
+        if wcobj_links:
+            print('urls_flv')
+            for wcobj_link in wcobj_links:
+                if wcobj_link.endswith(".flv"):
+                    self.video_urls1.append(wcobj_link)
+        return self.video_urls_webcollage_new_request(response)
+
+    def video_urls_webcollage_new_request(self, response):
+        # webcollage video info
+        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % \
+                      self.walmart_ed._extract_product_id()
+
+        return Request(url=request_url,
+                       callback=self.video_urls_webcollage_new_processing,
+                       meta=response.meta)
+
+    def video_urls_webcollage_new_processing(self, response):
+        body = response.body
+        if response.xpath("//div[@id='iframe-video-content']").extract() and \
+                response.xpath("//table[contains(@class, 'wc-gallery-table')]"
+                               "/@data-resources-base").extract():
+            video_base_path = response.xpath("//table[contains(@class, "
+                                             "'wc-gallery-table')]"
+                                             "/@data-resources-base").extract()
+            sIndex = 0
+            eIndex = 0
+
+            while sIndex >= 0:
+                sIndex = body.find('{"videos":[', sIndex)
+                eIndex = body.find('}]}', sIndex) + 3
+
+                if sIndex < 0:
+                    break
+
+                jsonVideo = body[sIndex:eIndex]
+                jsonVideo = json.loads(jsonVideo)
+
+                if len(jsonVideo['videos']) > 0:
+                    for video_info in jsonVideo['videos']:
+                        self.video_urls.append(video_base_path[0] +
+                                               video_info['src']['src'])
+
+                sIndex = eIndex
+
+        return self.video_urls_sellpoints_request(response)
+
+    def video_urls_sellpoints_request(self, response):
+        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % \
+                      self.walmart_ed._extract_product_id()
+
+        return Request(url=request_url,
+                       callback=self.video_urls_sellpoints_processing,
+                       meta=response.meta)
+
+    def video_urls_sellpoints_processing(self, response):
+        # TODO: Find items to check
+        if not response.body:
+            return self.video_urls_sellpoints_new_request(response)
+        else:
+            print('sellpoints_processing')
+            body = response.body
+            video_url_candidates = re.findall("'file': '([^']+)'", body)
+            if video_url_candidates:
+                for video_url_item in video_url_candidates:
+                    video_url_candidate = re.sub('\\\\', "", video_url_item)
+
+                    # if it ends in flv, it's a video, ok
+                    if video_url_candidate.endswith(".mp4") or \
+                            video_url_candidate.endswith(".flv"):
+                        self.has_sellpoints_media = True
+                        self.has_video = True
+                        self.video_urls.append(video_url_candidate)
+                        break
+            return self.video_urls_sellpoints_new_request(response)
+
+
+    def video_urls_sellpoints_new_request(self, response):
+        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS_NEW % \
+                      self.walmart_ed._extract_product_id()
+
+        return Request(url=request_url,
+                       callback=self.video_urls_sellpoints_new_processing,
+                       meta=response.meta)
+
+    def video_urls_sellpoints_new_processing(self, response):
+        # TODO: Find items to check
+        if response.xpath("//div[@id='iframe-video-content']"
+                          "//div[@id='player-holder']").extract():
+            print('sellpoints_new_processing')
+            pass
+            # TODO: Uncomment when moving
+            # self.has_video = True
+            # self.has_sellpoints_media = True
+
+        if len(self.video_urls) == 0:
+            if self.tree_html.xpath("//div[starts-with(@class,"
+                                    "'js-idml-video-container')]"):
+                pass
+
         return self._start_related(response)
+
 
     def parse_available(self, response):
         available = is_empty(response.xpath(
