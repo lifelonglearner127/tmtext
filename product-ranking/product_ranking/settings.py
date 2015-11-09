@@ -122,7 +122,7 @@ if 'load_s3_cache' in _args_names:
 
 if 'enable_cache' in _args_names:  # for local development purposes only!
     HTTPCACHE_ENABLED = True
-    HTTPCACHE_POLICY = 'cache.CustomCachePolicy'
+    HTTPCACHE_POLICY = 'product_ranking.cache.CustomCachePolicy'
     HTTPCACHE_STORAGE = 'product_ranking.cache.CustomFilesystemCacheStorage'
     HTTPCACHE_EXPIRATION_SECS = 0  # forever
     HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_cache')
