@@ -102,6 +102,8 @@ class ReportSearchterm(models.Model):
             (so the report is not precise enough)
         """
         if self.total_urls is not None and self.matched_urls is not None:
+            if not self.total_urls:
+                return True  # zero?
             percent = (float(self.matched_urls) / float(self.total_urls)) * 100
             if int(percent) < 85:
                 return True
