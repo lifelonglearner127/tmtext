@@ -17,8 +17,8 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
         'green rose': [10, 100],
         'long term black': [1, 50],
         'yellow ion': [15, 100],
-        'water proof': [50, 85],
-        'long night': [30, 200],
+        'water ball': [3, 85],
+        'levis 511': [10, 100],
     }
 
     test_urls = {
