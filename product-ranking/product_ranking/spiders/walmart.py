@@ -348,6 +348,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if sku:
             product['sku'] = sku[0]
 
+        # TODO: REMOVEME!
+        product['sku'] = 'TEST 3676'
+
         id = re.findall('\/(\d+)', response.url)
         response.meta['product_id'] = id[-1] if id else None
         # if id:
