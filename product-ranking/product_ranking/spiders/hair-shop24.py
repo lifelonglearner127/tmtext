@@ -9,7 +9,7 @@ from product_ranking.items import SiteProductItem, Price, RelatedProduct, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 from product_ranking.spiders import cond_set, cond_set_value
-
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 
 class HairShop24Spider(BaseProductsSpider):
     """
@@ -189,15 +189,14 @@ class HairShop24Spider(BaseProductsSpider):
         average_rating = response.xpath('//meta[@itemprop="ratingValue"]'
                                         '/@content').extract()
         num_of_reviews = len(points)
-
-        if rating_by_star:
+        if stars:
             buyer_reviews = {
                     'num_of_reviews': int(num_of_reviews),
                     'average_rating': float(average_rating[0]),
                     'rating_by_star': rating_by_star
-                }
+            }
         else:
-            buyer_reviews = self.ZERO_REVIEWS_VALUE
+            return ZERO_REVIEWS_VALUE
 
         return BuyerReviews(**buyer_reviews)
 
