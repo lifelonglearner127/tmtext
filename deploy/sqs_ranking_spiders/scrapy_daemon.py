@@ -1286,12 +1286,12 @@ def main():
 
     def stop_not_finished_tasks(tasks):
         for _ in tasks:
-            if not task.is_finished():
+            if not _.is_finished():
                 _.stop()
         time.sleep(15)
         logger.info('Reporting stopped tasks')
         for _ in tasks:
-            if not task.is_finished():
+            if not _.is_finished():
                 try:
                     logger.info(_.process.stdout.read())
                     logger.info(_.process.stderr.read())
