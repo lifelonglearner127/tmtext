@@ -522,7 +522,10 @@ class BaseValidator(object):
         try:
             date = datetime.datetime.strptime(val, '%Y-%m-%d')
         except:
-            return False
+            try:
+                date = datetime.datetime.strptime(val, '%d-%m-%Y')
+            except:
+                return False
         return True
 
     def _validate_department(self, val):
@@ -608,7 +611,7 @@ class BaseValidator(object):
         if not val:
             return True
         try:
-            _ = datetime.datetime.strptime(val, "%d/%m/%Y")
+            _ = datetime.datetime.strptime(val, "%d-%m-%Y")
         except Exception, e:
             return False
         return True
