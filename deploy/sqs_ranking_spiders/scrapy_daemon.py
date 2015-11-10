@@ -1291,8 +1291,8 @@ def main():
         logger.info('Reporting stopped tasks')
         for _ in tasks:
             try:
-                logger.info(task.process.stdout.read())
-                logger.info(task.process.stderr.read())
+                logger.info(_.process.stdout.read())
+                logger.info(_.process.stderr.read())
             except:
                 logger.warning('Unable to retrieve logs from task')
 
