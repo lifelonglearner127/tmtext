@@ -1285,7 +1285,16 @@ def main():
                 for _ in tasks if not _.is_finished()]
 
     def stop_not_finished_tasks(tasks):
-        return [_.stop() for _ in tasks if not _.is_finished()]
+        for _ in tasks:
+            _.stop()
+        time.sleep(15)
+        logger.info('Reporting stopped tasks')
+        for _ in tasks:
+            try:
+                logger.info(task.process.stdout.read())
+                logger.info(task.process.stderr.read())
+            except:
+                logger.warning('Unable to retrieve logs from task')
 
     def log_tasks_results(tasks):
         logger.info('#'*10 + 'START TASKS REPORT' + '#'*10)
