@@ -759,14 +759,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     price = price.replace(',', '').replace(' ', '')
                     cond_set_value(product, 'price',
                                    Price(priceCurrency=currency, price=price))
-            if not price:
-                price = response.xpath('//div[@itemprop="price"]//text()').extract()
-                price = [i for i in price if i != ' ']
-                price = price[1] + price[2] + price[3]
-                currency = currency.extract()[0]
+            if not price and not currency:
+                price_data = response.xpath('//script[contains(text(), "product/data")]/text()').extract()
+                currency = is_empty(re.findall(r'currencyUnit\":"(\w+)"', price_data[0]))
+                price = is_empty(re.findall(r'"price":"(\d+.\d+)"', price_data[0]))
+
                 cond_set_value(product, 'price',
-                                   Price(priceCurrency=currency, price=price))
-                print price
+                               Price(priceCurrency=currency, price=price))
 
         if not product.get('upc'):
             cond_set(
