@@ -2476,10 +2476,17 @@ class WalmartScraper(Scraper):
 
         try:
             if "/cp/" in self._canonical_link():
-                self.failure_type = "Category page"
+                self.failure_type = "Invalid url"
         except:
             if "/cp/" in self.product_page_url:
-                self.failure_type = "Category page"
+                self.failure_type = "Invalid url"
+
+        try:
+            if "/browse/" in self._canonical_link():
+                self.failure_type = "Invalid url"
+        except:
+            if "/browse/" in self.product_page_url:
+                self.failure_type = "Invalid url"
 
         # check existence of "We can't find the product you are looking for, but we have similar items for you to consider."
         text_list = self.tree_html.xpath("//body//text()")
