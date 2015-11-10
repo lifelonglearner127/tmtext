@@ -133,6 +133,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             prod['not_found'] = True
             return prod
 
+        cond_set_value(prod, 'locale', 'en-US')
+
         tv = TargetVariants()
         tv.setupSC(response)
         prod['variants'] = tv._variants()
@@ -169,7 +171,6 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         prod['url'] = old_url
         #cond_set_value(prod, 'url', old_url)
 
-        cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
         # fiME: brand=None
         if 'brand' in prod and len(prod['brand']) == 0:

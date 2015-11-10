@@ -11,10 +11,10 @@ class TargetValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
-        'sold': [15, 150],
+        'red stone': [15, 150],
         'cola': [60, 210],
         'vacation': [50, 175],
-        'sort': [7, 100],
+        'search book': [7, 170],
         'navigator': [10, 110],
         'manager': [15, 130],
         'IPhone-6': [1, 50],
