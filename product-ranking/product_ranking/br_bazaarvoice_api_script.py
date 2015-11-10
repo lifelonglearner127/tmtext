@@ -99,7 +99,7 @@ class BuyerReviewsBazaarApi(object):
                 )
                 last_buyer_review_date = datetime.strptime(date.replace('.', ''), '%d %B %Y')
                 if last_buyer_review_date:
-                    product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d/%m/%Y')
+                    product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d-%m-%Y')
 
                 stars_data = re.findall(
                     r'<span class="BVRRHistStarLabelText">(\d+) (?:S|s)tars?</span>|'
