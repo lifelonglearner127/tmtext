@@ -882,6 +882,25 @@ class WalmartScraper(Scraper):
 
         return self._exclude_javascript_from_description(short_description)
 
+    def _seller_ranking(self):
+        ranking_list = self.tree_html.xpath("//div[@class='Grid-col item-ranks']//ol/li[@class='item-rank']/span[contains(@class, 'rank')]/text()")
+        breadcrumb_list = self.tree_html.xpath("//div[@class='Grid-col item-ranks']//ol")
+        seller_ranking = []
+
+        for index, ranking in enumerate(ranking_list):
+            category_name = ""
+
+            for sub_category_name in breadcrumb_list[index].xpath("./li[@class='breadcrumb']/a/text()"):
+                category_name = category_name + sub_category_name + " > "
+
+            category_name = category_name[:-3]
+            seller_ranking.append({"category": category_name, "ranking": int(ranking[1:])})
+
+        if seller_ranking:
+            return seller_ranking
+
+        return None
+
     def _exclude_javascript_from_description(self, description):
         description = re.subn(r'<(script).*?</\1>(?s)', '', description)[0]
 #        description = re.sub(r"<script type=.+</script>", "", description)
@@ -2476,10 +2495,17 @@ class WalmartScraper(Scraper):
 
         try:
             if "/cp/" in self._canonical_link():
-                self.failure_type = "Category page"
+                self.failure_type = "Invalid url"
         except:
             if "/cp/" in self.product_page_url:
-                self.failure_type = "Category page"
+                self.failure_type = "Invalid url"
+
+        try:
+            if "/browse/" in self._canonical_link():
+                self.failure_type = "Invalid url"
+        except:
+            if "/browse/" in self.product_page_url:
+                self.failure_type = "Invalid url"
 
         # check existence of "We can't find the product you are looking for, but we have similar items for you to consider."
         text_list = self.tree_html.xpath("//body//text()")
@@ -2935,6 +2961,7 @@ class WalmartScraper(Scraper):
         "brand": _meta_brand_from_tree, \
         "description": _short_description_wrapper, \
         # TODO: check if descriptions work right
+        "seller_ranking": _seller_ranking, \
         "long_description": _long_description_wrapper, \
         "shelf_description": _shelf_description, \
         "variants": _variants, \
