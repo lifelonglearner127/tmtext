@@ -71,6 +71,7 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
                     '%3Dp_price_US_USD%257C0%26Ntk%3DAll%26Ntt%3Dmen%26Ntx%3Dmode%2Bmatchall')
     CURRENT_NAO = 0
     PAGINATE_BY = 12  # 12 products
+    TOTAL_MATCHES = None  # for pagination
 
     def __init__(self, *args, **kwargs):
         super(LeviProductsSpider, self).__init__(
@@ -90,6 +91,8 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         if totals:
             totals = totals[0].replace(',', '').replace('.', '').strip()
             if totals.isdigit():
+                if not self.TOTAL_MATCHES:
+                    self.TOTAL_MATCHES = int(totals)
                 return int(totals)
 
     def _scrape_product_links(self, response):
@@ -114,8 +117,8 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         print '_'*8, response
-        #if self.CURRENT_NAO > self._scrape_total_matches(response):
-        #    return  # it's over
+        if self.CURRENT_NAO > self._scrape_total_matches(response)+self.PAGINATE_BY:
+            return  # it's over
         self.CURRENT_NAO += self.PAGINATE_BY
         return Request(
             self.PAGINATE_URL.format(
