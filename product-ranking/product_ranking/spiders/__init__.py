@@ -217,8 +217,6 @@ class BaseProductsSpider(Spider):
         if product_url is None:  # searchterms mode
             # see https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3585#c10
             self.scrape_variants_with_extra_requests = False
-        else:
-            self.scrape_variants_with_extra_requests = True
 
         try:
             self.server_ip = socket.gethostbyname(socket.gethostname())

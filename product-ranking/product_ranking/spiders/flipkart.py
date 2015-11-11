@@ -91,7 +91,7 @@ class FlipkartProductsSpider(BaseProductsSpider):
             cond_set_value(
                 product, 'last_buyer_review_date',
                 datetime.strptime(last_review[0].extract(),
-                                  '%b %d, %Y').strftime('%d/%m/%Y'))
+                                  '%b %d, %Y').strftime('%d-%m-%Y'))
         # description
         cond_set_value(
             product, 'description', ''.join(

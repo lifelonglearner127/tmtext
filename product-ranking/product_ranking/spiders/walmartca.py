@@ -29,7 +29,7 @@ is_empty = lambda x, y="": x[0] if x else y
 def handle_date_from_json(date):
     """
     Handles date in format "2013-09-15T06:45:34.000+00:00"
-    Returns date in format "15/09/2013"
+    Returns date in format "15-09-2013"
     """
 
     dateconv = lambda date: datetime.strptime(date, '%Y-%m-%dT%H:%M:%S.%f').date()
@@ -38,7 +38,7 @@ def handle_date_from_json(date):
         timezone_id = date.index('+')
         date = date.replace(date[timezone_id:-1], '')
         conv_date = dateconv(date)
-        return str(conv_date.strftime('%d/%m/%Y'))
+        return str(conv_date.strftime('%d-%m-%Y'))
 
     return ''
 

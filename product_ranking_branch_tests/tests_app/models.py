@@ -42,7 +42,10 @@ class TestRun(models.Model):
     when_started = models.DateTimeField(auto_now_add=True)
     when_finished = models.DateTimeField(blank=True, null=True)
 
-    branch1 = models.CharField(max_length=150)
+    branch1 = models.CharField(
+        max_length=150,
+        help_text=("A valid branch to compare with"
+                   " (normally, master or sc_production)"))
     branch2 = models.CharField(max_length=150)
 
     spider = models.ForeignKey(Spider, related_name='spider_test_runs')
@@ -99,7 +102,10 @@ class ReportSearchterm(models.Model):
             (so the report is not precise enough)
         """
         if self.total_urls is not None and self.matched_urls is not None:
-            if self.matched_urls < self.total_urls / 2:
+            if not self.total_urls:
+                return True  # zero?
+            percent = (float(self.matched_urls) / float(self.total_urls)) * 100
+            if int(percent) < 85:
                 return True
         if self.matched_urls == 0:
             return True
