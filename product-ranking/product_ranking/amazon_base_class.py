@@ -794,6 +794,17 @@ class AmazonBaseClass(BaseProductsSpider):
         price = (price[:-3] + price[-3:].replace(',', '.')).replace(',', '')
         price = round(float(price), 2)
 
+        # try to scrape the price from another place
+        if price == 0.0:
+            price2 = re.search('\|([\d\.]+)\|baseItem"}',response.body)
+            if price2:
+                price2 = price2.group(1)
+                try:
+                    price2 = float(price2)
+                    price = price2
+                except:
+                    pass
+
         return Price(price=price, priceCurrency=self.price_currency)
 
     def _parse_price_original(self, response, add_xpath=None):
