@@ -11,7 +11,7 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
-        'samsung t9500 battery': [30, 250],
+        'samsung t9500 battery 2600 li-ion warranty': [20, 100],
         'water pump bronze inch apollo': [2, 30],
         'ceiling fan industrial white system': [5, 50],
         'kaspersky total': [20, 100],
