@@ -154,8 +154,6 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         response.meta['average'] = is_empty(re.findall(r'var averageRating=  (\d+)', response.body_as_unicode()))
         response.meta['total'] = is_empty(re.findall(r'var totalReviewsValue=(\d+)', response.body_as_unicode()))
 
-        print response.meta['average'], response.meta['total']
-
         if 'sorry, that item is no longer available' \
                 in response.body_as_unicode().lower():
             prod['not_found'] = True
