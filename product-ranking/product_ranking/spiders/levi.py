@@ -84,12 +84,15 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         product = response.meta.get('product', SiteProductItem())
 
         self.product_id = is_empty(response.xpath('//meta[@itemprop="model"]/@content').extract())
-
+        self.js_data = self.parse_data(response)
         title = self.parse_title(response)
         cond_set(product, 'title', title)
 
         image = self.parse_image(response)
         cond_set_value(product, 'image_url', image)
+
+        description = self.parse_description(response)
+        cond_set_value(product, 'description', description)
 
         return product
 
@@ -99,16 +102,33 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
 
         return title
 
-    def parse_image(self, response):
+    def parse_data(self, response):
         data = re.findall(r'var buyStackJSON = \'(.+)\'; ', response.body_as_unicode())
         data = re.sub(r'\\(.)', r'\g<1>', data[0])
         if data:
             try:
-                image_data = json.loads(data)
-                image = image_data['colorid'][self.product_id]['gridUrl']
+                js_data = json.loads(data)
             except:
-                pass
+                return
+        return js_data
+
+    def parse_image(self, response):
+        if self.js_data:
+            try:
+                image = self.js_data['colorid'][self.product_id]['gridUrl']
+                print image
+            except:
+                return
         return image
+
+    def parse_description(self, response):
+        if self.js_data:
+            try:
+                description = self.js_data['colorid'][self.product_id]['name']
+                print description
+            except:
+                return
+        return description
 
     def _scrape_total_matches(self, response):
         totals = response.css('.productCount ::text').extract()
