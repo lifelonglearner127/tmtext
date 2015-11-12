@@ -86,6 +86,9 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         self.product_id = is_empty(response.xpath('//meta[@itemprop="model"]/@content').extract())
         self.js_data = self.parse_data(response)
 
+        locale = 'en_US'
+        cond_set_value(product, 'locale', locale)
+
         cond_set_value(product, 'model', self.product_id)
 
         title = self.parse_title(response)
@@ -94,10 +97,19 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         image = self.parse_image(response)
         cond_set_value(product, 'image_url', image)
 
+        brand = self.parse_brand(response)
+        cond_set_value(product, 'brand', brand)
+
         description = self.parse_description(response)
         cond_set_value(product, 'description', description)
 
         return product
+
+    def parse_brand(self, response):
+        brand = is_empty(response.xpath(
+            '//meta[@itemprop="brand"]/@content').extract())
+
+        return brand
 
     def parse_title(self, response):
         title = response.xpath(
