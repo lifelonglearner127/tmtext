@@ -100,6 +100,12 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         brand = self.parse_brand(response)
         cond_set_value(product, 'brand', brand)
 
+        upc = self.parse_upc(response)
+        cond_set_value(product, 'upc', upc)
+
+        sku = self.parse_sku(response)
+        cond_set_value(product, 'sku', sku)
+
         description = self.parse_description(response)
         cond_set_value(product, 'description', description)
 
@@ -144,6 +150,20 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
             except:
                 return
         return description
+
+    def parse_upc(self, response):
+        if self.js_data:
+            for v in self.js_data['sku'].values():
+                upc = v['upc']
+
+        return upc
+
+    def parse_sku(self, response):
+        if self.js_data:
+            for v in self.js_data['sku'].values():
+                skuid = v['skuid']
+
+        return skuid
 
     def _scrape_total_matches(self, response):
         totals = response.css('.productCount ::text').extract()
