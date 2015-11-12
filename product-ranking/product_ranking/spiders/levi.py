@@ -14,7 +14,7 @@ from scrapy.log import DEBUG
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    FLOATING_POINT_RGEX
+    FLOATING_POINT_RGEX, cond_set_value
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.validation import BaseValidator
 
@@ -82,9 +82,33 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta.get('product', SiteProductItem())
-        cond_set(product, 'title',
-                 response.xpath('//h1[contains(@class, "title")]').extract())
+
+        self.product_id = is_empty(response.xpath('//meta[@itemprop="model"]/@content').extract())
+
+        title = self.parse_title(response)
+        cond_set(product, 'title', title)
+
+        image = self.parse_image(response)
+        cond_set_value(product, 'image_url', image)
+
         return product
+
+    def parse_title(self, response):
+        title = response.xpath(
+            '//h1[contains(@class, "title")]').extract()
+
+        return title
+
+    def parse_image(self, response):
+        data = re.findall(r'var buyStackJSON = \'(.+)\'; ', response.body_as_unicode())
+        data = re.sub(r'\\(.)', r'\g<1>', data[0])
+        if data:
+            try:
+                image_data = json.loads(data)
+                image = image_data['colorid'][self.product_id]['gridUrl']
+            except:
+                pass
+        return image
 
     def _scrape_total_matches(self, response):
         totals = response.css('.productCount ::text').extract()
