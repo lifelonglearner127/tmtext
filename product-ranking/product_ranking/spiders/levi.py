@@ -85,6 +85,9 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
 
         self.product_id = is_empty(response.xpath('//meta[@itemprop="model"]/@content').extract())
         self.js_data = self.parse_data(response)
+
+        cond_set_value(product, 'model', self.product_id)
+
         title = self.parse_title(response)
         cond_set(product, 'title', title)
 
