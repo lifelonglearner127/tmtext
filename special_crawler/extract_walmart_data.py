@@ -2536,44 +2536,42 @@ class WalmartScraper(Scraper):
 
     def _ingredients(self):
         # list of ingredients - list of strings
-        ingr = self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
+        ingr = self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]")
 
         if not ingr:
-            ingr = self.tree_html.xpath("//section[contains(@class,'js-ingredients')]/p[1]//text()")
+            ingr = self.tree_html.xpath("//section[contains(@class,'js-ingredients')]/p[1]")
 
         if len(ingr) > 0:
-            res = []
-            w = ''
-            br = 0
-            for s in ingr[0]:
-                if s == "," and br == 0:
-                    if w != "":
-                        res.append(w.strip())
-                    w = ""
-                elif s == "[" or s == "(":
-                    w += s
-                    br = 1
-                elif s == "]" or s == ")":
-                    w += s
-                    br = 0
-                else:
-                    w += s
-            if w != '':
-                res.append(w.strip())
-            self.ing_count = len(res)
-            return res
-        ingr=self.tree_html.xpath("//p[@class='ProductIngredients']//text()")
-        if len(ingr) >0 :
-            res = ingr[0].split(',')
-            self.ing_count = len(res)
-            return res
+            ingr = ingr[0].text_content().strip()
+
+            if ingr.lower().startswith("ingredients:"):
+                ingr = ingr[12:].strip()
+
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            ingredients = r.findall(ingr)
+            ingredients = [ingredient.strip() for ingredient in ingredients]
+            self.ing_count = len(ingredients)
+            return ingredients
+
+        ingr = self.tree_html.xpath("//p[@class='ProductIngredients']//text()")
+
+        if len(ingr) > 0:
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            ingredients = r.findall(ingr)
+            ingredients = [ingredient.strip() for ingredient in ingredients]
+            self.ing_count = len(ingredients)
+            return ingredients
+
         ingr = self.tree_html.xpath("//b[contains(text(),'Ingredients:')]")
+
         if len(ingr) > 0:
             ingr = ingr[0].tail
-            ingr = ingr.split(",")
-            ingr = map(lambda e: e.strip(), ingr)
-            self.ing_count = len(ingr)
-            return ingr
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            ingredients = r.findall(ingr)
+            ingredients = [ingredient.strip() for ingredient in ingredients]
+            self.ing_count = len(ingredients)
+            return ingredients
+
         self.ing_count = None
         return None
 
