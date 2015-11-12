@@ -395,7 +395,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         for i in ranking:
             x = i.xpath('li//text()').extract()
-            x = [i for i in x if 'in' not in i if i != ' ']
+            x = [i for i in x if i != ' ']
             ranking_data.append(x)
 
         seller_ranking = []
@@ -404,7 +404,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             rank = i[0].replace('#', '')
             data['ranking'] = int(rank)
 
-            cat = i[1:]
+            cat = i[2:]
             data['categories'] = cat
             seller_ranking.append(data)
 
