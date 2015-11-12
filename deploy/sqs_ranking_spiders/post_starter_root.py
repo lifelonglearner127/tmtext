@@ -67,6 +67,7 @@ def main():
         f.write('\n')
     os.system('crontab %s' % tmp_cron_name)
     _install_system_package('tesseract-ocr')
+    _install_system_package('phantomjs')
     # disable marketplaces (they are too slow)
     disabler = '/tmp/stop_marketplaces'
     os.system('echo "1" > %s' % disabler)

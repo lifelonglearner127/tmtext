@@ -6,6 +6,9 @@ import numpy as np
 import sys
 from matplotlib import pyplot as plt
 import numpy
+from PIL import Image
+from blockhash import blockhash
+from itertools import product
 
 image_hashes_a = {}
 image_hashes_w = {}
@@ -21,12 +24,12 @@ def hash_hamming(h1, h2):
     b2 = bin(int(h2,16))[2:].zfill(256)
     return distance.hamming(b1,b2)
 
-def hash_similarity(h1, h2):
+def hash_similarity(h1, h2, bits=16):
     '''Similarity between 2 hashes (0-100), based on hamming distance
     Hashes are assumed to be 64-char long (256 bits)
     '''
     d = hash_hamming(h1, h2)
-    s = 100 - (d/256.)*100
+    s = 100 - (d/float(bits*4*4))*100
     return s
 
 def compute_histogram(image_path, equalize=True):
@@ -36,11 +39,19 @@ def compute_histogram(image_path, equalize=True):
     hist = cv2.calcHist([image], [0, 1, 2], None, [8, 8, 8],[0, 256, 0, 256, 0, 256])
     return hist   
 
-def histogram_similarity(image1, image2):
-    hist1 = cv2.calcHist([image1], [0, 1, 2], None, [8, 8, 8],[0, 256, 0, 256, 0, 256])
-    hist2 = cv2.calcHist([image2], [0, 1, 2], None, [8, 8, 8],[0, 256, 0, 256, 0, 256])
-    score = cv2.compareHist(hist1.flatten(), hist2.flatten(), cv2.cv.CV_COMP_CORREL)
-    return score
+def histogram_similarity(image1, image2, bins=8, trunc_bins=False):
+    hist1 = cv2.calcHist([image1], [0, 1, 2], None, [bins, bins, bins],[0, 256, 0, 256, 0, 256])
+    hist2 = cv2.calcHist([image2], [0, 1, 2], None, [bins, bins, bins],[0, 256, 0, 256, 0, 256])
+    if trunc_bins:
+        hist1 = numpy.array(sorted(hist1.flatten(), reverse=True)[:100])
+        hist2 = numpy.array(sorted(hist2.flatten(), reverse=True)[:100])
+    else:
+        hist1 = numpy.array(hist1.flatten())
+        hist2 = numpy.array(hist2.flatten())
+    # print hist1
+    # print hist2
+    score = cv2.compareHist(hist1, hist2, cv2.cv.CV_COMP_CORREL)
+    return score * 100
 
 def histogram_to_string(image_path, equalize=True):
     '''Take an image path, compute its color histogram,
@@ -165,27 +176,64 @@ def _show(image):
     cv2.imshow("image", image)
     cv2.waitKey(0)
 
-def images_similarity(image1_path, image2_path):
+def _blockhash(image, bits = 16):
+    pilimage = Image.fromarray(image)
+    bhash = blockhash(pilimage, bits)
+    return bhash
+
+def blockhash_similarity(image1, image2, bits=16, resize=1):
+    '''
+    :param resize: resize option
+    None: don't resize
+    1: resize to image1's size
+    2: resize to fixed size of 256x256
+    '''
+    if resize:
+        if resize == 1:
+            image2 = cv2.resize(image2, (image1.shape[1], image2.shape[0]))
+        if resize == 2:
+            image1 = cv2.resize(image1, (256, 256))
+            image2 = cv2.resize(image2, (256, 256))
+    h1 = _blockhash(image1, bits)
+    h2 = _blockhash(image2, bits)
+    return hash_similarity(h1, h2, bits)
+
+def images_similarity(image1_path, image2_path, hist_weight=.8, bh_bits=16, blur=False, threshold_light=True, hist_bins=8, trunc_bins=True):
     '''Computes similarity between 2 images (opencv data structures)
+    :param weight: weight of histogram similarity vs hash similarity
+    :param bh_bits: nr bits used for blockhash
+    :param blur: blur (remove noise) images first
+    :param threhsold_light: remove very light pixes (replace them with white) first
     '''
 
     image1 = cv2.imread(image1_path)
     image2 = cv2.imread(image2_path)
     
     stdsize = (image1.shape[1], image1.shape[0])
-    image1 = _normalize_image(image1)
-    image2 = _normalize_image(image2, stdsize)
+    image1 = _normalize_image(image1, blur, threshold_light)
+    image2 = _normalize_image(image2, stdsize, blur, threshold_light)
 
     # 5. compare histograms
-    return histogram_similarity(image1, image2)
+    hist_similarity = histogram_similarity(image1, image2, bins=hist_bins, trunc_bins=trunc_bins)
 
-def _normalize_image(image, size=None):
+    # 6. blockhash similarity
+    hash_similarity = blockhash_similarity(image1, image2, bh_bits)
+
+    # compute average
+    sys.stderr.write("Hist sim: " + str(hist_similarity) + " Hash sim: " + str(hash_similarity) + "\n")
+    hash_weight = 1 - hist_weight
+    avg_similarity = hist_weight * hist_similarity + hash_weight * hash_similarity
+    return avg_similarity
+
+def _normalize_image(image, size=None, blur=False, threshold_light=True):
     # image = cv2.imread(image_path)
     
-    image = cv2.GaussianBlur(image,(3,3),0)
+    if blur:
+        image = cv2.GaussianBlur(image,(3,3),0)
     
     # 1. threshold off-white pixels
-    image = _threshold_light(image)
+    if threshold_light:
+        image = _threshold_light(image)
 
     # 2. remove white borders
     image = _remove_whitespace(image)
@@ -197,7 +245,7 @@ def _normalize_image(image, size=None):
 
     # 4. equalize color histogram
     image = equalize_hist_color(image)
-    _show(image)
+    # _show(image)
     return image
 
 def _threshold_light(image):
@@ -215,7 +263,7 @@ def _remove_whitespace(image):
 
     imagec = numpy.copy(image)
     gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
-    _,thresh = cv2.threshold(gray,210,255,cv2.THRESH_BINARY_INV)
+    _,thresh = cv2.threshold(gray,230,255,cv2.THRESH_BINARY_INV)
     contours,hierarchy = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
 
     rois = []
@@ -237,6 +285,63 @@ def _remove_whitespace(image):
     ret = map(lambda x: x[0],sorted(rois, key=lambda x: -len(x[0])))
     return ret[0]
 
+def benchmark(image_nr=None):
+    features = {
+    'threshold_light' : [True, False], \
+    'bh_bits' : [8, 16, 32], \
+    'trunc_bins' : [True, False], \
+    'hist_weight' : [.2, .3, .4, .5, .6, .7, .8, .9], \
+    'hist_bins' : [8, 16, 32, 50, 100], \
+    'blur' : [True, False]
+    }
+
+    param_features = ['threshold_light', 'hist_weight']
+
+    results = {k1 : {k2 : 0 for k2 in features[param_features[0]]} for k1 in features[param_features[1]]}
+
+    param_ranges = [features[f] for f in param_features]
+    current_params = {}
+    for currvalues in product(*param_ranges):
+        for i, f in enumerate(param_features):
+            current_params[f] = currvalues[i]
+
+        print current_params
+        avg_sim = 0
+        nr_images = 0
+        if image_nr:
+            test_set = [image_nr]
+        else:
+            test_set = range(50)
+        for nr in test_set:
+            print "Image", nr
+            s = 0
+            try:
+                s = images_similarity("%s_walmart.jpg" % str(nr), "%s_amazon.jpg" % str(nr), **current_params)
+            except:
+                pass
+            nr_images += 1
+            avg_sim += s
+        avg_sim = avg_sim / nr_images
+        print "Similarity:", avg_sim, "\n"
+        results[current_params[param_features[1]]][current_params[param_features[0]]] = avg_sim
+
+
+    # draw heatmap
+    data = numpy.array([r.values() for r in results.values()])
+    fig, ax = plt.subplots()
+    heatmap = ax.pcolor(data)
+    plt.colorbar(heatmap)
+    row_labels = [param_features[0] + ": " + str(b) for b in features[param_features[0]]]
+    column_labels = [param_features[1] + ": " + str(w) for w in features[param_features[1]]]
+    ax.set_yticks(np.arange(data.shape[0])+0.5, minor=False)
+    ax.set_xticks(np.arange(data.shape[1])+0.5, minor=False)
+    ax.set_xticklabels(row_labels, minor=False)
+    ax.set_yticklabels(column_labels, minor=False)
+    plt.show()
+    if image_nr:
+        plt.savefig("/tmp/benchmark_%s.png" % str(image_nr))
+
+
 if __name__=="__main__":
     import sys
     # # compute_similarities()
@@ -246,6 +351,15 @@ if __name__=="__main__":
     #     draw_histogram(image1)
     #     draw_histogram(image2)
 
-    nr = sys.argv[1]
-    print images_similarity("nows_%s_walmart.jpg" % nr, "nows_%s_amazon.jpg" % nr)
-    # _normalize_image(cv2.imread("nows_40_amazon.jpg"))
+    # nr = sys.argv[1]
+    for nr in range(50):
+        try:
+            im1 = "nows_%s_walmart.jpg" % str(nr)
+            im2 = "nows_%s_amazon.jpg" % str(nr)
+            s = images_similarity(im1, im2)
+            print ",".join([im1, im2, str(s)])
+        except Exception, e:
+            sys.stderr.write(str(e))
+            pass
+
+    # benchmark(nr)
