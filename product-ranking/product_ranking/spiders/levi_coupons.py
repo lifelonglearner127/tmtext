@@ -25,7 +25,7 @@ class LeviCouponsSpider(Spider):
         if product_url:
             self.product_urls = [product_url]
         else:
-            self.product_urls = self.DEFAULT_URLS * 3
+            self.product_urls = self.DEFAULT_URLS * self.REQUEST_TIMES
 
     def start_requests(self):
         return [
