@@ -73,6 +73,9 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
     PAGINATE_BY = 12  # 12 products
     TOTAL_MATCHES = None  # for pagination
 
+    BUYER_REVIEWS_URL = "http://levistrauss.ugc.bazaarvoice.com/module/" \
+                        "9090-en_us/rr/9090redes-en_us/display.pkg.js"
+
     def __init__(self, *args, **kwargs):
         super(LeviProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
@@ -83,31 +86,46 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
     def parse_product(self, response):
         product = response.meta.get('product', SiteProductItem())
 
+        # product id
         self.product_id = is_empty(response.xpath('//meta[@itemprop="model"]/@content').extract())
+
+        # product data in json
         self.js_data = self.parse_data(response)
 
+        # Parse locate
         locale = 'en_US'
         cond_set_value(product, 'locale', locale)
 
+        # Parse model
         cond_set_value(product, 'model', self.product_id)
 
+        # Parse title
         title = self.parse_title(response)
         cond_set(product, 'title', title)
 
+        # Parse image
         image = self.parse_image(response)
         cond_set_value(product, 'image_url', image)
 
+        # Parse brand
         brand = self.parse_brand(response)
         cond_set_value(product, 'brand', brand)
 
+        # Parse upc
         upc = self.parse_upc(response)
         cond_set_value(product, 'upc', upc)
 
+        # Parse sku
         sku = self.parse_sku(response)
         cond_set_value(product, 'sku', sku)
 
+        # Parse description
         description = self.parse_description(response)
         cond_set_value(product, 'description', description)
+
+        # Parse price
+        price = self.parse_price(response)
+        cond_set_value(product, 'price', price)
 
         return product
 
@@ -137,7 +155,6 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         if self.js_data:
             try:
                 image = self.js_data['colorid'][self.product_id]['gridUrl']
-                print image
             except:
                 return
         return image
@@ -146,7 +163,6 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         if self.js_data:
             try:
                 description = self.js_data['colorid'][self.product_id]['name']
-                print description
             except:
                 return
         return description
@@ -164,6 +180,21 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
                 skuid = v['skuid']
 
         return skuid
+
+    def parse_price(self, response):
+        if self.js_data:
+            price = self.js_data['colorid'][self.product_id]['price']
+            for price_data in price:
+                if price_data['il8n'] == 'now':
+                    price = price_data['amount']
+            currency = is_empty(re.findall(r'currency":"(\w+)"', response.body_as_unicode()))
+
+            if price and currency:
+                price = Price(price=price, priceCurrency=currency)
+            else:
+                price = Price(price=0.00, priceCurrency="USD")
+
+        return price
 
     def _scrape_total_matches(self, response):
         totals = response.css('.productCount ::text').extract()
