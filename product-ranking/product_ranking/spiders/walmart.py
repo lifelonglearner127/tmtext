@@ -390,6 +390,26 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
 
+        ranking = response.xpath('//div[@class="Grid-col item-ranks"]/ol')
+        ranking_data = []
+
+        for i in ranking:
+            x = i.xpath('li//text()').extract()
+            x = [i for i in x if 'in' not in i if i != ' ']
+            ranking_data.append(x)
+
+        seller_ranking = []
+        for i in ranking_data:
+            data = {}
+            rank = i[0].replace('#', '')
+            data['ranking'] = int(rank)
+
+            cat = i[1:]
+            data['categories'] = cat
+            seller_ranking.append(data)
+
+        product['seller_ranking'] = seller_ranking
+
         return self._start_related(response)
 
     def parse_available(self, response):

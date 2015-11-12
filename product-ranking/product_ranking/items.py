@@ -242,6 +242,7 @@ class SiteProductItem(Item):
     shelf_path = Field()
 
     _subitem = Field()
+    seller_ranking = Field()
 
 
 class DiscountCoupon(Item):
