@@ -509,6 +509,18 @@ class BaseValidator(object):
                 return False
         return True
 
+    def _validate_seller_ranking(self, val):
+        if not val:
+            return True
+        if isinstance(val, basestring):
+            try:
+                val = json.loads(val)
+            except Exception as e:
+                return False
+        if isinstance(val, (tuple, list)):
+            return True
+
+
     def _validate_bestseller_rank(self, val):
         if isinstance(val, int):
             return True

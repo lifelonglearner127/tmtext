@@ -408,7 +408,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             data['categories'] = cat
             seller_ranking.append(data)
 
-        product['seller_ranking'] = seller_ranking
+        if seller_ranking:
+            product['seller_ranking'] = seller_ranking
 
         return self._start_related(response)
 
