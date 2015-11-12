@@ -97,34 +97,27 @@ class BuyerReviewsBazaarApi(object):
                         histogram_data
                     )
                 )
-                last_buyer_review_date = datetime.strptime(date.replace('.', ''), '%d %B %Y')
-                if last_buyer_review_date:
+                if not date:
+                    date = is_empty(
+                        re.findall(
+                            r'<span class=\"BVRRValue BVRRReviewDate\">(\w+ \d+. \d+)',
+                            histogram_data
+                        )
+                    )
+                if date:
+                    last_buyer_review_date = datetime.strptime(date.replace('.', '').replace(',', ''), '%B %d %Y')
                     product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d/%m/%Y')
 
                 stars_data = re.findall(
-                    r'<span class="BVRRHistStarLabelText">(\d+) (?:S|s)tars?</span>|'
-                    r'<span class="BVRRHistAbsLabel">(\d+)</span>',
+                    r'<div itemprop="reviewRating".+>.+<span itemprop="ratingValue" '
+                    r'class="BVRRNumber BVRRRatingNumber">(\d+)</span>|'
+                    r'<span itemprop=\"ratingValue\" class=\"BVRRNumber BVRRRatingNumber\">(\d+).\d+',
                     histogram_data
                 )
-
-                if stars_data:
-                    # ('5', '') --> '5'
-                    item_list = []
-                    for star in stars_data:
-                        item_list.append(filter(None, list(star))[0])
-
-                    # ['3', '0', '5', '6'] --> {'3': '0', '5': '6'}
-                    i = iter(item_list)
-                    stars = {k: int(v) for (k, v) in izip(i, i)}
-                else:
-                    stars_data = re.findall(
-                        r'<div itemprop="reviewRating".+>.+<span itemprop="ratingValue" '
-                        r'class="BVRRNumber BVRRRatingNumber">(\d+)</span>',
-                        histogram_data
-                    )
-                    stars = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
-                    for star in stars_data:
-                        stars[star] += 1
+                stars_data = [x for i in stars_data for x in i if x != '']
+                stars = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+                for star in stars_data:
+                    stars[star] += 1
 
                 return stars
             except (KeyError, IndexError) as exc:

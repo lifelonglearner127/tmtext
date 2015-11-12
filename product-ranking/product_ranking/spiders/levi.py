@@ -17,6 +17,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FLOATING_POINT_RGEX, cond_set_value
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.validation import BaseValidator
+from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
 from lxml import html
 
@@ -73,10 +74,13 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
     PAGINATE_BY = 12  # 12 products
     TOTAL_MATCHES = None  # for pagination
 
-    BUYER_REVIEWS_URL = "http://levistrauss.ugc.bazaarvoice.com/module/" \
-                        "9090-en_us/rr/9090redes-en_us/display.pkg.js"
+    REVIEW_URL = "http://levistrauss.ugc.bazaarvoice.com/9090-en_us/" \
+                 "{product_id}/reviews.djs?format=embeddedhtml&page={index}&"
+    index = 0
 
     def __init__(self, *args, **kwargs):
+        self.br = BuyerReviewsBazaarApi(called_class=self)
+
         super(LeviProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
 
@@ -85,6 +89,8 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta.get('product', SiteProductItem())
+
+        reqs = []
 
         # product id
         self.product_id = is_empty(response.xpath('//meta[@itemprop="model"]/@content').extract())
@@ -127,7 +133,42 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
+        real_count = is_empty(re.findall(r'<span itemprop="reviewCount">(\d+)<\/span>',
+                                response.body_as_unicode()))
+        if int(real_count) > 8:
+            for index, i in enumerate(xrange(9, int(real_count) + 1, 30)):
+                reqs.append(
+                    Request(
+                        url=self.REVIEW_URL.format(product_id=self.product_id, index=index+2),
+                        dont_filter=True,
+                        callback=self.br.parse_buyer_reviews
+                    )
+        )
+
+        # Parse buyer reviews
+        reqs.append(
+            Request(
+                url=self.REVIEW_URL.format(product_id=self.product_id, index=0),
+                dont_filter=True,
+                callback=self.br.parse_buyer_reviews
+            ))
+
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
         return product
+
+    def send_next_request(self, reqs, response):
+        """
+        Helps to handle several requests
+        """
+
+        req = reqs.pop(0)
+        new_meta = response.meta.copy()
+        if reqs:
+            new_meta["reqs"] = reqs
+        return req.replace(meta=new_meta)
 
     def parse_brand(self, response):
         brand = is_empty(response.xpath(
