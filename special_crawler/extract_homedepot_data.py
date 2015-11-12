@@ -66,7 +66,7 @@ class HomeDepotScraper(Scraper):
             return
 
         try:
-            product_json_text = self._find_between(html.tostring(self.tree_html), "THD.PIP.products.primary = new THD.PIP.Product(", ");\r")
+            product_json_text = self._find_between(html.tostring(self.tree_html), "THD.PIP.products.primary = new THD.PIP.Product(", ");\n")
             self.product_json = json.loads(product_json_text)
         except:
             self.product_json = None
