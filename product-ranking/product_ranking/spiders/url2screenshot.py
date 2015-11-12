@@ -8,11 +8,7 @@ import os
 
 import scrapy
 from scrapy.conf import settings
-from scrapy.log import WARNING, ERROR
 from scrapy.http import Request
-from scrapy import Selector
-
-from product_ranking.items import SiteProductItem
 
 
 class ScreenshotItem(scrapy.Item):
