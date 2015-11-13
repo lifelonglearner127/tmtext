@@ -111,7 +111,7 @@ def _get_queue(queue_name, region="us-east-1"):
     return conn.get_queue(queue_name)
 
 
-def read_messages_from_queue(queue_name, region="us-east-1", timeout=5, num_messages=999):
+def read_messages_from_queue(queue_name, region="us-east-1", timeout=5, num_messages=5555):
     q = _get_queue(queue_name, region=region)
     num_iterations = num_messages / 10 + 1
     result = []
@@ -155,7 +155,57 @@ class Command(BaseCommand):
         output_queues = get_output_queues_for_jobs(jobs)
         progress_queues = get_progress_queues_for_jobs(jobs)
 
-        # scan output & progress queues (read the messages)
+        for progress_queue in progress_queues:
+            progress_messages = read_messages_from_queue(progress_queue)
+            for m in progress_messages:
+                m_body = m.get_body()
+                if isinstance(m_body, (str, unicode)):
+                    m_body = json.loads(m_body)
+                task_id = m_body.get('task_id', m_body.get('_msg_id', None))
+                # remove messages that are way too old
+                utc_datetime = m_body.get('utc_datetime', None)
+                if utc_datetime:
+                    utc_datetime = parse_date(utc_datetime)
+                    if utc_datetime < datetime.datetime.now() - datetime.timedelta(days=1):
+                        _delete_queue_message(progress_queue, m)
+                        print('Deleted old message: %s' % str(m_body))
+                        continue
+                if task_id is None:
+                    continue
+                server_name = _get_server_name_from_queue(progress_queue)
+                # get the appropriate DB job
+                db_job = Job.objects.filter(
+                    Q(status='pushed into sqs') | Q(status='in progress'),
+                    task_id=task_id, server_name=server_name)
+                if db_job.count() > 1:
+                    print 'Too many jobs found for message %s' % str(m_body)
+                    print db_job
+                    continue
+                if not db_job:
+                    continue  # not found in DB?
+                db_job = db_job[0]
+
+                # ok now we've got a message in the queue and its appropriate DB job
+                # create progress file
+                full_local_prog_path = MEDIA_ROOT + get_progress_filename(db_job)
+                if not os.path.exists(os.path.dirname(full_local_prog_path)):
+                    os.makedirs(os.path.dirname(full_local_prog_path))
+                with open(full_local_prog_path, 'w') as fh:
+                    fh.write(json.dumps(m_body))
+                progress = m_body.get('progress', None)
+                if progress not in (None, 'finished'):
+                    db_job.status = 'in progress'
+                    db_job.save()
+                    _delete_queue_message(progress_queue, m)
+                    print('Deleted progress message: %s' % str(m_body))
+                if progress == 'failed':
+                    db_job.status = 'failed'
+                    db_job.save()
+                    _delete_queue_message(progress_queue, m)
+                    print('Deleted progress message: %s' % str(m_body))
+                print('Downloaded progress file to %s' % full_local_prog_path)
+
+        # scan output queue (read the messages)
         for output_queue in output_queues:
             output_messages = read_messages_from_queue(output_queue)
             for m in output_messages:
@@ -257,20 +307,3 @@ class Command(BaseCommand):
                         db_job.save()
                         _delete_queue_message(output_queue, m)
                         print('Deleted successful message: %s' % str(m_body))
-
-                # TODO: handle progress messages
-                """
-                if amazon_progress_file:
-                    job.status = 'in progress'
-                    job.save()
-
-                if amazon_progress_file:
-                    full_local_prog_path = MEDIA_ROOT + get_progress_filename(job)
-                    if not os.path.exists(os.path.dirname(full_local_prog_path)):
-                        os.makedirs(os.path.dirname(full_local_prog_path))
-                    download_s3_file(AMAZON_BUCKET_NAME, amazon_progress_file,
-                                     full_local_prog_path)
-                    _unzip_local_file(full_local_prog_path, 'progress.progress',
-                                      '.progress')
-                """
-
