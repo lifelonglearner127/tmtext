@@ -133,31 +133,53 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
+        response.meta['marks'] = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
         real_count = is_empty(re.findall(r'<span itemprop="reviewCount">(\d+)<\/span>',
                                 response.body_as_unicode()))
+
+        # Parse buyer reviews
         if int(real_count) > 8:
             for index, i in enumerate(xrange(9, int(real_count) + 1, 30)):
                 reqs.append(
                     Request(
                         url=self.REVIEW_URL.format(product_id=self.product_id, index=index+2),
                         dont_filter=True,
-                        callback=self.br.parse_buyer_reviews
+                        callback=self.parse_buyer_reviews
                     )
         )
 
-        # Parse buyer reviews
         reqs.append(
             Request(
                 url=self.REVIEW_URL.format(product_id=self.product_id, index=0),
                 dont_filter=True,
-                callback=self.br.parse_buyer_reviews
+                callback=self.parse_buyer_reviews
             ))
-
 
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
+
+    def parse_buyer_reviews(self, response):
+        buyer_reviews_per_page = self.br.parse_buyer_reviews_per_page(response)
+
+        for k, v in buyer_reviews_per_page['rating_by_star'].iteritems():
+            response.meta['marks'][k] += v
+
+        product = response.meta['product']
+        reqs = response.meta['reqs']
+
+        product['buyer_reviews'] = BuyerReviews(
+            num_of_reviews=buyer_reviews_per_page['num_of_reviews'],
+            average_rating=buyer_reviews_per_page['average_rating'],
+            rating_by_star=response.meta['marks']
+            )
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
 
     def send_next_request(self, reqs, response):
         """
@@ -168,6 +190,7 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         new_meta = response.meta.copy()
         if reqs:
             new_meta["reqs"] = reqs
+
         return req.replace(meta=new_meta)
 
     def parse_brand(self, response):

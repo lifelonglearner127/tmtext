@@ -20,9 +20,9 @@ class BuyerReviewsBazaarApi(object):
             'rating_by_star': {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
         }
 
-    def parse_buyer_reviews(self, response):
+    def parse_buyer_reviews_per_page(self, response):
         """
-        Parses buyer reviews from bazaarvoice API
+        return dict for buyer_reviews
         """
         meta = response.meta.copy()
         product = meta['product']
@@ -68,7 +68,20 @@ class BuyerReviewsBazaarApi(object):
         else:
             buyer_reviews = self.ZERO_REVIEWS_VALUE
 
-        product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
+        return buyer_reviews
+
+    def parse_buyer_reviews(self, response):
+        """
+        Parses buyer reviews from bazaarvoice API
+        Create object from dict
+        :param response:
+        :return:
+        """
+        meta = response.meta.copy()
+        product = meta['product']
+        reqs = meta.get('reqs', [])
+
+        product['buyer_reviews'] = BuyerReviews(**self.parse_buyer_reviews2(response))
 
         if reqs:
             return self.called_class.send_next_request(reqs, response)
