@@ -1,9 +1,9 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import json
 import hjson
 import re
+from pprint import pprint
 import string
 import urllib
 import urlparse
@@ -18,7 +18,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.validation import BaseValidator
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
-
+from scrapy import Selector
 from lxml import html
 
 is_empty =lambda x,y=None: x[0] if x else y
@@ -76,6 +76,22 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
 
     REVIEW_URL = "http://levistrauss.ugc.bazaarvoice.com/9090-en_us/" \
                  "{product_id}/reviews.djs?format=embeddedhtml&page={index}&"
+
+    RELATED_PRODUCT = "http://www.res-x.com/ws/r2/Resonance.aspx?" \
+                      "appid=levi01&tk=811541814822703" \
+                      "&ss=544367773691192" \
+                      "&sg=1&" \
+                      "&vr=5.3x&bx=true" \
+                      "&sc=product4_rr" \
+                      "&sc=product3_rr" \
+                      "&sc=product1_r" \
+                      "r&sc=product2_rr" \
+                      "&ev=product&ei={product_id}" \
+                      "&no=20" \
+                      "&language=en_US" \
+                      "&cb=certonaResx.showResponse" \
+                      "&ur=http%3A%2F%2Fwww.levi.com%2FUS%2Fen_US%" \
+                      "2Fwomens-jeans%2Fp%2F095450043&plk=&"
     index = 0
 
     def __init__(self, *args, **kwargs):
@@ -175,6 +191,13 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
             rating_by_star=response.meta['marks']
             )
 
+        reqs.append(
+            Request(
+                url=self.RELATED_PRODUCT.format(product_id=self.product_id, index=0),
+                dont_filter=True,
+                callback=self.parse_related_product
+            ))
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -221,7 +244,31 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
                 image = self.js_data['colorid'][self.product_id]['gridUrl']
             except:
                 return
+
         return image
+
+    def parse_related_product(self, response):
+        related_prods = []
+        product = response.meta['product']
+        sample = response.body
+        sample = sample.replace('certonaResx.showResponse(', '')
+        sample = sample[:-2]
+        data = json.loads(sample)
+        html = data['Resonance']['Response'][2]['output']
+
+        s = Selector(text=html)
+        titles = s.xpath('//h4/text()').extract() # Title
+        urls = s.xpath('//img/@src').extract() # Img url
+        for title, url in zip(titles, urls):
+            if url and title:
+                related_prods.append(
+                            RelatedProduct(
+                                title=title,
+                                url=url
+                            )
+                        )
+        product['related_products'] = related_prods
+        return product
 
     def parse_description(self, response):
         if self.js_data:
