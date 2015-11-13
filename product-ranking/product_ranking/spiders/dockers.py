@@ -12,7 +12,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
 from product_ranking.validation import BaseValidator
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from scrapy import Selector
-from spiders_shared_code.levi_variants import LeviVariants
+from spiders_shared_code.dockers_variants import DockersVariants
 
 is_empty =lambda x,y=None: x[0] if x else y
 
@@ -50,29 +50,30 @@ class LeviValidatorSettings(object):  # do NOT set BaseValidatorSettings as pare
     }
 """
 
-class LeviProductsSpider(BaseValidator, BaseProductsSpider):
-    name = 'levi_products'
-    allowed_domains = ["levi.com", "www.levi.com"]
+class DockersProductsSpider(BaseValidator, BaseProductsSpider):
+    name = 'dockers_products'
+    allowed_domains = ["dockers.com", "www.dockers.com"]
     start_urls = []
 
     #settings = HomedepotValidatorSettings  # TODO
 
-    SEARCH_URL = "http://www.levi.com/US/en_US/search?Ntt={search_term}"  # TODO: ordering
+    SEARCH_URL = "http://www.dockers.com/US/en_US/search?Ntt={search_term}"  # TODO: ordering
 
-    PAGINATE_URL = ('http://www.levi.com/US/en_US/includes/searchResultsScroll/?nao={nao}'
+    PAGINATE_URL = ('http://www.dockers.com/US/en_US/includes/searchResultsScroll/?nao={nao}'
                     '&url=%2FUS%2Fen_US%2Fsearch%2F%3FD%3D{search_term}%26Dx'
                     '%3Dmode%2Bmatchall%26N%3D4294960840%2B4294961101%2B4294965619%26Ns'
                     '%3Dp_price_US_USD%257C0%26Ntk%3DAll%26Ntt%3Dmen%26Ntx%3Dmode%2Bmatchall')
+
     CURRENT_NAO = 0
     PAGINATE_BY = 12  # 12 products
     TOTAL_MATCHES = None  # for pagination
 
-    REVIEW_URL = "http://levistrauss.ugc.bazaarvoice.com/9090-en_us/" \
-                 "{product_id}/reviews.djs?format=embeddedhtml&page={index}&"
+    REVIEW_URL = "http://dockers.ugc.bazaarvoice.com/2080-en_us/{product_id}" \
+                 "/reviews.djs?format=embeddedhtml&page={index}&"
 
     RELATED_PRODUCT = "http://www.res-x.com/ws/r2/Resonance.aspx?" \
-                      "appid=levi01&tk=811541814822703" \
-                      "&ss=544367773691192" \
+                      "appid=dockers01&tk=187015646137297" \
+                      "&ss=182724939426407" \
                       "&sg=1&" \
                       "&vr=5.3x&bx=true" \
                       "&sc=product4_rr" \
@@ -86,10 +87,11 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
                       "&ur=http%3A%2F%2Fwww.levi.com%2FUS%2Fen_US%" \
                       "2Fwomens-jeans%2Fp%2F095450043&plk=&"
 
+
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
 
-        super(LeviProductsSpider, self).__init__(
+        super(DockersProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
 
     def _parse_single_product(self, response):
@@ -176,9 +178,9 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         """
         Parses product variants.
         """
-        lv = LeviVariants()
-        lv.setupSC(response)
-        variants = lv._variants()
+        dk = DockersVariants()
+        dk.setupSC(response)
+        variants = dk._variants()
 
         return variants
 
