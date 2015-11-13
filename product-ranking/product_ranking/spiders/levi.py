@@ -1,26 +1,18 @@
 from __future__ import division, absolute_import, unicode_literals
 
 import json
-import hjson
 import re
-from pprint import pprint
-import string
-import urllib
-import urlparse
 
-from scrapy import Request, Selector
-from scrapy.log import DEBUG
+from scrapy import Request
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FLOATING_POINT_RGEX, cond_set_value
-from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.validation import BaseValidator
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from scrapy import Selector
 from spiders_shared_code.levi_variants import LeviVariants
-from lxml import html
 
 is_empty =lambda x,y=None: x[0] if x else y
 
@@ -157,17 +149,17 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         response.meta['marks'] = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
         real_count = is_empty(re.findall(r'<span itemprop="reviewCount">(\d+)<\/span>',
                                 response.body_as_unicode()))
-
-        # Parse buyer reviews
-        if int(real_count) > 8:
-            for index, i in enumerate(xrange(9, int(real_count) + 1, 30)):
-                reqs.append(
-                    Request(
-                        url=self.REVIEW_URL.format(product_id=self.product_id, index=index+2),
-                        dont_filter=True,
-                        callback=self.parse_buyer_reviews
-                    )
-        )
+        if real_count:
+            # Parse buyer reviews
+            if int(real_count) > 8:
+                for index, i in enumerate(xrange(9, int(real_count) + 1, 30)):
+                    reqs.append(
+                        Request(
+                            url=self.REVIEW_URL.format(product_id=self.product_id, index=index+2),
+                            dont_filter=True,
+                            callback=self.parse_buyer_reviews
+                        )
+            )
 
         reqs.append(
             Request(
@@ -192,32 +184,32 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         return variants
 
     def parse_buyer_reviews(self, response):
+        meta = response.meta.copy()
         buyer_reviews_per_page = self.br.parse_buyer_reviews_per_page(response)
 
         for k, v in buyer_reviews_per_page['rating_by_star'].iteritems():
             response.meta['marks'][k] += v
 
         product = response.meta['product']
-        reqs = response.meta['reqs']
+        reqs = meta.get('reqs')
 
         product['buyer_reviews'] = BuyerReviews(
             num_of_reviews=buyer_reviews_per_page['num_of_reviews'],
             average_rating=buyer_reviews_per_page['average_rating'],
             rating_by_star=response.meta['marks']
             )
-
-        reqs.append(
-            Request(
-                url=self.RELATED_PRODUCT.format(product_id=self.product_id, index=0),
-                dont_filter=True,
-                callback=self.parse_related_product
-            ))
+        if reqs:
+            reqs.append(
+                Request(
+                    url=self.RELATED_PRODUCT.format(product_id=self.product_id, index=0),
+                    dont_filter=True,
+                    callback=self.parse_related_product
+                ))
 
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
-
 
     def send_next_request(self, reqs, response):
         """
@@ -353,7 +345,7 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         print '_'*8, response
-        if self.CURRENT_NAO > self._scrape_total_matches(response)+self.PAGINATE_BY:
+        if self.CURRENT_NAO > self.TOTAL_MATCHES+self.PAGINATE_BY:
             return  # it's over
         self.CURRENT_NAO += self.PAGINATE_BY
         return Request(
