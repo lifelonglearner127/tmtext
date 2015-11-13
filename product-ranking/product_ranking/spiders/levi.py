@@ -19,6 +19,7 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.validation import BaseValidator
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from scrapy import Selector
+from spiders_shared_code.levi_variants import LeviVariants
 from lxml import html
 
 is_empty =lambda x,y=None: x[0] if x else y
@@ -149,6 +150,10 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
+        # Parse variants
+        variants = self._parse_variants(response)
+        product['variants'] = variants
+
         response.meta['marks'] = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
         real_count = is_empty(re.findall(r'<span itemprop="reviewCount">(\d+)<\/span>',
                                 response.body_as_unicode()))
@@ -175,6 +180,16 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
             return self.send_next_request(reqs, response)
 
         return product
+
+    def _parse_variants(self, response):
+        """
+        Parses product variants.
+        """
+        lv = LeviVariants()
+        lv.setupSC(response)
+        variants = lv._variants()
+
+        return variants
 
     def parse_buyer_reviews(self, response):
         buyer_reviews_per_page = self.br.parse_buyer_reviews_per_page(response)
