@@ -256,7 +256,7 @@ class Command(BaseCommand):
                         db_job.finished = now()
                         db_job.save()
                         _delete_queue_message(output_queue, m)
-                        print('Deleted old message: %s' % str(m_body))
+                        print('Deleted successful message: %s' % str(m_body))
 
                 # TODO: handle progress messages
                 """
