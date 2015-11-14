@@ -9,6 +9,7 @@ import numpy
 from PIL import Image
 from blockhash import blockhash
 from itertools import product
+from collections import OrderedDict
 
 image_hashes_a = {}
 image_hashes_w = {}
@@ -198,7 +199,8 @@ def blockhash_similarity(image1, image2, bits=16, resize=1):
     h2 = _blockhash(image2, bits)
     return hash_similarity(h1, h2, bits)
 
-def images_similarity(image1_path, image2_path, hist_weight=.8, bh_bits=16, blur=False, threshold_light=True, hist_bins=8, trunc_bins=True):
+def images_similarity(image1_path, image2_path, hist_weight=.8, bh_bits=16, blur=True, \
+    threshold_light=True, hist_bins=8, trunc_bins=True, wsthresh_val=230):
     '''Computes similarity between 2 images (opencv data structures)
     :param weight: weight of histogram similarity vs hash similarity
     :param bh_bits: nr bits used for blockhash
@@ -210,8 +212,8 @@ def images_similarity(image1_path, image2_path, hist_weight=.8, bh_bits=16, blur
     image2 = cv2.imread(image2_path)
     
     stdsize = (image1.shape[1], image1.shape[0])
-    image1 = _normalize_image(image1, blur, threshold_light)
-    image2 = _normalize_image(image2, stdsize, blur, threshold_light)
+    image1 = _normalize_image(image1, blur, threshold_light, wsthresh_val=wsthresh_val)
+    image2 = _normalize_image(image2, stdsize, blur, threshold_light, wsthresh_val=wsthresh_val)
 
     # 5. compare histograms
     hist_similarity = histogram_similarity(image1, image2, bins=hist_bins, trunc_bins=trunc_bins)
@@ -225,7 +227,7 @@ def images_similarity(image1_path, image2_path, hist_weight=.8, bh_bits=16, blur
     avg_similarity = hist_weight * hist_similarity + hash_weight * hash_similarity
     return avg_similarity
 
-def _normalize_image(image, size=None, blur=False, threshold_light=True):
+def _normalize_image(image, size=None, blur=False, threshold_light=True, wsthresh_val=230):
     # image = cv2.imread(image_path)
     
     if blur:
@@ -236,7 +238,7 @@ def _normalize_image(image, size=None, blur=False, threshold_light=True):
         image = _threshold_light(image)
 
     # 2. remove white borders
-    image = _remove_whitespace(image)
+    image = _remove_whitespace(image, thresh_val=wsthresh_val)
 
 
     # # 3. resize to same size
@@ -257,13 +259,13 @@ def _threshold_light(image):
     image[numpy.where(image > THRESH)] = 255
     return image
 
-def _remove_whitespace(image):
+def _remove_whitespace(image, thresh_val=230):
     '''Crop image to remove whitespace around object
     '''
 
     imagec = numpy.copy(image)
     gray = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
-    _,thresh = cv2.threshold(gray,230,255,cv2.THRESH_BINARY_INV)
+    _,thresh = cv2.threshold(gray,thresh_val,255,cv2.THRESH_BINARY_INV)
     contours,hierarchy = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
 
     rois = []
@@ -292,12 +294,15 @@ def benchmark(image_nr=None):
     'trunc_bins' : [True, False], \
     'hist_weight' : [.2, .3, .4, .5, .6, .7, .8, .9], \
     'hist_bins' : [8, 16, 32, 50, 100], \
-    'blur' : [True, False]
+    'blur' : [True, False], \
+    'wsthresh_val' : [200, 205, 210, 220, 230, 240]
     }
 
-    param_features = ['threshold_light', 'hist_weight']
+    param_features = ['blur', 'hist_weight']
 
-    results = {k1 : {k2 : 0 for k2 in features[param_features[0]]} for k1 in features[param_features[1]]}
+    results = {k1 : \
+                {k2 : 0 for k2 in features[param_features[0]]} \
+            for k1 in features[param_features[1]]}
 
     param_ranges = [features[f] for f in param_features]
     current_params = {}
@@ -307,6 +312,7 @@ def benchmark(image_nr=None):
 
         print current_params
         avg_sim = 0
+        accuracy = 0
         nr_images = 0
         if image_nr:
             test_set = [image_nr]
@@ -315,24 +321,44 @@ def benchmark(image_nr=None):
         for nr in test_set:
             print "Image", nr
             s = 0
-            try:
-                s = images_similarity("%s_walmart.jpg" % str(nr), "%s_amazon.jpg" % str(nr), **current_params)
-            except:
-                pass
-            nr_images += 1
-            avg_sim += s
+            ss = []
+            # Check if the highest score is between this image and its match or another => measure accuracy
+            for nr2 in range(50):
+                try:
+                    s = images_similarity("%s_walmart.jpg" % str(nr), "%s_amazon.jpg" % str(nr2), **current_params)
+                    ss.append((nr2, s))
+                except:
+                    pass
+                    continue
+            if ss:
+                ss = sorted(ss, key=lambda t: t[1], reverse=True)
+                # max score for its match (same number)
+                
+                print "Most similar:", ss[0][0]
+                if int(ss[0][0]) == int(nr):
+                    accuracy += 1
+                # if anything happened at all
+                nr_images += 1
+            # avg_sim += s
         avg_sim = avg_sim / nr_images
-        print "Similarity:", avg_sim, "\n"
-        results[current_params[param_features[1]]][current_params[param_features[0]]] = avg_sim
+        accuracy = float(accuracy) / nr_images
+        # print "Similarity:", avg_sim, "\n"
+        print "Accuracy:", accuracy, "\n"
+        # results[current_params[param_features[1]]][current_params[param_features[0]]] = avg_sim
+        results[current_params[param_features[1]]][current_params[param_features[0]]] = accuracy
 
 
     # draw heatmap
+    
     data = numpy.array([r.values() for r in results.values()])
+    print results
     fig, ax = plt.subplots()
     heatmap = ax.pcolor(data)
     plt.colorbar(heatmap)
-    row_labels = [param_features[0] + ": " + str(b) for b in features[param_features[0]]]
-    column_labels = [param_features[1] + ": " + str(w) for w in features[param_features[1]]]
+    # row_labels = [param_features[0] + ": " + str(b) for b in features[param_features[0]]]
+    row_labels = [param_features[0] + ": " + str(b) for b in results.values()[0].keys()]
+    # column_labels = [param_features[1] + ": " + str(w) for w in features[param_features[1]]]
+    column_labels = [param_features[1] + ": " + str(w) for w in results.keys()]
     ax.set_yticks(np.arange(data.shape[0])+0.5, minor=False)
     ax.set_xticks(np.arange(data.shape[1])+0.5, minor=False)
     ax.set_xticklabels(row_labels, minor=False)
@@ -351,15 +377,15 @@ if __name__=="__main__":
     #     draw_histogram(image1)
     #     draw_histogram(image2)
 
-    # nr = sys.argv[1]
-    for nr in range(50):
-        try:
-            im1 = "nows_%s_walmart.jpg" % str(nr)
-            im2 = "nows_%s_amazon.jpg" % str(nr)
-            s = images_similarity(im1, im2)
-            print ",".join([im1, im2, str(s)])
-        except Exception, e:
-            sys.stderr.write(str(e))
-            pass
+    nr = sys.argv[1]
+    # for nr in range(50):
+    #     try:
+    #         im1 = "%s_walmart.jpg" % str(nr)
+    #         im2 = "%s_amazon.jpg" % str(nr)
+    #         s = images_similarity(im1, im2)
+    #         print ",".join([im1, im2, str(s)])
+    #     except Exception, e:
+    #         sys.stderr.write(str(e))
+    #         pass
 
-    # benchmark(nr)
+    benchmark()
