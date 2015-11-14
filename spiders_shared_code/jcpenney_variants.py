@@ -7,6 +7,30 @@ from lxml import html, etree
 
 is_empty = lambda x, y=None: x[0] if x else y
 
+
+def extract_ajax_variants(html_content):
+    """ Some URLs dynamically update Variant properties, such
+        as size for this URL http://www.jcpenney.com/hanes-2-pk-fleece-pajama-pants-big-tall/prod.jump?ppId=pp5004370110
+    :param html_content:
+    :return:
+    """
+    new_options = {}
+    availability = {}
+    js = json.loads(html_content)
+    for ops in js['skuOptions']:
+        option_name = ops['key']
+        for key in ops['options']:
+            availability[key.get('option')] = key.get('availability')
+            option_value = key.get('option')
+            if option_name not in new_options:
+                new_options[option_name] = []
+                # new_options['in_stock'] = []
+            new_options[option_name].append(option_value)
+            # new_options['in_stock'].append(availability)
+
+    return new_options
+
+
 class JcpenneyVariants(object):
 
     def setupSC(self, response):
@@ -113,7 +137,6 @@ class JcpenneyVariants(object):
             #size attribute
             size_list = self.tree_html.xpath("//ul[@id='" + product_id + "SIZE']//li[@id='size']/a/@title")
             size_li_list = self.tree_html.xpath("//ul[@id='" + product_id + "SIZE']//li[@id='size']")
-
             if size_list:
                 stockstatus_list = []
 
