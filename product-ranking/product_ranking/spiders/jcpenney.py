@@ -164,7 +164,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     del variants[var_indx]
 
     @staticmethod
-    def append_new_dynamic_variants(variants, current_lot, new_structure):
+    def append_new_dynamic_variants(product, variants, current_lot, new_structure):
         all_pairs = []
 
         for option_name, vals in new_structure.items():
@@ -177,16 +177,18 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         ]
         combined_results = list(itertools.product(*groupped_results))
         all_properties = []
+        price = product.get('price', None)
+        if price is not None:
+            price = '%.2f' % price.price
         for combined_result in combined_results:
-
             new_pair = {}.copy()
             for prop_name, prop_value in combined_result:
                 new_pair[prop_name.lower()] = prop_value
             if not new_pair in all_properties:
                 all_properties.append(new_pair)
         for prop in all_properties:
-            new_variant = {'lot': current_lot, 'price': 'todo', 'in_stock': None,
-                           'selected': False, 'properties': prop}.copy()
+            new_variant = {'lot': current_lot, 'price': price,
+                           'in_stock': None, 'selected': False, 'properties': prop}.copy()
             if not new_variant in variants:
                 variants.append(new_variant)
 
@@ -353,6 +355,9 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
         product_id = is_empty(re.findall('ppId=([a-zA-Z0-9]+)&{0,1}', response.url))
 
+        cond_set_value(prod, 'locale', 'en-US')
+        self._populate_from_html(response, prod)
+
         jp = JcpenneyVariants()
         jp.setupSC(response)
         prod['variants'] = jp._variants()
@@ -378,7 +383,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                 new_lot_structure[_lot] = _dynamic_structure
                 if _lot:
                     self.remove_old_static_variants_of_lot(prod['variants'], _lot)
-                    self.append_new_dynamic_variants(prod['variants'], _lot, _dynamic_structure)
+                    self.append_new_dynamic_variants(prod, prod['variants'], _lot, _dynamic_structure)
         try:
             processed_lots[1] = processed_lots[0]
         except:
@@ -396,9 +401,6 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                 yield self._ajax_variant_request(
                     product_id, response, prod['variants'], variant, var_indx,
                     Lot=lot_id)
-
-        cond_set_value(prod, 'locale', 'en-US')
-        self._populate_from_html(response, prod)
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
