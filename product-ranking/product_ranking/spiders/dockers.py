@@ -26,7 +26,7 @@ def is_num(s):
 
 # TODO: implement
 """
-class LeviValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
+class DockersValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
     optional_fields = ['brand', 'price']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
@@ -60,9 +60,9 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
     SEARCH_URL = "http://www.dockers.com/US/en_US/search?Ntt={search_term}"  # TODO: ordering
 
     PAGINATE_URL = ('http://www.dockers.com/US/en_US/includes/searchResultsScroll/?nao={nao}'
-                    '&url=%2FUS%2Fen_US%2Fsearch%2F%3FD%3D{search_term}%26Dx'
-                    '%3Dmode%2Bmatchall%26N%3D4294960840%2B4294961101%2B4294965619%26Ns'
-                    '%3Dp_price_US_USD%257C0%26Ntk%3DAll%26Ntt%3Dmen%26Ntx%3Dmode%2Bmatchall')
+                    '&url=%2FUS%2Fen_US%2Fsearch%3FD%3D{search_term}%26Dx'
+                    '%3Dmode%2Bmatchall%26N%3D4294961104%2B4294961101%2B4294965619%26Ntk'
+                    '%3DAll%26Ntt%3Ddress%26Ntx%3Dmode%2Bmatchalj')
 
     CURRENT_NAO = 0
     PAGINATE_BY = 12  # 12 products
