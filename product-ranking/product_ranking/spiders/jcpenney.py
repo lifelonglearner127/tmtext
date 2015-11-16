@@ -339,7 +339,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                 # perform sync request
                 try:
                     result = requests.get(size_url, proxies=proxies, timeout=15)
-                except:
+                except Exception, e:
+                    self.log('Non-fatal error %s while fetching URL %s' % (str(e), size_url))
                     continue
                 try:
                     new_variants_structure = extract_ajax_variants(result.text)
