@@ -11,8 +11,8 @@ import csv
 import glob
 import operator
 import shutil
-import sys
 import smtplib
+import sys
 
 def generate_department_product_list(input_file, output_dir):
     with open(input_file) as f:
@@ -63,9 +63,8 @@ def generate_department_product_list(input_file, output_dir):
             except:
                 continue
 
-path_output = "/home/mufasa/Documents/Workspace/Content Analytics/Misc/walmart departments/output/"
-
-gz_file_list = glob.glob("/home/mufasa/Documents/Workspace/Content Analytics/Misc/walmart departments/*.gz")
+path_output = "/home/ubuntu/walmart_departments_output/"
+gz_file_list = glob.glob("/home/ubuntu/walmart_departments/*.gz")
 
 for i in range(len(gz_file_list)):
     statinfo = os.stat(gz_file_list[i])
@@ -189,8 +188,8 @@ report_results = "Reference path: ubuntu@52.7.234.182:" + path_output + ('_' . j
 
 fromaddr = "jenkins@contentanalyticsinc.com"
 #toaddrs = ["dave@contentanalyticsinc.com", "jacob.cats426@gmail.com", "support@contentanalyticsinc.com"] # must be a list
-toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com"] # must be a list
-subject = "Walmart department product was updated"
+toaddrs = ["dave@contentanalyticsinc.com", "diogo.medeiros1115@gmail.com", "jacob.cats426@gmail.com", "support@contentanalyticsinc.com"] # must be a list
+subject = "Walmart department product list was updated"
 msg = """\
 From: %s
 To: %s
