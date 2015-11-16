@@ -410,21 +410,32 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         meta['has_video'] = False
         meta['product_info_json'] = None
 
+        # Determines if walmart page is old or new design.
+        # "Walmart v1" for old design
+        # "Walmart v2" for new design
         if response.xpath("//meta[@name='keywords']/@content"):
             meta['version'] = "Walmart v2"
         if response.xpath("//meta[@name='Keywords']/@content"):
             meta['version'] = "Walmart v1"
 
+        # Checks if a certain product page has a visible 'Video' button,
+        # using the page source tree
         richMedia_elements = response.xpath("//div[@id='richMedia']")
         if richMedia_elements:
             richMedia_element = richMedia_elements[0]
             elements_onclick = richMedia_element.xpath(".//li/@onclick")
-            # any of the "onclick" attributes of the richMedia <li> tags contains "video')"
             has_video = any(map(lambda el: "video')" in el, elements_onclick))
 
-            meta['has_video'] = has_video
+            meta['has_video_button'] = has_video
+        else:
+            meta['has_video_button'] = True
 
-        meta['has_video'] = True
+        body = unicode(response.body, 'utf-8')
+        if response.xpath("//div[@class='js-about-bundle-wrapper']") or \
+                        "WalmartMainBody DynamicMode wmBundleItemPage" in body:
+            meta['_is_bundle_product'] = True
+        else:
+            meta['_is_bundle_product'] = False
 
         return self.video_urls_first_request(response)
 
@@ -434,7 +445,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         product_id = product_id['_walmart_current_id']
         meta['product_id'] = product_id
         meta['video_urls'] = []
-        print('1', meta['has_video'])
 
         if meta['extracted_video_urls']:
             return self._start_related(response)
@@ -442,12 +452,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         # set flag that videos where attemtped to be extracted
         meta['extracted_video_urls'] = True
 
-        if meta['version'] == "Walmart v2" and \
-                self.walmart_ed._is_bundle_product():
+        if meta['version'] == "Walmart v2" and meta['_is_bundle_product']:
             return self._start_related(response)
 
         # if there is no video button, return no video
-        if not self.walmart_ed._has_video_button():
+        if not meta['has_video_button']:
             return self._start_related(response)
 
         if meta['version'] == "Walmart v2":
@@ -461,7 +470,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                                meta=meta)
 
         request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % meta['product_id']
-        print(self._extract_product_id(response))
         return Request(url=request_url,
                        callback=self.video_urls_webcollage_new,
                        meta=meta)
@@ -533,8 +541,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 # if it ends in flv, it's a video, ok
                 if video_url_candidate.endswith(".mp4") or \
                         video_url_candidate.endswith(".flv"):
-                        self.has_sellpoints_media = True
-                        self.has_video = True
+                        meta['has_video'] = True
                         video_urls.append(video_url_candidate)
                         break
 
@@ -552,8 +559,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         if response.xpath("//div[@id='iframe-video-content']"
                           "//div[@id='player-holder']").extract():
-            self.has_video = True
-            self.has_sellpoints_media = True
+            meta['has_video'] = True
 
         if len(video_urls) == 0:
             if self.response_html.xpath("//div[starts-with(@class,"
@@ -563,7 +569,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                                callback=self.video_urls_last_request,
                                meta=meta)
         else:
-            product['video_count'] = self.walmart_ed._video_count(video_urls)
+            product['video_count'] = self._video_count(response, video_urls)
         return self._start_related(response)
 
     def video_urls_last_request(self, response):
@@ -578,11 +584,28 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             video_base_path = response.xpath("//table[@class='wc-gallery-table']"
                                              "/@data-resources-base")[0]
             video_urls.append(video_base_path + video_relative_path)
-            self.has_video = True
-            product['video_count'] = self.walmart_ed._video_count(video_urls)
+            meta['has_video'] = True
+            product['video_count'] = self._video_count(response, video_urls)
         else:
             video_urls = None
         return self._start_related(response)
+
+    def _video_count(self, response, video_urls):
+        """Whether product has video
+        To be replaced with function that actually counts
+        number of videos for this product
+        Returns:
+            1 if product has video
+            0 if product doesn't have video
+        """
+        meta = response.meta
+        if not video_urls:
+            if meta['has_video']:
+                return 1
+            else:
+                return 0
+        else:
+            return len(video_urls)
 
     def parse_available(self, response):
         available = is_empty(response.xpath(
