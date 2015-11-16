@@ -115,8 +115,6 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
     settings = JcpenneyValidatorSettings
 
-    use_proxies = True
-
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
@@ -329,7 +327,9 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
 
             # perform sync request
-            result = requests.get(size_url)
+            result = requests.get(
+                size_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64;'
+                                                 ' Trident/7.0; AS; rv:11.0) like Gecko'})
 
             try:
                 new_variants_structure = extract_ajax_variants(result.text)
