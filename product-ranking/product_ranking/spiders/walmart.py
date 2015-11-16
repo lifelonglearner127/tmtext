@@ -405,16 +405,44 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         self.walmart_ed = WalmartExtraData(response=self.response_html, url=url)
         product['img_count'] = self.walmart_ed._image_count()
 
+        meta = response.meta
+        meta['extracted_video_urls'] = False
+        meta['has_video'] = False
+        meta['product_info_json'] = None
+
+        if response.xpath("//meta[@name='keywords']/@content"):
+            meta['version'] = "Walmart v2"
+        if response.xpath("//meta[@name='Keywords']/@content"):
+            meta['version'] = "Walmart v1"
+
+        richMedia_elements = response.xpath("//div[@id='richMedia']")
+        if richMedia_elements:
+            richMedia_element = richMedia_elements[0]
+            elements_onclick = richMedia_element.xpath(".//li/@onclick")
+            # any of the "onclick" attributes of the richMedia <li> tags contains "video')"
+            has_video = any(map(lambda el: "video')" in el, elements_onclick))
+
+            meta['has_video'] = has_video
+
+        meta['has_video'] = True
+
         return self.video_urls_first_request(response)
 
     def video_urls_first_request(self, response):
-        if self.walmart_ed.extracted_video_urls:
+        meta = response.meta
+        product_id = meta['product']
+        product_id = product_id['_walmart_current_id']
+        meta['product_id'] = product_id
+        meta['video_urls'] = []
+        print('1', meta['has_video'])
+
+        if meta['extracted_video_urls']:
             return self._start_related(response)
 
         # set flag that videos where attemtped to be extracted
-        self.walmart_ed.extracted_video_urls = True
+        meta['extracted_video_urls'] = True
 
-        if self.walmart_ed._version() == "Walmart v2" and \
+        if meta['version'] == "Walmart v2" and \
                 self.walmart_ed._is_bundle_product():
             return self._start_related(response)
 
@@ -422,13 +450,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if not self.walmart_ed._has_video_button():
             return self._start_related(response)
 
-        meta = response.meta
-        product_id = meta['product']
-        product_id = product_id['_walmart_current_id']
-        meta['product_id'] = product_id
-        meta['video_urls'] = []
-
-        if self.walmart_ed._version() == "Walmart v2":
+        if meta['version'] == "Walmart v2":
             emc_link = response.xpath("//iframe[contains(@class,"
                                       "'js-marketing-content-iframe')]"
                                       "/@src").extract()
