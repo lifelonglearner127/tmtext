@@ -745,7 +745,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 if self._no_image(pic[0]):
                     return None
             except Exception, e:
-                # TODO: how to get this printed in the logs
                 print "WARNING: ", e.message
 
             return self._qualify_image_urls(pic)
