@@ -329,7 +329,11 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             # perform sync request
             result = requests.get(size_url)
 
-            new_variants_structure = extract_ajax_variants(result.text)
+            try:
+                new_variants_structure = extract_ajax_variants(result.text)
+            except Exception, e:
+                self.log('Error while processing variants: %s' % str(e))
+                self.log(str(result.text.encode('utf8')))
             return lot, new_variants_structure
 
 
