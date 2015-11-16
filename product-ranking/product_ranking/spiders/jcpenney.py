@@ -166,8 +166,13 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     @staticmethod
     def append_new_dynamic_variants(product, variants, current_lot, new_structure):
         all_pairs = []
-
+        price_data = {}
         for option_name, vals in new_structure.items():
+            if option_name == 'price':
+                for k, v in vals.iteritems():
+                    if current_lot.upper() in k:
+                        price = v
+                        price_data[current_lot] = price
             for val in vals:
                 new_pair = [option_name, val]
                 if not new_pair in all_pairs:
@@ -187,8 +192,10 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             if not new_pair in all_properties:
                 all_properties.append(new_pair)
         for prop in all_properties:
-            new_variant = {'lot': current_lot, 'price': price,
-                           'in_stock': None, 'selected': False, 'properties': prop}.copy()
+            new_variant = {'lot': current_lot, 'price': price_data[current_lot]
+            if price_data[current_lot] else price, 'in_stock': None,
+                           'selected': False, 'properties': prop}.copy()
+            new_variant['properties'].pop('price')
             if not new_variant in variants:
                 variants.append(new_variant)
 
@@ -204,6 +211,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         waist = _props.pop('waist') if 'waist' in _props else None
         chest = _props.pop('chest') if 'chest' in _props else None
         length = _props.pop('length') if 'length' in _props else None
+        price = _props.pop('price') if 'price' in _props else None
         # check if there are still some keys
         if _props.keys():
             self.log('Error: extra variants found, url %s' % response.url, WARNING)
@@ -217,6 +225,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         _format_args['inseam'] = inseam if inseam else ''
         _format_args['chest'] = chest if chest else ''
         _format_args['length'] = length if length else ''
+        _format_args['price'] = price if price else ''
 
         if null_values and isinstance(null_values, (list, tuple)):
             for null_value in null_values:
@@ -314,9 +323,11 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '&_D%3AskuSelectionMap.COLOR=+&_DARGS=%'
                     '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
                     '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
-
+            proxies = {
+                "http": "http://proxyuser:57M8wD06P4K0Z7u@54.173.237.10:3128",
+                }
             # perform sync request
-            result = requests.get(size_url)
+            result = requests.get(size_url, proxies=proxies)
 
             new_variants_structure = extract_ajax_variants(result.text)
             return lot, new_variants_structure
