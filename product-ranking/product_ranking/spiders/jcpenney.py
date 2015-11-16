@@ -326,6 +326,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
                     '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
 
+            self.log('Using "Requests" lib to scrape the following url: %s' % size_url)
+
             # perform sync request
             result = requests.get(
                 size_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64;'
