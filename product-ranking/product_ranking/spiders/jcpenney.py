@@ -115,6 +115,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
     settings = JcpenneyValidatorSettings
 
+    use_proxies = True
+
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
