@@ -423,6 +423,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             return self._start_related(response)
 
         meta = response.meta
+        product_id = meta['product']
+        product_id = product_id['_walmart_current_id']
+        meta['product_id'] = product_id
         meta['video_urls'] = []
 
         if self.walmart_ed._version() == "Walmart v2":
@@ -435,23 +438,24 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 return Request(url=emc_link, callback=self.video_urls_wcobj,
                                meta=meta)
 
-        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % \
-                      self.walmart_ed._extract_product_id()
-
+        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % meta['product_id']
+        print(self._extract_product_id(response))
         return Request(url=request_url,
                        callback=self.video_urls_webcollage_new,
                        meta=meta)
 
     def video_urls_wcobj(self, response):
-        # TODO: Find items to check
         meta = response.meta
         video_urls = meta['video_urls']
-        body = response.body
 
-        video_urls = self.walmart_ed.wcobj_shared_code(body, video_urls)
+        wcobj_links = response.xpath("//img[contains(@class, "
+                                     "'wc-media')]/@wcobj").extract()
+        if wcobj_links:
+            for wcobj_link in wcobj_links:
+                if wcobj_link.endswith(".flv"):
+                    video_urls.append(wcobj_link)
 
-        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % \
-                      self.walmart_ed._extract_product_id()
+        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % meta['product_id']
 
         return Request(url=request_url,
                        callback=self.video_urls_webcollage_new,
@@ -462,10 +466,33 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         video_urls = meta['video_urls']
         body = response.body
 
-        video_urls = self.walmart_ed.webcollage_shared_code(body, video_urls)
+        if response.xpath("//div[@id='iframe-video-content']").extract() and \
+                response.xpath("//table[contains(@class, 'wc-gallery-table')]"
+                               "/@data-resources-base").extract():
+            video_base_path = response.xpath("//table[contains(@class, "
+                                             "'wc-gallery-table')]"
+                                             "/@data-resources-base").extract()
+            sIndex = 0
+            eIndex = 0
 
-        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % \
-                      self.walmart_ed._extract_product_id()
+            while sIndex >= 0:
+                sIndex = body.find('{"videos":[', sIndex)
+                eIndex = body.find('}]}', sIndex) + 3
+
+                if sIndex < 0:
+                    break
+
+                jsonVideo = body[sIndex:eIndex]
+                jsonVideo = json.loads(jsonVideo)
+
+                if len(jsonVideo['videos']) > 0:
+                    for video_info in jsonVideo['videos']:
+                        video_urls.append(video_base_path[0] +
+                                               video_info['src']['src'])
+
+                sIndex = eIndex
+
+        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % meta['product_id']
 
         return Request(url=request_url,
                        callback=self.video_urls_sellpoints,
@@ -476,10 +503,20 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         video_urls = meta['video_urls']
         body = response.body
 
-        video_urls = self.walmart_ed.sellpoints_shared_code(body, video_urls)
+        video_url_candidates = re.findall("'file': '([^']+)'", body)
+        if video_url_candidates:
+            for video_url_item in video_url_candidates:
+                video_url_candidate = re.sub('\\\\', "", video_url_item)
 
-        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS_NEW % \
-                      self.walmart_ed._extract_product_id()
+                # if it ends in flv, it's a video, ok
+                if video_url_candidate.endswith(".mp4") or \
+                        video_url_candidate.endswith(".flv"):
+                        self.has_sellpoints_media = True
+                        self.has_video = True
+                        video_urls.append(video_url_candidate)
+                        break
+
+        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS_NEW % meta['product_id']
 
         return Request(url=request_url,
                        callback=self.video_urls_sellpoints_new,
@@ -491,13 +528,16 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         video_urls = meta['video_urls']
         body = response.body
 
-        video_urls = self.walmart_ed.sellpoints_shared_code(body, video_urls)
+        if response.xpath("//div[@id='iframe-video-content']"
+                          "//div[@id='player-holder']").extract():
+            self.has_video = True
+            self.has_sellpoints_media = True
+
         if len(video_urls) == 0:
             if self.response_html.xpath("//div[starts-with(@class,"
                                         "'js-idml-video-container')]"):
                 return Request(url="http://www.walmart.com/product/idml/video/" +
-                               str(self.walmart_ed._extract_product_id()) +
-                               "/WebcollageVideos",
+                               meta['product_id'] + "/WebcollageVideos",
                                callback=self.video_urls_last_request,
                                meta=meta)
         else:
@@ -510,13 +550,17 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         video_urls = meta['video_urls']
 
         if response.body:
-            body = response.body
-            video_urls = self.walmart_ed.last_video_request(body, video_urls)
+            video_json = json.loads(response.xpath("//div[@class='wc-json-data']"
+                                                   "/text()")[0])
+            video_relative_path = video_json["videos"][0]["sources"][0]["src"]
+            video_base_path = response.xpath("//table[@class='wc-gallery-table']"
+                                             "/@data-resources-base")[0]
+            video_urls.append(video_base_path + video_relative_path)
+            self.has_video = True
             product['video_count'] = self.walmart_ed._video_count(video_urls)
         else:
             video_urls = None
         return self._start_related(response)
-
 
     def parse_available(self, response):
         available = is_empty(response.xpath(
