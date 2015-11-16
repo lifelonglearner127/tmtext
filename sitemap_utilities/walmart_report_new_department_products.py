@@ -184,7 +184,7 @@ try:
 except:
     pass
 
-report_results = "Reference path: ubuntu@52.7.234.182:" + path_output + ('_' . join(str(x) for x in date_numbers) + "\n\n*Please contact to ITS to register your ssh key to access the results")
+report_results = "Reference path: ubuntu@54.152.210.37:" + path_output + ('_' . join(str(x) for x in date_numbers) + "\n\n*Please contact to ITS to register your ssh key to access the results")
 
 fromaddr = "jenkins@contentanalyticsinc.com"
 #toaddrs = ["dave@contentanalyticsinc.com", "jacob.cats426@gmail.com", "support@contentanalyticsinc.com"] # must be a list
