@@ -45,10 +45,14 @@ for row in rows:
 urls_version_changed = []
 
 field_names = ["url", "number of changed parts", "version changed(Yes/No)", "detail view link"]
-csv_file_name = "/home/ubuntu/tmtext/special_crawler/jenkins/regression_service_report_" + time.strftime("%Y_%m_%d") + ".csv"
+csv_file_name_product_changes = "/home/ubuntu/tmtext/special_crawler/jenkins/product_changes_" + time.strftime("%Y_%m_%d") + ".csv"
+csv_file_name_upc_missed = "/home/ubuntu/tmtext/special_crawler/jenkins/upc_missed_" + time.strftime("%Y_%m_%d") + ".csv"
 
-if os.path.isfile(csv_file_name):
-    os.remove(csv_file_name)
+if os.path.isfile(csv_file_name_product_changes):
+    os.remove(csv_file_name_product_changes)
+
+if os.path.isfile(csv_file_name_upc_missed):
+    os.remove(csv_file_name_upc_missed)
 
 #> 80% of product titles are < 2 characters long
 count_product_titles_are_less_than_2_character_long = 0
@@ -92,14 +96,28 @@ for website in website_list:
             if current_json["sellers"]["site_online_out_of_stock"] and current_json["sellers"]["site_online_out_of_stock"] == 1:
                 count_products_are_out_of_stock = count_products_are_out_of_stock  + 1
 
+            #UPC missed
+            if not current_json["product_info"]["upc"]:
+                csv_file = None
+
+                if os.path.isfile(csv_file_name_upc_missed):
+                    csv_file = open(csv_file_name_upc_missed, "a+")
+                else:
+                    csv_file = open(csv_file_name_upc_missed, "w")
+
+                csv_writer = csv.writer(csv_file)
+                csv_writer.writerow([row["sample_url"]])
+
+                csv_file.close()
+
         if row["website"] == website and row["changes_in_structure"] > 0:
 
             csv_file = None
 
-            if os.path.isfile(csv_file_name):
-                csv_file = open(csv_file_name, "a+")
+            if os.path.isfile(csv_file_name_product_changes):
+                csv_file = open(csv_file_name_product_changes, "a+")
             else:
-                csv_file = open(csv_file_name, "w")
+                csv_file = open(csv_file_name_product_changes, "w")
                 writer = csv.DictWriter(csv_file, fieldnames=field_names)
                 writer.writeheader()
 
@@ -227,9 +245,17 @@ msg = MIMEMultipart(
         )
 msg['Subject'] = subject
 msg.preamble = subject
-csv_file = MIMEApplication(open(csv_file_name, "rb").read())
-csv_file.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name))
-msg.attach(csv_file)
+
+if os.path.isfile(csv_file_name_product_changes):
+    csv_file = MIMEApplication(open(csv_file_name_product_changes, "rb").read())
+    csv_file.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_product_changes))
+    msg.attach(csv_file)
+
+if os.path.isfile(csv_file_name_upc_missed):
+    csv_file1 = MIMEApplication(open(csv_file_name_upc_missed, "rb").read())
+    csv_file1.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_upc_missed))
+    msg.attach(csv_file1)
+
 msg.attach(MIMEText(email_content))
 
 server = smtplib.SMTP(
