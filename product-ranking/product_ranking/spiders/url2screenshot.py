@@ -8,11 +8,7 @@ import os
 
 import scrapy
 from scrapy.conf import settings
-from scrapy.log import WARNING, ERROR
 from scrapy.http import Request
-from scrapy import Selector
-
-from product_ranking.items import SiteProductItem
 
 
 class ScreenshotItem(scrapy.Item):
@@ -33,6 +29,12 @@ class URL2ScreenshotSpider(scrapy.Spider):
             ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/53 "
              "(KHTML, like Gecko) Chrome/15.0.87")
         )
+        self.crop_left = kwargs.get('crop_left', 0)
+        self.crop_top = kwargs.get('crop_top', 0)
+        self.crop_width = kwargs.get('crop_width', None)
+        self.crop_height = kwargs.get('crop_height', None)
+        self.remove_img = kwargs.get('remove_img', True)
+
         settings.overrides['ITEM_PIPELINES'] = {}
         super(URL2ScreenshotSpider, self).__init__(*args, **kwargs)
 
@@ -45,12 +47,16 @@ class URL2ScreenshotSpider(scrapy.Spider):
         from selenium import webdriver
         from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
+        # temporary file for the output image
         t_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
         t_file.close()
+        print('Created temporary image file: %s' % t_file.name)
 
+        # tweak user agent
         dcap = dict(DesiredCapabilities.PHANTOMJS)
         dcap["phantomjs.page.settings.userAgent"] = self.user_agent
 
+        # initialize webdriver, open the page and make a screenshot
         driver = webdriver.PhantomJS(desired_capabilities=dcap)
         driver.set_page_load_timeout(int(self.timeout))
         driver.set_window_size(int(self.width), int(self.height))
@@ -61,11 +67,27 @@ class URL2ScreenshotSpider(scrapy.Spider):
         driver.save_screenshot(t_file.name)
         driver.quit()
 
+        # crop the image if needed
+        if self.crop_width and self.crop_height:
+            self.crop_width = int(self.crop_width)
+            self.crop_height = int(self.crop_height)
+            from PIL import Image
+            # size is width/height
+            img = Image.open(t_file.name)
+            box = (self.crop_left,
+                   self.crop_top,
+                   self.crop_left+self.crop_width,
+                   self.crop_top+self.crop_height)
+            area = img.crop(box)
+            area.save(t_file.name, 'png')
+
         with open(t_file.name, 'rb') as fh:
             img_content = fh.read()
 
-        os.unlink(t_file.name)
+        if self.remove_img is True:
+            os.unlink(t_file.name)  # remove old output file
 
+        # create and yield item
         item = ScreenshotItem()
         item['url'] = response.url
         item['image'] = base64.b64encode(img_content)
