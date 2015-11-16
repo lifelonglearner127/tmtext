@@ -323,11 +323,9 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '&_D%3AskuSelectionMap.COLOR=+&_DARGS=%'
                     '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
                     '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
-            proxies = {
-                "http": "http://proxyuser:57M8wD06P4K0Z7u@54.173.237.10:3128",
-                }
+
             # perform sync request
-            result = requests.get(size_url, proxies=proxies)
+            result = requests.get(size_url)
 
             new_variants_structure = extract_ajax_variants(result.text)
             return lot, new_variants_structure
