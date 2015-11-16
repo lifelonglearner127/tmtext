@@ -6,6 +6,7 @@ import json
 import string
 import urllib
 import itertools
+import random
 
 import requests
 from scrapy.http import Request, FormRequest
@@ -15,7 +16,8 @@ from scrapy.log import WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
-from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.randomproxy import RandomProxy
+from product_ranking.settings import ZERO_REVIEWS_VALUE, PROXY_LIST
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.validation import BaseValidator
@@ -326,18 +328,26 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
                     '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
 
-            self.log('Using "Requests" lib to scrape the following url: %s' % size_url)
+            _rp = RandomProxy({'PROXY_LIST': PROXY_LIST})
 
-            # perform sync request
-            result = requests.get(
-                size_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64;'
-                                                 ' Trident/7.0; AS; rv:11.0) like Gecko'})
-
-            try:
-                new_variants_structure = extract_ajax_variants(result.text)
-            except Exception, e:
-                self.log('Error while processing variants: %s' % str(e))
-                self.log(str(result.text.encode('utf8')))
+            # try to fetch the page using a random proxy until it works
+            for _ in range(100):
+                random_proxy = random.choice(_rp.proxies.keys())
+                proxies = {"http": random_proxy, "https": random_proxy}
+                self.log('Using "Requests" lib to scrape the following url: %s, proxy: %s' % (
+                    size_url, random_proxy))
+                # perform sync request
+                try:
+                    result = requests.get(size_url, proxies=proxies, timeout=15)
+                except:
+                    continue
+                try:
+                    new_variants_structure = extract_ajax_variants(result.text)
+                    break
+                except Exception, e:
+                    self.log('Non-fatal error while processing variants: %s' % str(e))
+                    self.log(str(result.text.encode('utf8')))
+                    continue
             return lot, new_variants_structure
 
 
