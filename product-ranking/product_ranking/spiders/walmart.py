@@ -2,18 +2,19 @@ from __future__ import division, absolute_import, unicode_literals
 
 import json
 import pprint
-import re
 import urlparse
 import hashlib
 import random
 import re
-import string
+import os
 from datetime import datetime
+import mmh3 as MurmurHash
 import lxml.html
 
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
+from special_crawler.no_img_hash import fetch_bytes
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
@@ -437,6 +438,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             meta['_is_bundle_product'] = False
 
+        meta['product_info_json'] = self._extract_product_info_json(response)
+
+        test = self._image_urls_new(response)
+        print(len(test))
+
         return self.video_urls_first_request(response)
 
     def video_urls_first_request(self, response):
@@ -606,6 +612,170 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 return 0
         else:
             return len(video_urls)
+
+    # def _image_urls(self, response):
+    #     """Extracts image urls for this product.
+    #     Works on both old and new version of walmart pages.
+    #     Returns:
+    #         list of strings representing image urls
+    #     """
+    #     meta = response.meta
+    #     if meta['version'] == "Walmart v1":
+    #         return self._image_urls_old()
+    #
+    #     if meta['version'] == "Walmart v2":
+    #         return self._image_urls_new()
+
+    def _extract_product_info_json(self, response):
+        """Extracts body of javascript function
+        found in a script tag on each product page,
+        that contains various usable information about product.
+        Stores function body as json decoded dictionary in instance variable.
+        Returns:
+            function body as dictionary (containing various info on product)
+        """
+        body = response.xpath('//script[contains(text(), "product/data")]'
+                              '/text()').extract()
+        product_info_json = re.findall(r'define\("product/data",\n(.+)',
+                                       body[0])
+        if product_info_json:
+            product_info_json = json.loads(product_info_json[0])
+            return product_info_json
+        else:
+            return None
+
+    def _image_urls_new(self, response):
+        """Extracts image urls for this product.
+        Works on new version of walmart pages.
+        Returns:
+            list of strings representing image urls
+        """
+        meta = response.meta
+
+        if meta['version'] == "Walmart v2" and meta['_is_bundle_product']:
+            return response.xpath("//div[contains(@class, 'choice-hero-non-"
+                                  "carousel')]//img/@src").extract()
+        else:
+            def _fix_relative_url(relative_url):
+                """Fixes relative image urls by prepending
+                the domain. First checks if url is relative
+                """
+
+                if not relative_url.startswith("http"):
+                    return "http://www.walmart.com" + relative_url
+                else:
+                    return relative_url
+
+            pinfo_dict = meta['product_info_json']
+
+            images_carousel = []
+
+            for item in pinfo_dict['imageAssets']:
+                images_carousel.append(item['versions']['hero'])
+
+            if images_carousel:
+                # if there's only one image, check to see if it's a "no image"
+                if len(images_carousel) == 1:
+                    try:
+                        if self._no_image(images_carousel[0]):
+                            return None
+                    except Exception, e:
+                        print "WARNING: ", e.message
+
+                return self._qualify_image_urls(images_carousel)
+
+            # It should only return this img when there's no img carousel
+            main_image = response.xpath("//img[@class='product-image "
+                                        "js-product-image js-product-primary-"
+                                        "image']/@src").extract()
+            if main_image:
+                # check if this is a "no image" image
+                # this may return a decoder not found error
+                try:
+                    if self._no_image(main_image[0]):
+                        return None
+                except Exception, e:
+                    print "WARNING: ", e.message
+
+                return self._qualify_image_urls(main_image)
+
+            # bundle product images
+            images_bundle = response.xpath("//div[contains(@class, 'choice-"
+                                           "hero-imagery-components')]//"
+                                           "img[contains(@class, "
+                                           "'media-object')]/@src").extract()
+
+            if not images_bundle:
+                images_bundle = response.xpath("//div[contains(@class, "
+                                               "'non-choice-hero-components')]"
+                                               "//img[contains(@class, "
+                                               "'media-object')]/@src").extract()
+
+            if images_bundle:
+                # fix relative urls
+                images_bundle = map(_fix_relative_url, images_bundle)
+                return self._qualify_image_urls(images_bundle)
+
+            # nothing found
+            return None
+
+    def _no_image(self, url):
+        """Overwrites the _no_image
+        in the base class with an additional test.
+        Then calls the base class no_image.
+
+        Returns True if image in url is a "no image"
+        image, False if not
+        """
+
+        # if image name is "no_image", return True
+        if re.match(".*no.image\..*", url):
+            return True
+        else:
+            first_hash = self._image_hash(url)
+            if first_hash in self.NO_IMAGE_HASHES:
+                print "not an image"
+                return True
+            else:
+                return False
+
+    def _image_hash(self, image_url):
+        """Computes hash for an image.
+        To be used in _no_image, and for value of _image_hashes
+        returned by scraper.
+        Returns string representing hash of image.
+
+        :param image_url: url of image to be hashed
+        """
+        return str(MurmurHash.hash(fetch_bytes(image_url)))
+
+    def load_image_hashes(self):
+        """Read file with image hashes list
+        Return list of image hashes found in file
+        """
+        path = '../special_crawler/no_img_list.json'
+        no_img_list = []
+        if os.path.isfile(path):
+            f = open(path, 'r')
+            s = f.read()
+            if len(s) > 1:
+                no_img_list = json.loads(s)
+            f.close()
+        return no_img_list
+
+    def _qualify_image_urls(self, image_list):
+        """Remove no image urls in image list
+        """
+        qualified_image_list = []
+
+        for image in image_list:
+            if not re.match(".*no.image\..*", image):
+                qualified_image_list.append(image)
+
+        if len(qualified_image_list) == 0:
+            return None
+        else:
+            return qualified_image_list
 
     def parse_available(self, response):
         available = is_empty(response.xpath(
