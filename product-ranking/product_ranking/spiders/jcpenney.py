@@ -344,6 +344,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     continue
                 try:
                     new_variants_structure = extract_ajax_variants(result.text)
+                    self.log('Successfully fetched new structure, %s' % str(new_variants_structure))
                     break
                 except Exception, e:
                     self.log('Non-fatal error while processing variants: %s' % str(e))
