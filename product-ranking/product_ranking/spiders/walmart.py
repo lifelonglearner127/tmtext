@@ -401,11 +401,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
 
-        url = response.url
-        self.response_html = lxml.html.fromstring(response.body_as_unicode())
-        self.walmart_ed = WalmartExtraData(response=self.response_html, url=url)
-        product['img_count'] = self.walmart_ed._image_count()
-
         meta = response.meta
         meta['extracted_video_urls'] = False
         meta['has_video'] = False
@@ -440,8 +435,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         meta['product_info_json'] = self._extract_product_info_json(response)
 
-        test = self._image_urls_new(response)
-        print(len(test))
+        product['img_count'] = self._image_count(response)
 
         return self.video_urls_first_request(response)
 
@@ -613,18 +607,18 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             return len(video_urls)
 
-    # def _image_urls(self, response):
-    #     """Extracts image urls for this product.
-    #     Works on both old and new version of walmart pages.
-    #     Returns:
-    #         list of strings representing image urls
-    #     """
-    #     meta = response.meta
-    #     if meta['version'] == "Walmart v1":
-    #         return self._image_urls_old()
-    #
-    #     if meta['version'] == "Walmart v2":
-    #         return self._image_urls_new()
+    def _image_urls(self, response):
+        """Extracts image urls for this product.
+        Works on both old and new version of walmart pages.
+        Returns:
+            list of strings representing image urls
+        """
+        meta = response.meta
+        if meta['version'] == "Walmart v1":
+            return self._image_urls_old(response)
+
+        if meta['version'] == "Walmart v2":
+            return self._image_urls_new(response)
 
     def _extract_product_info_json(self, response):
         """Extracts body of javascript function
@@ -671,7 +665,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             images_carousel = []
 
             for item in pinfo_dict['imageAssets']:
-                images_carousel.append(item['versions']['hero'])
+                var = item['versions']['hero']
+                if 'walmartimages' in var:
+                    images_carousel.append(var)
 
             if images_carousel:
                 # if there's only one image, check to see if it's a "no image"
@@ -717,6 +713,43 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 return self._qualify_image_urls(images_bundle)
 
             # nothing found
+            return None
+
+    def _image_urls_old(self, response):
+        """Extracts image urls for this product.
+        Works on old version of walmart pages.
+        Returns:
+            list of strings representing image urls
+        """
+        scripts = response.xpath("//script//text()")
+        for script in scripts:
+            try:
+                find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script))
+            except:
+                find = []
+            if len(find) > 0:
+                return self._qualify_image_urls(find)
+
+        if response.xpath("//link[@rel='image_src']/@href"):
+            if self._no_image(response.xpath("//link[@rel='image_src']/@href")[0]):
+                return None
+            else:
+                return self.tree_html.xpath("//link[@rel='image_src']/@href")
+
+        # It should only return this img when there's no img carousel
+        pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
+        if pic:
+            # check if it's a "no image" image
+            # this may return a decoder not found error
+            try:
+                if self._no_image(pic[0]):
+                    return None
+            except Exception, e:
+                # TODO: how to get this printed in the logs
+                print "WARNING: ", e.message
+
+            return self._qualify_image_urls(pic)
+        else:
             return None
 
     def _no_image(self, url):
@@ -776,6 +809,25 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             return None
         else:
             return qualified_image_list
+
+    def _image_count(self, response):
+        """Counts number of (valid) images found
+        for this product (not including images saying "no image available")
+        Returns:
+            int representing number of images
+        """
+
+        try:
+            images = self._image_urls(response)
+        except Exception:
+            images = None
+            pass
+
+        if not images:
+            return 0
+        else:
+            print(images)
+            return len(images)
 
     def parse_available(self, response):
         available = is_empty(response.xpath(
