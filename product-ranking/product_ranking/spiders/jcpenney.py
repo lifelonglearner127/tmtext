@@ -317,6 +317,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '3AppId=+&'
                     'selectedLotValue={new_lot}&_D%'
                     '3AselectedLotValue=+'
+                    '&skuSelectionMap.INSEAM='
+                    '&_D%3AskuSelectionMap.INSEAM=+'
                     '&skuSelectionMap.{attribute_name}={size}'
                     '&_D%3AskuSelectionMap.{attribute_name}'
                     '=+&skuSelectionMap.COLOR={color}'
