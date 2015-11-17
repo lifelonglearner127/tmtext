@@ -155,6 +155,35 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     # base URL for request containing video URL from sellpoints
     BASE_URL_VIDEOREQ_SELLPOINTS_NEW = "http://www.walmart-content.com/product/idml/video/%s/SellPointsVideos"
 
+    NO_IMAGE_HASHES = [
+        "74961158",
+        "598838517",
+        "620012836",
+        "303712562",
+        "1393459826",
+        "-1134440587",
+        "1299331192",
+        "1583477300",
+        "-475618554",
+        "-721730591",
+        "1553262177",
+        "-663748881",
+        "-1758653328",
+        "-381594545",
+        "-1010639060",
+        "656084504",
+        "1042116784",
+        "-465049628",
+        "1857212183",
+        "1283923693",
+        "640747895",
+        "1866534382",
+        "-298777410",
+        "-1398961301",
+        "1486529754",
+        "-918314075"
+    ]
+
     def __init__(self, search_sort='best_match', zipcode='94117',
                  *args, **kwargs):
         if zipcode:
@@ -402,6 +431,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 product['is_out_of_stock'] = True
 
         meta = response.meta
+        product_id = response.url
+        meta['product_id'] = product_id.split('/')[-1]
         meta['extracted_video_urls'] = False
         meta['has_video'] = False
         meta['product_info_json'] = None
@@ -441,9 +472,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     def video_urls_first_request(self, response):
         meta = response.meta
-        product_id = meta['product']
-        product_id = product_id['_walmart_current_id']
-        meta['product_id'] = product_id
         meta['video_urls'] = []
 
         if meta['extracted_video_urls']:
@@ -562,7 +590,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             meta['has_video'] = True
 
         if len(video_urls) == 0:
-            if self.response_html.xpath("//div[starts-with(@class,"
+            if response.xpath("//div[starts-with(@class,"
                                         "'js-idml-video-container')]"):
                 return Request(url="http://www.walmart.com/product/idml/video/" +
                                meta['product_id'] + "/WebcollageVideos",
@@ -781,20 +809,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         """
         return str(MurmurHash.hash(fetch_bytes(image_url)))
 
-    def load_image_hashes(self):
-        """Read file with image hashes list
-        Return list of image hashes found in file
-        """
-        path = '../special_crawler/no_img_list.json'
-        no_img_list = []
-        if os.path.isfile(path):
-            f = open(path, 'r')
-            s = f.read()
-            if len(s) > 1:
-                no_img_list = json.loads(s)
-            f.close()
-        return no_img_list
-
     def _qualify_image_urls(self, image_list):
         """Remove no image urls in image list
         """
@@ -825,7 +839,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if not images:
             return 0
         else:
-            print(images)
             return len(images)
 
     def parse_available(self, response):
