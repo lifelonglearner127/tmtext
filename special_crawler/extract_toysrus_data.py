@@ -164,6 +164,13 @@ class ToysRusScraper(Scraper):
 
         if image_list:
             return image_list
+        elif self.tree_html.xpath("//img[@name='prodShot_0']/@src"):
+            main_image_url = self.tree_html.xpath("//img[@name='prodShot_0']/@src")
+
+            if not main_image_url[0].startswith("http://www.toysrus.com"):
+                main_image_url[0] = "http://www.toysrus.com" + main_image_url[0]
+
+            return main_image_url
 
         return None
 
