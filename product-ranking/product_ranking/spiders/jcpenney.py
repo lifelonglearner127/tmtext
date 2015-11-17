@@ -6,6 +6,7 @@ import json
 import string
 import urllib
 import itertools
+import random
 
 import requests
 from scrapy.http import Request, FormRequest
@@ -15,7 +16,8 @@ from scrapy.log import WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
-from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.randomproxy import RandomProxy
+from product_ranking.settings import ZERO_REVIEWS_VALUE, PROXY_LIST
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.validation import BaseValidator
@@ -166,8 +168,13 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     @staticmethod
     def append_new_dynamic_variants(product, variants, current_lot, new_structure):
         all_pairs = []
-
+        price_data = {}
         for option_name, vals in new_structure.items():
+            if option_name == 'price':
+                for k, v in vals.iteritems():
+                    if current_lot.upper() in k:
+                        price = v
+                        price_data[current_lot] = price
             for val in vals:
                 new_pair = [option_name, val]
                 if not new_pair in all_pairs:
@@ -187,8 +194,10 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             if not new_pair in all_properties:
                 all_properties.append(new_pair)
         for prop in all_properties:
-            new_variant = {'lot': current_lot, 'price': price,
-                           'in_stock': None, 'selected': False, 'properties': prop}.copy()
+            new_variant = {'lot': current_lot, 'price': price_data[current_lot]
+            if price_data[current_lot] else price, 'in_stock': None,
+                           'selected': False, 'properties': prop}.copy()
+            new_variant['properties'].pop('price')
             if not new_variant in variants:
                 variants.append(new_variant)
 
@@ -204,6 +213,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         waist = _props.pop('waist') if 'waist' in _props else None
         chest = _props.pop('chest') if 'chest' in _props else None
         length = _props.pop('length') if 'length' in _props else None
+        price = _props.pop('price') if 'price' in _props else None
         # check if there are still some keys
         if _props.keys():
             self.log('Error: extra variants found, url %s' % response.url, WARNING)
@@ -217,6 +227,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         _format_args['inseam'] = inseam if inseam else ''
         _format_args['chest'] = chest if chest else ''
         _format_args['length'] = length if length else ''
+        _format_args['price'] = price if price else ''
 
         if null_values and isinstance(null_values, (list, tuple)):
             for null_value in null_values:
@@ -308,6 +319,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '3AppId=+&'
                     'selectedLotValue={new_lot}&_D%'
                     '3AselectedLotValue=+'
+                    '&skuSelectionMap.INSEAM='
+                    '&_D%3AskuSelectionMap.INSEAM=+'
                     '&skuSelectionMap.{attribute_name}={size}'
                     '&_D%3AskuSelectionMap.{attribute_name}'
                     '=+&skuSelectionMap.COLOR={color}'
@@ -315,10 +328,28 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
                     '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
 
-            # perform sync request
-            result = requests.get(size_url)
+            _rp = RandomProxy({'PROXY_LIST': PROXY_LIST})
 
-            new_variants_structure = extract_ajax_variants(result.text)
+            # try to fetch the page using a random proxy until it works
+            for _ in range(100):
+                random_proxy = random.choice(_rp.proxies.keys())
+                proxies = {"http": random_proxy, "https": random_proxy}
+                self.log('Using "Requests" lib to scrape the following url: %s, proxy: %s' % (
+                    size_url, random_proxy))
+                # perform sync request
+                try:
+                    result = requests.get(size_url, proxies=proxies, timeout=15)
+                except Exception, e:
+                    self.log('Non-fatal error %s while fetching URL %s' % (str(e), size_url))
+                    continue
+                try:
+                    new_variants_structure = extract_ajax_variants(result.text)
+                    self.log('Successfully fetched new structure, %s' % str(new_variants_structure))
+                    break
+                except Exception, e:
+                    self.log('Non-fatal error while processing variants: %s' % str(e))
+                    self.log(str(result.text.encode('utf8')))
+                    continue
             return lot, new_variants_structure
 
 
