@@ -33,36 +33,47 @@ def hash_similarity(h1, h2, bits=16):
     s = 100 - (d/float(bits*4*4))*100
     return s
 
-def compute_histogram(image_path, equalize=True):
-    image = cv2.imread(image_path)
+def compute_histogram(image, equalize=False, bins=8, trunc_bins=False):
+    # image = cv2.imread(image_path)
     if equalize:
         image = equalize_hist_color(image)
-    hist = cv2.calcHist([image], [0, 1, 2], None, [8, 8, 8],[0, 256, 0, 256, 0, 256])
+    hist = cv2.calcHist([image], [0, 1, 2], None, [bins, bins, bins],[0, 256, 0, 256, 0, 256])
+    if trunc_bins:
+        hist = numpy.array(sorted(hist.flatten(), reverse=True)[:100])
+    else:
+        hist = numpy.array(hist.flatten())
+
     return hist   
 
 def histogram_similarity(image1, image2, bins=8, trunc_bins=False):
-    hist1 = cv2.calcHist([image1], [0, 1, 2], None, [bins, bins, bins],[0, 256, 0, 256, 0, 256])
-    hist2 = cv2.calcHist([image2], [0, 1, 2], None, [bins, bins, bins],[0, 256, 0, 256, 0, 256])
-    if trunc_bins:
-        hist1 = numpy.array(sorted(hist1.flatten(), reverse=True)[:100])
-        hist2 = numpy.array(sorted(hist2.flatten(), reverse=True)[:100])
-    else:
-        hist1 = numpy.array(hist1.flatten())
-        hist2 = numpy.array(hist2.flatten())
+    '''Input are 2 opencv images, output is histogram similarity
+    '''
+    hist1 = compute_histogram(image1, equalize=False, bins=8, trunc_bins=False)
+    hist1 = compute_histogram(image2, equalize=False, bins=8, trunc_bins=False)
     # print hist1
     # print hist2
     score = cv2.compareHist(hist1, hist2, cv2.cv.CV_COMP_CORREL)
     return score * 100
 
-def histogram_to_string(image_path, equalize=True):
-    '''Take an image path, compute its color histogram,
+def image_histogram_to_string(image, equalize=True):
+    '''Take an image, compute its color histogram,
     flatten it to a list and then output it to a comma-separated string
     '''
-    hist = compute_histogram(image_path, equalize)
+    hist = compute_histogram(image, equalize)
     histf = cv2.normalize(hist).flatten()
     lhistf = list(histf)
     hists = ','.join(map(str,lhistf))
     return hists
+
+def histogram_to_string(hist):
+    '''Take a histogram (numpy array)
+    flatten it to a list and then output it to a comma-separated string
+    '''
+    histf = cv2.normalize(hist).flatten()
+    lhistf = list(histf)
+    hists = ','.join(map(str,lhistf))
+    return hists
+
 
 def equalize_hist_color(image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2YCR_CB)
@@ -72,12 +83,12 @@ def equalize_hist_color(image):
     image = cv2.cvtColor(image, cv2.COLOR_YCR_CB2BGR)
     return image
 
-def hist_similarity(hstr1, hstr2):
+def shistogram_similarity(hstr1, hstr2):
     '''Input strings representing flattened histograms
     Output similarity
     '''
 
-    h1 = a = np.array(map(float,hstr1.split(','))).astype(np.float32)
+    h1 = np.array(map(float,hstr1.split(','))).astype(np.float32)
     h2 = np.array(map(float,hstr2.split(','))).astype(np.float32)
 
     try:
@@ -90,7 +101,7 @@ def hist_similarity(hstr1, hstr2):
 
 def combined_similarity(hash1, hash2, hist1, hist2):
     s1 = hash_similarity(hash1, hash2)
-    s2 = hist_similarity(hist1, hist2)
+    s2 = shistogram_similarity(hist1, hist2)
     return (s1+s2)/2.
 
 def compute_similarities():
@@ -119,10 +130,10 @@ def compute_similarities():
                 image_hists_w[image] = hist
 
 
-    print "image,most_similar,match,most_similar_similarity,match_similarity,hash_similarity,hist_similarity"
+    print "image,most_similar,match,most_similar_similarity,match_similarity,hash_similarity,shistogram_similarity"
     for image in image_hashes_w:
         most_similar = max(image_hashes_a.keys(), key=lambda i:\
-            # hist_similarity(image_hashes_w[image], image_hashes_a[i]))
+            # shistogram_similarity(image_hashes_w[image], image_hashes_a[i]))
             combined_similarity(image_hashes_w[image], image_hashes_a[i], image_hists_w[image], image_hists_a[i]))
         image_match = re.sub("walmart", "amazon", image)
         
@@ -132,7 +143,7 @@ def compute_similarities():
                 combined_similarity(image_hashes_w[image], image_hashes_a[most_similar], image_hists_w[image], image_hists_a[most_similar]), \
                 combined_similarity(image_hashes_w[image], image_hashes_a[image_match], image_hists_w[image], image_hists_a[most_similar]), \
                 hash_similarity(image_hashes_w[image], image_hashes_a[image_match]), \
-                hist_similarity(image_hists_w[image], image_hists_a[image_match])))
+                shistogram_similarity(image_hists_w[image], image_hists_a[image_match])))
 
         except Exception, e:
             sys.stderr.write(str(e))
@@ -177,12 +188,20 @@ def _show(image):
     cv2.imshow("image", image)
     cv2.waitKey(0)
 
-def _blockhash(image, bits = 16):
+def _blockhash(image, bits = 16, resize256=True):
+    '''
+    :param bits: number of bits for the hash
+    :param resize256: whether to resize both images to 256x256
+    '''
+
+    if resize256 == 1:
+        image = cv2.resize(image, (256, 256))
+
     pilimage = Image.fromarray(image)
     bhash = blockhash(pilimage, bits)
     return bhash
 
-def blockhash_similarity(image1, image2, bits=16, resize=1):
+def blockhash_similarity(image1, image2, bits=16, resize=2):
     '''
     :param resize: resize option
     None: don't resize
@@ -216,15 +235,15 @@ def images_similarity(image1_path, image2_path, hist_weight=.8, bh_bits=16, blur
     image2 = _normalize_image(image2, stdsize, blur, threshold_light, wsthresh_val=wsthresh_val)
 
     # 5. compare histograms
-    hist_similarity = histogram_similarity(image1, image2, bins=hist_bins, trunc_bins=trunc_bins)
+    shistogram_similarity = histogram_similarity(image1, image2, bins=hist_bins, trunc_bins=trunc_bins)
 
     # 6. blockhash similarity
     hash_similarity = blockhash_similarity(image1, image2, bh_bits)
 
     # compute average
-    sys.stderr.write("Hist sim: " + str(hist_similarity) + " Hash sim: " + str(hash_similarity) + "\n")
+    sys.stderr.write("Hist sim: " + str(shistogram_similarity) + " Hash sim: " + str(hash_similarity) + "\n")
     hash_weight = 1 - hist_weight
-    avg_similarity = hist_weight * hist_similarity + hash_weight * hash_similarity
+    avg_similarity = hist_weight * shistogram_similarity + hash_weight * hash_similarity
     return avg_similarity
 
 def _normalize_image(image, size=None, blur=False, threshold_light=True, wsthresh_val=230):

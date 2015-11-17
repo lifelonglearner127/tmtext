@@ -8,7 +8,10 @@ from scrapy import log
 import unicodedata
 import itertools
 import math
-
+import urllib
+import numpy as np
+import cv2
+from compute_distances import _normalize_image, image_histogram_to_string, compute_histogram, shistogram_similarity, _blockhash
 
 # process text in product names, compute similarity between products
 class ProcessText():
@@ -829,7 +832,44 @@ class ProcessText():
         # use tuples because they are hashable (to put them in a set), then convert them back to lists
         return map(lambda x: list(x), list(set(map(lambda x: tuple(set(sorted(x))), words))))
 
+    @staticmethod
+    def _url_to_image(url):
+        # download the image, convert it to a NumPy array, and then read
+        # it into OpenCV format
+        resp = urllib.urlopen(url)
+        image = np.asarray(bytearray(resp.read()), dtype="uint8")
+        image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+        return image
 
+    @staticmethod
+    def encode_image(url):
+        '''Input an image url
+        Encode the image as a string and return it
+        The string will contain the image histogram, encoded as a string,
+        and the image blockhash, encoded as a string; separated by space
+        '''
+        image = ProcessText._url_to_image(url)
+        image = _normalize_image(image)
+        histstr = image_histogram_to_string(image, equalize=False)
+        bhash = _blockhash(image)
 
+        code = " ".join([histstr, bhash])
+        return code
 
+    @staticmethod
+    def image_similarity(encoded_im1, encoded_im2, hist_weight=0.8):
+        '''Take as input 2 encoded images (as encoded by encode_image above),
+        compute their similarities
+        :param hist_weight: weight of histogram similarity vs hash similarity
+        '''
 
+        hist1, hash1 = encoded_im1.split()
+        hist2, hash2 = encoded_im2.split()
+
+        hist_similarity = shistogram_similarity(hist1, hist2)
+        hash_similarity = hash_similarity(hash1, hash2)
+
+        hash_weight = 1 - hist_weight
+
+        score = hist_weight * hist_similarity + hash_weight * hash_similarity
+        return score
