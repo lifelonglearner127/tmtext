@@ -81,7 +81,7 @@ class BuyerReviewsBazaarApi(object):
         product = meta['product']
         reqs = meta.get('reqs', [])
 
-        product['buyer_reviews'] = BuyerReviews(**self.parse_buyer_reviews2(response))
+        product['buyer_reviews'] = BuyerReviews(**self.parse_buyer_reviews_per_page(response))
 
         if reqs:
             return self.called_class.send_next_request(reqs, response)
@@ -118,7 +118,7 @@ class BuyerReviewsBazaarApi(object):
                         )
                     )
                 if date:
-                    last_buyer_review_date = datetime.strptime(date.replace('.', '').replace(',', ''), '%B %d %Y')
+                    last_buyer_review_date = datetime.strptime(date.replace('.', '').replace(',', ''), '%d %B %Y')
                     product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d/%m/%Y')
 
                 stars_data = re.findall(
