@@ -186,3 +186,5 @@ if __name__ == '__main__':
             print('Cleared')
         else:
             print('You did not type "y" - exit...')
+    if 'list' in sys.argv:
+        print list_db_cache()
