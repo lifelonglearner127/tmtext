@@ -94,6 +94,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         'rating_desc': 'RHL'
     }
 
+    use_proxies = True
+
     REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{product_id}" \
                  "/reviews.djs?format=embeddedhtml"
 
