@@ -12,6 +12,7 @@ class SearchItem(Item):
     product_brand = Field() # product brand as extracted from special element in product page
     product_category_tree = Field() # product cateogory tree - list of categories, from top level to lowest level
     product_keywords = Field() # product keywords (from page source, meta elements)
+    product_image_url = Field() # main image url
 
     manufacturer_code = Field() # product code on manufacturer site. e.g.: product code on maplin.co.uk (when maplin is manufacturer), 
                                 # "manufacturer reference" on amazon.co.uk
@@ -27,7 +28,8 @@ class SearchItem(Item):
     origin_brand_extracted = Field() # source product brand - as extracted from product name: not guaranteed to be correct
     origin_category_tree = Field() # source product cateogory tree - list of categories, from top level to lowest level
     origin_keywords = Field() # source product keywords (from page source, meta elements)
-    
+    origin_image_url = Field() # source product main image url
+
     origin_manufacturer_code = Field() # product code on manufacturer site.
                                        #  e.g.: product code on maplin.co.uk, "manufacturer reference" on amazon.co.uk
     origin_bestsellers_rank = Field() # product rank in bestsellers list on source (origin) site
