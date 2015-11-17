@@ -166,7 +166,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     del variants[var_indx]
 
     @staticmethod
-    def append_new_dynamic_variants(product, variants, current_lot, new_structure):
+    def append_new_dynamic_variants(product, variants, current_lot, new_structure, loggin):
         all_pairs = []
         price_data = {}
         for option_name, vals in new_structure.items():
@@ -194,9 +194,12 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             if not new_pair in all_properties:
                 all_properties.append(new_pair)
         for prop in all_properties:
-            new_variant = {'lot': current_lot, 'price': price_data[current_lot]
-            if price_data[current_lot] else price, 'in_stock': None,
-                           'selected': False, 'properties': prop}.copy()
+            try:
+                new_variant = {'lot': current_lot, 'price': price_data[current_lot]
+                if price_data[current_lot] else price, 'in_stock': None,
+                               'selected': False, 'properties': prop}.copy()
+            except:
+                loggin(current_lot, WARNING)
             new_variant['properties'].pop('price')
             if not new_variant in variants:
                 variants.append(new_variant)
@@ -414,7 +417,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                 new_lot_structure[_lot] = _dynamic_structure
                 if _lot:
                     self.remove_old_static_variants_of_lot(prod['variants'], _lot)
-                    self.append_new_dynamic_variants(prod, prod['variants'], _lot, _dynamic_structure)
+                    self.append_new_dynamic_variants(prod, prod['variants'], _lot, _dynamic_structure, self.log)
         try:
             processed_lots[1] = processed_lots[0]
         except:
