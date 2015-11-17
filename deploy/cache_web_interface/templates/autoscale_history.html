@@ -45,9 +45,9 @@
                     var ctx = canvas[0].getContext("2d");
                     var options = {
                         scaleOverride : true,
-                        scaleSteps : 15,
-                        scaleStepWidth : 100,
-                        scaleStartValue : 2000
+                        scaleSteps : 5,
+                        scaleStepWidth : 1000,
+                        scaleStartValue : 0
                     };
                     var myLineChart = new Chart(ctx).Line(chartData, options);
                 });

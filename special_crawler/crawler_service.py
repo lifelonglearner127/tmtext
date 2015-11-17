@@ -74,6 +74,7 @@ from extract_halfords_data import HalfordsScraper
 from extract_homebase_data import HomebaseScraper
 from extract_riverisland_data import RiverislandScraper
 from extract_mothercare_data import MotherCareScraper
+from extract_toysrus_data import ToysRusScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -156,6 +157,7 @@ SUPPORTED_SITES = {
                     "homebase": HomebaseScraper,
                     "riverisland": RiverislandScraper,
                     "mothercare": MotherCareScraper,
+                    "toysrus": ToysRusScraper
                     }
 
 # add logger
