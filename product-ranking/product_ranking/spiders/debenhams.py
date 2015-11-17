@@ -23,8 +23,10 @@ class DebenhamsProductSpider(BaseProductsSpider):
     name = 'debenhams_products'
     allowed_domains = ["debenhams.com"]
 
-    SEARCH_URL = "http://www.debenhams.com/webapp/wcs/stores/servlet/" \
-                 "Navigate?langId=-1&storeId=10701&catalogId=10001&txt={search_term}"
+    #SEARCH_URL = "http://www.debenhams.com/webapp/wcs/stores/servlet/" \
+    #             "Navigate?langId=-1&storeId=10701&catalogId=10001&txt={search_term}"
+
+    SEARCH_URL = "http://int.debenhams.com/us/search/{search_term}/"
 
     items_per_page = 60
 
@@ -77,8 +79,9 @@ class DebenhamsProductSpider(BaseProductsSpider):
         cond_set_value(product, 'description', description, conv=string.strip)
 
         # Parse stock status
-        is_out_of_stock = self._parse_stock_status(response)
-        cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
+        # TODO!!!
+        #is_out_of_stock = self._parse_stock_status(response)
+        #cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
 
         # Parse upc
         upc = self._parse_upc(response)
@@ -147,6 +150,31 @@ class DebenhamsProductSpider(BaseProductsSpider):
                            '//span[@itemprop="lowPrice"]'
                            '/text()').extract()
         )
+        if not price:
+            # discount (sales) price
+            price = response.xpath(
+                '//*[contains(@class, "attributes")]//*[contains(@class, "price")]'
+                '//*[contains(@class, "attr-price-now")]'
+                '//*[contains(@class, "amount")]/text()').extract()
+            if price:
+                price = price[0]
+                if not price.strip():
+                    price = None
+                if price:
+                    currency = response.xpath(
+                        '//*[contains(@class, "attributes")]//*[contains(@class, "price")]'
+                        '//*[contains(@class, "attr-price-now")]'
+                        '//*[contains(@class, "amount")]/span/@title').extract()[0]
+        if not price:
+            # normal price
+            price = response.xpath(
+                '//*[contains(@class, "attributes")]//*[contains(@class, "price")]'
+                '//*[contains(@class, "amount")]/text()').extract()
+            if price:
+                price = price[0]
+                currency = response.xpath(
+                    '//*[contains(@class, "attributes")]//*[contains(@class, "price")]'
+                    '//*[contains(@class, "amount")]/span/@title').extract()[0]
         if price:
             price = is_empty(
                 re.findall(
@@ -350,33 +378,20 @@ class DebenhamsProductSpider(BaseProductsSpider):
         """
         Scraping product links from search page
         """
-
-        items = response.xpath(
-            '//div[@id="productDisplay"]/./'
-            '/tr[@class="item_container"]'
-            '/td[contains(@class, "item")]'
-        )
-
-        if items:
-            for item in items:
-                link = is_empty(
-                    item.xpath('././/input[@id="productTileImageUrl"]'
-                               '/@value').extract()
-                )
-                res_item = SiteProductItem()
-                yield link, res_item
+        links = response.xpath(
+            '//div[contains(@class, "product-image")]//a'
+            '//img[contains(@class, "product-medium")]/../@href'
+        ).extract()
+        if links:
+            for link in links:
+                yield link, SiteProductItem()
         else:
             self.log("Found no product links in {url}".format(url=response.url), INFO)
 
     def _scrape_next_results_page_link(self, response):
-        url = is_empty(
-            response.xpath(
-                '//a[text()="Next"]/@href'
-            ).extract()
-        )
-
+        url = response.xpath('//*[contains(@class, "pagination_Next")]/@href').extract()
         if url:
-            return url
+            return url[0]
         else:
             self.log("Found no 'next page' links", WARNING)
             return None
