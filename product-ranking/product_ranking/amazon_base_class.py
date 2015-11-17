@@ -805,6 +805,15 @@ class AmazonBaseClass(BaseProductsSpider):
                 except:
                     pass
 
+        if price == 0.0:
+            _price = response.css('#alohaPricingWidget .a-color-price ::text').extract()
+            if _price:
+                _price = ''.join([c for c in _price[0].strip() if c.isdigit() or c == '.'])
+                try:
+                    price = float(_price)
+                except:
+                    pass
+
         return Price(price=price, priceCurrency=self.price_currency)
 
     def _parse_price_original(self, response, add_xpath=None):
