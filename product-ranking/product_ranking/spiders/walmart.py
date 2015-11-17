@@ -416,10 +416,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             product['special_pricing'] = False
 
-        if not product.get('price'):
-            cond_set_value(product, 'url', response.url)
-            return self._gen_location_request(response)
-
         _na_text = response.xpath(
             '//*[contains(@class, "NotAvailable")]'
             '[contains(@style, "block")]/text()'
@@ -436,6 +432,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         meta['extracted_video_urls'] = False
         meta['has_video'] = False
         meta['product_info_json'] = None
+        meta['response'] = response
 
         # Determines if walmart page is old or new design.
         # "Walmart v1" for old design
@@ -598,6 +595,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                                meta=meta)
         else:
             product['video_count'] = self._video_count(response, video_urls)
+            if not product.get('price'):
+                cond_set_value(product, 'url', meta['response'].url)
+                return self._gen_location_request(meta['response'])
         return self._start_related(response)
 
     def video_urls_last_request(self, response):
@@ -614,6 +614,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             video_urls.append(video_base_path + video_relative_path)
             meta['has_video'] = True
             product['video_count'] = self._video_count(response, video_urls)
+            if not product.get('price'):
+                cond_set_value(product, 'url', meta['response'].url)
+                return self._gen_location_request(meta['response'])
         else:
             video_urls = None
         return self._start_related(response)
