@@ -197,13 +197,17 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                 all_properties.append(new_pair)
         for prop in all_properties:
             try:
-                new_variant = {'lot': current_lot, 'price': price_data[current_lot]
-                if current_lot in price_data else price, 'in_stock': None,
-                               'selected': False, 'properties': prop}.copy()
+                new_variant = {
+                    'lot': current_lot,
+                    'price': price_data.get(current_lot, price),
+                    'in_stock': None,
+                    'selected': False,
+                    'properties': prop}.copy()
+                new_variant['properties'].pop('price')
             except Exception as e:
                 loggin(current_lot, WARNING)
                 loggin(e, WARNING)
-            new_variant['properties'].pop('price')
+
             if not new_variant in variants:
                 variants.append(new_variant)
 
