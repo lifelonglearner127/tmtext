@@ -153,7 +153,127 @@ class WalmartScraper(Scraper):
             list of strings containing the video urls
             or None if none found
         """
-        return self.extra_fields._video_urls()
+        if hasattr(self, 'video_urls'):
+            return self.video_urls
+        else:
+            if self.extra_fields.extracted_video_urls:
+                return
+
+            # set flag that videos where attemtped to be extracted
+            self.extra_fields.extracted_video_urls = True
+
+            if self.extra_fields._version() == "Walmart v2" and \
+                    self.extra_fields._is_bundle_product():
+                return
+
+            # if there is no video button, return no video
+            if not self.extra_fields._has_video_button():
+                return
+
+            self.video_urls = []
+
+            if self.extra_fields._version() == "Walmart v1" and not \
+                    self.tree_html.xpath("""//script[@type='text/javascript' and
+                    contains(text(), 'productVideoContent')]/text()"""):
+                self.video_urls = None
+                return
+
+            if self._version() == "Walmart v2":
+                tree = self._video_urls_first_request()
+                if tree:
+                    self.video_urls = self.extra_fields.wcobj_shared_code(tree, self.video_urls)
+
+            tree = self._video_urls_webcollage_new()
+            self.video_urls = self.extra_fields.webcollage_shared_code(tree, self.video_urls)
+
+            tree = self._video_urls_sellpoints()
+            self.video_urls = self.extra_fields.sellpoints_shared_code(tree, self.video_urls)
+
+            tree = self._video_urls_sellpoints_new()
+            self.video_urls = self.extra_fields.sellpoints_new_shared_code(tree, self.video_urls)
+
+            if len(self.video_urls) == 0:
+                if self.tree_html.xpath("//div[starts-with(@class,'js-idml-video-container')]"):
+                    tree = self._video_urls_last_request()
+                    if not tree:
+                        self.video_urls = None
+                        return
+
+                    tree = html.fromstring(contents)
+                    video_json = json.loads(tree.xpath("//div[@class='wc-json-data']/text()")[0])
+                    video_relative_path = video_json["videos"][0]["sources"][0]["src"]
+                    video_base_path = tree.xpath("//table[@class='wc-gallery-table']/@data-resources-base")[0]
+                    self.video_urls.append(video_base_path + video_relative_path)
+                    self.has_video = True
+                else:
+                    self.video_urls = None
+            print(self.video_urls)
+            return self.video_urls
+
+    def _video_urls_first_request(self):
+        emc_link = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]/@src")
+
+        if emc_link:
+            emc_link = "http:" + emc_link[0]
+            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+            s = requests.Session()
+            a = requests.adapters.HTTPAdapter(max_retries=3)
+            b = requests.adapters.HTTPAdapter(max_retries=3)
+            s.mount('http://', a)
+            s.mount('https://', b)
+            contents = s.get(emc_link, headers=h, timeout=5).text
+            return contents
+        else:
+            return None
+
+    def _video_urls_webcollage_new(self):
+        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self.extra_fields._extract_product_id()
+#        response_text = urllib.urlopen(request_url).read()
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        response_text = s.get(request_url, headers=h, timeout=5).text
+
+        return response_text
+
+    def _video_urls_sellpoints(self):
+        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self.extra_fields._extract_product_id()
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        response_text = s.get(request_url, headers=h, timeout=5).text
+
+        return response_text
+
+    def _video_urls_sellpoints_new(self):
+        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS_NEW % self.extra_fields._extract_product_id()
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        response_text = s.get(request_url, headers=h, timeout=5).text
+
+        return response_text
+
+    def _video_urls_last_request(self):
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        contents = s.get("http://www.walmart.com/product/idml/video/" +
+                         str(self.extra_fields._extract_product_id()) + "/WebcollageVideos", headers=h, timeout=5).text
+
+        return contents
 
     def _wc_360(self):
         """Return 360view existence for a given walmart product in new walmart design
@@ -454,8 +574,6 @@ class WalmartScraper(Scraper):
             0 otherwise
         """
 
-        self.extra_fields._extract_video_urls()
-
 #        if not self.extracted_pdf_urls:
 #            self._pdf_urls()
 
@@ -475,8 +593,8 @@ class WalmartScraper(Scraper):
             1 if product has video
             0 if product doesn't have video
         """
-
-        return self.extra_fields._video_count()
+        video_urls = self._video_urls()
+        return self.extra_fields._video_count(video_urls)
 
     def _pdf_count(self):
         """Returns the number of pdf

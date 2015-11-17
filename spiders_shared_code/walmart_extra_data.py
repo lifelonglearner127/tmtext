@@ -4,12 +4,10 @@ from lxml import html
 
 import re
 import json
-import requests
 import mmh3 as MurmurHash
 import os
 
 from special_crawler.no_img_hash import fetch_bytes
-from special_crawler.extract_data import Scraper
 
 class WalmartExtraData(object):
 
@@ -278,7 +276,7 @@ class WalmartExtraData(object):
 
             return self.product_info_json
 
-    def _video_count(self):
+    def _video_count(self, video_urls):
         """Whether product has video
         To be replaced with function that actually counts
         number of videos for this product
@@ -287,163 +285,88 @@ class WalmartExtraData(object):
             0 if product doesn't have video
         """
 
-        self._extract_video_urls()
-
-        if not self.video_urls:
+        if not video_urls:
             if self.has_video:
                 return 1
             else:
                 return 0
         else:
-            return len(self.video_urls)
+            return len(video_urls)
 
-    def _extract_video_urls(self):
-        """Extracts video URL for a given walmart product
-        and puts them in instance variable.
-        """
+    def wcobj_shared_code(self, body, video_urls):
+        tree = html.fromstring(body)
+        wcobj_links = tree.xpath("//img[contains(@class, "
+                                     "'wc-media')]/@wcobj")
+        if wcobj_links:
+            for wcobj_link in wcobj_links:
+                if wcobj_link.endswith(".flv"):
+                    video_urls.append(wcobj_link)
+        return video_urls
 
-        if self.extracted_video_urls:
-            return
-
-        # set flag that videos where attemtped to be extracted
-        self.extracted_video_urls = True
-
-        if self._version() == "Walmart v2" and self._is_bundle_product():
-            return
-
-        # if there is no video button, return no video
-        if not self._has_video_button():
-            return
-
-        self.video_urls = []
-
-        if self._version() == "Walmart v1" and not self.tree_html.xpath("""//script[@type='text/javascript' and contains(text(), 'productVideoContent')]/text()"""):
-            self.video_urls = None
-            return
-
-        if self._version() == "Walmart v2":
-            emc_link = self.tree_html.xpath("//iframe[contains(@class,'js-marketing-content-iframe')]/@src")
-
-            if emc_link:
-                emc_link = "http:" + emc_link[0]
-#                contents = requests.get(emc_link).text
-                h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-                s = requests.Session()
-                a = requests.adapters.HTTPAdapter(max_retries=3)
-                b = requests.adapters.HTTPAdapter(max_retries=3)
-                s.mount('http://', a)
-                s.mount('https://', b)
-                contents = s.get(emc_link, headers=h, timeout=5).text
-                tree = html.fromstring(contents)
-                wcobj_links = tree.xpath("//img[contains(@class, 'wc-media')]/@wcobj")
-
-                if wcobj_links:
-                    for wcobj_link in wcobj_links:
-                        if wcobj_link.endswith(".flv"):
-                            self.video_urls.append(wcobj_link)
-
-        # webcollage video info
-        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
-#        response_text = urllib.urlopen(request_url).read()
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
-        response_text = s.get(request_url, headers=h, timeout=5).text
-        tree = html.fromstring(response_text)
-
+    def webcollage_shared_code(self, body, video_urls):
+        tree = html.fromstring(body)
         if tree.xpath("//div[@id='iframe-video-content']") and \
-                tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base"):
-            video_base_path = tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base")[0]
+                tree.xpath("//table[contains(@class, 'wc-gallery-table')]"
+                               "/@data-resources-base"):
+            video_base_path = tree.xpath("//table[contains(@class, "
+                                             "'wc-gallery-table')]"
+                                             "/@data-resources-base")[0]
             sIndex = 0
             eIndex = 0
 
             while sIndex >= 0:
-                sIndex = response_text.find('{"videos":[', sIndex)
-                eIndex = response_text.find('}]}', sIndex) + 3
+                sIndex = body.find('{"videos":[', sIndex)
+                eIndex = body.find('}]}', sIndex) + 3
 
                 if sIndex < 0:
                     break
 
-                jsonVideo = response_text[sIndex:eIndex]
+                jsonVideo = body[sIndex:eIndex]
                 jsonVideo = json.loads(jsonVideo)
 
                 if len(jsonVideo['videos']) > 0:
                     for video_info in jsonVideo['videos']:
-                        self.video_urls.append(video_base_path + video_info['src']['src'])
+                        video_urls.append(video_base_path +
+                                               video_info['src']['src'])
 
                 sIndex = eIndex
 
-        # check sellpoints media if webcollage media doesn't exist
-        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
-        #TODO: handle errors
-#        response_text = urllib.urlopen(request_url).read()
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
-        response_text = s.get(request_url, headers=h, timeout=5).text
-        # get first "src" value in response
-        # # webcollage videos
-        video_url_candidates = re.findall("'file': '([^']+)'", response_text)
+        return video_urls
+
+    def sellpoints_shared_code(self, body, video_urls):
+
+        video_url_candidates = re.findall("'file': '([^']+)'", body)
         if video_url_candidates:
-            # remove escapes
-            #TODO: better way to do this?
             for video_url_item in video_url_candidates:
                 video_url_candidate = re.sub('\\\\', "", video_url_item)
 
                 # if it ends in flv, it's a video, ok
-                if video_url_candidate.endswith(".mp4") or video_url_candidate.endswith(".flv"):
-                    self.has_sellpoints_media = True
-                    self.has_video = True
-                    self.video_urls.append(video_url_candidate)
-                    break
+                if video_url_candidate.endswith(".mp4") or \
+                        video_url_candidate.endswith(".flv"):
+                        self.has_sellpoints_media = True
+                        self.has_video = True
+                        video_urls.append(video_url_candidate)
+                        break
 
-        # check sellpoints media if webcollage media doesn't exist
-        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS_NEW % self._extract_product_id()
-        # TODO: handle errors
-#        response_text = urllib.urlopen(request_url).read()
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
-        response_text = s.get(request_url, headers=h, timeout=5).text
-        tree = html.fromstring(response_text)
-        if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']"):
+        return video_urls
+
+    def sellpoints_new_shared_code(self, body, video_urls):
+        tree = html.fromstring(body)
+        if tree.xpath("//div[@id='iframe-video-content']"
+                          "//div[@id='player-holder']"):
             self.has_video = True
             self.has_sellpoints_media = True
 
-        if len(self.video_urls) == 0:
-            if self.tree_html.xpath("//div[starts-with(@class,'js-idml-video-container')]"):
-#                contents = requests.get("http://www.walmart.com/product/idml/video/" +
-#                                        str(self._extract_product_id()) + "/WebcollageVideos").text
-                h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-                s = requests.Session()
-                a = requests.adapters.HTTPAdapter(max_retries=3)
-                b = requests.adapters.HTTPAdapter(max_retries=3)
-                s.mount('http://', a)
-                s.mount('https://', b)
-                contents = s.get("http://www.walmart.com/product/idml/video/" +
-                                 str(self._extract_product_id()) + "/WebcollageVideos", headers=h, timeout=5).text
+        return video_urls
 
-                if not contents:
-                    self.video_urls = None
-                    return
-
-                tree = html.fromstring(contents)
-                video_json = json.loads(tree.xpath("//div[@class='wc-json-data']/text()")[0])
-                video_relative_path = video_json["videos"][0]["sources"][0]["src"]
-                video_base_path = tree.xpath("//table[@class='wc-gallery-table']/@data-resources-base")[0]
-                self.video_urls.append(video_base_path + video_relative_path)
-                self.has_video = True
-            else:
-                self.video_urls = None
+    def last_video_request(self, body, video_urls):
+        tree = html.fromstring(body)
+        video_json = json.loads(tree.xpath("//div[@class='wc-json-data']/text()")[0])
+        video_relative_path = video_json["videos"][0]["sources"][0]["src"]
+        video_base_path = tree.xpath("//table[@class='wc-gallery-table']/@data-resources-base")[0]
+        video_urls.append(video_base_path + video_relative_path)
+        self.has_video = True
+        return video_urls
 
     # check if there is a "Video" button available on the product page
     def _has_video_button(self):
@@ -499,16 +422,3 @@ class WalmartExtraData(object):
 
         # we could not decide
         return None
-
-    def _video_urls(self):
-        """Extracts video URLs for a given walmart product
-        Returns:
-            list of strings containing the video urls
-            or None if none found
-        """
-
-        self._extract_video_urls()
-
-        return self.video_urls
-
-    #TODO: To alter the structure of the module. The call requests only from spiders, query processing module.
