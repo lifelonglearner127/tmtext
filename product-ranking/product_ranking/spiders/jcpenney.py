@@ -283,6 +283,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '&skuSelectionMap.SIZE={size}'
                     '&skuSelectionMap.WAIST={waist}'
                     '&skuSelectionMap.INSEAM={inseam}'
+                    '&_D%3AskuSelectionMap.INSEAM=+'
                     '&skuSelectionMap.CHEST={chest}'
                     '&skuSelectionMap.NECK={neck}'
                     '&skuSelectionMap.SLEEVE={sleeve}'
@@ -291,7 +292,6 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '&_D%3AskuSelectionMap.COLOR=+&_DARGS=%'
                     '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
                     '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
-
         if async:
             return Request(
                 size_url,
