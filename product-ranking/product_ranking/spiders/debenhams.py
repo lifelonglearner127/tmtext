@@ -79,9 +79,8 @@ class DebenhamsProductSpider(BaseProductsSpider):
         cond_set_value(product, 'description', description, conv=string.strip)
 
         # Parse stock status
-        # TODO!!!
-        #is_out_of_stock = self._parse_stock_status(response)
-        #cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
+        is_out_of_stock = self._parse_stock_status(response)
+        cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
 
         # Parse upc
         upc = self._parse_upc(response)
