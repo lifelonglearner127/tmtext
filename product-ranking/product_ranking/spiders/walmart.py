@@ -2,18 +2,19 @@ from __future__ import division, absolute_import, unicode_literals
 
 import json
 import pprint
-import re
 import urlparse
 import hashlib
 import random
 import re
-import string
+import os
 from datetime import datetime
+import mmh3 as MurmurHash
 import lxml.html
 
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
+from special_crawler.no_img_hash import fetch_bytes
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
@@ -24,7 +25,6 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
 from product_ranking.validation import BaseValidator
 from spiders_shared_code.walmart_variants import WalmartVariants
 from spiders_shared_code.walmart_categories import WalmartCategoryParser
-#from spiders_shared_code.walmart_extra_data import WalmartExtraData
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -105,7 +105,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     FIXME: Currently we redirect infinitely, which could be a problem.
     """
     name = 'walmart_products'
-    allowed_domains = ["walmart.com", "msn.com", 'api.walmartlabs.com']
+    allowed_domains = ["walmart.com", "msn.com", 'api.walmartlabs.com',
+                       'walmart-content.com', 'json.webcollage.net']
 
     default_hhl = [404, 500, 502, 520]
 
@@ -143,6 +144,44 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
     user_agent = 'default'
+
+    # base URL for request containing video URL from webcollage
+    BASE_URL_VIDEOREQ_WEBCOLLAGE = "http://json.webcollage.net/apps/json/walmart?callback=jsonCallback&environment-id=live&cpi="
+    # base URL for request containing video URL from webcollage
+    BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW = "http://www.walmart-content.com/product/idml/video/%s/WebcollageVideos"
+    # base URL for request containing video URL from sellpoints
+    BASE_URL_VIDEOREQ_SELLPOINTS = "http://www.walmart.com/product/idml/video/%s/SellPointsVideos"
+    # base URL for request containing video URL from sellpoints
+    BASE_URL_VIDEOREQ_SELLPOINTS_NEW = "http://www.walmart-content.com/product/idml/video/%s/SellPointsVideos"
+
+    NO_IMAGE_HASHES = [
+        "74961158",
+        "598838517",
+        "620012836",
+        "303712562",
+        "1393459826",
+        "-1134440587",
+        "1299331192",
+        "1583477300",
+        "-475618554",
+        "-721730591",
+        "1553262177",
+        "-663748881",
+        "-1758653328",
+        "-381594545",
+        "-1010639060",
+        "656084504",
+        "1042116784",
+        "-465049628",
+        "1857212183",
+        "1283923693",
+        "640747895",
+        "1866534382",
+        "-298777410",
+        "-1398961301",
+        "1486529754",
+        "-918314075"
+    ]
 
     def __init__(self, search_sort='best_match', zipcode='94117',
                  *args, **kwargs):
@@ -376,10 +415,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             product['special_pricing'] = False
 
-        if not product.get('price'):
-            cond_set_value(product, 'url', response.url)
-            return self._gen_location_request(response)
-
         _na_text = response.xpath(
             '//*[contains(@class, "NotAvailable")]'
             '[contains(@style, "block")]/text()'
@@ -390,7 +425,423 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
 
+        meta = response.meta
+        product_id = response.url
+        meta['product_id'] = product_id.split('/')[-1]
+        meta['extracted_video_urls'] = False
+        meta['has_video'] = False
+        meta['product_info_json'] = None
+        meta['response'] = response
+
+        # Determines if walmart page is old or new design.
+        # "Walmart v1" for old design
+        # "Walmart v2" for new design
+        if response.xpath("//meta[@name='keywords']/@content"):
+            meta['version'] = "Walmart v2"
+        if response.xpath("//meta[@name='Keywords']/@content"):
+            meta['version'] = "Walmart v1"
+
+        # Checks if a certain product page has a visible 'Video' button,
+        # using the page source tree
+        richMedia_elements = response.xpath("//div[@id='richMedia']")
+        if richMedia_elements:
+            richMedia_element = richMedia_elements[0]
+            elements_onclick = richMedia_element.xpath(".//li/@onclick")
+            has_video = any(map(lambda el: "video')" in el, elements_onclick))
+
+            meta['has_video_button'] = has_video
+        else:
+            meta['has_video_button'] = True
+
+        body = unicode(response.body, 'utf-8')
+        if response.xpath("//div[@class='js-about-bundle-wrapper']") or \
+                        "WalmartMainBody DynamicMode wmBundleItemPage" in body:
+            meta['_is_bundle_product'] = True
+        else:
+            meta['_is_bundle_product'] = False
+
+        meta['product_info_json'] = self._extract_product_info_json(response)
+
+        product['img_count'] = self._image_count(response)
+
+        return self.video_urls_first_request(response)
+
+    def video_urls_first_request(self, response):
+        meta = response.meta
+        meta['video_urls'] = []
+
+        if meta['extracted_video_urls']:
+            return self._start_related(response)
+
+        # set flag that videos where attemtped to be extracted
+        meta['extracted_video_urls'] = True
+
+        if meta['version'] == "Walmart v2" and meta['_is_bundle_product']:
+            return self._start_related(response)
+
+        # if there is no video button, return no video
+        if not meta['has_video_button']:
+            return self._start_related(response)
+
+        if meta['version'] == "Walmart v2":
+            emc_link = response.xpath("//iframe[contains(@class,"
+                                      "'js-marketing-content-iframe')]"
+                                      "/@src").extract()
+
+            if emc_link:
+                emc_link = "http:" + emc_link[0]
+                return Request(url=emc_link, callback=self.video_urls_wcobj,
+                               meta=meta)
+
+        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % meta['product_id']
+        return Request(url=request_url,
+                       callback=self.video_urls_webcollage_new,
+                       meta=meta)
+
+    def video_urls_wcobj(self, response):
+        meta = response.meta
+        video_urls = meta['video_urls']
+
+        wcobj_links = response.xpath("//img[contains(@class, "
+                                     "'wc-media')]/@wcobj").extract()
+        if wcobj_links:
+            for wcobj_link in wcobj_links:
+                if wcobj_link.endswith(".flv"):
+                    video_urls.append(wcobj_link)
+
+        request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % meta['product_id']
+
+        return Request(url=request_url,
+                       callback=self.video_urls_webcollage_new,
+                       meta=meta)
+
+    def video_urls_webcollage_new(self, response):
+        meta = response.meta
+        video_urls = meta['video_urls']
+        body = response.body
+
+        if response.xpath("//div[@id='iframe-video-content']").extract() and \
+                response.xpath("//table[contains(@class, 'wc-gallery-table')]"
+                               "/@data-resources-base").extract():
+            video_base_path = response.xpath("//table[contains(@class, "
+                                             "'wc-gallery-table')]"
+                                             "/@data-resources-base").extract()
+            sIndex = 0
+            eIndex = 0
+
+            while sIndex >= 0:
+                sIndex = body.find('{"videos":[', sIndex)
+                eIndex = body.find('}]}', sIndex) + 3
+
+                if sIndex < 0:
+                    break
+
+                jsonVideo = body[sIndex:eIndex]
+                jsonVideo = json.loads(jsonVideo)
+
+                if len(jsonVideo['videos']) > 0:
+                    for video_info in jsonVideo['videos']:
+                        video_urls.append(video_base_path[0] +
+                                               video_info['src']['src'])
+
+                sIndex = eIndex
+
+        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % meta['product_id']
+
+        return Request(url=request_url,
+                       callback=self.video_urls_sellpoints,
+                       meta=meta)
+
+    def video_urls_sellpoints(self, response):
+        meta = response.meta
+        video_urls = meta['video_urls']
+        body = response.body
+
+        video_url_candidates = re.findall("'file': '([^']+)'", body)
+        if video_url_candidates:
+            for video_url_item in video_url_candidates:
+                video_url_candidate = re.sub('\\\\', "", video_url_item)
+
+                # if it ends in flv, it's a video, ok
+                if video_url_candidate.endswith(".mp4") or \
+                        video_url_candidate.endswith(".flv"):
+                        meta['has_video'] = True
+                        video_urls.append(video_url_candidate)
+                        break
+
+        request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS_NEW % meta['product_id']
+
+        return Request(url=request_url,
+                       callback=self.video_urls_sellpoints_new,
+                       meta=meta)
+
+    def video_urls_sellpoints_new(self, response):
+        meta = response.meta
+        product = meta['product']
+        video_urls = meta['video_urls']
+        body = response.body
+
+        if response.xpath("//div[@id='iframe-video-content']"
+                          "//div[@id='player-holder']").extract():
+            meta['has_video'] = True
+
+        if len(video_urls) == 0:
+            if response.xpath("//div[starts-with(@class,"
+                                        "'js-idml-video-container')]"):
+                return Request(url="http://www.walmart.com/product/idml/video/" +
+                               meta['product_id'] + "/WebcollageVideos",
+                               callback=self.video_urls_last_request,
+                               meta=meta)
+        else:
+            product['video_count'] = self._video_count(response, video_urls)
+            if not product.get('price'):
+                cond_set_value(product, 'url', meta['response'].url)
+                return self._gen_location_request(meta['response'])
         return self._start_related(response)
+
+    def video_urls_last_request(self, response):
+        meta = response.meta
+        product = meta['product']
+        video_urls = meta['video_urls']
+
+        if response.body:
+            video_json = json.loads(response.xpath("//div[@class='wc-json-data']"
+                                                   "/text()")[0])
+            video_relative_path = video_json["videos"][0]["sources"][0]["src"]
+            video_base_path = response.xpath("//table[@class='wc-gallery-table']"
+                                             "/@data-resources-base")[0]
+            video_urls.append(video_base_path + video_relative_path)
+            meta['has_video'] = True
+            product['video_count'] = self._video_count(response, video_urls)
+            if not product.get('price'):
+                cond_set_value(product, 'url', meta['response'].url)
+                return self._gen_location_request(meta['response'])
+        else:
+            video_urls = None
+        return self._start_related(response)
+
+    def _video_count(self, response, video_urls):
+        """Whether product has video
+        To be replaced with function that actually counts
+        number of videos for this product
+        Returns:
+            1 if product has video
+            0 if product doesn't have video
+        """
+        meta = response.meta
+        if not video_urls:
+            if meta['has_video']:
+                return 1
+            else:
+                return 0
+        else:
+            return len(video_urls)
+
+    def _image_urls(self, response):
+        """Extracts image urls for this product.
+        Works on both old and new version of walmart pages.
+        Returns:
+            list of strings representing image urls
+        """
+        meta = response.meta
+        if meta['version'] == "Walmart v1":
+            return self._image_urls_old(response)
+
+        if meta['version'] == "Walmart v2":
+            return self._image_urls_new(response)
+
+    def _extract_product_info_json(self, response):
+        """Extracts body of javascript function
+        found in a script tag on each product page,
+        that contains various usable information about product.
+        Stores function body as json decoded dictionary in instance variable.
+        Returns:
+            function body as dictionary (containing various info on product)
+        """
+        body = response.xpath('//script[contains(text(), "product/data")]'
+                              '/text()').extract()
+        product_info_json = re.findall(r'define\("product/data",\n(.+)',
+                                       body[0])
+        if product_info_json:
+            product_info_json = json.loads(product_info_json[0])
+            return product_info_json
+        else:
+            return None
+
+    def _image_urls_new(self, response):
+        """Extracts image urls for this product.
+        Works on new version of walmart pages.
+        Returns:
+            list of strings representing image urls
+        """
+        meta = response.meta
+
+        if meta['version'] == "Walmart v2" and meta['_is_bundle_product']:
+            return response.xpath("//div[contains(@class, 'choice-hero-non-"
+                                  "carousel')]//img/@src").extract()
+        else:
+            def _fix_relative_url(relative_url):
+                """Fixes relative image urls by prepending
+                the domain. First checks if url is relative
+                """
+
+                if not relative_url.startswith("http"):
+                    return "http://www.walmart.com" + relative_url
+                else:
+                    return relative_url
+
+            pinfo_dict = meta['product_info_json']
+
+            images_carousel = []
+
+            for item in pinfo_dict['imageAssets']:
+                var = item['versions']['hero']
+                if 'walmartimages' in var:
+                    images_carousel.append(var)
+
+            if images_carousel:
+                # if there's only one image, check to see if it's a "no image"
+                if len(images_carousel) == 1:
+                    try:
+                        if self._no_image(images_carousel[0]):
+                            return None
+                    except Exception, e:
+                        print "WARNING: ", e.message
+
+                return self._qualify_image_urls(images_carousel)
+
+            # It should only return this img when there's no img carousel
+            main_image = response.xpath("//img[@class='product-image "
+                                        "js-product-image js-product-primary-"
+                                        "image']/@src").extract()
+            if main_image:
+                # check if this is a "no image" image
+                # this may return a decoder not found error
+                try:
+                    if self._no_image(main_image[0]):
+                        return None
+                except Exception, e:
+                    print "WARNING: ", e.message
+
+                return self._qualify_image_urls(main_image)
+
+            # bundle product images
+            images_bundle = response.xpath("//div[contains(@class, 'choice-"
+                                           "hero-imagery-components')]//"
+                                           "img[contains(@class, "
+                                           "'media-object')]/@src").extract()
+
+            if not images_bundle:
+                images_bundle = response.xpath("//div[contains(@class, "
+                                               "'non-choice-hero-components')]"
+                                               "//img[contains(@class, "
+                                               "'media-object')]/@src").extract()
+
+            if images_bundle:
+                # fix relative urls
+                images_bundle = map(_fix_relative_url, images_bundle)
+                return self._qualify_image_urls(images_bundle)
+
+            # nothing found
+            return None
+
+    def _image_urls_old(self, response):
+        """Extracts image urls for this product.
+        Works on old version of walmart pages.
+        Returns:
+            list of strings representing image urls
+        """
+        scripts = response.xpath("//script//text()")
+        for script in scripts:
+            try:
+                find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script))
+            except:
+                find = []
+            if len(find) > 0:
+                return self._qualify_image_urls(find)
+
+        if response.xpath("//link[@rel='image_src']/@href"):
+            if self._no_image(response.xpath("//link[@rel='image_src']/@href")[0]):
+                return None
+            else:
+                return self.tree_html.xpath("//link[@rel='image_src']/@href")
+
+        # It should only return this img when there's no img carousel
+        pic = [self.tree_html.xpath('//div[@class="LargeItemPhoto215"]/a/@href')[0]]
+        if pic:
+            # check if it's a "no image" image
+            # this may return a decoder not found error
+            try:
+                if self._no_image(pic[0]):
+                    return None
+            except Exception, e:
+                print "WARNING: ", e.message
+
+            return self._qualify_image_urls(pic)
+        else:
+            return None
+
+    def _no_image(self, url):
+        """Overwrites the _no_image
+        in the base class with an additional test.
+        Then calls the base class no_image.
+
+        Returns True if image in url is a "no image"
+        image, False if not
+        """
+
+        # if image name is "no_image", return True
+        if re.match(".*no.image\..*", url):
+            return True
+        else:
+            first_hash = self._image_hash(url)
+            if first_hash in self.NO_IMAGE_HASHES:
+                print "not an image"
+                return True
+            else:
+                return False
+
+    def _image_hash(self, image_url):
+        """Computes hash for an image.
+        To be used in _no_image, and for value of _image_hashes
+        returned by scraper.
+        Returns string representing hash of image.
+
+        :param image_url: url of image to be hashed
+        """
+        return str(MurmurHash.hash(fetch_bytes(image_url)))
+
+    def _qualify_image_urls(self, image_list):
+        """Remove no image urls in image list
+        """
+        qualified_image_list = []
+
+        for image in image_list:
+            if not re.match(".*no.image\..*", image):
+                qualified_image_list.append(image)
+
+        if len(qualified_image_list) == 0:
+            return None
+        else:
+            return qualified_image_list
+
+    def _image_count(self, response):
+        """Counts number of (valid) images found
+        for this product (not including images saying "no image available")
+        Returns:
+            int representing number of images
+        """
+
+        try:
+            images = self._image_urls(response)
+        except Exception:
+            images = None
+            pass
+
+        if not images:
+            return 0
+        else:
+            return len(images)
 
     def parse_available(self, response):
         available = is_empty(response.xpath(
