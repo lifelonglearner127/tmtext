@@ -1273,7 +1273,7 @@ class WalmartScraper(Scraper):
             return None
         else:
             price = re.findall("\d+.\d+", price_info)
-            return price[0]
+            return float(price[0])
 
     def _price_currency(self):
         """Extracts currency of product price in
