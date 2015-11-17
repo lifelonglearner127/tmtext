@@ -49,6 +49,21 @@ def run(command, shell=None):
     return stdout, stderr
 
 
+def list_amazon_bucket(bucket=AMAZON_BUCKET_NAME,
+                       local_fname=LOCAL_AMAZON_LIST_CACHE):
+    filez = list_files_in_bucket(AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, bucket)
+    # dump to a temporary file and replace the original one then
+    tmp_file = tempfile.NamedTemporaryFile(mode='rb', delete=False)
+    tmp_file.close()
+
+    with open(tmp_file.name, 'w') as fh:
+        for f in filez:
+            fh.write(str(f)+'\n')
+    if os.path.exists(local_fname):
+        os.unlink(local_fname)
+    os.rename(tmp_file.name, local_fname)
+
+
 def num_of_running_instances(file_path):
     """ Check how many instances of the given file are running """
     processes = 0
@@ -145,6 +160,8 @@ class Command(BaseCommand):
         if num_of_running_instances('update_jobs') > 1:
             print 'an instance of the script is already running...'
             sys.exit()
+
+        list_amazon_bucket()  # list files for /search-files/ site page
 
         # get random jobs
         jobs = Job.objects.filter(
