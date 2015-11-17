@@ -94,6 +94,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         'rating_desc': 'RHL'
     }
 
+    use_proxies = True
+
     REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{product_id}" \
                  "/reviews.djs?format=embeddedhtml"
 
@@ -166,7 +168,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     del variants[var_indx]
 
     @staticmethod
-    def append_new_dynamic_variants(product, variants, current_lot, new_structure):
+    def append_new_dynamic_variants(product, variants, current_lot, new_structure, loggin):
         all_pairs = []
         price_data = {}
         for option_name, vals in new_structure.items():
@@ -194,10 +196,19 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             if not new_pair in all_properties:
                 all_properties.append(new_pair)
         for prop in all_properties:
-            new_variant = {'lot': current_lot, 'price': price_data[current_lot]
-            if price_data[current_lot] else price, 'in_stock': None,
-                           'selected': False, 'properties': prop}.copy()
-            new_variant['properties'].pop('price')
+            try:
+                new_variant = {
+                    'lot': current_lot,
+                    'price': price_data.get(current_lot, price),
+                    'in_stock': None,
+                    'selected': False,
+                    'properties': prop}.copy()
+                if 'price' in new_variant['properties']:
+                    new_variant['properties'].pop('price')
+            except Exception as e:
+                loggin(current_lot, WARNING)
+                loggin(e, WARNING)
+
             if not new_variant in variants:
                 variants.append(new_variant)
 
@@ -283,6 +294,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '&skuSelectionMap.SIZE={size}'
                     '&skuSelectionMap.WAIST={waist}'
                     '&skuSelectionMap.INSEAM={inseam}'
+                    '&_D%3AskuSelectionMap.INSEAM=+'
                     '&skuSelectionMap.CHEST={chest}'
                     '&skuSelectionMap.NECK={neck}'
                     '&skuSelectionMap.SLEEVE={sleeve}'
@@ -291,7 +303,6 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '&_D%3AskuSelectionMap.COLOR=+&_DARGS=%'
                     '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
                     '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
-
         if async:
             return Request(
                 size_url,
@@ -414,7 +425,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                 new_lot_structure[_lot] = _dynamic_structure
                 if _lot:
                     self.remove_old_static_variants_of_lot(prod['variants'], _lot)
-                    self.append_new_dynamic_variants(prod, prod['variants'], _lot, _dynamic_structure)
+                    self.append_new_dynamic_variants(prod, prod['variants'], _lot, _dynamic_structure, self.log)
         try:
             processed_lots[1] = processed_lots[0]
         except:
