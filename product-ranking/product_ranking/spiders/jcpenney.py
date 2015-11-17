@@ -203,7 +203,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     'in_stock': None,
                     'selected': False,
                     'properties': prop}.copy()
-                new_variant['properties'].pop('price')
+                if 'price' in new_variant['properties']:
+                    new_variant['properties'].pop('price')
             except Exception as e:
                 loggin(current_lot, WARNING)
                 loggin(e, WARNING)
