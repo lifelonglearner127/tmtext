@@ -244,7 +244,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                 js_data = json.loads(data)
             except:
                 return
-        return js_data
+            return js_data
 
     def parse_image(self, response):
         if self.js_data:
@@ -253,7 +253,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             except:
                 return
 
-        return image
+            return image
 
     def parse_related_product(self, response):
         related_prods = []
@@ -284,21 +284,21 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                 description = self.js_data['colorid'][self.product_id]['name']
             except:
                 return
-        return description
+            return description
 
     def parse_upc(self, response):
         if self.js_data:
             for v in self.js_data['sku'].values():
                 upc = v['upc']
 
-        return upc
+            return upc
 
     def parse_sku(self, response):
         if self.js_data:
             for v in self.js_data['sku'].values():
                 skuid = v['skuid']
 
-        return skuid
+            return skuid
 
     def parse_price(self, response):
         if self.js_data:
@@ -313,7 +313,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             else:
                 price = Price(price=0.00, priceCurrency="USD")
 
-        return price
+            return price
 
     def _scrape_total_matches(self, response):
         totals = response.css('.productCount ::text').extract()

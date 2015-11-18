@@ -60,9 +60,10 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
     SEARCH_URL = "http://www.levi.com/US/en_US/search?Ntt={search_term}"  # TODO: ordering
 
     PAGINATE_URL = ('http://www.levi.com/US/en_US/includes/searchResultsScroll/?nao={nao}'
-                    '&url=%2FUS%2Fen_US%2Fsearch%2F%3FD%3D{search_term}%26Dx'
-                    '%3Dmode%2Bmatchall%26N%3D4294960840%2B4294961101%2B4294965619%26Ns'
-                    '%3Dp_price_US_USD%257C0%26Ntk%3DAll%26Ntt%3Dmen%26Ntx%3Dmode%2Bmatchall')
+                    '&url=%2FUS%2Fen_US%2Fsearch%3FD%3D{search_term}%26Dx'
+                    '%3Dmode%2Bmatchall%26N%3D4294960840%2B4294961101%2B4294965619%26Ntk'
+                    '%3DAll%26Ntt%3Ddress%26Ntx%3Dmode%2Bmatchall')
+
     CURRENT_NAO = 0
     PAGINATE_BY = 12  # 12 products
     TOTAL_MATCHES = None  # for pagination
@@ -236,13 +237,13 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_data(self, response):
         data = re.findall(r'var buyStackJSON = \'(.+)\'; ', response.body_as_unicode())
-        data = re.sub(r'\\(.)', r'\g<1>', data[0])
         if data:
+            data = re.sub(r'\\(.)', r'\g<1>', data[0])
             try:
                 js_data = json.loads(data)
             except:
                 return
-        return js_data
+            return js_data
 
     def parse_image(self, response):
         if self.js_data:
@@ -251,7 +252,7 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
             except:
                 return
 
-        return image
+            return image
 
     def parse_related_product(self, response):
         related_prods = []
@@ -282,21 +283,21 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
                 description = self.js_data['colorid'][self.product_id]['name']
             except:
                 return
-        return description
+            return description
 
     def parse_upc(self, response):
         if self.js_data:
             for v in self.js_data['sku'].values():
                 upc = v['upc']
 
-        return upc
+            return upc
 
     def parse_sku(self, response):
         if self.js_data:
             for v in self.js_data['sku'].values():
                 skuid = v['skuid']
 
-        return skuid
+            return skuid
 
     def parse_price(self, response):
         if self.js_data:
@@ -311,7 +312,7 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
             else:
                 price = Price(price=0.00, priceCurrency="USD")
 
-        return price
+            return price
 
     def _scrape_total_matches(self, response):
         totals = response.css('.productCount ::text').extract()
@@ -327,6 +328,7 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
             '//li[contains(@class, "product-tile")]'
             '//a[contains(@rel, "product")]/@href'
         ).extract():
+            print link
             yield link, SiteProductItem()
 
     def _get_nao(self, url):
