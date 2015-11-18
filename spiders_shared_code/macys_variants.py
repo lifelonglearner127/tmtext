@@ -153,8 +153,15 @@ class MacysVariants(object):
         except:
             product_id = self.tree_html.xpath("//input[@id='productId']/@value")[0]
 
-        color_list = re.findall(r"MACYS.pdp.primaryImages\[" + product_id + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
-        color_list = color_list[0].split(",")
+        primary_image_list = re.findall(r"MACYS.pdp.primaryImages\[" + product_id + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        color_list = primary_image_list[0].split(",")
+
+        additional_image_list = re.findall(r"MACYS.pdp.additionalImages\[" + product_id + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+
+        try:
+            additional_image_list = json.loads("{" + additional_image_list[0] + "}")
+        except:
+            additional_image_list = {}
 
         for swatch in color_list:
             swatch_name = "color"
@@ -165,7 +172,11 @@ class MacysVariants(object):
             swatch_info["swatch_name"] = swatch_name
             swatch_info[swatch_name] = color
             swatch_info["hero"] = 1
-            swatch_info["hero_image"] = "http://slimages.macysassets.com/is/image/MCY/products/" + image_path
+            swatch_info["hero_image"] = ["http://slimages.macysassets.com/is/image/MCY/products/" + image_path]
+
+            for image_path in additional_image_list[color].split(","):
+                swatch_info["hero_image"].append("http://slimages.macysassets.com/is/image/MCY/products/" + image_path)
+
             swatch_list.append(swatch_info)
 
         if swatch_list:
