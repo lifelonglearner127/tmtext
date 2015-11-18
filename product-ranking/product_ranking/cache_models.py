@@ -187,4 +187,11 @@ if __name__ == '__main__':
         else:
             print('You did not type "y" - exit...')
     if 'list' in sys.argv:
-        print list_db_cache()
+        listing = list_db_cache()
+        for spider in listing.keys():
+            print
+            print spider.upper(), '*'*50
+            for date in listing[spider].keys():
+                print ' '*4, date, '-'*20
+                for searchterm in listing[spider][date]:
+                    print ' '*8, searchterm
