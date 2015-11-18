@@ -63,7 +63,8 @@ class DebenhamsProductSpider(BaseProductsSpider):
         cond_set_value(product, 'categories', categories)
 
         # Parse price
-        price = self._parse_price(response)
+        price, currency = self._parse_price(response)
+        price = Price(price=float(price), priceCurrency=currency)
         cond_set_value(product, 'price', price)
 
         # Parse special pricing
@@ -182,11 +183,7 @@ class DebenhamsProductSpider(BaseProductsSpider):
                     price
                 ), 0.00
             )
-
-        return Price(
-            price=float(price),
-            priceCurrency=currency
-        )
+        return price, currency
 
     def _parse_special_pricing(self, response):
         special_pricing = is_empty(
@@ -215,7 +212,7 @@ class DebenhamsProductSpider(BaseProductsSpider):
             response.xpath('//div[@class="product-stock-status"]'
                            '/p/span/text()').extract()
         )
-        print(stock_status)
+
         if 'In stock' in stock_status:
             stock_status = False
         else:
@@ -238,60 +235,40 @@ class DebenhamsProductSpider(BaseProductsSpider):
         product = meta['product']
 
         variants = []
-        data = is_empty(re.findall(
-            r'<div id="entitledItem_\w+" class="hidediv">(\[(.|\n)*?\])',
-            response.body_as_unicode()
-        ))
+        variant_drop_down = response.xpath('//div[@class="product-size '
+                                           'drop-down"]').extract()
+        if variant_drop_down:
+            stock_status = response.xpath('//div[@class="attributes"]'
+                                          '//div[@class="product-size '
+                                          'drop-down"]/select/'
+                                          'option[position() > 1]/'
+                                          '@data-item-stock').extract()
+            sizes = response.xpath('//div[@class="attributes"]'
+                                   '//div[@class="product-size drop-down"]'
+                                   '/select/option[position() > 1]'
+                                   '/@data-item-size').extract()
+            price = None
 
-        if data:
-            data = list(data)[0]
-
-            try:
-                variants_data = json.loads(data.replace('\'', '"'))
-            except ValueError as exc:
-                self.log(
-                    'Unable to parse variants from {url}: {exc}'.format(
-                        exc=exc,
-                        url=response.url
-                    ), ERROR
-                )
-                return []
-
-            for var_data in variants_data:
-                properties = {}
-
-                for attr, value in var_data['Attributes'].iteritems():
-                    attr = attr.lower().split('_')
-                    if attr[0] == 'colour':
-                        attr[0] = 'color'
-                    properties[attr[0]] = attr[1]
-
-                price = is_empty(
-                    re.findall(
-                        r'(\d+\.\d+)',
-                        var_data.get('offer_price', 0.00)
-                    ), product['price'].price.__float__()
-                )
-
-                status = var_data.get('inventory_status', 'unavailable')
-                stock = status.lower() == 'unavailable'
-
-                image_url = 'http://debenhams.scene7.com/is/image/Debenhams/' \
-                            '{upc}_{id}'.format(
-                                upc=product.get('upc', None),
-                                id=var_data['part_number']
-                            )
-
-                variant = {
-                    'properties': properties,
-                    'price': float(price),
-                    'is_out_of_stock': stock,
-                    'image_url': image_url
-                }
-
-                variants.append(variant)
         else:
-            return []
+            sizes = response.xpath('//ul[@class="size"]/li/label/span'
+                                  '/text()').extract()
+            stock_status = response.xpath('//ul[@class="size"]/li/label'
+                                          '/@title').extract()
+            price, currency = self._parse_price(response)
+            price = float(price)
+
+        for index, size in enumerate(sizes):
+            properties = {}
+            variant = {}
+
+            properties['size'] = size
+            variant['is_out_of_stock'] = True if 'Out of stock' in \
+                                                  stock_status[index] else False
+
+            variant['price'] = price if price else None
+            variant['properties'] = properties
+
+            variants.append(variant)
 
         return variants
 
@@ -357,12 +334,11 @@ class DebenhamsProductSpider(BaseProductsSpider):
         Scraping number of resulted product links
         """
         total_matches = is_empty(
-            response.xpath(
-                '//span[@class="products_count"]/text()'
-            ).extract(), 0
-        )
+            response.xpath('//span[@class="product-count"]'
+                           '/text()').re('\d.\d+'), 0)
 
         if total_matches:
+            total_matches = total_matches.replace(',', '')
             return int(total_matches)
         else:
             return 0
