@@ -274,46 +274,27 @@ class DebenhamsProductSpider(BaseProductsSpider):
 
     def _parse_related_products(self, response):
         related_products = []
-        data = is_empty(re.findall(
-            r'<div name="upSell_entitledItems_\w+" id="upSell_entitledItems_\w+"'
-            r' class="hidediv">(\[(.|\n)*?\])</div>',
-            response.body_as_unicode()
-        ))
+        title = response.xpath('//div[@class="product-cross-sells '
+                               'tab-container"]//ul[@class="jcarousel-skin-1"]'
+                               '/li/div[1]/h2/a/text()').extract()
+        url = response.xpath('//div[@class="product-cross-sells '
+                             'tab-container"]//ul[@class="jcarousel-skin-1"]'
+                             '/li/div[1]/h2/a/@href').extract()
 
-        if data:
-            data = list(data)[0]
-
-            try:
-                data = json.loads(data)
-            except ValueError as exc:
-                self.log(
-                    'Unable to parse related products from {url}: {exc}'.format(
-                        exc=exc,
-                        url=response.url
-                    ), ERROR
+        if title and url:
+            for index, title in enumerate(title):
+                related_products.append(
+                    RelatedProduct(
+                        url=url[index],
+                        title=title
+                    )
                 )
-                return
+            return related_products
 
-            for rel_prod in data:
-                url = rel_prod.get('pdpUrl')
-                if url:
-                    url = 'www.{domain}{url}'.format(
-                        domain=self.allowed_domains[0],
-                        url=url
-                    )
-
-                title = rel_prod.get('description')
-
-                if title and url:
-                    related_products.append(
-                        RelatedProduct(
-                            url=url,
-                            title=title
-                        )
-                    )
+        if related_products:
+            return related_products
         else:
-            return
-        return related_products
+            return None
 
     def send_next_request(self, reqs, response):
         """
