@@ -179,6 +179,7 @@ if __name__ == '__main__':
     create_tables()
     if 'clear_cache' in sys.argv:
         if raw_input('Delete all records? y/n: ').lower() == 'y':
+            #TODO: this doesn't work because of constraints - fix
             session.query(Spider).delete()
             session.query(Run).delete()
             session.query(Term).delete()
