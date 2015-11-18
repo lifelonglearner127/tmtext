@@ -1273,7 +1273,7 @@ class WalmartScraper(Scraper):
             return None
         else:
             price = re.findall("\d+.\d+", price_info)
-            return price[0]
+            return float(price[0])
 
     def _price_currency(self):
         """Extracts currency of product price in
@@ -2270,24 +2270,39 @@ class WalmartScraper(Scraper):
             or None if none found / not relevant
         """
 
-        # assume new page version
-        try:
+        if self._version() == "Walmart v2":
             sellers = self._marketplace_sellers_from_script()
             # filter out walmart
             if self._primary_seller().lower() == "walmart.com":
                 sellers = filter(lambda s: s != "Walmart.com", sellers)
 
-            return sellers if sellers else None
-        except:
-            sellers = None
+            if sellers:
+                return sellers
 
-        if not sellers:
-            # assume old page version
+            if self._marketplace_prices():
+                pinfo_dict = self._extract_product_info_json()
+
+                sellers = []
+                sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
+
+                if self._primary_seller().lower() in ["walmart.com", "walmart store"]:
+                    for seller in sellers_dict:
+                        if seller["sellerName"] != "Walmart.com":
+                            sellers.append(float(seller["sellerName"]))
+                else:
+                    for seller in sellers_dict:
+                        sellers.append(seller["sellerName"])
+
+                return sellers if sellers else None
+
+        if self._version() == "Walmart v1":
             sellers = self._seller_meta_from_tree().keys()
             # filter out walmart
             if self._primary_seller().lower() == "walmart.com":
                 sellers = filter(lambda s: s != "Walmart.com", sellers)
             return sellers if sellers else None
+
+        return None
 
     def _marketplace_prices(self):
         """Extracts list of marketplace sellers for this product
@@ -2297,18 +2312,15 @@ class WalmartScraper(Scraper):
             or None if none found / not relevant
         """
 
-        # assume new page version
-        try:
+        if self._version() == "Walmart v2":
             prices = self._marketplace_prices_from_script()
 
             if not prices:
                 return None
 
             return prices if prices else None
-        except:
-            prices = None
 
-        if not prices:
+        if self._version() == "Walmart v1":
             # assume old page version
             sellers = self._marketplace_sellers()
             product_info_json_text = self._find_between(html.tostring(self.tree_html), "var DefaultItemWidget =", "addMethodsToDefaultItem(DefaultItemWidget);").strip()
@@ -2332,6 +2344,8 @@ class WalmartScraper(Scraper):
                 return None
 
             return prices
+
+        return None
 
     def _marketplace_out_of_stock(self):
         """Extracts info on whether currently unavailable from any marketplace seller - binary
