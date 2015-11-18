@@ -226,6 +226,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         length = _props.pop('length') if 'length' in _props else None
         price = _props.pop('price') if 'price' in _props else None
         cup = _props.pop('cup') if 'cup' in _props else None
+        width = _props.pop('width') if 'width' in _props else None
         # check if there are still some keys
         if _props.keys():
             self.log('Error: extra variants found, url %s' % response.url, WARNING)
@@ -241,6 +242,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         _format_args['length'] = length if length else ''
         _format_args['price'] = price if price else ''
         _format_args['cup'] = cup if cup else ''
+        _format_args['width'] = width if width else ''
 
         if null_values and isinstance(null_values, (list, tuple)):
             for null_value in null_values:
@@ -295,6 +297,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '3AselectedLotValue=+'
                     '&skuSelectionMap.SIZE={size}'
                     '&_D%3AskuSelectionMap.SIZE=+'
+                    '&skuSelectionMap.WIDTH={width}'
+                    '&_D%3AskuSelectionMap.WIDTH=+'
                     '&skuSelectionMap.CUP={cup}'
                     '&_D%3AskuSelectionMap.CUP=+'
                     '&skuSelectionMap.WAIST={waist}'
@@ -340,6 +344,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '&_D%3AskuSelectionMap.SIZE=+'
                     '&skuSelectionMap.CUP={cup}'
                     '&_D%3AskuSelectionMap.CUP=+'
+                    '&skuSelectionMap.WIDTH={width}'
+                    '&_D%3AskuSelectionMap.WIDTH=+'
                     '&_D%3AskuSelectionMap.{attribute_name}=+'
                     '&skuSelectionMap.COLOR='''
                     '&_D%3AskuSelectionMap.COLOR=+&_DARGS=%'
@@ -386,7 +392,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
             variant['in_stock'] = None
 
-        if result:
+        if result.get('priceHtml', None):
             price_data = result['priceHtml']
             if price_data:
                 price = re.findall(r'\$(\d+\.*\d+)&nbsp', price_data)
