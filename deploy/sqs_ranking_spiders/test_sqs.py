@@ -1,4 +1,7 @@
 import json
+from time import sleep
+from datetime import datetime, timedelta
+from random import randint
 from boto.sqs.message import Message
 from boto.sqs import connect_to_region as connect_sqs
 from boto.s3 import connect_to_region as connect_s3
@@ -16,8 +19,15 @@ def generate_tasks():
     # walmart with best sellers
     # few product urls
     # additional cmd args
-    tasks = []
+    tasks = [
+
+    ]
     tasks_dict = {}
+    for task in tasks:
+        random_id = randint(10000, 9000000)
+        task['task_id'] = random_id
+        tasks_dict[str(random_id)] = task
+
     return tasks_dict
 
 
@@ -36,6 +46,8 @@ def get_or_create_sqs_queue(conn, queue_name):
     """create and return sqs queue"""
     try:
         queue = conn.get_queue(queue_name)
+        if not queue:
+            raise Exception
     except Exception as e:
         queue = conn.create_queue(queue_name)
     return queue
@@ -43,10 +55,9 @@ def get_or_create_sqs_queue(conn, queue_name):
 
 def push_tasks_to_sqs(tasks, queue):
     """put tasks to sqs queue"""
-    for task in tasks:
+    for task in tasks.itervalues():
         data = json.dumps(task)
-        m = Message()
-        m.set_body(data)
+        m = Message(body=data)
         queue.write(m)
 
 
@@ -69,15 +80,19 @@ def check_s3_key(bucket, key):
 
 def check_tasks_completed(tasks, wait_minutes, output_queue, s3_bucket):
     """check all pushed tasks to be completed"""
-    max_wait_time = wait_minutes * 60
     step_time = 10
-    for _ in xrange(0, max_wait_time, step_time):
+    time_start = datetime.now()
+    time_end = time_start + timedelta(minutes=wait_minutes)
+    while True:
+        if datetime.now() >= time_end:
+            break  # stop when allowed time is passed
         message = get_message_from_queue(output_queue, step_time)
         if not message:
-            continue
-        task_id = message['_msg_id']
+            sleep(5)
+            continue  # wait some time before another try
+        task_id = str(message['_msg_id'])
         res = check_s3_key(s3_bucket, message['s3_key_data'])
-        if res:
+        if res:  # if data exists in s3 (ok)
             tasks.pop(task_id, None)
         if not tasks:
             return True  # return True only when all tasks finished working
@@ -94,11 +109,12 @@ def main():
     bucket = s3_conn.get_bucket('spyder-bucket')
     max_wait_minutes = 30
     server_name = 'sqs_test'
-    output_queue_name = '%ssqs_ranking_spiders_output' % (server_name,)
-    progress_queue_name = '%ssqs_ranking_spiders_progress' % (server_name,)
+    sqs_name = 'sqs_ranking_spiders'
+    output_queue_name = '%s%s_output' % (server_name, sqs_name)
+    progress_queue_name = '%s%s_progress' % (server_name, sqs_name)
     output_queue = get_or_create_sqs_queue(sqs_conn, output_queue_name)
     progress_queue = get_or_create_sqs_queue(sqs_conn, progress_queue_name)
-    tasks_queue = get_or_create_sqs_queue(sqs_conn, 'sqs_ranking_spiders_tasks_tests')
+    tasks_queue = get_or_create_sqs_queue(sqs_conn, '%s_tasks_tests' % sqs_name)
 
     tasks = generate_tasks()
 
