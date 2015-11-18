@@ -981,9 +981,7 @@ class SearchSpider(BaseSpider):
         product['origin_model'] = product_model
         product['product_origin_price'] = price
         product['origin_image_url'] = product_image
-        print "IMAGE", ProcessText.encode_image(product_image)
-        with open("/tmp/page.html", "w+") as f:
-            f.write(hxs.response.body)
+        product['origin_image_encoded'] = ProcessText.encode_image(product_image)
         # TODO
         # product['origin_upc'] = upc
         product['origin_brand'] = brand

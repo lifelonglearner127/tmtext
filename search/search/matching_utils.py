@@ -11,7 +11,8 @@ import math
 import urllib
 import numpy as np
 import cv2
-from compute_distances import _normalize_image, image_histogram_to_string, compute_histogram, shistogram_similarity, _blockhash
+from compute_distances import _normalize_image, image_histogram_to_string,\
+ compute_histogram, shistogram_similarity, _blockhash, hash_similarity
 
 # process text in product names, compute similarity between products
 class ProcessText():
@@ -165,7 +166,10 @@ class ProcessText():
             product_upc = product2['origin_upc']
             product1_mancode = product2['origin_manufacturer_code']
             product_brand = product2['origin_brand']
-
+            try:
+                product_image = product2['origin_image_encoded']
+            except:
+                product_image = None
 
 
             words1 = ProcessText.normalize(product_name)
@@ -184,6 +188,11 @@ class ProcessText():
                 product2_mancode = product2['manufacturer_code']
             else:
                 product2_mancode = None
+
+            if 'product_image_encoded' in product2:
+                product2_image = product2['product_image_encoded']
+            else:
+                product2_image = None
 
             # and only available for Amazon
             # normalize brand name
@@ -243,6 +252,12 @@ class ProcessText():
 
             # check if manufacturer codes match
             manufacturer_code_matched = ProcessText.manufacturer_code_match(product1_mancode, product2_mancode)
+
+            # compute image similarity score
+            if product_image and product2_image:
+                image_similarity_score = ProcessText.image_similarity(product_image, product2_image)
+            else:
+                image_similarity_score = None
 
             # check if product names match (a similarity score)
             # use copies of brands names with model number replaced with a placeholder
@@ -330,7 +345,8 @@ class ProcessText():
                 log.msg("\nPRODUCT: " + unicode(product_name) + " URL: " + product2['origin_url'] + " MODEL: " + unicode(product_model) + " PRICE: " + unicode(product_price) + \
                 " BRAND: " + unicode(product1_brand) + \
                 "\nPRODUCT2: " + unicode(product2['product_name']) + " URL2: " + product2['product_url'] + " BRAND2: " + unicode(product2_brand) + " MODEL2: " + unicode(product2_model) + " PRICE2: " + unicode(product2_price) + \
-                "\nSCORE: " + str(score) + " PRICE_PENLZ: " + unicode(price_score_penalization) + " THRESHOLD: " + str(threshold) + "\n", level=log.WARNING)
+                "\nSCORE: " + str(score) + " PRICE_PENLZ: " + unicode(price_score_penalization) + " THRESHOLD: " + str(threshold) + \
+                "\nIMAGE SIMILARITY: " + str(image_similarity_score) + "\n", level=log.WARNING)
             except:
                 log.msg("\nPRODUCT: --Error trying to log product info", level=log.WARNING)
 
@@ -866,10 +882,10 @@ class ProcessText():
         hist1, hash1 = encoded_im1.split()
         hist2, hash2 = encoded_im2.split()
 
-        hist_similarity = shistogram_similarity(hist1, hist2)
-        hash_similarity = hash_similarity(hash1, hash2)
+        hist_sim = shistogram_similarity(hist1, hist2)
+        hash_sim = hash_similarity(hash1, hash2)
 
         hash_weight = 1 - hist_weight
 
-        score = hist_weight * hist_similarity + hash_weight * hash_similarity
+        score = hist_weight * hist_sim + hash_weight * hash_sim
         return score
