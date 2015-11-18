@@ -163,6 +163,12 @@ class MacysVariants(object):
         except:
             additional_image_list = {}
 
+        thumbnail_list = self.tree_html.xpath("//ul[@id='colorList{0}']/li".format(product_id))
+        thumbnail_image_list = {}
+
+        for thumbnail in thumbnail_list:
+            thumbnail_image_list[thumbnail.xpath("./@title")[0]] = "http://slimages.macysassets.com/is/image/MCY/products/" + thumbnail.xpath("./@data-imgurl")[0]
+
         for swatch in color_list:
             swatch_name = "color"
             color = swatch.split(":")[0].replace('"', '')
@@ -176,6 +182,9 @@ class MacysVariants(object):
 
             for image_path in additional_image_list[color].split(","):
                 swatch_info["hero_image"].append("http://slimages.macysassets.com/is/image/MCY/products/" + image_path)
+
+            swatch_info["thumb"] = 1
+            swatch_info["thumb_image"] = thumbnail_image_list[color]
 
             swatch_list.append(swatch_info)
 
