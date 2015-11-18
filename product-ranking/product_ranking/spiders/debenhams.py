@@ -132,7 +132,7 @@ class DebenhamsProductSpider(BaseProductsSpider):
     def _parse_categories(self, response):
         categories = []
         categories_sel = response.xpath(
-                '//div[@class="breadcrumb_links"]/div/span/a/text()').extract()
+                '//div[@class="breadcrumb"]/ol/li//text()').extract()
         for cat in categories_sel:
             categories.append(cat.strip())
         return categories
@@ -211,11 +211,12 @@ class DebenhamsProductSpider(BaseProductsSpider):
 
     def _parse_stock_status(self, response):
         stock_status = is_empty(
-            response.xpath('//meta[@name="twitter:data2"]'
-                           '/@content').extract()
+            response.xpath('//div[@class="product-stock-status"]'
+                           '/p/span/text()').extract()
         )
+        print(stock_status)
 
-        if stock_status.lower() is 'in stock':
+        if 'In stock' in stock_status[0]:
             stock_status = True
         else:
             stock_status = False
