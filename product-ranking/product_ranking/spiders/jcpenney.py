@@ -199,7 +199,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             try:
                 new_variant = {
                     'lot': current_lot,
-                    'price': price_data.get(current_lot, price),
+                    'price': float(price_data.get(current_lot, price)),
                     'in_stock': None,
                     'selected': False,
                     'properties': prop}.copy()
