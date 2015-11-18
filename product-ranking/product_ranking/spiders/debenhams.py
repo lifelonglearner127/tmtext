@@ -215,11 +215,11 @@ class DebenhamsProductSpider(BaseProductsSpider):
             response.xpath('//div[@class="product-stock-status"]'
                            '/p/span/text()').extract()
         )
-
-        if 'In stock' in stock_status[0]:
-            stock_status = True
-        else:
+        print(stock_status)
+        if 'In stock' in stock_status:
             stock_status = False
+        else:
+            stock_status = True
 
         return stock_status
 
