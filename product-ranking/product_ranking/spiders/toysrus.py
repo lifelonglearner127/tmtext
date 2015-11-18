@@ -34,7 +34,7 @@ class ToysrusProductSpider(BaseProductsSpider):
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
 
-        super(DebenhamsProductSpider, self).__init__(*args, **kwargs)
+        super(ToysrusProductSpider, self).__init__(*args, **kwargs)
 
     def parse_product(self, response):
         reqs = []
