@@ -117,12 +117,13 @@ class DebenhamsProductSpider(BaseProductsSpider):
 
     def _parse_brand(self, response):
         brand = is_empty(
-            response.xpath('//meta[@property="brand"]/@content').extract()
+            response.xpath('//img[@class="brand"]/@alt').extract()
         )
 
         return brand
 
     def _parse_department(self, response):
+        # field is not present in the new design
         department = is_empty(
             response.xpath('//meta[@property="department"]/@content').extract()
         )
@@ -189,7 +190,7 @@ class DebenhamsProductSpider(BaseProductsSpider):
 
     def _parse_special_pricing(self, response):
         special_pricing = is_empty(
-            response.xpath('//span[@class="price-was"]').extract(),
+            response.xpath('//li[@class="first-child attr-price-was"]/span[2]').extract(),
             False
         )
 
@@ -204,7 +205,7 @@ class DebenhamsProductSpider(BaseProductsSpider):
 
     def _parse_description(self, response):
         description = is_empty(
-            response.xpath('//div[@id="item-description-block"]').extract()
+            response.xpath('//h3[@class="description"]/text()').extract()
         )
 
         return description
@@ -214,7 +215,6 @@ class DebenhamsProductSpider(BaseProductsSpider):
             response.xpath('//div[@class="product-stock-status"]'
                            '/p/span/text()').extract()
         )
-        print(stock_status)
 
         if 'In stock' in stock_status[0]:
             stock_status = True
@@ -225,14 +225,13 @@ class DebenhamsProductSpider(BaseProductsSpider):
 
     def _parse_upc(self, response):
         upc = is_empty(
-            response.xpath('//meta[@property="product_number"]'
-                           '/@content').extract()
+            response.xpath('//span[@class="product-code"]/text()').extract()
         )
 
         if upc:
-            upc = upc.split('_')[0]
+            return upc
 
-        return upc
+        return None
 
     def _parse_variants(self, response):
         meta = response.meta.copy()
