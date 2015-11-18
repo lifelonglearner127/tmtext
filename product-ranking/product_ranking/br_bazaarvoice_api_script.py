@@ -146,13 +146,9 @@ class BuyerReviewsBazaarApi(object):
                         histogram_data
                     )
                     stars_data = [x for i in stars_data for x in i if x != '']
-                    print stars_data
                     stars = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
-                    print stars
                     for star in stars_data:
-
                         stars[star] += 1
-                        print stars
 
                 return stars
 

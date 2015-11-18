@@ -328,7 +328,6 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
             '//li[contains(@class, "product-tile")]'
             '//a[contains(@rel, "product")]/@href'
         ).extract():
-            print link
             yield link, SiteProductItem()
 
     def _get_nao(self, url):
