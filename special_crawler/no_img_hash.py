@@ -9,7 +9,7 @@ from StringIO import StringIO
 
 '''
     Fetches an image, hashes it, and adds/removes it from the desired path
-    jenkins test
+
     usage: http://localhost/hash?mode=add&path=no_img_list.json&url=http://tesco.scene7.com/is/image/tesco/436-0793_PI_1000021MN
 '''
 
