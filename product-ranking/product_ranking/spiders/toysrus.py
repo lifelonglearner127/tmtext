@@ -23,13 +23,16 @@ class ToysrusProductSpider(BaseProductsSpider):
     name = 'toysrus_products'
     allowed_domains = ["toysrus.com"]
 
-    # SEARCH_URL = "http://www.debenhams.com/webapp/wcs/stores/servlet/" \
-    #              "Navigate?langId=-1&storeId=10701&catalogId=10001&txt={search_term}"
-    #
-    # items_per_page = 60
+    SEARCH_URL = "http://www.toysrus.com/search/index.jsp?kwCatId=&" \
+                 "kw={search_term}&keywords={search_term}&" \
+                 "origkw={search_term}&sr=1"
+
+    items_per_page = 24
     #
     # BUYER_REVIEWS_URL = 'http://debenhams.ugc.bazaarvoice.com/9364redes-en_gb/{upc}/' \
     #                     'reviews.djs?format=embeddedhtml'
+
+    start_links = 'http://www.toysrus.com'
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
@@ -84,22 +87,26 @@ class ToysrusProductSpider(BaseProductsSpider):
         upc = self._parse_upc(response)
         cond_set_value(product, 'upc', upc)
 
-        # Parse variants
-        variants = self._parse_variants(response)
-        cond_set_value(product, 'variants', variants)
+        # Parse sku
+        sku = self._parse_sku(response)
+        cond_set_value(product, 'sku', sku)
 
-        # Parse buyer reviews
-        reqs.append(
-            Request(
-                url=self.BUYER_REVIEWS_URL.format(upc=upc),
-                dont_filter=True,
-                callback=self.br.parse_buyer_reviews
-            )
-        )
-
-        # Parse related products
-        related_products = self._parse_related_products(response)
-        cond_set_value(product, 'related_products', related_products)
+        # # Parse variants
+        # variants = self._parse_variants(response)
+        # cond_set_value(product, 'variants', variants)
+        #
+        # # Parse buyer reviews
+        # reqs.append(
+        #     Request(
+        #         url=self.BUYER_REVIEWS_URL.format(upc=upc),
+        #         dont_filter=True,
+        #         callback=self.br.parse_buyer_reviews
+        #     )
+        # )
+        #
+        # # Parse related products
+        # related_products = self._parse_related_products(response)
+        # cond_set_value(product, 'related_products', related_products)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -107,34 +114,80 @@ class ToysrusProductSpider(BaseProductsSpider):
         return product
 
     def _parse_title(self, response):
-        pass
+        title = is_empty(response.xpath('//meta[@property="og:title"]'
+                                        '/@content').extract())
+        return title
 
     def _parse_brand(self, response):
-        pass
+        brand = is_empty(response.xpath('//li[@class="first"]//label'
+                                        '/text()').extract())
+        return brand
 
     def _parse_department(self, response):
-        pass
+        department = self._parse_categories(response)
+        return department[1]
 
     def _parse_categories(self, response):
-        pass
+        categories = []
+        categories_sel = response.xpath('//div[@id="breadCrumbs"]'
+                                             '/a/text()').extract()
+        for i in categories_sel:
+            categories.append(i.strip())
+
+        return categories_sel
 
     def _parse_price(self, response):
-        pass
+        price = is_empty(response.xpath('//li[contains(@class, "retail fl")]'
+                                        '/span/text()').re(r'\d+.\d+'), 0.00)
+
+        currency = is_empty(response.xpath(
+            '//script[contains(text(), '
+            '"storeCurrencyCode")]').re(r"storeCurrencyCode = '(\w+)'"))
+
+        return Price(
+            price=float(price),
+            priceCurrency=currency
+        )
 
     def _parse_special_pricing(self, response):
-        pass
+        special_price = is_empty(response.xpath(
+            '//li[contains(@class, "list fl")]'
+            '/span/text()').extract(), False)
+
+        return special_price
 
     def _parse_image_url(self, response):
-        pass
+        image_url = is_empty(response.xpath('//meta[@property="og:image"]'
+                                            '/@content').extract())
+        return image_url
 
     def _parse_description(self, response):
-        pass
+        desc = is_empty(response.xpath('//meta[@property="og:description"]'
+                                       '/@content').extract())
+
+        if desc:
+            desc = desc.replace("<br>", "")
+
+        return desc
 
     def _parse_stock_status(self, response):
-        pass
+        stock_status = is_empty(response.xpath(
+            '//script[contains(text(), "inStock")]').re(r'"inStock", "(\d+)"'))
+
+        if stock_status == "1":
+            return False
+        else:
+            return True
 
     def _parse_upc(self, response):
-        pass
+        upc = is_empty(response.xpath('//p[@class="upc"]/span'
+                                      '/text()').extract())
+        return upc
+
+    def _parse_sku(self, response):
+        sku = is_empty(response.xpath('//p[@class="skuText"]/span'
+                                      '/text()').extract())
+        return sku
 
     def _parse_variants(self, response):
         pass
@@ -161,11 +214,9 @@ class ToysrusProductSpider(BaseProductsSpider):
         Scraping number of resulted product links
         """
         total_matches = is_empty(
-            response.xpath(
-                '//span[@class="products_count"]/text()'
-            ).extract(), 0
+            response.xpath('//h1[@id="search"]/strong/text()').re(r'\d+'), 0
         )
-
+        print(total_matches)
         if total_matches:
             return int(total_matches)
         else:
@@ -182,18 +233,16 @@ class ToysrusProductSpider(BaseProductsSpider):
         Scraping product links from search page
         """
 
-        items = response.xpath(
-            '//div[@id="productDisplay"]/./'
-            '/tr[@class="item_container"]'
-            '/td[contains(@class, "item")]'
-        )
+        items = response.xpath('//div[contains(@class, '
+                               '"clearfix prodloop_row_cont")]'
+                               '//div[@class="varHeightTop"]')
 
         if items:
             for item in items:
                 link = is_empty(
-                    item.xpath('././/input[@id="productTileImageUrl"]'
-                               '/@value').extract()
+                    item.xpath('a/@href').extract()
                 )
+                link = self.start_links + link
                 res_item = SiteProductItem()
                 yield link, res_item
         else:
@@ -201,11 +250,12 @@ class ToysrusProductSpider(BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         url = is_empty(
-            response.xpath(
-                '//a[text()="Next"]/@href'
-            ).extract()
-        )
+            response.xpath('//*[@id="pagination_bot"]//a'
+                           '/span[contains(@class,"next")]'
+                           '/parent::*/@href').extract()
 
+        )
+        url = self.start_links + url.replace('..', '')
         if url:
             return url
         else:
