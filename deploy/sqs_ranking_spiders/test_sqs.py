@@ -12,6 +12,7 @@ logging.basicConfig(
     format='[%(asctime)s, %(levelname)s] %(message)s',
     filename='/tmp/test_sqs.log'
 )
+logging.getLogger('boto').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
@@ -39,7 +40,7 @@ def generate_tasks():
         random_id = randint(10000, 9000000)
         task['task_id'] = random_id
         tasks_dict[str(random_id)] = task
-    logger.info('Task ids: ', tasks_dict.keys())
+    logger.info('Task ids: %s', tasks_dict.keys())
 
     return tasks_dict
 
@@ -48,11 +49,11 @@ def add_additional_task_params(tasks, add_to_cmd_args=False, **params):
     """add some parameters to the tasks"""
     for task in tasks.itervalues():
         if add_to_cmd_args:
-            task.update(params)
-        else:
             if 'cmd_args' not in task:
                 task['cmd_args'] = {}
             task['cmd_args'].update(params)
+        else:
+            task.update(params)
 
 
 def get_or_create_sqs_queue(conn, queue_name):
@@ -156,3 +157,5 @@ def main():
     log_failed_tasks(tasks)
 
 
+if __name__ == '__main__':
+    main()
