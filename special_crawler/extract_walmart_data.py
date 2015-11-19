@@ -102,7 +102,7 @@ class WalmartScraper(Scraper):
         # containing various info on the product.
         # Currently used for seller info (but useful for others as well)
         self.product_info_json = None
-
+        self.product_choice_info_json = None
         self.failure_type = None
 
         self.review_json = None
@@ -882,6 +882,25 @@ class WalmartScraper(Scraper):
 
         return self._exclude_javascript_from_description(short_description)
 
+    def _seller_ranking(self):
+        ranking_list = self.tree_html.xpath("//div[@class='Grid-col item-ranks']//ol/li[@class='item-rank']/span[contains(@class, 'rank')]/text()")
+        breadcrumb_list = self.tree_html.xpath("//div[@class='Grid-col item-ranks']//ol")
+        seller_ranking = []
+
+        for index, ranking in enumerate(ranking_list):
+            category_name = ""
+
+            for sub_category_name in breadcrumb_list[index].xpath("./li[@class='breadcrumb']/a/text()"):
+                category_name = category_name + sub_category_name + " > "
+
+            category_name = category_name[:-3]
+            seller_ranking.append({"category": category_name, "ranking": int(ranking[1:])})
+
+        if seller_ranking:
+            return seller_ranking
+
+        return None
+
     def _exclude_javascript_from_description(self, description):
         description = re.subn(r'<(script).*?</\1>(?s)', '', description)[0]
 #        description = re.sub(r"<script type=.+</script>", "", description)
@@ -1254,7 +1273,7 @@ class WalmartScraper(Scraper):
             return None
         else:
             price = re.findall("\d+.\d+", price_info)
-            return price[0]
+            return float(price[0])
 
     def _price_currency(self):
         """Extracts currency of product price in
@@ -1531,7 +1550,13 @@ class WalmartScraper(Scraper):
         if self._version() == "Walmart v2":
             if self.is_bundle_product:
                 product_info_json = self._extract_product_info_json()
-                return product_info_json["analyticsData"]["upc"]
+                if product_info_json["analyticsData"]["upc"]:
+                    return product_info_json["analyticsData"]["upc"]
+
+                if self.product_choice_info_json["product"]["wupc"]:
+                    return self.product_choice_info_json["product"]["wupc"]
+
+                return None
             else:
                 return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
 
@@ -1972,6 +1997,21 @@ class WalmartScraper(Scraper):
             product_info_json = json.loads(product_info_json)
             self.product_info_json = product_info_json
 
+            try:
+                product_choice_info_json = self._find_between(html.tostring(self.tree_html), 'define("choice/data",', ");\n")
+                product_choice_info_json = json.loads(product_choice_info_json)
+                self.product_choice_info_json = product_choice_info_json
+            except:
+                pass
+
+            if not self.product_choice_info_json:
+                try:
+                    product_choice_info_json = self._find_between(html.tostring(self.tree_html), 'define("non-choice/data",', ");\n")
+                    product_choice_info_json = json.loads(product_choice_info_json)
+                    self.product_choice_info_json = product_choice_info_json
+                except:
+                    pass
+
             return self.product_info_json
         else:
             page_raw_text = html.tostring(self.tree_html)
@@ -2251,24 +2291,39 @@ class WalmartScraper(Scraper):
             or None if none found / not relevant
         """
 
-        # assume new page version
-        try:
+        if self._version() == "Walmart v2":
             sellers = self._marketplace_sellers_from_script()
             # filter out walmart
             if self._primary_seller().lower() == "walmart.com":
                 sellers = filter(lambda s: s != "Walmart.com", sellers)
 
-            return sellers if sellers else None
-        except:
-            sellers = None
+            if sellers:
+                return sellers
 
-        if not sellers:
-            # assume old page version
+            if self._marketplace_prices():
+                pinfo_dict = self._extract_product_info_json()
+
+                sellers = []
+                sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
+
+                if self._primary_seller().lower() in ["walmart.com", "walmart store"]:
+                    for seller in sellers_dict:
+                        if seller["sellerName"] != "Walmart.com":
+                            sellers.append(float(seller["sellerName"]))
+                else:
+                    for seller in sellers_dict:
+                        sellers.append(seller["sellerName"])
+
+                return sellers if sellers else None
+
+        if self._version() == "Walmart v1":
             sellers = self._seller_meta_from_tree().keys()
             # filter out walmart
             if self._primary_seller().lower() == "walmart.com":
                 sellers = filter(lambda s: s != "Walmart.com", sellers)
             return sellers if sellers else None
+
+        return None
 
     def _marketplace_prices(self):
         """Extracts list of marketplace sellers for this product
@@ -2278,18 +2333,15 @@ class WalmartScraper(Scraper):
             or None if none found / not relevant
         """
 
-        # assume new page version
-        try:
+        if self._version() == "Walmart v2":
             prices = self._marketplace_prices_from_script()
 
             if not prices:
                 return None
 
             return prices if prices else None
-        except:
-            prices = None
 
-        if not prices:
+        if self._version() == "Walmart v1":
             # assume old page version
             sellers = self._marketplace_sellers()
             product_info_json_text = self._find_between(html.tostring(self.tree_html), "var DefaultItemWidget =", "addMethodsToDefaultItem(DefaultItemWidget);").strip()
@@ -2313,6 +2365,8 @@ class WalmartScraper(Scraper):
                 return None
 
             return prices
+
+        return None
 
     def _marketplace_out_of_stock(self):
         """Extracts info on whether currently unavailable from any marketplace seller - binary
@@ -2476,10 +2530,17 @@ class WalmartScraper(Scraper):
 
         try:
             if "/cp/" in self._canonical_link():
-                self.failure_type = "Category page"
+                self.failure_type = "Invalid url"
         except:
             if "/cp/" in self.product_page_url:
-                self.failure_type = "Category page"
+                self.failure_type = "Invalid url"
+
+        try:
+            if "/browse/" in self._canonical_link():
+                self.failure_type = "Invalid url"
+        except:
+            if "/browse/" in self.product_page_url:
+                self.failure_type = "Invalid url"
 
         # check existence of "We can't find the product you are looking for, but we have similar items for you to consider."
         text_list = self.tree_html.xpath("//body//text()")
@@ -2510,44 +2571,42 @@ class WalmartScraper(Scraper):
 
     def _ingredients(self):
         # list of ingredients - list of strings
-        ingr = self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]//text()")
+        ingr = self.tree_html.xpath("//section[contains(@class,'ingredients')]/p[2]")
 
         if not ingr:
-            ingr = self.tree_html.xpath("//section[contains(@class,'js-ingredients')]/p[1]//text()")
+            ingr = self.tree_html.xpath("//section[contains(@class,'js-ingredients')]/p[1]")
 
         if len(ingr) > 0:
-            res = []
-            w = ''
-            br = 0
-            for s in ingr[0]:
-                if s == "," and br == 0:
-                    if w != "":
-                        res.append(w.strip())
-                    w = ""
-                elif s == "[" or s == "(":
-                    w += s
-                    br = 1
-                elif s == "]" or s == ")":
-                    w += s
-                    br = 0
-                else:
-                    w += s
-            if w != '':
-                res.append(w.strip())
-            self.ing_count = len(res)
-            return res
-        ingr=self.tree_html.xpath("//p[@class='ProductIngredients']//text()")
-        if len(ingr) >0 :
-            res = ingr[0].split(',')
-            self.ing_count = len(res)
-            return res
+            ingr = ingr[0].text_content().strip()
+
+            if ingr.lower().startswith("ingredients:"):
+                ingr = ingr[12:].strip()
+
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            ingredients = r.findall(ingr)
+            ingredients = [ingredient.strip() for ingredient in ingredients]
+            self.ing_count = len(ingredients)
+            return ingredients
+
+        ingr = self.tree_html.xpath("//p[@class='ProductIngredients']//text()")
+
+        if len(ingr) > 0:
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            ingredients = r.findall(ingr)
+            ingredients = [ingredient.strip() for ingredient in ingredients]
+            self.ing_count = len(ingredients)
+            return ingredients
+
         ingr = self.tree_html.xpath("//b[contains(text(),'Ingredients:')]")
+
         if len(ingr) > 0:
             ingr = ingr[0].tail
-            ingr = ingr.split(",")
-            ingr = map(lambda e: e.strip(), ingr)
-            self.ing_count = len(ingr)
-            return ingr
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            ingredients = r.findall(ingr)
+            ingredients = [ingredient.strip() for ingredient in ingredients]
+            self.ing_count = len(ingredients)
+            return ingredients
+
         self.ing_count = None
         return None
 
@@ -2935,6 +2994,7 @@ class WalmartScraper(Scraper):
         "brand": _meta_brand_from_tree, \
         "description": _short_description_wrapper, \
         # TODO: check if descriptions work right
+        "seller_ranking": _seller_ranking, \
         "long_description": _long_description_wrapper, \
         "shelf_description": _shelf_description, \
         "variants": _variants, \
