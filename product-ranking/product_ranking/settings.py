@@ -9,11 +9,10 @@
 import os
 import sys
 import random
-
-from scrapy import log
 import requests
 from requests.exceptions import (Timeout as ReqTimeout,
-                                 ProxyError as ReqProxyError, SSLError)
+                                 ProxyError as ReqProxyError, SSLError,
+                                 ContentDecodingError)
 
 
 def _install_pip():
@@ -176,7 +175,7 @@ def _check_if_proxies_available(http_proxy_path, timeout=10):
         except ReqTimeout:
             print('failed to fetch host %s using proxy %s' % (h, prox))
             pass  # got timeout - proxy not available
-        except (ReqProxyError, SSLError):
+        except (ReqProxyError, SSLError, ContentDecodingError):
             print('proxy %s - failed to fetch host %s' % (prox, h))
 
 if not os.path.exists('/tmp/_stop_proxies'):
