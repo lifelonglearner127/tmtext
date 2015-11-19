@@ -10,6 +10,7 @@ import os
 import sys
 import random
 import requests
+from scrapy import log
 from requests.exceptions import (Timeout as ReqTimeout,
                                  ProxyError as ReqProxyError, SSLError,
                                  ContentDecodingError)
