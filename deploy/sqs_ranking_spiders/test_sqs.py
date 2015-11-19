@@ -6,6 +6,14 @@ from boto.sqs.message import Message
 from boto.sqs import connect_to_region as connect_sqs
 from boto.s3 import connect_to_region as connect_s3
 
+import logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(asctime)s, %(levelname)s] %(message)s',
+    filename='/tmp/test_sqs.log'
+)
+logger = logging.getLogger(__name__)
+
 
 def generate_tasks():
     """
@@ -20,13 +28,18 @@ def generate_tasks():
     # few product urls
     # additional cmd args
     tasks = [
-
+        dict(searchterms_str='iphone',
+             with_best_seller_ranking=True,
+             cmd_args=dict(quantity=50)),
+        dict(url='http://www.amazon.com/Casio-MQ24-1E-Black-Resin-Watch/dp/'
+                 'B000GAWSHM/ref=sr_1_2?ie=UTF8&qid=1447922212&sr=8-2')
     ]
     tasks_dict = {}
     for task in tasks:
         random_id = randint(10000, 9000000)
         task['task_id'] = random_id
         tasks_dict[str(random_id)] = task
+    logger.info('Task ids: ', tasks_dict.keys())
 
     return tasks_dict
 
@@ -48,13 +61,16 @@ def get_or_create_sqs_queue(conn, queue_name):
         queue = conn.get_queue(queue_name)
         if not queue:
             raise Exception
-    except Exception as e:
+    except Exception:
+        logger.info('Queue %s not exists, creating it', queue_name)
         queue = conn.create_queue(queue_name)
+        sleep(10)
     return queue
 
 
 def push_tasks_to_sqs(tasks, queue):
     """put tasks to sqs queue"""
+    logger.info('Pushing tasks to sqs')
     for task in tasks.itervalues():
         data = json.dumps(task)
         m = Message(body=data)
@@ -75,6 +91,7 @@ def check_s3_key(bucket, key):
     item = bucket.lookup(key)
     if item and item.size:
         return True
+    logger.warning('S3 key not exists or empty: %s', key)
     return False
 
 
@@ -83,7 +100,10 @@ def check_tasks_completed(tasks, wait_minutes, output_queue, s3_bucket):
     step_time = 10
     time_start = datetime.now()
     time_end = time_start + timedelta(minutes=wait_minutes)
+    res = False
+    logger.info('Starting to check output queue')
     while True:
+        logging.debug('Check status next step')
         if datetime.now() >= time_end:
             break  # stop when allowed time is passed
         message = get_message_from_queue(output_queue, step_time)
@@ -95,15 +115,23 @@ def check_tasks_completed(tasks, wait_minutes, output_queue, s3_bucket):
         if res:  # if data exists in s3 (ok)
             tasks.pop(task_id, None)
         if not tasks:
-            return True  # return True only when all tasks finished working
-    return False
+            res = True  # return True only when all tasks finished working
+            break
+    logger.info('Finished checking output in %s', datetime.now() - time_start)
+    return res
 
 
 def log_failed_tasks(tasks):
-    pass
+    if not tasks:
+        logger.info('All tasks finished')
+        return
+    logger.warning('Some tasks not finished in time')
+    for task in tasks.itervalues():
+        logger.warning(task)
 
 
 def main():
+    logger.info('Initializing variables')
     sqs_conn = connect_sqs('us-east-1')
     s3_conn = connect_s3('us-east-1')
     bucket = s3_conn.get_bucket('spyder-bucket')
@@ -125,10 +153,6 @@ def main():
 
     push_tasks_to_sqs(tasks, tasks_queue)
     res = check_tasks_completed(tasks, max_wait_minutes, output_queue, bucket)
-    if res:
-        # everything is ok
-        pass
-    else:
-        log_failed_tasks(tasks)
+    log_failed_tasks(tasks)
 
 
