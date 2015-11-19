@@ -21,19 +21,37 @@ def generate_tasks():
     returns dictionaries with tasks to be pushed to sqs
     keys of dictionary are ids for the task
     """
-    # TODO
-    # query term of one word
-    # query term as phrase
-    # query term with non ascii characters
-    # walmart with best sellers
-    # few product urls
-    # additional cmd args
     tasks = [
-        dict(searchterms_str='iphone',
+        dict(site='jcpenney',
+             searchterms_str='jeans',
+             cmd_args=dict(quantity=100)),  # quantity
+
+        dict(site='walmart',
+             searchterms_str='iphone',
              with_best_seller_ranking=True,
-             cmd_args=dict(quantity=50)),
-        dict(url='http://www.amazon.com/Casio-MQ24-1E-Black-Resin-Watch/dp/'
-                 'B000GAWSHM/ref=sr_1_2?ie=UTF8&qid=1447922212&sr=8-2')
+             cmd_args=dict(quantity=50)),  # best seller & quantity
+
+        dict(site='amazon',
+             url='http://www.amazon.com/Casio-MQ24-1E-Black-Resin-Watch/dp/'
+                 'B000GAWSHM/ref=sr_1_2?ie=UTF8&qid=1447922212&sr=8-2'),  # url
+
+        dict(site='amazon',
+             searchterms_str='\xd1\x87\xd0\xb0\xd1\x81\xd1\x8b',
+             cmd_args=dict(quantity=100)),  # non ascii 1
+
+        dict(site='amazon',  # non ascii 2 & no quantity
+             searchterms_str=u'\u30ad\u30e4\u30ce\u30f3'),
+
+        dict(site='kohls',
+             searchterms_str='book',
+             cmd_args=dict(quantity=100, save_s3_cache=True)),  # save s3 cache
+
+        dict(site='target',
+             searchterms_str='chair',
+             cmd_args=dict(quantity=50)),  # branch
+
+        dict(site='walmart_shelf_urls', cmd_args=dict(num_pages=10)),  # shelf
+        dict(site='jcpenney_coupons'),  # coupon
     ]
     tasks_dict = {}
     for task in tasks:
@@ -43,6 +61,29 @@ def generate_tasks():
     logger.info('Task ids: %s', tasks_dict.keys())
 
     return tasks_dict
+
+
+def validate_tasks(tasks):
+    """make sure all tasks contain required fields"""
+    res = True
+    required_fields = ['task_id', 'site', 'server_name',
+                       ['url', 'urls', 'searchterms_str']]
+    for task in tasks.itervalues():
+        for field in required_fields:
+            if isinstance(field, basestring):
+                if field not in task:
+                    logger.warning('Validation error: task %s, missing %s',
+                                   task, field)
+                    res = False
+            else:
+                for sub_field in field:
+                    if sub_field in task:
+                        break
+                else:
+                    logger.warning('Validation error: task %s, missing any: %s',
+                                   task, field)
+                    res = False
+    return res
 
 
 def add_additional_task_params(tasks, add_to_cmd_args=False, **params):
@@ -146,6 +187,9 @@ def main():
     tasks_queue = get_or_create_sqs_queue(sqs_conn, '%s_tasks_tests' % sqs_name)
 
     tasks = generate_tasks()
+    if not validate_tasks(tasks):
+        logger.error('Tasks validation failed, aborting')
+        return
 
     # we never store and retrieve data to/from cache
     add_additional_task_params(
