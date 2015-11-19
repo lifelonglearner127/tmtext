@@ -180,8 +180,9 @@ class MacysVariants(object):
             swatch_info["hero"] = 1
             swatch_info["hero_image"] = ["http://slimages.macysassets.com/is/image/MCY/products/" + image_path]
 
-            for image_path in additional_image_list[color].split(","):
-                swatch_info["hero_image"].append("http://slimages.macysassets.com/is/image/MCY/products/" + image_path)
+            if color in additional_image_list:
+                for image_path in additional_image_list[color].split(","):
+                    swatch_info["hero_image"].append("http://slimages.macysassets.com/is/image/MCY/products/" + image_path)
 
             swatch_info["thumb"] = 1
             swatch_info["thumb_image"] = thumbnail_image_list[color]
