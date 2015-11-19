@@ -1158,13 +1158,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         product = response.meta['product']
         data = json.loads(response.body_as_unicode())
         sel = Selector(text=data['reviewsHtml'])
-
-        cond_set(
-            product,
-            'last_buyer_review_date',
-            sel.xpath(
-                '//span[contains(@class, "customer-review-date")]/text()'
-            ).extract()
-        )
+        lbrd = sel.xpath('//span[contains(@class, "customer-review-date")]'
+                         '/text()').extract()
+        if lbrd:
+            lbrd = datetime.strptime(lbrd[0].strip(), '%m/%d/%Y')
+            product['last_buyer_review_date'] = lbrd.strftime('%d-%m-%Y')
 
         return product
