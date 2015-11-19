@@ -74,8 +74,9 @@ def _get_load_from_date():
 
 
 def _slugify(value, replaces='\'"~@#$%^&*()[] _-/\:\?\=\,\.'):
-    for char in replaces:
-        value = value.replace(char, '-')
+    if value:
+        for char in replaces:
+            value = value.replace(char, '-')
     return value
 
 
@@ -88,7 +89,7 @@ def clear_local_cache(cache_dir, spider, UTC_NOW=UTC_NOW):
             print('Local cache cleared')
 
 
-def get_partial_request_path(cache_dir, spider, UTC_NOW=UTC_NOW):
+def get_partial_request_path(cache_dir, spider, UTC_NOW=UTC_NOW, dont_append_url=False):
     if not isinstance(spider, (str, unicode)):
         spider_name = spider.name
     else:
@@ -99,8 +100,12 @@ def get_partial_request_path(cache_dir, spider, UTC_NOW=UTC_NOW):
         return os.path.join(
             cache_dir, spider_name, utc_today, searchterms_str)  # TODO: replace searchterms_str with double hash (md5 and sha1); or do it in _get_searchterms_str_or_product_url ?
     else:
-        return os.path.join(
-            cache_dir, spider_name, utc_today, 'url')
+        if dont_append_url:
+            return os.path.join(
+                cache_dir, spider_name, utc_today)
+        else:
+            return os.path.join(
+                cache_dir, spider_name, utc_today, 'url')
 
 
 def get_request_path_with_date(cache_dir, spider, request, UTC_NOW=UTC_NOW):

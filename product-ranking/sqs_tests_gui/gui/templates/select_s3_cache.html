@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+{% load split %}
 <head lang="en">
     <meta charset="UTF-8">
     <title></title>
@@ -47,7 +48,11 @@
                 setTimeout("location.reload(true);", 7000);
             </script>
         {% else %}
-            TODO: list of URLs and searchterms
+            <h2>Available searchterms and URLs for spider {{ request.GET.spider }}
+                and date {{ request.GET.date }}</h2>
+            {% for st_url in available_st_and_urls %}
+                <p><a href="">{{ st_url }}</a></p>
+            {% endfor %}
         {% endif %}
     {% endif %}
 </body>

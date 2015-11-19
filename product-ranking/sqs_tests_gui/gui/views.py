@@ -32,7 +32,9 @@ sys.path.append(os.path.join(CWD,  '..', '..'))
 from add_task_to_sqs import read_access_and_secret_keys
 from scrapy_daemon import PROGRESS_QUEUE_NAME
 from product_ranking.extensions import amazon_public_key,\
-    amazon_secret_key, bucket_name, get_cache_keys
+    amazon_secret_key, bucket_name, get_cache_keys, _download_s3_file
+from product_ranking.cache import get_partial_request_path
+from product_ranking import settings as spider_settings
 
 
 class AdminOnlyMixin(object):
@@ -233,15 +235,32 @@ class SelectS3Cache(AdminOnlyMixin, FormView):
                         aws_key=amazon_public_key,
                         aws_secret_key=amazon_secret_key
                     )
-                    _keys2download = get_cache_keys(
-                        django_settings=settings, bucket_name=bucket_name,
+
+
+                    # TODO: the things below should work in background
+                    # ************************************************
+                    _keys2download = get_cache_keys(  # TODO: cached "bucket.list()" call?
+                        settings=spider_settings, bucket_name=bucket_name,
                         amazon_public_key=amazon_public_key, amazon_secret_key=amazon_secret_key,
-                        spider_name=request.GET['spider'], date=request.GET['date'])
-                    funnel.get(bucket=bucket_name, ikeys=_keys2download)
-                    # TODO: cache downloading
+                        spider_name=request.GET['spider'],
+                        date=datetime.datetime.strptime(request.GET['date'], '%Y-%m-%d').date(),
+                        dont_append_url=True)
+                    print('Downloading keys...')
+                    for key2download in _keys2download:
+                        _download_s3_file(key2download, settings=spider_settings)
+                    #funnel.get(bucket=bucket_name, ikeys=_keys2download)
+                    # ************************************************
+
+
                     return HttpResponseRedirect(request.get_full_path()+'&downloading_started=1')
                 else:
-                    pass
+                    # wait for the downloader process to finish, and list available URLs
+                    _cache_dir = get_partial_request_path(
+                        spider_settings.HTTPCACHE_DIR, request.GET['spider'],
+                        datetime.datetime.strptime(request.GET['date'], '%Y-%m-%d').date(),
+                        dont_append_url=True)
+                    self.cache_downloaded = True
+                    self.available_st_and_urls = os.listdir(_cache_dir)
             # render template
             return super(SelectS3Cache, self).get(request, *args, **kwargs)
 
@@ -249,4 +268,7 @@ class SelectS3Cache(AdminOnlyMixin, FormView):
         context = super(SelectS3Cache, self).get_context_data(**kwargs)
         if getattr(self, 'cache_downloading', False):
             context['cache_downloading'] = True
+        if getattr(self, 'cache_downloaded', False):
+            context['cache_downloaded'] = True
+            context['available_st_and_urls'] = self.available_st_and_urls
         return context
