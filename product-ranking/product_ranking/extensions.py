@@ -199,7 +199,7 @@ class S3CacheUploader(object):
         return cls(crawler)
 
 
-def _download_s3_file(key, settings):
+def _download_s3_file(key):
     _local_cache_file = os.path.join(settings.HTTPCACHE_DIR, key.key)
     _dir = os.path.dirname(_local_cache_file)
     if not os.path.exists(_dir):
@@ -209,21 +209,6 @@ def _download_s3_file(key, settings):
         res = key.get_contents_to_filename(_local_cache_file)
     except Exception as e:
         print(str(e))
-
-
-def get_cache_keys(settings, bucket_name,
-                   amazon_public_key, amazon_secret_key,
-                   spider_name, date, dont_append_url=False):
-    conn = S3Connection(amazon_public_key, amazon_secret_key)
-    bucket = conn.get_bucket(bucket_name)
-    partial_path = cache.get_partial_request_path(
-        settings.HTTPCACHE_DIR, spider_name, date, dont_append_url)
-    _keys2download = []
-    for key in bucket.list():
-        if key.key.startswith(os.path.relpath(
-                partial_path, settings.HTTPCACHE_DIR)):
-            _keys2download.append(key)
-    return _keys2download
 
 
 class S3CacheDownloader(object):
@@ -237,11 +222,18 @@ class S3CacheDownloader(object):
                                 _load_from)
         # download s3 cache
         # TODO: speed up by using cache_map from DB!
-        _keys2download = get_cache_keys(
-            settings=settings, bucket_name=bucket_name,
-            amazon_public_key=amazon_public_key, amazon_secret_key=amazon_secret_key,
-            spider_name=crawler._spider.name, date=_load_from)
-        if not _keys2download:
+        conn = S3Connection(amazon_public_key, amazon_secret_key)
+        bucket = conn.get_bucket(bucket_name)
+        partial_path = cache.get_partial_request_path(
+            settings.HTTPCACHE_DIR, crawler._spider, _load_from)
+        _cache_found = False
+        _keys2download = []
+        for key in bucket.list():
+            if key.key.startswith(os.path.relpath(
+                    partial_path, settings.HTTPCACHE_DIR)):
+                _cache_found = True
+                _keys2download.append(key)
+        if not _cache_found:
             print('Cache is not found! Check the date param!')
             sys.exit(1)
         # TODO: fix! (threaded downloading hangs up for unknown reasons)
@@ -256,7 +248,7 @@ class S3CacheDownloader(object):
         pool.wait()
         """
         for key2download in _keys2download:
-            _download_s3_file(key2download, settings=settings)
+            _download_s3_file(key2download)
         print('Cache downloaded; ready for re-parsing the data, remove'
               ' %s file when you are ready' % _blocker_fname)
         while os.path.exists(_blocker_fname):

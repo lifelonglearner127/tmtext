@@ -74,9 +74,8 @@ def _get_load_from_date():
 
 
 def _slugify(value, replaces='\'"~@#$%^&*()[] _-/\:\?\=\,\.'):
-    if value:
-        for char in replaces:
-            value = value.replace(char, '-')
+    for char in replaces:
+        value = value.replace(char, '-')
     return value
 
 
@@ -89,23 +88,15 @@ def clear_local_cache(cache_dir, spider, UTC_NOW=UTC_NOW):
             print('Local cache cleared')
 
 
-def get_partial_request_path(cache_dir, spider, UTC_NOW=UTC_NOW, dont_append_url=False):
-    if not isinstance(spider, (str, unicode)):
-        spider_name = spider.name
-    else:
-        spider_name = spider
+def get_partial_request_path(cache_dir, spider, UTC_NOW=UTC_NOW):
     searchterms_str = _slugify(_get_searchterms_str_or_product_url())
     utc_today = UTC_NOW.strftime('%Y-%m-%d')
     if searchterms_str:
         return os.path.join(
-            cache_dir, spider_name, utc_today, searchterms_str)  # TODO: replace searchterms_str with double hash (md5 and sha1); or do it in _get_searchterms_str_or_product_url ?
+            cache_dir, spider.name, utc_today, searchterms_str)  # TODO: replace searchterms_str with double hash (md5 and sha1); or do it in _get_searchterms_str_or_product_url ?
     else:
-        if dont_append_url:
-            return os.path.join(
-                cache_dir, spider_name, utc_today)
-        else:
-            return os.path.join(
-                cache_dir, spider_name, utc_today, 'url')
+        return os.path.join(
+            cache_dir, spider.name, utc_today, 'url')
 
 
 def get_request_path_with_date(cache_dir, spider, request, UTC_NOW=UTC_NOW):
@@ -151,6 +142,17 @@ class S3CacheStorage(FilesystemCacheStorage):
             utcnow = UTC_NOW
         return get_request_path_with_date(self.cachedir, spider, request,
                                           utcnow)
+
+    def store_response(self, spider, request, response):
+        # store request URL as an empty file
+        rpath = self._get_request_path(spider, request)
+        if not os.path.exists(rpath):
+            os.makedirs(rpath)
+        fname = _slugify(request.url)[0:254]
+        fname = os.path.join(rpath, fname)
+        with open(fname, 'wb') as f:
+            f.write(' ')
+        return super(S3CacheStorage, self).store_response(spider, request, response)
 
 
 class CustomCachePolicy(DummyPolicy):
