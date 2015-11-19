@@ -50,8 +50,12 @@ def generate_tasks():
              searchterms_str='chair',
              cmd_args=dict(quantity=50)),  # branch
 
-        dict(site='walmart_shelf_urls', cmd_args=dict(num_pages=10)),  # shelf
-        dict(site='jcpenney_coupons'),  # coupon
+        dict(site='walmart_shelf_urls',
+             url='http://www.walmart.com/search/?query=dress',
+             cmd_args=dict(num_pages=10)),  # shelf
+        dict(site='jcpenney_coupons',
+             url='http://www.jcpenney.com/jsp/browse/marketing/'
+                 'promotion.jsp?pageId=pg40027800029#'),  # coupon
     ]
     tasks_dict = {}
     for task in tasks:
