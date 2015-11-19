@@ -191,14 +191,13 @@ def main():
     tasks_queue = get_or_create_sqs_queue(sqs_conn, '%s_tasks_tests' % sqs_name)
 
     tasks = generate_tasks()
-    if not validate_tasks(tasks):
-        logger.error('Tasks validation failed, aborting')
-        return
-
     # we never store and retrieve data to/from cache
     add_additional_task_params(
         tasks, sqs_cache_save_ignore=True, sqs_cache_get_ignore=True,
         server_name=server_name)
+    if not validate_tasks(tasks):
+        logger.error('Tasks validation failed, aborting')
+        return
 
     push_tasks_to_sqs(tasks, tasks_queue)
     res = check_tasks_completed(tasks, max_wait_minutes, output_queue, bucket)
