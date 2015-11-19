@@ -3,6 +3,7 @@
 import json
 import re
 import string
+import collections
 import itertools
 import urllib
 
@@ -413,7 +414,9 @@ class WayfairProductSpider(BaseProductsSpider):
                 variants = []
 
                 if option_details:
+                    final_options_ordered = collections.OrderedDict()
                     final_options = {}
+
                     # A dict for sku accordance for every single variant.
                     # Will contain, for ex.: 'blue': '123456', 'red': '456789'
                     variants_skus = {}
@@ -427,17 +430,28 @@ class WayfairProductSpider(BaseProductsSpider):
                         if option['kit_id'] == meta['kit_id']:
                             category = option['category'].replace(' ', '_').lower()
                             value = option['name']
-
                             # From this data for price we get an additional price value (+ 3.00 USD, for ex.)
                             add_price = round(option['price'], 2)
 
-                            if not final_options.get(category):
-                                final_options[category] = []
+                            if not final_options_ordered.get(category):
+                                final_options_ordered[category] = []
 
                             variants_skus[value] = sku
-                            final_options[category].append({category: value, 'price': add_price})
-
+                            final_options_ordered[category].append({category: value, 'price': add_price})
                     response.meta['variants_skus'] = variants_skus
+                    quantity_vars = 1
+                    final = False
+                    for k,v in final_options_ordered.iteritems():
+                        if final:
+                            break
+                        quantity_vars = quantity_vars * len(v)
+                        if quantity_vars > 100:
+                            for i in final_options_ordered.keys()[:2]:
+                                final_options[i] = final_options_ordered[i]
+                                final = True
+                                continue
+                    if quantity_vars < 100:
+                        final_options = final_options_ordered
 
                     for variant in itertools.product(*final_options.values()):
                         # Make a list of dictionary with variant from a list of tuples
