@@ -1,6 +1,7 @@
 import os
 import sys
 import random
+import cPickle as pickle
 
 from django import forms
 
@@ -11,6 +12,8 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', 'monitoring'))
 SPIDERS_DIR = os.path.join(CWD, '..', '..', 'product_ranking', 'spiders')
 from deploy_to_monitoring_host import find_spiders
+
+import settings
 
 
 def generate_spider_choices():
@@ -78,3 +81,21 @@ class JobForm(forms.ModelForm):
     class Meta:
         model = Job
         exclude = ['created', 'status', 'finished']
+
+
+class S3CacheSelectForm(forms.Form):
+    spider = forms.ChoiceField(choices=[])
+
+    # values for this control will be created dynamically via ajax
+    date = forms.ChoiceField(choices=[], required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(S3CacheSelectForm, self).__init__(*args, **kwargs)
+        # load values from pickled file dumped by cache_models.py script
+        if os.path.exists(settings.CACHE_MODELS_FILENAME):
+            with open(settings.CACHE_MODELS_FILENAME, 'rb') as fh:
+                cont = pickle.loads(fh.read())
+                self.fields['spider'].choices = [
+                    (spider, spider) for spider in cont.keys()
+                ]
+                self.fields['spider'].choices.insert(0, ['', ''])

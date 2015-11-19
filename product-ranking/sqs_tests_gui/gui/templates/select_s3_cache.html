@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+</head>
+<body>
+    {% if not cache_downloading %}
+        <h1>Select S3 cache</h1>
+        <form method="GET" action=".">
+            <table>
+                {{ form.as_table }}
+                <tr>
+                    <td></td>
+                    <td id="loader">Loading, please wait...</td>
+                </tr>
+                <tr><td></td><td><button type="submit">Find URLs and searchterms</button></td></tr>
+            </table>
+        </form>
+
+        <script>
+            $('#id_date').parent().parent().hide();
+            $('#loader').hide();
+
+            $('#id_spider').change(function() {
+                $('#loader').show();
+                $.ajax({
+                    url: ".",
+                    method: "GET",
+                    data: {spider: $('#id_spider').val()}
+                }).success(function(response) {
+                    $('#loader').hide();
+                    $('#id_date').parent().parent().show();
+                    $('#id_date').html(response);
+                });
+                //alert($('#id_spider').val());
+            });
+        </script>
+    {% else %}
+        {% if not cache_downloaded %}
+            <p>The cache for spider <b>{{ request.GET.spider }}</b> and date <b>{{ request.GET.date }}</b>
+                is being downloaded.</p>
+            <p>This page will be refreshed automatically and it will provide you the list of
+                searchterms and URLs after the cache is downloaded.</p>
+            <script>
+                setTimeout("location.reload(true);", 7000);
+            </script>
+        {% else %}
+            TODO: list of URLs and searchterms
+        {% endif %}
+    {% endif %}
+</body>
+</html>

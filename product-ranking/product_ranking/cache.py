@@ -89,14 +89,18 @@ def clear_local_cache(cache_dir, spider, UTC_NOW=UTC_NOW):
 
 
 def get_partial_request_path(cache_dir, spider, UTC_NOW=UTC_NOW):
+    if not isinstance(spider, (str, unicode)):
+        spider_name = spider.name
+    else:
+        spider_name = spider
     searchterms_str = _slugify(_get_searchterms_str_or_product_url())
     utc_today = UTC_NOW.strftime('%Y-%m-%d')
     if searchterms_str:
         return os.path.join(
-            cache_dir, spider.name, utc_today, searchterms_str)  # TODO: replace searchterms_str with double hash (md5 and sha1); or do it in _get_searchterms_str_or_product_url ?
+            cache_dir, spider_name, utc_today, searchterms_str)  # TODO: replace searchterms_str with double hash (md5 and sha1); or do it in _get_searchterms_str_or_product_url ?
     else:
         return os.path.join(
-            cache_dir, spider.name, utc_today, 'url')
+            cache_dir, spider_name, utc_today, 'url')
 
 
 def get_request_path_with_date(cache_dir, spider, request, UTC_NOW=UTC_NOW):

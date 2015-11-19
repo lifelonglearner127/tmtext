@@ -1,5 +1,7 @@
 import sys
 import os
+import cPickle as pickle
+import subprocess
 
 from sqlalchemy import Column, ForeignKey, \
     String, Integer, SmallInteger, Date, create_engine
@@ -17,6 +19,36 @@ TERM_TYPES = {
     URL_TERM: 1,
     URLS_TERM: 2
 }
+
+
+def run(command, shell=None):
+    """ Run the given command and return its output
+    """
+    out_stream = subprocess.PIPE
+    err_stream = subprocess.PIPE
+
+    if shell is not None:
+        p = subprocess.Popen(command, shell=True, stdout=out_stream,
+                             stderr=err_stream, executable=shell)
+    else:
+        p = subprocess.Popen(command, shell=True, stdout=out_stream,
+                             stderr=err_stream)
+    (stdout, stderr) = p.communicate()
+
+    return stdout, stderr
+
+
+def num_of_running_instances(file_path):
+    """ Check how many instances of the given file are running """
+    processes = 0
+    output = run('ps aux')
+    output = ' '.join(output)
+    for line in output.split('\n'):
+        line = line.strip()
+        line = line.decode('utf-8')
+        if file_path in line and not '/bin/sh' in line:
+            processes += 1
+    return processes
 
 
 class Spider(Base):
@@ -196,3 +228,13 @@ if __name__ == '__main__':
                 print ' '*4, date, '-'*20
                 for searchterm in listing[spider][date]:
                     print ' '*8, searchterm
+    if 'list_to_pickle' in sys.argv:
+        # like 'python cache_models.py list_to_pickle output_filename.pickle'
+        if num_of_running_instances('cache_models') > 1:
+            print 'an instance of the script is already running...'
+            sys.exit()
+        listing = list_db_cache()
+        # change date(time) objects to strings
+        fname = sys.argv[2]
+        with open(fname, 'wb') as fh:
+            fh.write(pickle.dumps(listing))

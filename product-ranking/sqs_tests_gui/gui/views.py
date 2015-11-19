@@ -6,17 +6,20 @@ import json
 import base64
 import tempfile
 import mimetypes
+import cPickle as pickle
 
 from django.core.servers.basehttp import FileWrapper
-from django.views.generic import RedirectView, View, ListView, TemplateView
+from django.views.generic import RedirectView, View, ListView, TemplateView, FormView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 import boto
 from boto.s3.connection import S3Connection
 
 from .models import get_data_filename, get_log_filename, get_progress_filename,\
     Job, JobGrouperCache
+from .forms import S3CacheSelectForm
+
 from management.commands.update_jobs import LOCAL_AMAZON_LIST_CACHE,\
     AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_BUCKET_NAME, download_s3_file
 import settings
@@ -25,8 +28,11 @@ import settings
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD,  '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
+sys.path.append(os.path.join(CWD,  '..', '..'))
 from add_task_to_sqs import read_access_and_secret_keys
 from scrapy_daemon import PROGRESS_QUEUE_NAME
+from product_ranking.extensions import amazon_public_key,\
+    amazon_secret_key, bucket_name, get_cache_keys
 
 
 class AdminOnlyMixin(object):
@@ -190,3 +196,57 @@ class GetS3FileView(AdminOnlyMixin, View):
         response['Content-Length'] = os.path.getsize(tempfile_name.name)
         response['Content-Disposition'] = 'attachment; filename=%s' % tempfile_name.name
         return response
+
+
+#******** S3-cache Views ********
+# This all will work this way:
+# 1) a user selects spider, date, and searchterms (or product url)
+# 2) the user then can download the cache, list all the pages and select a page to see
+# 3) the user then can see the historical page as it was in the past
+class SelectS3Cache(AdminOnlyMixin, FormView):
+    form_class = S3CacheSelectForm
+    template_name = 'select_s3_cache.html'
+
+    @staticmethod
+    def _get_dates_for_spider(spider):
+        with open(settings.CACHE_MODELS_FILENAME, 'rb') as fh:
+            cont = pickle.loads(fh.read())
+        return cont[spider].keys()
+
+    def get(self, request, *args, **kwargs):
+        if request.is_ajax():
+            # return dates
+            template = ''
+            # TODO: load dates for this spider
+            # TODO: render template (options only)
+            for date in self._get_dates_for_spider(request.GET.get('spider')):
+                template += '<option value="%s">%s</option>' % (date, date)
+            return HttpResponse(template)
+        else:
+            if 'spider' in request.GET and 'date' in request.GET:
+                # download cache
+                self.cache_downloading = True
+                if 'downloading_started' not in request.GET:
+                    # it's the first page visit - start downloading
+                    import s3funnel
+                    funnel = s3funnel.S3Funnel(
+                        aws_key=amazon_public_key,
+                        aws_secret_key=amazon_secret_key
+                    )
+                    _keys2download = get_cache_keys(
+                        django_settings=settings, bucket_name=bucket_name,
+                        amazon_public_key=amazon_public_key, amazon_secret_key=amazon_secret_key,
+                        spider_name=request.GET['spider'], date=request.GET['date'])
+                    funnel.get(bucket=bucket_name, ikeys=_keys2download)
+                    # TODO: cache downloading
+                    return HttpResponseRedirect(request.get_full_path()+'&downloading_started=1')
+                else:
+                    pass
+            # render template
+            return super(SelectS3Cache, self).get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(SelectS3Cache, self).get_context_data(**kwargs)
+        if getattr(self, 'cache_downloading', False):
+            context['cache_downloading'] = True
+        return context
