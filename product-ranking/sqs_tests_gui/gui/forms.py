@@ -1,7 +1,6 @@
 import os
 import sys
 import random
-import cPickle as pickle
 
 from django import forms
 
@@ -12,8 +11,6 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', 'monitoring'))
 SPIDERS_DIR = os.path.join(CWD, '..', '..', 'product_ranking', 'spiders')
 from deploy_to_monitoring_host import find_spiders
-
-import settings
 
 
 def generate_spider_choices():
