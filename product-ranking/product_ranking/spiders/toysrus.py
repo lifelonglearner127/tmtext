@@ -91,19 +91,12 @@ class ToysrusProductSpider(BaseProductsSpider):
         sku = self._parse_sku(response)
         cond_set_value(product, 'sku', sku)
 
-        # # Parse variants
-        # variants = self._parse_variants(response)
-        # cond_set_value(product, 'variants', variants)
-        #
+        # Parse variants
+        variants = self._parse_variants(response)
+        cond_set_value(product, 'variants', variants)
+
         # # Parse buyer reviews
-        # reqs.append(
-        #     Request(
-        #         url=self.BUYER_REVIEWS_URL.format(upc=upc),
-        #         dont_filter=True,
-        #         callback=self.br.parse_buyer_reviews
-        #     )
-        # )
-        #
+        reviews = self._parse_buyer_reviews(response)
         # # Parse related products
         # related_products = self._parse_related_products(response)
         # cond_set_value(product, 'related_products', related_products)
@@ -164,7 +157,6 @@ class ToysrusProductSpider(BaseProductsSpider):
     def _parse_description(self, response):
         desc = is_empty(response.xpath('//meta[@property="og:description"]'
                                        '/@content').extract())
-
         if desc:
             desc = desc.replace("<br>", "")
 
@@ -192,6 +184,30 @@ class ToysrusProductSpider(BaseProductsSpider):
     def _parse_variants(self, response):
         pass
 
+    def _parse_buyer_reviews(self, response):
+        average = is_empty(response.xpath(
+            '//div[@id="prod_ratings"]//span[@class="pr-rating '
+            'pr-rounded average"]/text()').extract())
+        numb_of_customers = is_empty(response.xpath(
+            '//div[@id="prod_ratings"]//span[@class="count"]/text()').extract())
+        evaluetion = response.xpath(
+            '//div[@id="prod_ratings"]'
+            '//span[@class="pr-rating pr-rounded"]/text()').re(r'(\d).\d')
+
+        if average:
+            average = float(average)
+
+        if numb_of_customers:
+            numb_of_customers = int(numb_of_customers)
+
+        marks = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+
+        for i in evaluetion:
+            marks[int(i)] += 1
+        print(marks)
+        print(average)
+        print(numb_of_customers)
+
     def _parse_related_products(self, response):
         pass
 
@@ -216,7 +232,7 @@ class ToysrusProductSpider(BaseProductsSpider):
         total_matches = is_empty(
             response.xpath('//h1[@id="search"]/strong/text()').re(r'\d+'), 0
         )
-        print(total_matches)
+
         if total_matches:
             return int(total_matches)
         else:
