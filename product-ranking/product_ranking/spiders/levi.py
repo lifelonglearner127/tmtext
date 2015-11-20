@@ -87,6 +87,8 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
                       "&ur=http%3A%2F%2Fwww.levi.com%2FUS%2Fen_US%" \
                       "2Fwomens-jeans%2Fp%2F095450043&plk=&"
 
+    use_proxies = True
+
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
 
