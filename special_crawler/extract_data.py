@@ -254,7 +254,7 @@ class Scraper():
             s.mount('https://', b)
             contents = requests.get(url).text
 
-            if extra_exclude_condition not in contents:
+            if not extra_exclude_condition or extra_exclude_condition not in contents:
                 return contents
 
         return None
