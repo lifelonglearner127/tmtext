@@ -91,12 +91,10 @@ class ToysrusProductSpider(BaseProductsSpider):
         sku = self._parse_sku(response)
         cond_set_value(product, 'sku', sku)
 
-        # Parse variants
-        variants = self._parse_variants(response)
-        cond_set_value(product, 'variants', variants)
-
         # # Parse buyer reviews
-        reviews = self._parse_buyer_reviews(response)
+        buyer_reviews = self._parse_buyer_reviews(response)
+        cond_set_value(product, 'buyer_reviews', buyer_reviews)
+
         # # Parse related products
         # related_products = self._parse_related_products(response)
         # cond_set_value(product, 'related_products', related_products)
@@ -181,32 +179,32 @@ class ToysrusProductSpider(BaseProductsSpider):
                                       '/text()').extract())
         return sku
 
-    def _parse_variants(self, response):
-        pass
-
     def _parse_buyer_reviews(self, response):
-        average = is_empty(response.xpath(
+        average_rating = is_empty(response.xpath(
             '//div[@id="prod_ratings"]//span[@class="pr-rating '
             'pr-rounded average"]/text()').extract())
-        numb_of_customers = is_empty(response.xpath(
+        num_of_reviews = is_empty(response.xpath(
             '//div[@id="prod_ratings"]//span[@class="count"]/text()').extract())
         evaluetion = response.xpath(
-            '//div[@id="prod_ratings"]'
-            '//span[@class="pr-rating pr-rounded"]/text()').re(r'(\d).\d')
+            '//p[@class="pr-histogram-count"]/span/text()').re(r'\d+')[:5]
 
-        if average:
-            average = float(average)
+        if average_rating:
+            average_rating = float(average_rating)
 
-        if numb_of_customers:
-            numb_of_customers = int(numb_of_customers)
+        if num_of_reviews:
+            num_of_reviews = int(num_of_reviews)
 
-        marks = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+        if evaluetion:
+            evaluetion.reverse()
 
-        for i in evaluetion:
-            marks[int(i)] += 1
-        print(marks)
-        print(average)
-        print(numb_of_customers)
+        rating_by_star = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+
+        if num_of_reviews > 0:
+            for index, i in enumerate(evaluetion):
+                rating_by_star[index + 1] = int(i)
+            return BuyerReviews(num_of_reviews, average_rating, rating_by_star)
+
+        return None
 
     def _parse_related_products(self, response):
         pass
