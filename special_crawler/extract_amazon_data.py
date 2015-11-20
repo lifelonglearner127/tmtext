@@ -830,7 +830,7 @@ class AmazonScraper(Scraper):
                 review_link_mark_star = review_link.replace("cm_cr_dp_qt_see_all_top", "cm_cr_pr_viewopt_sr") + "sortBy=helpful&reviewerType=all_reviews&formatType=all_formats&filterByStar=" + mark + "_star&pageNumber=1"
             elif review_link.find("cm_cr_dp_see_all_top") > 0:
                 review_link_mark_star = review_link.replace("cm_cr_dp_see_all_top", "cm_cr_pr_viewopt_sr") + "sortBy=helpful&reviewerType=all_reviews&formatType=all_formats&filterByStar=" + mark + "_star&pageNumber=1"
-            h = {"User-Agent" : "Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0"}
+            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
             s = requests.Session()
             a = requests.adapters.HTTPAdapter(max_retries=3)
             b = requests.adapters.HTTPAdapter(max_retries=3)
