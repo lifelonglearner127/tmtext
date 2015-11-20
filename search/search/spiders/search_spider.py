@@ -17,6 +17,8 @@ import csv
 import urllib
 import uuid
 
+import cv2
+
 # from selenium import webdriver
 # import time
 
@@ -70,7 +72,7 @@ class SearchSpider(BaseSpider):
         # call specific init for each derived class
         self.init_sub()
 
-        self.version = "2cdbc56eb165ae93bc4272e97accd38eb339352c"
+        self.version = "3eccc771a21f33b55f9267042a7a40ea0eb6013f"
 
         self.product_url = product_url
         self.products_file = products_file
@@ -552,7 +554,6 @@ class SearchSpider(BaseSpider):
         else:
             raise CloseSpider("Unsupported site: " + site)
         origin_product['origin_url'] = response.url
-        print "HERE", origin_product
 
         for attribute in ('origin_name', 'origin_model', 'product_origin_price', \
             'origin_upc', 'origin_manufacturer_code'):
@@ -970,10 +971,17 @@ class SearchSpider(BaseSpider):
         except:
             keywords = None
 
+        try:
+            product_image = hxs.select("//img[@id='landingImage']/@src").extract()[0]
+        except:
+            product_image = None
+
         product = {}
         product['origin_name'] = product_name
         product['origin_model'] = product_model
         product['product_origin_price'] = price
+        product['origin_image_url'] = product_image
+        product['origin_image_encoded'] = ProcessText.encode_image(product_image)
         # TODO
         # product['origin_upc'] = upc
         product['origin_brand'] = brand
