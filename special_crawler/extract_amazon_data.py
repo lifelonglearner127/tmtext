@@ -1026,7 +1026,6 @@ class AmazonScraper(Scraper):
         except:
             amsel = {}
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         domain=self.product_page_url.split("/")
 
         try:
@@ -1036,7 +1035,7 @@ class AmazonScraper(Scraper):
         fl = 0
 
         while len(url) > 10:
-            contents = requests.get(url, headers=h).text
+            contents = self.load_page_from_url_with_number_of_retries(url)
             tree = html.fromstring(contents)
             sells = tree.xpath('//div[@class="a-row a-spacing-mini olpOffer"]')
 
@@ -1067,14 +1066,14 @@ class AmazonScraper(Scraper):
 
                             if seller_name == "":
                                 if seller_link[0].startswith("http://www.amazon."):
-                                    seller_content = requests.get(seller_link[0], headers=h).text
+                                    seller_content = self.load_page_from_url_with_number_of_retries(seller_link[0])
                                 else:
                                     if self.scraper_version == "uk":
-                                        seller_content = requests.get("http://www.amazon.co.uk" + seller_link[0], headers=h).text
+                                        seller_content = self.load_page_from_url_with_number_of_retries("http://www.amazon.co.uk" + seller_link[0])
                                     elif self.scraper_version == "ca":
-                                        seller_content = requests.get("http://www.amazon.ca" + seller_link[0], headers=h).text
+                                        seller_content = self.load_page_from_url_with_number_of_retries("http://www.amazon.ca" + seller_link[0])
                                     else:
-                                        seller_content = requests.get("http://www.amazon.com" + seller_link[0], headers=h).text
+                                        seller_content = self.load_page_from_url_with_number_of_retries("http://www.amazon.com" + seller_link[0])
 
                                 seller_tree = html.fromstring(seller_content)
                                 seller_names = seller_tree.xpath("//h2[@id='s-result-count']/span/span//text()")
