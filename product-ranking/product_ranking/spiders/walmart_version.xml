@@ -7,7 +7,7 @@
     <field name="results_per_page" version="1.1"></field>
     <field name="scraped_results_per_page" version="1.1"></field>
     <field name="is_single_result" version="1.1"></field>
-    <field name="title" version="1.1"></field>
+    <field name="title" version="1.2"></field>
     <field name="upc" version="1.1"></field>
     <field name="model" version="1.1"></field>
     <field name="url" version="1.1"></field>
