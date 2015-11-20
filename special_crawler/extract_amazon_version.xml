@@ -30,7 +30,7 @@
     <field name="average_review" version="1.2"></field>
     <field name="max_review" version="1.2"></field>
     <field name="min_review" version="1.2"></field>
-    <field name="reviews" version="1.4"></field>
+    <field name="reviews" version="1.5"></field>
     <field name="price" version="1.2"></field>
     <field name="price_amount" version="1.2"></field>
     <field name="price_currency" version="1.2"></field>
