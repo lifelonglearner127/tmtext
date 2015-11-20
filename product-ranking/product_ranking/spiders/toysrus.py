@@ -182,9 +182,12 @@ class ToysrusProductSpider(BaseProductsSpider):
     def _parse_buyer_reviews(self, response):
         average_rating = is_empty(response.xpath(
             '//div[@id="prod_ratings"]//span[@class="pr-rating '
-            'pr-rounded average"]/text()').extract())
+            'pr-rounded average"]/text()').extract(), 0.0)
+
         num_of_reviews = is_empty(response.xpath(
-            '//div[@id="prod_ratings"]//span[@class="count"]/text()').extract())
+            '//div[@id="prod_ratings"]//span[@class="count"]'
+            '/text()').extract(), 0)
+
         evaluetion = response.xpath(
             '//p[@class="pr-histogram-count"]/span/text()').re(r'\d+')[:5]
 
@@ -202,9 +205,9 @@ class ToysrusProductSpider(BaseProductsSpider):
         if num_of_reviews > 0:
             for index, i in enumerate(evaluetion):
                 rating_by_star[index + 1] = int(i)
-            return BuyerReviews(num_of_reviews, average_rating, rating_by_star)
 
-        return None
+        return BuyerReviews(num_of_reviews, average_rating, rating_by_star)
+
 
     def _parse_related_products(self, response):
         pass
