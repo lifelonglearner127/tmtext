@@ -281,6 +281,14 @@ class AmazonSpider(SearchSpider):
             except:
                 pass
 
+            try:
+                product_image = hxs.select("//img[@id='landingImage']/@src").extract()[0]
+                item['product_image_url'] = product_image
+                item['product_image_encoded'] = ProcessText.encode_image(product_image)
+            except:
+                pass
+
+
             # add result to items
             self.results[origin_product_id]['search_requests'][current_query]['product_items'].append(item)
 

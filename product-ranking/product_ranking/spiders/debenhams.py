@@ -23,8 +23,10 @@ class DebenhamsProductSpider(BaseProductsSpider):
     name = 'debenhams_products'
     allowed_domains = ["debenhams.com"]
 
-    SEARCH_URL = "http://www.debenhams.com/webapp/wcs/stores/servlet/" \
-                 "Navigate?langId=-1&storeId=10701&catalogId=10001&txt={search_term}"
+    #SEARCH_URL = "http://www.debenhams.com/webapp/wcs/stores/servlet/" \
+    #             "Navigate?langId=-1&storeId=10701&catalogId=10001&txt={search_term}"
+
+    SEARCH_URL = "http://int.debenhams.com/us/search/{search_term}/"
 
     items_per_page = 60
 
@@ -61,7 +63,8 @@ class DebenhamsProductSpider(BaseProductsSpider):
         cond_set_value(product, 'categories', categories)
 
         # Parse price
-        price = self._parse_price(response)
+        price, currency = self._parse_price(response)
+        price = Price(price=float(price), priceCurrency=currency)
         cond_set_value(product, 'price', price)
 
         # Parse special pricing
@@ -115,12 +118,13 @@ class DebenhamsProductSpider(BaseProductsSpider):
 
     def _parse_brand(self, response):
         brand = is_empty(
-            response.xpath('//meta[@property="brand"]/@content').extract()
+            response.xpath('//img[@class="brand"]/@alt').extract()
         )
 
         return brand
 
     def _parse_department(self, response):
+        # field is not present in the new design
         department = is_empty(
             response.xpath('//meta[@property="department"]/@content').extract()
         )
@@ -130,7 +134,7 @@ class DebenhamsProductSpider(BaseProductsSpider):
     def _parse_categories(self, response):
         categories = []
         categories_sel = response.xpath(
-                '//div[@class="breadcrumb_links"]/div/span/a/text()').extract()
+                '//div[@class="breadcrumb"]/ol/li//text()').extract()
         for cat in categories_sel:
             categories.append(cat.strip())
         return categories
@@ -147,6 +151,31 @@ class DebenhamsProductSpider(BaseProductsSpider):
                            '//span[@itemprop="lowPrice"]'
                            '/text()').extract()
         )
+        if not price:
+            # discount (sales) price
+            price = response.xpath(
+                '//*[contains(@class, "attributes")]//*[contains(@class, "price")]'
+                '//*[contains(@class, "attr-price-now")]'
+                '//*[contains(@class, "amount")]/text()').extract()
+            if price:
+                price = price[0]
+                if not price.strip():
+                    price = None
+                if price:
+                    currency = response.xpath(
+                        '//*[contains(@class, "attributes")]//*[contains(@class, "price")]'
+                        '//*[contains(@class, "attr-price-now")]'
+                        '//*[contains(@class, "amount")]/span/@title').extract()[0]
+        if not price:
+            # normal price
+            price = response.xpath(
+                '//*[contains(@class, "attributes")]//*[contains(@class, "price")]'
+                '//*[contains(@class, "amount")]/text()').extract()
+            if price:
+                price = price[0]
+                currency = response.xpath(
+                    '//*[contains(@class, "attributes")]//*[contains(@class, "price")]'
+                    '//*[contains(@class, "amount")]/span/@title').extract()[0]
         if price:
             price = is_empty(
                 re.findall(
@@ -154,15 +183,11 @@ class DebenhamsProductSpider(BaseProductsSpider):
                     price
                 ), 0.00
             )
-
-        return Price(
-            price=float(price),
-            priceCurrency=currency
-        )
+        return price, currency
 
     def _parse_special_pricing(self, response):
         special_pricing = is_empty(
-            response.xpath('//span[@class="price-was"]').extract(),
+            response.xpath('//li[@class="first-child attr-price-was"]/span[2]').extract(),
             False
         )
 
@@ -177,139 +202,99 @@ class DebenhamsProductSpider(BaseProductsSpider):
 
     def _parse_description(self, response):
         description = is_empty(
-            response.xpath('//div[@id="item-description-block"]').extract()
+            response.xpath('//h3[@class="description"]/text()').extract()
         )
 
         return description
 
     def _parse_stock_status(self, response):
         stock_status = is_empty(
-            response.xpath('//meta[@name="twitter:data2"]'
-                           '/@content').extract()
+            response.xpath('//div[@class="product-stock-status"]'
+                           '/p/span/text()').extract()
         )
 
-        if stock_status.lower() is 'in stock':
-            stock_status = True
-        else:
+        if 'In stock' in stock_status:
             stock_status = False
+        else:
+            stock_status = True
 
         return stock_status
 
     def _parse_upc(self, response):
         upc = is_empty(
-            response.xpath('//meta[@property="product_number"]'
-                           '/@content').extract()
+            response.xpath('//span[@class="product-code"]/text()').extract()
         )
 
         if upc:
-            upc = upc.split('_')[0]
+            return upc
 
-        return upc
+        return None
 
     def _parse_variants(self, response):
         meta = response.meta.copy()
         product = meta['product']
 
         variants = []
-        data = is_empty(re.findall(
-            r'<div id="entitledItem_\w+" class="hidediv">(\[(.|\n)*?\])',
-            response.body_as_unicode()
-        ))
+        variant_drop_down = response.xpath('//div[@class="product-size '
+                                           'drop-down"]').extract()
+        if variant_drop_down:
+            stock_status = response.xpath('//div[@class="attributes"]'
+                                          '//div[@class="product-size '
+                                          'drop-down"]/select/'
+                                          'option[position() > 1]/'
+                                          '@data-item-stock').extract()
+            sizes = response.xpath('//div[@class="attributes"]'
+                                   '//div[@class="product-size drop-down"]'
+                                   '/select/option[position() > 1]'
+                                   '/@data-item-size').extract()
+            price = None
 
-        if data:
-            data = list(data)[0]
-
-            try:
-                variants_data = json.loads(data.replace('\'', '"'))
-            except ValueError as exc:
-                self.log(
-                    'Unable to parse variants from {url}: {exc}'.format(
-                        exc=exc,
-                        url=response.url
-                    ), ERROR
-                )
-                return []
-
-            for var_data in variants_data:
-                properties = {}
-
-                for attr, value in var_data['Attributes'].iteritems():
-                    attr = attr.lower().split('_')
-                    if attr[0] == 'colour':
-                        attr[0] = 'color'
-                    properties[attr[0]] = attr[1]
-
-                price = is_empty(
-                    re.findall(
-                        r'(\d+\.\d+)',
-                        var_data.get('offer_price', 0.00)
-                    ), product['price'].price.__float__()
-                )
-
-                status = var_data.get('inventory_status', 'unavailable')
-                stock = status.lower() == 'unavailable'
-
-                image_url = 'http://debenhams.scene7.com/is/image/Debenhams/' \
-                            '{upc}_{id}'.format(
-                                upc=product.get('upc', None),
-                                id=var_data['part_number']
-                            )
-
-                variant = {
-                    'properties': properties,
-                    'price': float(price),
-                    'is_out_of_stock': stock,
-                    'image_url': image_url
-                }
-
-                variants.append(variant)
         else:
-            return []
+            sizes = response.xpath('//ul[@class="size"]/li/label/span'
+                                  '/text()').extract()
+            stock_status = response.xpath('//ul[@class="size"]/li/label'
+                                          '/@title').extract()
+            price, currency = self._parse_price(response)
+            price = float(price)
+
+        for index, size in enumerate(sizes):
+            properties = {}
+            variant = {}
+
+            properties['size'] = size
+            variant['is_out_of_stock'] = True if 'Out of stock' in \
+                                                  stock_status[index] else False
+
+            variant['price'] = price if price else None
+            variant['properties'] = properties
+
+            variants.append(variant)
 
         return variants
 
     def _parse_related_products(self, response):
         related_products = []
-        data = is_empty(re.findall(
-            r'<div name="upSell_entitledItems_\w+" id="upSell_entitledItems_\w+"'
-            r' class="hidediv">(\[(.|\n)*?\])</div>',
-            response.body_as_unicode()
-        ))
+        title = response.xpath('//div[@class="product-cross-sells '
+                               'tab-container"]//ul[@class="jcarousel-skin-1"]'
+                               '/li/div[1]/h2/a/text()').extract()
+        url = response.xpath('//div[@class="product-cross-sells '
+                             'tab-container"]//ul[@class="jcarousel-skin-1"]'
+                             '/li/div[1]/h2/a/@href').extract()
 
-        if data:
-            data = list(data)[0]
-
-            try:
-                data = json.loads(data)
-            except ValueError as exc:
-                self.log(
-                    'Unable to parse related products from {url}: {exc}'.format(
-                        exc=exc,
-                        url=response.url
-                    ), ERROR
+        if title and url:
+            for index, title in enumerate(title):
+                related_products.append(
+                    RelatedProduct(
+                        url=url[index],
+                        title=title
+                    )
                 )
-                return
+            return related_products
 
-            for rel_prod in data:
-                url = rel_prod.get('pdpUrl')
-                if url:
-                    url = 'www.{domain}{url}'.format(
-                        domain=self.allowed_domains[0],
-                        url=url
-                    )
-
-                title = rel_prod.get('description')
-
-                if title and url:
-                    related_products.append(
-                        RelatedProduct(
-                            url=url,
-                            title=title
-                        )
-                    )
+        if related_products:
+            return related_products
         else:
-            return
-        return related_products
+            return None
 
     def send_next_request(self, reqs, response):
         """
@@ -330,12 +315,11 @@ class DebenhamsProductSpider(BaseProductsSpider):
         Scraping number of resulted product links
         """
         total_matches = is_empty(
-            response.xpath(
-                '//span[@class="products_count"]/text()'
-            ).extract(), 0
-        )
+            response.xpath('//span[@class="product-count"]'
+                           '/text()').re('\d.\d+'), 0)
 
         if total_matches:
+            total_matches = total_matches.replace(',', '')
             return int(total_matches)
         else:
             return 0
@@ -350,33 +334,20 @@ class DebenhamsProductSpider(BaseProductsSpider):
         """
         Scraping product links from search page
         """
-
-        items = response.xpath(
-            '//div[@id="productDisplay"]/./'
-            '/tr[@class="item_container"]'
-            '/td[contains(@class, "item")]'
-        )
-
-        if items:
-            for item in items:
-                link = is_empty(
-                    item.xpath('././/input[@id="productTileImageUrl"]'
-                               '/@value').extract()
-                )
-                res_item = SiteProductItem()
-                yield link, res_item
+        links = response.xpath(
+            '//div[contains(@class, "product-image")]//a'
+            '//img[contains(@class, "product-medium")]/../@href'
+        ).extract()
+        if links:
+            for link in links:
+                yield link, SiteProductItem()
         else:
             self.log("Found no product links in {url}".format(url=response.url), INFO)
 
     def _scrape_next_results_page_link(self, response):
-        url = is_empty(
-            response.xpath(
-                '//a[text()="Next"]/@href'
-            ).extract()
-        )
-
+        url = response.xpath('//*[contains(@class, "pagination_Next")]/@href').extract()
         if url:
-            return url
+            return url[0]
         else:
             self.log("Found no 'next page' links", WARNING)
             return None
