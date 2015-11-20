@@ -288,6 +288,7 @@ class LeviScraper(Scraper):
         review_count = int(self.review_json["jsonData"]["attributes"]["numReviews"])
 
         if review_count == 0:
+            self.review_json = None
             return None
 
         offset = 0
