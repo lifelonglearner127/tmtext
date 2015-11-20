@@ -8,7 +8,7 @@ from boto.s3 import connect_to_region as connect_s3
 
 import logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.WARNING,
     format='[%(asctime)s, %(levelname)s] %(message)s',
     filename='/tmp/test_sqs.log'
 )
@@ -48,11 +48,13 @@ def generate_tasks():
 
         dict(site='target',
              searchterms_str='chair',
-             cmd_args=dict(quantity=50)),  # branch
+             cmd_args=dict(quantity=100),
+             branch_name='master'),  # branch
 
         dict(site='walmart_shelf_urls',
              url='http://www.walmart.com/search/?query=dress',
              cmd_args=dict(num_pages=10)),  # shelf
+
         dict(site='jcpenney_coupons',
              url='http://www.jcpenney.com/jsp/browse/marketing/'
                  'promotion.jsp?pageId=pg40027800029#'),  # coupon
@@ -181,7 +183,7 @@ def main():
     sqs_conn = connect_sqs('us-east-1')
     s3_conn = connect_s3('us-east-1')
     bucket = s3_conn.get_bucket('spyder-bucket')
-    max_wait_minutes = 30
+    max_wait_minutes = 40
     server_name = 'sqs_test'
     sqs_name = 'sqs_ranking_spiders'
     output_queue_name = '%s%s_output' % (server_name, sqs_name)
