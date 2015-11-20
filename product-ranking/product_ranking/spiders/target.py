@@ -151,6 +151,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         ).extract()
         prod = response.meta['product']
 
+        response.meta['average'] = is_empty(re.findall(r'var averageRating=  (\d+)', response.body_as_unicode()))
+        response.meta['total'] = is_empty(re.findall(r'var totalReviewsValue=(\d+)', response.body_as_unicode()))
+
         if 'sorry, that item is no longer available' \
                 in response.body_as_unicode().lower():
             prod['not_found'] = True
@@ -768,7 +771,15 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         data = data.get('FilteredReviewStatistics', {})
         average = data.get('AverageOverallRating')
         total = data.get('TotalReviewCount')
-        
+        if not average:
+            average = response.meta['average']
+            total = response.meta['total']
+            if average == '0':
+                cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
+            else:
+                fdist = None
+                reviews = BuyerReviews(total, average, fdist)
+                cond_set_value(product, 'buyer_reviews', reviews)
         if average and total:
             distribution = data.get('RatingDistribution', [])
             distribution = {d['RatingValue']: d['Count']
@@ -779,8 +790,6 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                     fdist[i] = distribution[i]
             reviews = BuyerReviews(total, average, fdist)
             cond_set_value(product, 'buyer_reviews', reviews)
-        else:
-            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         return product
 
     def _populate_collection_items(self, response, prod):
