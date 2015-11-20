@@ -21,6 +21,7 @@ from .models import get_data_filename, get_log_filename, get_progress_filename,\
 
 from management.commands.update_jobs import LOCAL_AMAZON_LIST_CACHE,\
     AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_BUCKET_NAME, download_s3_file
+from management.commands.download_list_of_s3_cache_files import LOCAL_AMAZON_LIST_CACHE
 import settings
 
 
@@ -203,13 +204,38 @@ class SearchS3Cache(SearchFilesView):
     template_name = 'search_s3_cache.html'
 
 
-class RenderRequestPage(AdminOnlyMixin, View):
+class RenderS3CachePage(AdminOnlyMixin, View):
     # Downloads and renders the selected cache page
-    fname2open = ''  #TODO: change to the cached list of cache files =)
+    fname2open = LOCAL_AMAZON_LIST_CACHE
 
     def get(self, request, *args, **kwargs):
         # TODO: 1) unencode URL
         # TODO: 2) download the response body file
         # TODO: 3) if this is a HTML page, replace relative css and image paths to absolute ones
         # TODO: 4) render the page in the browser
-        pass
+        fname = request.GET['file']
+        ext = os.path.splitext(fname)
+        if ext and len(ext) > 1 and isinstance(ext, (list, tuple)):
+            ext = ext[1]
+        # save to a temporary file
+        tempfile_name = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
+        tempfile_name.close()
+
+        # download S3 file
+        # TODO: move bucket name and credentials to an indipendent config file
+        amazon_public_key = 'AKIAIKTYYIQIZF3RWNRA'
+        amazon_secret_key = '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'
+        bucket_name = 'spiders-cache'
+
+        aws_connection = S3Connection(aws_access_key_id=amazon_public_key, aws_secret_access_key=amazon_secret_key)
+        bucket = aws_connection.get_bucket(bucket_name)
+        key = bucket.get_key(fname)
+        key.get_contents_to_filename(tempfile_name.name)
+
+        # create File response
+        wrapper = FileWrapper(open(tempfile_name.name, 'rb'))
+        content_type = mimetypes.guess_type(tempfile_name.name)[0]
+        response = HttpResponse(wrapper, content_type=content_type)
+        response['Content-Length'] = os.path.getsize(tempfile_name.name)
+        response['Content-Disposition'] = 'attachment; filename=%s' % tempfile_name.name
+        return response
