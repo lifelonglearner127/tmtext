@@ -179,6 +179,7 @@ if __name__ == '__main__':
     create_tables()
     if 'clear_cache' in sys.argv:
         if raw_input('Delete all records? y/n: ').lower() == 'y':
+            #TODO: this doesn't work because of constraints - fix
             session.query(Spider).delete()
             session.query(Run).delete()
             session.query(Term).delete()
@@ -187,4 +188,11 @@ if __name__ == '__main__':
         else:
             print('You did not type "y" - exit...')
     if 'list' in sys.argv:
-        print list_db_cache()
+        listing = list_db_cache()
+        for spider in listing.keys():
+            print
+            print spider.upper(), '*'*50
+            for date in listing[spider].keys():
+                print ' '*4, date, '-'*20
+                for searchterm in listing[spider][date]:
+                    print ' '*8, searchterm
