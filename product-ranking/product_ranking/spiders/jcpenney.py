@@ -17,7 +17,11 @@ from scrapy.log import WARNING
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.randomproxy import RandomProxy
-from product_ranking.settings import ZERO_REVIEWS_VALUE, PROXY_LIST
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+try:
+    from product_ranking.settings import PROXY_LIST
+except ImportError:
+    PROXY_LIST = []
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.validation import BaseValidator
