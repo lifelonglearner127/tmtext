@@ -39,9 +39,11 @@ class LeviVariants(object):
             out_of_stock_combination_list = []
 
             color_list = []
+            color_name_id_map = {}
 
             for color_id in buy_stack_json["colorid"]:
                 color_list.append(buy_stack_json["colorid"][color_id]["finish"]["title"])
+                color_name_id_map[buy_stack_json["colorid"][color_id]["finish"]["title"]] = color_id
 
             if color_list:
                 attribute_values_list.append(color_list)
@@ -119,6 +121,13 @@ class LeviVariants(object):
 
                 variant_item["properties"] = properties
                 variant_item["price"] = None
+
+                if "color" in properties:
+                    for price in buy_stack_json["colorid"][color_name_id_map[properties["color"]]]["price"]:
+                        if price["il8n"] == "now":
+                            variant_item["price"] = float(re.findall("\d+.\d+", price["amount"])[0])
+                            break
+
                 variant_item["selected"] = False
                 variant_item["upc"] = None
                 variant_item["stock"] = 0
