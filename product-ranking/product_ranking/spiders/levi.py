@@ -25,10 +25,10 @@ def is_num(s):
 
 
 class LeviValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand', 'price', 'is_out_of_stock',
+    optional_fields = ['brand', 'price',
                        'related_products', 'upc']
     ignore_fields = [
-        'is_in_store_only',
+        'is_in_store_only', 'is_out_of_stock',
         'google_source_site', 'description', 'special_pricing',
         'bestseller_rank', 'img_count', 'video_count'
     ]
@@ -273,7 +273,9 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
                                 url=url
                             )
                         )
-        product['related_products'] = related_prods
+        product['related_products'] = {}
+        if related_prods:
+            product['related_products']['buyers_also_bought'] = related_prods
         return product
 
     def parse_description(self, response):
@@ -343,7 +345,6 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
             return url+'&nao='+str(new_nao)
 
     def _scrape_next_results_page_link(self, response):
-        print '_'*8, response
         if self.CURRENT_NAO > self.TOTAL_MATCHES+self.PAGINATE_BY:
             return  # it's over
         self.CURRENT_NAO += self.PAGINATE_BY
