@@ -27,7 +27,7 @@ def is_num(s):
 class DockersValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
     optional_fields = ['brand', 'price']
     ignore_fields = [
-        'is_in_store_only',
+        'is_in_store_only', 'is_out_of_stock',
         'google_source_site', 'description', 'special_pricing',
         'bestseller_rank', 'img_count', 'video_count'
     ]
@@ -273,6 +273,8 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                             )
                         )
         product['related_products'] = related_prods
+        if related_prods:
+            product['related_products']['buyers_also_bought'] = related_prods
         return product
 
     def parse_description(self, response):
