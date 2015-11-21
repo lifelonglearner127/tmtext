@@ -24,14 +24,13 @@ def is_num(s):
         return False
 
 
-# TODO: implement
-"""
 class LeviValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand', 'price']
+    optional_fields = ['brand', 'price', 'is_out_of_stock',
+                       'related_products', 'upc']
     ignore_fields = [
-        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'is_in_store_only',
         'google_source_site', 'description', 'special_pricing',
-        'bestseller_rank',
+        'bestseller_rank', 'img_count', 'video_count'
     ]
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = True  # ... duplicated requests?
@@ -39,23 +38,24 @@ class LeviValidatorSettings(object):  # do NOT set BaseValidatorSettings as pare
     test_requests = {
         'sdfsdgdf': 0,  # should return 'no products' or just 0 products
         'benny benassi': 0,
-        'red car': [20, 150],
-        'red stone': [40, 150],
-        'musci': [110, 210],
-        'funky': [10, 110],
-        'bunny': [7, 90],
-        'soldering iron': [30, 120],
-        'burger': [1, 40],
-        'hold': [30, 200],
+
+        'black jeans': [50, 300],
+        'black shirt': [10, 150],
+        'men shirt': [100, 400],
+        '501 men': [30, 300],
+        'white jeans': [7, 150],
+        'red jeans': [20, 150],
+        'red shirt': [10, 150],
+        'hat': [5, 50],
     }
-"""
+
 
 class LeviProductsSpider(BaseValidator, BaseProductsSpider):
     name = 'levi_products'
     allowed_domains = ["levi.com", "www.levi.com"]
     start_urls = []
 
-    #settings = HomedepotValidatorSettings  # TODO
+    settings = LeviValidatorSettings
 
     SEARCH_URL = "http://www.levi.com/US/en_US/search?Ntt={search_term}"  # TODO: ordering
 
