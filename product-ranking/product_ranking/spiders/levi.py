@@ -86,6 +86,8 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
                       "&ur=http%3A%2F%2Fwww.levi.com%2FUS%2Fen_US%" \
                       "2Fwomens-jeans%2Fp%2F095450043&plk=&"
 
+    use_proxies=True
+
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
 
@@ -256,8 +258,8 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
     def parse_related_product(self, response):
         related_prods = []
         product = response.meta['product']
-        sample = response.body
-        sample = sample.replace('certonaResx.showResponse(', '')
+        sample = response.body_as_unicode()
+        sample = sample.replace(u'certonaResx.showResponse(', '')
         sample = sample[:-2]
         data = json.loads(sample)
         html = data['Resonance']['Response'][2]['output']
@@ -345,6 +347,9 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
             return url+'&nao='+str(new_nao)
 
     def _scrape_next_results_page_link(self, response):
+        if self.TOTAL_MATCHES is None:
+            self.log('No "next result page" link!')
+            return
         if self.CURRENT_NAO > self.TOTAL_MATCHES+self.PAGINATE_BY:
             return  # it's over
         self.CURRENT_NAO += self.PAGINATE_BY
@@ -354,3 +359,4 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
                 nao=str(self.CURRENT_NAO)),
             callback=self.parse, meta=response.meta
         )
+

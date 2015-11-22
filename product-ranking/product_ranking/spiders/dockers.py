@@ -85,6 +85,8 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                       "&ur=http%3A%2F%2Fwww.levi.com%2FUS%2Fen_US%" \
                       "2Fwomens-jeans%2Fp%2F095450043&plk=&"
 
+    use_proxies=True
+
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
 
@@ -272,7 +274,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                                 url=url
                             )
                         )
-        product['related_products'] = related_prods
+        product['related_products'] = {}
         if related_prods:
             product['related_products']['buyers_also_bought'] = related_prods
         return product
@@ -344,7 +346,9 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             return url+'&nao='+str(new_nao)
 
     def _scrape_next_results_page_link(self, response):
-        print '_'*8, response
+        if self.TOTAL_MATCHES is None:
+            self.log('No "next result page" link!')
+            return
         if self.CURRENT_NAO > self.TOTAL_MATCHES+self.PAGINATE_BY:
             return  # it's over
         self.CURRENT_NAO += self.PAGINATE_BY
@@ -354,3 +358,4 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                 nao=str(self.CURRENT_NAO)),
             callback=self.parse, meta=response.meta
         )
+
