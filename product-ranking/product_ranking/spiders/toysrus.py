@@ -22,10 +22,6 @@ class ToysrusProductSpider(BaseProductsSpider):
 
     items_per_page = 24
     start_links = 'http://www.toysrus.com'
-    related_url = 'http://www.res-x.com/ws/r2/Resonance.aspx?appid=toysrus01' \
-                  '&tk=617553336778655&sg=1&bx=true&sc=bproduct_rr' \
-                  '&sc=bproduct2_rr&sc=bproduct3_rr&ei={0}&siteid=BRU' \
-                  '&cb=certonaResx.showResponse'
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
