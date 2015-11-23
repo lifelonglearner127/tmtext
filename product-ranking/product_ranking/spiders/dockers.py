@@ -24,14 +24,12 @@ def is_num(s):
         return False
 
 
-# TODO: implement
-"""
 class DockersValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
     optional_fields = ['brand', 'price']
     ignore_fields = [
-        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
+        'is_in_store_only', 'is_out_of_stock',
         'google_source_site', 'description', 'special_pricing',
-        'bestseller_rank',
+        'bestseller_rank', 'img_count', 'video_count'
     ]
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = True  # ... duplicated requests?
@@ -39,23 +37,23 @@ class DockersValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
     test_requests = {
         'sdfsdgdf': 0,  # should return 'no products' or just 0 products
         'benny benassi': 0,
-        'red car': [20, 150],
-        'red stone': [40, 150],
-        'musci': [110, 210],
-        'funky': [10, 110],
-        'bunny': [7, 90],
-        'soldering iron': [30, 120],
-        'burger': [1, 40],
-        'hold': [30, 200],
+        'jeans': [20, 150],
+        'red': [40, 150],
+        'black': [50, 300],
+        'white': [10, 110],
+        'blue jeans': [5, 150],
+        'shoes': [10, 100],
+        'black pants': [20, 150],
+        'leather': [20, 200],
     }
-"""
+
 
 class DockersProductsSpider(BaseValidator, BaseProductsSpider):
     name = 'dockers_products'
     allowed_domains = ["dockers.com", "www.dockers.com"]
     start_urls = []
 
-    #settings = HomedepotValidatorSettings  # TODO
+    settings = DockersValidatorSettings
 
     SEARCH_URL = "http://www.dockers.com/US/en_US/search?Ntt={search_term}"  # TODO: ordering
 
@@ -86,6 +84,8 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                       "&cb=certonaResx.showResponse" \
                       "&ur=http%3A%2F%2Fwww.levi.com%2FUS%2Fen_US%" \
                       "2Fwomens-jeans%2Fp%2F095450043&plk=&"
+
+    use_proxies=True
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
@@ -274,7 +274,9 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                                 url=url
                             )
                         )
-        product['related_products'] = related_prods
+        product['related_products'] = {}
+        if related_prods:
+            product['related_products']['buyers_also_bought'] = related_prods
         return product
 
     def parse_description(self, response):
@@ -344,7 +346,9 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             return url+'&nao='+str(new_nao)
 
     def _scrape_next_results_page_link(self, response):
-        print '_'*8, response
+        if self.TOTAL_MATCHES is None:
+            self.log('No "next result page" link!')
+            return
         if self.CURRENT_NAO > self.TOTAL_MATCHES+self.PAGINATE_BY:
             return  # it's over
         self.CURRENT_NAO += self.PAGINATE_BY
@@ -354,3 +358,4 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                 nao=str(self.CURRENT_NAO)),
             callback=self.parse, meta=response.meta
         )
+

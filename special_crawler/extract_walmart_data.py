@@ -1587,7 +1587,7 @@ class WalmartScraper(Scraper):
         if self.is_legacy_review:
             average_review_str = self.tree_html.xpath("//div[@class='review-summary Grid']\
                 //p[@class='heading-e']/text()")[0]
-            average_review = re.search('reviews \| (.+?) out of ', average_review_str).group(1)
+            average_review = re.search('review[s]* \| (.+?) out of ', average_review_str).group(1)
             average_review = float(average_review)
 
             return average_review
@@ -1690,11 +1690,15 @@ class WalmartScraper(Scraper):
         if not review_rating_list_text:
             return None
 
+        is_no_review = True
+
         for index in range(5):
             if int(review_rating_list_text[index]) > 0:
-                review_rating_list_int.append([5 - index, int(review_rating_list_text[index])])
+                is_no_review = False
 
-        if not review_rating_list_int:
+            review_rating_list_int.append([5 - index, int(review_rating_list_text[index])])
+
+        if is_no_review:
             return None
 
         return review_rating_list_int
@@ -1713,15 +1717,19 @@ class WalmartScraper(Scraper):
 
     def _no_longer_available(self):
         try:
-            txt = self.tree_html.xpath("//div[@class='prod-no-buying-option']/div[@class='heading-d']/text()")[0]
-            if "Information unavailable" in txt or "This Item is no longer available" in txt:
+            txt = self.tree_html.xpath("//div[contains(@class, 'prod-no-buying-option')]")[0].text_content().lower()
+
+            if "information unavailable" in txt or "this item is no longer available" in txt:
                 return True
         except:
             pass
+
         if self.tree_html.xpath('//*[contains(@class, "invalid") and contains(text(), "tem not available")]'):
             return True
+
         if self.tree_html.xpath('//*[contains(@class, "NotAvailable") and contains(text(), "ot Available")]'):
             return True
+
         return False
 
     def _shipping(self):
@@ -2090,10 +2098,7 @@ class WalmartScraper(Scraper):
 
     def _in_stores_v2(self):
         try:
-            if not self.product_info_json:
-                pinfo_dict = self._extract_product_info_json()
-            else:
-                pinfo_dict = self.product_info_json
+            pinfo_dict = self._extract_product_info_json()
 
             for store in pinfo_dict["analyticsData"]["storesAvail"]:
                 if int(store["isAvail"]) == 1:
@@ -2109,6 +2114,13 @@ class WalmartScraper(Scraper):
                 body_clean = re.sub("\n", " ", body_raw)
                 body_jpart = re.findall("\{\"query.*?\}", body_clean)[0]
                 body_dict = json.loads(body_jpart)
+
+                sellers = self._marketplace_sellers_from_script()
+                if sellers:
+                    sellers = [seller.lower() for seller in sellers]
+
+                    if "walmart store" in sellers:
+                        return 1
 
                 if body_dict["inStore"] is True:
                     return 1
@@ -2150,7 +2162,6 @@ class WalmartScraper(Scraper):
             pinfo_dict = self._extract_product_info_json()
         else:
             pinfo_dict = self.product_info_json
-
 #        sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
 #        sellers = map(lambda d: d["sellerName"], sellers_dict)
 
@@ -2176,15 +2187,11 @@ class WalmartScraper(Scraper):
         prices = []
         sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
 
-        if self._primary_seller().lower() in ["walmart.com", "walmart store"]:
-            for seller in sellers_dict:
-                if seller["sellerName"] != "Walmart.com":
-                    prices.append(float(seller["price"]))
-        else:
-            for seller in sellers_dict:
+        for seller in sellers_dict:
+            if seller["sellerName"].lower() not in ["walmart.com", "walmart store"]:
                 prices.append(float(seller["price"]))
 
-        return prices
+        return prices if prices else None
 
     def _marketplace_lowest_price(self):
         marketplace_prices = self._marketplace_prices()
@@ -2273,8 +2280,7 @@ class WalmartScraper(Scraper):
         if self._version() == "Walmart v2":
             sellers = self._marketplace_sellers_from_script()
             # filter out walmart
-            if self._primary_seller().lower() == "walmart.com":
-                sellers = filter(lambda s: s != "Walmart.com", sellers)
+            sellers = filter(lambda s: s.lower() not in ["walmart.com", "walmart store"], sellers)
 
             if sellers:
                 return sellers
@@ -2285,12 +2291,8 @@ class WalmartScraper(Scraper):
                 sellers = []
                 sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
 
-                if self._primary_seller().lower() in ["walmart.com", "walmart store"]:
-                    for seller in sellers_dict:
-                        if seller["sellerName"] != "Walmart.com":
-                            sellers.append(float(seller["sellerName"]))
-                else:
-                    for seller in sellers_dict:
+                for seller in sellers_dict:
+                    if seller["sellerName"] not in ["walmart.com", "walmart store"]:
                         sellers.append(seller["sellerName"])
 
                 return sellers if sellers else None
@@ -2298,8 +2300,8 @@ class WalmartScraper(Scraper):
         if self._version() == "Walmart v1":
             sellers = self._seller_meta_from_tree().keys()
             # filter out walmart
-            if self._primary_seller().lower() == "walmart.com":
-                sellers = filter(lambda s: s != "Walmart.com", sellers)
+            sellers = filter(lambda s: s.lower() not in ["walmart.com", "walmart store"], sellers)
+
             return sellers if sellers else None
 
         return None
@@ -2340,10 +2342,7 @@ class WalmartScraper(Scraper):
 
             prices = [float(price) for price in prices]
 
-            if not prices:
-                return None
-
-            return prices
+            return prices if prices else None
 
         return None
 
