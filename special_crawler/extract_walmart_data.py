@@ -1587,7 +1587,7 @@ class WalmartScraper(Scraper):
         if self.is_legacy_review:
             average_review_str = self.tree_html.xpath("//div[@class='review-summary Grid']\
                 //p[@class='heading-e']/text()")[0]
-            average_review = re.search('reviews \| (.+?) out of ', average_review_str).group(1)
+            average_review = re.search('review[s]* \| (.+?) out of ', average_review_str).group(1)
             average_review = float(average_review)
 
             return average_review
@@ -1690,11 +1690,15 @@ class WalmartScraper(Scraper):
         if not review_rating_list_text:
             return None
 
+        is_no_review = True
+
         for index in range(5):
             if int(review_rating_list_text[index]) > 0:
-                review_rating_list_int.append([5 - index, int(review_rating_list_text[index])])
+                is_no_review = False
 
-        if not review_rating_list_int:
+            review_rating_list_int.append([5 - index, int(review_rating_list_text[index])])
+
+        if is_no_review:
             return None
 
         return review_rating_list_int
