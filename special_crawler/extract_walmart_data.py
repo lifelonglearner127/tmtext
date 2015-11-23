@@ -2158,6 +2158,9 @@ class WalmartScraper(Scraper):
         else:
             pinfo_dict = self.product_info_json
 
+        print "************"
+        print pinfo_dict
+        print "************"
 #        sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
 #        sellers = map(lambda d: d["sellerName"], sellers_dict)
 
