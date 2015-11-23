@@ -675,7 +675,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             title = is_empty(response.xpath(
                 "//h1[contains(@class,'product-name')]/span/text()"
             ).extract())
-        if title:
+        if title and not product['title']:
+            print 'sfsfsffs111111111'
             title = Selector(text=title).xpath('string()').extract()
             product["title"] = is_empty(title, "").strip()
 
