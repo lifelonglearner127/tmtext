@@ -1717,15 +1717,19 @@ class WalmartScraper(Scraper):
 
     def _no_longer_available(self):
         try:
-            txt = self.tree_html.xpath("//div[contains(@class, 'prod-no-buying-option')]/div[@class='heading-d']/text()")[0]
-            if "Information unavailable" in txt or "This Item is no longer available" in txt:
+            txt = self.tree_html.xpath("//div[contains(@class, 'prod-no-buying-option')]")[0].text_content().lower()
+
+            if "information unavailable" in txt or "this item is no longer available" in txt:
                 return True
         except:
             pass
+
         if self.tree_html.xpath('//*[contains(@class, "invalid") and contains(text(), "tem not available")]'):
             return True
+
         if self.tree_html.xpath('//*[contains(@class, "NotAvailable") and contains(text(), "ot Available")]'):
             return True
+
         return False
 
     def _shipping(self):
