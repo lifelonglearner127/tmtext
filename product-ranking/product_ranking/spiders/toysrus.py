@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-#
 import re
 import string
 
-from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
-from scrapy import Selector
-
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
@@ -26,6 +22,10 @@ class ToysrusProductSpider(BaseProductsSpider):
 
     items_per_page = 24
     start_links = 'http://www.toysrus.com'
+    related_url = 'http://www.res-x.com/ws/r2/Resonance.aspx?appid=toysrus01' \
+                  '&tk=617553336778655&sg=1&bx=true&sc=bproduct_rr' \
+                  '&sc=bproduct2_rr&sc=bproduct3_rr&ei={0}&siteid=BRU' \
+                  '&cb=certonaResx.showResponse'
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
@@ -89,8 +89,8 @@ class ToysrusProductSpider(BaseProductsSpider):
         cond_set_value(product, 'buyer_reviews', buyer_reviews)
 
         # # Parse related products
-        # related_products = self._parse_related_products(response)
-        # cond_set_value(product, 'related_products', related_products)
+        related_products = self._parse_related_products(response)
+        cond_set_value(product, 'related_products', related_products)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -203,7 +203,24 @@ class ToysrusProductSpider(BaseProductsSpider):
 
 
     def _parse_related_products(self, response):
-        pass
+        titles = response.xpath('//div[@id="relatedItems"]'
+                                '//div[@class="titleReviewPrice"]'
+                                '/label/b/a/text()').extract()
+        links_data = response.xpath('//div[@id="relatedItems"]'
+                               '//div[@class="titleReviewPrice"]'
+                               '/label/b/a/@href').extract()
+
+        links = []
+        for link in links_data:
+            links.append(re.sub(r'&prodFindSrc=prodCrossSell', r'', link))
+
+        related = []
+        if titles and links:
+            for index, link in enumerate(links):
+                related.append(RelatedProduct(title=titles[index],
+                               url=self.start_links + link))
+
+        return related
 
     def send_next_request(self, reqs, response):
         """
