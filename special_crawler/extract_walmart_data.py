@@ -2108,7 +2108,9 @@ class WalmartScraper(Scraper):
                 body_dict = json.loads(body_jpart)
 
                 sellers = self._marketplace_sellers_from_script()
-
+                print "*****************"
+                print sellers
+                print "*****************"
                 if sellers:
                     sellers = [seller.lower() for seller in sellers]
 
