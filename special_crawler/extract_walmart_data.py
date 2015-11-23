@@ -2108,9 +2108,6 @@ class WalmartScraper(Scraper):
                 body_dict = json.loads(body_jpart)
 
                 sellers = self._marketplace_sellers_from_script()
-                print "*****************"
-                print sellers
-                print "*****************"
                 if sellers:
                     sellers = [seller.lower() for seller in sellers]
 
@@ -2157,10 +2154,6 @@ class WalmartScraper(Scraper):
             pinfo_dict = self._extract_product_info_json()
         else:
             pinfo_dict = self.product_info_json
-
-        print "************"
-        print pinfo_dict
-        print "************"
 #        sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
 #        sellers = map(lambda d: d["sellerName"], sellers_dict)
 
