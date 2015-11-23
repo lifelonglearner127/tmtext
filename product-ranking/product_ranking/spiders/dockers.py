@@ -97,9 +97,10 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
         return self.parse_product(response)
 
     def parse_product(self, response):
-        product = response.meta.get('product', SiteProductItem())
-
+        meta = response.meta.copy()
+        product = meta.get('product', SiteProductItem())
         reqs = []
+        meta['reqs'] = reqs
 
         # product id
         self.product_id = is_empty(response.xpath('//meta[@itemprop="model"]/@content').extract())
@@ -157,7 +158,8 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                         Request(
                             url=self.REVIEW_URL.format(product_id=self.product_id, index=index+2),
                             dont_filter=True,
-                            callback=self.parse_buyer_reviews
+                            callback=self.parse_buyer_reviews,
+                            meta=meta
                         )
             )
 
@@ -165,7 +167,8 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             Request(
                 url=self.REVIEW_URL.format(product_id=self.product_id, index=0),
                 dont_filter=True,
-                callback=self.parse_buyer_reviews
+                callback=self.parse_buyer_reviews,
+                meta=meta
             ))
 
         if reqs:
@@ -191,25 +194,23 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             response.meta['marks'][k] += v
 
         product = response.meta['product']
-        reqs = meta.get('reqs')
+        reqs = meta.get('reqs', [])
 
         product['buyer_reviews'] = BuyerReviews(
             num_of_reviews=buyer_reviews_per_page['num_of_reviews'],
             average_rating=buyer_reviews_per_page['average_rating'],
             rating_by_star=response.meta['marks']
             )
-        if reqs:
-            reqs.append(
-                Request(
-                    url=self.RELATED_PRODUCT.format(product_id=self.product_id, index=0),
-                    dont_filter=True,
-                    callback=self.parse_related_product
-                ))
 
-        if reqs:
-            return self.send_next_request(reqs, response)
+        reqs.append(
+            Request(
+                url=self.RELATED_PRODUCT.format(product_id=self.product_id),
+                dont_filter=True,
+                callback=self.parse_related_product,
+                meta=meta
+            ))
 
-        return product
+        return self.send_next_request(reqs, response)
 
     def send_next_request(self, reqs, response):
         """
@@ -255,6 +256,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             return image
 
     def parse_related_product(self, response):
+        print 'fdvfdvdfvdvcdvdf'
         related_prods = []
         product = response.meta['product']
         sample = response.body
@@ -264,8 +266,8 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
         html = data['Resonance']['Response'][2]['output']
 
         s = Selector(text=html)
-        titles = s.xpath('//h4/text()').extract() # Title
-        urls = s.xpath('//img/@src').extract() # Img url
+        titles = s.xpath('//h4/text()').extract()  # Title
+        urls = s.xpath('//img/@src').extract()  # Img url
         for title, url in zip(titles, urls):
             if url and title:
                 related_prods.append(
