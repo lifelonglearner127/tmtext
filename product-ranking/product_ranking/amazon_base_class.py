@@ -568,7 +568,10 @@ class AmazonBaseClass(BaseProductsSpider):
                 brand = brand_logo.split('/')[1]
 
         if not brand and title:
-            brand = guess_brand_from_first_words(title)
+            try:
+                brand = guess_brand_from_first_words(title)
+            except:
+                brand = guess_brand_from_first_words(title[0])
             if brand:
                 brand = [brand]
 
