@@ -944,7 +944,7 @@ class AmazonBaseClass(BaseProductsSpider):
             date = self._format_last_br_date(date)
             if date:
                 cond_set_value(product, 'last_buyer_review_date',
-                               date.strftime('%m/%d/%Y'))
+                               date.strftime('%m-%d-%Y'))
 
         if reqs:
             return self.send_next_request(reqs, response)
