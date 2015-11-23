@@ -128,10 +128,7 @@ class ToysrusProductSpider(BaseProductsSpider):
             '//script[contains(text(), '
             '"storeCurrencyCode")]').re(r"storeCurrencyCode = '(\w+)'"))
 
-        return Price(
-            price=float(price),
-            priceCurrency=currency
-        )
+        return Price(price=float(price), priceCurrency=currency)
 
     def _parse_special_pricing(self, response):
         special_price = is_empty(response.xpath(
