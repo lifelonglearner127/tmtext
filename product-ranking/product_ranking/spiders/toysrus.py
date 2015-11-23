@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-#
-
-import json
 import re
 import string
-import itertools
-import urllib
 
 from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
+from scrapy import Selector
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
@@ -28,10 +25,6 @@ class ToysrusProductSpider(BaseProductsSpider):
                  "origkw={search_term}&sr=1"
 
     items_per_page = 24
-    #
-    # BUYER_REVIEWS_URL = 'http://debenhams.ugc.bazaarvoice.com/9364redes-en_gb/{upc}/' \
-    #                     'reviews.djs?format=embeddedhtml'
-
     start_links = 'http://www.toysrus.com'
 
     def __init__(self, *args, **kwargs):
