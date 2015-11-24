@@ -2,11 +2,18 @@ import sys
 import os
 import cPickle as pickle
 import subprocess
+import os
+import sys
 
 from sqlalchemy import Column, ForeignKey, \
     String, Integer, SmallInteger, Date, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
+
+
+CWD = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(os.path.join(CWD, '..'))
+from sqs_tests_gui.settings import CACHE_MODELS_FILENAME
 
 
 Base = declarative_base()
@@ -235,6 +242,6 @@ if __name__ == '__main__':
             sys.exit()
         listing = list_db_cache()
         # change date(time) objects to strings
-        fname = sys.argv[2]
+        fname = sys.argv[2] if len(sys.argv) > 2 else CACHE_MODELS_FILENAME
         with open(fname, 'wb') as fh:
             fh.write(pickle.dumps(listing))

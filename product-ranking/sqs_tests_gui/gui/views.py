@@ -1,11 +1,15 @@
 import os
 import sys
 import datetime
+import gzip
 import random
 import json
 import base64
 import tempfile
 import mimetypes
+import StringIO
+import zlib
+import urlparse
 import cPickle as pickle
 
 from django.core.servers.basehttp import FileWrapper
@@ -144,6 +148,7 @@ class SearchFilesView(AdminOnlyMixin, TemplateView):
     template_name = 'search_s3_files.html'
     max_files = 400
     fname2open = LOCAL_AMAZON_LIST_CACHE
+    extra_filter = None
 
     def get_context_data(self, **kwargs):
         result = []
@@ -164,7 +169,12 @@ class SearchFilesView(AdminOnlyMixin, TemplateView):
                         if line[-1] == '>':
                             line = line[0:-1]
                         if searchterm.lower() in line.lower():
-                            result.append(line)
+                            if self.extra_filter:
+                                # filter by additional filtering str, if needed
+                                if self.extra_filter.lower() in line.lower():
+                                    result.append(line)
+                            else:
+                                result.append(line)
                         if len(result) > self.max_files:
                             warning = 'More than %i results matched' % self.max_files
                             break
@@ -202,40 +212,92 @@ class SearchS3Cache(SearchFilesView):
     # User searches for a URL, the search results are displayed then.
     # User then can choose what cached response to view.
     template_name = 'search_s3_cache.html'
+    extra_filter = '__MARKER_URL__'
 
 
-class RenderS3CachePage(AdminOnlyMixin, View):
+class RenderS3CachePage(AdminOnlyMixin, TemplateView):
     # Downloads and renders the selected cache page
     fname2open = LOCAL_AMAZON_LIST_CACHE
+    template_name = 'render_cache_page.html'
 
-    def get(self, request, *args, **kwargs):
-        # TODO: 1) unencode URL
-        # TODO: 2) download the response body file
-        # TODO: 3) if this is a HTML page, replace relative css and image paths to absolute ones
-        # TODO: 4) render the page in the browser
-        fname = request.GET['file']
+    @staticmethod
+    def _ungzip(what):
+        what2 = None
+        try:
+            what2 = StringIO.StringIO(zlib.decompress(what)).read()
+        except:
+            try:
+                what2 = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(what)).read()
+            except:
+                pass
+        return what2 if what2 is not None else what
+
+    @staticmethod
+    def _relative_to_absolute(domain, cont):
+        # ugly things like src="//img1.domain.com"
+        cont = cont.replace('src="//', 'str="http://')
+        cont = cont.replace('src=\'//', 'str=\'http://')
+        cont = cont.replace('href="//', 'href="http://')
+        cont = cont.replace('href=\'//', 'href=\'http://')
+        # normal relative links like src="/images/img.png"
+        cont = cont.replace('src="/', 'str="http://%s/' % domain)
+        cont = cont.replace('src=\'/', 'str=\'http://%s/' % domain)
+        cont = cont.replace('href="/', 'href="http://%s/' % domain)
+        cont = cont.replace('href=\'/', 'href=\'http://%s/' % domain)
+        return cont
+
+    def get_context_data(self, *args, **kwargs):
+        # TODO: proxy to rewrite requests to the original website?
+        # (if the resource's link is created dynamically)
+        context = super(RenderS3CachePage, self).get_context_data(
+            *args, **kwargs)
+
+        fname = self.request.GET['file']
+        fname = base64.b32decode(fname)
+
+        # we actually want the response file, not the __MARKER_URL__ file
+        fpath = fname.split('__MARKER_URL__', 1)[0]
+
         ext = os.path.splitext(fname)
         if ext and len(ext) > 1 and isinstance(ext, (list, tuple)):
             ext = ext[1]
-        # save to a temporary file
-        tempfile_name = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
-        tempfile_name.close()
 
-        # download S3 file
-        # TODO: move bucket name and credentials to an indipendent config file
+        # download S3 files
+        # TODO: move bucket name and credentials to an independent config file
         amazon_public_key = 'AKIAIKTYYIQIZF3RWNRA'
         amazon_secret_key = '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'
         bucket_name = 'spiders-cache'
 
-        aws_connection = S3Connection(aws_access_key_id=amazon_public_key, aws_secret_access_key=amazon_secret_key)
+        aws_connection = S3Connection(aws_access_key_id=amazon_public_key,
+                                      aws_secret_access_key=amazon_secret_key)
         bucket = aws_connection.get_bucket(bucket_name)
-        key = bucket.get_key(fname)
-        key.get_contents_to_filename(tempfile_name.name)
 
-        # create File response
-        wrapper = FileWrapper(open(tempfile_name.name, 'rb'))
-        content_type = mimetypes.guess_type(tempfile_name.name)[0]
-        response = HttpResponse(wrapper, content_type=content_type)
-        response['Content-Length'] = os.path.getsize(tempfile_name.name)
-        response['Content-Disposition'] = 'attachment; filename=%s' % tempfile_name.name
+        # get response body
+        key = bucket.get_key(fpath+'response_body')
+        f_content = key.get_contents_as_string()
+        f_content = self._ungzip(f_content)
+
+        # get metadata
+        key = bucket.get_key(fpath+'pickled_meta')
+        metadata = key.get_contents_as_string()
+        if metadata:
+            metadata = pickle.loads(metadata)
+            if 'timestamp' in metadata:
+                metadata['datetime'] = datetime.datetime.fromtimestamp(
+                    metadata['timestamp'])
+
+        # rewrite relative links to absolute
+        original_domain = urlparse.urlparse(metadata['url']).netloc
+        f_content = self._relative_to_absolute(original_domain, f_content)
+
+        context['original_content'] = f_content
+        context['cache_meta'] = metadata
+        return context
+
+    def render_to_response(self, context, **response_kwargs):
+        response = super(RenderS3CachePage, self).render_to_response(
+            context, **response_kwargs)
+        response["Cache-Control"] = "no-cache, no-store, must-revalidate"  # HTTP 1.1.
+        response["Pragma"] = "no-cache"  # HTTP 1.0.
+        response["Expires"] = "0"  # Proxies.
         return response

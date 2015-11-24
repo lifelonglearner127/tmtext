@@ -169,8 +169,8 @@ def _s3_cache_on_spider_close(spider, reason):
     if uploaded_to_s3:
         create_db_cache_record(spider, utcnow)
     # remove local cache
-    cache.clear_local_cache(settings.HTTPCACHE_DIR, spider,
-                            datetime.datetime.utcnow())
+    # DO NOT CLEAR LOCAL CACHE on file upload - otherwise you may delete cache of
+    #  a spider working in parallel!
 
 
 class S3CacheUploader(object):

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head lang="en">
+    {% load b32encode split %}
     <meta charset="UTF-8">
     <title></title>
 </head>
@@ -17,7 +18,11 @@
 
     {% if searchterm %}<h4>Found files</h4>{% endif %}
     {% for result in results %}
-        <a href="{% url 'get-file' %}?file={{ result }}">{{ result }}</a> <br/>
+        <a href="{% url 'render-s3-cache' %}?file={{ result|b32encode }}">
+            {% with result|split:"__MARKER_URL__" as split_fname %}
+                {{ split_fname.1 }}
+            {% endwith %}
+        </a> <br/>
     {% endfor %}
 </body>
 </html>

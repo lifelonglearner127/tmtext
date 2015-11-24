@@ -148,10 +148,11 @@ class S3CacheStorage(FilesystemCacheStorage):
         rpath = self._get_request_path(spider, request)
         if not os.path.exists(rpath):
             os.makedirs(rpath)
-        fname = _slugify(request.url)[0:254]
+        fname = '__MARKER_URL__' + _slugify(request.url)
+        fname = fname[0:254]
         fname = os.path.join(rpath, fname)
-        with open(fname, 'wb') as f:
-            f.write(' ')
+        with open(fname, 'w') as f:
+            f.write(response.url)
         return super(S3CacheStorage, self).store_response(spider, request, response)
 
 
