@@ -1623,6 +1623,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                          '/text()').extract()
         if lbrd:
             lbrd = datetime.strptime(lbrd[0].strip(), '%m/%d/%Y')
-            product['last_buyer_review_date'] = lbrd.strftime('%d/%m/%Y')
+            product['last_buyer_review_date'] = lbrd.strftime('%d-%m-%Y')
 
         return product
