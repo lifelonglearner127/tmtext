@@ -340,6 +340,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '3AselectedLotValue=+'
                     '&skuSelectionMap.INSEAM='
                     '&_D%3AskuSelectionMap.INSEAM=+'
+                    '&skuSelectionMap.WAIST={waist}'
+                    '&_D%3AskuSelectionMap.WAIST=+'
                     '&skuSelectionMap.SIZE={size}'
                     '&_D%3AskuSelectionMap.SIZE=+'
                     '&skuSelectionMap.CUP={cup}'
@@ -627,7 +629,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     "/span[@class='BVRRNumber']/text()").extract()
                 if total:
                     try:
-                        total = int(total[0])
+                        total = int(total[0].replace(',', ''))
                     except ValueError:
                         total = 0
                 else:
