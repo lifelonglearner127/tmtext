@@ -1,17 +1,50 @@
 <!doctype html>
+<html>
+<head>
 <title>Matches</title>
+</head>
+
+<body>
 
 <div class=page>
-  <h2>Do they match?</h2>
+  <h4>Do they match?</h4>
   
 <table>
-  <tr>
+<!--   <tr>
   <td>{{matches[0]}}</td><td>{{matches[1]}}</td>
-  <tr>
-  <td><iframe width="750" height="500" src="/page/{{matches[0]}}"></iframe></td>
-  <td><iframe width="750" height="500" src="/page/{{matches[1]}}"></iframe></td>
   </tr>
+ -->  <tr>
+  <td><iframe width="750" height="475" src="/page/{{matches[0]}}"></iframe></td>
+  <td><iframe width="750" height="475" src="/page/{{matches[1]}}"></iframe></td>
   </tr>
-<table>
+</table>
 
-<a href="/workbench"> Next >>> </a>
+<form action="">
+<p> 
+    Are these the same product?
+    <input type="radio" name="product" value="yes">Yes
+    <input type="radio" name="product" value="no">No
+</p>
+<p> 
+    Does the product name match?
+    <input type="radio" name="name" value="yes">Yes
+    <input type="radio" name="name" value="no">No
+</p>
+<p> 
+    Does the product image match?
+    <input type="radio" name="image" value="yes">Yes
+    <input type="radio" name="image" value="no">No
+</p>
+<p> 
+    Does the manufacturer match?
+    <input type="radio" name="manufacturer" value="yes">Yes
+    <input type="radio" name="manufacturer" value="no">No
+</p>
+
+<input type="submit" value="Next >>" href="/workbench">
+</form>
+
+
+</div>
+</body>
+</html>
