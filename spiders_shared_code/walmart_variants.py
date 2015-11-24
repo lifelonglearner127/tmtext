@@ -244,7 +244,6 @@ class WalmartVariants(object):
                                 properties[key] = variation_key_values_by_attributes[key][variants[key]["id"]]
 
                             variant_values_list.append(variation_key_values_by_attributes[key][variants[key]["id"]])
-                            properties['unavailable'] = properties.get('unavailable', False) or variation_key_unav_by_attributes[key][variants[key]["id"]]
 
                             if selected_variants and selected_variants[key] != variation_key_values_by_attributes[key][variants[key]["id"]]:
                                 isSelected = False
@@ -267,7 +266,6 @@ class WalmartVariants(object):
                     stockstatus_for_variants["properties"] = properties
                     stockstatus_for_variants["price"] = None
                     stockstatus_for_variants["selected"] = isSelected
-                    stockstatus_for_variants["availability"] = True
                     stockstatus_for_variants_list.append(stockstatus_for_variants)
 
                 for item in out_of_stock_combination_list:
@@ -285,7 +283,7 @@ class WalmartVariants(object):
                     stockstatus_for_variants["properties"] = properties
                     stockstatus_for_variants["price"] = None
                     stockstatus_for_variants["selected"] = False
-                    stockstatus_for_variants["availability"] = False
+                    stockstatus_for_variants["unavailable"] = True
                     stockstatus_for_variants_list.append(stockstatus_for_variants)
 
                 if not stockstatus_for_variants_list:
