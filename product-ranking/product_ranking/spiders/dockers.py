@@ -40,10 +40,10 @@ class DockersValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
         'jeans': [20, 150],
         'red': [40, 150],
         'black': [50, 300],
-        'white': [10, 110],
+        'green': [10, 110],
         'blue jeans': [5, 150],
         'shoes': [10, 100],
-        'black pants': [20, 150],
+        'black fit': [20, 150],
         'leather': [20, 200],
     }
 
@@ -60,7 +60,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
     PAGINATE_URL = ('http://www.dockers.com/US/en_US/includes/searchResultsScroll/?nao={nao}'
                     '&url=%2FUS%2Fen_US%2Fsearch%3FD%3D{search_term}%26Dx'
                     '%3Dmode%2Bmatchall%26N%3D4294961104%2B4294961101%2B4294965619%26Ntk'
-                    '%3DAll%26Ntt%3Ddress%26Ntx%3Dmode%2Bmatchalj')
+                    '%3DAll%26Ntt%3D{search_term}%26Ntx%3Dmode%2Bmatchall')
 
     CURRENT_NAO = 0
     PAGINATE_BY = 12  # 12 products
@@ -256,7 +256,6 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             return image
 
     def parse_related_product(self, response):
-        print 'fdvfdvdfvdvcdvdf'
         related_prods = []
         product = response.meta['product']
         sample = response.body
@@ -293,6 +292,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
         if self.js_data:
             for v in self.js_data['sku'].values():
                 upc = v['upc']
+            upc = upc[-12:]
 
             return upc
 
