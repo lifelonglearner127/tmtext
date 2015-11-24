@@ -250,6 +250,8 @@ class WalmartVariants(object):
 
                     if variant_values_list in out_of_stock_combination_list:
                         out_of_stock_combination_list.remove(variant_values_list)
+                    else:
+                        continue
 
                     if not selected_variants:
                         isSelected = False
