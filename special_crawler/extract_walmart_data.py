@@ -156,7 +156,7 @@ class WalmartScraper(Scraper):
         try:
             if field_name in self.key_fields_list:
                 if field_name == "upc":
-                    return self.product_api_json["analyticsData"]["upc"] if self.product_api_json["analyticsData"]["upc"] else self.product_api_json["analyticsData"]["wupc"]
+                    return self.product_api_json["product"]["upc"] if self.product_api_json["product"]["upc"] else self.product_api_json["product"]["wupc"]
         except Exception, e:
             print "Error (Walmart - _filter_key_fields)" + str(e)
 
