@@ -818,6 +818,18 @@ class AmazonBaseClass(BaseProductsSpider):
                 except:
                     pass
 
+        if price == 0.0:
+            # "add to cart first" price?
+            _price = re.search(r'asin\-metadata.{3,100}?price.{3,100}?([\d\.]+)',
+                               response.body_as_unicode())
+            if _price:
+                _price = _price.group(1)
+                try:
+                    _price = float(_price)
+                    price = _price
+                except ValueError:
+                    pass
+
         return Price(price=price, priceCurrency=self.price_currency)
 
     def _parse_price_original(self, response, add_xpath=None):
