@@ -38,13 +38,13 @@ class LeviValidatorSettings(object):  # do NOT set BaseValidatorSettings as pare
     test_requests = {
         'sdfsdgdf': 0,  # should return 'no products' or just 0 products
         'benny benassi': 0,
-        'black jeans': [50, 300],
-        'black shirt': [10, 150],
+        'make': [50, 300],
+        'men tee': [10, 150],
         'men shirt': [100, 400],
         '501 men': [30, 300],
-        'white jeans': [7, 150],
-        'red jeans': [20, 150],
-        'red shirt': [10, 150],
+        'bool': [7, 150],
+        'water': [20, 300],
+        'bool cut': [10, 150],
         'hat': [5, 50],
     }
 
