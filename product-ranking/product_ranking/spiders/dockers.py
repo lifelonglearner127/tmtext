@@ -13,6 +13,7 @@ from product_ranking.validation import BaseValidator
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from scrapy import Selector
 from spiders_shared_code.dockers_variants import DockersVariants
+from product_ranking.validators.dockers_validator import DockersValidatorSettings
 
 is_empty =lambda x,y=None: x[0] if x else y
 
@@ -22,30 +23,6 @@ def is_num(s):
         return True
     except ValueError:
         return False
-
-
-class DockersValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand', 'price']
-    ignore_fields = [
-        'is_in_store_only', 'is_out_of_stock',
-        'google_source_site', 'description', 'special_pricing',
-        'bestseller_rank', 'img_count', 'video_count'
-    ]
-    ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = True  # ... duplicated requests?
-    ignore_log_filtered = True  # ... filtered requests?
-    test_requests = {
-        'sdfsdgdf': 0,  # should return 'no products' or just 0 products
-        'benny benassi': 0,
-        'jeans': [20, 150],
-        'red': [40, 150],
-        'black': [50, 300],
-        'green': [10, 110],
-        'blue jeans': [5, 150],
-        'shoes': [10, 100],
-        'black fit': [20, 150],
-        'leather': [20, 200],
-    }
 
 
 class DockersProductsSpider(BaseValidator, BaseProductsSpider):
