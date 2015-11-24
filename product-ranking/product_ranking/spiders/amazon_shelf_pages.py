@@ -93,17 +93,17 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
 
     def _scrape_product_links(self, response):
         urls = response.xpath(
-            '//*[@id="dealHoverContent"]//a[contains(@href, "/gp/product/")]/@href'
+            '//*[contains(@id, "dealHoverContent")]//a[contains(@class, "titleLink")]/@href'
             ' | //div[contains(@class, "imageContainer")]'
-            '/../../..//a[contains(@href, "/gp/product/")]/@href').extract()
+            '/../../..//a[contains(@href, "/gp/product/")]/@href'
+            ' | //div[contains(@class, "mageWrapper")]'
+            '/../../..//a[contains(@href, "/gp/product/")]/@href'
+        ).extract()
 
         urls = [urlparse.urljoin(response.url, x) for x in urls]
 
-        # TODO:
         # parse shelf category
-        """
-        shelf_categories = [c.strip() for c in response.css('ol.breadcrumb-list ::text').extract()
-                            if len(c.strip()) > 1]
+        shelf_categories = response.css('h1 ::text').extract()
         shelf_category = shelf_categories[-1] if shelf_categories else None
 
         for url in urls:
@@ -113,9 +113,6 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             if shelf_categories:
                 item['shelf_path'] = shelf_categories
             yield url, item
-        """
-        for url in urls:
-            yield url, SiteProductItem(total_matches=self.quantity)
 
     def _scrape_total_matches(self, response):
         return self.quantity
