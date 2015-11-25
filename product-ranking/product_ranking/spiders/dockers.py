@@ -271,6 +271,10 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                 upc = v['upc']
             upc = upc[-12:]
 
+            if len(upc) < 12:
+                count = 12-len(upc)
+                upc = '0'*count+upc
+
             return upc
 
     def parse_sku(self, response):
