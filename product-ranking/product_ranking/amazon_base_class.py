@@ -350,15 +350,16 @@ class AmazonBaseClass(BaseProductsSpider):
             product['prime'] = self._parse_prime_pantry(response)
 
         if not product.get('prime', None):
-            data_body = response.xpath('//script[contains(text(), "ASIN")]'
-                                   '/text()').extract()
-            asin = re.findall(r'"ASIN" : "(\w+)"', data_body[0])[0]
-            merchantID = re.findall(r'"merchantID" : "(\w+)"', data_body[0])[0]
+            data_body = response.xpath('//script[contains(text(), '
+                                       '"merchantID")]/text()').extract()
+            if data_body:
+                asin = re.findall(r'"ASIN" : "(\w+)"', data_body[0])[0]
+                merchantID = re.findall(r'"merchantID" : "(\w+)"', data_body[0])[0]
 
-            reqs.append(
-                Request(url=self.AMAZON_PRIME_URL.format(asin, merchantID),
-                        meta=meta, callback=self._amazon_prime_check)
-            )
+                reqs.append(
+                    Request(url=self.AMAZON_PRIME_URL.format(asin, merchantID),
+                            meta=meta, callback=self._amazon_prime_check)
+                )
 
         # Parse variants
         variants = self._parse_variants(response)
