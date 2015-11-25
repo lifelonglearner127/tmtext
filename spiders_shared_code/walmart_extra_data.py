@@ -7,9 +7,25 @@ import json
 import requests
 import mmh3 as MurmurHash
 import os
+from PIL import Image
+from io import BytesIO
+from StringIO import StringIO
 
-from special_crawler.no_img_hash import fetch_bytes
 from special_crawler.extract_data import Scraper
+
+
+def fetch_bytes(url):
+    agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+    headers ={'User-agent': agent}
+    with requests.Session() as s:
+        response = s.get(url, headers=headers, timeout=15)
+        if response != 'Error' and response.ok:
+            img = Image.open(StringIO(response.content))
+            b = BytesIO()
+            img.save(b, format='png')
+            data = b.getvalue()
+            return data
+
 
 class WalmartExtraData(object):
 
