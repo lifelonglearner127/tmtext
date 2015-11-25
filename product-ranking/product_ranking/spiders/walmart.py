@@ -24,7 +24,7 @@ from product_ranking.validation import BaseValidator
 from spiders_shared_code.walmart_variants import WalmartVariants
 from spiders_shared_code.walmart_categories import WalmartCategoryParser
 
-
+"""
 from PIL import Image
 from io import BytesIO
 from StringIO import StringIO
@@ -44,7 +44,7 @@ def fetch_bytes(url):
             img.save(b, format='png')
             data = b.getvalue()
             return data
-
+"""
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -809,7 +809,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         Returns True if image in url is a "no image"
         image, False if not
         """
-
+        return True
         # if image name is "no_image", return True
         if re.match(".*no.image\..*", url):
             return True
@@ -829,7 +829,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         :param image_url: url of image to be hashed
         """
-        return str(MurmurHash.hash(fetch_bytes(image_url)))
+        pass
+        #return str(MurmurHash.hash(fetch_bytes(image_url)))
 
     def _qualify_image_urls(self, image_list):
         """Remove no image urls in image list
