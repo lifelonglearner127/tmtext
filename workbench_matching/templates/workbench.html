@@ -4,46 +4,68 @@
 <title>Matches</title>
 </head>
 
+<style type="text/css">
+  tr:nth-child(odd) {background: #CCC}
+  tr:nth-child(even) {background: #FFF}
+</style>
+
 <body>
 
 <div class=page>
   <h4>Do they match?</h4>
   
-<table>
+<table class="frames">
 <!--   <tr>
   <td>{{matches[0]}}</td><td>{{matches[1]}}</td>
   </tr>
- -->  <tr>
+ -->  
+ <tr style="background: #FFF">
   <td><iframe width="750" height="475" src="/page/{{matches[0]}}"></iframe></td>
   <td><iframe width="750" height="475" src="/page/{{matches[1]}}"></iframe></td>
   </tr>
 </table>
 
-<form action="">
-<p> 
-    Are these the same product?
-    <input type="radio" name="product" value="yes">Yes
-    <input type="radio" name="product" value="no">No
-</p>
-<p> 
-    Does the product name match?
-    <input type="radio" name="name" value="yes">Yes
-    <input type="radio" name="name" value="no">No
-</p>
-<p> 
-    Does the product image match?
-    <input type="radio" name="image" value="yes">Yes
-    <input type="radio" name="image" value="no">No
-</p>
-<p> 
-    Does the manufacturer match?
-    <input type="radio" name="manufacturer" value="yes">Yes
-    <input type="radio" name="manufacturer" value="no">No
-</p>
+<br/>
 
-<input type="submit" value="Next >>" href="/workbench">
+<form action="">
+
+<table>
+
+<tr>
+
+<td>    Are these the same product? </td>
+<td>    <label> <input type="radio" name="product" value="yes">Yes </label> </td>
+<td>    <label> <input type="radio" name="product" value="no">No </label> </td>
+
+</tr>
+
+<tr> 
+    <td> Does the product name match (is it fairly similar)? </td>
+    <td> <label> <input type="radio" name="name" value="yes">Yes </label> </td>
+    <td> <label> <input type="radio" name="name" value="no">No </label>  </td>
+</tr>
+<tr> 
+    <td> Does the product image match (is the same product depicted, with only minor differences)? </td>
+    <td> <label> <input type="radio" name="image" value="yes">Yes </label> </td>
+    <td> <label> <input type="radio" name="image" value="no">No </label> </td>
+</tr>
+<tr> 
+    <td> Does the manufacturer/brand match? </td>
+    <td> <label> <input type="radio" name="manufacturer" value="yes">Yes </label> </td>
+    <td> <label> <input type="radio" name="manufacturer" value="no">No </label> </td>
+</tr>
+
+<tr> 
+    <td> Are the categories of the 2 products analogous/similar? </td>
+    <td> <label> <input type="radio" name="manufacturer" value="yes">Yes </label> </td>
+    <td> <label> <input type="radio" name="manufacturer" value="no">No </label> </td>
+</tr>
+
+<input style="float:right;height:50px;width:200px" type="submit" value="Next >>" href="/workbench">
+
 </form>
 
+<table>
 
 </div>
 </body>
