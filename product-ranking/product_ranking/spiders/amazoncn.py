@@ -7,30 +7,8 @@ import re
 
 from product_ranking.amazon_tests import AmazonTests
 from product_ranking.amazon_base_class import AmazonBaseClass
+from product_ranking.validators.amazoncn_validator import AmazoncnValidatorSettings
 
-
-class AmazoncnValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['model', 'brand', 'price', 'bestseller_rank',
-                       'buyer_reviews']
-    ignore_fields = [
-        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'description', 'special_pricing'
-    ]
-    ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = True  # ... duplicated requests?
-    ignore_log_filtered = True  # ... filtered requests?
-    test_requests = {
-        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
-        'adfhsadifgewrtgujoc2': 0,
-        'iphone duos': [5, 175],
-        'gold shell': [50, 200],
-        'Led Tv screen': [20, 200],
-        'told help': [5, 150],
-        'crawl': [50, 400],
-        'sony playstation 4': [50, 200],
-        'store data all': [20, 300],
-        'iphone stone': [40, 250]
-    }
 
 class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     name = 'amazoncn_products'

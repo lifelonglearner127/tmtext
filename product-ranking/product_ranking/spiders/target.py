@@ -20,33 +20,10 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, FLOATING_POINT
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 from spiders_shared_code.target_variants import TargetVariants
 from product_ranking.validation import BaseValidator
-
+from product_ranking.validators.target_validator import TargetValidatorSettings
 
 is_empty = lambda x, y=None: x[0] if x else y
 
-
-class TargetValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand', 'price']
-    ignore_fields = [
-        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'description', 'special_pricing', "model", 
-        "bestseller_rank",
-    ]
-    ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = True  # ... duplicated requests?
-    ignore_log_filtered = True  # ... filtered requests?
-    test_requests = {
-        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
-        'nothing_found_1234654654': 0,
-        'sold': [15, 150],
-        'cola': [60, 210],
-        'vacation': [50, 175],
-        'sort': [7, 100],
-        'navigator': [10, 110],
-        'manager': [15, 130],
-        'IPhone-6': [1, 50],
-        'air conditioner': [60, 170],
-    }
 
 
 class TargetProductSpider(BaseValidator, BaseProductsSpider):
@@ -151,10 +128,15 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         ).extract()
         prod = response.meta['product']
 
+        response.meta['average'] = is_empty(re.findall(r'var averageRating=  (\d+)', response.body_as_unicode()))
+        response.meta['total'] = is_empty(re.findall(r'var totalReviewsValue=(\d+)', response.body_as_unicode()))
+
         if 'sorry, that item is no longer available' \
                 in response.body_as_unicode().lower():
             prod['not_found'] = True
             return prod
+
+        cond_set_value(prod, 'locale', 'en-US')
 
         tv = TargetVariants()
         tv.setupSC(response)
@@ -192,7 +174,6 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         prod['url'] = old_url
         #cond_set_value(prod, 'url', old_url)
 
-        cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
         # fiME: brand=None
         if 'brand' in prod and len(prod['brand']) == 0:
@@ -768,7 +749,15 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         data = data.get('FilteredReviewStatistics', {})
         average = data.get('AverageOverallRating')
         total = data.get('TotalReviewCount')
-        
+        if not average:
+            average = response.meta['average']
+            total = response.meta['total']
+            if average == '0':
+                cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
+            else:
+                fdist = None
+                reviews = BuyerReviews(total, average, fdist)
+                cond_set_value(product, 'buyer_reviews', reviews)
         if average and total:
             distribution = data.get('RatingDistribution', [])
             distribution = {d['RatingValue']: d['Count']
@@ -779,8 +768,6 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                     fdist[i] = distribution[i]
             reviews = BuyerReviews(total, average, fdist)
             cond_set_value(product, 'buyer_reviews', reviews)
-        else:
-            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         return product
 
     def _populate_collection_items(self, response, prod):

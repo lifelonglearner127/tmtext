@@ -1,6 +1,7 @@
  #!/usr/bin/python
 
 import urllib2
+import requests
 from httplib import IncompleteRead
 import re
 import sys
@@ -10,6 +11,7 @@ import cStringIO
 from PIL import Image
 import mmh3 as MurmurHash
 import os
+import random
 
 from no_img_hash import fetch_bytes
 from socket import timeout
@@ -39,7 +41,18 @@ class Scraper():
         MAX_RETRIES (int): number of retries before giving up fetching product page soruce (if errors encountered
             - usually IncompleteRead exceptions)
     """
-
+    # Browser agent string list
+    BROWSER_AGENT_STRING_LIST = {"Firefox": ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1",
+                                             "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0",
+                                             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10; rv:33.0) Gecko/20100101 Firefox/33.0"],
+                                 "Chrome":  ["Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36",
+                                             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.1 Safari/537.36",
+                                             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.0 Safari/537.36",
+                                             "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.0 Safari/537.36"],
+                                 "Safari":  ["Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A",
+                                             "Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5355d Safari/8536.25",
+                                             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.13+ (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2"]
+                                 }
     # number of retries for fetching product page source before giving up
     MAX_RETRIES = 3
 
@@ -69,6 +82,7 @@ class Scraper():
             "feature_count", # number of features of product, int
             "model_meta", # model from meta, string
             "description", # short description / entire description if no short available, string
+            "seller_ranking",
             "long_description", # long description / null if description above is entire description,
             "shelf_description",
             "apluscontent_desc", #aplus description
@@ -195,7 +209,7 @@ class Scraper():
     # TODO: add one for root? to make sure nothing new appears in root either?
     DICT_STRUCTURE = {
         "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
-                        "features", "feature_count", "model_meta", "description", "long_description", "shelf_description", "apluscontent_desc",
+                        "features", "feature_count", "model_meta", "description", "seller_ranking", "long_description", "shelf_description", "apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
                         "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to"],
@@ -223,6 +237,27 @@ class Scraper():
         "failure_type": None,
         "owned": None
     }
+
+    def select_browser_agents_randomly(self, agent_type=None):
+        if agent_type and agent_type in self.BROWSER_AGENT_STRING_LIST:
+            return random.choice(self.BROWSER_AGENT_STRING_LIST[agent_type])
+
+        return random.choice(self.BROWSER_AGENT_STRING_LIST.values())
+
+    def load_page_from_url_with_number_of_retries(self, url, max_retries=3, extra_exclude_condition=None):
+        for index in range(1, max_retries):
+            header = {"User-Agent": self.select_browser_agents_randomly()}
+            s = requests.Session()
+            a = requests.adapters.HTTPAdapter(max_retries=3)
+            b = requests.adapters.HTTPAdapter(max_retries=3)
+            s.mount('http://', a)
+            s.mount('https://', b)
+            contents = requests.get(url).text
+
+            if not extra_exclude_condition or extra_exclude_condition not in contents:
+                return contents
+
+        return None
 
     def load_image_hashes():
         '''Read file with image hashes list

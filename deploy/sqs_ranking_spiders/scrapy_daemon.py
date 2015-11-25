@@ -583,7 +583,7 @@ class ScrapyTask(object):
             # maybe should be changed to product_url
             additional_part = 'single-product-url-request'
         job_name += '____' + additional_part + '____' + site
-        job_name = sub('\(|\)|&|;', '', job_name)
+        job_name = sub("\(|\)|&|;|'", "", job_name)
         # truncate resulting string as file name limitation is 256 characters
         return job_name[:200]
 
@@ -1285,7 +1285,18 @@ def main():
                 for _ in tasks if not _.is_finished()]
 
     def stop_not_finished_tasks(tasks):
-        return [_.stop() for _ in tasks if not _.is_finished()]
+        for _ in tasks:
+            if not _.is_finished():
+                _.stop()
+        time.sleep(15)
+        logger.info('Reporting stopped tasks')
+        for _ in tasks:
+            if not _.is_finished():
+                try:
+                    logger.info(_.process.stdout.read())
+                    logger.info(_.process.stderr.read())
+                except:
+                    logger.warning('Unable to retrieve logs from task')
 
     def log_tasks_results(tasks):
         logger.info('#'*10 + 'START TASKS REPORT' + '#'*10)

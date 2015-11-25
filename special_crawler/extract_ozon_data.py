@@ -29,17 +29,24 @@ class OzonScraper(Scraper):
         return (not not m)
 
     def not_a_product(self):
-        """Checks if current page is not a valid product page
-        (an unavailable product page or other type of method)
-        Overwrites dummy base class method.
-        Returns:
-            True if it's an unavailable product page
-            False otherwise
-        """
-        if len(self._categories()) < 1:
+        '''Overwrites parent class method that determines if current page
+        is not a product page.
+        Currently for Amazon it detects captcha validation forms,
+        and returns True if current page is one.
+        '''
+
+        try:
+            itemtype1 = self.tree_html.xpath('//div[@class="bDetailPage" and @itemtype="http://schema.org/Product"]')
+            itemtype2 = self.tree_html.xpath('//div[contains(@class,"content-block product-block bProductBlock")]')
+
+            if not itemtype1 and not itemtype2:
+                raise Exception()
+
+        except Exception:
             return True
-        else:
-            return False
+
+        return False
+
     ##########################################
     ############### CONTAINER : NONE
     ##########################################

@@ -830,13 +830,8 @@ class AmazonScraper(Scraper):
                 review_link_mark_star = review_link.replace("cm_cr_dp_qt_see_all_top", "cm_cr_pr_viewopt_sr") + "sortBy=helpful&reviewerType=all_reviews&formatType=all_formats&filterByStar=" + mark + "_star&pageNumber=1"
             elif review_link.find("cm_cr_dp_see_all_top") > 0:
                 review_link_mark_star = review_link.replace("cm_cr_dp_see_all_top", "cm_cr_pr_viewopt_sr") + "sortBy=helpful&reviewerType=all_reviews&formatType=all_formats&filterByStar=" + mark + "_star&pageNumber=1"
-            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-            s = requests.Session()
-            a = requests.adapters.HTTPAdapter(max_retries=3)
-            b = requests.adapters.HTTPAdapter(max_retries=3)
-            s.mount('http://', a)
-            s.mount('https://', b)
-            contents = requests.get(review_link_mark_star).text
+
+            contents = self.load_page_from_url_with_number_of_retries(review_link_mark_star, 10, "<title>500 Service Unavailable Error</title>")
 
             if "Sorry, no reviews match your current selections." in contents:
                 review_list.append([index + 1, 0])
@@ -1031,7 +1026,6 @@ class AmazonScraper(Scraper):
         except:
             amsel = {}
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         domain=self.product_page_url.split("/")
 
         try:
@@ -1041,7 +1035,7 @@ class AmazonScraper(Scraper):
         fl = 0
 
         while len(url) > 10:
-            contents = requests.get(url, headers=h).text
+            contents = self.load_page_from_url_with_number_of_retries(url)
             tree = html.fromstring(contents)
             sells = tree.xpath('//div[@class="a-row a-spacing-mini olpOffer"]')
 
@@ -1072,14 +1066,14 @@ class AmazonScraper(Scraper):
 
                             if seller_name == "":
                                 if seller_link[0].startswith("http://www.amazon."):
-                                    seller_content = requests.get(seller_link[0], headers=h).text
+                                    seller_content = self.load_page_from_url_with_number_of_retries(seller_link[0])
                                 else:
                                     if self.scraper_version == "uk":
-                                        seller_content = requests.get("http://www.amazon.co.uk" + seller_link[0], headers=h).text
+                                        seller_content = self.load_page_from_url_with_number_of_retries("http://www.amazon.co.uk" + seller_link[0])
                                     elif self.scraper_version == "ca":
-                                        seller_content = requests.get("http://www.amazon.ca" + seller_link[0], headers=h).text
+                                        seller_content = self.load_page_from_url_with_number_of_retries("http://www.amazon.ca" + seller_link[0])
                                     else:
-                                        seller_content = requests.get("http://www.amazon.com" + seller_link[0], headers=h).text
+                                        seller_content = self.load_page_from_url_with_number_of_retries("http://www.amazon.com" + seller_link[0])
 
                                 seller_tree = html.fromstring(seller_content)
                                 seller_names = seller_tree.xpath("//h2[@id='s-result-count']/span/span//text()")

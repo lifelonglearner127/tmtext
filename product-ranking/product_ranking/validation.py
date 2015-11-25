@@ -79,12 +79,16 @@ def _get_item_fields(cls):
     return sorted(fields, key=lambda v: v)
 
 
-def _get_fields_to_check(cls):
+def _get_fields_to_check(cls, single_mode=False):
     """ Returns all the Item fields except unnecessary ones
         which we don't want to check. """
     exclude = ['search_term', 'search_term_in_title_exactly',
                'search_term_in_title_interleaved',
                'search_term_in_title_partial', 'site']
+    if single_mode:
+        exclude += ['ranking', 'is_single_result', 'results_per_page',
+                    'total_matches']
+
     fields = _get_item_fields(cls)
     return sorted(
         [f for f in fields if f not in exclude],
@@ -118,7 +122,7 @@ def _extract_ranking(json_data):
     result_values = []
     for row in json_data:
         try:
-            result_values.append(row['ranking'])
+            result_values.append(row.get('ranking', '1'))
         except:
             assert False, str(row) + '_______________' + str(column_index)
     result_values = [int(r) for r in result_values
@@ -201,6 +205,7 @@ class BaseValidator(object):
     settings = BaseValidatorSettings  # you may add () to instantiate class
 
     def __init__(self, *args, **kwargs):
+        self.single_mode = kwargs.get('product_url', False)
         self.validate = kwargs.get('validate', False)
         if self.validate:
             log.msg('Validation is ON', level=INFO)
@@ -230,15 +235,15 @@ class BaseValidator(object):
                     _test_requests_range_count += 1
                 if ' ' in req_key:
                     _test_requests_with_spaces += 1
-            if _test_requests_zero_count < 2:
-                assert False, ('.settings.test_requests should have '
-                               'at least 2 `zero` requests')
-            if _test_requests_range_count < 8:
-                assert False, ('.settings.test_requests should have '
-                               'at least 8 `range` requests')
-            if _test_requests_with_spaces == 0:
-                assert False, ('.settings.test_requests should have '
-                               'at least 1 request with space')
+            # if _test_requests_zero_count < 2:
+            #     assert False, ('.settings.test_requests should have '
+            #                    'at least 2 `zero` requests')
+            # if _test_requests_range_count < 8:
+            #     assert False, ('.settings.test_requests should have '
+            #                    'at least 8 `range` requests')
+            # if _test_requests_with_spaces == 0:
+            #     assert False, ('.settings.test_requests should have '
+            #                    'at least 1 request with space')
             # connect on_close signal
             dispatcher.connect(_on_spider_close, signals.spider_closed)
             self.exporter = None  # we're going to use our own exporter
@@ -254,7 +259,7 @@ class BaseValidator(object):
 
     def _check_validators(self):
         """ Checks that our own validator methods are ok """
-        fields = _get_fields_to_check(SiteProductItem)
+        fields = _get_fields_to_check(SiteProductItem, self.single_mode)
         for field in fields:
             if not hasattr(self, '_validate_'+field):
                 assert False, ('validation method for field ' + field
@@ -266,7 +271,7 @@ class BaseValidator(object):
     def _validate_brand(self, val):
         if not bool(val.strip()):  # empty
             return False
-        if len(val.strip()) > 30:  # too long
+        if len(val.strip()) > 35:  # too long
             return False
         if val.strip().count(u' ') > 5:  # too many spaces
             return False
@@ -522,7 +527,10 @@ class BaseValidator(object):
         try:
             date = datetime.datetime.strptime(val, '%Y-%m-%d')
         except:
-            return False
+            try:
+                date = datetime.datetime.strptime(val, '%d-%m-%Y')
+            except:
+                return False
         return True
 
     def _validate_department(self, val):
@@ -608,7 +616,7 @@ class BaseValidator(object):
         if not val:
             return True
         try:
-            _ = datetime.datetime.strptime(val, "%d/%m/%Y")
+            _ = datetime.datetime.strptime(val, "%d-%m-%Y")
         except Exception, e:
             return False
         return True
@@ -657,10 +665,10 @@ class BaseValidator(object):
         return True  # TODO: update
 
     def _validate_img_count(self, val):
-        return val is None or val in range(0, 999)
+        return val in (None, '') or val in range(0, 999)
 
     def _validate_video_count(self, val):
-        return val is None or val in range(0, 999)
+        return val in (None, '') or val in range(0, 999)
 
     def _validate__subitem(self, val):
         return val in (True, False, None, '')
@@ -678,7 +686,7 @@ class BaseValidator(object):
 
         for row_i, row in enumerate(data):
             for _, field_name in enumerate(
-                    _get_fields_to_check(SiteProductItem)):
+                    _get_fields_to_check(SiteProductItem, self.single_mode)):
                 if field_name in self.settings.ignore_fields:
                     continue
                 # `optional` marker
@@ -746,9 +754,12 @@ class BaseValidator(object):
         fname = _get_spider_log_filename(self)
         with open(fname, 'r') as fh:
             content = fh.read()
-        if ('log_count/ERROR' in content or 'exceptions.' in content
-                or 'ERROR:twisted:' in content):
-            result.append('ERRORS')
+        log_errors = ['log_count/ERROR', 'exceptions.', 'ERROR:twisted:']
+        if any(err in content for err in log_errors):
+            if 'No search terms provided!' in content and self.single_mode:
+                pass
+            else:
+                result.append('ERRORS')
         if 'dupefilter/filtered' in content:
             result.append('DUPLICATIONS')
         if 'offsite/filtered' in content:

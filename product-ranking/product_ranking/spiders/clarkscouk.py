@@ -371,6 +371,18 @@ class ClarksProductSpider(BaseProductsSpider):
                 self.log("Found no product links.".format(response.url), INFO)
 
     def _scrape_next_results_page_link(self, response):
+        # if the page no products to stop the spider
+        items = response.xpath(
+            '//ul[@id="prod-list"]/li[contains(@class, "product-list-item")]'
+        )
+        if not items:
+            links = re.findall(
+                r'<a href=\\"(\/p\/\d+)\\"',
+                response.body_as_unicode().replace('\u003c', '<').replace('\u003e', '>')
+            )
+            if not links:
+                return
+
         meta = response.meta.copy()
 
         # We need initial link always to be a referer:

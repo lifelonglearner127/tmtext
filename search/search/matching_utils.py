@@ -8,7 +8,11 @@ from scrapy import log
 import unicodedata
 import itertools
 import math
-
+import urllib
+import numpy as np
+import cv2
+from compute_distances import _normalize_image, image_histogram_to_string,\
+ compute_histogram, shistogram_similarity, _blockhash, hash_similarity
 
 # process text in product names, compute similarity between products
 class ProcessText():
@@ -162,7 +166,10 @@ class ProcessText():
             product_upc = product2['origin_upc']
             product1_mancode = product2['origin_manufacturer_code']
             product_brand = product2['origin_brand']
-
+            try:
+                product_image = product2['origin_image_encoded']
+            except:
+                product_image = None
 
 
             words1 = ProcessText.normalize(product_name)
@@ -181,6 +188,11 @@ class ProcessText():
                 product2_mancode = product2['manufacturer_code']
             else:
                 product2_mancode = None
+
+            if 'product_image_encoded' in product2:
+                product2_image = product2['product_image_encoded']
+            else:
+                product2_image = None
 
             # and only available for Amazon
             # normalize brand name
@@ -240,6 +252,12 @@ class ProcessText():
 
             # check if manufacturer codes match
             manufacturer_code_matched = ProcessText.manufacturer_code_match(product1_mancode, product2_mancode)
+
+            # compute image similarity score
+            if product_image and product2_image:
+                image_similarity_score = ProcessText.image_similarity(product_image, product2_image)
+            else:
+                image_similarity_score = None
 
             # check if product names match (a similarity score)
             # use copies of brands names with model number replaced with a placeholder
@@ -327,7 +345,8 @@ class ProcessText():
                 log.msg("\nPRODUCT: " + unicode(product_name) + " URL: " + product2['origin_url'] + " MODEL: " + unicode(product_model) + " PRICE: " + unicode(product_price) + \
                 " BRAND: " + unicode(product1_brand) + \
                 "\nPRODUCT2: " + unicode(product2['product_name']) + " URL2: " + product2['product_url'] + " BRAND2: " + unicode(product2_brand) + " MODEL2: " + unicode(product2_model) + " PRICE2: " + unicode(product2_price) + \
-                "\nSCORE: " + str(score) + " PRICE_PENLZ: " + unicode(price_score_penalization) + " THRESHOLD: " + str(threshold) + "\n", level=log.WARNING)
+                "\nSCORE: " + str(score) + " PRICE_PENLZ: " + unicode(price_score_penalization) + " THRESHOLD: " + str(threshold) + \
+                "\nIMAGE SIMILARITY: " + str(image_similarity_score) + "\n", level=log.WARNING)
             except:
                 log.msg("\nPRODUCT: --Error trying to log product info", level=log.WARNING)
 
@@ -829,7 +848,44 @@ class ProcessText():
         # use tuples because they are hashable (to put them in a set), then convert them back to lists
         return map(lambda x: list(x), list(set(map(lambda x: tuple(set(sorted(x))), words))))
 
+    @staticmethod
+    def _url_to_image(url):
+        # download the image, convert it to a NumPy array, and then read
+        # it into OpenCV format
+        resp = urllib.urlopen(url)
+        image = np.asarray(bytearray(resp.read()), dtype="uint8")
+        image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+        return image
 
+    @staticmethod
+    def encode_image(url):
+        '''Input an image url
+        Encode the image as a string and return it
+        The string will contain the image histogram, encoded as a string,
+        and the image blockhash, encoded as a string; separated by space
+        '''
+        image = ProcessText._url_to_image(url)
+        image = _normalize_image(image)
+        histstr = image_histogram_to_string(image, equalize=False)
+        bhash = _blockhash(image)
 
+        code = " ".join([histstr, bhash])
+        return code
 
+    @staticmethod
+    def image_similarity(encoded_im1, encoded_im2, hist_weight=0.8):
+        '''Take as input 2 encoded images (as encoded by encode_image above),
+        compute their similarities
+        :param hist_weight: weight of histogram similarity vs hash similarity
+        '''
 
+        hist1, hash1 = encoded_im1.split()
+        hist2, hash2 = encoded_im2.split()
+
+        hist_sim = shistogram_similarity(hist1, hist2)
+        hash_sim = hash_similarity(hash1, hash2)
+
+        hash_weight = 1 - hist_weight
+
+        score = hist_weight * hist_sim + hash_weight * hash_sim
+        return score

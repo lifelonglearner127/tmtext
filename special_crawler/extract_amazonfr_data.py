@@ -925,7 +925,7 @@ class AmazonFRScraper(Scraper):
         fl = 0
 
         while len(url) > 10:
-            contents = requests.get(url, headers=h).text
+            contents = self.load_page_from_url_with_number_of_retries(url)
             tree = html.fromstring(contents)
             sells = tree.xpath('//div[@class="a-row a-spacing-mini olpOffer"]')
 
@@ -958,9 +958,9 @@ class AmazonFRScraper(Scraper):
 
                             if seller_name == "":
                                 if seller_link[0].startswith("http://www.amazon."):
-                                    seller_content = requests.get(seller_link[0], headers=h).text
+                                    seller_content = self.load_page_from_url_with_number_of_retries(seller_link[0])
                                 else:
-                                    seller_content = requests.get("http://www.amazon.fr" + seller_link[0], headers=h).text
+                                    seller_content = self.load_page_from_url_with_number_of_retries("http://www.amazon.fr" + seller_link[0])
 
                                 seller_tree = html.fromstring(seller_content)
                                 seller_names = seller_tree.xpath("//h2[@id='s-result-count']/span/span//text()")

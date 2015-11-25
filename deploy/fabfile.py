@@ -230,6 +230,7 @@ def setup_packages():
     cuisine.package_ensure('mc htop iotop nano')  # just for convenience
     cuisine.package_ensure('python-psycopg2 libpq-dev python-dev')
     cuisine.package_ensure('libjpeg-dev')
+    cuisine.package_ensure('phantomjs')
     sudo('pip install virtualenv --upgrade')
     sudo('pip install pytesseract')
     sudo('pip install tldextract')
@@ -300,6 +301,7 @@ def _setup_virtual_env_scrapyd():
         run('pip install psutil')
         run('pip install mmh3')
         run('pip install flask')
+        run('pip install selenium')
 
     _setup_simmetrica_monitoring()
 

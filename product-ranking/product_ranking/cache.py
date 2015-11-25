@@ -143,6 +143,18 @@ class S3CacheStorage(FilesystemCacheStorage):
         return get_request_path_with_date(self.cachedir, spider, request,
                                           utcnow)
 
+    def store_response(self, spider, request, response):
+        # store request URL as an empty file
+        rpath = self._get_request_path(spider, request)
+        if not os.path.exists(rpath):
+            os.makedirs(rpath)
+        fname = '__MARKER_URL__' + _slugify(request.url)
+        fname = fname[0:254]
+        fname = os.path.join(rpath, fname)
+        with open(fname, 'w') as f:
+            f.write(response.url)
+        return super(S3CacheStorage, self).store_response(spider, request, response)
+
 
 class CustomCachePolicy(DummyPolicy):
     """ For not caching amazon captcha """
@@ -150,9 +162,10 @@ class CustomCachePolicy(DummyPolicy):
     def should_cache_response(self, response, request):
         # all gzipped strings start with this symbols
         gzip_line_start = '\037\213'
-        if response.body.startswith(gzip_line_start):
-            body = gz.gunzip(response.body)
-            if '.images-amazon.com/captcha/' in body:
-                return False
+        body = response.body
+        if body.startswith(gzip_line_start):
+            body = gz.gunzip(body)
+        if '.images-amazon.com/captcha/' in body:
+            return False
         return super(CustomCachePolicy, self).should_cache_response(
             response, request)
