@@ -1,30 +1,38 @@
 import os
 import sys
 import datetime
+import gzip
 import random
 import json
 import base64
 import tempfile
 import mimetypes
+import StringIO
+import zlib
+import urlparse
+import cPickle as pickle
 
 from django.core.servers.basehttp import FileWrapper
-from django.views.generic import RedirectView, View, ListView, TemplateView
+from django.views.generic import RedirectView, View, ListView, TemplateView, FormView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 import boto
 from boto.s3.connection import S3Connection
 
 from .models import get_data_filename, get_log_filename, get_progress_filename,\
     Job, JobGrouperCache
+
 from management.commands.update_jobs import LOCAL_AMAZON_LIST_CACHE,\
     AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_BUCKET_NAME, download_s3_file
+from management.commands.download_list_of_s3_cache_files import LOCAL_AMAZON_LIST_CACHE
 import settings
 
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD,  '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
+sys.path.append(os.path.join(CWD,  '..', '..'))
 from add_task_to_sqs import read_access_and_secret_keys
 from scrapy_daemon import PROGRESS_QUEUE_NAME
 
@@ -139,6 +147,8 @@ class ProgressMessagesView(AdminOnlyMixin, TemplateView):
 class SearchFilesView(AdminOnlyMixin, TemplateView):
     template_name = 'search_s3_files.html'
     max_files = 400
+    fname2open = LOCAL_AMAZON_LIST_CACHE
+    extra_filter = None
 
     def get_context_data(self, **kwargs):
         result = []
@@ -151,7 +161,7 @@ class SearchFilesView(AdminOnlyMixin, TemplateView):
         elif len(searchterm) < 4:
             error = 'Searchterm must be longer than 4 chars'
         else:
-            with open(LOCAL_AMAZON_LIST_CACHE, 'r') as fh:
+            with open(self.fname2open, 'r') as fh:
                 for line in fh:
                     line = line.strip()
                     if '<Key:' in line and ',' in line:
@@ -159,7 +169,12 @@ class SearchFilesView(AdminOnlyMixin, TemplateView):
                         if line[-1] == '>':
                             line = line[0:-1]
                         if searchterm.lower() in line.lower():
-                            result.append(line)
+                            if self.extra_filter:
+                                # filter by additional filtering str, if needed
+                                if self.extra_filter.lower() in line.lower():
+                                    result.append(line)
+                            else:
+                                result.append(line)
                         if len(result) > self.max_files:
                             warning = 'More than %i results matched' % self.max_files
                             break
@@ -189,4 +204,100 @@ class GetS3FileView(AdminOnlyMixin, View):
         response = HttpResponse(wrapper, content_type=content_type)
         response['Content-Length'] = os.path.getsize(tempfile_name.name)
         response['Content-Disposition'] = 'attachment; filename=%s' % tempfile_name.name
+        return response
+
+
+#******** S3-cache Views ********
+class SearchS3Cache(SearchFilesView):
+    # User searches for a URL, the search results are displayed then.
+    # User then can choose what cached response to view.
+    template_name = 'search_s3_cache.html'
+    extra_filter = '__MARKER_URL__'
+
+
+class RenderS3CachePage(AdminOnlyMixin, TemplateView):
+    # Downloads and renders the selected cache page
+    fname2open = LOCAL_AMAZON_LIST_CACHE
+    template_name = 'render_cache_page.html'
+
+    @staticmethod
+    def _ungzip(what):
+        what2 = None
+        try:
+            what2 = StringIO.StringIO(zlib.decompress(what)).read()
+        except:
+            try:
+                what2 = gzip.GzipFile('', 'rb', 9, StringIO.StringIO(what)).read()
+            except:
+                pass
+        return what2 if what2 is not None else what
+
+    @staticmethod
+    def _relative_to_absolute(domain, cont):
+        # ugly things like src="//img1.domain.com"
+        cont = cont.replace('src="//', 'str="http://')
+        cont = cont.replace('src=\'//', 'str=\'http://')
+        cont = cont.replace('href="//', 'href="http://')
+        cont = cont.replace('href=\'//', 'href=\'http://')
+        # normal relative links like src="/images/img.png"
+        cont = cont.replace('src="/', 'str="http://%s/' % domain)
+        cont = cont.replace('src=\'/', 'str=\'http://%s/' % domain)
+        cont = cont.replace('href="/', 'href="http://%s/' % domain)
+        cont = cont.replace('href=\'/', 'href=\'http://%s/' % domain)
+        return cont
+
+    def get_context_data(self, *args, **kwargs):
+        # TODO: proxy to rewrite requests to the original website?
+        # (if the resource's link is created dynamically)
+        context = super(RenderS3CachePage, self).get_context_data(
+            *args, **kwargs)
+
+        fname = self.request.GET['file']
+        fname = base64.b32decode(fname)
+
+        # we actually want the response file, not the __MARKER_URL__ file
+        fpath = fname.split('__MARKER_URL__', 1)[0]
+
+        ext = os.path.splitext(fname)
+        if ext and len(ext) > 1 and isinstance(ext, (list, tuple)):
+            ext = ext[1]
+
+        # download S3 files
+        # TODO: move bucket name and credentials to an independent config file
+        amazon_public_key = 'AKIAIKTYYIQIZF3RWNRA'
+        amazon_secret_key = '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'
+        bucket_name = 'spiders-cache'
+
+        aws_connection = S3Connection(aws_access_key_id=amazon_public_key,
+                                      aws_secret_access_key=amazon_secret_key)
+        bucket = aws_connection.get_bucket(bucket_name)
+
+        # get response body
+        key = bucket.get_key(fpath+'response_body')
+        f_content = key.get_contents_as_string()
+        f_content = self._ungzip(f_content)
+
+        # get metadata
+        key = bucket.get_key(fpath+'pickled_meta')
+        metadata = key.get_contents_as_string()
+        if metadata:
+            metadata = pickle.loads(metadata)
+            if 'timestamp' in metadata:
+                metadata['datetime'] = datetime.datetime.fromtimestamp(
+                    metadata['timestamp'])
+
+        # rewrite relative links to absolute
+        original_domain = urlparse.urlparse(metadata['url']).netloc
+        f_content = self._relative_to_absolute(original_domain, f_content)
+
+        context['original_content'] = f_content
+        context['cache_meta'] = metadata
+        return context
+
+    def render_to_response(self, context, **response_kwargs):
+        response = super(RenderS3CachePage, self).render_to_response(
+            context, **response_kwargs)
+        response["Cache-Control"] = "no-cache, no-store, must-revalidate"  # HTTP 1.1.
+        response["Pragma"] = "no-cache"  # HTTP 1.0.
+        response["Expires"] = "0"  # Proxies.
         return response

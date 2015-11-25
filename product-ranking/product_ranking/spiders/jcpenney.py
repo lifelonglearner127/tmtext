@@ -179,7 +179,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             try:
                 new_variant = {
                     'lot': current_lot,
-                    'price': price_data.get(current_lot, price),
+                    'price': float(price_data.get(current_lot, price)),
                     'in_stock': None,
                     'selected': False,
                     'properties': prop}.copy()
@@ -205,6 +205,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         chest = _props.pop('chest') if 'chest' in _props else None
         length = _props.pop('length') if 'length' in _props else None
         price = _props.pop('price') if 'price' in _props else None
+        cup = _props.pop('cup') if 'cup' in _props else None
+        width = _props.pop('width') if 'width' in _props else None
         # check if there are still some keys
         if _props.keys():
             self.log('Error: extra variants found, url %s' % response.url, WARNING)
@@ -219,6 +221,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         _format_args['chest'] = chest if chest else ''
         _format_args['length'] = length if length else ''
         _format_args['price'] = price if price else ''
+        _format_args['cup'] = cup if cup else ''
+        _format_args['width'] = width if width else ''
 
         if null_values and isinstance(null_values, (list, tuple)):
             for null_value in null_values:
@@ -241,7 +245,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             attribute_name = 'Lot'
         """
         # TODO: moar `attribute_name` values!
-        _format_args['color'] = ''
+        _format_args['color'] = color if color else ''
         _format_args['neck'] = neck if neck else ''
         _format_args['sleeve'] = sleeve if sleeve else ''
         _format_args['attribute_name'] = attribute_name[0] \
@@ -272,13 +276,17 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     'selectedLotValue={new_lot}&_D%'
                     '3AselectedLotValue=+'
                     '&skuSelectionMap.SIZE={size}'
+                    '&_D%3AskuSelectionMap.SIZE=+'
+                    '&skuSelectionMap.WIDTH={width}'
+                    '&_D%3AskuSelectionMap.WIDTH=+'
+                    '&skuSelectionMap.CUP={cup}'
+                    '&_D%3AskuSelectionMap.CUP=+'
                     '&skuSelectionMap.WAIST={waist}'
                     '&skuSelectionMap.INSEAM={inseam}'
                     '&_D%3AskuSelectionMap.INSEAM=+'
                     '&skuSelectionMap.CHEST={chest}'
                     '&skuSelectionMap.NECK={neck}'
                     '&skuSelectionMap.SLEEVE={sleeve}'
-                    '&_D%3AskuSelectionMap.{attribute_name}'
                     '=+&skuSelectionMap.COLOR={color}'
                     '&_D%3AskuSelectionMap.COLOR=+&_DARGS=%'
                     '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
@@ -312,9 +320,16 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '3AselectedLotValue=+'
                     '&skuSelectionMap.INSEAM='
                     '&_D%3AskuSelectionMap.INSEAM=+'
-                    '&skuSelectionMap.{attribute_name}={size}'
-                    '&_D%3AskuSelectionMap.{attribute_name}'
-                    '=+&skuSelectionMap.COLOR={color}'
+                    '&skuSelectionMap.WAIST={waist}'
+                    '&_D%3AskuSelectionMap.WAIST=+'
+                    '&skuSelectionMap.SIZE={size}'
+                    '&_D%3AskuSelectionMap.SIZE=+'
+                    '&skuSelectionMap.CUP={cup}'
+                    '&_D%3AskuSelectionMap.CUP=+'
+                    '&skuSelectionMap.WIDTH={width}'
+                    '&_D%3AskuSelectionMap.WIDTH=+'
+                    '&_D%3AskuSelectionMap.{attribute_name}=+'
+                    '&skuSelectionMap.COLOR='''
                     '&_D%3AskuSelectionMap.COLOR=+&_DARGS=%'
                     '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
                     '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
@@ -350,15 +365,25 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         result = response.body
         color = variant['properties'].get('color', None)
         #import pdb; pdb.set_trace()
-        if u'function()' in response.body_as_unicode():
-            variant['in_stock'] = None
-            return
+        # if u'function()' in response.body_as_unicode():
+        #     variant['in_stock'] = None
+        #     return
         try:
             result = json.loads(result)
         except Exception as e:
             self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
             variant['in_stock'] = None
 
+        if result.get('priceHtml', None):
+            price_data = result['priceHtml']
+            if price_data:
+                price = re.findall(r'\$(\d+\.*\d+)&nbsp', price_data)
+                if price:
+                    try:
+                        price = price[1]
+                    except:
+                        price = price[0]
+                    variant['price'] = price
         # find of such a combination is available
         if color:
             _avail = [a['options'] for a in result['skuOptions'] if a.get('key', None).lower() == 'color']
@@ -584,7 +609,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     "/span[@class='BVRRNumber']/text()").extract()
                 if total:
                     try:
-                        total = int(total[0])
+                        total = int(total[0].replace(',', ''))
                     except ValueError:
                         total = 0
                 else:
