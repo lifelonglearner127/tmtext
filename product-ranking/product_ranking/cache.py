@@ -143,6 +143,18 @@ class S3CacheStorage(FilesystemCacheStorage):
         return get_request_path_with_date(self.cachedir, spider, request,
                                           utcnow)
 
+    def store_response(self, spider, request, response):
+        # store request URL as an empty file
+        rpath = self._get_request_path(spider, request)
+        if not os.path.exists(rpath):
+            os.makedirs(rpath)
+        fname = '__MARKER_URL__' + _slugify(request.url)
+        fname = fname[0:254]
+        fname = os.path.join(rpath, fname)
+        with open(fname, 'w') as f:
+            f.write(response.url)
+        return super(S3CacheStorage, self).store_response(spider, request, response)
+
 
 class CustomCachePolicy(DummyPolicy):
     """ For not caching amazon captcha """

@@ -164,6 +164,4 @@ LOGGING = {
 TEST_QUEUE = QUEUES_LIST['test']
 TEST_CACHE_QUEUE = CACHE_QUEUES_LIST['test']
 
-
-#TODO: nginx http AUTH
-#TODO: colored statuses, remove unnecessary statuses
+CACHE_MODELS_FILENAME = '/tmp/cache_models.pickle'

@@ -65,8 +65,12 @@ class WalmartScraper(Scraper):
         self.extracted_video_urls = False
         # product pdfs (to be used for "pdf_urls", "pdf_count", and "webcollage")
         self.pdf_urls = None
-        # whether videos were extracted
+        # whether pdfs were extracted
         self.extracted_pdf_urls = False
+        # product image
+        self.image_urls = None
+        # whether pdfs were extracted
+        self.extracted_image_urls = False
 
         # whether product has any pdfs
         self.has_pdf = False
@@ -1725,12 +1729,19 @@ class WalmartScraper(Scraper):
         for script in scripts:
             # TODO: is str() below needed?
             #       it sometimes throws an exception for non-ascii text
+            image_urls = []
+
             try:
-                find = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script))
+                urls = re.findall(r'posterImages\.push\(\'(.*)\'\);', str(script))
+
+                for url in urls:
+                    if not self._no_image(url.replace("_500X500.jpg", "_60X60.gif")):
+                        image_urls.append(url)
             except:
-                find = []
-            if len(find) > 0:
-                return self._qualify_image_urls(find)
+                image_urls = []
+
+            if len(image_urls) > 0:
+                return self._qualify_image_urls(image_urls)
 
         if self.tree_html.xpath("//link[@rel='image_src']/@href"):
             if self._no_image(self.tree_html.xpath("//link[@rel='image_src']/@href")[0]):
@@ -1846,11 +1857,20 @@ class WalmartScraper(Scraper):
             list of strings representing image urls
         """
 
+        if self.extracted_image_urls:
+            return self.image_urls
+
+        self.extracted_image_urls = True
+
         if self._version() == "Walmart v1":
-            return self._image_urls_old()
+            self.image_urls = self._image_urls_old()
+            return self.image_urls
 
         if self._version() == "Walmart v2":
-            return self._image_urls_new()
+            self.image_urls = self._image_urls_new()
+            return self.image_urls
+
+        return None
 
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
     # might be outdated? (since walmart site redesign)
@@ -2186,7 +2206,11 @@ class WalmartScraper(Scraper):
 
                 for seller in sellers_dict:
                     if seller["sellerName"] not in ["walmart.com", "walmart store"]:
-                        sellers.append(seller["sellerName"])
+                        if seller["sellerId"] == pinfo_dict["buyingOptions"]["seller"]["sellerId"] and seller["sellerName"] != \
+                                pinfo_dict["buyingOptions"]["seller"]["displayName"]:
+                            sellers.append(pinfo_dict["buyingOptions"]["seller"]["displayName"])
+                        else:
+                            sellers.append(seller["sellerName"])
 
                 return sellers if sellers else None
 
