@@ -13,7 +13,6 @@ import lxml.html
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
-from spiders_shared_code.walmart_extra_data import fetch_bytes
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
@@ -24,6 +23,28 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
 from product_ranking.validation import BaseValidator
 from spiders_shared_code.walmart_variants import WalmartVariants
 from spiders_shared_code.walmart_categories import WalmartCategoryParser
+
+
+from PIL import Image
+from io import BytesIO
+from StringIO import StringIO
+import requests
+
+
+
+def fetch_bytes(url):
+    # TODO: fix this - remove if this method is not neeeded anymore
+    agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+    headers ={'User-agent': agent}
+    with requests.Session() as s:
+        response = s.get(url, headers=headers, timeout=15)
+        if response != 'Error' and response.ok:
+            img = Image.open(StringIO(response.content))
+            b = BytesIO()
+            img.save(b, format='png')
+            data = b.getvalue()
+            return data
+
 
 is_empty = lambda x, y="": x[0] if x else y
 
