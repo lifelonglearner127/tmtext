@@ -44,8 +44,12 @@ def init():
 init()
 
 
-@app.route('/workbench', methods = ['GET'])
+@app.route('/workbench', methods = ['GET', 'POST'])
 def display_match():
+    # store form data
+    if request.form:
+        store_feedback()
+
     global current_urls
     with app.app_context():
         matches = urls.pop()
@@ -121,16 +125,14 @@ def insert_feedback(urls, features_dict):
     conn.commit()
 
 
-@app.route('/store_feedback', methods = ['GET', 'POST'])
 def store_feedback():
     print request.form
     global current_urls
     with app.app_context():
         for key in request.form:
             print current_urls
-            insert_feedback(current_urls, request.form)
+            # insert_feedback(current_urls, request.form)
     print request
-    return display_match()
 
 if __name__ == '__main__':
     app.run(port = 8080, threaded = True, debug=True)
