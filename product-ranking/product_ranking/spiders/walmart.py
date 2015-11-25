@@ -13,7 +13,7 @@ import lxml.html
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
-from special_crawler.no_img_hash import fetch_bytes
+from spiders_shared_code.walmart_extra_data import fetch_bytes
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
