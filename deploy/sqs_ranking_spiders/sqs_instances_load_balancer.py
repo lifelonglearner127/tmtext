@@ -53,4 +53,4 @@ def scale_instances(tasks_per_instance, groups_names=('SCCluster1', 'SCCluster2'
 
 
 if __name__ == '__main__':
-    scale_instances(12)
+    scale_instances(16)
