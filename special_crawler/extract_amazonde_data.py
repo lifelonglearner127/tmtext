@@ -915,8 +915,7 @@ class AmazonDEScraper(Scraper):
         except:
             amsel = {}
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        domain=self.product_page_url.split("/")
+        domain = self.product_page_url.split("/")
 
         try:
             url = domain[0] + "//" + domain[2] + "/gp/offer-listing/" + self.tree_html.xpath("//input[@id='ASIN']/@value")[0] + "/ref=olp_tab_all"
@@ -925,7 +924,7 @@ class AmazonDEScraper(Scraper):
         fl = 0
 
         while len(url) > 10:
-            contents = requests.get(url, headers=h).text
+            contents = self.load_page_from_url_with_number_of_retries(url)
             tree = html.fromstring(contents)
             sells = tree.xpath('//div[@class="a-row a-spacing-mini olpOffer"]')
 
@@ -958,9 +957,9 @@ class AmazonDEScraper(Scraper):
 
                             if seller_name == "":
                                 if seller_link[0].startswith("http://www.amazon."):
-                                    seller_content = requests.get(seller_link[0], headers=h).text
+                                    seller_content = self.load_page_from_url_with_number_of_retries(seller_link[0])
                                 else:
-                                    seller_content = requests.get("http://www.amazon.de" + seller_link[0], headers=h).text
+                                    seller_content = self.load_page_from_url_with_number_of_retries("http://www.amazon.de" + seller_link[0])
 
                                 seller_tree = html.fromstring(seller_content)
                                 seller_names = seller_tree.xpath("//h2[@id='s-result-count']/span/span//text()")

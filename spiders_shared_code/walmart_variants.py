@@ -2,6 +2,7 @@ import json
 
 import lxml.html
 import re
+import itertools
 import yaml
 
 class WalmartVariants(object):
@@ -177,6 +178,9 @@ class WalmartVariants(object):
 
                 variation_key_values_by_attributes = {}
                 variation_key_unav_by_attributes = {}
+
+                attribute_values_list = []
+
                 for variation_attribute in json_body:
 
                     variation_key_values = {}
@@ -190,6 +194,13 @@ class WalmartVariants(object):
 
                     variation_key_values_by_attributes[variation_attribute_id] = variation_key_values
                     variation_key_unav_by_attributes[variation_attribute_id] = variation_key_unav
+
+                for variation_key in variation_key_values_by_attributes:
+                    attribute_values_list.append(variation_key_values_by_attributes[variation_key].values())
+
+                out_of_stock_combination_list = list(itertools.product(*attribute_values_list))
+                out_of_stock_combination_list = [list(tup) for tup in out_of_stock_combination_list]
+
                 selected_variants = {}
 
                 for item in json_body:
@@ -223,6 +234,7 @@ class WalmartVariants(object):
                     stockstatus_for_variants = {}
                     properties = {}
                     isSelected = True
+                    variant_values_list = []
 
                     for key in variants:
                         if key in variation_key_values_by_attributes:
@@ -230,10 +242,16 @@ class WalmartVariants(object):
                                 properties["color"] = variation_key_values_by_attributes[key][variants[key]["id"]]
                             else:
                                 properties[key] = variation_key_values_by_attributes[key][variants[key]["id"]]
-                            properties['unavailable'] = properties.get('unavailable', False) or variation_key_unav_by_attributes[key][variants[key]["id"]]
+
+                            variant_values_list.append(variation_key_values_by_attributes[key][variants[key]["id"]])
 
                             if selected_variants and selected_variants[key] != variation_key_values_by_attributes[key][variants[key]["id"]]:
                                 isSelected = False
+
+                    if variant_values_list in out_of_stock_combination_list:
+                        out_of_stock_combination_list.remove(variant_values_list)
+                    else:
+                        continue
 
                     if not selected_variants:
                         isSelected = False
@@ -250,6 +268,24 @@ class WalmartVariants(object):
                     stockstatus_for_variants["properties"] = properties
                     stockstatus_for_variants["price"] = None
                     stockstatus_for_variants["selected"] = isSelected
+                    stockstatus_for_variants_list.append(stockstatus_for_variants)
+
+                for item in out_of_stock_combination_list:
+                    stockstatus_for_variants = {}
+                    properties = {}
+
+                    for index, key in enumerate(variation_key_values_by_attributes):
+                        if key == "actual_color":
+                            properties["color"] = item[index]
+                        else:
+                            properties[key] = item[index]
+
+                    stockstatus_for_variants["url"] = None
+                    stockstatus_for_variants["in_stock"] = False
+                    stockstatus_for_variants["properties"] = properties
+                    stockstatus_for_variants["price"] = None
+                    stockstatus_for_variants["selected"] = False
+                    stockstatus_for_variants["unavailable"] = True
                     stockstatus_for_variants_list.append(stockstatus_for_variants)
 
                 if not stockstatus_for_variants_list:

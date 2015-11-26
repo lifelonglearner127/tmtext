@@ -2206,7 +2206,11 @@ class WalmartScraper(Scraper):
 
                 for seller in sellers_dict:
                     if seller["sellerName"] not in ["walmart.com", "walmart store"]:
-                        sellers.append(seller["sellerName"])
+                        if seller["sellerId"] == pinfo_dict["buyingOptions"]["seller"]["sellerId"] and seller["sellerName"] != \
+                                pinfo_dict["buyingOptions"]["seller"]["displayName"]:
+                            sellers.append(pinfo_dict["buyingOptions"]["seller"]["displayName"])
+                        else:
+                            sellers.append(seller["sellerName"])
 
                 return sellers if sellers else None
 
