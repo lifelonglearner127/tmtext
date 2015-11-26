@@ -1308,6 +1308,7 @@ def main():
     # names of the queues in SQS, ordered by priority
     q_keys = ['urgent', 'production', 'test', 'dev']
     q_ind = 0  # index of current queue
+    global MAX_CONCURRENT_TASKS
     # try to get tasks, untill max number of tasks is reached or
     # max number of tries to get tasks is reached
     while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
@@ -1330,6 +1331,9 @@ def main():
             time.sleep(3)
             continue
         task_data, queue = msg
+        if 'url' in task_data and 'searchterms_str' not in task_data:
+            if MAX_CONCURRENT_TASKS < 50:
+                MAX_CONCURRENT_TASKS += 5
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))
         # prepare to run task
