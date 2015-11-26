@@ -1333,7 +1333,7 @@ def main():
         task_data, queue = msg
         if 'url' in task_data and 'searchterms_str' not in task_data:
             if MAX_CONCURRENT_TASKS < 50:
-                MAX_CONCURRENT_TASKS += 5
+                MAX_CONCURRENT_TASKS += 1
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))
         # prepare to run task
