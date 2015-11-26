@@ -353,13 +353,16 @@ class AmazonBaseClass(BaseProductsSpider):
             data_body = response.xpath('//script[contains(text(), '
                                        '"merchantID")]/text()').extract()
             if data_body:
-                asin = re.findall(r'"ASIN" : "(\w+)"', data_body[0])[0]
-                merchantID = re.findall(r'"merchantID" : "(\w+)"', data_body[0])[0]
+                asin = is_empty(re.findall(r'"ASIN" : "(\w+)"', data_body[0]),
+                                None)
+                merchantID = is_empty(re.findall(r'"merchantID" : "(\w+)"',
+                                                 data_body[0]), None)
 
-                reqs.append(
-                    Request(url=self.AMAZON_PRIME_URL.format(asin, merchantID),
-                            meta=meta, callback=self._amazon_prime_check)
-                )
+                if asin and merchantID:
+                    reqs.append(
+                        Request(url=self.AMAZON_PRIME_URL.format(asin, merchantID),
+                                meta=meta, callback=self._amazon_prime_check)
+                    )
 
         # Parse variants
         variants = self._parse_variants(response)
@@ -936,7 +939,7 @@ class AmazonBaseClass(BaseProductsSpider):
                                '%0A%20%20%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A', res)
                 if f:
                     desc = unquote(f[0])
-                    description = [desc]
+                    description = desc
 
         return description.strip() if description else None
 
