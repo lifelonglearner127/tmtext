@@ -69,7 +69,7 @@ EXTENSIONS['product_ranking.extensions.IPCollector'] = 500
 
 # memory limit
 EXTENSIONS['scrapy.contrib.memusage.MemoryUsage'] = 500
-MEMUSAGE_LIMIT_MB = 768
+# MEMUSAGE_LIMIT_MB = 768
 MEMUSAGE_ENABLED = True
 
 
@@ -180,20 +180,20 @@ def _check_if_proxies_available(http_proxy_path, timeout=10):
         except (ReqProxyError, SSLError, ContentDecodingError):
             print('proxy %s - failed to fetch host %s' % (prox, h))
 
-if not os.path.exists('/tmp/_stop_proxies'):
-    PROXY_LIST = os.path.join(CWD, 'http_proxies.txt')
-    PROXY_LIST2 = '/tmp/http_proxies.txt'
-    if not os.path.exists(PROXY_LIST) and os.path.exists(PROXY_LIST2):
-        PROXY_LIST = PROXY_LIST2
-    if (os.path.exists(PROXY_LIST)
-            and not os.path.exists('/tmp/_disable_proxies')
-            and _check_if_proxies_available(http_proxy_path)):
-        log.msg('USING PROXIES')
-        print('USING PROXIES')
-        DOWNLOADER_MIDDLEWARES['product_ranking.randomproxy.RandomProxy'] = 100
-    else:
-        log.msg('NOT USING PROXIES')
-        print('NOT USING PROXIES')
+# if not os.path.exists('/tmp/_stop_proxies'):
+#     PROXY_LIST = os.path.join(CWD, 'http_proxies.txt')
+#     PROXY_LIST2 = '/tmp/http_proxies.txt'
+#     if not os.path.exists(PROXY_LIST) and os.path.exists(PROXY_LIST2):
+#         PROXY_LIST = PROXY_LIST2
+#     if (os.path.exists(PROXY_LIST)
+#             and not os.path.exists('/tmp/_disable_proxies')
+#             and _check_if_proxies_available(http_proxy_path)):
+#         log.msg('USING PROXIES')
+#         print('USING PROXIES')
+#         DOWNLOADER_MIDDLEWARES['product_ranking.randomproxy.RandomProxy'] = 100
+#     else:
+#         log.msg('NOT USING PROXIES')
+#         print('NOT USING PROXIES')
 
 # shared CH and SC code
 sys.path.append(os.path.join(CWD, '..', '..'))
