@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from flask import Flask, jsonify, abort, request, render_template, Response, g
+from flask.ext.basicauth import BasicAuth
 import random
 import urllib2
 from lxml import html
@@ -7,6 +8,11 @@ from lxml import html
 import sqlite3
 
 app = Flask(__name__)
+app.config['BASIC_AUTH_USERNAME'] = 'test'
+app.config['BASIC_AUTH_PASSWORD'] = '632316f5ecdb9bba3b7c55b570911aaf'
+
+basic_auth = BasicAuth(app)
+
 urls = []
 MAX_RETRIES = 3
 
@@ -43,9 +49,13 @@ def init():
 
 init()
 
-
-@app.route('/workbench', methods = ['GET'])
+@app.route('/workbench', methods = ['GET', 'POST'])
+@basic_auth.required
 def display_match():
+    # store form data
+    if request.form:
+        store_feedback()
+
     global current_urls
     with app.app_context():
         matches = urls.pop()
@@ -121,16 +131,14 @@ def insert_feedback(urls, features_dict):
     conn.commit()
 
 
-@app.route('/store_feedback', methods = ['GET', 'POST'])
 def store_feedback():
     print request.form
     global current_urls
     with app.app_context():
         for key in request.form:
             print current_urls
-            insert_feedback(current_urls, request.form)
+            # insert_feedback(current_urls, request.form)
     print request
-    return display_match()
 
 if __name__ == '__main__':
-    app.run(port = 8080, threaded = True, debug=True)
+    app.run(port = 8080, threaded = True)
