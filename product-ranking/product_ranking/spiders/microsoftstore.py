@@ -130,29 +130,31 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
         rating_by_star = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
 
         if data:
-            try:
-                data = json.loads(data)
-            except:
-                buyer_reviews = self.ZERO_REVIEWS_VALUE
+            data = json.loads(data)
 
             if data:
-                total = data["BatchedResults"]['q0']['Includes']['Products'][product_id]['ReviewStatistics']['TotalReviewCount']
-                average = data["BatchedResults"]['q0']['Includes']['Products'][product_id]['ReviewStatistics']['AverageOverallRating']
-                stars = data["BatchedResults"]['q0']['Includes']['Products'][product_id]['ReviewStatistics']['RatingDistribution']
+                try:
+                    js = data["BatchedResults"]['q0']['Includes']['Products'][product_id]['ReviewStatistics']
+                    total = js['TotalReviewCount']
+                    average = js['AverageOverallRating']
+                    stars = data["BatchedResults"]['q0']['Includes']['Products'][product_id]['ReviewStatistics']['RatingDistribution']
 
-                for star in stars:
-                   rating_by_star[str(star['RatingValue'])] = star['Count']
+                    for star in stars:
+                       rating_by_star[str(star['RatingValue'])] = star['Count']
 
-        if total and average and stars:
-            buyer_reviews = {
-                    'num_of_reviews': int(total),
-                    'average_rating': round(average, 1),
-                    'rating_by_star': rating_by_star
-                    }
-        else:
-            buyer_reviews = self.ZERO_REVIEWS_VALUE
+                    if total and average and stars:
+                        buyer_reviews = {
+                            'num_of_reviews': int(total),
+                            'average_rating': round(average, 1),
+                            'rating_by_star': rating_by_star
+                        }
 
-        product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
+                    product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
+
+                except:
+                    product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+
+
 
         return product
 
@@ -171,12 +173,18 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
 
     def parse_price(self, response):
         price = is_empty(response.xpath(
-            '//p[@class="current-price"]/span/text()').extract())
+            '//p[@class="current-price"]/span/text()').re(r'(\d+\.?\d+)'))
         currency = is_empty(response.xpath(
             '//meta[@itemprop="priceCurrency"]/@content').extract())
 
+        if not price:
+            price = is_empty(response.xpath(
+                                   '//span[@itemprop="price"]/text()').re(r'Starting from .(\d+\.?\d+)'))
+
+            print price
+
         if price and currency:
-            price = Price(price=price[1:], priceCurrency=currency)
+            price = Price(price=price, priceCurrency=currency)
         else:
             price = Price(price=0.00, priceCurrency="USD")
         return price
