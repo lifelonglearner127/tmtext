@@ -916,7 +916,7 @@ class AmazonBaseClass(BaseProductsSpider):
                                '%0A%20%20%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A', res)
                 if f:
                     desc = unquote(f[0])
-                    description = [desc]
+                    description = desc
 
         return description.strip() if description else None
 
