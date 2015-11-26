@@ -37,13 +37,20 @@ def scale_instances(tasks_per_instance, groups_names=('SCCluster1', 'SCCluster2'
         logger.info('No tasks left in queues')
         return
     logger.info('Num of tasks in queues %s', tasks_count)
-    tasks_per_instance = float(tasks_per_instance)
-    additional_instances_count = int(ceil(tasks_count/tasks_per_instance) / len(groups_names))
-    updated_instances_count = \
-        group.desired_capacity + additional_instances_count
-    # consider max allowed instances
-    if updated_instances_count > group.max_size:
+
+    if tasks_count > 1000:  # a (temporary?) workaround for speeding up sqs load balancing
         updated_instances_count = group.max_size
+        logger.info('Scenario 1 - more than 1000 tasks in the queues')
+    else:
+        logger.info('Scenario 2 - less than 1000 tasks in the queues')
+        tasks_per_instance = float(tasks_per_instance)
+        additional_instances_count = int(ceil(tasks_count/tasks_per_instance) / len(groups_names))
+        updated_instances_count = \
+            group.desired_capacity + additional_instances_count
+        # consider max allowed instances
+        if updated_instances_count > group.max_size:
+            updated_instances_count = group.max_size
+
     logger.info('Updating group from %s to %s instances',
                 group.desired_capacity, updated_instances_count)
     group.set_capacity(updated_instances_count)
