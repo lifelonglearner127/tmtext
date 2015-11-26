@@ -6,8 +6,12 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js"></script>
     <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
     <script>
+        {% raw %}
         $(document).ready(function(){
-            $('.date-select').change(function(){
+            var selectBox = $('.date-select');
+            var container = $('#myChart');
+
+            selectBox.change(function(){
                 var val = $(this).val();
                 if (!val) return;
                 $.post('', {days: val}, function(resp){
@@ -27,7 +31,7 @@
                     var chartData = {
                         labels: labels,
                         datasets: [{
-                            label: "My Second dataset",
+                            label: "Number of instances",
                             fillColor: "rgba(151,187,205,0.2)",
                             strokeColor: "rgba(151,187,205,1)",
                             pointColor: "rgba(151,187,205,1)",
@@ -41,19 +45,24 @@
                     canvas.id = 'chart';
                     canvas.attr('width', 800);
                     canvas.attr('height', 400);
-                    canvas.appendTo($('#myChart').empty());
+                    container.empty();
+                    canvas.appendTo(container);
                     var ctx = canvas[0].getContext("2d");
                     var options = {
                         scaleOverride : true,
                         scaleSteps : 5,
                         scaleStepWidth : 1000,
-                        scaleStartValue : 0
+                        scaleStartValue : 0,
+                        legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"color:<%=datasets[i].pointColor%>\"><%if(datasets[i].label){%><%=datasets[i].label%><%}%></span></li><%}%></ul>"
                     };
                     var myLineChart = new Chart(ctx).Line(chartData, options);
+                    var legend = myLineChart.generateLegend();
+                    $(legend).appendTo(container);
                 });
             });
-            $('.date-select').change();
+            selectBox.change();  // manually trigger change event to load initial data
         });
+        {% endraw %}
     </script>
 </head>
 <body>

@@ -24,7 +24,7 @@ DEBUG = True
 
 TEMPLATE_DEBUG = True
 
-HOST_NAME = 'ranking-auto-tests.contentanalyticsinc.com'
+HOST_NAME = 'sc-branch-tests.contentanalyticsinc.com'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', HOST_NAME, '52.0.7.54']
 
