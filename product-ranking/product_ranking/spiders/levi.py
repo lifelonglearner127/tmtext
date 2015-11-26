@@ -13,6 +13,7 @@ from product_ranking.validation import BaseValidator
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from scrapy import Selector
 from spiders_shared_code.levi_variants import LeviVariants
+from product_ranking.validators.levi_validator import LeviValidatorSettings
 
 is_empty =lambda x,y=None: x[0] if x else y
 
@@ -22,31 +23,6 @@ def is_num(s):
         return True
     except ValueError:
         return False
-
-
-class LeviValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand', 'price',
-                       'related_products', 'upc']
-    ignore_fields = [
-        'is_in_store_only', 'is_out_of_stock',
-        'google_source_site', 'description', 'special_pricing',
-        'bestseller_rank', 'img_count', 'video_count'
-    ]
-    ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = True  # ... duplicated requests?
-    ignore_log_filtered = True  # ... filtered requests?
-    test_requests = {
-        'sdfsdgdf': 0,  # should return 'no products' or just 0 products
-        'benny benassi': 0,
-        'black jeans': [50, 300],
-        'black shirt': [10, 150],
-        'men shirt': [100, 400],
-        '501 men': [30, 300],
-        'white jeans': [7, 150],
-        'red jeans': [20, 150],
-        'red shirt': [10, 150],
-        'hat': [5, 50],
-    }
 
 
 class LeviProductsSpider(BaseValidator, BaseProductsSpider):
@@ -292,6 +268,7 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         if self.js_data:
             for v in self.js_data['sku'].values():
                 upc = v['upc']
+            upc = upc[-12:]
 
             return upc
 
