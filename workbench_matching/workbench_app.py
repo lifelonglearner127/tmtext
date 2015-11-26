@@ -109,7 +109,7 @@ def export_matches_DB(matches_path = "/home/ana/code/tmtext/data/opd_round3/walm
             if not match:
                 match = Match(url1=url1, url2=url2)
                 db.session.add(match)
-                db.session.commit()
+        db.session.commit()
 
 
 def get_unseen_match():
@@ -125,6 +125,8 @@ def get_unseen_match():
 
 def init():
 
+    db.create_all()
+    db.session.commit()
     # if there are no unseen matches in DB, get them from file
     match = get_unseen_match()
     if not match:
@@ -132,8 +134,6 @@ def init():
     match = get_unseen_match()
     if not match:
         import_matches_from_file()
-    db.create_all()
-    db.session.commit()
 
 init()
 
