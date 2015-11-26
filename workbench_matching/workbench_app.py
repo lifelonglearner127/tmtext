@@ -17,8 +17,6 @@ urls = []
 MAX_RETRIES = 3
 
 # TODO: do this better
-current_urls = []
-# TODO: do this better
 conn = None
 
 
@@ -54,14 +52,12 @@ init()
 def display_match():
     # store form data
     if request.form:
-        store_feedback()
+        url1 = request.form['url1']
+        url2 = request.form['url2']
+        print request.form
+        store_feedback(request.form)
 
-    global current_urls
-    with app.app_context():
-        matches = urls.pop()
-        g.urls = matches
-        current_urls = matches
-        print current_urls
+    matches = urls.pop()
     return render_template('workbench.html', matches=matches)
 
 # use this for loading iframes on sites that don't permit iframes?
@@ -127,18 +123,16 @@ def insert_feedback(urls, features_dict):
             values.append(True if features_dict[key]=='yes' else False)
     c.execute('''INSERT INTO TABLE matches
              (url1, url2, %s, %s, %s, %s, %s, seen)
-             values %s, %s, %s, %s, %s, %s, %s)''', (columns + current_urls[0] + current_urls[1] + values))
+             values %s, %s, %s, %s, %s, %s, %s)''', (columns + [url1] + [url2] + values))
     conn.commit()
 
 
-def store_feedback():
-    print request.form
-    global current_urls
+def store_feedback(feedback):
+    current_urls = (feedback['url1'], feedback['url2'])
     with app.app_context():
         for key in request.form:
-            print current_urls
+            pass
             # insert_feedback(current_urls, request.form)
-    print request
 
 if __name__ == '__main__':
     app.run(port = 8080, threaded = True)
