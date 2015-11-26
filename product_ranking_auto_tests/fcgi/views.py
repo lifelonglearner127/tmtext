@@ -1,6 +1,19 @@
 from django.views.generic import FormView
+from django.http import HttpResponseRedirect, HttpResponse
+from django.core.urlresolvers import reverse_lazy, NoReverseMatch
 from .forms import ReloadFcgiForm
-from tests_app.views import AuthViewMixin
+
+
+class AuthViewMixin(object):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            try:  # if the view exists
+                return HttpResponseRedirect(
+                    reverse_lazy('login_view')
+                )
+            except NoReverseMatch:  # if the view doesn't exist
+                return HttpResponse('you must be admin')
+        return super(AuthViewMixin, self).dispatch(request, *args, **kwargs)
 
 
 class ReloadFcgiView(AuthViewMixin, FormView):

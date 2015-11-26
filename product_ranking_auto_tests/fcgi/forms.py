@@ -25,20 +25,13 @@ class ReloadFcgiForm(forms.Form):
     maxchildren = forms.IntegerField(min_value=1, max_value=10, required=False)
 
     def reload_fcgi(self):
-        f = open('/home/user/111.txt', 'w')
-        try:
-            options = ' '.join(
-                ['%s=%s' % (k, v) for k, v in self.cleaned_data.iteritems() if v]
-            )
-            manage_py = os.path.join(settings.BASE_DIR, 'manage.py')
-            command_name = 'runfcgi'
-            python_path = check_output('which python', shell=True).strip()
-            cmd = ('kill `cat {pidfile}` && {python_path} {manage_py} '
-                   '{command_name} {options}').format(
-                pidfile=self.cleaned_data['pidfile'], **locals())
-            e = check_output(cmd, shell=True)
-            f.write(cmd + '\n')
-            f.write(e)
-        except Exception as e:
-            f.write(str(e))
-        f.close()
+        options = ' '.join(
+            ['%s=%s' % (k, v) for k, v in self.cleaned_data.iteritems() if v]
+        )
+        manage_py = os.path.join(settings.BASE_DIR, 'manage.py')
+        command_name = 'runfcgi'
+        python_path = check_output('which python', shell=True).strip()
+        cmd = ('kill `cat {pidfile}` && {python_path} {manage_py} '
+               '{command_name} {options}').format(
+            pidfile=self.cleaned_data['pidfile'], **locals())
+        check_output(cmd, shell=True)

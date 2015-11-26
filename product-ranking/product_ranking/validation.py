@@ -105,7 +105,7 @@ def _json_file_to_data(fname):
         for line in f:
             if not line.strip():
                 continue
-            line = line.strip()
+            line = line.strip().replace('\n', '')
             data.append(json.loads(line))
     return data
 
