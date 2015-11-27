@@ -106,7 +106,9 @@ class WalmartScraper(Scraper):
         # containing various info on the product.
         # Currently used for seller info (but useful for others as well)
         self.product_info_json = None
-
+        self.product_choice_info_json = None
+        self.product_api_json = None
+        self.key_fields_list = ["upc"]
         self.failure_type = None
 
         self.review_json = None
@@ -147,7 +149,27 @@ class WalmartScraper(Scraper):
 
             return True
 
+        try:
+            self.product_api_json = json.loads(self.load_page_from_url_with_number_of_retries(self.BASE_URL_PRODUCT_API.format(self._extract_product_id())))
+        except Exception, e:
+            print "Error (Loading product json from Walmart api - not_a_product)" + str(e)
+            self.product_api_json = None
+
         return False
+
+    def _filter_key_fields(self, field_name, value):
+        if value:
+            return value
+
+        if self.product_api_json:
+            try:
+                if field_name in self.key_fields_list:
+                    if field_name == "upc":
+                        return self.product_api_json["product"]["upc"] if self.product_api_json["product"]["upc"] else self.product_api_json["product"]["wupc"]
+            except Exception, e:
+                print "Error (Walmart - _filter_key_fields)" + str(e)
+
+        return None
 
     def _extract_product_id(self):
         """Extracts product id of walmart product from its URL
@@ -1448,14 +1470,29 @@ class WalmartScraper(Scraper):
             string containing upc
         """
         if self._version() == "Walmart v1":
-            return self._find_between(html.tostring(self.tree_html), "upc: '", "'").strip()
+            return self._filter_key_fields("upc", self._find_between(html.tostring(self.tree_html), "upc: '", "'").strip())
 
         if self._version() == "Walmart v2":
             if self.is_bundle_product:
                 product_info_json = self._extract_product_info_json()
-                return product_info_json["analyticsData"]["upc"]
+
+                upc = product_info_json.get("analyticsData", {}).get("upc")
+
+                if upc:
+                    return upc
+
+                upc = self.product_choice_info_json.get("product", {}).get("wupc")
+
+                if upc:
+                    return upc
+
+                return self._filter_key_fields("upc", None)
             else:
-                return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
+
+                upc_info = self.tree_html.xpath("//meta[@property='og:upc']/@content")
+                upc = upc_info[0] if len(upc_info) > 0 else None
+
+                return self._filter_key_fields("upc", upc)
 
     # extract product seller information from its product product page tree
     def _seller_from_tree(self):
@@ -1911,6 +1948,21 @@ class WalmartScraper(Scraper):
             product_info_json = self._find_between(html.tostring(self.tree_html), 'define("product/data",', ");\n")
             product_info_json = json.loads(product_info_json)
             self.product_info_json = product_info_json
+
+            try:
+                product_choice_info_json = self._find_between(html.tostring(self.tree_html), 'define("choice/data",', ");\n")
+                product_choice_info_json = json.loads(product_choice_info_json)
+                self.product_choice_info_json = product_choice_info_json
+            except:
+                pass
+
+            if not self.product_choice_info_json:
+                try:
+                    product_choice_info_json = self._find_between(html.tostring(self.tree_html), 'define("non-choice/data",', ");\n")
+                    product_choice_info_json = json.loads(product_choice_info_json)
+                    self.product_choice_info_json = product_choice_info_json
+                except:
+                    pass
 
             return self.product_info_json
         else:
