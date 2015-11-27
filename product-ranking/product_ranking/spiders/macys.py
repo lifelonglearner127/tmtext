@@ -208,6 +208,13 @@ class MacysProductsSpider(ProductsSpider):
             if image_url:
                 product["image_url"] = image_url[0]
 
+        if not product.get('image_url'):
+            cond_set(
+                product, 'image_url',
+                response.xpath('//*[contains(@class,'
+                               ' "productImageSection")]//img/@src').extract()
+            )
+
         title = response.css('#productTitle::text').extract()
         if title:
             cond_replace(product, 'title', title)
