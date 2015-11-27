@@ -30,7 +30,9 @@ urlpatterns = [
     url(r'^search-files/', SearchFilesView.as_view(), name='search-files'),
     url(r'^get-file/', GetS3FileView.as_view(), name='get-file'),
     url(r'^s3-cache/$', SearchS3Cache.as_view(), name='s3-cache'),
-    url(r'^render-s3-cache/$', RenderS3CachePage.as_view(), name='render-s3-cache')
+    url(r'^render-s3-cache/$', RenderS3CachePage.as_view(), name='render-s3-cache'),
+
+    url('^fcgi/$', include('fcgi.urls'))
 ]
 
 if settings.DEBUG:
