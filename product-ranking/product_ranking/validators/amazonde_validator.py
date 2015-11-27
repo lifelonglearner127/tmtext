@@ -12,7 +12,7 @@ class AmazonDeValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'nothing_found_1234654654': 0,
         'dress code style all': [5, 70],
         'water pump bronze': [2, 70],
-        'ceiling fan industrial': [15, 90],
+        'ceiling fan industrial': [5, 90],
         'kaspersky total': [30, 250],
         'car navigator garmin': [5, 100],
         'yamaha drums midi': [2, 50],
