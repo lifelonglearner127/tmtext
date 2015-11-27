@@ -101,10 +101,10 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
         # # Parse upc
         # upc = self._parse_upc(response)
         # cond_set_value(product, 'upc', upc)
-        #
-        # # Parse variants
-        # variants = self._parse_variants(response)
-        # cond_set_value(product, 'variants', variants)
+
+        # Parse variants
+        variants = self.parse_variant(response)
+        cond_set_value(product, 'variants', variants)
 
         # Parse buyer reviews
         reqs.append(
@@ -181,8 +181,6 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
             price = is_empty(response.xpath(
                                    '//span[@itemprop="price"]/text()').re(r'Starting from .(\d+\.?\d+)'))
 
-            print price
-
         if price and currency:
             price = Price(price=price, priceCurrency=currency)
         else:
@@ -200,6 +198,25 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
             '//div[@class="short-desc"]').extract())
 
         return description
+
+    def parse_variant(self, response):
+        options = {}
+        color ={}
+        color_list = response.xpath('//ul[contains(@class, "product-colors")]/li/a/@title').extract()
+        color_pid = response.xpath('//ul[contains(@class, "product-colors")]/li/a/@var-pid').extract()
+        data4 = response.xpath('//ul[contains(@class, "option-list")]/li/a//text()').extract()
+        data4 = [i for i in data4 if i != u'\n' and i != u'*']
+        data_pid = response.xpath('//ul[contains(@class, "option-list")]/li/@data-pid').extract()
+        if color_list:
+            for i, items in enumerate(color_pid):
+                color[items] = color_list[i]
+        if data_pid:
+            for i, items in enumerate(data_pid):
+                options[items] = data4[i]
+
+        options.update(color)
+
+        return 'variant'
 
     def send_next_request(self, reqs, response):
         """
