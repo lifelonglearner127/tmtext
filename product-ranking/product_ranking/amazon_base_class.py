@@ -545,7 +545,6 @@ class AmazonBaseClass(BaseProductsSpider):
                   '//*[@id="contributorLink"]/text() |' \
                   '//*[@id="by-line"]/.//a/text() |' \
                   '//*[@id="artist-container"]/.//a/text() |' \
-                  '//*[@id="byline"]/.//*[contains(@class,"author")]/a/text() |' \
                   '//div[@class="buying"]/.//a[contains(@href, "search-type=ss")]/text() |' \
                   '//a[@id="ProductInfoArtistLink"]/text() |' \
                   '//a[contains(@href, "field-author")]/text()'
@@ -576,7 +575,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 brand = [brand]
 
         if isinstance(brand, list):
-            brand = [br for br in brand if br is not 'search results']
+            brand = [br for br in brand if br != 'search results']
 
         brand = brand or ['NO BRAND']
 
@@ -586,6 +585,10 @@ class AmazonBaseClass(BaseProductsSpider):
             else:
                 brand = None
                 break
+
+        # remove authors
+        if response.xpath('//*[contains(@id, "byline")]//*[contains(@class, "author")]'):
+            brand = None
 
         return brand
 
@@ -816,6 +819,18 @@ class AmazonBaseClass(BaseProductsSpider):
                 try:
                     price = float(_price)
                 except:
+                    pass
+
+        if price == 0.0:
+            # "add to cart first" price?
+            _price = re.search(r'asin\-metadata.{3,100}?price.{3,100}?([\d\.]+)',
+                               response.body_as_unicode())
+            if _price:
+                _price = _price.group(1)
+                try:
+                    _price = float(_price)
+                    price = _price
+                except ValueError:
                     pass
 
         return Price(price=price, priceCurrency=self.price_currency)
