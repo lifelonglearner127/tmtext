@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
 
     'tests_app',
+    'fcgi',
     'django_ses',
     'adminplus'
 )

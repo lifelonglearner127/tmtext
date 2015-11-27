@@ -123,5 +123,3 @@ except ImportError:
     pass
 
 LOGIN_REDIRECT_URL = '/tests/'
-
-TEMPLATE_DIRS = ('fcgi/templates',)
