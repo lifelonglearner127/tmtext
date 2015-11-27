@@ -5,6 +5,7 @@ import re
 import string
 import itertools
 import urllib
+import math
 
 from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
@@ -31,34 +32,25 @@ class NeweggProductSpider(BaseProductsSpider):
                  "?Submit=ENE&DEPA=0&Order=BESTMATCH" \
                  "&Description={search_term}&N=-1&isNodeId=1"
 
-    PAGINATE_URL = 'http://www.microsoftstore.com/store/msusa/en_US/filterSearch/' \
-                   'categoryID.{category_id}/startIndex.{start_index}/size.{size}/sort.score%' \
-                   '20descending?keywords={search_term}&' \
-                   'Env=BASE&callingPage=productSearchResultPage'
+    PAGINATE_URL = 'http://www.newegg.com/Product/ProductList.aspx?' \
+                   'Submit=ENE&DEPA=0&Order=BESTMATCH&Description={search_term}' \
+                   '&N=-1&isNodeId=1&Page={index}'
 
-    REVIEWS_URL = 'http://api.bazaarvoice.com/data/batch.json' \
-                  '?passkey=291coa9o5ghbv573x7ercim80&apiversion=5.5' \
-                  '&displaycode=5681-en_us&resource.q0=reviews' \
-                  '&filter.q0=isratingsonly%3Aeq%3Afalse' \
-                  '&filter.q0=productid%3Aeq%3A{product_id}' \
-                  '&filter.q0=contentlocale%3Aeq%3Aen_US' \
-                  '&sort.q0=helpfulness%3Adesc%' \
-                  '2Ctotalpositivefeedbackcount%3Adesc' \
-                  '&stats.q0=reviews&filteredstats.q0=reviews' \
-                  '&include.q0=authors%2Cproducts%2Ccomments' \
-                  '&filter_reviews'
+    # REVIEWS_URL = 'http://www.newegg.com/Product/ProductList.aspx?' \
+    #               'Submit=ENE&DEPA=0&Order=BESTMATCH' \
+    #               '&Description={search_term}&N=-1&isNodeId=1&Page=1'
 
 
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
-        self.start_index = 0
+        self.index = 0
 
         super(NeweggProductSpider, self).__init__(*args, **kwargs)
 
     def parse_product(self, response):
         reqs = []
-        meta = response.meta
+        meta = response.meta.copy()
         product = meta['product']
 
        #  product_id = is_empty(response.xpath(
@@ -151,12 +143,15 @@ class NeweggProductSpider(BaseProductsSpider):
         """
         Number of results on page
         """
-        per_page = is_empty(response.xpath(
-            '//div[@class="recordCount"]/text()'
-        ).re('Showing  .-(\d+)'))
+        links = response.xpath(
+            '//div[@class="itemCell itemCell-ProductList itemCell-ProductGridList"]/'
+            'div[@class="itemText"]/div/a/@href'
+        ).extract()
+        if links:
+            per_page = int(len(links))
 
         if per_page:
-            return int(per_page)
+            return per_page
 
     def _scrape_product_links(self, response):
         """
@@ -176,16 +171,12 @@ class NeweggProductSpider(BaseProductsSpider):
     def _scrape_next_results_page_link(self, response):
         total = self._scrape_total_matches(response)
         size = self._scrape_results_per_page(response)
-        self.start_index += size
-        if self.start_index != total:
-            category_id = is_empty(
-                response.xpath(
-                    "//div[@id='productListContainer']/@category-id").extract())
-            return Request(
-                self.PAGINATE_URL.format(
-                    search_term=response.meta['search_term'],
-                    size=size,
-                    start_index=self.start_index,
-                    category_id=category_id),
-                    meta=response.meta
-                )
+        pages = int(math.ceil(total/size))
+        self.index += 1
+
+        if self.index != int(pages) + 1:
+            return self.PAGINATE_URL.format(
+                search_term=response.meta['search_term'],
+                index=self.index,
+                meta=response.meta.copy(),
+            )
