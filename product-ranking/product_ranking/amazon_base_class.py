@@ -305,6 +305,11 @@ class AmazonBaseClass(BaseProductsSpider):
         title = self._parse_title(response)
         cond_set_value(product, 'title', title)
 
+        # Parse product link
+        url = is_empty(response.xpath('//link[@rel="canonical"]'
+                                      '/@href').extract())
+        product['url'] = url
+
         # Parse image url
         image_url = self._parse_image_url(response)
         cond_set_value(product, 'image_url', image_url, conv=string.strip)
