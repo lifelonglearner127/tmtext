@@ -161,7 +161,6 @@ class SearchFilesView(AdminOnlyMixin, TemplateView):
         elif len(searchterm) < 4:
             error = 'Searchterm must be longer than 4 chars'
         else:
-            assert False, os.path.exists(self.fname2open)
             with open(self.fname2open, 'r') as fh:
                 for line in fh:
                     line = line.strip()
