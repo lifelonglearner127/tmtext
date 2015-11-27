@@ -1107,6 +1107,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 if "%" in is_perc:
                     break
                 if number:
+                    number = number.replace('.', '')
                     buyer_reviews['rating_by_star'][rating] = int(
                         number.replace(',', '')
                     )
