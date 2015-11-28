@@ -9,11 +9,11 @@
 import os
 import sys
 import random
-
-from scrapy import log
 import requests
+from scrapy import log
 from requests.exceptions import (Timeout as ReqTimeout,
-                                 ProxyError as ReqProxyError)
+                                 ProxyError as ReqProxyError, SSLError,
+                                 ContentDecodingError, ConnectionError)
 
 
 def _install_pip():
@@ -102,6 +102,9 @@ if 'validate' in _args_names:
         ITEM_PIPELINES = {}
     ITEM_PIPELINES['product_ranking.validation.ValidatorPipeline'] = 99
 
+
+HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_s3_cache')  # default
+
 if 'save_s3_cache' in _args_names:
     #DOWNLOADER_MIDDLEWARES['scrapy.contrib.downloadermiddleware.httpcache.HttpCacheMiddleware'] = 50
     #DOWNLOADER_MIDDLEWARES['product_ranking.cache.PersistentCacheMiddleware'] = 50
@@ -109,7 +112,6 @@ if 'save_s3_cache' in _args_names:
     HTTPCACHE_POLICY = 'product_ranking.cache.CustomCachePolicy'
     HTTPCACHE_STORAGE = 'product_ranking.cache.S3CacheStorage'
     HTTPCACHE_EXPIRATION_SECS = 0  # forever
-    HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_s3_cache')
     EXTENSIONS['product_ranking.extensions.S3CacheUploader'] = 999
 
 if 'load_s3_cache' in _args_names:
@@ -117,12 +119,11 @@ if 'load_s3_cache' in _args_names:
     HTTPCACHE_POLICY = 'product_ranking.cache.CustomCachePolicy'
     HTTPCACHE_STORAGE = 'product_ranking.cache.S3CacheStorage'
     HTTPCACHE_EXPIRATION_SECS = 0  # forever
-    HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_s3_cache')
     EXTENSIONS['product_ranking.extensions.S3CacheDownloader'] = 999
 
 if 'enable_cache' in _args_names:  # for local development purposes only!
     HTTPCACHE_ENABLED = True
-    HTTPCACHE_POLICY = 'scrapy.contrib.httpcache.DummyPolicy'
+    HTTPCACHE_POLICY = 'product_ranking.cache.CustomCachePolicy'
     HTTPCACHE_STORAGE = 'product_ranking.cache.CustomFilesystemCacheStorage'
     HTTPCACHE_EXPIRATION_SECS = 0  # forever
     HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_cache')
@@ -173,27 +174,26 @@ def _check_if_proxies_available(http_proxy_path, timeout=10):
             )
             print('successfully fetched host %s using proxy %s' % (h, prox))
             return True
-        except ReqTimeout:
+        except (ReqTimeout, ConnectionError):
             print('failed to fetch host %s using proxy %s' % (h, prox))
             pass  # got timeout - proxy not available
-        except ReqProxyError:
+        except (ReqProxyError, SSLError, ContentDecodingError):
             print('proxy %s - failed to fetch host %s' % (prox, h))
 
-
-PROXY_LIST = os.path.join(CWD, 'http_proxies.txt')
-PROXY_LIST2 = '/tmp/http_proxies.txt'
-if not os.path.exists(PROXY_LIST) and os.path.exists(PROXY_LIST2):
-    PROXY_LIST = PROXY_LIST2
-if (os.path.exists(PROXY_LIST)
-        and not os.path.exists('/tmp/_disable_proxies')
-        and _check_if_proxies_available(http_proxy_path)):
-    log.msg('USING PROXIES')
-    print('USING PROXIES')
-    DOWNLOADER_MIDDLEWARES['product_ranking.randomproxy.RandomProxy'] = 100
-else:
-    log.msg('NOT USING PROXIES')
-    print('NOT USING PROXIES')
-
+if not os.path.exists('/tmp/_stop_proxies'):
+    PROXY_LIST = os.path.join(CWD, 'http_proxies.txt')
+    PROXY_LIST2 = '/tmp/http_proxies.txt'
+    if not os.path.exists(PROXY_LIST) and os.path.exists(PROXY_LIST2):
+        PROXY_LIST = PROXY_LIST2
+    if (os.path.exists(PROXY_LIST)
+            and not os.path.exists('/tmp/_disable_proxies')
+            and _check_if_proxies_available(http_proxy_path)):
+        log.msg('USING PROXIES')
+        print('USING PROXIES')
+        DOWNLOADER_MIDDLEWARES['product_ranking.randomproxy.RandomProxy'] = 100
+    else:
+        log.msg('NOT USING PROXIES')
+        print('NOT USING PROXIES')
 
 # shared CH and SC code
 sys.path.append(os.path.join(CWD, '..', '..'))

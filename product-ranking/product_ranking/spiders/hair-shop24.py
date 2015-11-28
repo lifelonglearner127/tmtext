@@ -3,12 +3,13 @@ import urllib
 
 from scrapy import Request
 from scrapy.log import ERROR
-
+import re
 import urlparse
-from product_ranking.items import SiteProductItem, Price, RelatedProduct
+from product_ranking.items import SiteProductItem, Price, RelatedProduct, \
+    BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 from product_ranking.spiders import cond_set, cond_set_value
-
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 
 class HairShop24Spider(BaseProductsSpider):
     """
@@ -159,7 +160,45 @@ class HairShop24Spider(BaseProductsSpider):
             related_products[rel_key[0]] = related
             product['related_products'] = related_products
 
+        # Parse buyer reviews
+        buyer_reviews = self._parse_buyer_review(response)
+        cond_set_value(product, 'buyer_reviews', buyer_reviews)
+
         return product
+
+    def _parse_buyer_review(self, response):
+        rating_by_star = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+        stars = response.xpath('//div[@class="box-collateral box-reviews"]'
+                               '/dl/dt/div/div/@style').extract()
+        points = []
+        for star in stars:
+            point = re.findall(r'(\d+)', star)
+
+            if point[0] == '100':
+                points.append(5)
+            elif point[0] == '80':
+                points.append(4)
+            elif point[0] == '60':
+                points.append(3)
+            elif point[0] == '40':
+                points.append(2)
+            elif point[0] == '20':
+                points.append(1)
+        for point in points:
+            rating_by_star[str(point)] += 1
+        average_rating = response.xpath('//meta[@itemprop="ratingValue"]'
+                                        '/@content').extract()
+        num_of_reviews = len(points)
+        if stars:
+            buyer_reviews = {
+                    'num_of_reviews': int(num_of_reviews),
+                    'average_rating': float(average_rating[0]),
+                    'rating_by_star': rating_by_star
+            }
+        else:
+            return ZERO_REVIEWS_VALUE
+
+        return BuyerReviews(**buyer_reviews)
 
     def _scrape_total_matches(self, response):
         totals = response.xpath(
