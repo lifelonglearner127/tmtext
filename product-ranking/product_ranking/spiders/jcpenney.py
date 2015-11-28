@@ -320,7 +320,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     '3AselectedLotValue=+'
                     '&skuSelectionMap.INSEAM='
                     '&_D%3AskuSelectionMap.INSEAM=+'
-                    '&skuSelectionMap.WAIST={waist}'
+                    '&skuSelectionMap.WAIST='''
                     '&_D%3AskuSelectionMap.WAIST=+'
                     '&skuSelectionMap.SIZE={size}'
                     '&_D%3AskuSelectionMap.SIZE=+'
