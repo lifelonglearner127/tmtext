@@ -146,7 +146,7 @@ if price_issue_product_list:
     csv_writer = csv.writer(csv_file)
 
     for url in price_issue_product_list:
-        csv_writer.writerow(url)
+        csv_writer.writerow([url])
 
     csv_file.close()
 
