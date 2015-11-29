@@ -115,8 +115,9 @@ rows = sorted(rows, key=lambda k: k['changes_in_structure'], reverse=True)
 email_content = ""
 
 #UPC missing issue
+csv_file_name_upc_missed = "/home/ubuntu/tmtext/special_crawler/jenkins/upc_missed_" + time.strftime("%Y_%m_%d") + ".csv"
+
 if upc_missing_product_list:
-    csv_file_name_upc_missed = "/home/ubuntu/tmtext/special_crawler/jenkins/upc_missed_" + time.strftime("%Y_%m_%d") + ".csv"
     csv_file = open(csv_file_name_upc_missed, "w")
     csv_writer = csv.writer(csv_file)
 
@@ -126,8 +127,9 @@ if upc_missing_product_list:
     csv_file.close()
 
 #Review issue
+csv_file_name_review_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/review_issue_" + time.strftime("%Y_%m_%d") + ".csv"
+
 if review_issue_product_list:
-    csv_file_name_review_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/review_issue_" + time.strftime("%Y_%m_%d") + ".csv"
     csv_file = open(csv_file_name_review_issue, "w")
     csv_writer = csv.writer(csv_file)
 
@@ -137,8 +139,9 @@ if review_issue_product_list:
     csv_file.close()
 
 #Price issue
+csv_file_name_price_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/price_issue_" + time.strftime("%Y_%m_%d") + ".csv"
+
 if price_issue_product_list:
-    csv_file_name_price_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/price_issue_" + time.strftime("%Y_%m_%d") + ".csv"
     csv_file = open(csv_file_name_price_issue, "w")
     csv_writer = csv.writer(csv_file)
 
@@ -148,8 +151,9 @@ if price_issue_product_list:
     csv_file.close()
 
 #Marketplace issue
+csv_file_name_marketplace_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/marketplace_issue_" + time.strftime("%Y_%m_%d") + ".csv"
+
 if marketplace_issue_product_list:
-    csv_file_name_marketplace_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/marketplace_issue_" + time.strftime("%Y_%m_%d") + ".csv"
     csv_file = open(csv_file_name_marketplace_issue, "w")
     csv_writer = csv.writer(csv_file)
 
@@ -159,8 +163,9 @@ if marketplace_issue_product_list:
     csv_file.close()
 
 #Walmart v1 products
+csv_file_name_walmart_v1= "/home/ubuntu/tmtext/special_crawler/jenkins/walmart_v1_products_" + time.strftime("%Y_%m_%d") + ".csv"
+
 if walmart_v1_product_list:
-    csv_file_name_walmart_v1= "/home/ubuntu/tmtext/special_crawler/jenkins/walmart_v1_products_" + time.strftime("%Y_%m_%d") + ".csv"
     csv_file = open(csv_file_name_walmart_v1, "w")
     csv_writer = csv.writer(csv_file)
 
