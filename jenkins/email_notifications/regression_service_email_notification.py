@@ -122,7 +122,7 @@ if upc_missing_product_list:
     csv_writer = csv.writer(csv_file)
 
     for url in upc_missing_product_list:
-        csv_writer.writerow(url)
+        csv_writer.writerow([url])
 
     csv_file.close()
 
@@ -134,7 +134,7 @@ if review_issue_product_list:
     csv_writer = csv.writer(csv_file)
 
     for url in review_issue_product_list:
-        csv_writer.writerow(url)
+        csv_writer.writerow([url])
 
     csv_file.close()
 
@@ -158,7 +158,7 @@ if marketplace_issue_product_list:
     csv_writer = csv.writer(csv_file)
 
     for url in marketplace_issue_product_list:
-        csv_writer.writerow(url)
+        csv_writer.writerow([url])
 
     csv_file.close()
 
@@ -170,7 +170,7 @@ if walmart_v1_product_list:
     csv_writer = csv.writer(csv_file)
 
     for url in walmart_v1_product_list:
-        csv_writer.writerow(url)
+        csv_writer.writerow([url])
 
     csv_file.close()
 
