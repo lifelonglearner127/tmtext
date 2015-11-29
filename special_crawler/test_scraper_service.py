@@ -583,48 +583,54 @@ class ServiceScraperTest(unittest.TestCase):
             print e
 
     def _test(self, website, sample_url):
-        self.cur.execute("select * from console_urlsample where website='%s' and url='%s' and not_a_product=0" % (website, sample_url))
-        row = self.cur.fetchall()
-
         print "\n-------------------------------Report results for %s-------------------------------" % website
         print ">>>>>>sample url: %s" % sample_url
 
-        base = "http://localhost/get_data?url=%s"
-        test_json = requests.get(base%(urllib.quote(sample_url))).text
-        test_json = json.loads(test_json)
-
-        test_json_str = json.dumps(test_json, sort_keys=True, indent=4)
-
         today = date.today()
 
-        row = row[0]
+        base = "http://localhost/get_data?url=%s"
+        test_json = requests.get(base%(urllib.quote(sample_url))).text
 
-        if "sellers" not in test_json.keys():
+        try:
+            test_json = json.loads(test_json)
+            test_json_str = json.dumps(test_json, sort_keys=True, indent=4)
+
+            if "sellers" not in test_json.keys():
+                raise Exception("Invalid product")
+
+            self.cur.execute("select * from console_urlsample where website='%s' and url='%s' and not_a_product=0" % (website, sample_url))
+            row = self.cur.fetchall()
+
+            if row:
+                row = row[0]
+
+                sample_json = row["json"]
+                sample_json_str = row["json"]
+                sample_json = json.loads(sample_json)
+                diff_engine = JsonDiff(test_json, sample_json)
+
+                print ">>>>>>reports:"
+
+                diff_engine.diff()
+
+                sql = ("insert into console_reportresult(sample_url, website, "
+                       "report_result, changes_in_structure, changes_in_type, changes_in_value, report_date, "
+                       "sample_json, current_json) "
+                       "values('%s', '%s', $$%s$$, %d, %d, %d, '%s', $$%s$$, $$%s$$)"
+                       % (sample_url, website, diff_engine.log, diff_engine.occurrence_structural_change,
+                          diff_engine.occurrence_type_change, diff_engine.occurrence_value_change, today.isoformat(),
+                          sample_json_str, test_json_str))
+
+                self.cur.execute(sql)
+                self.con.commit()
+
+            self.cur.execute("update console_urlsample set not_a_product=0, json=$$%s$$, qualified_date='%s' where url='%s'"
+                             % (test_json_str, today.isoformat(), sample_url))
+            self.con.commit()
+        except:
+            test_json_str = ''
             print "This url is not valid anymore.\n"
-            self.cur.execute("update console_urlsample set not_a_product=1 where url = '%s'" % row["url"])
-            self.con.commit()
-        else:
-            sample_json = row["json"]
-            sample_json_str = row["json"]
-            sample_json = json.loads(sample_json)
-            diff_engine = JsonDiff(test_json, sample_json)
-
-            print ">>>>>>reports:"
-
-            diff_engine.diff()
-
-            sql = ("insert into console_reportresult(sample_url, website, "
-                   "report_result, changes_in_structure, changes_in_type, changes_in_value, report_date, "
-                   "sample_json, current_json) "
-                   "values('%s', '%s', $$%s$$, %d, %d, %d, '%s', $$%s$$, $$%s$$)"
-                   % (sample_url, website, diff_engine.log, diff_engine.occurrence_structural_change,
-                      diff_engine.occurrence_type_change, diff_engine.occurrence_value_change, today.isoformat(),
-                      sample_json_str, test_json_str))
-
-            self.cur.execute(sql)
-            self.con.commit()
-
-            self.cur.execute("update console_urlsample set json=$$%s$$, qualified_date='%s' where url='%s'"
+            self.cur.execute("update console_urlsample set not_a_product=1, json=$$%s$$, qualified_date='%s' where url='%s'"
                              % (test_json_str, today.isoformat(), sample_url))
             self.con.commit()
 
@@ -660,30 +666,27 @@ class ServiceScraperTest(unittest.TestCase):
                 if not row:
                     base = "http://localhost/get_data?url=%s"
                     sample_json = requests.get(base%(urllib.quote(url))).text
-                    sample_json = json.loads(sample_json)
-                    sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
 
-                    print url
+                    not_a_product = 0
 
-                    if "sellers" not in sample_json.keys():
+                    try:
+                        sample_json = json.loads(sample_json)
+                        sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
+
+                        if "sellers" not in sample_json.keys():
+                            raise Exception('Invalid product')
+                    except:
                         not_a_product = 1
                         sample_json_str = ''
-                        print "This product url is invalid.\n"
-                    else:
-                        not_a_product = 0
-                        sample_json_str = sample_json_str
+
+                    print url
 
                     self.cur.execute("insert into console_urlsample(url, website, json, qualified_date, not_a_product)"
                                      " values('%s', '%s', $$%s$$, '%s', %d)"
                                      % (url, website, sample_json_str, today.isoformat(), not_a_product))
                     self.con.commit()
-                '''
-                elif not_a_product == 1 and row[0]["not_a_product"] == 0:
-                    self.cur.execute("update console_urlsample set json=$$%s$$, qualified_date='%s', not_a_product='%d' where url='%s'"
-                                     % (sample_json_str, today.isoformat(), not_a_product, url))
-                    self.con.commit()
-                '''
-        self.cur.execute("select url from console_urlsample where not_a_product=0 and website = '%s'" % website)
+
+        self.cur.execute("select url from console_urlsample where website = '%s'" % website)
         urls = self.cur.fetchall()
 
         self.urls_by_scraper[website] = [url[0] for url in urls]
