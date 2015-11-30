@@ -4,7 +4,7 @@ from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
 import re
 from datetime import datetime
-from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
+from scrapy.log import ERROR
 
 from product_ranking.amazon_tests import AmazonTests
 from product_ranking.amazon_base_class import AmazonBaseClass
