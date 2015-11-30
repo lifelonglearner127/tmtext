@@ -18,7 +18,7 @@ class NeweggScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.newegg.com/Product/Product.aspx?Item=<product-id>"
-    REVIEW_URL = "http://www.newegg.com/Product/Product.aspx?Item=[a-zA-Z0-9]+"
+    WEBCOLLAGE_BASE_URL = "http://content.webcollage.net/newegg/power-page?ird=true&channel-product-id={0}"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -32,6 +32,7 @@ class NeweggScraper(Scraper):
         self.review_json = None
         self.review_list = None
         self.is_review_checked = False
+        self.web_collage_contents = None
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -94,6 +95,12 @@ class NeweggScraper(Scraper):
         except:
             print "Issue(Newegg): product availableMap json loading"
 
+        try:
+            self.web_collage_contents = self.load_page_from_url_with_number_of_retries(self.WEBCOLLAGE_BASE_URL.format(self._product_id()))
+            self.web_collage_contents = html.fromstring(self._find_between(self.web_collage_contents, 'html: "', '"\n'))
+        except:
+            self.web_collage_contents = None
+            print "Issue(Newegg): webcollage contents loading"
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -170,17 +177,24 @@ class NeweggScraper(Scraper):
         long_description = None
 
         try:
-            for overview in self.overviewData_json:
-                if overview["ParentItem"] == self.related_item_id:
-                    long_description = self._clean_text(html.fromstring(self._exclude_javascript_from_description(overview["Overview"])).text_content())
-                    return long_description if long_description else None
+            long_description = html.tostring(self.web_collage_contents)
+            long_description = self._clean_text(html.fromstring(self._exclude_javascript_from_description(long_description)).text_content())
+            return long_description if long_description and long_description.strip() != '' else None
         except:
             pass
 
         try:
             long_description = html.tostring(self.tree_html.xpath("//div[@id='Overview_Content']")[0])
             long_description = self._clean_text(html.fromstring(self._exclude_javascript_from_description(long_description)).text_content())
-            return long_description if long_description else None
+            return long_description if long_description and long_description.strip() != '' else None
+        except:
+            pass
+
+        try:
+            for overview in self.overviewData_json:
+                if overview["ParentItem"] == self.related_item_id:
+                    long_description = self._clean_text(html.fromstring(self._exclude_javascript_from_description(overview["Overview"])).text_content())
+                    return long_description if long_description and long_description.strip() != '' else None
         except:
             pass
 
