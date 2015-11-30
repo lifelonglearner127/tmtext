@@ -346,10 +346,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 cond_set_value(product,
                                'shipping',
                                False)
-            else:
-                cond_set_value(product,
-                               'shipping',
-                               True)
         else:
             shipping = response.xpath(
                 '//div[@class="product-no-fulfillment Grid-col '
@@ -359,14 +355,15 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 'delivery-date-msg"]/text()[contains(., "Not available")]'
             ).extract()
 
-            if len(shipping) > 0:
-                cond_set_value(product,
-                               'shipping',
-                               False)
-            else:
-                cond_set_value(product,
-                               'shipping',
-                               True)
+            if not 'shipping' in product:
+                if len(shipping) > 0:
+                    cond_set_value(product,
+                                   'shipping',
+                                   False)
+                else:
+                    cond_set_value(product,
+                                   'shipping',
+                                   True)
 
         sku = response.xpath('//*[@itemprop="sku"]/text()').extract()
         if sku:
