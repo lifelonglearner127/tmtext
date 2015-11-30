@@ -218,10 +218,12 @@ class JsonDiff:
                                                type(_json2).__name__,
                                                str(_json2)))
                 '''
+                '''
                 print u"TypeDifference : {} - {}: ({}), {}: ({})".format(path, type(_json1).__name__,
                                                str(_json1),
                                                type(_json2).__name__,
                                                str(_json2))
+                '''
                 self.difference.append(u'<tr style="background-color: green; color: white;">'
                                        u'<td>{}</td><td>{}</td><td>{}</td></tr>'
                                        .format(path, type(_json1).__name__, type(_json2).__name__))
@@ -465,7 +467,9 @@ class JsonDiff:
         if use_regex and type(_json2) is unicode:
             match = re.match(_json2, str(_json1))
             if not match:
+                '''
                 print u'Changed: {} to {} from {}'.format(path, _json1, _json2)
+                '''
                 self.difference.append(
 #                    u'Changed: {} to {} from {}'.format(path, _json1, _json2))
                     u'<tr style="background-color: blue; color: white;"><td>{}</td>'
@@ -473,7 +477,9 @@ class JsonDiff:
                 self.occurrence_value_change += 1
         else:
             if not _json1 == _json2:
+                '''
                 print u'Changed: {} to {} from {}'.format(path, _json1, _json2)
+                '''
                 self.difference.append(
 #                    u'Changed: {} to {} from {}'.format(path, _json1, _json2))
                     u'<tr style="background-color: blue; color: white;"><td>{}</td>'
@@ -505,7 +511,9 @@ class JsonDiff:
                 else:
                     new_path = "{}.{}".format(path, key)
                 if type(blob[key]) not in [list, dict]:
+                    '''
                     print u'{}: {}={}'.format(c, new_path, blob[key])
+                    '''
                     self.difference.append(
 #                        u'{}: {}={}'.format(c, new_path, blob[key]))
                         u'<tr style="background-color:' + color + u'; color: white;">'
@@ -519,14 +527,18 @@ class JsonDiff:
                 if type(blob[index]) in (list, dict):
                     self._expand_diff(item[index], new_path, new_item)
                 else:
+                    '''
                     print u'{}: {}={}'.format(c, new_path, blob[index])
+                    '''
                     self.difference.append(
 #                        u'{}: {}={}'.format(c, new_path, blob[index]))
                         u'<tr style="background-color:' +  color + u'; color: white;">'
                         u'<td>{}</td><td colspan="2">{}</td></tr>'.format(new_path, blob[index]))
                     self.occurrence_structural_change += 1
         else:
+            '''
             print u"{}: {}={}".format(c, path, blob)
+            '''
 #            self.difference.append(u"{}: {}={}".format(c, path, blob))
             self.difference.append(
                 u'<tr style="background-color:' + color + u'; color: white;">'
