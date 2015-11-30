@@ -13,7 +13,7 @@ import requests
 from scrapy import log
 from requests.exceptions import (Timeout as ReqTimeout,
                                  ProxyError as ReqProxyError, SSLError,
-                                 ContentDecodingError)
+                                 ContentDecodingError, ConnectionError)
 
 
 def _install_pip():
@@ -174,7 +174,7 @@ def _check_if_proxies_available(http_proxy_path, timeout=10):
             )
             print('successfully fetched host %s using proxy %s' % (h, prox))
             return True
-        except ReqTimeout:
+        except (ReqTimeout, ConnectionError):
             print('failed to fetch host %s using proxy %s' % (h, prox))
             pass  # got timeout - proxy not available
         except (ReqProxyError, SSLError, ContentDecodingError):

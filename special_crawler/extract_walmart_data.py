@@ -149,7 +149,11 @@ class WalmartScraper(Scraper):
 
             return True
 
-        self.product_api_json = json.loads(self.load_page_from_url_with_number_of_retries(self.BASE_URL_PRODUCT_API.format(self._extract_product_id())))
+        try:
+            self.product_api_json = json.loads(self.load_page_from_url_with_number_of_retries(self.BASE_URL_PRODUCT_API.format(self._extract_product_id())))
+        except Exception, e:
+            print "Error (Loading product json from Walmart api - not_a_product)" + str(e)
+            self.product_api_json = None
 
         return False
 
@@ -157,12 +161,13 @@ class WalmartScraper(Scraper):
         if value:
             return value
 
-        try:
-            if field_name in self.key_fields_list:
-                if field_name == "upc":
-                    return self.product_api_json["product"]["upc"] if self.product_api_json["product"]["upc"] else self.product_api_json["product"]["wupc"]
-        except Exception, e:
-            print "Error (Walmart - _filter_key_fields)" + str(e)
+        if self.product_api_json:
+            try:
+                if field_name in self.key_fields_list:
+                    if field_name == "upc":
+                        return self.product_api_json["product"]["upc"] if self.product_api_json["product"]["upc"] else self.product_api_json["product"]["wupc"]
+            except Exception, e:
+                print "Error (Walmart - _filter_key_fields)" + str(e)
 
         return None
 
