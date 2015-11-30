@@ -951,8 +951,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 prod = response.meta['product']
                 opts = data.get('buyingOptions', {})
                 prod['is_out_of_stock'] = not opts.get('available', False)
-                prod['shipping'] = bool(opts.get('pickupable') and
-                                        opts.get('pickupOptions', []))
+                if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
+                    prod['shipping'] = False
                 prod['is_in_store_only'] = opts.get('storeOnlyItem', None)
                 self.log(
                     'Scraped and parsed unofficial APIs from %s' % response.url,
