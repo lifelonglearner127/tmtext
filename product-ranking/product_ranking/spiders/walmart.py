@@ -1387,8 +1387,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         prod = response.meta['product']
         opts = data.get('buyingOptions', {})
         prod['is_out_of_stock'] = not opts.get('available', False)
-        prod['shipping'] = (opts.get('pickupable') and
-                            opts.get('pickupOptions', []))
+        prod['shipping'] = bool(opts.get('pickupable') and
+                                opts.get('pickupOptions', []))
         return self._start_related(response)
 
     def _populate_from_js(self, response, product):
