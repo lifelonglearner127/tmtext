@@ -135,6 +135,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         "&search_query={search_term}&sort={search_sort}"
 
     LOCATION_URL = "http://www.walmart.com/location"
+    LOCATION_PROD_URL = "http://www.walmart.com/product/dynamic/{product_id}?" \
+                        "location={zip_code}&selected=true"
 
     QA_URL = "http://www.walmart.com/reviews/api/questions" \
              "/{product_id}?sort=mostRecentQuestions&pageNumber={page}"
@@ -1372,6 +1374,21 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         product = response.meta['product']
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
+        # return self._start_related(response)
+        return Request(
+            self.LOCATION_PROD_URL.format(
+                product_id=response.meta['product_id'], zip_code=self.zipcode),
+            callback=self._read_in_stock,
+            meta=response.meta
+        )
+
+    def _read_in_stock(self, response):
+        data = json.loads(response.body_as_unicode())
+        prod = response.meta['product']
+        opts = data.get('buyingOptions', {})
+        prod['is_out_of_stock'] = not opts.get('available', False)
+        prod['shipping'] = (opts.get('pickupable') and
+                            opts.get('pickupOptions', []))
         return self._start_related(response)
 
     def _populate_from_js(self, response, product):
