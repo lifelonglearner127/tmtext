@@ -385,11 +385,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         #    return Request(url=url, meta=meta, callback=self.get_questions)
         
-
-        if re.search(
-                "only available .{0,20} Walmart store",
-                response.body_as_unicode()):
-            product['is_in_store_only'] = True
+        if 'is_in_store_only' not in product:
+            if re.search(
+                    "only available .{0,20} Walmart store",
+                    response.body_as_unicode()):
+                product['is_in_store_only'] = True
 
         special_pricing = response.xpath(
             '//div[contains(@class, "price-flags")]//text()').extract()
@@ -414,7 +414,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
 
-        return self._start_related(response)
+        return Request(
+            self.LOCATION_PROD_URL.format(
+                product_id=response.meta['product_id'], zip_code=self.zipcode),
+            callback=self._on_dynamic_api_response,
+            meta=response.meta
+        )
 
     def parse_available(self, response):
         available = is_empty(response.xpath(
@@ -924,21 +929,35 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         product = response.meta['product']
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
-        # return self._start_related(response)
         return Request(
             self.LOCATION_PROD_URL.format(
                 product_id=response.meta['product_id'], zip_code=self.zipcode),
-            callback=self._read_in_stock,
+            callback=self._on_dynamic_api_response,
             meta=response.meta
         )
 
-    def _read_in_stock(self, response):
-        data = json.loads(response.body_as_unicode())
-        prod = response.meta['product']
-        opts = data.get('buyingOptions', {})
-        prod['is_out_of_stock'] = not opts.get('available', False)
-        prod['shipping'] = bool(opts.get('pickupable') and
-                                opts.get('pickupOptions', []))
+    def _on_dynamic_api_response(self, response):
+        if response.status != 200:
+            # walmart's unofficial API returned bad code - site change?
+            self.log('Unofficial API returned code [%s], URL: %s' % (
+                response.status, response.url), ERROR)
+        else:
+            data = None
+            try:
+                data = json.loads(response.body_as_unicode())
+            except Exception as e:
+                self.log('Could not load JSON at %s' % response.url, ERROR)
+            if data:
+                prod = response.meta['product']
+                opts = data.get('buyingOptions', {})
+                prod['is_out_of_stock'] = not opts.get('available', False)
+                prod['shipping'] = bool(opts.get('pickupable') and
+                                        opts.get('pickupOptions', []))
+                prod['is_in_store_only'] = opts.get('storeOnlyItem', None)
+                self.log(
+                    'Scraped and parsed unofficial APIs from %s' % response.url,
+                    INFO
+                )
         return self._start_related(response)
 
     def _populate_from_js(self, response, product):
@@ -968,11 +987,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             # the next 2 lines of code should not be uncommented, see BZ #1459
             #if response.xpath('//button[@id="WMItemAddToCartBtn"]').extract():
             #    product['is_out_of_stock'] = False
-            cond_set_value(
-                product,
-                'is_in_store_only',
-                data['buyingOptions']['storeOnlyItem'],
-            )
+            if 'is_in_store_only' not in product:
+                cond_set_value(
+                    product,
+                    'is_in_store_only',
+                    data['buyingOptions']['storeOnlyItem'],
+                )
             if available:
                 price_block = None
                 try:
