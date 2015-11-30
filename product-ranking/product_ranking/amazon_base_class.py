@@ -575,7 +575,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 brand = [brand]
 
         if isinstance(brand, list):
-            brand = [br for br in brand if br != 'search results']
+            brand = [br for br in brand if brand and 'search result' not in br.lower()]
 
         brand = brand or ['NO BRAND']
 
