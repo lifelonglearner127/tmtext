@@ -24,7 +24,7 @@ class TargetValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
     test_urls = {
         'http://www.target.com/p/girls-relaxed-crop-jean-cherokee/-/A-16484962#prodSlot=medium_1_3&term=crot',
         'http://www.target.com/p/women-s-xhilaration-mixed-print-fit-and-flare-dress-onyx/-/A-18770459?lnk=rec|pdp|viewed_bought|pdph1',
-        'http://www.target.com/p/women-s-woven-scallop-a-line-dress-isani/-/A-16711290#prodSlot=medium_1_13&term=dress',
+        'http://www.target.com/p/women-s-stripe-ponte-fit-and-flare-dress-merona/-/A-16622562',
         'http://www.target.com/p/women-s-shirt-dress-merona/-/A-17257480#prodSlot=medium_1_19&term=dress',
         'http://www.target.com/p/lattice-back-paisley-shift-dress-3hearts/-/A-18759199#prodSlot=medium_1_23&term=dress',
         'http://www.target.com/p/women-s-woven-skater-dress-mossimo-supply-co/-/A-21442655?lnk=rec|pdp|viewed_bought|pdp404h2'
