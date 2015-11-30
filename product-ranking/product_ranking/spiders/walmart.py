@@ -281,13 +281,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if "we can't find the product you are looking for" \
                 in response.body_as_unicode().lower():
             product['not_found'] = True
-            yield product
-            return
+            return product
 
         if response.status in self.default_hhl:
             product.update({"locale":'en-US'})
-            yield product
-            return
+            return product
         if self._search_page_error(response):
             self.log(
                 "Got 404 when coming from %r." % response.request.url, ERROR)
@@ -386,14 +384,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         #    }
 
         #    return Request(url=url, meta=meta, callback=self.get_questions)
-
-        product['_subitem'] = True
-        yield Request(
-            self.LOCATION_PROD_URL.format(
-                product_id=response.meta['product_id'], zip_code=self.zipcode),
-            callback=self._dynamic_stock_status,
-            meta=response.meta
-        )
+        
 
         if re.search(
                 "only available .{0,20} Walmart store",
@@ -411,8 +402,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         if not product.get('price'):
             cond_set_value(product, 'url', response.url)
-            yield self._gen_location_request(response)
-            return
+            return self._gen_location_request(response)
 
         _na_text = response.xpath(
             '//*[contains(@class, "NotAvailable")]'
@@ -422,10 +412,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             _na_text = response.css('#WMNotAvailableLine ::text').extract()
         if _na_text:
             if 'not available' in _na_text[0].lower():
-                if 'is_out_of_stock' not in product:  # do we need this condition?
-                    product['is_out_of_stock'] = True
+                product['is_out_of_stock'] = True
 
-        yield self._start_related(response)
+        return self._start_related(response)
 
     def parse_available(self, response):
         available = is_empty(response.xpath(
@@ -935,16 +924,22 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         product = response.meta['product']
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
-        return self._start_related(response)
+        # return self._start_related(response)
+        return Request(
+            self.LOCATION_PROD_URL.format(
+                product_id=response.meta['product_id'], zip_code=self.zipcode),
+            callback=self._read_in_stock,
+            meta=response.meta
+        )
 
-    def _dynamic_stock_status(self, response):
+    def _read_in_stock(self, response):
         data = json.loads(response.body_as_unicode())
         prod = response.meta['product']
         opts = data.get('buyingOptions', {})
         prod['is_out_of_stock'] = not opts.get('available', False)
         prod['shipping'] = bool(opts.get('pickupable') and
                                 opts.get('pickupOptions', []))
-        yield prod
+        return self._start_related(response)
 
     def _populate_from_js(self, response, product):
         data = {}
@@ -965,12 +960,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 'string()').extract())
             cond_set_value(product, 'title', title)
             available = data['buyingOptions']['available']
-            if not 'is_out_of_stock' in product:
-                cond_set_value(
-                    product,
-                    'is_out_of_stock',
-                    not available,
-                )
+            cond_set_value(
+                product,
+                'is_out_of_stock',
+                not available,
+            )
             # the next 2 lines of code should not be uncommented, see BZ #1459
             #if response.xpath('//button[@id="WMItemAddToCartBtn"]').extract():
             #    product['is_out_of_stock'] = False
