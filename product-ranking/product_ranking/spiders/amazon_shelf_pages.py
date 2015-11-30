@@ -92,12 +92,12 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                       meta=self._setup_meta_compatibility())  # meta is for SC baseclass compatibility
 
     def _scrape_product_links(self, response):
-        urls = response.xpath(
-            '//*[@id="dealHoverContent"]//a[contains(@href, "/gp/product/")]/@href'
+        links = response.xpath(
+            '//*[@id="dealHoverContent"]//a[contains(@href, "p/")]'
             ' | //div[contains(@class, "imageContainer")]'
-            '/../../..//a[contains(@href, "/gp/product/")]/@href').extract()
-
-        urls = [urlparse.urljoin(response.url, x) for x in urls]
+            '/../../..//a[contains(@href, "p/")]'
+            ' | //div[contains(@id, "atfResults")]//a[contains(@href, "p/")]'
+        )
 
         # TODO:
         # parse shelf category
@@ -114,8 +114,22 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                 item['shelf_path'] = shelf_categories
             yield url, item
         """
-        for url in urls:
-            yield url, SiteProductItem(total_matches=self.quantity)
+
+        for link in links:
+            _href = link.xpath('./@href').extract()[0]
+            if '/product-reviews/' in _href:
+                continue
+            is_prime = link.xpath(
+                './..//*[contains(@class, "a-icon-prime")]')
+            is_prime_pantry = link.xpath(
+                './..//*[contains(@class, "a-icon-prime-pantry")]')
+            product = SiteProductItem()
+            product['total_matches'] = self.quantity
+            if is_prime:
+                product['prime'] = 'Prime'
+            if is_prime_pantry:
+                product['prime'] = 'PrimePantry'
+            yield urlparse.urljoin(response.url, _href), product
 
     def _scrape_total_matches(self, response):
         return self.quantity
