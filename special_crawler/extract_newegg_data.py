@@ -28,6 +28,7 @@ class NeweggScraper(Scraper):
         self.related_item_id = None
         self.imgGalleryConfig_json = None
         self.overviewData_json = None
+        self.availableMap_json = None
         self.review_json = None
         self.review_list = None
         self.is_review_checked = False
@@ -88,6 +89,12 @@ class NeweggScraper(Scraper):
         except:
             print "Issue(Newegg): product imgGalleryConfig json loading"
 
+        try:
+            self.availableMap_json = json.loads(self._find_between(html.tostring(self.tree_html), "availableMap:", ",\r"))
+        except:
+            print "Issue(Newegg): product availableMap json loading"
+
+
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
@@ -112,13 +119,13 @@ class NeweggScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0]
+        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0]
+        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0]
+        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0].strip()
 
     def _model(self):
         for item in self.hdGroupItemModelString_json:
@@ -188,7 +195,7 @@ class NeweggScraper(Scraper):
     def _image_urls(self):        
         image_list = []
 
-        base_url_for_s7 = "http://images17.newegg.com/is/image/"
+        base_url_for_s7 = "http://images17.newegg.com/is/image/newegg/"
         base_url_for_non_s7 = "http://images10.newegg.com/productimage/"
 
         for item in self.imgGalleryConfig_json:
@@ -308,54 +315,74 @@ class NeweggScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return None
+        return "${0}".format(self._price_amount())
 
     def _price_amount(self):
+        for item in self.availableMap_json:
+            if item["info"]["item"] == self.related_item_id:
+                return float(item["info"]["price"])
+
         return None
 
     def _price_currency(self):
-        return None
+        return "USD"
 
     def _in_stores(self):
         return 0
 
     def _site_online(self):
-        return 1
+        if self.tree_html.xpath("//p[@id='grpNotesoldby_{0}']/span[@class='grpNote-ship-by']/text()".format(self.related_item_id))[0].strip().lower() == "newegg":
+            return 1
+
+        return 0
 
     def _site_online_out_of_stock(self):
+        stock_status = int(self._find_between(html.tostring(self.tree_html), "product_instock:['", "'],"))
+
+        if stock_status == 0 and self._site_online() == 1:
+            return 1
+
         return 0
 
     def _in_stores_out_of_stock(self):
         return 0
 
     def _marketplace(self):
-        return 0
-
-    def _seller_from_tree(self):
-        return None
+        return 1 if self._marketplace_sellers() else 0
 
     def _marketplace_sellers(self):
-        return None
+        marketplace_sellers = self.tree_html.xpath("//div[@id='MBO_{0}']//ul[@class='sellers-list']/li[contains(@class, 'sellers-list-item')]//div[@class='store']//a/@title".format(self.related_item_id))
+        return marketplace_sellers if marketplace_sellers else None
 
     def _marketplace_lowest_price(self):
+        marketplace_prices = self._marketplace_prices()
+        return sorted(marketplace_prices)[0] if marketplace_prices else None
+
+    def _marketplace_prices(self):
+        marketplace_prices = self.tree_html.xpath("//div[@id='MBO_{0}']//ul[@class='sellers-list']/li[contains(@class, 'sellers-list-item')]//ul[contains(@class, 'price')]//li[contains(@class, 'price-current')]".format(self.related_item_id))
+        marketplace_prices = [price.text_content() for price in marketplace_prices]
+        marketplace_prices = [float(re.compile("\$(\d+.\d+)").search(price_text.replace(',', '')).group(1)) for price_text in marketplace_prices]
+
+        return marketplace_prices if marketplace_prices else None
+
+    def _marketplace_out_of_stock(self):
         return None
-
-
-
-
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        return None
+        return self.tree_html.xpath("//div[@id='baBreadcrumbTop']//dd/a/text()")[1:]
 
     def _category_name(self):
-        return None
+        return self._categories()[-1]
     
     def _brand(self):
-        return None
+        for item in self.hdGroupItemModelString_json:
+            if item["SellerItem"] == self._product_id():
+                return item["Brand"]
 
+        return None
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -420,7 +447,8 @@ class NeweggScraper(Scraper):
         "marketplace" : _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
-
+        "marketplace_prices" : _marketplace_prices, \
+        "marketplace_out_of_stock": _marketplace_out_of_stock, \
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
         "category_name" : _category_name, \
