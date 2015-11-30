@@ -951,6 +951,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
                     prod['shipping'] = False
                 prod['is_in_store_only'] = opts.get('storeOnlyItem', None)
+                if 'price' in opts and 'displayPrice' in opts['price']:
+                    prod['price'] = Price(
+                        priceCurrency='USD',
+                        price=opts['price']['displayPrice'].replace('$', '')
+                    )
                 self.log(
                     'Scraped and parsed unofficial APIs from %s' % response.url,
                     INFO
