@@ -32,7 +32,8 @@ class NeweggScraper(Scraper):
         self.review_json = None
         self.review_list = None
         self.is_review_checked = False
-        self.web_collage_contents = None
+        self.webcollage_contents = None
+        self.webcollage_json_data = None
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -96,10 +97,10 @@ class NeweggScraper(Scraper):
             print "Issue(Newegg): product availableMap json loading"
 
         try:
-            self.web_collage_contents = self.load_page_from_url_with_number_of_retries(self.WEBCOLLAGE_BASE_URL.format(self._product_id()))
-            self.web_collage_contents = html.fromstring(self._find_between(self.web_collage_contents, 'html: "', '"\n'))
+            self.webcollage_contents = self.load_page_from_url_with_number_of_retries(self.WEBCOLLAGE_BASE_URL.format(self._product_id()))
+            self.webcollage_contents = html.fromstring(self._find_between(self.webcollage_contents, 'html: "', '"\n'))
         except:
-            self.web_collage_contents = None
+            self.webcollage_contents = None
             print "Issue(Newegg): webcollage contents loading"
 
     def _canonical_link(self):
@@ -177,7 +178,12 @@ class NeweggScraper(Scraper):
         long_description = None
 
         try:
-            long_description = html.tostring(self.web_collage_contents)
+            long_description = html.fromstring(html.tostring(self.webcollage_contents))
+
+            for wc_json_block in long_description.xpath("//div[contains(@class, 'wc-json-data')]"):
+                  wc_json_block.getparent().remove(wc_json_block)
+
+            long_description = html.tostring(long_description)
             long_description = self._clean_text(html.fromstring(self._exclude_javascript_from_description(long_description)).text_content())
             return long_description if long_description and long_description.strip() != '' else None
         except:
@@ -230,6 +236,12 @@ class NeweggScraper(Scraper):
         return len(image_urls) if image_urls else 0
 
     def _video_urls(self):
+        if self.webcollage_contents:
+            #a[ends-with(@href, '.jpg')]
+            video_urls = self.webcollage_contents.xpath("//meta[contains(@content, '.mp4')]/@content")
+            video_urls = [url.replace("\\", "")[1:-1] for url in video_urls]
+            return video_urls if video_urls else None
+
         return None
 
     def _video_count(self):
@@ -345,10 +357,8 @@ class NeweggScraper(Scraper):
         return 0
 
     def _site_online(self):
-        if self.tree_html.xpath("//p[@id='grpNotesoldby_{0}']/span[@class='grpNote-ship-by']/text()".format(self.related_item_id))[0].strip().lower() == "newegg":
-            return 1
-
-        return 0
+        seller_text_block = self.tree_html.xpath("//p[@id='grpNotesoldby_{0}']/span[@class='grpNote-ship-by']/text()".format(self.related_item_id))
+        return 1 if seller_text_block and seller_text_block[0].strip().lower() == "newegg" else 0
 
     def _site_online_out_of_stock(self):
         stock_status = int(self._find_between(html.tostring(self.tree_html), "product_instock:['", "'],"))
@@ -366,6 +376,13 @@ class NeweggScraper(Scraper):
 
     def _marketplace_sellers(self):
         marketplace_sellers = self.tree_html.xpath("//div[@id='MBO_{0}']//ul[@class='sellers-list']/li[contains(@class, 'sellers-list-item')]//div[@class='store']//a/@title".format(self.related_item_id))
+
+        if self._site_online() == 0:
+            seller_text_block = self.tree_html.xpath("//p[@id='grpNotesoldby_{0}']/a[contains(@href, 'http://www.newegg.com/')]/text()".format(self.related_item_id))
+
+            if seller_text_block and seller_text_block[0].strip() != "":
+                marketplace_sellers.append(seller_text_block[0].strip())
+
         return marketplace_sellers if marketplace_sellers else None
 
     def _marketplace_lowest_price(self):
@@ -377,11 +394,21 @@ class NeweggScraper(Scraper):
         marketplace_prices = [price.text_content() for price in marketplace_prices]
         marketplace_prices = [float(re.compile("\$(\d+.\d+)").search(price_text.replace(',', '')).group(1)) for price_text in marketplace_prices]
 
+        if self._site_online() == 0:
+            seller_text_block = self.tree_html.xpath("//p[@id='grpNotesoldby_{0}']/a[contains(@href, 'http://www.newegg.com/')]/text()".format(self.related_item_id))
+
+            if seller_text_block and seller_text_block[0].strip() != "":
+                marketplace_prices.append(self._price_amount())
+
         return marketplace_prices if marketplace_prices else None
 
     def _marketplace_out_of_stock(self):
-        return None
+        stock_status = int(self._find_between(html.tostring(self.tree_html), "product_instock:['", "'],"))
 
+        if stock_status == 0 and self._marketplace() == 1:
+            return 1
+
+        return 0
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
