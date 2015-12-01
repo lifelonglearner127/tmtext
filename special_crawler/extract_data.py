@@ -259,6 +259,16 @@ class Scraper():
 
         return None
 
+    def _exclude_javascript_from_description(self, description):
+        description = re.subn(r'<(script).*?</\1>(?s)', '', description)[0]
+        description = re.subn(r'<(style).*?</\1>(?s)', '', description)[0]
+        return description
+
+    def _clean_text(self, text):
+        text = text.replace("<br />"," ").replace("\n"," ").replace("\t"," ").replace("\r"," ")
+       	text = re.sub("&nbsp;", " ", text).strip()
+        return  re.sub(r'\s+', ' ', text)
+
     def load_image_hashes():
         '''Read file with image hashes list
         Return list of image hashes found in file
