@@ -242,10 +242,10 @@ class NeweggScraper(Scraper):
             video_urls = []
 
             for url in urls:
-                if url.endswith(".mp4"):
+                if url.endswith('.mp4\\"'):
                     video_urls.append(url.replace("\\", "")[1:-1])
 
-            return video_urls if video_urls else None
+            return list(set(video_urls)) if video_urls else None
 
         return None
 
