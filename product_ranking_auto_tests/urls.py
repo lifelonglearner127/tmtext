@@ -4,15 +4,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = patterns('',
-    # Examples:
-    # url(r'^$', 'auto_tests.views.home', name='home'),
-    # url(r'^blog/', include('blog.urls')),
-
     url(r'^admin/', include(admin.site.urls)),
     url(r'^tests/', include('tests_app.urls')),
 
     url(r'^login/$', 'django.contrib.auth.views.login',
         {'template_name': 'login.html'}, name='login_view'),
+    url('^fcgi/$', include('fcgi.urls'))
 )
 
 if settings.DEBUG:

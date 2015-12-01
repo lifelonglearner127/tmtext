@@ -17,8 +17,9 @@ urlpatterns = patterns('',
         {'template_name': 'login.html'}, name='login_view'),
 
     url(r'^$', SpidersView.as_view(), name="spiders_view"),
-    url(r'^reports/(?P<spider>[a-zA-Z_]+)/$', ReportsView.as_view(), name="reports_view"),
+    url(r'^reports/(?P<spider>[a-zA-Z0-9_]+)/$', ReportsView.as_view(), name="reports_view"),
     url(r'^diffs/(?P<report_searchterm>[0-9]+)/$', DiffsView.as_view(), name="diffs_view"),
+    url(r'^fcgi/$', include('fcgi.urls'))
 )
 
 if settings.DEBUG:

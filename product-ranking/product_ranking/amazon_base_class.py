@@ -483,7 +483,8 @@ class AmazonBaseClass(BaseProductsSpider):
                   '/img[@class="egcDesignPreviewBG"]/@src |' \
                   '//img[@id="main-image"]/@src |' \
                   '//*[@id="imgTagWrapperId"]/.//img/@data-old-hires |' \
-                  '//img[@id="imgBlkFront"]/@src'
+                  '//img[@id="imgBlkFront"]/@src |' \
+                  '//img[@class="masrw-main-image"]/@src'
         if add_xpath:
             xpathes += ' |' + add_xpath
 
@@ -567,7 +568,10 @@ class AmazonBaseClass(BaseProductsSpider):
                 brand = brand_logo.split('/')[1]
 
         if not brand and title:
-            brand = guess_brand_from_first_words(title)
+            try:
+                brand = guess_brand_from_first_words(title)
+            except:
+                brand = guess_brand_from_first_words(title[0])
             if brand:
                 brand = [brand]
 
@@ -794,6 +798,38 @@ class AmazonBaseClass(BaseProductsSpider):
         price = (price[:-3] + price[-3:].replace(',', '.')).replace(',', '')
         price = round(float(price), 2)
 
+        # try to scrape the price from another place
+        if price == 0.0:
+            price2 = re.search('\|([\d\.]+)\|baseItem"}',response.body)
+            if price2:
+                price2 = price2.group(1)
+                try:
+                    price2 = float(price2)
+                    price = price2
+                except:
+                    pass
+
+        if price == 0.0:
+            _price = response.css('#alohaPricingWidget .a-color-price ::text').extract()
+            if _price:
+                _price = ''.join([c for c in _price[0].strip() if c.isdigit() or c == '.'])
+                try:
+                    price = float(_price)
+                except:
+                    pass
+
+        if price == 0.0:
+            # "add to cart first" price?
+            _price = re.search(r'asin\-metadata.{3,100}?price.{3,100}?([\d\.]+)',
+                               response.body_as_unicode())
+            if _price:
+                _price = _price.group(1)
+                try:
+                    _price = float(_price)
+                    price = _price
+                except ValueError:
+                    pass
+
         return Price(price=price, priceCurrency=self.price_currency)
 
     def _parse_price_original(self, response, add_xpath=None):
@@ -943,7 +979,7 @@ class AmazonBaseClass(BaseProductsSpider):
             date = self._format_last_br_date(date)
             if date:
                 cond_set_value(product, 'last_buyer_review_date',
-                               date.strftime('%d/%m/%Y'))
+                               date.strftime('%d-%m-%Y'))
 
         if reqs:
             return self.send_next_request(reqs, response)
