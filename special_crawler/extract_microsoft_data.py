@@ -35,7 +35,7 @@ class MicrosoftScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.homebase.co.uk/en/homebaseuk/.*?$", self.product_page_url)
+        m = re.match(r"^http://www\.microsoftstore\.com/store/msusa/en_US/pdp/productID\.[0-9]+?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -73,11 +73,11 @@ class MicrosoftScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = self.tree_html.xpath('//input[@id="product_partNumber"]/@value')[0]
+        product_id = self.tree_html.xpath('//div[@data-basepproductid]/@data-basepproductid')[0]
         return product_id
 
     def _site_id(self):
-        product_id = self.tree_html.xpath('//input[@id="product_partNumber"]/@value')[0]
+        product_id = self.tree_html.xpath('//div[@data-basepproductid]/@data-basepproductid')[0]
         return product_id
 
     def _status(self):
@@ -92,13 +92,13 @@ class MicrosoftScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//h1[@class="product_detail-right-title"]/span[@itemprop="name"]/text()')[0].strip()
+        return self.tree_html.xpath('//div[@class="title-block title-desktop"]/h1[@itemprop="name"]/text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//h1[@class="product_detail-right-title"]/span[@itemprop="name"]/text()')[0].strip()
+        return self.tree_html.xpath('//div[@class="title-block title-desktop"]/h1[@itemprop="name"]/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//h1[@class="product_detail-right-title"]/span[@itemprop="name"]/text()')[0].strip()
+        return self.tree_html.xpath('//div[@class="title-block title-desktop"]/h1[@itemprop="name"]/text()')[0].strip()
 
     def _model(self):
         return None
@@ -107,7 +107,7 @@ class MicrosoftScraper(Scraper):
         return None
 
     def _features(self):
-        features_list = self.tree_html.xpath("//div[@class='product_detail-left-summary-copy']//ul/li/text()")
+        features_list = self.tree_html.xpath("//section[@id='techspecs']//ul/li/text()")
 
         if features_list:
             return features_list

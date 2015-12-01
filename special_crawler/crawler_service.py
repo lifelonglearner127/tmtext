@@ -159,7 +159,7 @@ SUPPORTED_SITES = {
                     "riverisland": RiverislandScraper,
                     "mothercare": MotherCareScraper,
                     "toysrus": ToysRusScraper,
-                    "microsoft": MicrosoftScraper
+                    "microsoftstore": MicrosoftScraper
                     }
 
 # add logger
