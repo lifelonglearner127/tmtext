@@ -191,7 +191,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 url=url, 
                 callback=self.get_sponsored_links,
                 dont_filter=True, 
-                meta={"handle_httpstatus_list": [404]},
+                meta={"handle_httpstatus_list": [404, 502]},
             )
 
         if self.product_url:
@@ -199,7 +199,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod, 'handle_httpstatus_list': [404]},
+                          meta={'product': prod, 'handle_httpstatus_list': [404, 502]},
                           dont_filter=True)
 
     def get_sponsored_links(self, response):
@@ -284,6 +284,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             return product
 
         if response.status in self.default_hhl:
+            if response.status == 502:  # no longer available?
+                product.update({"no_longer_available": True})
             product.update({"locale":'en-US'})
             return product
         if self._search_page_error(response):
@@ -947,19 +949,24 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             if data:
                 prod = response.meta['product']
                 opts = data.get('buyingOptions', {})
-                prod['is_out_of_stock'] = not opts.get('available', False)
-                if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
-                    prod['shipping'] = False
-                prod['is_in_store_only'] = opts.get('storeOnlyItem', None)
-                if 'price' in opts and 'displayPrice' in opts['price']:
-                    prod['price'] = Price(
-                        priceCurrency='USD',
-                        price=opts['price']['displayPrice'].replace('$', '')
+                if opts is None:
+                    # product "no longer available"?
+                    self.log('buyingOptions are None: %s' % response.url, ERROR)
+                    prod.update({"no_longer_available": True})
+                else:
+                    prod['is_out_of_stock'] = not opts.get('available', False)
+                    if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
+                        prod['shipping'] = False
+                    prod['is_in_store_only'] = opts.get('storeOnlyItem', None)
+                    if 'price' in opts and 'displayPrice' in opts['price']:
+                        prod['price'] = Price(
+                            priceCurrency='USD',
+                            price=opts['price']['displayPrice'].replace('$', '')
+                        )
+                    self.log(
+                        'Scraped and parsed unofficial APIs from %s' % response.url,
+                        INFO
                     )
-                self.log(
-                    'Scraped and parsed unofficial APIs from %s' % response.url,
-                    INFO
-                )
         return self._start_related(response)
 
     def _populate_from_js(self, response, product):
