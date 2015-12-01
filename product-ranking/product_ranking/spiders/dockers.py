@@ -215,8 +215,8 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_data(self, response):
         data = re.findall(r'var buyStackJSON = \'(.+)\'; ', response.body_as_unicode())
-        data = re.sub(r'\\(.)', r'\g<1>', data[0])
         if data:
+            data = re.sub(r'\\(.)', r'\g<1>', data[0])
             try:
                 js_data = json.loads(data)
             except:
