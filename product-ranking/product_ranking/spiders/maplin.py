@@ -86,9 +86,9 @@ class MaplinProductsSpider(BaseValidator, BaseProductsSpider):
         ).extract()
         cond_set(prod, 'title', title)
 
-        brand = is_empty(
+        brand = [is_empty(
                         re.findall(r'"manufacturer":\s"(.*)",', response.body),
-                        None)
+                        None)]
         if not brand:
             if prod.get("title"):
                 brand = is_empty([guess_brand_from_first_words(prod['title'])], None)
