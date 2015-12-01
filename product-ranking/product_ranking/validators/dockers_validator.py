@@ -16,7 +16,7 @@ class DockersValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
         'black': [50, 300],
         'green': [10, 110],
         'blue jeans': [5, 150],
-        'shoes': [10, 100],
+        'black shoes': [10, 100],
         'black fit': [20, 150],
         'leather': [20, 200],
     }
