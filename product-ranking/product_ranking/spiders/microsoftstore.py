@@ -24,9 +24,6 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
     name = 'microsoftstore_products'
     allowed_domains = ["www.microsoftstore.com"]
 
-    #SEARCH_URL = "http://www.debenhams.com/webapp/wcs/stores/servlet/" \
-    #             "Navigate?langId=-1&storeId=10701&catalogId=10001&txt={search_term}"
-
     SEARCH_URL = "http://www.microsoftstore.com/store?keywords={search_term}" \
                  "&SiteID=msusa&Locale=en_US" \
                  "&Action=DisplayProductSearchResultsPage&" \
@@ -82,10 +79,6 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
-        # # Parse special pricing
-        # special_pricing = self._parse_special_pricing(response)
-        # cond_set_value(product, 'special_pricing', special_pricing, conv=bool)
-
         # Parse image url
         image_url = self.parse_image_url(response)
         cond_set_value(product, 'image_url', image_url, conv=string.strip)
@@ -94,13 +87,9 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
         description = self.parse_description(response)
         cond_set_value(product, 'description', description, conv=string.strip)
 
-        # # Parse stock status
-        # is_out_of_stock = self._parse_stock_status(response)
-        # cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
-        #
-        # # Parse upc
-        # upc = self._parse_upc(response)
-        # cond_set_value(product, 'upc', upc)
+        # Parse sku
+        sku = self.parse_sku(response)
+        cond_set_value(product, 'sku', sku)
 
         # Parse variants
         variants = self.parse_variant(response)
@@ -120,6 +109,10 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
             return self.send_next_request(reqs, response)
 
         return product
+
+    def parse_sku(self, response):
+        sku = is_empty(response.xpath('//script[contains(text(), "sku")]').re(r"sku : \[(.*)\]"))
+        return sku
 
     def parse_buyer_reviews(self, response):
         meta = response.meta
@@ -189,7 +182,7 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
 
     def parse_image_url(self, response):
         image_url = is_empty(response.xpath(
-            '//img[@class="poster"]/@src').extract())
+            '//div[@class="image-container"]/@data-src').extract())
         if image_url:
             return image_url
 
@@ -200,21 +193,22 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
         return description
 
     def parse_variant(self, response):
-        options = {}
-        color ={}
-        color_list = response.xpath('//ul[contains(@class, "product-colors")]/li/a/@title').extract()
-        color_pid = response.xpath('//ul[contains(@class, "product-colors")]/li/a/@var-pid').extract()
-        data4 = response.xpath('//ul[contains(@class, "option-list")]/li/a//text()').extract()
-        data4 = [i for i in data4 if i != u'\n' and i != u'*']
-        data_pid = response.xpath('//ul[contains(@class, "option-list")]/li/@data-pid').extract()
-        if color_list:
-            for i, items in enumerate(color_pid):
-                color[items] = color_list[i]
-        if data_pid:
-            for i, items in enumerate(data_pid):
-                options[items] = data4[i]
-
-        options.update(color)
+        # options = {}
+        # color ={}
+        # color_list = response.xpath('//ul[contains(@class, "product-colors")]/li[contains(@class, "selected")]/a/@title').extract()
+        # print '*****************',color_list
+        # color_pid = response.xpath('//ul[contains(@class, "product-colors")]/li/a/@var-pid').extract()
+        # data4 = response.xpath('//ul[contains(@class, "option-list")]/li/a//text()').extract()
+        # data4 = [i for i in data4 if i != u'\n' and i != u'*']
+        # data_pid = response.xpath('//ul[contains(@class, "option-list")]/li/@data-pid').extract()
+        # # print data_pid, data4
+        # if color_list:
+        #     for i, items in enumerate(color_pid):
+        #         color[items] = color_list[i]
+        # if data_pid:
+        #     for i, items in enumerate(data_pid):
+        #         options[items] = data4[i]
+        # print options, color
 
         return 'variant'
 
