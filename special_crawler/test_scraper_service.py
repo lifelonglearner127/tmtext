@@ -10,6 +10,7 @@ import psycopg2.extras
 import requests
 import sys
 import urllib
+import signal
 from datetime import date
 
 SUPPORTED_SITES = ["amazon", "bestbuy", "homedepot","statelinetack","tesco","walmart","argos",
@@ -18,6 +19,8 @@ SUPPORTED_SITES = ["amazon", "bestbuy", "homedepot","statelinetack","tesco","wal
                     "samsclub","babysecurity","staples","soap","drugstore","staplesadvantage",
                     "freshamazon","souq","freshdirect","quill","george","peapod"]
 
+def signal_handler(signum, frame):
+    raise Exception("Timed out!")
 
 class JsonDiff:
     def __init__(self, sample_json, test_json, list_depth=0):
@@ -623,7 +626,14 @@ class ServiceScraperTest(unittest.TestCase):
 
                 print ">>>>>>reports:"
 
-                diff_engine.diff()
+                signal.signal(signal.SIGALRM, signal_handler)
+                signal.alarm(30)   # Ten seconds
+
+                try:
+                    diff_engine.diff()
+                except Exception, msg:
+                    print "Timed out!"
+
 
                 sql = ("insert into console_reportresult(sample_url, website, "
                        "report_result, changes_in_structure, changes_in_type, changes_in_value, report_date, "
