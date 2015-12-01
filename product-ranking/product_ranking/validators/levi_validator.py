@@ -16,8 +16,8 @@ class LeviValidatorSettings(object):  # do NOT set BaseValidatorSettings as pare
         'men tee': [10, 150],
         'green shirt': [8, 100],
         'red jacket': [10, 300],
-        'coat': [2, 150],
-        'blue shoes': [3, 300],
+        'blue shoes': [2, 150],
+        'coat': [3, 100],
         'bool cut': [10, 150],
         'hat': [5, 50],
     }
