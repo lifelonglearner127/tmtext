@@ -5,7 +5,7 @@ import json
 
 import scrapy
 from scrapy.log import WARNING, ERROR
-from scrapy.http import Request
+from scrapy.http import Request, HtmlResponse
 from scrapy import Selector
 
 from product_ranking.items import SiteProductItem
@@ -92,12 +92,34 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                       meta=self._setup_meta_compatibility())  # meta is for SC baseclass compatibility
 
     def _scrape_product_links(self, response):
-        links = response.xpath(
+        links_xpath = (
             '//*[@id="dealHoverContent"]//a[contains(@href, "p/")]'
             ' | //div[contains(@class, "imageContainer")]'
             '/../../..//a[contains(@href, "p/")]'
             ' | //div[contains(@id, "atfResults")]//a[contains(@href, "p/")]'
         )
+        links = response.xpath(links_xpath)
+
+        if not links:
+            # page with lots of JS requests? try selenium
+            # TODO: thread-safe
+            from selenium import webdriver
+            from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+            self.log('No product links found at first attempt'
+                     ' - trying PhantomJS with UA %s' % self.user_agent)
+            dcap = dict(DesiredCapabilities.PHANTOMJS)
+            dcap["phantomjs.page.settings.userAgent"] = self.user_agent
+            driver = webdriver.PhantomJS(desired_capabilities=dcap)
+            driver.set_page_load_timeout(30)
+            driver.set_window_size(1280, 1024)
+            try:
+                driver.get(self.product_url)
+            except Exception as e:
+                print('Exception while loading url: %s' % str(e))
+            scrapy_response = HtmlResponse(
+                url=response.url, body=driver.page_source.encode('utf8'))
+            links = scrapy_response.xpath(links_xpath)
+            driver.quit()
 
         # TODO:
         # parse shelf category
@@ -114,6 +136,9 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                 item['shelf_path'] = shelf_categories
             yield url, item
         """
+
+        with open('/tmp/_amazon_links.txt', 'a') as fh:
+            fh.write(response.url + '\n')
 
         for link in links:
             _href = link.xpath('./@href').extract()[0]
