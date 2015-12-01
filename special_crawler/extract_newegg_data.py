@@ -178,29 +178,35 @@ class NeweggScraper(Scraper):
         long_description = None
 
         try:
-            long_description = html.fromstring(html.tostring(self.webcollage_contents))
-
-            for wc_json_block in long_description.xpath("//div[contains(@class, 'wc-json-data')]"):
-                  wc_json_block.getparent().remove(wc_json_block)
-
-            long_description = html.tostring(long_description)
-            long_description = self._clean_text(html.fromstring(self._exclude_javascript_from_description(long_description)).text_content())
-            return long_description if long_description and long_description.strip() != '' else None
-        except:
-            pass
-
-        try:
             long_description = html.tostring(self.tree_html.xpath("//div[@id='Overview_Content']")[0])
-            long_description = self._clean_text(html.fromstring(self._exclude_javascript_from_description(long_description)).text_content())
-            return long_description if long_description and long_description.strip() != '' else None
+            long_description = self._clean_text(html.fromstring(self._exclude_javascript_from_description(long_description)).text_content()).strip()
+
+            if long_description and len(long_description) > 0:
+                return long_description
         except:
             pass
 
         try:
             for overview in self.overviewData_json:
                 if overview["ParentItem"] == self.related_item_id:
-                    long_description = self._clean_text(html.fromstring(self._exclude_javascript_from_description(overview["Overview"])).text_content())
-                    return long_description if long_description and long_description.strip() != '' else None
+                    long_description = self._clean_text(html.fromstring(self._exclude_javascript_from_description(overview["Overview"])).text_content()).strip()
+
+                    if long_description and len(long_description) > 0:
+                        return long_description
+        except:
+            pass
+
+        try:
+            wc_rich_content_description_blocks= self.webcollage_contents.xpath("//div[contains(@class, 'wc-rich-content-description')]")
+            long_description = ""
+
+            for description in wc_rich_content_description_blocks:
+                long_description += (description.text_content().strip() + "\n")
+
+            long_description = self._clean_text(long_description).strip()
+
+            if long_description and len(long_description) > 0:
+                return long_description
         except:
             pass
 
