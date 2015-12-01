@@ -238,8 +238,13 @@ class NeweggScraper(Scraper):
     def _video_urls(self):
         if self.webcollage_contents:
             #a[ends-with(@href, '.jpg')]
-            video_urls = self.webcollage_contents.xpath("//meta[contains(@content, '.mp4')]/@content")
-            video_urls = [url.replace("\\", "")[1:-1] for url in video_urls]
+            urls = self.webcollage_contents.xpath("//meta[contains(@content, '.mp4')]/@content")
+            video_urls = []
+
+            for url in urls:
+                if url.endswith(".mp4"):
+                    video_urls.append(url.replace("\\", "")[1:-1])
+
             return video_urls if video_urls else None
 
         return None
