@@ -2064,31 +2064,24 @@ class WalmartScraper(Scraper):
     def _in_stores_v2(self):
         try:
             pinfo_dict = self._extract_product_info_json()
+            pickupable = pinfo_dict.get("buyingOptions", {}).get("pickupable", False)
 
-            for store in pinfo_dict["analyticsData"]["storesAvail"]:
+            if pickupable:
+                return 1
+
+            modal_texts = self.tree_html.xpath("//*[@class='js-pure-soi-flyout-header']")
+            modal_texts = modal_texts[0].text_content() if modal_texts else ""
+
+            if "This item is only sold at a Walmart store." in modal_texts:
+                return 1
+
+            available_stores = pinfo_dict.get("analyticsData", {}).get("storesAvail", [])
+            available_stores = available_stores if available_stores else []
+
+            for store in available_stores:
                 if int(store["isAvail"]) == 1:
                     return 1
 
-            if self._version() == "Walmart v2" and self.is_bundle_product:
-                body_dict = json.loads(self._find_between(html.tostring(self.tree_html), 'define("ads/data",', ');\n'))
-
-                if body_dict["inStore"] is True:
-                    return 1
-            else:
-                body_raw = "".join(self.tree_html.xpath("//script//text()"))
-                body_clean = re.sub("\n", " ", body_raw)
-                body_jpart = re.findall("\{\"query.*?\}", body_clean)[0]
-                body_dict = json.loads(body_jpart)
-
-                sellers = self._marketplace_sellers_from_script()
-                if sellers:
-                    sellers = [seller.lower() for seller in sellers]
-
-                    if "walmart store" in sellers:
-                        return 1
-
-                if body_dict["inStore"] is True:
-                    return 1
         except Exception:
             pass
 
