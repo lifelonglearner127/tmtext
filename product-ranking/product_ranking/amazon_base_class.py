@@ -918,6 +918,8 @@ class AmazonBaseClass(BaseProductsSpider):
                     desc = unquote(f[0])
                     description = [desc]
 
+        if isinstance(description, (list, tuple)):
+            description = description[0]
         return description.strip() if description else None
 
     def _parse_upc(self, response):
