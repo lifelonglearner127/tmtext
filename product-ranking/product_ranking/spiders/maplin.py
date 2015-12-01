@@ -110,6 +110,8 @@ class MaplinProductsSpider(BaseValidator, BaseProductsSpider):
                                       price=price[0])
             else:
                 prod["price"] = Price(priceCurrency="GBP", price=0.00)
+        else:
+            prod["price"] = Price(priceCurrency="GBP", price=0.00)
 
         des = response.xpath('//div[@class="productDescription"]').extract()
         cond_set(prod, 'description', des)
