@@ -26,7 +26,6 @@ class NeweggScraper(Scraper):
         self.hdGroupItemModelString_json = None
         self.hdGroupItemsString_json = None
         self.related_item_id = None
-        self.item_id = None
         self.imgGalleryConfig_json = None
         self.overviewData_json = None
         self.availableMap_json = None
@@ -70,15 +69,10 @@ class NeweggScraper(Scraper):
         try:
             self.hdGroupItemModelString_json = json.loads(self._find_between(html.tostring(self.tree_html), "var hdGroupItemModelString = ", ";\r"))
 
-            if len(self.hdGroupItemModelString_json) == 1:
-                self.related_item_id = self.hdGroupItemModelString_json[0]["ParentItem"]
-                self.item_id = self.hdGroupItemModelString_json[0]["SellerItem"]
-            else:
-                for item in self.hdGroupItemModelString_json:
-                    if item["SellerItem"] == self._product_id():
-                        self.related_item_id = item["ParentItem"]
-                        self.item_id = item["SellerItem"]
-                        break
+            for item in self.hdGroupItemModelString_json:
+                if item["SellerItem"] == self._product_id():
+                    self.related_item_id = item["ParentItem"]
+                    break
         except:
             print "Issue(Newegg): product hdGroupItemModelString json loading"
 
@@ -143,7 +137,7 @@ class NeweggScraper(Scraper):
 
     def _model(self):
         for item in self.hdGroupItemModelString_json:
-            if item["SellerItem"] == self.item_id:
+            if item["SellerItem"] == self._product_id():
                 return item["Model"]
 
         return None
@@ -437,7 +431,7 @@ class NeweggScraper(Scraper):
     
     def _brand(self):
         for item in self.hdGroupItemModelString_json:
-            if item["SellerItem"] == self.item_id:
+            if item["SellerItem"] == self._product_id():
                 return item["Brand"]
 
         return None
