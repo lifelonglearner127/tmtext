@@ -129,7 +129,7 @@ class MicrosoftScraper(Scraper):
         return None
 
     def _description(self):
-        description = self.tree_html.xpath("//div[@class='description-block description-desktop']/div[@class='short-desc' and @itemprop='description']")
+        description = self.tree_html.xpath("//div[@class='description-block description-desktop']/div[contains(@class, 'short-desc')]")
 
         if description and len(description[0].text_content().strip()) > 0:
             return description[0].text_content().strip()
@@ -280,7 +280,7 @@ class MicrosoftScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        price = self.tree_html.xpath("//div[@class='product-data-container']//div[@class='price-block']//p[@class='current-price' and @itemprop='price']//span/text()")[0]
+        price = self.tree_html.xpath("//div[@class='product-data-container']//div[@class='price-block']//p[@class='current-price' and @itemprop='price']")[0].text_content().strip()
         return price
 
     def _price_amount(self):
