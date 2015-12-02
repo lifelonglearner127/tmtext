@@ -280,13 +280,14 @@ class MicrosoftScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath("//span[@itemprop='price']/text()")[0].strip()
+        price = self.tree_html.xpath("//div[@class='product-data-container']//div[@class='price-block']//p[@class='current-price' and @itemprop='price']//span/text()")[0]
+        return price
 
     def _price_amount(self):
         return re.findall("\d+.\d+", self._price())[0]
 
     def _price_currency(self):
-        return self.tree_html.xpath("//span[@itemprop='priceCurrency']/text()")[0]
+        return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
 
     def _in_stores(self):
         return 0
@@ -320,21 +321,10 @@ class MicrosoftScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        breadcrumbs = self.tree_html.xpath("//ul[@class='breadcrumb-wrapper']/li/a/text()")
-        categories = []
-
-        for index, breadcrumb in enumerate(breadcrumbs):
-            breadcrumb = re.sub('\\n+', ' ', breadcrumb).strip()
-            breadcrumb = re.sub('\\t+', ' ', breadcrumb).strip()
-            breadcrumb = re.sub(' +', ' ', breadcrumb).strip()
-
-            if breadcrumb:
-                categories.append(breadcrumb)
-
-        return categories
+        return None
 
     def _category_name(self):
-        return self._categories()[-1]
+        return None
     
     def _brand(self):
         return None
