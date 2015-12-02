@@ -2087,10 +2087,9 @@ class WalmartScraper(Scraper):
             if pickupable:
                 return 1
 
-            modal_texts = self.tree_html.xpath("//*[@class='js-pure-soi-flyout-header']")
-            modal_texts = modal_texts[0].text_content() if modal_texts else ""
+            sold_only_at_store = pinfo_dict.get("buyingOptions", {}).get("storeOnlyItem", False)
 
-            if "This item is only sold at a Walmart store." in modal_texts:
+            if sold_only_at_store:
                 return 1
 
             available_stores = pinfo_dict.get("analyticsData", {}).get("storesAvail", [])
@@ -2388,19 +2387,18 @@ class WalmartScraper(Scraper):
         return 0
 
     def _site_online_v2(self):
-        # The product is only sold at a Walmart store
-        try:
-            modal_texts = self.tree_html.xpath("//*[@class='js-pure-soi-flyout-header']")[0].text_content()
-
-            if "This item is only sold at a Walmart store." in modal_texts:
-                return 0
-        except Exception:
-            pass
-
         # The product is site online according to the product json info
+
         pinfo_dict = self._extract_product_info_json()
 
-        if pinfo_dict["buyingOptions"]["seller"]["walmartOnline"]:
+        sold_only_at_store = pinfo_dict.get("buyingOptions", {}).get("storeOnlyItem", False)
+
+        if sold_only_at_store:
+            return 0
+
+        walmart_online = pinfo_dict.get("buyingOptions", {}).get("seller", {}).get("walmartOnline", False)
+
+        if walmart_online:
             return 1
 
         # The product is site online as marketplace sellers(means walmart is one of marketplace seller of this product
