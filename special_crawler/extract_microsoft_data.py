@@ -19,7 +19,7 @@ class MicrosoftScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.microsoftstore.com/store/msusa/en_US/pdp/<product-title>/productID.<product-id>"
-    REVIEW_URL = "http://www.microsoftstore.com/store/msusa/en_US/pdp/.*/productID.[0-9]+"
+    REVIEW_URL = "http://api.bazaarvoice.com/data/batch.json?passkey=291coa9o5ghbv573x7ercim80&apiversion=5.5&displaycode=5681-en_us&resource.q0=products&filter.q0=id%3Aeq%3A{0}&stats.q0=questions%2Creviews&filteredstats.q0=questions%2Creviews&filter_questions.q0=contentlocale%3Aeq%3Aen_US&filter_answers.q0=contentlocale%3Aeq%3Aen_US&filter_reviews.q0=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US&resource.q1=questions&filter.q1=productid%3Aeq%3A{0}&filter.q1=contentlocale%3Aeq%3Aen_US&sort.q1=lastapprovedanswersubmissiontime%3Adesc&stats.q1=questions&filteredstats.q1=questions&include.q1=authors%2Cproducts%2Canswers&filter_questions.q1=contentlocale%3Aeq%3Aen_US&filter_answers.q1=contentlocale%3Aeq%3Aen_US&sort_answers.q1=submissiontime%3Adesc&limit.q1=10&offset.q1=0&limit_answers.q1=10&resource.q2=reviews&filter.q2=isratingsonly%3Aeq%3Afalse&filter.q2=productid%3Aeq%3A{0}&filter.q2=contentlocale%3Aeq%3Aen_US&sort.q2=helpfulness%3Adesc%2Ctotalpositivefeedbackcount%3Adesc&stats.q2=reviews&filteredstats.q2=reviews&include.q2=authors%2Cproducts%2Ccomments&filter_reviews.q2=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q2=contentlocale%3Aeq%3Aen_US&filter_comments.q2=contentlocale%3Aeq%3Aen_US&limit.q2=8&offset.q2=0&limit_comments.q2=3&callback=BV._internal.dataHandler0"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -219,20 +219,15 @@ class MicrosoftScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        if self._review_count() == 0:
-            return None
+        if self._review_count() > 0:
+            average_review = float(self.tree_html.xpath("//div[@id='bvseo-aggregateRatingSection']//span[@class='bvseo-ratingValue' and @itemprop='ratingValue']/text()")[0])
+            return average_review
 
-        average_review = round(float(self.review_json["jsonData"]["attributes"]["avgRating"]), 1)
-
-        if str(average_review).split('.')[1] == '0':
-            return int(average_review)
-        else:
-            return float(average_review)
+        return None
 
     def _review_count(self):
         try:
-            review_count = self.tree_html.xpath("//div[@class='product-data-container']//div[@id='BVRRSummaryContainer']//div[@class='bv-rating-ratio-count']/span[@class='bv-rating-label bv-text-link']/text()")[0]
-            review_count = int(re.search(r'\d+', review_count).group())
+            review_count = int(self.tree_html.xpath("//div[@id='bvseo-aggregateRatingSection']//span[@class='bvseo-reviewCount' and @itemprop='reviewCount']/text()")[0])
 
             if review_count > 0:
                 return review_count
@@ -242,55 +237,44 @@ class MicrosoftScraper(Scraper):
         return 0
 
     def _max_review(self):
-        if self._review_count() == 0:
-            return None
+        if self._review_count() > 0:
+            reviews = self._reviews()
+            max_review = reviews[0]
 
-        for i, review in enumerate(self.review_list):
-            if review[1] > 0:
-                return 5 - i
+            for review in reviews:
+                if max_review[0] < review[0]:
+                    max_review = review
+
+            return int(max_review[0])
+
+        return None
 
     def _min_review(self):
-        if self._review_count() == 0:
-            return None
+        if self._review_count() > 0:
+            reviews = self._reviews()
+            min_review = reviews[0]
 
-        for i, review in enumerate(reversed(self.review_list)):
-            if review[1] > 0:
-                return i + 1
+            for review in reviews:
+                if min_review[0] > review[0]:
+                    min_review = review
+
+            return int(min_review[0])
+
+        return None
 
     def _reviews(self):
-        if self.is_review_checked:
-            return self.review_list
+        if self._review_count() > 0:
+            review_list = []
+            review_json = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(self._product_id()))
+            review_json = json.loads(review_json[26:-1])
 
-        self.is_review_checked = True
+            for review in review_json["BatchedResults"]["q0"]["Results"][0]["FilteredReviewStatistics"]["RatingDistribution"]:
+                review_list.append([int(review["RatingValue"]), int(review["Count"])])
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
-        contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
+            if review_list:
+                return review_list
 
-        try:
-            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
-            end_index = contents.find(",\nwidgetInitializers:initializers", start_index)
-
-            self.review_json = contents[start_index:end_index]
-            self.review_json = json.loads(self.review_json)
-        except:
-            self.review_json = None
-
-        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
-        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
-        reviews_by_mark = reviews_by_mark[:5]
-        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
-
-        if not review_list:
-            review_list = None
-
-        self.review_list = review_list
-
-        return self.review_list
+        return None
 
     ##########################################
     ############### CONTAINER : SELLERS
