@@ -109,7 +109,7 @@ class WalmartScraper(Scraper):
         self.product_info_json = None
         self.product_choice_info_json = None
         self.product_api_json = None
-        self.key_fields_list = ["upc"]
+        self.key_fields_list = ["upc", "price"]
         self.failure_type = None
 
         self.review_json = None
@@ -154,7 +154,7 @@ class WalmartScraper(Scraper):
 
         return False
 
-    def _filter_key_fields(self, field_name, value):
+    def _filter_key_fields(self, field_name, value=None):
         if value:
             return value
 
@@ -163,6 +163,8 @@ class WalmartScraper(Scraper):
                 if field_name in self.key_fields_list:
                     if field_name == "upc":
                         return self.product_api_json["product"]["upc"] if self.product_api_json["product"]["upc"] else self.product_api_json["product"]["wupc"]
+                    if field_name == "price":
+                        return self.product_api_json["product"]["buyingOptions"]["price"]["displayPrice"]
             except Exception, e:
                 print "Error (Walmart - _filter_key_fields)" + str(e)
 
@@ -1180,6 +1182,9 @@ class WalmartScraper(Scraper):
             except:
                 pass
 
+            if self._filter_key_fields("price"):
+                return self._filter_key_fields("price")
+
         return None
 
     def _price_amount(self):
@@ -1202,25 +1207,7 @@ class WalmartScraper(Scraper):
         Returns:
             price currency symbol
         """
-        price_info = self._price_from_tree()
-
-        if price_info is None or price_info == "out of stock - no price given" or price_info == \
-                "in stores only - no online price":
-            return None
-        else:
-            if self._version() == "Walmart v1":
-                meta_currency = self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
-                return meta_currency
-
-            if self._version() == "Walmart v2":
-                if self.is_bundle_product:
-                    return "USD"
-                else:
-                    product_info_json = self._extract_product_info_json()
-
-                    return product_info_json["buyingOptions"]["price"]["currencyUnit"]
-
-        return None
+        return "USD"
 
     # extract htags (h1, h2) from its product product page tree
     def _htags_from_tree(self):
