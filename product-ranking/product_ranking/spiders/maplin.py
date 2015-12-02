@@ -13,6 +13,7 @@ from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.validation import BaseValidator
 from product_ranking.validators.maplin_validator import MaplinValidatorSettings
 
+is_empty = lambda x, y="": x[0] if x else y
 
 # scrapy crawl maplin_products -a searchterms_str="Earth" [-a order=default]
 class MaplinProductsSpider(BaseValidator, BaseProductsSpider):
@@ -85,10 +86,12 @@ class MaplinProductsSpider(BaseValidator, BaseProductsSpider):
         ).extract()
         cond_set(prod, 'title', title)
 
-        brand = re.findall(r'"manufacturer":\s"(.*)",', response.body)
+        brand = is_empty(
+                        re.findall(r'"manufacturer":\s"(.*)",', response.body),
+                        None)
         if not brand:
             if prod.get("title"):
-                brand = [guess_brand_from_first_words(prod['title'])]
+                brand = is_empty([guess_brand_from_first_words(prod['title'])], None)
         if brand:
             cond_set(prod, 'brand', brand)
 
@@ -105,6 +108,8 @@ class MaplinProductsSpider(BaseValidator, BaseProductsSpider):
             if re.match("\d+(.\d+){0,1}", price[0]):
                 prod["price"] = Price(priceCurrency=priceCurrency[0],
                                       price=price[0])
+            else:
+                prod["price"] = Price(priceCurrency="GBP", price=0.00)
 
         des = response.xpath('//div[@class="productDescription"]').extract()
         cond_set(prod, 'description', des)

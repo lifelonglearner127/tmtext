@@ -755,8 +755,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             if average == '0':
                 cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             else:
-                fdist = None
-                reviews = BuyerReviews(total, average, fdist)
+                fdist = ZERO_REVIEWS_VALUE[-1]
+                reviews = BuyerReviews(int(total), int(average), fdist)
                 cond_set_value(product, 'buyer_reviews', reviews)
         if average and total:
             distribution = data.get('RatingDistribution', [])
