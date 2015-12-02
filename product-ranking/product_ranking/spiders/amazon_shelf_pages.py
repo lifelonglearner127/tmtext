@@ -97,6 +97,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             ' | //div[contains(@class, "imageContainer")]'
             '/../../..//a[contains(@href, "p/")]'
             ' | //div[contains(@id, "atfResults")]//a[contains(@href, "p/")]'
+            ' | //a[contains(@href, "p/") and contains(@class, "dealTitle")]'
         )
         links = response.xpath(links_xpath)
 
