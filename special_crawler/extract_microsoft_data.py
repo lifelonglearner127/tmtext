@@ -4,9 +4,10 @@ import urllib
 import re
 import sys
 import json
-
+import ast
 from lxml import html, etree
 import time
+import yaml
 import requests
 from extract_data import Scraper
 
@@ -35,7 +36,7 @@ class MicrosoftScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www\.microsoftstore\.com/store/msusa/en_US/pdp/productID\.[0-9]+?$", self.product_page_url)
+        m = re.match(r"^http://www\.microsoftstore\.com/store/msusa/en_US/pdp/(.*/)?productID\.[0-9]+?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -83,11 +84,6 @@ class MicrosoftScraper(Scraper):
     def _status(self):
         return "success"
 
-
-
-
-
-
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
@@ -104,13 +100,22 @@ class MicrosoftScraper(Scraper):
         return None
 
     def _upc(self):
-        return None
+        upc_list = self._find_between(html.tostring(self.tree_html), ",upc :", "\r").strip()
+        upc_list = ast.literal_eval(upc_list)
+        return upc_list[0]
 
     def _features(self):
-        features_list = self.tree_html.xpath("//section[@id='techspecs']//ul/li/text()")
+        features_block_list = self.tree_html.xpath("//section[@id='techspecs']//div[contains(@class, 'grid-row')]")
+        features_list = []
 
-        if features_list:
-            return features_list
+        if features_block_list:
+            for feature_block in features_block_list:
+                feature_title = feature_block.xpath(".//div[contains(@class, 'grid-unit')]")[0].text_content().strip()
+                feature_text = feature_block.xpath(".//div[contains(@class, 'grid-unit')]")[1].text_content().strip()
+                features_list.append(feature_title + ": " + feature_text)
+
+            if features_list:
+                return features_list
 
         return None
 
@@ -124,30 +129,18 @@ class MicrosoftScraper(Scraper):
         return None
 
     def _description(self):
-        description = self.tree_html.xpath("//div[@class='product_detail-left-summary-copy']")[0].text_content()
-        feature_text = self.tree_html.xpath("//div[@class='product_detail-left-summary-copy']/ul")[0].text_content()
-        description = description[:description.find(feature_text)]
+        description = self.tree_html.xpath("//div[@class='description-block description-desktop']/div[@class='short-desc' and @itemprop='description']")
 
-        description = re.sub('\\n+', ' ', description).strip()
-        description = re.sub('\\t+', ' ', description).strip()
-        description = re.sub(' +', ' ', description).strip()
-
-        if description:
-            return description
+        if description and len(description[0].text_content().strip()) > 0:
+            return description[0].text_content().strip()
 
         return None
 
     def _long_description(self):
-        description = self.tree_html.xpath("//div[@class='product_detail-left-summary-copy']")[0].text_content()
-        feature_text = self.tree_html.xpath("//div[@class='product_detail-left-summary-copy']/ul")[0].text_content()
-        description = description[description.find(feature_text):]
+        description = self.tree_html.xpath("//section[@id='overview']")
 
-        description = re.sub('\\n+', ' ', description).strip()
-        description = re.sub('\\t+', ' ', description).strip()
-        description = re.sub(' +', ' ', description).strip()
-
-        if description:
-            return description
+        if description and len(self._clean_text(description[0].text_content().strip())) > 0:
+            return self._clean_text(description[0].text_content().strip())
 
         return None
 
@@ -159,11 +152,22 @@ class MicrosoftScraper(Scraper):
         return None
 
     def _image_urls(self):        
-        image_list = self.tree_html.xpath("//meta[@property='og:image']/@content")
-        image_list = ["http:" + url for url in image_list]
+        url_list = self.tree_html.xpath("//div[contains(@class, 'grid-row media-container')]/ul[contains(@class, 'product-hero')]//img/@src")
 
-        if image_list:
-            return image_list
+        if url_list:
+            for index, url in enumerate(url_list):
+                if not url.startswith("http://"):
+                    url_list[index] = "http:" + url
+
+            url_list = list(set(url_list))
+            image_urls = []
+
+            for url in url_list:
+                if not "360_Overlay.png" in url:
+                    image_urls.append(url)
+
+            if image_urls:
+                return image_urls
 
         return None
 
@@ -226,12 +230,16 @@ class MicrosoftScraper(Scraper):
             return float(average_review)
 
     def _review_count(self):
-        self._reviews()
+        try:
+            review_count = self.tree_html.xpath("//div[@class='product-data-container']//div[@id='BVRRSummaryContainer']//div[@class='bv-rating-ratio-count']/span[@class='bv-rating-label bv-text-link']/text()")[0]
+            review_count = int(re.search(r'\d+', review_count).group())
 
-        if not self.review_json:
-            return 0
+            if review_count > 0:
+                return review_count
+        except:
+            pass
 
-        return int(self.review_json["jsonData"]["attributes"]["numReviews"])
+        return 0
 
     def _max_review(self):
         if self._review_count() == 0:
@@ -346,16 +354,6 @@ class MicrosoftScraper(Scraper):
     
     def _brand(self):
         return None
-
-
-
-    ##########################################
-    ################ HELPER FUNCTIONS
-    ##########################################
-    # clean text inside html tags - remove html entities, trim spaces
-    def _clean_text(self, text):
-        return re.sub("&nbsp;", " ", text).strip()
-
 
 
     ##########################################
