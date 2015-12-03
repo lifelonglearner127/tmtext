@@ -54,11 +54,15 @@ class NeweggProductSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         reqs = []
-        meta = response.meta.copy()
+        meta = response.meta
         product = meta['product']
 
         product_id = is_empty(response.xpath('//script[contains(text(), "product_id")]').re(r"product_id:\['(.*)']"))
         meta['product_id'] = product_id
+
+        seller_list_id = response.xpath('//table[@class="gridSellerList"]/tbody/script[2]/text()').re(r'SellerList\["(\d+\-?\d+\-?\d+)"]')
+        if seller_list_id:
+            meta['seller_id'] = seller_list_id[-1]
 
         # Set locale
         product['locale'] = 'en_US'
@@ -95,10 +99,6 @@ class NeweggProductSpider(BaseProductsSpider):
         is_out_of_stock = self.parse_stock_status(response)
         cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
 
-        # Parse marketplace
-        marketplace = self.parse_marketplace(response)
-        cond_set_value(product, 'marketplace', marketplace)
-
        #  # Parse variants
        #  variants = self.parse_variant(response)
        #  cond_set_value(product, 'variants', variants)
@@ -122,20 +122,29 @@ class NeweggProductSpider(BaseProductsSpider):
 
         return product
 
+    def remove_dublicate(self, full_list):
+        new_list = []
+        for item in full_list:
+            if not item in new_list:
+                new_list.append(item)
+        return new_list
+
     def parse_marketplace_json(self, response):
         marketplaces = []
-        meta = response.meta.copy()
+        meta = response.meta
         product = meta['product']
         data = response.body_as_unicode()
-        if data:
-            data = is_empty(re.findall(r'"sellerInfo":"(.*)"', data)).replace('\\', '')
-            # print data.replace('\\', '')
+        seller_id = meta.get('seller_id')
+        try:
+            data = is_empty(re.findall(r'parentItem":"{0}"(.*)?'.format(seller_id), data)).replace('\\', '')
             marketplace = Selector(text=data)
-        # print marketplace.extract()
-        sellers_noline = marketplace.xpath("//tr[contains(@class, featured)]/td/img/@alt").extract()
+        except:
+            return product
+
+        sellers_noline = list(set(marketplace.xpath("//tr[contains(@class, featured)]/td/img/@alt").extract()))
         sellers_line = marketplace.xpath("//tr/td[@class='seller']/a[1]/@title").extract()
-        sellers = sellers_noline + sellers_line
-        # print sellers_noline, sellers_line, sellers
+        new_sellers_line = self.remove_dublicate(sellers_line)
+        sellers = sellers_noline + new_sellers_line
         price_int = marketplace.xpath("//ul[contains(@class, 'price')]/li[@class='price-current ']/strong/text()").extract()
         price_sup = marketplace.xpath("//ul[contains(@class, 'price')]/li[@class='price-current ']/sup/text()").extract()
         for i, item in enumerate(sellers):
@@ -143,7 +152,7 @@ class NeweggProductSpider(BaseProductsSpider):
             if price:
                 price = Price(price=price, priceCurrency="USD")
             else:
-                price = Price(price=0, priceCurrency="USD")
+                price = Price(price=0.0, priceCurrency="USD")
             marketplaces.append({
                 "price": price,
                 "name": item
@@ -152,35 +161,7 @@ class NeweggProductSpider(BaseProductsSpider):
             if marketplaces:
                 product["marketplace"] = marketplaces
 
-
-
-        # for i, item in enumerate(sellers):
-        #     price = price[i]+price_sup[i]
-        #     if price:
-        #         price = Price(price=price, priceCurrency="USD")
-        #     else:
-        #         price = Price(price=0, priceCurrency="USD")
-        #     print price
-        #     # marketplaces.append({
-        #     #         "price": price,
-        #     #         "name": item
-        #     #     })
-        #
-        # if marketplaces:
-        #     product["marketplace"] = marketplaces
-
         return product
-
-    def parse_marketplace(self, response):
-        meta = response.meta.copy()
-        product = meta['product']
-        parent_id=is_empty(response.xpath(
-            '//script[contains(text(), "ParentItem")]').re(r'"ParentItem":"(\d+\-?\d+\-?\d+)"'))
-        # seller_text_block = response.xpath("//div[@id='MBO_{0}']//ul[@class='sellers-list']/li[contains(@class, 'sellers-list-item')]//div[@class='store']//a/@title".format(parent_id)).extract()
-        seller_text = response.xpath('//ul/li[contains(@class, "normal-available")]/div[@class="left"]/div[@class="store"]//text()').extract()
-        for item in seller_text:
-            print item.strip()
-        print '********************', seller_text
 
     def parse_price(self, response):
         price = is_empty(response.xpath('//script[contains(text(), "product_instock")]/text()').re(r"product_sale_price:\['(\d+\.?\d+)']"))
@@ -214,14 +195,14 @@ class NeweggProductSpider(BaseProductsSpider):
                 n += int(v)
             if n > 0:
                 average_rating = round(s/float(n),2)
-
-        buyer_reviws = {'num_of_reviews': int(num_of_review),
-                        'average_rating': float(average_rating),
-                        'rating_by_star': rating_by_star}
+        try:
+            buyer_reviws = {'num_of_reviews': int(num_of_review),
+                            'average_rating': float(average_rating),
+                            'rating_by_star': rating_by_star}
+        except:
+            return ZERO_REVIEWS_VALUE
 
         return buyer_reviws
-
-        return None
 
     def parse_stock_status(self, response):
         stock_status = response.xpath('//script[contains(text(), "product_instock")]/text()').re(r"product_instock:\['(\d+)']")
