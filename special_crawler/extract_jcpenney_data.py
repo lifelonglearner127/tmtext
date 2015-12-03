@@ -170,6 +170,7 @@ class JcpenneyScraper(Scraper):
         image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
 
         swatches = self._swatches()
+        swatches = swatches if swatches else []
 
         for swatch in swatches:
             if swatch["hero_image"] not in image_urls:
