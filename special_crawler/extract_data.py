@@ -727,7 +727,7 @@ class Scraper():
         # in_stores is 1 and in_stores_out_of_stock is 0
         if in_stores == 1 and in_stores_out_of_stock == 0:
             return 1
-        if in_stores == 1 and in_stores_out_of_stock == 0:
+        if in_stores == 1 and in_stores_out_of_stock == 1:
             return 0
 
         return None
