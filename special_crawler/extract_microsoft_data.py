@@ -163,7 +163,7 @@ class MicrosoftScraper(Scraper):
             image_urls = []
 
             for url in url_list:
-                if not "360_Overlay.png" in url:
+                if "360_Overlay.png" not in url and "/Spin/" not in url:
                     image_urls.append(url)
 
             if image_urls:
