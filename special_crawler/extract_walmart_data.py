@@ -1199,7 +1199,7 @@ class WalmartScraper(Scraper):
                 "in stores only - no online price":
             return None
         else:
-            price = re.findall("\d+.\d+", price_info)
+            price = re.findall("\d+.\d+", price_info.replace(",", ""))
             return float(price[0])
 
     def _price_currency(self):
