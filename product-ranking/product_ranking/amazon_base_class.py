@@ -305,6 +305,11 @@ class AmazonBaseClass(BaseProductsSpider):
         title = self._parse_title(response)
         cond_set_value(product, 'title', title)
 
+        # Parse product link
+        url = is_empty(response.xpath('//link[@rel="canonical"]'
+                                      '/@href').extract())
+        product['url'] = url
+
         # Parse image url
         image_url = self._parse_image_url(response)
         cond_set_value(product, 'image_url', image_url, conv=string.strip)
@@ -916,8 +921,10 @@ class AmazonBaseClass(BaseProductsSpider):
                                '%0A%20%20%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A', res)
                 if f:
                     desc = unquote(f[0])
-                    description = [desc]
+                    description = desc
 
+        if isinstance(description, (list, tuple)):
+            description = description[0]
         return description.strip() if description else None
 
     def _parse_upc(self, response):
@@ -1107,6 +1114,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 if "%" in is_perc:
                     break
                 if number:
+                    number = number.replace('.', '')
                     buyer_reviews['rating_by_star'][rating] = int(
                         number.replace(',', '')
                     )
