@@ -84,25 +84,25 @@ for row in rows:
 
         #UPC missing products
         if not sample_json["product_info"]["upc"]:
-            upc_missing_product_list.append(sample_json["url"])
+            upc_missing_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
 
         #Review issue products
         if sample_json["reviews"]["review_count"] > 0 and \
                 (sample_json["reviews"]["average_review"] is None or sample_json["reviews"]["max_review"] is None or sample_json["reviews"]["min_review"] is None or sample_json["reviews"]["reviews"] is None):
-            review_issue_product_list.append(sample_json["url"])
+            review_issue_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
 
         #Price issue products
         if sample_json["sellers"]["price"] and (sample_json["sellers"]["price_amount"] is None or sample_json["sellers"]["price_currency"] is None):
-            price_issue_product_list.append(sample_json["url"])
+            price_issue_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
 
         #Marketplace issue products
         if ((sample_json["marketplace_sellers"] and not sample_json["marketplace_prices"]) or (not sample_json["marketplace_sellers"] and sample_json["marketplace_prices"])) \
                 or ((sample_json["marketplace_sellers"] and sample_json["marketplace_prices"]) and len(sample_json["marketplace_sellers"]) != len(sample_json["marketplace_prices"])):
-            marketplace_issue_product_list.append(sample_json["url"])
+            marketplace_issue_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
 
         #Walmart v1 products
         if website == "walmart" and sample_json["scraper"] == "Walmart v1":
-            walmart_v1_product_list.append(sample_json["url"])
+            walmart_v1_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
     except:
         invalid_products_list.append(row["url"])
 
@@ -115,67 +115,77 @@ rows = sorted(rows, key=lambda k: k['changes_in_structure'], reverse=True)
 email_content = ""
 
 #UPC missing issue
-csv_file_name_upc_missed = "/home/ubuntu/tmtext/special_crawler/jenkins/upc_missed_" + time.strftime("%Y_%m_%d") + ".csv"
+csv_file_name_upc_missed = "/home/ubuntu/tmtext/special_crawler/jenkins/{0}_upc_missed_{1}.csv".format(website, time.strftime("%Y_%m_%d"))
 
 if upc_missing_product_list:
+    field_names = ["store url", "regression report url"]
     csv_file = open(csv_file_name_upc_missed, "w")
-    csv_writer = csv.writer(csv_file)
+    csv_writer = csv.DictWriter(csv_file, fieldnames=field_names)
+    csv_writer.writeheader()
 
-    for url in upc_missing_product_list:
-        csv_writer.writerow([url])
+    for product in upc_missing_product_list:
+        csv_writer.writerow(product)
 
     csv_file.close()
 
 #Review issue
-csv_file_name_review_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/review_issue_" + time.strftime("%Y_%m_%d") + ".csv"
+csv_file_name_review_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/{0}_review_issue_{1}.csv".format(website, time.strftime("%Y_%m_%d"))
 
 if review_issue_product_list:
+    field_names = ["store url", "regression report url"]
     csv_file = open(csv_file_name_review_issue, "w")
-    csv_writer = csv.writer(csv_file)
+    csv_writer = csv.DictWriter(csv_file, fieldnames=field_names)
+    csv_writer.writeheader()
 
-    for url in review_issue_product_list:
-        csv_writer.writerow([url])
+    for product in review_issue_product_list:
+        csv_writer.writerow(product)
 
     csv_file.close()
 
 #Price issue
-csv_file_name_price_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/price_issue_" + time.strftime("%Y_%m_%d") + ".csv"
+csv_file_name_price_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/{0}_price_issue_{1}.csv".format(website, time.strftime("%Y_%m_%d"))
 
 if price_issue_product_list:
+    field_names = ["store url", "regression report url"]
     csv_file = open(csv_file_name_price_issue, "w")
-    csv_writer = csv.writer(csv_file)
+    csv_writer = csv.DictWriter(csv_file, fieldnames=field_names)
+    csv_writer.writeheader()
 
-    for url in price_issue_product_list:
-        csv_writer.writerow([url])
+    for product in price_issue_product_list:
+        csv_writer.writerow(product)
 
     csv_file.close()
 
 #Marketplace issue
-csv_file_name_marketplace_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/marketplace_issue_" + time.strftime("%Y_%m_%d") + ".csv"
+csv_file_name_marketplace_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/{0}_marketplace_issue_{1}.csv".format(website, time.strftime("%Y_%m_%d"))
 
 if marketplace_issue_product_list:
+    field_names = ["store url", "regression report url"]
     csv_file = open(csv_file_name_marketplace_issue, "w")
-    csv_writer = csv.writer(csv_file)
+    csv_writer = csv.DictWriter(csv_file, fieldnames=field_names)
+    csv_writer.writeheader()
 
-    for url in marketplace_issue_product_list:
-        csv_writer.writerow([url])
+    for product in marketplace_issue_product_list:
+        csv_writer.writerow(product)
 
     csv_file.close()
 
 #Walmart v1 products
-csv_file_name_walmart_v1= "/home/ubuntu/tmtext/special_crawler/jenkins/walmart_v1_products_" + time.strftime("%Y_%m_%d") + ".csv"
+csv_file_name_walmart_v1 = "/home/ubuntu/tmtext/special_crawler/jenkins/{0}_walmart_v1_products_{1}.csv".format(website, time.strftime("%Y_%m_%d"))
 
 if walmart_v1_product_list:
+    field_names = ["store url", "regression report url"]
     csv_file = open(csv_file_name_walmart_v1, "w")
-    csv_writer = csv.writer(csv_file)
+    csv_writer = csv.DictWriter(csv_file, fieldnames=field_names)
+    csv_writer.writeheader()
 
-    for url in walmart_v1_product_list:
-        csv_writer.writerow([url])
+    for product in walmart_v1_product_list:
+        csv_writer.writerow(product)
 
     csv_file.close()
 
-field_names = ["url", "number of changed parts", "version changed(Yes/No)", "detail view link"]
-csv_file_name_product_changes = "/home/ubuntu/tmtext/special_crawler/jenkins/product_changes_" + time.strftime("%Y_%m_%d") + ".csv"
+field_names = ["store url", "number of changed parts", "version changed(Yes/No)", "regression report url"]
+csv_file_name_product_changes = "/home/ubuntu/tmtext/special_crawler/jenkins/{0}_product_changes_{1}.csv".format(website, time.strftime("%Y_%m_%d"))
 csv_file = open(csv_file_name_product_changes, "w")
 csv_writer = csv.DictWriter(csv_file, fieldnames=field_names)
 csv_writer.writeheader()
@@ -195,7 +205,7 @@ for row in rows:
             number_of_version_changed_products = number_of_version_changed_products + 1
             version_changed = "Yes"
 
-        csv_writer.writerow({"url": row["sample_url"], "number of changed parts": str(row["changes_in_structure"]), "version changed(Yes/No)": version_changed, "detail view link": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
+        csv_writer.writerow({"store url": row["sample_url"], "number of changed parts": str(row["changes_in_structure"]), "version changed(Yes/No)": version_changed, "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
 
 csv_file.close()
 
@@ -256,7 +266,7 @@ email_content += (website_header)
 fromaddr = "jenkins@contentanalyticsinc.com"
 toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com", "adriana@contentanalyticsinc.com", "support@contentanalyticsinc.com"] # must be a list
 #toaddrs = ["jacob.cats426@gmail.com"] # must be a list
-subject = "Daily Notification from Regression Service : %s" % today.isoformat()
+subject = "{0} Daily Notification from Regression Service : {1}".format(website.upper(), today.isoformat())
 
 print "Message length is " + repr(len(email_content))
 
