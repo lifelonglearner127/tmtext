@@ -116,40 +116,33 @@ class JcpenneyScraper(Scraper):
         return 0
 
     def _description(self):
-        description_block = self.tree_html.xpath("//div[@id='longCopyCont']")[0]
-        description = description_block.text_content().strip()
-        description = re.sub('\\n+', ' ', description).strip()
-        description = re.sub('\\t+', ' ', description).strip()
-        description = re.sub('\\r+', ' ', description).strip()
-        description = re.sub(' +', ' ', description).strip()
+        #check long description existence
+        if self.tree_html.xpath("//div[@id='longCopyCont']//ul"):
+            page_raw_text = html.tostring(self.tree_html)
+            nIndex2 = page_raw_text.find('id="longCopyCont"')
+            nIndex1 = page_raw_text.find('>', nIndex2)
+            nIndex2= page_raw_text.find('<ul', nIndex1)
+            return page_raw_text[nIndex1 + 1:nIndex2].strip()
+        elif self.tree_html.xpath("//div[@id='longCopyCont']"):
+            return html.tostring(self.tree_html.xpath("//div[@id='longCopyCont']")[0]).strip()
 
-        long_description = self._long_description()
-
-        if long_description:
-            description = description.replace(long_description, "")
-
-        return description.strip()
+        return None
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        try:
-            description_block = self.tree_html.xpath("//div[@id='longCopyCont']//ul")[0]
-            long_description = description_block.text_content().strip()
+        #check long description existence
+        if self.tree_html.xpath("//div[@id='longCopyCont']//ul"):
+            page_raw_text = html.tostring(self.tree_html)
+            nIndex2 = page_raw_text.find('id="longCopyCont"')
+            nIndex1 = page_raw_text.find('>', nIndex2)
+            nIndex2= page_raw_text.find('<ul', nIndex1)
+            page_raw_text_exclude_short_description = page_raw_text[:nIndex1 + 1] + page_raw_text[nIndex2:]
+            page_html_exclude_short_description = html.fromstring(page_raw_text_exclude_short_description)
 
-            if not long_description:
-                return None
-            else:
-                long_description = re.sub('\\n+', ' ', long_description).strip()
-                long_description = re.sub('\\t+', ' ', long_description).strip()
-                long_description = re.sub('\\r+', ' ', long_description).strip()
-                long_description = re.sub(' +', ' ', long_description).strip()
-
-                return long_description
-        except:
-            pass
+            return html.tostring(page_html_exclude_short_description.xpath("//div[@id='longCopyCont']")[0])
 
         return None
 
@@ -177,6 +170,7 @@ class JcpenneyScraper(Scraper):
         image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
 
         swatches = self._swatches()
+        swatches = swatches if swatches else []
 
         for swatch in swatches:
             if swatch["hero_image"] not in image_urls:

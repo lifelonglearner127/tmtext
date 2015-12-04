@@ -88,13 +88,13 @@ class MicrosoftScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//div[@class="title-block title-desktop"]/h1[@itemprop="name"]/text()')[0].strip()
+        return self.tree_html.xpath('//div[@class="title-block title-desktop"]/h1/text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//div[@class="title-block title-desktop"]/h1[@itemprop="name"]/text()')[0].strip()
+        return self.tree_html.xpath('//div[@class="title-block title-desktop"]/h1/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//div[@class="title-block title-desktop"]/h1[@itemprop="name"]/text()')[0].strip()
+        return self.tree_html.xpath('//div[@class="title-block title-desktop"]/h1/text()')[0].strip()
 
     def _model(self):
         return None
@@ -163,7 +163,7 @@ class MicrosoftScraper(Scraper):
             image_urls = []
 
             for url in url_list:
-                if not "360_Overlay.png" in url:
+                if "360_Overlay.png" not in url and "/Spin/" not in url:
                     image_urls.append(url)
 
             if image_urls:

@@ -89,9 +89,9 @@ class KohlsScraper(Scraper):
         return product_id
 
     def _failure_type(self):
-        itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
+        itemtype = self.tree_html.xpath('//div[@itemtype="http://schema.org/Product"]')
 
-        if itemtype != "product":
+        if not itemtype:
             self.failure_type = "Not a product"
             return
 
@@ -105,13 +105,13 @@ class KohlsScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//title/text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//title/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//title/text()')[0].strip()
 
     def _model(self):
         return None
@@ -454,7 +454,7 @@ class KohlsScraper(Scraper):
         return float(price_amount[1:])
 
     def _price_currency(self):
-        return self.tree_html.xpath("//meta[@property='og:price:currency']/@content")[0]
+        return "USD"
 
     def _owned(self):
         return 0
