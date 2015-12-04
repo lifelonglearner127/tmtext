@@ -69,6 +69,7 @@ class WalmartScraper(Scraper):
         self.extracted_pdf_urls = False
         # product image
         self.image_urls = None
+        self.image_dimensions = None
         # whether pdfs were extracted
         self.extracted_image_urls = False
 
@@ -1807,7 +1808,7 @@ class WalmartScraper(Scraper):
             list of strings representing image urls
         """
 
-        if self._version() == "Walmart v2" and self.is_bundle_product:
+        if self.is_bundle_product:
             return self.tree_html.xpath("//div[contains(@class, 'choice-hero-non-carousel')]//img/@src")
         else:
             def _fix_relative_url(relative_url):
@@ -1826,10 +1827,19 @@ class WalmartScraper(Scraper):
                 pinfo_dict = self.product_info_json
 
             images_carousel = []
+            image_dimensions = []
 
             for item in pinfo_dict['imageAssets']:
-                if item['versions']['hero'].startswith("http://i5.walmartimages.com"):
-                    images_carousel.append(item['versions']['hero'])
+                hero_image_url = item.get('versions', {}).get('hero', None)
+                zoom_image_url = item.get('versions', {}).get('zoom', None)
+
+                if hero_image_url and hero_image_url.startswith("http://i5.walmartimages.com"):
+                    images_carousel.append(hero_image_url)
+                    image_dimensions.append([450, 450])
+
+                if zoom_image_url and zoom_image_url.startswith("http://i5.walmartimages.com"):
+                    images_carousel.append(zoom_image_url)
+                    image_dimensions.append([2000, 2000])
 
             if images_carousel:
                 # if there's only one image, check to see if it's a "no image"
@@ -1839,6 +1849,8 @@ class WalmartScraper(Scraper):
                             return None
                     except Exception, e:
                         print "WARNING: ", e.message
+
+                self.image_dimensions = image_dimensions
 
                 return self._qualify_image_urls(images_carousel)
 
@@ -1853,6 +1865,7 @@ class WalmartScraper(Scraper):
                 except Exception, e:
                     print "WARNING: ", e.message
 
+                self.image_dimensions = [450, 450]
                 return self._qualify_image_urls(main_image)
 
             # bundle product images
@@ -1891,6 +1904,9 @@ class WalmartScraper(Scraper):
             self.image_urls = self._image_urls_new()
             return self.image_urls
 
+        return None
+
+    def _image_dimensions(self):
         return None
 
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
@@ -2977,7 +2993,7 @@ class WalmartScraper(Scraper):
 
         "image_count": _image_count, \
         "image_urls": _image_urls, \
-
+        "image_dimensions": _image_dimensions, \
         "categories": _categories_hierarchy, \
         "category_name": _category, \
 
