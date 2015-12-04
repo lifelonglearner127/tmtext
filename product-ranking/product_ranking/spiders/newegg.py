@@ -99,9 +99,9 @@ class NeweggProductSpider(BaseProductsSpider):
         is_out_of_stock = self.parse_stock_status(response)
         cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
 
-       #  # Parse variants
-       #  variants = self.parse_variant(response)
-       #  cond_set_value(product, 'variants', variants)
+        # Parse variants
+        variants = self.parse_variant(response)
+        cond_set_value(product, 'variants', variants)
 
         # Parse review
         review = self.parse_buyer_review(response)
@@ -129,6 +129,41 @@ class NeweggProductSpider(BaseProductsSpider):
                 new_list.append(item)
         return new_list
 
+    def parse_variant(self, response):
+        variants = []
+
+        vars = is_empty(response.xpath(
+            '//script[contains(text(), "Biz.Product.GroupItemSwitcher")]').extract())
+        try:
+            properties_vars = re.findall(r'properties:(\[.*\]\}])', vars)
+            availableMap = re.findall(r'availableMap:(\[.*\]\}])', vars)
+            data = json.loads(properties_vars[0])
+            availableMap_js = json.loads(availableMap[0])
+        except Exception as e:
+            print e
+
+        all = list()
+        for group in data:
+            group_variants = list()
+            for prop in group['data']:
+                if prop['displayInfo']:
+                    group_variants.append([prop['displayInfo'], prop['value'], group['name'], group['description']])
+            if group_variants:
+                all.append(group_variants)
+        result = list(itertools.product(*all))
+
+        for r in result:
+            properties = {}
+            variant = {}
+            for item in r:
+                properties[str(item[3])] = item[0]
+            variant['price'] = None
+            variant['in_stock'] = None
+            variant['properties'] = properties
+            variants.append(variant)
+
+        return variants
+
     def parse_marketplace_json(self, response):
         marketplaces = []
         meta = response.meta
@@ -148,7 +183,10 @@ class NeweggProductSpider(BaseProductsSpider):
         price_int = marketplace.xpath("//ul[contains(@class, 'price')]/li[@class='price-current ']/strong/text()").extract()
         price_sup = marketplace.xpath("//ul[contains(@class, 'price')]/li[@class='price-current ']/sup/text()").extract()
         for i, item in enumerate(sellers):
-            price = price_int[i]+price_sup[i]
+            try:
+                price = price_int[i]+price_sup[i]
+            except:
+                price = 0.0
             if price:
                 price = Price(price=price, priceCurrency="USD")
             else:
