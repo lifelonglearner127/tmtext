@@ -137,8 +137,11 @@ class NeweggProductSpider(BaseProductsSpider):
         try:
             properties_vars = re.findall(r'properties:(\[.*\]\}])', vars)
             availableMap = re.findall(r'availableMap:(\[.*\]\}])', vars)
-            data = json.loads(properties_vars[0])
-            availableMap_js = json.loads(availableMap[0])
+            if properties_vars:
+                data = json.loads(properties_vars[0])
+            else:
+                return
+            price_js = json.loads(availableMap[0])
         except Exception as e:
             print e
 
@@ -152,12 +155,28 @@ class NeweggProductSpider(BaseProductsSpider):
                 all.append(group_variants)
         result = list(itertools.product(*all))
 
-        for r in result:
+        price_all = list()
+        for group in price_js:
+            group_variants = list()
+            for prop in group['map']:
+                group_variants.append([prop['name'], prop['value'], group['info']['price']])
+            price_all.append(group_variants)
+
+        for i, r in enumerate(result):
             properties = {}
             variant = {}
-            for item in r:
+            price = None
+            for j, item in enumerate(r):
                 properties[str(item[3])] = item[0]
-            variant['price'] = None
+                try:
+                    if item[1] == price_all[i][j][1] and item[2] == price_all[i][j][0]:
+                        price = price_all[i][j][2]
+                except:
+                    price = None
+            if price:
+                variant['price'] = price
+            else:
+                variant['price'] = None
             variant['in_stock'] = None
             variant['properties'] = properties
             variants.append(variant)
