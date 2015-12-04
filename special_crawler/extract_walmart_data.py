@@ -1906,7 +1906,7 @@ class WalmartScraper(Scraper):
         return None
 
     def _image_dimensions(self):
-        self.image_urls()
+        self._image_urls()
         return self.image_dimensions
 
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
