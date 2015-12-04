@@ -107,7 +107,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
 
         # TODO: remove later
         self._scraped_product_links_count += 1
-        if self._scraped_product_links_count > 5:
+        if self._scraped_product_links_count > 50:
             return
 
         if not links:
