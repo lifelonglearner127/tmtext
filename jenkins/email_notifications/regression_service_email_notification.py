@@ -84,25 +84,25 @@ for row in rows:
 
         #UPC missing products
         if not sample_json["product_info"]["upc"]:
-            upc_missing_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
+            upc_missing_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/urlsample/" + str(row["id"])})
 
         #Review issue products
         if sample_json["reviews"]["review_count"] > 0 and \
                 (sample_json["reviews"]["average_review"] is None or sample_json["reviews"]["max_review"] is None or sample_json["reviews"]["min_review"] is None or sample_json["reviews"]["reviews"] is None):
-            review_issue_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
+            review_issue_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/urlsample/" + str(row["id"])})
 
         #Price issue products
         if sample_json["sellers"]["price"] and (sample_json["sellers"]["price_amount"] is None or sample_json["sellers"]["price_currency"] is None):
-            price_issue_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
+            price_issue_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/urlsample/" + str(row["id"])})
 
         #Marketplace issue products
         if ((sample_json["marketplace_sellers"] and not sample_json["marketplace_prices"]) or (not sample_json["marketplace_sellers"] and sample_json["marketplace_prices"])) \
                 or ((sample_json["marketplace_sellers"] and sample_json["marketplace_prices"]) and len(sample_json["marketplace_sellers"]) != len(sample_json["marketplace_prices"])):
-            marketplace_issue_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
+            marketplace_issue_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/urlsample/" + str(row["id"])})
 
         #Walmart v1 products
         if website == "walmart" and sample_json["scraper"] == "Walmart v1":
-            walmart_v1_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
+            walmart_v1_product_list.append({"store url": sample_json["url"], "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/urlsample/" + str(row["id"])})
     except:
         invalid_products_list.append(row["url"])
 
