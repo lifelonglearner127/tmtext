@@ -1833,13 +1833,12 @@ class WalmartScraper(Scraper):
                 hero_image_url = item.get('versions', {}).get('hero', None)
                 zoom_image_url = item.get('versions', {}).get('zoom', None)
 
-                if hero_image_url and hero_image_url.startswith("http://i5.walmartimages.com"):
-                    images_carousel.append(hero_image_url)
-                    image_dimensions.append([450, 450])
-
                 if zoom_image_url and zoom_image_url.startswith("http://i5.walmartimages.com"):
                     images_carousel.append(zoom_image_url)
                     image_dimensions.append([2000, 2000])
+                elif hero_image_url and hero_image_url.startswith("http://i5.walmartimages.com"):
+                    images_carousel.append(hero_image_url)
+                    image_dimensions.append([450, 450])
 
             if images_carousel:
                 # if there's only one image, check to see if it's a "no image"
@@ -1907,7 +1906,8 @@ class WalmartScraper(Scraper):
         return None
 
     def _image_dimensions(self):
-        return None
+        self.image_urls()
+        return self.image_dimensions
 
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
     # might be outdated? (since walmart site redesign)
