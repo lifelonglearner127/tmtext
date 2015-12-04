@@ -91,6 +91,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         yield Request(url=self.valid_url(self.product_url),
                       meta=self._setup_meta_compatibility())  # meta is for SC baseclass compatibility
 
+    _scraped_product_links_count = 0  # TODO: remove and implement another way of controlling the limits
     def _scrape_product_links(self, response):
         links_xpath = (
             '//*[@id="dealHoverContent"]//a[contains(@href, "p/")]'
@@ -98,8 +99,16 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             '/../../..//a[contains(@href, "p/")]'
             ' | //div[contains(@id, "atfResults")]//a[contains(@href, "p/")]'
             ' | //a[contains(@href, "p/") and contains(@class, "dealTitle")]'
+            ' | //*[contains(@class, "imagebox_imagemap")]/../../a[contains(@href, "p/")]'
+            ' | //li[contains(@id, "result_")]//h2/../../a[contains(@href, "p/")]'
+            ' | //*[contains(@class, "dv-shelf-item")]//img/../../a[contains(@href, "p/")]'
         )
         links = response.xpath(links_xpath)
+
+        # TODO: remove later
+        self._scraped_product_links_count += 1
+        if self._scraped_product_links_count > 5:
+            return
 
         if not links:
             # page with lots of JS requests? try selenium
@@ -111,10 +120,12 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             dcap = dict(DesiredCapabilities.PHANTOMJS)
             dcap["phantomjs.page.settings.userAgent"] = self.user_agent
             driver = webdriver.PhantomJS(desired_capabilities=dcap)
-            driver.set_page_load_timeout(30)
+            driver.set_page_load_timeout(60)
+            driver.set_script_timeout(60)
             driver.set_window_size(1280, 1024)
             try:
                 driver.get(self.product_url)
+                driver.save_screenshot('/tmp/page.png')
             except Exception as e:
                 print('Exception while loading url: %s' % str(e))
             scrapy_response = HtmlResponse(
@@ -138,9 +149,6 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             yield url, item
         """
 
-        with open('/tmp/_amazon_links.txt', 'a') as fh:
-            fh.write(response.url + '\n')
-
         for link in links:
             _href = link.xpath('./@href').extract()[0]
             if '/product-reviews/' in _href:
@@ -160,11 +168,17 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
     def _scrape_total_matches(self, response):
         return self.quantity
 
-    #def _scrape_next_results_page_link(self, response):
-    #    if self.current_page >= self.num_pages:
-    #        return
-    #    self.current_page += 1
-    #    return super(WalmartShelfPagesSpider, self)._scrape_next_results_page_link(response)
+    def _scrape_next_results_page_link(self, response):
+        if self.current_page >= self.num_pages:
+            return
+        self.current_page += 1
+        next_link = super(AmazonShelfPagesSpider, self).\
+            _scrape_next_results_page_link(response)
+        if not next_link:
+            next_link = response.xpath(
+                '//*[contains(@id, "pagnNextLink")]/@href').extract()
+        if next_link:
+            return next_link
 
     """
     def parse_product(self, response):
