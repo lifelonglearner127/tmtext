@@ -2062,6 +2062,10 @@ class WalmartScraper(Scraper):
                 if int(store["isAvail"]) == 1:
                     return 0
 
+            for seller in self.product_info_json["buyingOptions"]["marketplaceOptions"]:
+                if seller["seller"]["displayName"].lower() == "walmart store" and seller["available"]:
+                    return 0
+
             return 1
 
         return None
@@ -2102,6 +2106,22 @@ class WalmartScraper(Scraper):
                 if int(store["isAvail"]) == 1:
                     return 1
 
+            # The product is site online as marketplace sellers(means walmart is one of marketplace seller of this product
+            sellers = self._marketplace_sellers_from_script()
+
+            if sellers:
+                sellers = [seller.lower() for seller in sellers]
+
+                if "walmart store" in sellers:
+                    return 1
+
+            marketplace_seller_names = self.tree_html.xpath("//div[contains(@data-automation-id, 'product-mp-seller-name')]")
+
+            if marketplace_seller_names:
+                for marketplace in marketplace_seller_names:
+                    if "walmart store" in marketplace.text_content().lower().strip():
+                        return 1
+
         except Exception:
             pass
 
@@ -2136,12 +2156,7 @@ class WalmartScraper(Scraper):
             or None if none found / not relevant
         """
 
-        if not self.product_info_json:
-            pinfo_dict = self._extract_product_info_json()
-        else:
-            pinfo_dict = self.product_info_json
-#        sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
-#        sellers = map(lambda d: d["sellerName"], sellers_dict)
+        pinfo_dict = self._extract_product_info_json()
 
         sellers_dict = pinfo_dict["buyingOptions"]["marketplaceOptions"]
         sellers = map(lambda d: d["seller"]["displayName"], sellers_dict)
@@ -2178,24 +2193,6 @@ class WalmartScraper(Scraper):
             return None
 
         return min(marketplace_prices)
-
-    # ! may throw exception if not found
-    def _in_stock_from_script(self):
-        """Extracts info on whether product is available to be
-        bought on the site, from any seller (marketplace or owned).
-        Works on new page design
-        Returns:
-            1/0 (available/not available)
-        """
-
-        if not self.product_info_json:
-            pinfo_dict = self._extract_product_info_json()
-        else:
-            pinfo_dict = self.product_info_json
-
-        available = pinfo_dict["analyticsData"]["onlineAvail"]
-
-        return 1 if available else 0
 
     def _in_stock_old(self):
         """Extracts info on whether product is available to be
@@ -2405,16 +2402,20 @@ class WalmartScraper(Scraper):
             return 1
 
         # The product is site online as marketplace sellers(means walmart is one of marketplace seller of this product
-        try:
-            marketplace_seller_names = self.tree_html.xpath("//div[contains(@data-automation-id, 'product-mp-seller-name')]/text()")
+        sellers = self._marketplace_sellers_from_script()
 
-            if marketplace_seller_names:
-                for marketplace in marketplace_seller_names:
-                    if marketplace.lower().strip() == "walmart.com":
-                        return 1
+        if sellers:
+            sellers = [seller.lower() for seller in sellers]
 
-        except:
-            pass
+            if "walmart.com" in sellers:
+                return 1
+
+        marketplace_seller_names = self.tree_html.xpath("//div[contains(@data-automation-id, 'product-mp-seller-name')]")
+
+        if marketplace_seller_names:
+            for marketplace in marketplace_seller_names:
+                if "walmart.com" in marketplace.text_content().lower().strip():
+                    return 1
 
         return 0
 
@@ -2427,10 +2428,14 @@ class WalmartScraper(Scraper):
         if self._site_online() == 1:
             try:
                 if self._version() == "Walmart v2":
-                    if not self.product_info_json["analyticsData"]["onlineAvail"]:
-                        return 1
-                    else:
+                    if self.product_info_json["analyticsData"]["onlineAvail"]:
                         return 0
+
+                    for seller in self.product_info_json["buyingOptions"]["marketplaceOptions"]:
+                        if seller["seller"]["displayName"].lower() == "walmart.com" and seller["available"]:
+                            return 0
+
+                    return 1
                 else:
                     site_online_out_of_stock = self.tree_html.xpath("//meta[@itemprop='availability']/@content")[0]
 
