@@ -201,9 +201,12 @@ for row in rows:
         number_of_changed_products = number_of_changed_products + 1
         version_changed = "No"
 
-        if sample_json["scraper"] != current_json["scraper"]:
-            number_of_version_changed_products = number_of_version_changed_products + 1
-            version_changed = "Yes"
+        try:
+            if sample_json["scraper"] != current_json["scraper"]:
+                number_of_version_changed_products = number_of_version_changed_products + 1
+                version_changed = "Yes"
+        except:
+            continue
 
         csv_writer.writerow({"store url": row["sample_url"], "number of changed parts": str(row["changes_in_structure"]), "version changed(Yes/No)": version_changed, "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
 
