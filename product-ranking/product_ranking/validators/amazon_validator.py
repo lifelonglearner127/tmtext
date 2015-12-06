@@ -11,13 +11,13 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
-        'samsung t9500 battery 2600 li-ion warranty': [20, 100],
-        'water pump bronze inch apollo': [2, 30],
-        'ceiling fan industrial white system': [5, 50],
+        'zollinger atlas of surgical operations': [10, 40],
+        'assassins creed golden edition': [2, 30],
+        'ceiling fan industrial white system': [5, 60],
         'kaspersky total': [20, 100],
         'car navigator garmin maps 44LM': [1, 20],
         'yamaha drums midi': [50, 300],
-        'black men shoes size 8  red stripes': [40, 100],
+        'black men shoes size 8  red stripes': [40, 120],
         'car audio equalizer pioneer mp3': [20, 100]
     }
 

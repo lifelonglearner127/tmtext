@@ -10,12 +10,12 @@ class AmazoncaValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
-        'transformator': [50, 300],
+        'yellow toaster 2 slice': [2, 10],
         'kaspersky total': [3, 50],
-        'gold sold fold': [5, 200],  # spider should return from 5 to 200 products
+        'learn python the hard way': [2, 10],
         'yamaha drums midi': [5, 100],
-        'black men shoes size 8 red': [5, 100],
-        'antoshka': [5, 150],
+        'black men shoes size 8 red': [5, 150],
+        'green wooden plug': [3, 10],
         'apple ipod nano gold': [50, 300],
         'programming product best': [5, 100],
     }
