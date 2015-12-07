@@ -125,10 +125,10 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
     user_agent = 'default'
 
-    def __init__(self, search_sort='best_match', zipcode='M3C',
+    def __init__(self, search_sort='best_match', zip_code='M3C',
                  search_order='default', *args, **kwargs):
-        if zipcode:
-            self.zipcode = zipcode
+        if zip_code:
+            self.zip_code = zip_code
         super(WalmartCaProductsSpider, self).__init__(
             site_name=self.allowed_domains[0],
             url_formatter=FormatterWithDefaults(
