@@ -13,11 +13,7 @@ import urllib
 import signal
 from datetime import date
 
-SUPPORTED_SITES = ["amazon", "bestbuy", "homedepot","statelinetack","tesco","walmart","argos",
-                    "kmart","ozon","pgestore","pgshop","vitadepot","wayfair","impactgel",
-                    "chicksaddlery","bhinneka","maplin","hersheysstore","target","chicago",
-                    "samsclub","babysecurity","staples","soap","drugstore","staplesadvantage",
-                    "freshamazon","souq","freshdirect","quill","george","peapod"]
+SUPPORTED_SITES = ["walmart", "amazon", "jcpenney", "kohls", "macys"]
 
 def signal_handler(signum, frame):
     raise Exception("Timed out!")
