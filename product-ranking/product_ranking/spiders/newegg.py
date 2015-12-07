@@ -150,7 +150,7 @@ class NeweggProductSpider(BaseProductsSpider):
             group_variants = list()
             for prop in group['data']:
                 if prop['displayInfo']:
-                    group_variants.append([prop['displayInfo'], prop['value'], group['name'], group['description']])
+                    group_variants.append([prop['description'], prop['value'], group['name'], group['description']])
             if group_variants:
                 all.append(group_variants)
         result = list(itertools.product(*all))
@@ -159,20 +159,27 @@ class NeweggProductSpider(BaseProductsSpider):
         for group in price_js:
             group_variants = list()
             for prop in group['map']:
-                group_variants.append([prop['name'], prop['value'], group['info']['price']])
+                group_variants.append(prop['value'])
+                group_variants.append(prop['name'])
+            group_variants.append(group['info']['price'])
             price_all.append(group_variants)
-
-        for i, r in enumerate(result):
+        for r in result:
+            id_result = []
             properties = {}
             variant = {}
-            price = None
-            for j, item in enumerate(r):
+            for item in r:
+                id_result.append(item[1])
+                id_result.append(item[2])
                 properties[str(item[3])] = item[0]
-                try:
-                    if item[1] == price_all[i][j][1] and item[2] == price_all[i][j][0]:
-                        price = price_all[i][j][2]
-                except:
+            for price_item in price_all:
+                rez = list(set(id_result) - set(price_item))
+                if not rez:
+                    print rez
+                    price = price_item[-1]
+                else:
+                    print rez
                     price = None
+
             if price:
                 variant['price'] = price
             else:
