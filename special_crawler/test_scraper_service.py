@@ -737,6 +737,42 @@ class ServiceScraperTest(unittest.TestCase):
             except:
                 pass
 
+    def test_jcpenney(self):
+        if specified_website and specified_website != "jcpenney":
+            return
+
+        self.initialize_scraper("jcpenney")
+
+        for url in self.urls_by_scraper["jcpenney"]:
+            try:
+                self._test("jcpenney", url)
+            except:
+                pass
+
+    def test_kohls(self):
+        if specified_website and specified_website != "kohls":
+            return
+
+        self.initialize_scraper("kohls")
+
+        for url in self.urls_by_scraper["kohls"]:
+            try:
+                self._test("kohls", url)
+            except:
+                pass
+
+    def test_macys(self):
+        if specified_website and specified_website != "macys":
+            return
+
+        self.initialize_scraper("macys")
+
+        for url in self.urls_by_scraper["macys"]:
+            try:
+                self._test("macys", url)
+            except:
+                pass
+
 if __name__ == '__main__':
     specified_website = ""
 
