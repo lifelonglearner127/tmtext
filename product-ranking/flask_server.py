@@ -295,6 +295,8 @@ def _start_spider_and_wait_for_finish(spider, url, max_wait=60*2):
 @app.route('/get_data_ajax')
 def get_data_ajax():
     url = request.args.get('url', '').strip()
+    if isinstance(url, unicode):
+        url = url.encode('utf-8')
     spider = request.args['spider'].strip()
     print 'SPIDER', spider
     print 'PROCESSING URL', url
