@@ -66,13 +66,18 @@ class JcpenneyScraper(Scraper):
             itemtype = self.tree_html.xpath('//div[@class="pdp_details"]')
 
             if not itemtype:
+                self.ERROR_RESPONSE["failure_type"] = "Not a product"
+
                 if self.tree_html.xpath("//div[@class='product_row bottom_border flt_wdt']"):
                     self.ERROR_RESPONSE["failure_type"] = "Bundle"
 
                 raise Exception()
 
+
         except Exception:
             return True
+
+        self.analyze_media_contents()
 
         return False
 
@@ -173,8 +178,7 @@ class JcpenneyScraper(Scraper):
         swatches = swatches if swatches else []
 
         for swatch in swatches:
-            if swatch["hero_image"] not in image_urls:
-                image_urls.append(swatch["hero_image"])
+            image_urls.extend(swatch["hero_image"])
 
         image_urls = list(set(image_urls))
 
@@ -215,7 +219,7 @@ class JcpenneyScraper(Scraper):
         video_json = None
 
         try:
-            video_json = ast.literal_eval(self._find_between(html.tostring(self.tree_html), "videoIds.push(", ");\nvar videoThumbsMap = "))
+            video_json = ast.literal_eval(self._find_between(html.tostring(self.tree_html), "videoIds.push(", ");\n"))
         except:
             video_json = None
 
@@ -286,49 +290,43 @@ class JcpenneyScraper(Scraper):
                 except:
                     pass
 
-        if video_json:
-            if not self.video_urls:
-                self.video_urls = [video_json['url']]
-                self.video_count = 1
-            else:
-                self.video_urls.append(video_json["url"])
-                self.video_count = self.video_count + 1
+        try:
+            if video_json:
+                if not self.video_urls:
+                    self.video_urls = [video_json['url']]
+                    self.video_count = 1
+                else:
+                    self.video_urls.append(video_json["url"])
+                    self.video_count = self.video_count + 1
+        except:
+            pass
 
     def _video_urls(self):
-        self.analyze_media_contents()
         return self.video_urls
 
     def _video_count(self):
-        self.analyze_media_contents()
         return self.video_count
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
-        self.analyze_media_contents()
         return self.pdf_urls
 
     def _pdf_count(self):
-        self.analyze_media_contents()
         return self.pdf_count
 
     def _wc_emc(self):
-        self.analyze_media_contents()        
         return self.wc_emc
 
     def _wc_prodtour(self):
-        self.analyze_media_contents()        
         return self.wc_prodtour
 
     def _wc_360(self):
-        self.analyze_media_contents()        
         return self.wc_360
 
     def _wc_video(self):
-        self.analyze_media_contents()        
         return self.wc_video
 
     def _wc_pdf(self):
-        self.analyze_media_contents()        
         return self.wc_pdf
 
     def _webcollage(self):
