@@ -1,4 +1,5 @@
 import json
+import sys
 from time import sleep
 from datetime import datetime, timedelta
 from random import randint
@@ -6,13 +7,15 @@ from boto.sqs.message import Message
 from boto.sqs import connect_to_region as connect_sqs
 from boto.s3 import connect_to_region as connect_s3
 
+from remote_instance_starter import AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+
 import logging
 logging.basicConfig(
-    level=logging.WARNING,
+    stream=sys.stdout,
+    level=logging.INFO,
     format='[%(asctime)s, %(levelname)s] %(message)s',
-    filename='/tmp/test_sqs.log'
 )
-logging.getLogger('boto').setLevel(logging.WARNING)
+logging.getLogger('boto').setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -181,7 +184,11 @@ def log_failed_tasks(tasks):
 def main():
     logger.info('Initializing variables')
     sqs_conn = connect_sqs('us-east-1')
-    s3_conn = connect_s3('us-east-1')
+    s3_conn = connect_s3(
+        'us-east-1',
+        aws_access_key_id=AMAZON_ACCESS_KEY,
+        aws_secret_access_key=AMAZON_SECRET_KEY
+    )
     bucket = s3_conn.get_bucket('spyder-bucket')
     max_wait_minutes = 40
     server_name = 'sqs_test'
