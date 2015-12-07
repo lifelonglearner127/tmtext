@@ -112,6 +112,7 @@ class Scraper():
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
             "image_urls", # urls of product images, list of strings
+            "image_dimensions", # dimensions of product images
             "video_count", # nr of videos, int
             "video_urls", # urls of product videos, list of strings
             "wc_360", # binary (0/1), whether 360 view exists or not
@@ -213,7 +214,7 @@ class Scraper():
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
                         "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to"],
-        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "wc_360", \
+        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
                             "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls"], \
@@ -727,7 +728,7 @@ class Scraper():
         # in_stores is 1 and in_stores_out_of_stock is 0
         if in_stores == 1 and in_stores_out_of_stock == 0:
             return 1
-        if in_stores == 1 and in_stores_out_of_stock == 0:
+        if in_stores == 1 and in_stores_out_of_stock == 1:
             return 0
 
         return None
