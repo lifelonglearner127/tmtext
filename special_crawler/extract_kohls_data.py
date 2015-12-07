@@ -267,13 +267,12 @@ class KohlsScraper(Scraper):
 
         if swatches:
             for swatch in swatches:
-                try:
-                    if swatch["hero_image"] and swatch["hero_image"] not in image_urls:
-                        image_urls.append(swatch["hero_image"])
-                except:
-                    pass
+                if swatch["hero_image"]:
+                    image_urls.extend(swatch["hero_image"])
 
         if image_urls:
+            image_urls = list(set(list))
+
             return image_urls
 
         return None
