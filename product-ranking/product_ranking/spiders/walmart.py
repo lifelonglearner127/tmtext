@@ -168,10 +168,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     user_agent = 'default'
 
-    def __init__(self, search_sort='best_match', zipcode='94117',
+    def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
-        if zipcode:
-            self.zipcode = zipcode
+        if zip_code:
+            self.zip_code = zip_code
         if search_sort == 'best_sellers':
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         super(WalmartProductsSpider, self).__init__(
@@ -431,7 +431,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         _meta['handle_httpstatus_list'] = [404, 502, 520]
         return Request(
             self.LOCATION_PROD_URL.format(
-                product_id=response.meta['product_id'], zip_code=self.zipcode),
+                product_id=response.meta['product_id'], zip_code=self.zip_code),
             callback=self._on_dynamic_api_response,
             meta=_meta
         )
@@ -844,7 +844,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             headers={'x-requested-with': 'XMLHttpRequest',
                      'Content-Type': 'application/json'},
             dont_filter=True)
-        req = req.replace(body='{"postalCode":"' + self.zipcode + '"}')
+        req = req.replace(body='{"postalCode":"' + self.zip_code + '"}')
         return req
 
     def _gen_related_req(self, response):
@@ -949,7 +949,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         _meta['handle_httpstatus_list'] = [404, 502, 520]
         return Request(
             self.LOCATION_PROD_URL.format(
-                product_id=response.meta['product_id'], zip_code=self.zipcode),
+                product_id=response.meta['product_id'], zip_code=self.zip_code),
             callback=self._on_dynamic_api_response,
             meta=response.meta
         )
