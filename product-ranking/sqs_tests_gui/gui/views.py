@@ -146,7 +146,7 @@ class ProgressMessagesView(AdminOnlyMixin, TemplateView):
 
 class SearchFilesView(AdminOnlyMixin, TemplateView):
     template_name = 'search_s3_files.html'
-    max_files = 400
+    max_files = 10000
     fname2open = LOCAL_AMAZON_LIST
     extra_filter = None
 

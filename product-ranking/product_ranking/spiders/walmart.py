@@ -191,7 +191,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 url=url, 
                 callback=self.get_sponsored_links,
                 dont_filter=True, 
-                meta={"handle_httpstatus_list": [404]},
+                meta={"handle_httpstatus_list": [404, 502]},
             )
 
         if self.product_url:
@@ -199,7 +199,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod, 'handle_httpstatus_list': [404]},
+                          meta={'product': prod, 'handle_httpstatus_list': [404, 502]},
                           dont_filter=True)
 
     def get_sponsored_links(self, response):
@@ -284,6 +284,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             return product
 
         if response.status in self.default_hhl:
+            if response.status == 502:  # no longer available?
+                product.update({"no_longer_available": True})
             product.update({"locale":'en-US'})
             return product
         if self._search_page_error(response):
@@ -381,7 +383,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         #    }
 
         #    return Request(url=url, meta=meta, callback=self.get_questions)
-        
+
         if 'is_in_store_only' not in product:
             if re.search(
                     "only available .{0,20} Walmart store",
@@ -397,6 +399,21 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             product['special_pricing'] = False
 
+        if not product.get('price', None):
+            prod_data = re.search('"product/data",(.+?);', response.body)
+            if prod_data:
+                prod_data = prod_data.group(1)
+                if prod_data.endswith(')'):
+                    prod_data = prod_data[0:-1]
+                prod_data = json.loads(prod_data.strip())
+                display_price = prod_data['buyingOptions']['price']['displayPrice']
+
+                display_price = re.search('[\d\.]+', display_price)
+                if display_price:
+                    display_price = display_price.group()
+                    price_amount = float(display_price)
+                    product['price'] = Price(price=price_amount, priceCurrency="USD")
+
         if not product.get('price'):
             cond_set_value(product, 'url', response.url)
             return self._gen_location_request(response)
@@ -410,12 +427,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if _na_text:
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
-
+        _meta = response.meta
+        _meta['handle_httpstatus_list'] = [404, 502, 520]
         return Request(
             self.LOCATION_PROD_URL.format(
                 product_id=response.meta['product_id'], zip_code=self.zipcode),
             callback=self._on_dynamic_api_response,
-            meta=response.meta
+            meta=_meta
         )
 
     def parse_available(self, response):
@@ -496,6 +514,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             else:
                 product = response.meta['product']
             product['response_code'] = 404
+            product['not_found'] = True
             if not 'url' in product:
                 product['url'] = getattr(self, 'product_url', '')
             yield product
@@ -926,6 +945,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         product = response.meta['product']
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
+        _meta = response.meta
+        _meta['handle_httpstatus_list'] = [404, 502, 520]
         return Request(
             self.LOCATION_PROD_URL.format(
                 product_id=response.meta['product_id'], zip_code=self.zipcode),
@@ -947,19 +968,25 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             if data:
                 prod = response.meta['product']
                 opts = data.get('buyingOptions', {})
-                prod['is_out_of_stock'] = not opts.get('available', False)
-                if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
-                    prod['shipping'] = False
-                prod['is_in_store_only'] = opts.get('storeOnlyItem', None)
-                if 'price' in opts and 'displayPrice' in opts['price']:
-                    prod['price'] = Price(
-                        priceCurrency='USD',
-                        price=opts['price']['displayPrice'].replace('$', '')
+                if opts is None:
+                    # product "no longer available"?
+                    self.log('buyingOptions are None: %s' % response.url, ERROR)
+                    prod.update({"no_longer_available": True})
+                else:
+                    prod['is_out_of_stock'] = not opts.get('available', False)
+                    if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
+                        prod['shipping'] = False
+                    prod['is_in_store_only'] = opts.get('storeOnlyItem', None)
+                    if 'price' in opts and 'displayPrice' in opts['price']:
+                        if opts['price']['displayPrice']:
+                            prod['price'] = Price(
+                                priceCurrency='USD',
+                                price=opts['price']['displayPrice'].replace('$', '')
+                            )
+                    self.log(
+                        'Scraped and parsed unofficial APIs from %s' % response.url,
+                        INFO
                     )
-                self.log(
-                    'Scraped and parsed unofficial APIs from %s' % response.url,
-                    INFO
-                )
         return self._start_related(response)
 
     def _populate_from_js(self, response, product):

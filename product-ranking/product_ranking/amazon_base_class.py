@@ -550,7 +550,6 @@ class AmazonBaseClass(BaseProductsSpider):
                   '//*[@id="contributorLink"]/text() |' \
                   '//*[@id="by-line"]/.//a/text() |' \
                   '//*[@id="artist-container"]/.//a/text() |' \
-                  '//*[@id="byline"]/.//*[contains(@class,"author")]/a/text() |' \
                   '//div[@class="buying"]/.//a[contains(@href, "search-type=ss")]/text() |' \
                   '//a[@id="ProductInfoArtistLink"]/text() |' \
                   '//a[contains(@href, "field-author")]/text()'
@@ -581,7 +580,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 brand = [brand]
 
         if isinstance(brand, list):
-            brand = [br for br in brand if br is not 'search results']
+            brand = [br for br in brand if brand and 'search result' not in br.lower()]
 
         brand = brand or ['NO BRAND']
 
@@ -591,6 +590,10 @@ class AmazonBaseClass(BaseProductsSpider):
             else:
                 brand = None
                 break
+
+        # remove authors
+        if response.xpath('//*[contains(@id, "byline")]//*[contains(@class, "author")]'):
+            brand = None
 
         return brand
 
@@ -923,6 +926,8 @@ class AmazonBaseClass(BaseProductsSpider):
                     desc = unquote(f[0])
                     description = desc
 
+        if isinstance(description, (list, tuple)):
+            description = description[0]
         return description.strip() if description else None
 
     def _parse_upc(self, response):

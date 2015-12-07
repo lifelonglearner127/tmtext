@@ -607,6 +607,8 @@ class ScrapyTask(object):
         ext_cache_down = 'cache_downloading'
         ext_cache_up = 'cache_uploading'
         cmd_args = self.task_data.get('cmd_args', {})
+        if not isinstance(cmd_args, dict):
+            cmd_args = {}
         if cmd_args.get('save_s3_cache', False):
             self.required_signals[SIGNAL_SPIDER_OPENED]['wait'] += \
                 EXTENSION_SIGNALS[ext_cache_up]
@@ -845,6 +847,8 @@ class ScrapyTask(object):
         urls = self.task_data.get('urls', None)
         site = self.task_data['site']
         cmd_line_args = self.task_data.get('cmd_args', {})
+        if not isinstance(cmd_line_args, dict):
+            cmd_line_args = {}
         output_path = self.get_output_path()
         options = ' '
         arg_name = arg_value = None
