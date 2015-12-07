@@ -267,13 +267,12 @@ class KohlsScraper(Scraper):
 
         if swatches:
             for swatch in swatches:
-                try:
-                    if swatch["hero_image"] and swatch["hero_image"] not in image_urls:
-                        image_urls.append(swatch["hero_image"])
-                except:
-                    pass
+                if swatch["hero_image"]:
+                    image_urls.extend(swatch["hero_image"])
 
         if image_urls:
+            image_urls = list(set(image_urls))
+
             return image_urls
 
         return None
@@ -383,13 +382,7 @@ class KohlsScraper(Scraper):
 
         self.is_review_checked = True
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
-        contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
+        contents = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(self._product_id()))
 
         try:
             start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
