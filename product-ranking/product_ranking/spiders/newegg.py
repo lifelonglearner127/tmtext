@@ -247,23 +247,42 @@ class NeweggProductSpider(BaseProductsSpider):
     def parse_related_product(self, response):
         meta = response.meta
         product = meta['product']
-        related_prods = []
+        related_products = {
+            'customers_also_bought': [],
+            'recommended': []
+        }
         data = response.body_as_unicode().replace('\\','')
         if data:
             sel = Selector(text=data)
-        titles = sel.xpath('//span[contains(@class, "descText")]/text()').extract()
-        urls = sel.xpath('//div[contains(@class, "wrap_description")]/a/@href').extract()
-        for title, url in zip(titles, urls):
-            if url and title:
-                related_prods.append(
-                            RelatedProduct(
-                                title=title,
-                                url=url
-                            )
-                        )
-        product['related_products'] = {}
-        if related_prods:
-            product['related_products']['customers_also_bought'] = related_prods
+
+        # Customers Also Bought
+        customers_products = sel.xpath('//div[contains(@class, "descSideSell")]')
+        for item in customers_products:
+            title = is_empty(item.xpath('a/text()').extract())
+            url = is_empty(item.xpath('a/@href').extract())
+            if title and url:
+                prod = RelatedProduct(url=url, title=title)
+                related_products['customers_also_bought'].append(prod)
+
+        customers_products = sel.xpath('//div[contains(@class,"imgSideSell")]/img')
+        for item in customers_products:
+            title = is_empty(item.xpath('@title').extract())
+            url = is_empty(item.xpath('@src').extract())
+            if title and url:
+                prod = RelatedProduct(url=url, title=title)
+                related_products['customers_also_bought'].append(prod)
+
+        # Recommended
+        recommended_products = sel.xpath('//div[contains(@class, "wrap_description")]')
+        for item in recommended_products:
+            title = is_empty(item.xpath('a/span/text()').extract())
+            url = is_empty(item.xpath('a/@href').extract())
+            if title and url:
+                prod = RelatedProduct(url=url, title=title)
+                related_products['recommended'].append(prod)
+
+        if related_products:
+            product['related_products'] = related_products
 
         return product
 
