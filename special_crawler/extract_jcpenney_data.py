@@ -229,9 +229,7 @@ class JcpenneyScraper(Scraper):
             media_contents_window_link = self.tree_html.xpath("//a[@class='InvodoViewerLink']/@onclick")[0]
             media_contents_window_link = re.search("window\.open\('(.+?)',", media_contents_window_link).group(1)
 
-            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-
-            contents = requests.get(media_contents_window_link, headers=h).text
+            contents = self.load_page_from_url_with_number_of_retries(media_contents_window_link)
 
             #check media contents
             if "webapps.easy2.com" in media_contents_window_link:
@@ -253,7 +251,7 @@ class JcpenneyScraper(Scraper):
                     pass
             elif "content.webcollage.net" in media_contents_window_link:
                 webcollage_link = re.search("document\.location\.replace\('(.+?)'\);", contents).group(1)
-                contents = requests.get(webcollage_link, headers=h).text
+                contents = self.load_page_from_url_with_number_of_retries(webcollage_link)
                 webcollage_page_tree = html.fromstring(contents)
 
                 try:
@@ -398,14 +396,8 @@ class JcpenneyScraper(Scraper):
 
         self.is_review_checked = True
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
         review_id = self._find_between(html.tostring(self.tree_html), 'reviewId:"', '",').strip()
-        contents = s.get(self.REVIEW_URL.format(review_id), headers=h, timeout=5).text
+        contents = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(review_id))
 
         try:
             start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
