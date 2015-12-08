@@ -26,9 +26,6 @@ class NeweggProductSpider(BaseProductsSpider):
     name = 'newegg_products'
     allowed_domains = ["www.newegg.com"]
 
-    #SEARCH_URL = "http://www.debenhams.com/webapp/wcs/stores/servlet/" \
-    #             "Navigate?langId=-1&storeId=10701&catalogId=10001&txt={search_term}"
-
     SEARCH_URL = "http://www.newegg.com/Product/ProductList.aspx" \
                  "?Submit=ENE&DEPA=0&Order=BESTMATCH" \
                  "&Description={search_term}&N=-1&isNodeId=1"
@@ -45,11 +42,6 @@ class NeweggProductSpider(BaseProductsSpider):
                        '&item={product_id}&v2=2012' \
                        '&parentItem={seller_id}' \
                        '&action=Biz.Product.ItemRelationInfoManager.JsonpCallBack'
-
-    # REVIEWS_URL = 'http://www.newegg.com/Product/ProductList.aspx?' \
-    #               'Submit=ENE&DEPA=0&Order=BESTMATCH' \
-    #               '&Description={search_term}&N=-1&isNodeId=1&Page=1'
-
 
 
     def __init__(self, *args, **kwargs):
@@ -88,10 +80,6 @@ class NeweggProductSpider(BaseProductsSpider):
        # Parse price
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
-       #
-       #  # # Parse special pricing
-       #  # special_pricing = self._parse_special_pricing(response)
-       #  # cond_set_value(product, 'special_pricing', special_pricing, conv=bool)
 
         # Parse image url
         image_url = self.parse_image_url(response)
@@ -178,11 +166,9 @@ class NeweggProductSpider(BaseProductsSpider):
             for item in r:
                 id_result.append(item[1])
                 id_result.append(item[2])
-                print id_result
                 properties[str(item[3])] = item[0]
             for price_item in price_all:
                 rez = list(set(id_result) - set(price_item))
-                print rez
                 if not rez:
                     price = price_item[-1]
                     in_stock = True
