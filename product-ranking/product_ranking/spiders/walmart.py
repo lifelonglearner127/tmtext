@@ -342,6 +342,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                      response.xpath(
                          '//meta[@itemprop="model"]/@content'
                      ).extract())
+        if response.xpath('//*[contains(@class, "submap-price")]'
+                          '[contains(text(), "See details in cart")]').extract():
+            product['price_details_in_cart'] = True
+
         flag = 'not available'
         if response.xpath('//meta[@name="Keywords"]').extract():
             if not flag in response.body_as_unicode():
