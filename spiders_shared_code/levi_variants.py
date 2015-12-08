@@ -159,7 +159,7 @@ class LeviVariants(object):
                 swatch_info["hero"] = 1
                 swatch_info["thumb"] = 1
                 swatch_info["hero_image"] = [buy_stack_json["colorid"][swatch]["imageURL"] + altView for altView in buy_stack_json["colorid"][swatch]["altViewsMain"]]
-                swatch_info["thumb_image"] = [buy_stack_json["colorid"][swatch]["swatch"]]
+                swatch_info["thumb_image"] = buy_stack_json["colorid"][swatch]["swatch"]
                 swatch_list.append(swatch_info)
 
             if swatch_list:
