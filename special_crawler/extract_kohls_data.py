@@ -392,13 +392,11 @@ class KohlsScraper(Scraper):
             self.review_json = json.loads(self.review_json)
         except:
             self.review_json = None
-            print "*********** review json parse error ************"
 
         review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
         reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
         reviews_by_mark = reviews_by_mark[:5]
         review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
-        print review_list
 
         if not review_list:
             review_list = None
