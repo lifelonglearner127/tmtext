@@ -610,7 +610,7 @@ class ServiceScraperTest(unittest.TestCase):
             test_json = json.loads(test_json)
             test_json_str = json.dumps(test_json, sort_keys=True, indent=4)
 
-            if "sellers" not in test_json.keys():
+            if "sellers" not in test_json.keys() or "failure_type" in test_json.keys():
                 raise Exception("Invalid product")
 
             self.cur.execute("select * from console_urlsample where website='%s' and url='%s' and not_a_product=0" % (website, sample_url))
@@ -695,7 +695,7 @@ class ServiceScraperTest(unittest.TestCase):
                         sample_json = json.loads(sample_json)
                         sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
 
-                        if "sellers" not in sample_json.keys():
+                        if "sellers" not in sample_json.keys() or "failure_type" in sample_json.keys():
                             raise Exception('Invalid product')
                     except:
                         not_a_product = 1
