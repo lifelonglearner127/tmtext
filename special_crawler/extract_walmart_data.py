@@ -69,6 +69,7 @@ class WalmartScraper(Scraper):
         self.extracted_pdf_urls = False
         # product image
         self.image_urls = None
+        self.image_dimensions = None
         # whether pdfs were extracted
         self.extracted_image_urls = False
 
@@ -1807,7 +1808,7 @@ class WalmartScraper(Scraper):
             list of strings representing image urls
         """
 
-        if self._version() == "Walmart v2" and self.is_bundle_product:
+        if self.is_bundle_product:
             return self.tree_html.xpath("//div[contains(@class, 'choice-hero-non-carousel')]//img/@src")
         else:
             def _fix_relative_url(relative_url):
@@ -1826,10 +1827,18 @@ class WalmartScraper(Scraper):
                 pinfo_dict = self.product_info_json
 
             images_carousel = []
+            image_dimensions = []
 
             for item in pinfo_dict['imageAssets']:
-                if item['versions']['hero'].startswith("http://i5.walmartimages.com"):
-                    images_carousel.append(item['versions']['hero'])
+                hero_image_url = item.get('versions', {}).get('hero', None)
+                zoom_image_url = item.get('versions', {}).get('zoom', None)
+
+                if zoom_image_url and zoom_image_url.startswith("http://i5.walmartimages.com"):
+                    images_carousel.append(zoom_image_url)
+                    image_dimensions.append([2000, 2000])
+                elif hero_image_url and hero_image_url.startswith("http://i5.walmartimages.com"):
+                    images_carousel.append(hero_image_url)
+                    image_dimensions.append([450, 450])
 
             if images_carousel:
                 # if there's only one image, check to see if it's a "no image"
@@ -1839,6 +1848,8 @@ class WalmartScraper(Scraper):
                             return None
                     except Exception, e:
                         print "WARNING: ", e.message
+
+                self.image_dimensions = image_dimensions
 
                 return self._qualify_image_urls(images_carousel)
 
@@ -1853,6 +1864,7 @@ class WalmartScraper(Scraper):
                 except Exception, e:
                     print "WARNING: ", e.message
 
+                self.image_dimensions = [450, 450]
                 return self._qualify_image_urls(main_image)
 
             # bundle product images
@@ -1892,6 +1904,10 @@ class WalmartScraper(Scraper):
             return self.image_urls
 
         return None
+
+    def _image_dimensions(self):
+        self._image_urls()
+        return self.image_dimensions
 
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
     # might be outdated? (since walmart site redesign)
@@ -2046,6 +2062,10 @@ class WalmartScraper(Scraper):
                 if int(store["isAvail"]) == 1:
                     return 0
 
+            for seller in self.product_info_json["buyingOptions"]["marketplaceOptions"]:
+                if seller["seller"]["displayName"].lower() == "walmart store" and seller["available"]:
+                    return 0
+
             return 1
 
         return None
@@ -2086,6 +2106,22 @@ class WalmartScraper(Scraper):
                 if int(store["isAvail"]) == 1:
                     return 1
 
+            # The product is site online as marketplace sellers(means walmart is one of marketplace seller of this product
+            sellers = self._marketplace_sellers_from_script()
+
+            if sellers:
+                sellers = [seller.lower() for seller in sellers]
+
+                if "walmart store" in sellers:
+                    return 1
+
+            marketplace_seller_names = self.tree_html.xpath("//div[contains(@data-automation-id, 'product-mp-seller-name')]")
+
+            if marketplace_seller_names:
+                for marketplace in marketplace_seller_names:
+                    if "walmart store" in marketplace.text_content().lower().strip():
+                        return 1
+
         except Exception:
             pass
 
@@ -2120,12 +2156,7 @@ class WalmartScraper(Scraper):
             or None if none found / not relevant
         """
 
-        if not self.product_info_json:
-            pinfo_dict = self._extract_product_info_json()
-        else:
-            pinfo_dict = self.product_info_json
-#        sellers_dict = pinfo_dict["analyticsData"]["productSellersMap"]
-#        sellers = map(lambda d: d["sellerName"], sellers_dict)
+        pinfo_dict = self._extract_product_info_json()
 
         sellers_dict = pinfo_dict["buyingOptions"]["marketplaceOptions"]
         sellers = map(lambda d: d["seller"]["displayName"], sellers_dict)
@@ -2162,24 +2193,6 @@ class WalmartScraper(Scraper):
             return None
 
         return min(marketplace_prices)
-
-    # ! may throw exception if not found
-    def _in_stock_from_script(self):
-        """Extracts info on whether product is available to be
-        bought on the site, from any seller (marketplace or owned).
-        Works on new page design
-        Returns:
-            1/0 (available/not available)
-        """
-
-        if not self.product_info_json:
-            pinfo_dict = self._extract_product_info_json()
-        else:
-            pinfo_dict = self.product_info_json
-
-        available = pinfo_dict["analyticsData"]["onlineAvail"]
-
-        return 1 if available else 0
 
     def _in_stock_old(self):
         """Extracts info on whether product is available to be
@@ -2389,16 +2402,20 @@ class WalmartScraper(Scraper):
             return 1
 
         # The product is site online as marketplace sellers(means walmart is one of marketplace seller of this product
-        try:
-            marketplace_seller_names = self.tree_html.xpath("//div[contains(@data-automation-id, 'product-mp-seller-name')]/text()")
+        sellers = self._marketplace_sellers_from_script()
 
-            if marketplace_seller_names:
-                for marketplace in marketplace_seller_names:
-                    if marketplace.lower().strip() == "walmart.com":
-                        return 1
+        if sellers:
+            sellers = [seller.lower() for seller in sellers]
 
-        except:
-            pass
+            if "walmart.com" in sellers:
+                return 1
+
+        marketplace_seller_names = self.tree_html.xpath("//div[contains(@data-automation-id, 'product-mp-seller-name')]")
+
+        if marketplace_seller_names:
+            for marketplace in marketplace_seller_names:
+                if "walmart.com" in marketplace.text_content().lower().strip():
+                    return 1
 
         return 0
 
@@ -2411,10 +2428,14 @@ class WalmartScraper(Scraper):
         if self._site_online() == 1:
             try:
                 if self._version() == "Walmart v2":
-                    if not self.product_info_json["analyticsData"]["onlineAvail"]:
-                        return 1
-                    else:
+                    if self.product_info_json["analyticsData"]["onlineAvail"]:
                         return 0
+
+                    for seller in self.product_info_json["buyingOptions"]["marketplaceOptions"]:
+                        if seller["seller"]["displayName"].lower() == "walmart.com" and seller["available"]:
+                            return 0
+
+                    return 1
                 else:
                     site_online_out_of_stock = self.tree_html.xpath("//meta[@itemprop='availability']/@content")[0]
 
@@ -2977,7 +2998,7 @@ class WalmartScraper(Scraper):
 
         "image_count": _image_count, \
         "image_urls": _image_urls, \
-
+        "image_dimensions": _image_dimensions, \
         "categories": _categories_hierarchy, \
         "category_name": _category, \
 

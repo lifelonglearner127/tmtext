@@ -12,7 +12,7 @@ class DockersValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
         'sdfsdgdf': 0,  # should return 'no products' or just 0 products
         'benny benassi': 0,
         'jeans': [20, 150],
-        'red': [40, 150],
+        'red': [20, 150],
         'black': [50, 300],
         'green': [10, 110],
         'blue jeans': [5, 150],

@@ -66,6 +66,8 @@ class JcpenneyScraper(Scraper):
             itemtype = self.tree_html.xpath('//div[@class="pdp_details"]')
 
             if not itemtype:
+                self.ERROR_RESPONSE["failure_type"] = "Not a product"
+
                 if self.tree_html.xpath("//div[@class='product_row bottom_border flt_wdt']"):
                     self.ERROR_RESPONSE["failure_type"] = "Bundle"
 
@@ -173,8 +175,7 @@ class JcpenneyScraper(Scraper):
         swatches = swatches if swatches else []
 
         for swatch in swatches:
-            if swatch["hero_image"] not in image_urls:
-                image_urls.append(swatch["hero_image"])
+            image_urls.extend(swatch["hero_image"])
 
         image_urls = list(set(image_urls))
 
@@ -215,7 +216,7 @@ class JcpenneyScraper(Scraper):
         video_json = None
 
         try:
-            video_json = ast.literal_eval(self._find_between(html.tostring(self.tree_html), "videoIds.push(", ");\nvar videoThumbsMap = "))
+            video_json = ast.literal_eval(self._find_between(html.tostring(self.tree_html), "videoIds.push(", ");\n"))
         except:
             video_json = None
 

@@ -85,8 +85,8 @@ class JcpenneyVariants(object):
             swatch_info["color"] = swatch.xpath("./img/@name")[0]
             swatch_info["hero"] = 1
             swatch_info["thumb"] = 1
-            swatch_info["hero_image"] = "http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % image_id
-            swatch_info["thumb_image"] = swatch.xpath("./img/@src")[0]
+            swatch_info["hero_image"] = ["http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % image_id]
+            swatch_info["thumb_image"] = [swatch.xpath("./img/@src")[0]]
             swatch_list.append(swatch_info)
 
         if swatch_list:
