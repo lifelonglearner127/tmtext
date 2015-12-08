@@ -40,6 +40,12 @@ class NeweggProductSpider(BaseProductsSpider):
     MARKETPLACE_URL = 'http://www.newegg.com/LandingPage/' \
                       'ItemInfo4ProductDetail2015.aspx?Item={product_id}&v2=2012'
 
+    RELATED_PRODUCTS = 'http://content.newegg.com/Common/Ajax/' \
+                       'RelationItemInfo2015.aspx?type=Seller' \
+                       '&item={product_id}&v2=2012' \
+                       '&parentItem={seller_id}' \
+                       '&action=Biz.Product.ItemRelationInfoManager.JsonpCallBack'
+
     # REVIEWS_URL = 'http://www.newegg.com/Product/ProductList.aspx?' \
     #               'Submit=ENE&DEPA=0&Order=BESTMATCH' \
     #               '&Description={search_term}&N=-1&isNodeId=1&Page=1'
@@ -174,10 +180,8 @@ class NeweggProductSpider(BaseProductsSpider):
             for price_item in price_all:
                 rez = list(set(id_result) - set(price_item))
                 if not rez:
-                    print rez
                     price = price_item[-1]
                 else:
-                    print rez
                     price = None
 
             if price:
@@ -196,6 +200,7 @@ class NeweggProductSpider(BaseProductsSpider):
         product = meta['product']
         data = response.body_as_unicode()
         seller_id = meta.get('seller_id')
+        product_id = meta.get('product_id')
         try:
             data = is_empty(re.findall(r'parentItem":"{0}"(.*)?'.format(seller_id), data)).replace('\\', '')
             marketplace = Selector(text=data)
@@ -224,6 +229,41 @@ class NeweggProductSpider(BaseProductsSpider):
 
             if marketplaces:
                 product["marketplace"] = marketplaces
+
+        reqs = meta.get('reqs', [])
+        reqs.append(
+            Request(
+                url=self.RELATED_PRODUCTS.format(product_id=product_id, seller_id=seller_id),
+                dont_filter=True,
+                callback=self.parse_related_product,
+                meta=meta
+            ))
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def parse_related_product(self, response):
+        meta = response.meta
+        product = meta['product']
+        related_prods = []
+        data = response.body_as_unicode().replace('\\','')
+        if data:
+            sel = Selector(text=data)
+        titles = sel.xpath('//span[contains(@class, "descText")]/text()').extract()
+        urls = sel.xpath('//div[contains(@class, "wrap_description")]/a/@href').extract()
+        for title, url in zip(titles, urls):
+            if url and title:
+                related_prods.append(
+                            RelatedProduct(
+                                title=title,
+                                url=url
+                            )
+                        )
+        product['related_products'] = {}
+        if related_prods:
+            product['related_products']['customers_also_bought'] = related_prods
 
         return product
 
