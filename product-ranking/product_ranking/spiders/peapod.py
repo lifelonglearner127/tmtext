@@ -172,7 +172,7 @@ class PeapodProductsSpider(BaseProductsSpider):
             value = form.xpath(path).extract()
             new_data[key] = str(value[0]).strip()
         # populate static info
-        new_data['zipcode'] = self.default_zip
+        new_data['zip_code'] = self.default_zip
         new_data['memberType'] = 'C'
         new_data['_D:memberType'] = ''
         return FormRequest(main_url,
