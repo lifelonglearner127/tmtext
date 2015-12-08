@@ -105,7 +105,7 @@ def _json_file_to_data(fname):
         for line in f:
             if not line.strip():
                 continue
-            line = line.strip()
+            line = line.strip().replace('\n', '')
             data.append(json.loads(line))
     return data
 
@@ -543,6 +543,8 @@ class BaseValidator(object):
         return val in (True, False, None, '')
 
     def _validate_limited_stock(self, val):
+        if isinstance(val, list):
+            return val[0] in (True, False, None, '')
         return val in (True, False, None, '')
 
     def _validate_marketplace(self, val):

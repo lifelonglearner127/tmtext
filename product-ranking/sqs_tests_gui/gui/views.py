@@ -23,7 +23,7 @@ from boto.s3.connection import S3Connection
 from .models import get_data_filename, get_log_filename, get_progress_filename,\
     Job, JobGrouperCache
 
-from management.commands.update_jobs import LOCAL_AMAZON_LIST_CACHE,\
+from management.commands.update_jobs import LOCAL_AMAZON_LIST,\
     AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_BUCKET_NAME, download_s3_file
 from management.commands.download_list_of_s3_cache_files import LOCAL_AMAZON_LIST_CACHE
 import settings
@@ -146,8 +146,8 @@ class ProgressMessagesView(AdminOnlyMixin, TemplateView):
 
 class SearchFilesView(AdminOnlyMixin, TemplateView):
     template_name = 'search_s3_files.html'
-    max_files = 400
-    fname2open = LOCAL_AMAZON_LIST_CACHE
+    max_files = 10000
+    fname2open = LOCAL_AMAZON_LIST
     extra_filter = None
 
     def get_context_data(self, **kwargs):
@@ -212,12 +212,12 @@ class SearchS3Cache(SearchFilesView):
     # User searches for a URL, the search results are displayed then.
     # User then can choose what cached response to view.
     template_name = 'search_s3_cache.html'
+    fname2open = LOCAL_AMAZON_LIST_CACHE
     extra_filter = '__MARKER_URL__'
 
 
 class RenderS3CachePage(AdminOnlyMixin, TemplateView):
     # Downloads and renders the selected cache page
-    fname2open = LOCAL_AMAZON_LIST_CACHE
     template_name = 'render_cache_page.html'
 
     @staticmethod

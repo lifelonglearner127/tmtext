@@ -66,13 +66,18 @@ class JcpenneyScraper(Scraper):
             itemtype = self.tree_html.xpath('//div[@class="pdp_details"]')
 
             if not itemtype:
+                self.ERROR_RESPONSE["failure_type"] = "Not a product"
+
                 if self.tree_html.xpath("//div[@class='product_row bottom_border flt_wdt']"):
                     self.ERROR_RESPONSE["failure_type"] = "Bundle"
 
                 raise Exception()
 
+
         except Exception:
             return True
+
+        self.analyze_media_contents()
 
         return False
 
@@ -116,40 +121,33 @@ class JcpenneyScraper(Scraper):
         return 0
 
     def _description(self):
-        description_block = self.tree_html.xpath("//div[@id='longCopyCont']")[0]
-        description = description_block.text_content().strip()
-        description = re.sub('\\n+', ' ', description).strip()
-        description = re.sub('\\t+', ' ', description).strip()
-        description = re.sub('\\r+', ' ', description).strip()
-        description = re.sub(' +', ' ', description).strip()
+        #check long description existence
+        if self.tree_html.xpath("//div[@id='longCopyCont']//ul"):
+            page_raw_text = html.tostring(self.tree_html)
+            nIndex2 = page_raw_text.find('id="longCopyCont"')
+            nIndex1 = page_raw_text.find('>', nIndex2)
+            nIndex2= page_raw_text.find('<ul', nIndex1)
+            return page_raw_text[nIndex1 + 1:nIndex2].strip()
+        elif self.tree_html.xpath("//div[@id='longCopyCont']"):
+            return html.tostring(self.tree_html.xpath("//div[@id='longCopyCont']")[0]).strip()
 
-        long_description = self._long_description()
-
-        if long_description:
-            description = description.replace(long_description, "")
-
-        return description.strip()
+        return None
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        try:
-            description_block = self.tree_html.xpath("//div[@id='longCopyCont']//ul")[0]
-            long_description = description_block.text_content().strip()
+        #check long description existence
+        if self.tree_html.xpath("//div[@id='longCopyCont']//ul"):
+            page_raw_text = html.tostring(self.tree_html)
+            nIndex2 = page_raw_text.find('id="longCopyCont"')
+            nIndex1 = page_raw_text.find('>', nIndex2)
+            nIndex2= page_raw_text.find('<ul', nIndex1)
+            page_raw_text_exclude_short_description = page_raw_text[:nIndex1 + 1] + page_raw_text[nIndex2:]
+            page_html_exclude_short_description = html.fromstring(page_raw_text_exclude_short_description)
 
-            if not long_description:
-                return None
-            else:
-                long_description = re.sub('\\n+', ' ', long_description).strip()
-                long_description = re.sub('\\t+', ' ', long_description).strip()
-                long_description = re.sub('\\r+', ' ', long_description).strip()
-                long_description = re.sub(' +', ' ', long_description).strip()
-
-                return long_description
-        except:
-            pass
+            return html.tostring(page_html_exclude_short_description.xpath("//div[@id='longCopyCont']")[0])
 
         return None
 
@@ -177,10 +175,10 @@ class JcpenneyScraper(Scraper):
         image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
 
         swatches = self._swatches()
+        swatches = swatches if swatches else []
 
         for swatch in swatches:
-            if swatch["hero_image"] not in image_urls:
-                image_urls.append(swatch["hero_image"])
+            image_urls.extend(swatch["hero_image"])
 
         image_urls = list(set(image_urls))
 
@@ -221,7 +219,7 @@ class JcpenneyScraper(Scraper):
         video_json = None
 
         try:
-            video_json = ast.literal_eval(self._find_between(html.tostring(self.tree_html), "videoIds.push(", ");\nvar videoThumbsMap = "))
+            video_json = ast.literal_eval(self._find_between(html.tostring(self.tree_html), "videoIds.push(", ");\n"))
         except:
             video_json = None
 
@@ -231,9 +229,7 @@ class JcpenneyScraper(Scraper):
             media_contents_window_link = self.tree_html.xpath("//a[@class='InvodoViewerLink']/@onclick")[0]
             media_contents_window_link = re.search("window\.open\('(.+?)',", media_contents_window_link).group(1)
 
-            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-
-            contents = requests.get(media_contents_window_link, headers=h).text
+            contents = self.load_page_from_url_with_number_of_retries(media_contents_window_link)
 
             #check media contents
             if "webapps.easy2.com" in media_contents_window_link:
@@ -255,7 +251,7 @@ class JcpenneyScraper(Scraper):
                     pass
             elif "content.webcollage.net" in media_contents_window_link:
                 webcollage_link = re.search("document\.location\.replace\('(.+?)'\);", contents).group(1)
-                contents = requests.get(webcollage_link, headers=h).text
+                contents = self.load_page_from_url_with_number_of_retries(webcollage_link)
                 webcollage_page_tree = html.fromstring(contents)
 
                 try:
@@ -292,49 +288,43 @@ class JcpenneyScraper(Scraper):
                 except:
                     pass
 
-        if video_json:
-            if not self.video_urls:
-                self.video_urls = [video_json['url']]
-                self.video_count = 1
-            else:
-                self.video_urls.append(video_json["url"])
-                self.video_count = self.video_count + 1
+        try:
+            if video_json:
+                if not self.video_urls:
+                    self.video_urls = [video_json['url']]
+                    self.video_count = 1
+                else:
+                    self.video_urls.append(video_json["url"])
+                    self.video_count = self.video_count + 1
+        except:
+            pass
 
     def _video_urls(self):
-        self.analyze_media_contents()
         return self.video_urls
 
     def _video_count(self):
-        self.analyze_media_contents()
         return self.video_count
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
-        self.analyze_media_contents()
         return self.pdf_urls
 
     def _pdf_count(self):
-        self.analyze_media_contents()
         return self.pdf_count
 
     def _wc_emc(self):
-        self.analyze_media_contents()        
         return self.wc_emc
 
     def _wc_prodtour(self):
-        self.analyze_media_contents()        
         return self.wc_prodtour
 
     def _wc_360(self):
-        self.analyze_media_contents()        
         return self.wc_360
 
     def _wc_video(self):
-        self.analyze_media_contents()        
         return self.wc_video
 
     def _wc_pdf(self):
-        self.analyze_media_contents()        
         return self.wc_pdf
 
     def _webcollage(self):
@@ -406,14 +396,8 @@ class JcpenneyScraper(Scraper):
 
         self.is_review_checked = True
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
         review_id = self._find_between(html.tostring(self.tree_html), 'reviewId:"', '",').strip()
-        contents = s.get(self.REVIEW_URL.format(review_id), headers=h, timeout=5).text
+        contents = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(review_id))
 
         try:
             start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")

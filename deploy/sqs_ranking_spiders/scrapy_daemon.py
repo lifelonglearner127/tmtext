@@ -78,7 +78,7 @@ S3_CONN = boto.connect_s3(
 S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
 
 # settings
-MAX_CONCURRENT_TASKS = 12  # tasks per instance, all with same git branch
+MAX_CONCURRENT_TASKS = 16  # tasks per instance, all with same git branch
 MAX_TRIES_TO_GET_TASK = 100  # tries to get max tasks for same branch
 LISTENER_ADDRESS = ('localhost', 9070)  # address to listen for signals
 # SCRAPY_LOGS_DIR = ''  # where to put log files
@@ -607,6 +607,8 @@ class ScrapyTask(object):
         ext_cache_down = 'cache_downloading'
         ext_cache_up = 'cache_uploading'
         cmd_args = self.task_data.get('cmd_args', {})
+        if not isinstance(cmd_args, dict):
+            cmd_args = {}
         if cmd_args.get('save_s3_cache', False):
             self.required_signals[SIGNAL_SPIDER_OPENED]['wait'] += \
                 EXTENSION_SIGNALS[ext_cache_up]
@@ -845,6 +847,8 @@ class ScrapyTask(object):
         urls = self.task_data.get('urls', None)
         site = self.task_data['site']
         cmd_line_args = self.task_data.get('cmd_args', {})
+        if not isinstance(cmd_line_args, dict):
+            cmd_line_args = {}
         output_path = self.get_output_path()
         options = ' '
         arg_name = arg_value = None
@@ -1308,6 +1312,7 @@ def main():
     # names of the queues in SQS, ordered by priority
     q_keys = ['urgent', 'production', 'test', 'dev']
     q_ind = 0  # index of current queue
+    global MAX_CONCURRENT_TASKS
     # try to get tasks, untill max number of tasks is reached or
     # max number of tries to get tasks is reached
     while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
@@ -1330,6 +1335,9 @@ def main():
             time.sleep(3)
             continue
         task_data, queue = msg
+        if 'url' in task_data and 'searchterms_str' not in task_data:
+            if MAX_CONCURRENT_TASKS < 50:
+                MAX_CONCURRENT_TASKS += 1
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))
         # prepare to run task

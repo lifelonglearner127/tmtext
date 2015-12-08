@@ -1,5 +1,5 @@
 class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand']
+    optional_fields = ['brand', 'description']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
         'google_source_site', 'special_pricing', 'ranking',
@@ -13,8 +13,8 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
         'benny benassi': 0,
         'red car': [100, 200],
         'black stone': [50, 250],
-        'red ball': [5, 150],
-        'green rose': [10, 100],
+        'red ball': [5, 180],
+        'green jersey': [10, 130],
         'long term black': [1, 50],
         'yellow ion': [15, 100],
         'water ball': [3, 85],

@@ -38,7 +38,7 @@ class DockersScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.dockers.com/US/en_US/.*/p/[a-zA-Z0-9\-]+$", self.product_page_url)
+        m = re.match(r"^http://www.dockers.com/US/en_US/(.*/)?p/[a-zA-Z0-9\-]+$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
