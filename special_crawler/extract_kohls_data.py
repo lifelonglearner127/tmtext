@@ -271,7 +271,7 @@ class KohlsScraper(Scraper):
                     image_urls.extend(swatch["hero_image"])
 
         if image_urls:
-            image_urls = list(set(list))
+            image_urls = list(set(image_urls))
 
             return image_urls
 
