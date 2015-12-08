@@ -148,7 +148,6 @@ class NeweggProductSpider(BaseProductsSpider):
             if group_variants:
                 all.append(group_variants)
         result = list(itertools.product(*all))
-        print 'result', result
 
         price_all = list()
         for group in price_js:
@@ -158,7 +157,6 @@ class NeweggProductSpider(BaseProductsSpider):
                 group_variants.append(prop['name'])
             group_variants.append(group['info']['price'])
             price_all.append(group_variants)
-        print 'price_all', price_all
         for r in result:
             id_result = []
             properties = {}
