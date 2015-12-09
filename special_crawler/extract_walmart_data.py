@@ -1835,10 +1835,10 @@ class WalmartScraper(Scraper):
 
                 if zoom_image_url and zoom_image_url.startswith("http://i5.walmartimages.com"):
                     images_carousel.append(zoom_image_url)
-                    image_dimensions.append([2000, 2000])
+                    image_dimensions.append(1)
                 elif hero_image_url and hero_image_url.startswith("http://i5.walmartimages.com"):
                     images_carousel.append(hero_image_url)
-                    image_dimensions.append([450, 450])
+                    image_dimensions.append(0)
 
             if images_carousel:
                 # if there's only one image, check to see if it's a "no image"
@@ -1864,7 +1864,7 @@ class WalmartScraper(Scraper):
                 except Exception, e:
                     print "WARNING: ", e.message
 
-                self.image_dimensions = [450, 450]
+                self.image_dimensions = [0]
                 return self._qualify_image_urls(main_image)
 
             # bundle product images
