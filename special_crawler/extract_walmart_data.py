@@ -1835,10 +1835,10 @@ class WalmartScraper(Scraper):
 
                 if zoom_image_url and zoom_image_url.startswith("http://i5.walmartimages.com"):
                     images_carousel.append(zoom_image_url)
-                    image_dimensions.append([2000, 2000])
+                    image_dimensions.append(1)
                 elif hero_image_url and hero_image_url.startswith("http://i5.walmartimages.com"):
                     images_carousel.append(hero_image_url)
-                    image_dimensions.append([450, 450])
+                    image_dimensions.append(0)
 
             if images_carousel:
                 # if there's only one image, check to see if it's a "no image"
@@ -1864,7 +1864,7 @@ class WalmartScraper(Scraper):
                 except Exception, e:
                     print "WARNING: ", e.message
 
-                self.image_dimensions = [450, 450]
+                self.image_dimensions = [0]
                 return self._qualify_image_urls(main_image)
 
             # bundle product images
@@ -1952,34 +1952,35 @@ class WalmartScraper(Scraper):
             print "Error (Loading product json from Walmart api - not_a_product)" + str(e)
             self.product_api_json = None
 
-        if self._version() == "Walmart v2" and self.is_bundle_product:
-            product_info_json = self._find_between(html.tostring(self.tree_html), 'define("product/data",', ");\n")
-            product_info_json = json.loads(product_info_json)
-            self.product_info_json = product_info_json
+        if self._version() == "Walmart v2":
+            if self.is_bundle_product:
+                product_info_json = self._find_between(html.tostring(self.tree_html), 'define("product/data",', ");\n")
+                product_info_json = json.loads(product_info_json)
+                self.product_info_json = product_info_json
 
-            try:
-                product_choice_info_json = self._find_between(html.tostring(self.tree_html), 'define("choice/data",', ");\n")
-                product_choice_info_json = json.loads(product_choice_info_json)
-                self.product_choice_info_json = product_choice_info_json
-            except:
-                pass
-
-            if not self.product_choice_info_json:
                 try:
-                    product_choice_info_json = self._find_between(html.tostring(self.tree_html), 'define("non-choice/data",', ");\n")
+                    product_choice_info_json = self._find_between(html.tostring(self.tree_html), 'define("choice/data",', ");\n")
                     product_choice_info_json = json.loads(product_choice_info_json)
                     self.product_choice_info_json = product_choice_info_json
                 except:
                     pass
 
-            return self.product_info_json
-        else:
-            page_raw_text = html.tostring(self.tree_html)
-            product_info_json = json.loads(re.search('define\("product\/data",\n(.+?)\n', page_raw_text).group(1))
+                if not self.product_choice_info_json:
+                    try:
+                        product_choice_info_json = self._find_between(html.tostring(self.tree_html), 'define("non-choice/data",', ");\n")
+                        product_choice_info_json = json.loads(product_choice_info_json)
+                        self.product_choice_info_json = product_choice_info_json
+                    except:
+                        pass
 
-            self.product_info_json = product_info_json
+                return self.product_info_json
+            else:
+                page_raw_text = html.tostring(self.tree_html)
+                product_info_json = json.loads(re.search('define\("product\/data",\n(.+?)\n', page_raw_text).group(1))
 
-            return self.product_info_json
+                self.product_info_json = product_info_json
+
+                return self.product_info_json
 
     # ! may throw exception if not found
     def _owned_from_script(self):

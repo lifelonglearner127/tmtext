@@ -48,6 +48,47 @@ def _list_diff(l1, l2):
     return list(set(result))
 
 
+def _compare_dicts(d1, d2, exclude_fields):
+    results = []
+    if not d1 or not d2:
+        return results
+    if exclude_fields is None:
+        exclude_fields = []
+
+    if isinstance(d1, list) and isinstance(d2, list):
+        len1 = len(d1)
+        len2 = len(d2)
+        if len1 != len2:
+            return 'different length: %s and %s' % (len1, len2)
+        t1 = d1[:]
+        t2 = d2[:]
+        l = len(t1)
+        for i in xrange(l-1, -1, -1):
+            v1 = t1[i]
+            if v1 in t2:
+                t2.remove(v1)
+                t1.remove(v1)
+        if t1 or t2:
+            results.append('Not matching lists: %s ----- %s' % (t1, t2))
+
+    if isinstance(d1, dict) and isinstance(d2, dict):
+        e_f = set(exclude_fields)
+        keys1 = set(d1.keys()) - e_f
+        keys2 = set(d2.keys()) - e_f
+        # check their length (missing fields?)
+        if keys1 != keys2:
+            return 'fields: %s, %s' % (list(keys1-keys2), list(keys2-keys1))
+        for k in keys1:
+            v1, v2 = d1[k], d2[k]
+            if isinstance(v1, (list, dict)) and isinstance(v2, (list, dict)):
+                res = _compare_dicts(v1, v2, exclude_fields)
+                if res:
+                    results.append({k: res})
+            elif v1 != v2:
+                results.append({k: [v1, v2]})
+    return results
+
+
 def _get_mismatching_fields(d1, d2, exclude_fields):
     result = []
     if d1.keys() is None or d2.keys() is None:
@@ -87,12 +128,13 @@ def print_human_friendly(
             if field in exclude_fields:
                 continue
         else:  # string error code?
-            field = 'Fiels sets are different!'
+            field = 'Field sets are different!'
             vals = [field, ''] if isinstance(results, (list, tuple))\
                 else [results, '']
         print ' '*indent, heading_color, field, basic_color
-        print ' '*indent*2, colorama.Fore.YELLOW, '1.', basic_color, vals[0]
-        print ' '*indent*2, colorama.Fore.YELLOW, '2.', basic_color, vals[1]
+        print ' '*indent*2, colorama.Fore.YELLOW, '1.', basic_color,  vals[0]
+        if len(vals) > 1:
+            print ' '*indent*2, colorama.Fore.YELLOW, '2.', basic_color, vals[1]
         print
 
 
@@ -106,11 +148,11 @@ def collect_human_friendly(results, exclude_fields):
             if field in exclude_fields:
                 continue
         else:  # string error code?
-            field = 'Fiels sets are different!'
+            field = 'Field sets are different!'
             vals = [field, ''] if isinstance(results, (list, tuple))\
                 else [results, '']
         #print ' '*indent, heading_color, field, basic_color
-        output.append({'field': field, 'f1': vals[0], 'f2': vals[1]})
+        output.append({'field': field, 'f1': vals[0], 'f2': vals[1] if len(vals) > 1 else ''})
     return output
 
 
@@ -165,8 +207,9 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
                 url2 = _strip_get_args(url2)
             if url1 == url2:
                 matched_urls += 1
-                mis_fields = _get_mismatching_fields(json1, json2,
-                                                     fields2exclude)
+                # mis_fields = _get_mismatching_fields(json1, json2,
+                #                                      fields2exclude)
+                mis_fields = _compare_dicts(json1, json2, fields2exclude)
                 if mis_fields:
                     if print_output:
                         print 'LINE', i
@@ -176,7 +219,9 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
                     else:
                         result_mismatched.append({
                             'line': i,
-                            'diff': collect_human_friendly(mis_fields, fields2exclude)
+                            'diff': collect_human_friendly(mis_fields, fields2exclude),
+                            'data1': json1,
+                            'data2': json2,
                         })
 
     if print_output:
@@ -199,5 +244,8 @@ if __name__ == '__main__':
         fields2exclude=fields2exclude,
         strip_get_args=args.strip_get_args,
         skip_urls=args.skip_urls,
-        print_output=True
+        print_output=False
     )
+    print '*' * 100
+    # print result['diff'][0]['diff']
+    print result['diff'][0].keys()
