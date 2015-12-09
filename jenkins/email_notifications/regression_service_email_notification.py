@@ -1,20 +1,15 @@
 import os
 import smtplib
 from os.path import basename
-import glob
-import unittest
 import json
-import re
-import copy
 import psycopg2
 import psycopg2.extras
-import requests
 import sys
-import urllib
 import time
 import csv
+import gzip
+import shutil
 from datetime import date
-import xml.etree.ElementTree as ET
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -131,6 +126,10 @@ if upc_missing_product_list:
 
     csv_file.close()
 
+    with open(csv_file_name_upc_missed, 'rb') as f_in, gzip.open(csv_file_name_upc_missed + ".gz", 'wb') as f_out:
+        shutil.copyfileobj(f_in, f_out)
+
+
 #Review issue
 csv_file_name_review_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/{0}_review_issue_{1}.csv".format(website, time.strftime("%Y_%m_%d"))
 
@@ -147,6 +146,9 @@ if review_issue_product_list:
         csv_writer.writerow(product)
 
     csv_file.close()
+
+    with open(csv_file_name_review_issue, 'rb') as f_in, gzip.open(csv_file_name_review_issue + ".gz", 'wb') as f_out:
+        shutil.copyfileobj(f_in, f_out)
 
 #Price issue
 csv_file_name_price_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/{0}_price_issue_{1}.csv".format(website, time.strftime("%Y_%m_%d"))
@@ -165,6 +167,9 @@ if price_issue_product_list:
 
     csv_file.close()
 
+    with open(csv_file_name_price_issue, 'rb') as f_in, gzip.open(csv_file_name_price_issue + ".gz", 'wb') as f_out:
+        shutil.copyfileobj(f_in, f_out)
+
 #Marketplace issue
 csv_file_name_marketplace_issue = "/home/ubuntu/tmtext/special_crawler/jenkins/{0}_marketplace_issue_{1}.csv".format(website, time.strftime("%Y_%m_%d"))
 
@@ -182,6 +187,9 @@ if marketplace_issue_product_list:
 
     csv_file.close()
 
+    with open(csv_file_name_marketplace_issue, 'rb') as f_in, gzip.open(csv_file_name_marketplace_issue + ".gz", 'wb') as f_out:
+        shutil.copyfileobj(f_in, f_out)
+
 #Walmart v1 products
 csv_file_name_walmart_v1 = "/home/ubuntu/tmtext/special_crawler/jenkins/{0}_walmart_v1_products_{1}.csv".format(website, time.strftime("%Y_%m_%d"))
 
@@ -198,6 +206,9 @@ if walmart_v1_product_list:
         csv_writer.writerow(product)
 
     csv_file.close()
+
+    with open(csv_file_name_walmart_v1, 'rb') as f_in, gzip.open(csv_file_name_walmart_v1 + ".gz", 'wb') as f_out:
+        shutil.copyfileobj(f_in, f_out)
 
 field_names = ["store url", "number of changed parts", "version changed(Yes/No)", "regression report url"]
 csv_file_name_product_changes = "/home/ubuntu/tmtext/special_crawler/jenkins/{0}_product_changes_{1}.csv".format(website, time.strftime("%Y_%m_%d"))
@@ -229,6 +240,9 @@ for row in rows:
                              "regression report url": unicode("http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])).encode("utf-8")})
 
 csv_file.close()
+
+with open(csv_file_name_product_changes, 'rb') as f_in, gzip.open(csv_file_name_product_changes + ".gz", 'wb') as f_out:
+    shutil.copyfileobj(f_in, f_out)
 
 percentage_of_changed_products = (float(number_of_changed_products) / float(number_of_reported_products)) * float(100)
 possibility_of_overall_website_changes = "No"
@@ -306,34 +320,34 @@ msg = MIMEMultipart(
 msg['Subject'] = subject
 msg.preamble = subject
 
-if os.path.isfile(csv_file_name_product_changes):
-    csv_file = MIMEApplication(open(csv_file_name_product_changes, "rb").read())
-    csv_file.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_product_changes))
+if os.path.isfile(csv_file_name_product_changes + ".gz"):
+    csv_file = MIMEApplication(open(csv_file_name_product_changes + ".gz", "rb").read())
+    csv_file.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_product_changes + ".gz"))
     msg.attach(csv_file)
 
-if os.path.isfile(csv_file_name_upc_missed):
-    csv_file1 = MIMEApplication(open(csv_file_name_upc_missed, "rb").read())
-    csv_file1.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_upc_missed))
+if os.path.isfile(csv_file_name_upc_missed + ".gz"):
+    csv_file1 = MIMEApplication(open(csv_file_name_upc_missed + ".gz", "rb").read())
+    csv_file1.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_upc_missed + ".gz"))
     msg.attach(csv_file1)
 
-if os.path.isfile(csv_file_name_review_issue):
-    csv_file1 = MIMEApplication(open(csv_file_name_review_issue, "rb").read())
-    csv_file1.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_review_issue))
+if os.path.isfile(csv_file_name_review_issue + ".gz"):
+    csv_file1 = MIMEApplication(open(csv_file_name_review_issue + ".gz", "rb").read())
+    csv_file1.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_review_issue + ".gz"))
     msg.attach(csv_file1)
 
-if os.path.isfile(csv_file_name_price_issue):
-    csv_file1 = MIMEApplication(open(csv_file_name_price_issue, "rb").read())
-    csv_file1.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_price_issue))
+if os.path.isfile(csv_file_name_price_issue + ".gz"):
+    csv_file1 = MIMEApplication(open(csv_file_name_price_issue + ".gz", "rb").read())
+    csv_file1.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_price_issue + ".gz"))
     msg.attach(csv_file1)
 
-if os.path.isfile(csv_file_name_marketplace_issue):
-    csv_file1 = MIMEApplication(open(csv_file_name_marketplace_issue, "rb").read())
-    csv_file1.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_marketplace_issue))
+if os.path.isfile(csv_file_name_marketplace_issue + ".gz"):
+    csv_file1 = MIMEApplication(open(csv_file_name_marketplace_issue + ".gz", "rb").read())
+    csv_file1.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_marketplace_issue + ".gz"))
     msg.attach(csv_file1)
 
-if os.path.isfile(csv_file_name_walmart_v1):
-    csv_file1 = MIMEApplication(open(csv_file_name_walmart_v1, "rb").read())
-    csv_file1.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_walmart_v1))
+if os.path.isfile(csv_file_name_walmart_v1 + ".gz"):
+    csv_file1 = MIMEApplication(open(csv_file_name_walmart_v1 + ".gz", "rb").read())
+    csv_file1.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_walmart_v1 + ".gz"))
     msg.attach(csv_file1)
 
 msg.attach(MIMEText(email_content))
