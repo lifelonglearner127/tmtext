@@ -124,6 +124,9 @@ if upc_missing_product_list:
     csv_writer.writeheader()
 
     for product in upc_missing_product_list:
+        for key in product.keys():
+            product[key] = unicode(product[key]).encode("utf-8")
+
         csv_writer.writerow(product)
 
     csv_file.close()
@@ -138,6 +141,9 @@ if review_issue_product_list:
     csv_writer.writeheader()
 
     for product in review_issue_product_list:
+        for key in product.keys():
+            product[key] = unicode(product[key]).encode("utf-8")
+
         csv_writer.writerow(product)
 
     csv_file.close()
@@ -152,6 +158,9 @@ if price_issue_product_list:
     csv_writer.writeheader()
 
     for product in price_issue_product_list:
+        for key in product.keys():
+            product[key] = unicode(product[key]).encode("utf-8")
+
         csv_writer.writerow(product)
 
     csv_file.close()
@@ -166,6 +175,9 @@ if marketplace_issue_product_list:
     csv_writer.writeheader()
 
     for product in marketplace_issue_product_list:
+        for key in product.keys():
+            product[key] = unicode(product[key]).encode("utf-8")
+
         csv_writer.writerow(product)
 
     csv_file.close()
@@ -180,6 +192,9 @@ if walmart_v1_product_list:
     csv_writer.writeheader()
 
     for product in walmart_v1_product_list:
+        for key in product.keys():
+            product[key] = unicode(product[key]).encode("utf-8")
+
         csv_writer.writerow(product)
 
     csv_file.close()
@@ -208,7 +223,10 @@ for row in rows:
         except:
             continue
 
-        csv_writer.writerow({"store url": row["sample_url"], "number of changed parts": str(row["changes_in_structure"]), "version changed(Yes/No)": version_changed, "regression report url": "http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])})
+        csv_writer.writerow({"store url": unicode(row["sample_url"]).encode("utf-8"),
+                             "number of changed parts": unicode(str(row["changes_in_structure"])).encode("utf-8"),
+                             "version changed(Yes/No)": unicode(version_changed).encode("utf-8"),
+                             "regression report url": unicode("http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])).encode("utf-8")})
 
 csv_file.close()
 
