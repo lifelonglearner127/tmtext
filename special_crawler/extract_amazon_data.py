@@ -274,7 +274,6 @@ class AmazonScraper(Scraper):
 
         return None
 
-
     def _feature_count(self): # extract number of features from tree
         rows = self._features()
 
@@ -282,23 +281,20 @@ class AmazonScraper(Scraper):
             return 0
 
         return len(rows)
-        # select table rows with more than 2 cells (the others are just headers), count them
-    #    return len(filter(lambda row: len(row.xpath(".//td"))>0, self.tree_html.xpath("//div[@class='content pdClearfix']//tbody//tr")))
 
     def _model_meta(self):
         return None
 
-
     def _description(self):
-        short_description = " ".join(self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//text()[normalize-space()]")).strip()
-        if short_description is not None and len(short_description)>0:
-            return short_description.replace("\n"," ")
-        short_description=" ".join(self.tree_html.xpath("//div[@class='dv-simple-synopsis dv-extender']//text()")).strip()
+        if self.tree_html.xpath("//*[contains(@id,'feature-bullets')]"):
+            return self._clean_text(html.tostring(self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")[0]))
+
+        short_description = " " . join(self.tree_html.xpath("//div[@class='dv-simple-synopsis dv-extender']//text()")).strip()
+
         if short_description is not None and len(short_description)>0:
             return short_description.replace("\n"," ")
 
         return self._long_description_helper()
-
 
     def _long_description(self):
         d1 = self._description()
@@ -1253,18 +1249,6 @@ class AmazonScraper(Scraper):
         if self.product_page_url.find(".co.uk")>1:
             return "uk"
         return "com"
-
-    ##########################################
-    ################ HELPER FUNCTIONS
-    ##########################################
-
-    # clean text inside html tags - remove html entities, trim spaces
-    def _clean_text(self, text):
-        text = text.replace("<br />"," ").replace("\n"," ").replace("\t"," ").replace("\r"," ")
-       	text = re.sub("&nbsp;", " ", text).strip()
-        return  re.sub(r'\s+', ' ', text)
-
-
 
     ##########################################
     ################ RETURN TYPES
