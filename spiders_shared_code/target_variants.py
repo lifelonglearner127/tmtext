@@ -45,6 +45,23 @@ class TargetVariants(object):
             else:
                 return None
 
+            # filter out duplicated colors
+            used_colors = []
+            duplicated_colors_filtered = False  # this flag will be used later
+            for sv in stockstatus_for_variation_combinations:
+                color = sv['Attributes'].get('preselect', {}).get('var1')
+                if color and color not in used_colors:
+                    used_colors.append(color)
+                else:
+                    stockstatus_for_variation_combinations.remove(sv)
+                    duplicated_colors_filtered = True
+
+            # this is for [future] debugging! don't remove
+            #for sv in stockstatus_for_variation_combinations:
+            #    print '*'*20, sv['catentry_id'], '-', sv['Attributes']['partNumber'], ':', \
+            #        sv['Attributes']["price"]["formattedOfferPrice"], '-->', \
+            #        sv['Attributes'].get('preselect', {}).get('var1')
+
             hash_catentryid_to_stockstatus = {}
 
             for stockstatus in stockstatus_for_variation_combinations:
@@ -67,7 +84,11 @@ class TargetVariants(object):
 
                 stockstatus_for_variants["properties"] = properties
                 stockstatus_for_variants["selected"] = None
-                stockstatus_for_variants["price"] = float(hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["price"]["formattedOfferPrice"][1:])
+                try:
+                    stockstatus_for_variants["price"] = float(hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["price"]["formattedOfferPrice"][1:])
+                except:
+                    continue
+
                 stockstatus_for_variants["image_url"] = hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["primary_image"]
 
                 if hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["inventory"]["status"] == "in stock":
@@ -77,7 +98,10 @@ class TargetVariants(object):
 
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
 
-            if possible_variant_urls:
+
+            if possible_variant_urls and not duplicated_colors_filtered:
+                # variants with duplicated colors often use wrong partNumbers,
+                # so we don't filter this if there were duplicated colors
                 for i, _variant in enumerate(stockstatus_for_variants_list):
                     _url = _variant.get('image_url')
                     if _url and self._get_variant_id_from_image_url(_url) not in possible_variant_ids:
@@ -87,5 +111,5 @@ class TargetVariants(object):
                 return None
             else:
                 return stockstatus_for_variants_list
-        except Exception:
+        except:
             return None
