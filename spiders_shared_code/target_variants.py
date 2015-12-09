@@ -45,13 +45,13 @@ class TargetVariants(object):
             else:
                 return None
 
-            # filter out duplicated colors
-            used_colors = []
-            duplicated_colors_filtered = False  # this flag will be used later
+            # filter out duplicated combinations
+            used_combinations = []
+            duplicated_combinations_filtered = False  # this flag will be used later
             for sv in stockstatus_for_variation_combinations:
-                color = sv['Attributes'].get('preselect', {}).get('var1')
-                if color and color not in used_colors:
-                    used_colors.append(color)
+                combination = sv['Attributes'].get('preselect', {})
+                if combination and combination not in used_combinations:
+                    used_combinations.append(combination)
                 else:
                     stockstatus_for_variation_combinations.remove(sv)
                     duplicated_colors_filtered = True
