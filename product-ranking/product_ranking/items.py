@@ -241,6 +241,9 @@ class SiteProductItem(Item):
     shelf_name = Field()  # see https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c8
     shelf_path = Field()
 
+    price_details_in_cart = Field()  # returns True if the price is available
+                                     # only after you put the product in cart
+
     _subitem = Field()
 
 
