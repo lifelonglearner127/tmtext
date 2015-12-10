@@ -9,16 +9,11 @@ import unittest
 import json
 import random
 import sys
-import os
 
 from scrapy import Selector
 from scrapy.exceptions import DropItem
-from scrapy import logformatter
-from scrapy import log
 from scrapy.xlib.pydispatch import dispatcher
 from scrapy import signals
-from scrapy import log
-from scrapy import logformatter
 import tldextract
 try:
     import mock
