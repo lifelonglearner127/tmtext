@@ -266,7 +266,7 @@ class Scraper():
         return description
 
     def _clean_text(self, text):
-        text = text.replace("<br />"," ").replace("\n"," ").replace("\t"," ").replace("\r"," ")
+        text = text.replace("\n"," ").replace("\t"," ").replace("\r"," ")
        	text = re.sub("&nbsp;", " ", text).strip()
         return  re.sub(r'\s+', ' ', text)
 

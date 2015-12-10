@@ -271,7 +271,7 @@ class KohlsScraper(Scraper):
                     image_urls.extend(swatch["hero_image"])
 
         if image_urls:
-            image_urls = list(set(list))
+            image_urls = list(set(image_urls))
 
             return image_urls
 
@@ -382,13 +382,7 @@ class KohlsScraper(Scraper):
 
         self.is_review_checked = True
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
-        contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
+        contents = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(self._product_id()))
 
         try:
             start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")

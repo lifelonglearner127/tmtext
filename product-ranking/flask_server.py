@@ -278,6 +278,8 @@ def _start_spider_and_wait_for_finish(spider, url, max_wait=60*2):
     else:
         cmd = ("scrapy crawl {spider} -a product_url={url} -o {output}"
                " > /tmp/_flask_server_scrapy.log 2>&1")
+    if isinstance(url, unicode):
+        url = url.encode('utf8')
     run(cmd.format(spider=spider, url=url, output=output_file.name))
     _total_slept = 0
     while 1:
@@ -293,6 +295,8 @@ def _start_spider_and_wait_for_finish(spider, url, max_wait=60*2):
 @app.route('/get_data_ajax')
 def get_data_ajax():
     url = request.args.get('url', '').strip()
+    if isinstance(url, unicode):
+        url = url.encode('utf-8')
     spider = request.args['spider'].strip()
     print 'SPIDER', spider
     print 'PROCESSING URL', url
