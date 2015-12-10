@@ -960,7 +960,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _on_dynamic_api_response(self, response):
         yield Request(  # make another call - to scrape questions/answers
-            self.ALL_QA_URL % (get_walmart_id_from_url(self.product_url), 1),
+            self.ALL_QA_URL % (
+                get_walmart_id_from_url(response.meta['product']['url']), 1),
             meta={'product': response.meta['product']},
             callback=self._parse_all_questions_and_answers
         )
