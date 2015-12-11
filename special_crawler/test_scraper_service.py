@@ -628,7 +628,8 @@ class ServiceScraperTest(unittest.TestCase):
                 try:
                     diff_engine.diff()
                 except Exception, msg:
-                    print "Timed out!"
+                    print "******************Timed out at {0}******************".format(sample_url)
+
 
 
                 sql = ("insert into console_reportresult(sample_url, website, "
@@ -699,10 +700,14 @@ class ServiceScraperTest(unittest.TestCase):
 
                     print url
 
-                    self.cur.execute("insert into console_urlsample(url, website, json, qualified_date, not_a_product)"
-                                     " values('%s', '%s', $$%s$$, '%s', %d)"
-                                     % (url, website, sample_json_str, today.isoformat(), not_a_product))
-                    self.con.commit()
+                    try:
+                        self.cur.execute("insert into console_urlsample(url, website, json, qualified_date, not_a_product)"
+                                         " values('%s', '%s', $$%s$$, '%s', %d)"
+                                         % (url, website, sample_json_str, today.isoformat(), not_a_product))
+                        self.con.commit()
+                    except:
+                        print "******************Parsing Error at {0}******************".format(url)
+                        continue
 
         self.cur.execute("select url from console_urlsample where website = '%s'" % website)
         urls = self.cur.fetchall()
