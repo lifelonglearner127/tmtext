@@ -16,28 +16,37 @@ class OzonScraper(Scraper):
     ##########################################
     ############### PREP
     ##########################################
-    
+
     INVALID_URL_MESSAGE = "Expected URL format is http://www.ozon.ru/.*"
 
     feature_count = 0
     is_long_desc_is_none = False
 
     def check_url_format(self):
-        m = re.match("^http://www\.ozon\.ru/.*$", self.product_page_url) 
+        self.image_urls = None
+        self.video_urls = None
+        m = re.match("^http://www\.ozon\.ru/.*$", self.product_page_url)
         return (not not m)
-    
+
     def not_a_product(self):
-        """Checks if current page is not a valid product page
-        (an unavailable product page or other type of method)
-        Overwrites dummy base class method.
-        Returns:
-            True if it's an unavailable product page
-            False otherwise
-        """
-        if len(self._categories()) < 1:
+        '''Overwrites parent class method that determines if current page
+        is not a product page.
+        Currently for Amazon it detects captcha validation forms,
+        and returns True if current page is one.
+        '''
+
+        try:
+            itemtype1 = self.tree_html.xpath('//div[@class="bDetailPage" and @itemtype="http://schema.org/Product"]')
+            itemtype2 = self.tree_html.xpath('//div[contains(@class,"content-block product-block bProductBlock")]')
+
+            if not itemtype1 and not itemtype2:
+                raise Exception()
+
+        except Exception:
             return True
-        else:
-            return False
+
+        return False
+
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -45,7 +54,7 @@ class OzonScraper(Scraper):
 
     def _url(self):
         return self.product_page_url
-    
+
     def _event(self):
         return None
 
@@ -108,6 +117,8 @@ class OzonScraper(Scraper):
 
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='bTechDescription']//div[contains(@class, 'bTechCover')]")
+        if len(rows)==0:
+            rows = self.tree_html.xpath("//div[@class='eProductDescriptionBlock_right']//div[contains(@class, 'eItemProperties_line')]")
         cells = map(lambda row: row.xpath(".//*//text()"), rows)
         rows_text = map(\
             lambda row: ":".join(\
@@ -148,7 +159,7 @@ class OzonScraper(Scraper):
         return description
 
     def _description_helper(self):
-        short_description = " ".join(self.tree_html.xpath("//div[@class='bDetailLogoBlock']//text()")).strip()
+        short_description = " ".join(self.tree_html.xpath("//div[@class='eItemProperties_line']//text()")).strip()
         if len(short_description) < 1:
             try:
                 script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
@@ -175,35 +186,36 @@ class OzonScraper(Scraper):
 
     def _long_description_helper(self):
         try:
-            script = " ".join(self.tree_html.xpath("//div[@class='bContentColumn']/script/text()"))
-            m = re.findall(r"\.model_data = (.*?)};", script)
-            script = m[0] + "}"
-            jsn = json.loads(script)
+            description = " ".join(self.tree_html.xpath('//div[@itemprop="description"]//text()'))
+##            m = re.findall(r"\.model_data = (.*?)};", script)
+##            script = m[0] + "}"
+##            jsn = json.loads(script)
         except IndexError:
             description = None
-            return description
 
-        description = ""
-        try:
-            description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
-        except KeyError:
-            pass
-
-        try:
-            for block in jsn["PlainTextDescription"]["Blocks"]:
-                description += self._clean_html(block['Text'])
-        except KeyError:
-            pass
-
-        try:
-            for block in jsn["Description"]["Blocks"]:
-                description += self._clean_html(block['Text'])
-        except KeyError:
-            pass
-
-        if len(description) < 1:
-            return None
         return description
+
+##        description = ""
+##        try:
+##            description = self._clean_html(jsn["Description"]["ManufacturerDescription"] + "\n" + jsn["Description"]["OzonDescription"])
+##        except KeyError:
+##            pass
+##
+##        try:
+##            for block in jsn["PlainTextDescription"]["Blocks"]:
+##                description += self._clean_html(block['Text'])
+##        except KeyError:
+##            pass
+##
+##        try:
+##            for block in jsn["Description"]["Blocks"]:
+##                description += self._clean_html(block['Text'])
+##        except KeyError:
+##            pass
+##
+##        if len(description) < 1:
+##            return None
+##        return description
 
 
     ##########################################
@@ -224,10 +236,20 @@ class OzonScraper(Scraper):
         image_url = []
         try:
             text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
+            urls =re.findall(r'PreviewBig".*?jpg', str(text))
+            if len(urls)==0:
+                urls =re.findall(r'PreviewBig".*?JPG', str(text))
+            if len(urls)>0:
+                return ['http:'+u[13:] for u in urls]
+            text = self.tree_html.xpath('//div[@class="bCombiningColumn"]//div[@class="bContentColumn"]//script//text()')
+            urls =re.findall(r'PreviewBig".*?jpg', str(text))
+            if len(urls)==0:
+                urls =re.findall(r'PreviewBig".*?JPG', str(text))
+            if len(urls)>0:
+                return ['http:'+u[13:] for u in urls]
             text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
             jsn = json.loads(text)
         except IndexError:
-            text = self.tree_html.xpath('//div[@class="bCombiningColumn"]//div[@class="bContentColumn"]//script//text()')
             text = re.findall(r'\.model_data = (\{.*\});', str(text))[0]
             text = ''.join(text)
             jsn = json.loads(text.decode("unicode_escape"))
@@ -274,10 +296,22 @@ class OzonScraper(Scraper):
         iframes = self.tree_html.xpath("//iframe")
         video_url = []
         for iframe in iframes:
-            src = str(iframe.xpath('.//@src'))
-            find = re.findall(r'www\.youtube\.com/embed/.*$', src)
-            if find:
-                video_url.append(find[0])
+            src = iframe.xpath('.//@src')
+            if len(src)>0:
+                find = re.findall(r'www\.youtube\.com/embed/.*$', src[0])
+                if find:
+                    video_url.append("https://"+find[0])
+        try:
+            text = self.tree_html.xpath('//*[@class="bImageColumn"]//script//text()')
+            text = re.findall(r'gallery_data \= (\[\{.*\}\]);', str(text))[0]
+            jsn = json.loads(text)
+            for e in jsn:
+                if 'Elements' in e and len(e['Elements'])>0 and \
+                   'Type' in e['Elements'][0]  and e['Elements'][0]['Type']=='video':
+                    if e['Elements'][0].get('ElementId',"") != "":
+                        video_url.append("https://www.youtube.com/embed/"+e['Elements'][0]['ElementId'])
+        except:
+            pass
         if len(video_url) < 1:
             return None
         return video_url
@@ -290,7 +324,7 @@ class OzonScraper(Scraper):
 
     def _pdf_urls(self):
         return None
-        
+
     def _pdf_count(self):
         urls = self._pdf_urls()
         if urls is not None:
@@ -324,7 +358,7 @@ class OzonScraper(Scraper):
     def _average_review(self):
         r = self.tree_html.xpath('//div[@itemprop="ratingValue"]//text()')[0]
         return r
-    
+
     def _review_count(self):
         try:
             review_count = self.tree_html.xpath("//div[@itemprop='reviewCount']//text()")[0].strip()
@@ -347,13 +381,31 @@ class OzonScraper(Scraper):
 
     def _price(self):
         try:
-            price_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//span[contains(@class,'eOzonPrice_main')]//text()")[0].strip()
-            price_sub_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//span[contains(@class,'eOzonPrice_submain')]//text()")[0].strip()
-            currency_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//div[contains(@class, 'bOzonPrice mSaleBlock')]//meta[@itemprop='priceCurrency']/@content")[0].strip()
+            price_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//span[contains(@class,'eOzonPrice_main')]//text()")[0].strip()
+            price_sub_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//span[contains(@class,'eOzonPrice_submain')]//text()")[0].strip()
+            currency_txt = self.tree_html.xpath("//div[@class='bSale_BasePriceCover']//span[contains(@class,'bRub')]//text()")[0].strip()
             price_txt = price_txt.replace(u'\xa0', u'')
             return "%s.%s %s" % (price_txt, price_sub_txt, currency_txt)
         except IndexError:
             return None
+
+    def _price_amount(self):
+        price = self._price()
+        price = price.replace(",", "")
+        price_amount = re.findall(r"[\d\.]+", price)[0]
+        return float(price_amount)
+
+    def _price_currency(self):
+        price = self._price()
+        price = price.replace(",", "")
+        price_amount = re.findall(r"[\d\.]+", price)[0]
+        price_currency = price.replace(price_amount, "")
+        if price_currency == "$":
+            return "USD"
+        else:
+            return "RUR"
+        return price_currency
+
 
     def _in_stores_only(self):
         return 0
@@ -362,6 +414,23 @@ class OzonScraper(Scraper):
         return None
 
     def _owned(self):
+        return 1
+
+    def _site_online(self):
+        # site_online: the item is sold by the site and delivered directly, without a physical store.
+        return 1
+
+    def _site_online_out_of_stock(self):
+        #  site_online_out_of_stock - currently unavailable from the site - binary
+        if self._site_online() == 0:
+            return None
+        if self._in_stock() == 0:
+            return 1
+        return 0
+
+    def _in_stock(self):
+        if self._owned_out_of_stock()==1:
+            return 0
         return 1
 
     def _owned_out_of_stock(self):
@@ -376,7 +445,7 @@ class OzonScraper(Scraper):
 
     def _marketplace(self):
         return 0
-    
+
     def _marketplace_sellers(self):
         return None
 
@@ -392,14 +461,14 @@ class OzonScraper(Scraper):
     ##########################################
 
     def _categories(self):
-        all = self.tree_html.xpath("//ul[@class='navLine']/li//text()")
+        all = self.tree_html.xpath("//a[@class='eBreadCrumbs_link ']//text()")
         #the last value is the product itself
-        return all[0:-1]
-   
+        return all
+
     def _category_name(self):
         # dept = " ".join(self.tree_html.xpath("//ul[@class='navLine']/li[1]//text()")).strip()
         return self._categories()[-1]
-   
+
     def _brand(self):
         try:
             brand_txt = self.tree_html.xpath("//div[@class='eItemBrand_textLogo']//text()")[0].strip()
@@ -435,7 +504,7 @@ class OzonScraper(Scraper):
         #     return "C"+brand_txt
         # except IndexError:
         #     return None
-        
+
     '''
     python curl_wrapper.py 'localhost/get_data?url=http://www.ozon.ru/context/detail/id/1434860/'
     "ФИЗМАТЛИТ"
@@ -508,8 +577,13 @@ class OzonScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
+        "price_amount" : _price_amount, \
+        "price_currency" : _price_currency, \
         "in_stores_only" : _in_stores_only, \
         "in_stores" : _in_stores, \
+        "in_stock" : _in_stock, \
+        "site_online" : _site_online, \
+        "site_online_out_of_stock" : _site_online_out_of_stock, \
         "owned" : _owned, \
         "owned_out_of_stock" : _owned_out_of_stock, \
         "marketplace" : _marketplace, \
@@ -529,6 +603,6 @@ class OzonScraper(Scraper):
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
         "mobile_image_same" : _mobile_image_same, \
-        
+
     }
 

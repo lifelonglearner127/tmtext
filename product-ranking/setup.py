@@ -17,7 +17,8 @@ setup(
             os.walk('product_ranking/data'),
             os.walk('monitoring'),
             os.walk('../product_ranking_auto_tests'),
-            os.walk('spiders_shared_code')  # TODO: test!
+            os.walk('spiders_shared_code'),  # TODO: test!
+            os.walk('product_ranking/validators')
         )
     ],
     install_requires=[

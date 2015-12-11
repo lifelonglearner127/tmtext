@@ -2,6 +2,7 @@ from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
 import json
+import hjson
 import re
 import string
 import urllib
@@ -15,6 +16,8 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FLOATING_POINT_RGEX
 from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.validation import BaseValidator
+from product_ranking.validators.homedepot_validator import HomedepotValidatorSettings
 
 from lxml import html
 
@@ -28,16 +31,20 @@ def is_num(s):
         return False
 
 
-class HomedepotProductsSpider(BaseProductsSpider):
+class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
     name = 'homedepot_products'
     allowed_domains = ["homedepot.com", "www.res-x.com"]
     start_urls = []
+
+    settings = HomedepotValidatorSettings
 
     SEARCH_URL = "http://www.homedepot.com/s/{search_term}?NCNI-5"
     SCRIPT_URL = "http://www.res-x.com/ws/r2/Resonance.aspx"
     DETAILS_URL = "http://www.homedepot.com/p/getSkuDetails?itemId=%s"
     REVIEWS_URL = "http://homedepot.ugc.bazaarvoice.com/1999m/%s/" \
         "reviews.djs?format=embeddedhtml"
+
+    product_filter = []
 
     def __init__(self, *args, **kwargs):
         # All this is to set the site_name since we have several
@@ -89,14 +96,28 @@ class HomedepotProductsSpider(BaseProductsSpider):
                     priceCurrency='USD'
                 )
 
-        cond_set(
-            product,
-            'model',
-            response.xpath(
-                "//h2[@class='internetNo']"
-                "/span[@itemprop='productID']/text()").extract(),
-            conv=int
-        )
+        if not product.get('price'):
+            price = response.xpath(
+                    "//div[@class='pricingReg']"
+                    "/span[@itemprop='price']/text() |"
+                    "//div[contains(@class, 'pricingReg')]/span[@itemprop='price']"
+            ).re(FLOATING_POINT_RGEX)
+            if price:
+                product["price"] = Price(
+                    priceCurrency="USD",
+                    price=price[0]
+                )
+
+        try:
+            product['model'] = response.css(
+                '.product_details.modelNo ::text'
+            ).extract()[0].replace('Model', '').replace('#', '').strip()
+        except IndexError:
+            pass
+
+        internet_no = response.css('#product_internet_number ::text').extract()
+        if internet_no:
+            internet_no = internet_no[0]
 
         upc = is_empty(re.findall(
             "ItemUPC=\'(\d+)\'", response.body))
@@ -121,9 +142,8 @@ class HomedepotProductsSpider(BaseProductsSpider):
         skus = []
         if metadata:
             metadata = metadata[0]
-            jsmeta = json.loads(metadata)
+            jsmeta = hjson.loads(metadata)
             try:
-                #skus = jsmeta['attributeDefinition']['attributeLookup']
                 skus = [jsmeta["attributeDefinition"]["defaultSku"]]
                 response.meta['skus'] = skus
                 metaname = jsmeta['attributeDefinition']['attributeListing'][0][
@@ -137,6 +157,7 @@ class HomedepotProductsSpider(BaseProductsSpider):
             new_meta = response.meta.copy()
             new_meta['product'] = product
             new_meta['handle_httpstatus_list'] = [404]
+            new_meta['internet_no'] = internet_no
             return Request(
                 certona_url,
                 self._parse_certona,
@@ -144,28 +165,28 @@ class HomedepotProductsSpider(BaseProductsSpider):
                 priority=1000,
             )
 
-        if product.get("model"):
+        if internet_no:
             return Request(
-                url=self.REVIEWS_URL % (product.get("model"),),
+                url=self.REVIEWS_URL % internet_no,
                 callback=self.parse_buyer_reviews,
                 meta={"product": product},
                 dont_filter=True,
             )
 
-        return self._gen_variants_requests(response, product, skus)
+        return self._gen_variants_requests(response, product, skus, internet_no)
 
-    def _gen_variants_requests(self, response, product, skus):
+    def _gen_variants_requests(self, response, product, skus, internet_no):
         reqs = []
 
         for sku in skus:
             # if sku:
             #     sku = sku[len(sku)-1]
             new_product = product.copy()
-            new_product['model'] = sku
 
             new_meta = response.meta.copy()
             new_meta['product'] = new_product
             new_meta['handle_httpstatus_list'] = [404]
+            new_meta['internet_no'] = internet_no
             url = self.DETAILS_URL % sku
             reqs.append(Request(
                 url,
@@ -210,6 +231,7 @@ class HomedepotProductsSpider(BaseProductsSpider):
 
     def _parse_certona(self, response):
         product = response.meta['product']
+        internet_no = response.meta.get('internet_no', None)
 
         if response.status == 404:
             # No further pages were found.
@@ -251,15 +273,15 @@ class HomedepotProductsSpider(BaseProductsSpider):
         skus = response.meta.get('skus', None)
 
         if not skus:
-            if product.get("model"):
+            if internet_no:
                 return Request(
-                    url=self.REVIEWS_URL % (product.get("model"),),
+                    url=self.REVIEWS_URL % internet_no,
                     callback=self.parse_buyer_reviews,
                     meta={"product": product},
                     dont_filter=True,
                 )
             return product
-        return self._gen_variants_requests(response, product, skus)
+        return self._gen_variants_requests(response, product, skus, internet_no)
 
     def _parse_skudetails(self, response):
         product = response.meta['product']
@@ -296,14 +318,14 @@ class HomedepotProductsSpider(BaseProductsSpider):
             colornames = [el['value'] for el in colornames
                           if el['name'] == attrname]
             if colornames:
-                product['model'] = colornames[0]
+                product['model'] = str(colornames[0])
         except (ValueError, KeyError, IndexError):
             self.log("Failed to parse SKU details.", DEBUG)
 
-
-        if product.get("model"):
+        internet_no = response.meta.get('internet_no', None)
+        if internet_no:
             return Request(
-                url=self.REVIEWS_URL % (product.get("model"),),
+                url=self.REVIEWS_URL % internet_no,
                 callback=self.parse_buyer_reviews,
                 meta={"product": product},
                 dont_filter=True,
@@ -336,10 +358,14 @@ class HomedepotProductsSpider(BaseProductsSpider):
         if avg:
             avg = float("{0:.2f}".format(avg))
         if avg and total:
-            product["buyer_reviews"] = BuyerReviews(total, avg, rating_by_stars)
+            product["buyer_reviews"] = BuyerReviews(
+                int(total.replace(",", "")), 
+                float(avg), 
+                rating_by_stars
+            )
         else:
             product["buyer_reviews"] = ZERO_REVIEWS_VALUE
-
+        
         return product
 
     def _scrape_total_matches(self, response):
@@ -369,11 +395,17 @@ class HomedepotProductsSpider(BaseProductsSpider):
             self.log("Found no product links.", DEBUG)
 
         for link in links:
+            if link in self.product_filter:
+                continue
+            self.product_filter.append(link)
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
         next = response.xpath(
             "//div[@class='pagination-wrapper']/ul/li/span"
-            "/a[@title='Next']/@href").extract()
+            "/a[@title='Next']/@href |"
+            "//div[contains(@class, 'pagination')]/ul/li/span"
+            "/a[@class='icon-next']/@href"
+        ).extract()
         if next:
             return urlparse.urljoin(response.url, next[0])

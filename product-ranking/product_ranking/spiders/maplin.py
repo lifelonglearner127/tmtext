@@ -10,13 +10,18 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults, cond_set_value, dump_url_to_file
 from product_ranking.guess_brand import guess_brand_from_first_words
+from product_ranking.validation import BaseValidator
+from product_ranking.validators.maplin_validator import MaplinValidatorSettings
 
+is_empty = lambda x, y="": x[0] if x else y
 
 # scrapy crawl maplin_products -a searchterms_str="Earth" [-a order=default]
-class GandermountainProductsSpider(BaseProductsSpider):
+class MaplinProductsSpider(BaseValidator, BaseProductsSpider):
     name = "maplin_products"
     allowed_domains = ["www.maplin.co.uk"]
     start_urls = []
+
+    settings = MaplinValidatorSettings
 
     SEARCH_URL = "http://www.maplin.co.uk/search?text={search_term}&x=0&y=0"\
                  "&sort={search_sort}"
@@ -42,7 +47,7 @@ class GandermountainProductsSpider(BaseProductsSpider):
                      % order, WARNING)
             order = 'default'
         search_sort = self.SORT_MODES[order]
-        super(GandermountainProductsSpider, self).__init__(
+        super(MaplinProductsSpider, self).__init__(
             url_formatter=FormatterWithDefaults(
                 search_sort=search_sort,
             ), *args, **kwargs
@@ -81,10 +86,12 @@ class GandermountainProductsSpider(BaseProductsSpider):
         ).extract()
         cond_set(prod, 'title', title)
 
-        brand = re.findall(r'"manufacturer":\s"(.*)",', response.body)
+        brand = [is_empty(
+                        re.findall(r'"manufacturer":\s"(.*)",', response.body),
+                        None)]
         if not brand:
             if prod.get("title"):
-                brand = [guess_brand_from_first_words(prod['title'])]
+                brand = is_empty([guess_brand_from_first_words(prod['title'])], None)
         if brand:
             cond_set(prod, 'brand', brand)
 
@@ -101,6 +108,10 @@ class GandermountainProductsSpider(BaseProductsSpider):
             if re.match("\d+(.\d+){0,1}", price[0]):
                 prod["price"] = Price(priceCurrency=priceCurrency[0],
                                       price=price[0])
+            else:
+                prod["price"] = Price(priceCurrency="GBP", price=0.00)
+        else:
+            prod["price"] = Price(priceCurrency="GBP", price=0.00)
 
         des = response.xpath('//div[@class="productDescription"]').extract()
         cond_set(prod, 'description', des)
@@ -173,6 +184,9 @@ class GandermountainProductsSpider(BaseProductsSpider):
         return self.parse_product(initial_response)
 
     def _scrape_total_matches(self, response):
+        if "Sorry, we couldn't find any results for your search" \
+                in response.body_as_unicode():
+            return 0
         total_matches = None
         if 'No products found matching the search criteria'\
                 in response.body_as_unicode():

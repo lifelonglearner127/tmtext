@@ -8,7 +8,11 @@ from scrapy import log
 import unicodedata
 import itertools
 import math
-
+import urllib
+import numpy as np
+import cv2
+from compute_distances import _normalize_image, image_histogram_to_string,\
+ compute_histogram, shistogram_similarity, _blockhash, hash_similarity
 
 # process text in product names, compute similarity between products
 class ProcessText():
@@ -25,6 +29,8 @@ class ProcessText():
     DICTIONARY_WORD_MATCH_WEIGHT = 1
     # if price difference is above this value, consider score penalization
     PRODUCT_PRICE_THRESHOLD = 10
+    # threshold to be used if products have no names (independent of names length)
+    DEFAULT_THRESH = 12
 
     # exception brands - are brands names but are also found in the dictionary
     brand_exceptions = ['philips', 'sharp', 'sceptre', 'westinghouse', 'element', 'curtis', 'emerson', 'xerox', 'kellogg']
@@ -45,7 +51,11 @@ class ProcessText():
         # convert text to ascii. so accented letters and special characters are all normalized to ascii characters
         # first normalize unicode form
         #TODO: test
-        text = unicodedata.normalize("NFD", unicode(text)).encode("ascii", "ignore")
+        try:
+            text = unicodedata.normalize("NFD", unicode(text)).encode("ascii", "ignore")
+        except Exception:
+            text = unicodedata.normalize("NFD", unicode(text, "utf-8")).encode("ascii", "ignore")
+
 
         # other preprocessing: -Inch = " - fitting for staples->amazon search
         #                        Feet = '
@@ -64,6 +74,9 @@ class ProcessText():
 
         # convert yards
         text = re.sub("[- ][yY]ards", "yd", text)
+
+        # convert pack (if it's preceded by space or dash and not followed by a letter)
+        text = re.sub("(?<=[- ])[pP]ack(?!([a-z]))", "pk", text)
 
         # replace w/ with 'with'. note: only lowercase w followd by / and space
         text = re.sub("w/(?= )", "with", text)
@@ -118,6 +131,7 @@ class ProcessText():
         #TODO: only if result of stemming is in the dictionary?
         if stem:
             clean = [ProcessText.stem(token) for token in clean]
+            clean = [word for word in clean if word != '']
 
         # TODO:
         # # add versions of the queries with different spelling
@@ -136,16 +150,27 @@ class ProcessText():
     # return most similar product from a list to a target product (by their names)
     # if none is similar enough, return None
     # arguments:
-    #            product_name - name of target product
-    #            product_model - model number of target product, if available (as extracted from somewhere on the page other than its name)
-    #            products2 - list of product items for products to search through
-    #            param - threshold for accepting a product name as similar or not (float between 0-1)
+    #            candidates - list of product items for products to search through, SearchItem objects
+    #            param - threshold for accepting a product as similar or not (float between 0-1)
     
     @staticmethod
-    def similar(product_name, product_model, product_price, product_upc, product1_mancode, products2, param):
+    def similar(candidates, param):
         result = None
         products_found = []
-        for product2 in products2:
+        for product2 in candidates:
+
+            # origin product features
+            product_name = product2['origin_name']
+            product_model = product2['origin_model']
+            product_price = product2['product_origin_price']
+            product_upc = product2['origin_upc']
+            product1_mancode = product2['origin_manufacturer_code']
+            product_brand = product2['origin_brand']
+            try:
+                product_image = product2['origin_image_encoded']
+            except:
+                product_image = None
+
 
             words1 = ProcessText.normalize(product_name)
             words2 = ProcessText.normalize(product2['product_name'])
@@ -164,7 +189,11 @@ class ProcessText():
             else:
                 product2_mancode = None
 
-            #TODO: currently only considering brand for target products
+            if 'product_image_encoded' in product2:
+                product2_image = product2['product_image_encoded']
+            else:
+                product2_image = None
+
             # and only available for Amazon
             # normalize brand name
             if 'product_brand' in product2:
@@ -178,6 +207,11 @@ class ProcessText():
 
             else:
                 product2_brand = None
+
+            if product_brand:
+                product1_brand = " ".join(ProcessText.normalize(product_brand))
+            else:
+                product1_brand = None
 
 
             # compute a term to penalize score woth for large price differences (above 100% of small price)
@@ -211,13 +245,19 @@ class ProcessText():
             (model_matched, words1_copy, words2_copy) = ProcessText.models_match(words1, words2, product_model, product2_model)
 
             # check if product brands match
-            (brand_matched, words1_copy, words2_copy) = ProcessText.brands_match(words1_copy, words2_copy, product2_brand)
+            (brand_matched, words1_copy, words2_copy) = ProcessText.brands_match(words1_copy, words2_copy, product1_brand, product2_brand)
 
             # check if product UPCs match
             upc_matched = ProcessText.upcs_match(product_upc, product2_upc)
 
             # check if manufacturer codes match
             manufacturer_code_matched = ProcessText.manufacturer_code_match(product1_mancode, product2_mancode)
+
+            # compute image similarity score
+            if product_image and product2_image:
+                image_similarity_score = ProcessText.image_similarity(product_image, product2_image)
+            else:
+                image_similarity_score = None
 
             # check if product names match (a similarity score)
             # use copies of brands names with model number replaced with a placeholder
@@ -229,6 +269,7 @@ class ProcessText():
             # add score for matched brand
             if brand_matched:
                 score += ProcessText.BRAND_MATCH_WEIGHT
+                log.msg("BRAND MATCHED: " + str(product1_brand) + str(product2_brand) + "\n", level=log.INFO)
 
             # add score for matched UPC
             if upc_matched:
@@ -240,27 +281,36 @@ class ProcessText():
             # add model matching score
             if model_matched:
                 # only add to score if they have more than a word in common - otherwise assume it's a conincidence model match
-                if score > 1:
-                    # if actual models matched
-                    if (model_matched == 1):
-                        score += ProcessText.MODEL_MATCH_WEIGHT
-                    # if alternate models matched
-                    elif (model_matched == 2):
-                        score += ProcessText.ALT_MODEL_MATCH_WEIGHT
+                # temporarily remove this condidition to be able to use matching by just model nr and brand (no name)
+                # if score > 1:
+                # if actual models matched
+                if (model_matched == 1):
+                    score += ProcessText.MODEL_MATCH_WEIGHT
+                # if alternate models matched
+                elif (model_matched == 2):
+                    score += ProcessText.ALT_MODEL_MATCH_WEIGHT
 
 
+            # if the products have no product name
+            if not words1 or not words2:
+                threshold_ = threshold = ProcessText.DEFAULT_THRESH
 
-            # compute threshold for accepting/discarding a match: log(average of name lengths)*10 * parameter
-            threshold = param*(math.log(float(len(words1) + len(words2))/2, 10))*10
+                log.msg("Default threshold for products with no name", level=log.INFO)
+            else:
 
-            # compute confidence of result (using 'threshold' as a landmark - score equal to threshold means 50% confidence)
-            # make sure it doesn't exceed 100%
-            
-            # compute confidence using fixed param of 1.0 (default threshold property). compute threshold for this pair for param=1, and compute confidence.
-            # if threshold property (param) will change, spider will accept confidence scores lower than 50 or reject scores higher
-            # param_ and threshold_ are local values used only for confidence score computation
-            param_ = 1.0
-            threshold_ = param_*(math.log(float(len(words1) + len(words2))/2, 10))*10
+
+                # compute threshold for accepting/discarding a match: log(average of name lengths)*10 * parameter
+                threshold = param*(math.log(float(len(words1) + len(words2))/2, 10))*10
+
+                # compute confidence of result (using 'threshold' as a landmark - score equal to threshold means 50% confidence)
+                # make sure it doesn't exceed 100%
+                
+                # compute confidence using fixed param of 1.0 (default threshold property). compute threshold for this pair for param=1, and compute confidence.
+                # if threshold property (param) will change, spider will accept confidence scores lower than 50 or reject scores higher
+                # param_ and threshold_ are local values used only for confidence score computation
+                param_ = 1.0
+                threshold_ = param_*(math.log(float(len(words1) + len(words2))/2, 10))*10
+
             if threshold_ != 0:
                 confidence = 100 * min(1.0, score/(2.0 * threshold_))
             else:
@@ -270,6 +320,8 @@ class ProcessText():
 
 
             product2['confidence'] = confidence
+            product2['UPC_match'] = 1 if upc_matched else 0
+            product2['model_match'] = 1 if model_matched else 0
 
 
             if score >= threshold:
@@ -289,9 +341,14 @@ class ProcessText():
             else:
                 product2_price = ""
             
-            log.msg("\nPRODUCT: " + unicode(product_name) + " URL: " + product2['origin_url'] + " MODEL: " + unicode(product_model) + " PRICE: " + unicode(product_price) + \
+            try:
+                log.msg("\nPRODUCT: " + unicode(product_name) + " URL: " + product2['origin_url'] + " MODEL: " + unicode(product_model) + " PRICE: " + unicode(product_price) + \
+                " BRAND: " + unicode(product1_brand) + \
                 "\nPRODUCT2: " + unicode(product2['product_name']) + " URL2: " + product2['product_url'] + " BRAND2: " + unicode(product2_brand) + " MODEL2: " + unicode(product2_model) + " PRICE2: " + unicode(product2_price) + \
-                "\nSCORE: " + str(score) + " PRICE_PENLZ: " + unicode(price_score_penalization) + " THRESHOLD: " + str(threshold) + "\n", level=log.WARNING)
+                "\nSCORE: " + str(score) + " PRICE_PENLZ: " + unicode(price_score_penalization) + " THRESHOLD: " + str(threshold) + \
+                "\nIMAGE SIMILARITY: " + str(image_similarity_score) + "\n", level=log.WARNING)
+            except:
+                log.msg("\nPRODUCT: --Error trying to log product info", level=log.WARNING)
 
             ###################
 
@@ -341,16 +398,12 @@ class ProcessText():
     # check if brands of 2 products match, using words in their names, and brand for second product extracted from special field if available
     # return a boolean indicating if brands were matched, and the product names, with matched brands replaced with placeholders
     @staticmethod
-    def brands_match(words1, words2, product2_brand):
+    def brands_match(words1, words2, product1_brand, product2_brand):
         # build copies of the original names to use in matching
         words1_copy = list(words1)
         words2_copy = list(words2)
 
         # treat case with less than 2 words separately
-
-        # if one product has no words, brand matched is False
-        if len(words1_copy) < 1 or len(words2_copy) < 1:
-            return (False, words1_copy, words2_copy)
 
         # if they each have at least 1 word but not 2, append dummy word
         if len(words1_copy) < 2:
@@ -358,13 +411,42 @@ class ProcessText():
         if len(words2_copy) < 2:
             words2_copy.append("__brand2_dummy__")
 
+        if product1_brand:
+            product1_brand = lower(product1_brand)
+        if product2_brand:
+            product2_brand = lower(product2_brand)
+
+        # deal with case where actual certain (we're sure these are brands) brands match
+        if product1_brand and product2_brand:
+
+            if "".join(product1_brand.split()) == "".join(product2_brand.split()) \
+            or set(product1_brand.split()).intersection(set(product2_brand.split())):
+                # remove/replace words in brand name
+                for word in words1:
+                    if word in product1_brand:
+                        if "__brand1__" not in words1_copy:
+                            words1_copy[words1.index(word)] = "__brand1__"
+                        else:
+                            words1_copy.remove(word)
+                # remove/replace words in brand name
+                for word in words2:
+                    if word in product2_brand:
+                        if "__brand2__" not in words2_copy:
+                            words2_copy[words2.index(word)] = "__brand2__"
+                        else:
+                            words2_copy.remove(word)
+
+
+                return (True, words1_copy, words2_copy)
+
+            # else:
+            #     return (False, words1_copy, words2_copy)
 
         # deal separately with the case where product2_brand (we're sure this is the brand) is found as is in fist product name
         # check if it's in the concatenation of all words in words1 - this way we capture concatenated pairs of words too.
         # then remove from name only words which were part of product2_brand
         #TODO: does this lead to any errors?
         if product2_brand and "".join(product2_brand.split()) in "".join(words1_copy):
-            # remove/replace words in brand name
             for word in words1:
                 if word in product2_brand:
                     if "__brand1__" not in words1_copy:
@@ -380,6 +462,35 @@ class ProcessText():
                         words2_copy.remove(word)
 
             return (True, words1_copy, words2_copy)
+
+
+        # TODO: maybe do this more optimally - it is a little redundant with the fragment above
+        # deal separately with the case where product1_brand (we're sure this is the brand) is found as is in second product name
+        # check if it's in the concatenation of all words in words2 - this way we capture concatenated pairs of words too.
+        # then remove from name only words which were part of product1_brand
+        #TODO: does this lead to any errors?
+        if product1_brand and "".join(product1_brand.split()) in "".join(words2_copy):
+            # remove/replace words in brand name
+            for word in words2:
+                if word in product1_brand:
+                    if "__brand2__" not in words2_copy:
+                        words2_copy[words2.index(word)] = "__brand2__"
+                    else:
+                        words2_copy.remove(word)
+
+            for word in words1:
+                if word in product1_brand:
+                    if "__brand1__" not in words1_copy:
+                        words1_copy[words1.index(word)] = "__brand1__"
+                    else:
+                        words1_copy.remove(word)
+
+            return (True, words1_copy, words2_copy)
+
+
+        # if one product has no words, brand matched is False
+        if len(words1_copy) <= 1 or len(words2_copy) <= 1:
+            return (False, words1_copy, words2_copy)
 
         
         brand_matched = False
@@ -573,6 +684,7 @@ class ProcessText():
     # check if word is a likely candidate to represent a model number
     @staticmethod
     def is_model_number(word, min_length = 5):
+        exceptions = ['skamp', 'skimp']
 
         # eliminate words smaller than 4 letters (inclusively)
         if len(word) < min_length:
@@ -592,6 +704,7 @@ class ProcessText():
         
         if ((letters > 1 and numbers > 0) or numbers > 4 or (numbers >=4 and letters >=1) or\
         (letters > 3 and vowels < 2 and not ProcessText.is_dictionary_word(word))) \
+        and word not in exceptions \
         and nonwords==0 \
         and not word.endswith("in") and not word.endswith("inch") and not word.endswith("hz") and \
         not re.match("[0-9]{3,}[kmgt]b", word) and not re.match("[0-9]{3,}p", word) and not re.match("[0-9]{2,}hz", word) \
@@ -633,7 +746,7 @@ class ProcessText():
     # normalize model numbers (remove dashes, lowercase)
     @staticmethod
     def normalize_modelnr(modelnr):
-        return re.sub("[\- ]", "", modelnr.lower())
+        return re.sub("[\- /]", "", modelnr.lower())
 
     # extract index of (first found) model number in list of words if any
     # return -1 if none found
@@ -653,6 +766,21 @@ class ProcessText():
             return name_tokenized[model_index]
         else:
             return None
+
+    # extract model number from product url, for supported sites
+    @staticmethod
+    def extract_model_from_url(product_url):
+        r = re.match("https?://www1?\.([^/]*)\.com/.*", product_url)
+        if not r:
+            log.msg("Domain could not be extracted from URL " + product_url + " for extracting product model", level=log.DEBUG)
+            return None
+        domain = r.group(1)
+        # # only walmart is supported
+        # if domain not in ['walmart', 'wayfair']:
+        #     return None
+        
+        name_from_url = " ".join(product_url.split("/")[-1].split("-"))
+        return ProcessText.extract_model_from_name(name_from_url)
 
 
     # compute weight to be used for a word for measuring similarity between two texts
@@ -720,7 +848,44 @@ class ProcessText():
         # use tuples because they are hashable (to put them in a set), then convert them back to lists
         return map(lambda x: list(x), list(set(map(lambda x: tuple(set(sorted(x))), words))))
 
+    @staticmethod
+    def _url_to_image(url):
+        # download the image, convert it to a NumPy array, and then read
+        # it into OpenCV format
+        resp = urllib.urlopen(url)
+        image = np.asarray(bytearray(resp.read()), dtype="uint8")
+        image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+        return image
 
+    @staticmethod
+    def encode_image(url):
+        '''Input an image url
+        Encode the image as a string and return it
+        The string will contain the image histogram, encoded as a string,
+        and the image blockhash, encoded as a string; separated by space
+        '''
+        image = ProcessText._url_to_image(url)
+        image = _normalize_image(image)
+        histstr = image_histogram_to_string(image, equalize=False)
+        bhash = _blockhash(image)
 
+        code = " ".join([histstr, bhash])
+        return code
 
+    @staticmethod
+    def image_similarity(encoded_im1, encoded_im2, hist_weight=0.8):
+        '''Take as input 2 encoded images (as encoded by encode_image above),
+        compute their similarities
+        :param hist_weight: weight of histogram similarity vs hash similarity
+        '''
 
+        hist1, hash1 = encoded_im1.split()
+        hist2, hash2 = encoded_im2.split()
+
+        hist_sim = shistogram_similarity(hist1, hist2)
+        hash_sim = hash_similarity(hash1, hash2)
+
+        hash_weight = 1 - hist_weight
+
+        score = hist_weight * hist_sim + hash_weight * hash_sim
+        return score

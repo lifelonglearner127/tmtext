@@ -30,6 +30,7 @@ used item from the queue.
 
 from boto.sqs.message import Message
 import boto.sqs
+import zlib
 
 class SQS_Queue():
     # Connect to the SQS Queue
@@ -44,7 +45,7 @@ class SQS_Queue():
         m = Message()
         try:
             if isinstance(message, basestring):
-                m.set_body(message)
+                m.set_body(zlib.compress(message))
                 self.q.write(m)
         except NameError:
             if isinstance(message, str):
@@ -57,9 +58,10 @@ class SQS_Queue():
 
     # Get an item from the queue
     # Note : it remains on the queue until you call task_done
-    def get(self):
+    def get(self, timeout=None):
         if self.currentM is None:
-            rs = self.q.get_messages()
+            rs = self.q.get_messages(visibility_timeout=timeout) \
+                if timeout else self.q.get_messages()
             m = rs[0]
             self.currentM = m
             return m.get_body()

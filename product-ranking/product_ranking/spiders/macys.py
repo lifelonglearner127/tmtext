@@ -71,7 +71,7 @@ class MacysProductsSpider(ProductsSpider):
             prod['url'] = self.product_url
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod})
+                          meta={'product': prod}, dont_filter=True)
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -207,6 +207,13 @@ class MacysProductsSpider(ProductsSpider):
                 "//img[contains(@id, 'mainView')]/@src").extract()
             if image_url:
                 product["image_url"] = image_url[0]
+
+        if not product.get('image_url'):
+            cond_set(
+                product, 'image_url',
+                response.xpath('//*[contains(@class,'
+                               ' "productImageSection")]//img/@src').extract()
+            )
 
         title = response.css('#productTitle::text').extract()
         if title:

@@ -18,6 +18,11 @@ class MacysVariants(object):
 
     def _variants(self):
         try:
+            colors = self.tree_html.xpath('//img[@class="colorSwatch"]/@alt')
+            if not colors:
+                colors = self.tree_html.xpath('//*[contains(@class, "productColor")]/text()')
+
+            sizes = self.tree_html.xpath('//li[@class=" size"]/@title')
             page_raw_text = lxml.html.tostring(self.tree_html)
             product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0].strip()
             variants_json = json.loads(re.search('MACYS\.pdp\.upcmap\["' + product_id + '"\] = (.+?);\nMACYS\.pdp', page_raw_text).group(1))
@@ -32,14 +37,17 @@ class MacysVariants(object):
             color_list = []
             size_list = []
             type_list = []
+            exists_map = {}
 
             for variant_item in variants_json:
+
                 stockstatus_for_variants = {}
                 properties = {}
                 variation_combination = []
 
                 if variant_item["color"] and variant_item["color"] != "No Color":
                     properties["color"] = variant_item["color"]
+
                     color_list.append(variant_item["color"])
                     variation_combination.append(variant_item["color"])
 
@@ -56,6 +64,9 @@ class MacysVariants(object):
                 if not properties:
                     continue
 
+                color, size = properties['color'], properties['size']
+                exists_map[(color, size)] = True
+
                 if variation_combination in instock_variation_combinations_values:
                     continue
 
@@ -65,7 +76,7 @@ class MacysVariants(object):
                 if len(variants_json) == 1:
                     stockstatus_for_variants["selected"] = True
                 else:
-                    stockstatus_for_variants["selected"] = None
+                    stockstatus_for_variants["selected"] = False
 
                 stockstatus_for_variants["price"] = price_amount
 
@@ -74,7 +85,10 @@ class MacysVariants(object):
                 else:
                     stockstatus_for_variants["in_stock"] = False
 
-                stockstatus_for_variants_list.append(stockstatus_for_variants)
+                stockstatus_for_variants["upc"] = variant_item["upc"]
+
+                if color in colors:
+                    stockstatus_for_variants_list.append(stockstatus_for_variants)
 
             size_list = list(set(size_list))
             color_list = list(set(color_list))
@@ -96,7 +110,11 @@ class MacysVariants(object):
                 key_list.append("type")
                 variation_values_list.append(type_list)
 
-            variation_combinations_values = list(itertools.product(*variation_values_list))
+            def filter(x):
+                color, size = x
+                return color in colors
+
+            variation_combinations_values = list(itertools.ifilter(filter, itertools.product(*variation_values_list)))
             variation_combinations_values = map(list, variation_combinations_values)
             outofstock_variation_combinations_values = [variation_combination for variation_combination in variation_combinations_values if variation_combination not in instock_variation_combinations_values]
 
@@ -112,7 +130,7 @@ class MacysVariants(object):
                         continue
 
                     stockstatus_for_variants["properties"] = properties
-                    stockstatus_for_variants["selected"] = None
+                    stockstatus_for_variants["selected"] = False
                     stockstatus_for_variants["price"] = price_amount
                     stockstatus_for_variants["in_stock"] = False
 
@@ -124,3 +142,54 @@ class MacysVariants(object):
                 return stockstatus_for_variants_list
         except:
             return None
+
+    def _swatches(self):
+        swatch_list = []
+
+        product_id = None
+
+        try:
+            product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
+        except:
+            product_id = self.tree_html.xpath("//input[@id='productId']/@value")[0]
+
+        primary_image_list = re.findall(r"MACYS.pdp.primaryImages\[" + product_id + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        color_list = primary_image_list[0].split(",")
+
+        additional_image_list = re.findall(r"MACYS.pdp.additionalImages\[" + product_id + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+
+        try:
+            additional_image_list = json.loads("{" + additional_image_list[0] + "}")
+        except:
+            additional_image_list = {}
+
+        thumbnail_list = self.tree_html.xpath("//ul[@id='colorList{0}']/li".format(product_id))
+        thumbnail_image_list = {}
+
+        for thumbnail in thumbnail_list:
+            thumbnail_image_list[thumbnail.xpath("./@title")[0]] = "http://slimages.macysassets.com/is/image/MCY/products/" + thumbnail.xpath("./@data-imgurl")[0]
+
+        for swatch in color_list:
+            swatch_name = "color"
+            color = swatch.split(":")[0].replace('"', '')
+            image_path = swatch.split(":")[1].replace('"', '')
+
+            swatch_info = {}
+            swatch_info["swatch_name"] = swatch_name
+            swatch_info[swatch_name] = color
+            swatch_info["hero"] = 1
+            swatch_info["hero_image"] = ["http://slimages.macysassets.com/is/image/MCY/products/" + image_path]
+
+            if color in additional_image_list:
+                for image_path in additional_image_list[color].split(","):
+                    swatch_info["hero_image"].append("http://slimages.macysassets.com/is/image/MCY/products/" + image_path)
+
+            swatch_info["thumb"] = 1
+            swatch_info["thumb_image"] = [thumbnail_image_list[color]]
+
+            swatch_list.append(swatch_info)
+
+        if swatch_list:
+            return swatch_list
+
+        return None

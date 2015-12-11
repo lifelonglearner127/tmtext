@@ -18,12 +18,17 @@ class HomeDepotScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.homedepot.com/p/<product-name>/<product-id>"
+    REVIEW_URL = "http://homedepot.ugc.bazaarvoice.com/1999aa/{0}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
         self.product_json = None
+        # whether product has any webcollage media
+        self.review_json = None
+        self.review_list = None
+        self.is_review_checked = False
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -61,13 +66,8 @@ class HomeDepotScraper(Scraper):
             return
 
         try:
-            product_json_text = self.tree_html.xpath("//script[contains(text(), 'THD.PIP.products.primary')]/text()")[0]
-
-            start_index = product_json_text.find("{")
-            end_index = product_json_text.rfind("}") + 1
-
-            product_json = product_json_text[start_index:end_index]
-            self.product_json = json.loads(product_json)
+            product_json_text = self._find_between(html.tostring(self.tree_html), "THD.PIP.products.primary = new THD.PIP.Product(", ");\n")
+            self.product_json = json.loads(product_json_text)
         except:
             self.product_json = None
 
@@ -193,25 +193,16 @@ class HomeDepotScraper(Scraper):
         return None
 
     def _image_urls(self):        
-        scripts = self.tree_html.xpath('//script//text()')
+        self._extract_product_json()
+        media_list = self.product_json["media"]["mediaList"]
+        image_list = []
 
-        for script in scripts:
-            jsonvar = re.findall(r'PRODUCT_INLINE_PLAYER_JSON = (.*?);', script)
-            if len(jsonvar) > 0:
-                jsonvar = jsonvar[0]
-                break
+        for media_item in media_list:
+            if media_item["mediaType"].startswith("IMAGE") and int(media_item["width"]) == 400:
+                image_list.append(media_item["location"])
 
-        jsonvar = json.loads(jsonvar)
-        imageurl = []
-
-        for row in jsonvar.items():
-            if "videoId" in row[1]:
-                continue
-
-            imageurl.append(row[1][0]['mediaUrl'])
-
-        if imageurl:
-            return imageurl
+        if image_list:
+            return image_list
 
         return None
 
@@ -222,25 +213,26 @@ class HomeDepotScraper(Scraper):
         return 0
 
     def _video_urls(self):
+        self._extract_product_json()
+        media_list = self.product_json["media"]["mediaList"]
+        video_list = []
+
+        for media_item in media_list:
+            if "video" in media_item:
+                video_list.append(media_item["video"])
+
+        if video_list:
+            return video_list
+
         return None
 
     def _video_count(self):
-        scripts = self.tree_html.xpath('//script//text()')
+        videos = self._video_urls()
 
-        for script in scripts:
-            jsonvar = re.findall(r'PRODUCT_INLINE_PLAYER_JSON = (.*?);', script)
-            if len(jsonvar) > 0:
-                jsonvar = jsonvar[0]
-                break
+        if videos:
+            return len(videos)
 
-        jsonvar = json.loads(jsonvar)
-        video_count = 0
-
-        for row in jsonvar.items():
-            if "videoId" in row[1]:
-                video_count += 1
-
-        return video_count
+        return 0
 
     def _pdf_urls(self):
         moreinfo = self.tree_html.xpath('//div[@id="moreinfo_wrapper"]')[0]
@@ -275,44 +267,87 @@ class HomeDepotScraper(Scraper):
     def _no_image(self):
         return None
     
-
-
-
-
-
-
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
-    def _average_review(self):
-        self._extract_product_json()
 
-        return float("%.1f" % float(self.product_json["ratingsReviews"]["averageRating"]))
+    def _average_review(self):
+        if self._review_count() == 0:
+            return None
+
+        average_review = round(float(self.review_json["jsonData"]["attributes"]["avgRating"]), 1)
+
+        if str(average_review).split('.')[1] == '0':
+            return int(average_review)
+        else:
+            return float(average_review)
 
     def _review_count(self):
-        self._extract_product_json()
+        self._reviews()
 
-        return int(self.product_json["ratingsReviews"]["totalReviews"])
+        if not self.review_json:
+            return 0
+
+        return int(self.review_json["jsonData"]["attributes"]["numReviews"])
 
     def _max_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        for i, review in enumerate(self.review_list):
+            if review[1] > 0:
+                return 5 - i
 
     def _min_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
 
+        for i, review in enumerate(reversed(self.review_list)):
+            if review[1] > 0:
+                return i + 1
 
+    def _reviews(self):
+        if self.is_review_checked:
+            return self.review_list
 
+        self.is_review_checked = True
+
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
+
+        try:
+            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
+            end_index = contents.find(",\nwidgetInitializers:initializers", start_index)
+
+            self.review_json = contents[start_index:end_index]
+            self.review_json = json.loads(self.review_json)
+        except:
+            self.review_json = None
+
+        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
+        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
+        reviews_by_mark = reviews_by_mark[:5]
+        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
+
+        if not review_list:
+            review_list = None
+
+        self.review_list = review_list
+
+        return self.review_list
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        price = self.tree_html.xpath("//div[contains(@class, 'product_containerprice c show')]//span[@id='ajaxPrice']/text()")
+        self._extract_product_json()
 
-        if price:
-            return price[0].strip()
-
-        return None
+        return "$" + '{0:,}'.format(float(self.product_json["itemExtension"]["displayPrice"]))
 
     def _price_amount(self):
         self._extract_product_json()
@@ -320,12 +355,7 @@ class HomeDepotScraper(Scraper):
         return float(self.product_json["itemExtension"]["displayPrice"])
 
     def _price_currency(self):
-        price_currency = self.tree_html.xpath("//div[contains(@class, 'product_containerprice c show')]//meta[@itemprop='priceCurrency']/@content")
-
-        if price_currency:
-            return price_currency[0].strip()
-
-        return None
+        return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
 
     def _in_stores(self):
         self._extract_product_json()
@@ -449,7 +479,7 @@ class HomeDepotScraper(Scraper):
         "average_review" : _average_review, \
         "max_review" : _max_review, \
         "min_review" : _min_review, \
-
+        "reviews" : _reviews, \
         # CONTAINER : SELLERS
         "price" : _price, \
         "price_amount" : _price_amount, \

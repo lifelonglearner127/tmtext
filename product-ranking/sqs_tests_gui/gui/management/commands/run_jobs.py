@@ -30,6 +30,11 @@ class Command(BaseCommand):
             }
             if not job.quantity:
                 del msg['cmd_args']['quantity']
+            if job.save_s3_cache:
+                msg['cmd_args']['save_s3_cache'] = '1'
+            #elif job.load_s3_cache:
+            #    msg['cmd_args']['load_s3_cache'] \
+            #        = job.load_s3_cache.strftime('%Y-%m-%d')
             if not msg['cmd_args']:
                 del msg['cmd_args']
             if job.search_term:

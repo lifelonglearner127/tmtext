@@ -66,10 +66,14 @@ class FreshDirectScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//h1[@class='pdpTitle']/text()")[0].strip()
+        return self._product_title()
 
     def _product_title(self):
-        return self.tree_html.xpath("//h1[@class='pdpTitle']/text()")[0].strip()
+        try:
+            title = self.tree_html.xpath("//h1[@class='pdpTitle']/text()")[0].strip()
+        except IndexError:
+            title = self.tree_html.xpath('//span[@itemprop="name"]/text()')[0].strip()
+        return title
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()

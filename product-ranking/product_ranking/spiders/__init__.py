@@ -6,6 +6,8 @@ import re
 import string
 import urllib
 import urlparse
+import socket
+import os
 
 import scrapy.log
 from scrapy.log import ERROR, WARNING, INFO
@@ -179,6 +181,14 @@ class BaseProductsSpider(Spider):
             'Gecko/35.0 Firefox/35.0',
         'android': 'Mozilla/5.0 (Android; Tablet; rv:35.0) '\
             'Gecko/35.0 Firefox/35.0',
+        'iphone6': 'Mozilla/5.0 (iPhone; CPU iPhone OS 6_0 like Mac OS X)'\
+            ' AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25',
+        'ipad6': 'Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26'\
+                ' (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25',
+        'iphone4': 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us)'\
+            ' AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7',
+        'ipad4': 'Mozilla/5.0 (iPad; U; CPU iPhone OS 4_0 like Mac OS X; en-us)'\
+            ' AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7'
     }
 
     def __init__(self,
@@ -186,8 +196,9 @@ class BaseProductsSpider(Spider):
                  quantity=None,
                  searchterms_str=None, searchterms_fn=None,
                  site_name=None,
-                 product_url=None,
+                 product_url=None, products_url=None,
                  user_agent=None,
+                 scrape_variants_with_extra_requests=True,
                  *args, **kwargs):
         if user_agent is None or user_agent not in self.USER_AGENTS.keys():
             self.log("Not available user agent type or it wasn't set."
@@ -197,6 +208,20 @@ class BaseProductsSpider(Spider):
         if user_agent:
             self.user_agent = self.USER_AGENTS[user_agent]
             self.user_agent_key = user_agent
+
+        if scrape_variants_with_extra_requests in (0, '0', 'false', 'False', False, None):
+            self.scrape_variants_with_extra_requests = False
+        else:
+            self.scrape_variants_with_extra_requests = True
+
+        if product_url is None:  # searchterms mode
+            # see https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3585#c10
+            self.scrape_variants_with_extra_requests = False
+
+        try:
+            self.server_ip = socket.gethostbyname(socket.gethostname())
+        except Exception as e:
+            self.log("Failed to get server IP", ERROR)
 
         super(BaseProductsSpider, self).__init__(*args, **kwargs)
 
@@ -221,6 +246,7 @@ class BaseProductsSpider(Spider):
             self.quantity = int(quantity)
 
         self.product_url = product_url
+        self.products_url = products_url
 
         self.searchterms = []
         if searchterms_str is not None:
@@ -255,9 +281,20 @@ class BaseProductsSpider(Spider):
             prod = SiteProductItem()
             prod['is_single_result'] = True
             prod['url'] = self.product_url
+            prod['search_term'] = ''
             yield Request(self.product_url,
                           self._parse_single_product,
                           meta={'product': prod})
+
+        if self.products_url:
+            urls = self.products_url.split('||||')
+            for url in urls:
+                prod = SiteProductItem()
+                prod['url'] = url
+                prod['search_term'] = ''
+                yield Request(url,
+                              self._parse_single_product,
+                              meta={'product': prod})
 
     def parse(self, response):
 

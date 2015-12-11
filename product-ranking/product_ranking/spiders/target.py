@@ -19,17 +19,21 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 from spiders_shared_code.target_variants import TargetVariants
-
-
+from product_ranking.validation import BaseValidator
+from product_ranking.validators.target_validator import TargetValidatorSettings
 
 is_empty = lambda x, y=None: x[0] if x else y
 
 
-class TargetProductSpider(BaseProductsSpider):
+
+class TargetProductSpider(BaseValidator, BaseProductsSpider):
     name = 'target_products'
     allowed_domains = ["target.com", "recs.richrelevance.com",
                        'api.bazaarvoice.com']
     start_urls = ["http://www.target.com/"]
+
+    settings = TargetValidatorSettings
+
     # TODO: support new currencies if you're going to scrape target.canada
     #  or any other target.* different from target.com!
     SEARCH_URL = "http://www.target.com/s?searchTerm={search_term}"
@@ -124,12 +128,27 @@ class TargetProductSpider(BaseProductsSpider):
         ).extract()
         prod = response.meta['product']
 
+        response.meta['average'] = is_empty(re.findall(r'var averageRating=  (\d+)', response.body_as_unicode()))
+        response.meta['total'] = is_empty(re.findall(r'var totalReviewsValue=(\d+)', response.body_as_unicode()))
+
+        if 'sorry, that item is no longer available' \
+                in response.body_as_unicode().lower():
+            prod['not_found'] = True
+            return prod
+
+        cond_set_value(prod, 'locale', 'en-US')
+
         tv = TargetVariants()
         tv.setupSC(response)
         prod['variants'] = tv._variants()
 
         price = is_empty(response.xpath(
             '//p[contains(@class, "price")]/span/text()').extract())
+        if not price:
+            price = is_empty(response.xpath(
+                '//*[contains(@class, "price")]'
+                '/*[contains(@itemprop, "price")]/text()'
+            ).extract())
         if price:
             price = is_empty(re.findall("\d+\.{0,1}\d+", price))
             if price:
@@ -141,9 +160,9 @@ class TargetProductSpider(BaseProductsSpider):
         special_pricing = is_empty(response.xpath(
             '//li[contains(@class, "eyebrow")]//text()').extract())
         if special_pricing == "TEMP PRICE CUT":
-            prod['special_pricing'] = 1
+            prod['special_pricing'] = True
         else:
-            prod['special_pricing'] = 0
+            prod['special_pricing'] = False
 
         if 'url' not in prod:
             prod['url'] = response.url
@@ -155,7 +174,6 @@ class TargetProductSpider(BaseProductsSpider):
         prod['url'] = old_url
         #cond_set_value(prod, 'url', old_url)
 
-        cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
         # fiME: brand=None
         if 'brand' in prod and len(prod['brand']) == 0:
@@ -699,8 +717,13 @@ class TargetProductSpider(BaseProductsSpider):
     def _scrape_next_results_page_link_html(self, response):
         next_page = response.xpath(
             "//div[@id='pagination1']/div[@class='col2']"
-            "/ul[@class='pagination1']/li[@class='next']/a/@href").extract()
+            "/ul[@class='pagination1']/li[@class='next']/a/@href |"
+            "//li[contains(@class, 'pagination--next')]/a/@href"
+        ).extract()
         if next_page:
+            search = "?searchTerm=%s" % self.searchterms[0].replace(" ", "+")
+            if search in next_page[0] and "page=" in next_page[0]:
+                return next_page[0]
             next_page = next_page[0]
             return self._gen_next_request(response, next_page)
 
@@ -726,7 +749,15 @@ class TargetProductSpider(BaseProductsSpider):
         data = data.get('FilteredReviewStatistics', {})
         average = data.get('AverageOverallRating')
         total = data.get('TotalReviewCount')
-        
+        if not average:
+            average = response.meta['average']
+            total = response.meta['total']
+            if average == '0':
+                cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
+            else:
+                fdist = ZERO_REVIEWS_VALUE[-1]
+                reviews = BuyerReviews(int(total), int(average), fdist)
+                cond_set_value(product, 'buyer_reviews', reviews)
         if average and total:
             distribution = data.get('RatingDistribution', [])
             distribution = {d['RatingValue']: d['Count']
@@ -737,8 +768,6 @@ class TargetProductSpider(BaseProductsSpider):
                     fdist[i] = distribution[i]
             reviews = BuyerReviews(total, average, fdist)
             cond_set_value(product, 'buyer_reviews', reviews)
-        else:
-            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
         return product
 
     def _populate_collection_items(self, response, prod):

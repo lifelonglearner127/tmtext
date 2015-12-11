@@ -5,6 +5,7 @@ import lxml
 import lxml.html
 import requests
 import json
+import ast
 
 from itertools import groupby
 
@@ -19,12 +20,15 @@ class JcpenneyScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www\.jcpenney\.com/.*/prod\.jump\?ppId=.+$"
+    REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
         self.review_json = None
+        self.review_list = None
+        self.is_review_checked = False
         self.price_json = None
         self.jv = JcpenneyVariants()
         self.is_analyze_media_contents = False
@@ -59,13 +63,21 @@ class JcpenneyScraper(Scraper):
         self.jv.setupCH(self.tree_html)
 
         try:
-            itemtype = self.tree_html.xpath('//div[@class="pdp_details"]')[0]
+            itemtype = self.tree_html.xpath('//div[@class="pdp_details"]')
 
             if not itemtype:
+                self.ERROR_RESPONSE["failure_type"] = "Not a product"
+
+                if self.tree_html.xpath("//div[@class='product_row bottom_border flt_wdt']"):
+                    self.ERROR_RESPONSE["failure_type"] = "Bundle"
+
                 raise Exception()
+
 
         except Exception:
             return True
+
+        self.analyze_media_contents()
 
         return False
 
@@ -83,6 +95,9 @@ class JcpenneyScraper(Scraper):
 
     def _product_id(self):
         return re.search('prod\.jump\?ppId=(.+?)$', self.product_page_url).group(1)
+
+    def _site_id(self):
+        return re.findall(r"\d+", self.tree_html.xpath("//div[@id='productWebId']/text()")[0])[0]
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -106,29 +121,35 @@ class JcpenneyScraper(Scraper):
         return 0
 
     def _description(self):
-        return html.tostring(self.tree_html.xpath("//div[@id='longCopyCont']//p[1]")[0])
+        #check long description existence
+        if self.tree_html.xpath("//div[@id='longCopyCont']//ul"):
+            page_raw_text = html.tostring(self.tree_html)
+            nIndex2 = page_raw_text.find('id="longCopyCont"')
+            nIndex1 = page_raw_text.find('>', nIndex2)
+            nIndex2= page_raw_text.find('<ul', nIndex1)
+            return page_raw_text[nIndex1 + 1:nIndex2].strip()
+        elif self.tree_html.xpath("//div[@id='longCopyCont']"):
+            return html.tostring(self.tree_html.xpath("//div[@id='longCopyCont']")[0]).strip()
+
+        return None
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        description_block = self.tree_html.xpath("//div[@id='longCopyCont']")[0]
-        long_description = ""
-        long_description_start = False
+        #check long description existence
+        if self.tree_html.xpath("//div[@id='longCopyCont']//ul"):
+            page_raw_text = html.tostring(self.tree_html)
+            nIndex2 = page_raw_text.find('id="longCopyCont"')
+            nIndex1 = page_raw_text.find('>', nIndex2)
+            nIndex2= page_raw_text.find('<ul', nIndex1)
+            page_raw_text_exclude_short_description = page_raw_text[:nIndex1 + 1] + page_raw_text[nIndex2:]
+            page_html_exclude_short_description = html.fromstring(page_raw_text_exclude_short_description)
 
-        for element in description_block:
-            if element.tag == "p" and not long_description:
-                long_description_start = True
-                continue
+            return html.tostring(page_html_exclude_short_description.xpath("//div[@id='longCopyCont']")[0])
 
-            if long_description_start:
-                long_description = long_description + html.tostring(element)
-
-        if not long_description.strip():
-            return None
-        else:
-            return long_description
+        return None
 
     def _ingredients(self):
         return None
@@ -139,6 +160,9 @@ class JcpenneyScraper(Scraper):
     def _variants(self):
         return self.jv._variants()
 
+    def _swatches(self):
+        return self.jv.swatches()
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -148,16 +172,20 @@ class JcpenneyScraper(Scraper):
     def _image_urls(self):
         image_ids = re.search('var imageName = "(.+?)";', html.tostring(self.tree_html)).group(1)
         image_ids = image_ids.split(",")
+        image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
 
-        image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?wid=35&hei=35&fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
+        swatches = self._swatches()
+        swatches = swatches if swatches else []
 
-        if not image_urls:
-            return None
+        for swatch in swatches:
+            image_urls.extend(swatch["hero_image"])
 
-        if len(image_urls) > 1:
-            return image_urls[1:]
-        else:
+        image_urls = list(set(image_urls))
+
+        if image_urls:
             return image_urls
+
+        return None
 
     def _image_count(self):
         if self._image_urls():
@@ -188,109 +216,115 @@ class JcpenneyScraper(Scraper):
         except:
             pass
 
+        video_json = None
+
+        try:
+            video_json = ast.literal_eval(self._find_between(html.tostring(self.tree_html), "videoIds.push(", ");\n"))
+        except:
+            video_json = None
+
         #check media contents window existence
-        if not self.tree_html.xpath("//a[@class='InvodoViewerLink']"):
-            return
+        if self.tree_html.xpath("//a[@class='InvodoViewerLink']"):
 
-        media_contents_window_link = self.tree_html.xpath("//a[@class='InvodoViewerLink']/@onclick")[0]
-        media_contents_window_link = re.search("window\.open\('(.+?)',", media_contents_window_link).group(1)
+            media_contents_window_link = self.tree_html.xpath("//a[@class='InvodoViewerLink']/@onclick")[0]
+            media_contents_window_link = re.search("window\.open\('(.+?)',", media_contents_window_link).group(1)
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+            contents = self.load_page_from_url_with_number_of_retries(media_contents_window_link)
 
-        contents = requests.get(media_contents_window_link, headers=h).text
+            #check media contents
+            if "webapps.easy2.com" in media_contents_window_link:
+                try:
+                    media_content_raw_text = re.search('Demo.instance.data =(.+?)};\n', contents).group(1) + "}"
+                    media_content_json = json.loads(media_content_raw_text)
 
-        #check media contents
-        if "webapps.easy2.com" in media_contents_window_link:
-            try:
-                media_content_raw_text = re.search('Demo.instance.data =(.+?)};\n', contents).group(1) + "}"
-                media_content_json = json.loads(media_content_raw_text)
+                    video_lists = re.findall('"Path":"(.*?)",', media_content_raw_text)
 
-                video_lists = re.findall('"Path":"(.*?)",', media_content_raw_text)
+                    video_lists = [media_content_json["UrlAddOn"] + url for url in video_lists if url.strip().endswith(".flv") or url.strip().endswith(".mp4/")]
+                    video_lists = list(set(video_lists))
 
-                video_lists = [media_content_json["UrlAddOn"] + url for url in video_lists if url.strip().endswith(".flv") or url.strip().endswith(".mp4/")]
-                video_lists = list(set(video_lists))
+                    if not video_lists:
+                        raise Exception
 
-                if not video_lists:
-                    raise Exception
+                    self.video_urls = video_lists
+                    self.video_count = len(self.video_urls)
+                except:
+                    pass
+            elif "content.webcollage.net" in media_contents_window_link:
+                webcollage_link = re.search("document\.location\.replace\('(.+?)'\);", contents).group(1)
+                contents = self.load_page_from_url_with_number_of_retries(webcollage_link)
+                webcollage_page_tree = html.fromstring(contents)
 
-                self.video_urls = video_lists
-                self.video_count = len(self.video_urls)
-            except:
-                pass
-        elif "content.webcollage.net" in media_contents_window_link:
-            webcollage_link = re.search("document\.location\.replace\('(.+?)'\);", contents).group(1)
-            contents = requests.get(webcollage_link, headers=h).text
-            webcollage_page_tree = html.fromstring(contents)
+                try:
+                    webcollage_media_base_url = re.search('<div data-resources-base="(.+?)"', contents).group(1)
 
-            try:
-                webcollage_media_base_url = re.search('<div data-resources-base="(.+?)"', contents).group(1)
+                    videos_json = '{"videos":' + re.search('{"videos":(.*?)]}</div>', contents).group(1) + ']}'
+                    videos_json = json.loads(videos_json)
 
-                videos_json = '{"videos":' + re.search('{"videos":(.*?)]}</div>', contents).group(1) + ']}'
-                videos_json = json.loads(videos_json)
+                    video_lists = [webcollage_media_base_url + videos_json["videos"][0]["src"]["src"][1:]]
+                    self.wc_video = 1
+                    self.video_urls = video_lists
+                    self.video_count = len(self.video_urls)
+                except:
+                    pass
 
-                video_lists = [webcollage_media_base_url + videos_json["videos"][0]["src"]["src"][1:]]
-                self.wc_video = 1
-                self.video_urls = video_lists
-                self.video_count = len(self.video_urls)
-            except:
-                pass
+                try:
+                    if webcollage_page_tree.xpath("//div[@class='wc-ms-navbar']//span[text()='360 Rotation']") or webcollage_page_tree.xpath("//div[@class='wc-ms-navbar']//span[text()='360/Zoom']"):
+                        self.wc_360 = 1
+                except:
+                    pass
 
-            try:
-                if webcollage_page_tree.xpath("//div[@class='wc-ms-navbar']//span[text()='360 Rotation']") or webcollage_page_tree.xpath("//div[@class='wc-ms-navbar']//span[text()='360/Zoom']"):
-                    self.wc_360 = 1
-            except:
-                pass
+                try:
+                    if webcollage_page_tree.xpath("//ul[contains(@class, 'wc-rich-features')]"):
+                        self.wc_emc = 1
+                except:
+                    pass
 
-            try:
-                if webcollage_page_tree.xpath("//ul[contains(@class, 'wc-rich-features')]"):
-                    self.wc_emc = 1
-            except:
-                pass
+            elif "bcove.me" in media_contents_window_link:
+                try:
+                    brightcove_page_tree = html.fromstring(contents)
+                    video_lists = [brightcove_page_tree.xpath("//meta[@property='og:video']/@content")[0]]
+                    self.video_urls = video_lists
+                    self.video_count = len(self.video_urls)
+                except:
+                    pass
 
-        elif "bcove.me" in media_contents_window_link:
-            try:
-                brightcove_page_tree = html.fromstring(contents)
-                video_lists = [brightcove_page_tree.xpath("//meta[@property='og:video']/@content")[0]]
-                self.video_urls = video_lists
-                self.video_count = len(self.video_urls)
-            except:
-                pass
+        try:
+            if video_json:
+                if not self.video_urls:
+                    self.video_urls = [video_json['url']]
+                    self.video_count = 1
+                else:
+                    self.video_urls.append(video_json["url"])
+                    self.video_count = self.video_count + 1
+        except:
+            pass
 
     def _video_urls(self):
-        self.analyze_media_contents()
         return self.video_urls
 
     def _video_count(self):
-        self.analyze_media_contents()
         return self.video_count
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
-        self.analyze_media_contents()
         return self.pdf_urls
 
     def _pdf_count(self):
-        self.analyze_media_contents()
         return self.pdf_count
 
     def _wc_emc(self):
-        self.analyze_media_contents()        
         return self.wc_emc
 
     def _wc_prodtour(self):
-        self.analyze_media_contents()        
         return self.wc_prodtour
 
     def _wc_360(self):
-        self.analyze_media_contents()        
         return self.wc_360
 
     def _wc_video(self):
-        self.analyze_media_contents()        
         return self.wc_video
 
     def _wc_pdf(self):
-        self.analyze_media_contents()        
         return self.wc_pdf
 
     def _webcollage(self):
@@ -313,24 +347,13 @@ class JcpenneyScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
 
-    def _extract_review_json(self):
-        try:
-            review_id = re.search('reviewId:"(.+?)",', html.tostring(self.tree_html)).group(1)
-
-            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-
-            contents = requests.get("https://jcpenney.ugc.bazaarvoice.com/1573-en_us/%s/reviews.djs?format=embeddedhtml" % review_id, headers=h).text
-            review_json = re.search('webAnalyticsConfig:(.+?),\nwidgetInitializers:initializers,', contents).group(1)
-            self.review_json = json.loads(review_json)
-        except:
-            self.review_json = None
-
     def _extract_price_json(self):
         try:
             price_json= re.search('var jcpPPJSON = (.+?);\njcpDLjcp\.productPresentation = jcpPPJSON;', html.tostring(self.tree_html)).group(1)
             self.price_json = json.loads(price_json)
         except:
             self.price_json = None
+
 
     def _average_review(self):
         if self._review_count() == 0:
@@ -344,19 +367,58 @@ class JcpenneyScraper(Scraper):
             return float(average_review)
 
     def _review_count(self):
+        self._reviews()
+
         if not self.review_json:
-            self._extract_review_json()
+            return 0
 
         return int(self.review_json["jsonData"]["attributes"]["numReviews"])
 
     def _max_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        for i, review in enumerate(self.review_list):
+            if review[1] > 0:
+                return 5 - i
 
     def _min_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        for i, review in enumerate(reversed(self.review_list)):
+            if review[1] > 0:
+                return i + 1
 
     def _reviews(self):
-        return None
+        if self.is_review_checked:
+            return self.review_list
+
+        self.is_review_checked = True
+
+        review_id = self._find_between(html.tostring(self.tree_html), 'reviewId:"', '",').strip()
+        contents = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(review_id))
+
+        try:
+            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
+            end_index = contents.find(",\nwidgetInitializers:initializers", start_index)
+
+            self.review_json = contents[start_index:end_index]
+            self.review_json = json.loads(self.review_json)
+        except:
+            self.review_json = None
+
+        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
+        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
+        reviews_by_mark = reviews_by_mark[:5]
+        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
+
+        if not review_list:
+            review_list = None
+
+        self.review_list = review_list
+
+        return self.review_list
 
     ##########################################
     ############### CONTAINER : SELLERS
@@ -449,7 +511,7 @@ class JcpenneyScraper(Scraper):
         # CONTAINER : NONE
         "url" : _url, \
         "product_id" : _product_id, \
-
+        "site_id" : _site_id, \
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
         "product_title" : _product_title, \
@@ -462,7 +524,7 @@ class JcpenneyScraper(Scraper):
         "ingredients": _ingredients, \
         "ingredient_count": _ingredients_count,
         "variants": _variants,
-
+        "swatches": _swatches,
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \

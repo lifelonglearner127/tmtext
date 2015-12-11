@@ -31,6 +31,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
+LOGIN_URL = '/admin/'
 
 # Application definition
 
@@ -42,7 +43,8 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'gui'
+    'gui',
+    'fcgi'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -163,6 +165,4 @@ LOGGING = {
 TEST_QUEUE = QUEUES_LIST['test']
 TEST_CACHE_QUEUE = CACHE_QUEUES_LIST['test']
 
-
-#TODO: nginx http AUTH
-#TODO: colored statuses, remove unnecessary statuses
+CACHE_MODELS_FILENAME = '/tmp/cache_models.pickle'

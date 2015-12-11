@@ -10,6 +10,7 @@ from itertools import groupby
 
 from lxml import html, etree
 from extract_data import Scraper
+from spiders_shared_code.kohls_variants import KohlsVariants
 
 
 class KohlsScraper(Scraper):
@@ -18,14 +19,22 @@ class KohlsScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.kohls.com/product/prd-<product-id>/<optional-part-of-product-name>.jsp"
+    REVIEW_URL = "http://kohls.ugc.bazaarvoice.com/9025/{}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
-        self.review_json = None
         self.price_json = None
         self.failure_type = None
+        self.kv = KohlsVariants()
+
+        self.review_json = None
+        self.review_list = None
+        self.is_review_checked = False
+
+        self.variants = None
+        self.is_variant_checked = False
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -45,6 +54,12 @@ class KohlsScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
+
+        try:
+            self.kv.setupCH(self.tree_html)
+        except:
+            pass
+
         try:
             self._failure_type()
 
@@ -74,9 +89,9 @@ class KohlsScraper(Scraper):
         return product_id
 
     def _failure_type(self):
-        itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
+        itemtype = self.tree_html.xpath('//div[@itemtype="http://schema.org/Product"]')
 
-        if itemtype != "product":
+        if not itemtype:
             self.failure_type = "Not a product"
             return
 
@@ -90,13 +105,13 @@ class KohlsScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//title/text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//title/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//title/text()')[0].strip()
 
     def _model(self):
         return None
@@ -217,6 +232,19 @@ class KohlsScraper(Scraper):
     def _ingredients_count(self):
         return 0
 
+    def _variants(self):
+        if self.is_variant_checked:
+            return self.variants
+
+        self.is_variant_checked = True
+
+        self.variants = self.kv._variants()
+
+        return self.variants
+
+    def _swatches(self):
+        return self.kv.swatches()
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -235,7 +263,16 @@ class KohlsScraper(Scraper):
             if "?wid=" in url:
                 image_urls[index] = url[:url.find("?wid=")]
 
+        swatches = self._swatches()
+
+        if swatches:
+            for swatch in swatches:
+                if swatch["hero_image"]:
+                    image_urls.extend(swatch["hero_image"])
+
         if image_urls:
+            image_urls = list(set(image_urls))
+
             return image_urls
 
         return None
@@ -284,19 +321,6 @@ class KohlsScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
 
-    def _extract_review_json(self):
-        try:
-            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-
-            contents = requests.get("http://kohls.ugc.bazaarvoice.com/9025/%s/reviews.djs?format=embeddedhtml" % self._product_id(), headers=h).text
-            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
-            end_index = contents.find("}},", start_index) + 2
-
-            self.review_json = contents[start_index:end_index]
-            self.review_json = json.loads(self.review_json)
-        except:
-            self.review_json = None
-
     def _extract_price_json(self):
         if self.price_json:
             return
@@ -316,6 +340,7 @@ class KohlsScraper(Scraper):
             price_json = price_json[:start_index] + item_product_id_text + price_json[end_index:]
             self.price_json = json.loads(price_json)
 
+
     def _average_review(self):
         if self._review_count() == 0:
             return None
@@ -328,24 +353,75 @@ class KohlsScraper(Scraper):
             return float(average_review)
 
     def _review_count(self):
+        self._reviews()
+
         if not self.review_json:
-            self._extract_review_json()
+            return 0
 
         return int(self.review_json["jsonData"]["attributes"]["numReviews"])
 
     def _max_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        for i, review in enumerate(self.review_list):
+            if review[1] > 0:
+                return 5 - i
 
     def _min_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        for i, review in enumerate(reversed(self.review_list)):
+            if review[1] > 0:
+                return i + 1
 
     def _reviews(self):
-        return None
+        if self.is_review_checked:
+            return self.review_list
+
+        self.is_review_checked = True
+
+        contents = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(self._product_id()))
+
+        try:
+            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
+            end_index = contents.find(",\nwidgetInitializers:initializers", start_index)
+
+            self.review_json = contents[start_index:end_index]
+            self.review_json = json.loads(self.review_json)
+        except:
+            self.review_json = None
+
+        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
+        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
+        reviews_by_mark = reviews_by_mark[:5]
+        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
+
+        if not review_list:
+            review_list = None
+
+        self.review_list = review_list
+
+        return self.review_list
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
+        if self.tree_html.xpath("//div[@class='sale']//span[@class='price_ammount']"):
+            price_text = self.tree_html.xpath("//div[@class='sale']//span[@class='price_ammount']")[0].text_content().strip()
+
+            if len(price_text) > 0:
+                return price_text
+
+        if self.tree_html.xpath("//div[@class='original original-reg']"):
+            price_text = self.tree_html.xpath("//div[@class='original original-reg']")[0].text_content().strip().lower()
+            price_text = price_text.replace("original", "").replace("regular", "").replace("\n", "").strip()
+
+            if len(price_text) > 0:
+                return price_text
+
         self._extract_price_json()
 
         if not self.price_json:
@@ -364,27 +440,12 @@ class KohlsScraper(Scraper):
         return price.strip()
 
     def _price_amount(self):
-        self._extract_price_json()
-
-        if not self.price_json:
-            return None
-
-        price_amount = 0
-
-        if not self.price_json["product_Details"]["itemSalePrice"]:
-            price_amount = self.price_json["product_Details"]["itemOriginalPrice"]
-        else:
-            price_amount = self.price_json["product_Details"]["itemSalePrice"]
-
-        if "|" in price_amount:
-            price_amount = price_amount[:price_amount.find("|")]
-
-        price_amount = price_amount.strip()
-
-        return float(price_amount[1:])
+        price_text = self._price()
+        price = re.findall("\d+.\d+", price_text.replace(",", ""))
+        return float(price[0])
 
     def _price_currency(self):
-        return self.tree_html.xpath("//meta[@property='og:price:currency']/@content")[0]
+        return "USD"
 
     def _owned(self):
         return 0
@@ -452,7 +513,8 @@ class KohlsScraper(Scraper):
         "long_description" : _long_description, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredients_count,
-
+        "variants": _variants,
+        "swatches": _swatches,
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \

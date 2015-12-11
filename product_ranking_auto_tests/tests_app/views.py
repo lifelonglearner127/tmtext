@@ -75,7 +75,7 @@ class JSONToCSV(AuthViewMixin, View):
             return HttpResponse('passed file is not JSON list file')
         if not os.path.exists(_json):  # media url?
             _json = os.path.join(settings.MEDIA_ROOT,
-                                 _json.replace(settings.MEDIA_URL, ''))
+                                 _json.replace(settings.MEDIA_URL[1:], ''))
         if not os.path.exists(_json):
             return HttpResponse('given file does not exist')
         csv_fname = convert_json_to_csv(_json.replace('.jl', ''))
