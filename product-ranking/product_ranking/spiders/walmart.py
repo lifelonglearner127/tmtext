@@ -1271,6 +1271,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 return product
 
     def _parse_all_questions_and_answers(self, response):
+        if not self.product_url:
+            return  # work only in product_url mode; it consumes too much RAM
         original_prod_url = response.meta['product']['url']
         product = response.meta['product']
         product['_subitem'] = True
