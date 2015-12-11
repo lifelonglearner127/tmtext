@@ -32,7 +32,7 @@
     <field name="in_stores_out_of_stock" version="1.1"></field>
     <field name="categories" version="1.1"></field>
     <field name="category_name" version="1.1"></field>
-    <field name="brand" version="1.1"></field>
+    <field name="brand" version="1.2"></field>
     <field name="review_count" version="1.1"></field>
     <field name="average_review" version="1.2"></field>
     <field name="max_review" version="1.1"></field>
