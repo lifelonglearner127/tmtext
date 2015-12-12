@@ -409,6 +409,19 @@ class KohlsScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
+        if self.tree_html.xpath("//div[@class='sale']//span[@class='price_ammount']"):
+            price_text = self.tree_html.xpath("//div[@class='sale']//span[@class='price_ammount']")[0].text_content().strip()
+
+            if len(price_text) > 0:
+                return price_text
+
+        if self.tree_html.xpath("//div[@class='original original-reg']"):
+            price_text = self.tree_html.xpath("//div[@class='original original-reg']")[0].text_content().strip().lower()
+            price_text = price_text.replace("original", "").replace("regular", "").replace("\n", "").strip()
+
+            if len(price_text) > 0:
+                return price_text
+
         self._extract_price_json()
 
         if not self.price_json:
@@ -427,24 +440,9 @@ class KohlsScraper(Scraper):
         return price.strip()
 
     def _price_amount(self):
-        self._extract_price_json()
-
-        if not self.price_json:
-            return None
-
-        price_amount = 0
-
-        if not self.price_json["product_Details"]["itemSalePrice"]:
-            price_amount = self.price_json["product_Details"]["itemOriginalPrice"]
-        else:
-            price_amount = self.price_json["product_Details"]["itemSalePrice"]
-
-        if "|" in price_amount:
-            price_amount = price_amount[:price_amount.find("|")]
-
-        price_amount = price_amount.strip()
-
-        return float(price_amount[1:])
+        price_text = self._price()
+        price = re.findall("\d+.\d+", price_text.replace(",", ""))
+        return float(price[0])
 
     def _price_currency(self):
         return "USD"

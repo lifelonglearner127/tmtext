@@ -947,24 +947,6 @@ class AmazonScraper(Scraper):
 
         return price
 
-    def _in_stock(self):
-        in_stock = self.tree_html.xpath('//div[contains(@id, "availability")]//text()')
-        in_stock = " ".join(in_stock)
-        if 'currently unavailable' in in_stock.lower():
-            return 0
-
-        in_stock = self.tree_html.xpath('//div[contains(@id, "outOfStock")]//text()')
-        in_stock = " ".join(in_stock)
-        if 'currently unavailable' in in_stock.lower():
-            return 0
-
-        in_stock = self.tree_html.xpath("//div[@id='buyBoxContent']//text()")
-        in_stock = " ".join(in_stock)
-        if 'sign up to be notified when this item becomes available' in in_stock.lower():
-            return 0
-
-        return 1
-
     def _in_stores(self):
         return 0
 
@@ -1163,14 +1145,31 @@ class AmazonScraper(Scraper):
         if self.tree_html.xpath("//input[@id='add-to-cart-button']"):
             return 1
 
+        if self.tree_html.xpath("//input[@id='add-to-wishlist-button-submit']"):
+            return 1
+
         return 0
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 0:
             return None
-        if self._in_stock() == 0:
+
+        in_stock = self.tree_html.xpath('//div[contains(@id, "availability")]//text()')
+        in_stock = " ".join(in_stock)
+        if 'currently unavailable' in in_stock.lower():
             return 1
+
+        in_stock = self.tree_html.xpath('//div[contains(@id, "outOfStock")]//text()')
+        in_stock = " ".join(in_stock)
+        if 'currently unavailable' in in_stock.lower():
+            return 1
+
+        in_stock = self.tree_html.xpath("//div[@id='buyBoxContent']//text()")
+        in_stock = " ".join(in_stock)
+        if 'sign up to be notified when this item becomes available' in in_stock.lower():
+            return 1
+
         return 0
 
     def _in_stores_out_of_stock(self):
@@ -1319,7 +1318,6 @@ class AmazonScraper(Scraper):
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
-        "in_stock" : _in_stock, \
         "owned" : _owned, \
         "owned_out_of_stock" : _owned_out_of_stock, \
 
