@@ -40,7 +40,8 @@ class InvokeWalmartApiViewSet(viewsets.ViewSet):
                 response = requests.get(request_url,  headers=walmart_api_request_json).text
                 response = xmltodict.parse(response)
             elif method.lower() == "post":
-                response = xmltodict.parse(requests.get(request_url, data=walmart_api_request_json).text)
+                xml_file = open(os.path.dirname(os.path.realpath(__file__)) + "/supplier-sample.xml", "rb")
+                response = xmltodict.parse(requests.post(request_url, data=walmart_api_request_json, files={'supplier-sample.xml': xml_file}).text)
 
             return Response(response)
         except:
