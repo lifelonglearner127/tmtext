@@ -231,13 +231,13 @@ for row in rows:
             if sample_json["scraper"] != current_json["scraper"]:
                 number_of_version_changed_products = number_of_version_changed_products + 1
                 version_changed = "Yes"
+
+            csv_writer.writerow({"store url": unicode(row["sample_url"]).encode("utf-8"),
+                                 "number of changed parts": unicode(str(row["changes_in_structure"])).encode("utf-8"),
+                                 "version changed(Yes/No)": unicode(version_changed).encode("utf-8"),
+                                 "regression report url": unicode("http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])).encode("utf-8")})
         except:
             continue
-
-        csv_writer.writerow({"store url": unicode(row["sample_url"]).encode("utf-8"),
-                             "number of changed parts": unicode(str(row["changes_in_structure"])).encode("utf-8"),
-                             "version changed(Yes/No)": unicode(version_changed).encode("utf-8"),
-                             "regression report url": unicode("http://regression.contentanalyticsinc.com:8080/regression/console/reportresult/" + str(row["id"])).encode("utf-8")})
 
 csv_file.close()
 
