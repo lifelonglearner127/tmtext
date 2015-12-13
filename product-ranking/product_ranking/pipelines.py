@@ -13,12 +13,8 @@ import os
 
 from scrapy import Selector
 from scrapy.exceptions import DropItem
-from scrapy import logformatter
-from scrapy import log
 from scrapy.xlib.pydispatch import dispatcher
 from scrapy import signals
-from scrapy import log
-from scrapy import logformatter
 import tldextract
 try:
     import mock
@@ -305,6 +301,7 @@ class MergeSubItems(object):
                 self._mapper[item['url']] = {}
             self._mapper[item['url']].update(item)
             raise DropItem('Multiple Sub-Items found')
+
 
 class CollectStatistics(object):
     """ Gathers server and spider statistics, such as RAM, HDD, CPU etc. """
