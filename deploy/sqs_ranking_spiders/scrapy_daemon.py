@@ -78,7 +78,7 @@ S3_CONN = boto.connect_s3(
 S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
 
 # settings
-MAX_CONCURRENT_TASKS = 16  # tasks per instance, all with same git branch
+MAX_CONCURRENT_TASKS = 12  # tasks per instance, all with same git branch
 MAX_TRIES_TO_GET_TASK = 100  # tries to get max tasks for same branch
 LISTENER_ADDRESS = ('localhost', 9070)  # address to listen for signals
 # SCRAPY_LOGS_DIR = ''  # where to put log files
