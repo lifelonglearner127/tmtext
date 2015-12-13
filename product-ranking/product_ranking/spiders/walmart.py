@@ -2,7 +2,6 @@ from __future__ import division, absolute_import, unicode_literals
 
 import json
 import pprint
-import re
 import urlparse
 import hashlib
 import random

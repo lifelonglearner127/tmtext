@@ -9,6 +9,7 @@ import unittest
 import json
 import random
 import sys
+import copy
 import os
 
 from scrapy import Selector
@@ -292,14 +293,19 @@ class MergeSubItems(object):
             self._dump_mapper_to_fname(_validation_filename)
 
     def process_item(self, item, spider):
+        _item = copy.deepcopy(item)
+        item = copy.deepcopy(_item)
+        del _item
         _subitem = item.get('_subitem', None)
         if not _subitem:
             return item  # we don't need to merge sub-items
         self._subitem_mode = True  # switch a flag if there's at least one item with "subitem mode" found
         if 'url' in item:  # sub-items: collect them and dump them on "on_close" call
-            if not item['url'] in self._mapper:
-                self._mapper[item['url']] = {}
-            self._mapper[item['url']].update(item)
+            _url = item['url']
+            if not _url in self._mapper:
+                self._mapper[_url] = {}
+            self._mapper[_url].update(item)
+            del item
             raise DropItem('Multiple Sub-Items found')
 
 
