@@ -1148,6 +1148,9 @@ class AmazonScraper(Scraper):
         if self.tree_html.xpath("//input[@id='add-to-wishlist-button-submit']"):
             return 1
 
+        if self.tree_html.xpath("//span[@id='pantry-availability']") and "in stock" in self.tree_html.xpath("//span[@id='pantry-availability']")[0].text_content().lower():
+            return 1
+
         return 0
 
     def _site_online_out_of_stock(self):
