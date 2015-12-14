@@ -51,6 +51,9 @@ def fetch_bytes(url):
 is_empty = lambda x, y="": x[0] if x else y
 
 
+SiteProductItem.__repr__ = lambda _: 'product item'  # avoid tons of 'items' in logs
+
+
 def get_string_from_html(xp, link):
     loc = is_empty(link.xpath(xp).extract())
     return Selector(text=loc).xpath('string()').extract()
@@ -172,7 +175,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
-        scrapy_settings.set('LOG_LEVEL', 'ERROR')
         if zip_code:
             self.zip_code = zip_code
         if search_sort == 'best_sellers':
