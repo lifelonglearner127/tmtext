@@ -35,6 +35,7 @@ sys.path.insert(2, os.path.join(CWD, '..', '..', 'product-ranking'))
 sys.path.insert(1, os.path.join(path, '..'))
 sys.path.insert(2, os.path.join(path, '..', '..', 'special_crawler',
                                 'queue_handler'))
+sys.path.insert(3, os.path.join(path, 'tmtext', 'product-ranking'))
 
 
 from sqs_ranking_spiders.task_id_generator import \
@@ -1396,6 +1397,7 @@ def main():
     max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 61
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
+    # loop where we wait for all the tasks to complete
     try:
         for i in xrange(0, max_wait_time, step_time):
             if is_all_tasks_finished(tasks_taken):
@@ -1403,6 +1405,7 @@ def main():
                 break
             send_tasks_status(tasks_taken)
             time.sleep(step_time)
+            logger.info('Server statistics: ' + str(statistics.report_statistics()))
         else:
             logger.error('Some of the tasks not finished in allowed time, '
                          'stopping them.')
