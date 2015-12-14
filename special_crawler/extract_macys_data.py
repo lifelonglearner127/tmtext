@@ -481,7 +481,7 @@ class MacysScraper(Scraper):
         return self._categories()[-1]
 
     def _brand(self):
-        return None
+        return self.tree_html.xpath("//div[@id='brandLogo']//img/@alt")[0]
 
     ##########################################
     ################ HELPER FUNCTIONS
