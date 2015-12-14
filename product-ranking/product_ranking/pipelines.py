@@ -284,11 +284,15 @@ class MergeSubItems(object):
             for url, item in self._mapper.items():
                 fh.write(json.dumps(item, default=self._serializer)+'\n')
 
-    def spider_closed(self, spider):
+    def _dump_output(self, spider):
         if self._subitem_mode:  # rewrite output only if we're in "subitem mode"
             output_fname = self._get_output_filename(spider)
             if output_fname:
                 self._dump_mapper_to_fname(output_fname)
+
+    def spider_closed(self, spider):
+        if self._subitem_mode:  # rewrite output only if we're in "subitem mode"
+            self._dump_output(spider)
             _validation_filename = _get_spider_output_filename(spider)
             self._dump_mapper_to_fname(_validation_filename)
 
@@ -306,6 +310,9 @@ class MergeSubItems(object):
                 self._mapper[_url] = {}
             self._mapper[_url].update(item)
             del item
+            if random.randint(0, 100) == 0:
+                # dump output from time to time to show progress (non-empty output file)
+                self._dump_output(spider)
             raise DropItem('Multiple Sub-Items found')
 
 
