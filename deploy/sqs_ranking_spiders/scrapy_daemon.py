@@ -366,7 +366,7 @@ def compress_multiple_files(output_fname, *filenames):
         mode = zipfile.ZIP_DEFLATED
     except ImportError:
         mode = zipfile.ZIP_STORED
-    zf = zipfile.ZipFile(output_fname, 'a', mode)
+    zf = zipfile.ZipFile(output_fname, 'a', mode, allowZip64=True)
     for filename in filenames:
         zf.write(filename=filename, arcname=os.path.basename(filename))
     zf.close()
@@ -394,7 +394,7 @@ def put_file_into_s3(bucket_name, fname,
             mode = zipfile.ZIP_STORED
         archive_name = filename + '.zip'
         archive_path = fname + '.zip'
-        zf = zipfile.ZipFile(archive_path, 'w', mode)
+        zf = zipfile.ZipFile(archive_path, 'w', mode, allowZip64=True)
         try:
             zf.write(filename=fname, arcname=filename)
             logger.info("Adding %s to archive", filename)
