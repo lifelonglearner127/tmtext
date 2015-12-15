@@ -10,6 +10,7 @@ class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as p
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_123': 0,
         'vodka': [50, 600],
+        'white lipton tea': [50, 150],
         'trimming cat': [5, 50],
         'waterpik': [10, 150],
         'hexacore video': [5, 100],

@@ -1952,34 +1952,35 @@ class WalmartScraper(Scraper):
             print "Error (Loading product json from Walmart api - not_a_product)" + str(e)
             self.product_api_json = None
 
-        if self._version() == "Walmart v2" and self.is_bundle_product:
-            product_info_json = self._find_between(html.tostring(self.tree_html), 'define("product/data",', ");\n")
-            product_info_json = json.loads(product_info_json)
-            self.product_info_json = product_info_json
+        if self._version() == "Walmart v2":
+            if self.is_bundle_product:
+                product_info_json = self._find_between(html.tostring(self.tree_html), 'define("product/data",', ");\n")
+                product_info_json = json.loads(product_info_json)
+                self.product_info_json = product_info_json
 
-            try:
-                product_choice_info_json = self._find_between(html.tostring(self.tree_html), 'define("choice/data",', ");\n")
-                product_choice_info_json = json.loads(product_choice_info_json)
-                self.product_choice_info_json = product_choice_info_json
-            except:
-                pass
-
-            if not self.product_choice_info_json:
                 try:
-                    product_choice_info_json = self._find_between(html.tostring(self.tree_html), 'define("non-choice/data",', ");\n")
+                    product_choice_info_json = self._find_between(html.tostring(self.tree_html), 'define("choice/data",', ");\n")
                     product_choice_info_json = json.loads(product_choice_info_json)
                     self.product_choice_info_json = product_choice_info_json
                 except:
                     pass
 
-            return self.product_info_json
-        else:
-            page_raw_text = html.tostring(self.tree_html)
-            product_info_json = json.loads(re.search('define\("product\/data",\n(.+?)\n', page_raw_text).group(1))
+                if not self.product_choice_info_json:
+                    try:
+                        product_choice_info_json = self._find_between(html.tostring(self.tree_html), 'define("non-choice/data",', ");\n")
+                        product_choice_info_json = json.loads(product_choice_info_json)
+                        self.product_choice_info_json = product_choice_info_json
+                    except:
+                        pass
 
-            self.product_info_json = product_info_json
+                return self.product_info_json
+            else:
+                page_raw_text = html.tostring(self.tree_html)
+                product_info_json = json.loads(re.search('define\("product\/data",\n(.+?)\n', page_raw_text).group(1))
 
-            return self.product_info_json
+                self.product_info_json = product_info_json
+
+                return self.product_info_json
 
     # ! may throw exception if not found
     def _owned_from_script(self):
