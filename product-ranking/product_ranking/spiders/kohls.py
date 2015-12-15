@@ -283,10 +283,14 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                 url = is_empty(sel.xpath('@href').extract())
                 if url:
                     title = is_empty(sel.xpath('./div/p/text()').extract())
-                    if isinstance(title, unicode):
-                        title = title.encode('utf')
-                    title = title.replace("\xe9", "Ã©")\
-                        .replace("\xf6", "").replace("\xb0", "")
+                    _original_type_str = False
+                    if isinstance(title, str):
+                        _original_type_str = True
+                        title = title.decode('utf8')
+                    title = title.replace(u"\xe9", u"Ã©")\
+                        .replace(u"\xf6", "").replace(u"\xb0", "")
+                    if _original_type_str:
+                        title = title.decode('utf8')
                     related.append(
                         RelatedProduct(
                             title=title,
