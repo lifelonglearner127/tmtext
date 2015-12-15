@@ -199,7 +199,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod, 'handle_httpstatus_list': [404, 502]},
+                          meta={'product': prod, 'handle_httpstatus_list': [404, 502, 520]},
                           dont_filter=True)
 
     def get_sponsored_links(self, response):
@@ -342,6 +342,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                      response.xpath(
                          '//meta[@itemprop="model"]/@content'
                      ).extract())
+        if response.xpath('//*[contains(@class, "submap-flyout")]'
+                          '//*[contains(@class, "submap-price")]'
+                          '[contains(text(), "See details in cart")]').extract():
+            product['price_details_in_cart'] = True
+
         flag = 'not available'
         if response.xpath('//meta[@name="Keywords"]').extract():
             if not flag in response.body_as_unicode():
@@ -508,12 +513,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         )
 
     def _parse_single_product(self, response):
-        if response.status == 404:
+        if response.status in (404, 520):
             if 'product' not in response.meta:
                 product = SiteProductItem()
             else:
                 product = response.meta['product']
-            product['response_code'] = 404
+            product['response_code'] = response.status
             product['not_found'] = True
             if not 'url' in product:
                 product['url'] = getattr(self, 'product_url', '')

@@ -69,7 +69,7 @@ def _compare_dicts(d1, d2, exclude_fields):
                 t2.remove(v1)
                 t1.remove(v1)
         if t1 or t2:
-            results.append('Not matching lists: %s ----- %s' % (t1, t2))
+            results.append([t1, t2])
 
     if isinstance(d1, dict) and isinstance(d2, dict):
         e_f = set(exclude_fields)
@@ -213,6 +213,7 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
                 if mis_fields:
                     if print_output:
                         print 'LINE', i
+                        print 'URL', json1['url']
                         print colorama.Fore.GREEN
                         print_human_friendly(mis_fields, fields2exclude)
                         print colorama.Fore.RESET
@@ -222,6 +223,7 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
                             'diff': collect_human_friendly(mis_fields, fields2exclude),
                             'data1': json1,
                             'data2': json2,
+                            'url': json1['url']
                         })
 
     if print_output:
@@ -244,8 +246,5 @@ if __name__ == '__main__':
         fields2exclude=fields2exclude,
         strip_get_args=args.strip_get_args,
         skip_urls=args.skip_urls,
-        print_output=False
+        print_output=True
     )
-    print '*' * 100
-    # print result['diff'][0]['diff']
-    print result['diff'][0].keys()
