@@ -238,6 +238,9 @@ class WalmartVariants(object):
 
                     for key in variants:
                         if key in variation_key_values_by_attributes:
+                            if variants[key]["id"] not in variation_key_values_by_attributes[key].keys():
+                                continue
+
                             if key == "actual_color":
                                 properties["color"] = variation_key_values_by_attributes[key][variants[key]["id"]]
                             else:
