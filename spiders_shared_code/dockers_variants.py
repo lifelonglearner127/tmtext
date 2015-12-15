@@ -74,8 +74,12 @@ class DockersVariants(object):
                 value_list = []
 
                 if "colorid" in buy_stack_json["sku"][variant_combination]:
-                    properties["color"] = buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]["colorid"]]["finish"]["title"]
+                    _colorid = buy_stack_json["sku"][variant_combination]["colorid"]
+                    if _colorid not in buy_stack_json['colorid']:
+                        continue
+                    properties["color"] = buy_stack_json["colorid"][_colorid]["finish"]["title"]
                     value_list.append(properties["color"])
+
                     if "color" not in attribute_list: attribute_list.append("color")
 
                 if "length" in buy_stack_json["sku"][variant_combination]:
