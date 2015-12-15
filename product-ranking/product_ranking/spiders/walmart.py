@@ -22,6 +22,7 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
+from product_ranking.validators.walmart_validator import WalmartValidatorSettings
 from spiders_shared_code.walmart_variants import WalmartVariants
 from spiders_shared_code.walmart_categories import WalmartCategoryParser
 #from spiders_shared_code.walmart_extra_data import WalmartExtraData
@@ -90,29 +91,6 @@ def _get_walmart_api_key():
             '63y2yz3qnes9vwn97tjpshtb']
     key = random.choice(keys)
     return key
-
-
-class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['model', 'brand', 'description', 'recent_questions',
-                       'related_products', 'upc', 'buyer_reviews', 'price']
-    ignore_fields = ['google_source_site', 'is_in_store_only', 'bestseller_rank',
-                     'is_out_of_stock']
-    ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = False  # ... duplicated requests?
-    ignore_log_filtered = False  # ... filtered requests?
-    ignore_log_duplications_and_ranking_gaps = True
-    test_requests = {
-        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
-        'nothing_found_123': 0,
-        'vodka': [50, 250],
-        'taker': [100, 500],
-        'socket 775': [10, 150],
-        'hexacore': [50, 700],
-        '300c': [50, 250],
-        'muay': [50, 200],
-        '14-pack': [1, 100],
-        'voltmeter': [50, 250]
-    }
 
 
 class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
