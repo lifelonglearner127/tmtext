@@ -2,7 +2,6 @@ from __future__ import division, absolute_import, unicode_literals
 
 import json
 import pprint
-import re
 import urlparse
 import hashlib
 import random
@@ -14,6 +13,7 @@ import lxml.html
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
+from scrapy.conf import settings as scrapy_settings
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
@@ -22,6 +22,7 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
+from product_ranking.validators.walmart_validator import WalmartValidatorSettings
 from spiders_shared_code.walmart_variants import WalmartVariants
 from spiders_shared_code.walmart_categories import WalmartCategoryParser
 #from spiders_shared_code.walmart_extra_data import WalmartExtraData
@@ -49,6 +50,9 @@ def fetch_bytes(url):
 """
 
 is_empty = lambda x, y="": x[0] if x else y
+
+
+SiteProductItem.__repr__ = lambda _: 'product item'  # avoid tons of 'items' in logs
 
 
 def get_string_from_html(xp, link):
@@ -92,29 +96,6 @@ def _get_walmart_api_key():
     return key
 
 
-class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['model', 'brand', 'description', 'recent_questions',
-                       'related_products', 'upc', 'buyer_reviews', 'price']
-    ignore_fields = ['google_source_site', 'is_in_store_only', 'bestseller_rank',
-                     'is_out_of_stock']
-    ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = False  # ... duplicated requests?
-    ignore_log_filtered = False  # ... filtered requests?
-    ignore_log_duplications_and_ranking_gaps = True
-    test_requests = {
-        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
-        'nothing_found_123': 0,
-        'vodka': [50, 250],
-        'taker': [100, 500],
-        'socket 775': [10, 150],
-        'hexacore': [50, 700],
-        '300c': [50, 250],
-        'muay': [50, 200],
-        '14-pack': [1, 100],
-        'voltmeter': [50, 250]
-    }
-
-
 class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     """Implements a spider for Walmart.com.
 
@@ -141,6 +122,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     QA_URL = "http://www.walmart.com/reviews/api/questions" \
              "/{product_id}?sort=mostRecentQuestions&pageNumber={page}"
+
+    ALL_QA_URL = 'http://www.walmart.com/reviews/api/questions/%s?pageNumber=%i'
 
     REVIEW_URL = 'http://walmart.ugc.bazaarvoice.com/1336/{product_id}/' \
                  'reviews.djs?format=embeddedhtml&sort=submissionTime'
@@ -180,6 +163,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
+
 
     def start_requests(self):
         for st in self.searchterms:
@@ -277,6 +261,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta.get("product")
+        product['_subitem'] = True
 
         if "we can't find the product you are looking for" \
                 in response.body_as_unicode().lower():
@@ -881,6 +866,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             #return product
         (url, proc) = reql.pop(0)
         response.meta['relreql'] = reql
+
         return Request(
             url,
             meta=response.meta.copy(),
@@ -960,6 +946,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         )
 
     def _on_dynamic_api_response(self, response):
+        yield Request(  # make another call - to scrape questions/answers
+            self.ALL_QA_URL % (
+                get_walmart_id_from_url(response.meta['product']['url']), 1),
+            meta={'product': response.meta['product']},
+            callback=self._parse_all_questions_and_answers
+        )
+
         if response.status != 200:
             # walmart's unofficial API returned bad code - site change?
             self.log('Unofficial API returned code [%s], URL: %s' % (
@@ -992,7 +985,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                         'Scraped and parsed unofficial APIs from %s' % response.url,
                         INFO
                     )
-        return self._start_related(response)
+        yield self._start_related(response)
 
     def _populate_from_js(self, response, product):
         data = {}
@@ -1263,6 +1256,37 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                                dont_filter=True)
             else:
                 return product
+
+    def _parse_all_questions_and_answers(self, response):
+        original_prod_url = response.meta['product']['url']
+        product = response.meta['product']
+        product['_subitem'] = True
+        all_questions = product.get('all_questions', [])
+        current_qa_page = int(
+            re.search('pageNumber\=(\d+)', response.url).group(1))
+
+        content = json.loads(response.body)
+        if not content['questionDetails']:
+            # pagination reached its end?
+            yield product
+            return
+        all_questions.extend(content['questionDetails'])
+        product['all_questions'] = all_questions
+        # this is for [future] debugging - do not remove!
+        #for qa in content['questionDetails']:
+        #    print; print;
+        #    print '__', qa['questionSummary'][0:200].encode('utf8')
+        #    for answer in qa['answers']:
+        #        print '____', answer['answerText'][0:200].encode('utf8')
+
+        _meta = response.meta
+        _meta['product'] = product
+        yield product
+        yield Request(
+            self.ALL_QA_URL % (get_walmart_id_from_url(original_prod_url), current_qa_page+1),
+            callback=self._parse_all_questions_and_answers,
+            meta=_meta
+        )
 
     def _parse_last_buyer_review_date(self, response):
         product = response.meta['product']

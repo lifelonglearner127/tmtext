@@ -35,6 +35,7 @@ sys.path.insert(2, os.path.join(CWD, '..', '..', 'product-ranking'))
 sys.path.insert(1, os.path.join(path, '..'))
 sys.path.insert(2, os.path.join(path, '..', '..', 'special_crawler',
                                 'queue_handler'))
+sys.path.insert(3, os.path.join(path, 'tmtext', 'product-ranking'))
 
 
 from sqs_ranking_spiders.task_id_generator import \
@@ -366,7 +367,7 @@ def compress_multiple_files(output_fname, *filenames):
         mode = zipfile.ZIP_DEFLATED
     except ImportError:
         mode = zipfile.ZIP_STORED
-    zf = zipfile.ZipFile(output_fname, 'a', mode)
+    zf = zipfile.ZipFile(output_fname, 'a', mode, allowZip64=True)
     for filename in filenames:
         zf.write(filename=filename, arcname=os.path.basename(filename))
     zf.close()
@@ -394,7 +395,7 @@ def put_file_into_s3(bucket_name, fname,
             mode = zipfile.ZIP_STORED
         archive_name = filename + '.zip'
         archive_path = fname + '.zip'
-        zf = zipfile.ZipFile(archive_path, 'w', mode)
+        zf = zipfile.ZipFile(archive_path, 'w', mode, allowZip64=True)
         try:
             zf.write(filename=fname, arcname=filename)
             logger.info("Adding %s to archive", filename)
@@ -1214,17 +1215,17 @@ def log_failed_task(task):
         return False
 
 
-def cache_complete_task(task, is_from_cache=False):
-    """send request to notice that task is completed (for statistics)"""
+def notify_cache(task, is_from_cache=False):
+    """send request to cache (for statistics)"""
     url = CACHE_HOST + CACHE_URL_STATS
     data = dict(task=json.dumps(task), is_from_cache=json.dumps(is_from_cache))
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
                              headers={'Authorization': CACHE_AUTH})
-        logger.info('Updated completed task (%s), status %s.',
+        logger.info('Cache: updated task (%s), status %s.',
                     task.get('task_id'), resp.status_code)
     except Exception as ex:
-        logger.warning('Update completed task error: %s.', ex)
+        logger.warning('Cache: update completed task error: %s.', ex)
 
 
 def del_duplicate_tasks(tasks):
@@ -1336,8 +1337,14 @@ def main():
             continue
         task_data, queue = msg
         if 'url' in task_data and 'searchterms_str' not in task_data:
-            if MAX_CONCURRENT_TASKS < 50:
+            if MAX_CONCURRENT_TASKS < 50:  # increase num of parallel jobs
+                                           # for "light" URL-based jobs
                 MAX_CONCURRENT_TASKS += 1
+        if task_data['site'] == 'walmart':
+            task_quantity = task_data.get('cmd_args', {}).get('quantity', 20)
+            if task_quantity > 300:
+                # decrease num of parallel tasks for "heavy" Walmart jobs
+                MAX_CONCURRENT_TASKS -= 4 if MAX_CONCURRENT_TASKS > 0 else 0
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))
         # prepare to run task
@@ -1363,7 +1370,7 @@ def main():
         if task.get_cached_result(TASK_QUEUE_NAME):
             # if found response in cache, upload data, delete task from sqs
             task.queue.task_done()
-            cache_complete_task(task_data, is_from_cache=True)
+            notify_cache(task_data, is_from_cache=True)
             del task
             continue
         if task.start():
@@ -1373,7 +1380,7 @@ def main():
                 'Task %s started successfully, removing it from the queue',
                 task.task_data.get('task_id'))
             task.queue.task_done()
-            cache_complete_task(task_data, is_from_cache=False)
+            notify_cache(task_data, is_from_cache=False)
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
                          task.task_data.get('task_id', 0))
@@ -1396,6 +1403,7 @@ def main():
     max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 61
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
+    # loop where we wait for all the tasks to complete
     try:
         for i in xrange(0, max_wait_time, step_time):
             if is_all_tasks_finished(tasks_taken):
@@ -1403,6 +1411,7 @@ def main():
                 break
             send_tasks_status(tasks_taken)
             time.sleep(step_time)
+            logger.info('Server statistics: ' + str(statistics.report_statistics()))
         else:
             logger.error('Some of the tasks not finished in allowed time, '
                          'stopping them.')
