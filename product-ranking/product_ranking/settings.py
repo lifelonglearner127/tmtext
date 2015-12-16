@@ -69,7 +69,7 @@ EXTENSIONS['product_ranking.extensions.IPCollector'] = 500
 
 # memory limit
 EXTENSIONS['scrapy.contrib.memusage.MemoryUsage'] = 500
-MEMUSAGE_LIMIT_MB = 768
+MEMUSAGE_LIMIT_MB = 2048
 MEMUSAGE_ENABLED = True
 
 

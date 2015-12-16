@@ -206,6 +206,7 @@ class SiteProductItem(Item):
 
     date_of_last_question = Field()  # now for Walmart only
     recent_questions = Field()  # now for Walmart only; may change in the future
+    all_questions = Field()  # contains all questions (and answers if applicable)
 
     special_pricing = Field()  # True/False/None for TPC, Rollback; target, walmart
 
