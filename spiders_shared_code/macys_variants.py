@@ -37,7 +37,6 @@ class MacysVariants(object):
             color_list = []
             size_list = []
             type_list = []
-            exists_map = {}
 
             for variant_item in variants_json:
 
@@ -64,8 +63,7 @@ class MacysVariants(object):
                 if not properties:
                     continue
 
-                color, size = properties['color'], properties['size']
-                exists_map[(color, size)] = True
+                color, size = properties['color'] if 'color' in properties else None, properties['size'] if 'size' in properties else None
 
                 if variation_combination in instock_variation_combinations_values:
                     continue
@@ -111,7 +109,7 @@ class MacysVariants(object):
                 variation_values_list.append(type_list)
 
             def filter(x):
-                color, size = x
+                color = x[0]
                 return color in colors
 
             variation_combinations_values = list(itertools.ifilter(filter, itertools.product(*variation_values_list)))
