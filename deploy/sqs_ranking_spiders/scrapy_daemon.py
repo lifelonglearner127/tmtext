@@ -79,7 +79,7 @@ S3_CONN = boto.connect_s3(
 S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
 
 # settings
-MAX_CONCURRENT_TASKS = 12  # tasks per instance, all with same git branch
+MAX_CONCURRENT_TASKS = 16  # tasks per instance, all with same git branch
 MAX_TRIES_TO_GET_TASK = 100  # tries to get max tasks for same branch
 LISTENER_ADDRESS = ('localhost', 9070)  # address to listen for signals
 # SCRAPY_LOGS_DIR = ''  # where to put log files
@@ -1337,8 +1337,14 @@ def main():
             continue
         task_data, queue = msg
         if 'url' in task_data and 'searchterms_str' not in task_data:
-            if MAX_CONCURRENT_TASKS < 50:
+            if MAX_CONCURRENT_TASKS < 50:  # increase num of parallel jobs
+                                           # for "light" URL-based jobs
                 MAX_CONCURRENT_TASKS += 1
+        if task_data['site'] == 'walmart':
+            task_quantity = task_data.get('cmd_args', {}).get('quantity', 20)
+            if task_quantity > 300:
+                # decrease num of parallel tasks for "heavy" Walmart jobs
+                MAX_CONCURRENT_TASKS -= 4 if MAX_CONCURRENT_TASKS > 0 else 0
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))
         # prepare to run task
