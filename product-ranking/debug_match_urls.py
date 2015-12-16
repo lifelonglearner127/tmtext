@@ -207,9 +207,9 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
                 url2 = _strip_get_args(url2)
             if url1 == url2:
                 matched_urls += 1
-                # mis_fields = _get_mismatching_fields(json1, json2,
-                #                                      fields2exclude)
-                mis_fields = _compare_dicts(json1, json2, fields2exclude)
+                mis_fields = _get_mismatching_fields(json1, json2,
+                                                     fields2exclude)
+                # mis_fields = _compare_dicts(json1, json2, fields2exclude)
                 if mis_fields:
                     if print_output:
                         print 'LINE', i
