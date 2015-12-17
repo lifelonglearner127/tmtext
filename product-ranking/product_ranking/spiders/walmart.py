@@ -647,12 +647,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 name = is_empty(seller.xpath(
                     './/div[contains(@class, "seller-name")]//a/text()'
                 ).extract()).strip()
-            if price:
-                price = Price(price=price, priceCurrency="USD")
-            else:
-                price = Price(price=0, priceCurrency="USD")
             marketplaces.append({
-                "price": price,
+                'currency': 'USD',
+                "price": float(price) if price else 0.00,
                 "name": name.strip()
             })
 
@@ -682,15 +679,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                                '/@content').extract(),
                 "USD"
             )
-            if price_amount:
-                price = Price(price=price_amount,
-                              priceCurrency=currency)
-            else:
-                price = Price(price=0,
-                              priceCurrency=currency)
             if name:
                 marketplaces.append({
-                    "price": price,
+                    'currency': currency,
+                    "price": float(price_amount) if price_amount else 0.00,
                     "name": name
                 })
             product["marketplace"] = marketplaces
