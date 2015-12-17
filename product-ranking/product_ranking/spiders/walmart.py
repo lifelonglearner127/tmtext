@@ -970,7 +970,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 opts = data.get('buyingOptions', {})
                 if opts is None:
                     # product "no longer available"?
-                    self.log('buyingOptions are None: %s' % response.url, ERROR)
+                    self.log('buyingOptions are None: %s' % response.url, WARNING)
                     prod.update({"no_longer_available": True})
                 else:
                     prod['is_out_of_stock'] = not opts.get('available', False)
