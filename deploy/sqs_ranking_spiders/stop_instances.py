@@ -69,7 +69,8 @@ TOTAL_WAS_TERMINATED = 0
 autoscale_conn = None
 
 
-def get_all_group_instances_and_conn(groups_names=('SCCluster1', 'SCCluster2', 'SCCluster3')):
+def get_all_group_instances_and_conn(
+        groups_names=('SCCluster1', 'SCCluster2', 'SCCluster3', 'SCCluster4')):
     conn = AutoScaleConnection()
     global autoscale_conn
     autoscale_conn = conn
