@@ -672,6 +672,13 @@ class BaseValidator(object):
     def _validate_video_count(self, val):
         return val in (None, '') or val in range(0, 999)
 
+    def _validate_price_details_in_cart(self, val):
+        return val in (None, '', True, False)
+
+    def _validate_all_questions(self, val):
+        # TODO
+        return True
+
     def _validate__subitem(self, val):
         return val in (True, False, None, '')
 

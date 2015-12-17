@@ -274,7 +274,6 @@ class AmazonScraper(Scraper):
 
         return None
 
-
     def _feature_count(self): # extract number of features from tree
         rows = self._features()
 
@@ -282,23 +281,20 @@ class AmazonScraper(Scraper):
             return 0
 
         return len(rows)
-        # select table rows with more than 2 cells (the others are just headers), count them
-    #    return len(filter(lambda row: len(row.xpath(".//td"))>0, self.tree_html.xpath("//div[@class='content pdClearfix']//tbody//tr")))
 
     def _model_meta(self):
         return None
 
-
     def _description(self):
-        short_description = " ".join(self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//text()[normalize-space()]")).strip()
-        if short_description is not None and len(short_description)>0:
-            return short_description.replace("\n"," ")
-        short_description=" ".join(self.tree_html.xpath("//div[@class='dv-simple-synopsis dv-extender']//text()")).strip()
+        if self.tree_html.xpath("//*[contains(@id,'feature-bullets')]"):
+            return self._clean_text(html.tostring(self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")[0]))
+
+        short_description = " " . join(self.tree_html.xpath("//div[@class='dv-simple-synopsis dv-extender']//text()")).strip()
+
         if short_description is not None and len(short_description)>0:
             return short_description.replace("\n"," ")
 
         return self._long_description_helper()
-
 
     def _long_description(self):
         d1 = self._description()
@@ -951,24 +947,6 @@ class AmazonScraper(Scraper):
 
         return price
 
-    def _in_stock(self):
-        in_stock = self.tree_html.xpath('//div[contains(@id, "availability")]//text()')
-        in_stock = " ".join(in_stock)
-        if 'currently unavailable' in in_stock.lower():
-            return 0
-
-        in_stock = self.tree_html.xpath('//div[contains(@id, "outOfStock")]//text()')
-        in_stock = " ".join(in_stock)
-        if 'currently unavailable' in in_stock.lower():
-            return 0
-
-        in_stock = self.tree_html.xpath("//div[@id='buyBoxContent']//text()")
-        in_stock = " ".join(in_stock)
-        if 'sign up to be notified when this item becomes available' in in_stock.lower():
-            return 0
-
-        return 1
-
     def _in_stores(self):
         return 0
 
@@ -1163,18 +1141,28 @@ class AmazonScraper(Scraper):
         return seller_info
 
     def _site_online(self):
-        # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
-        if self.tree_html.xpath("//input[@id='add-to-cart-button']"):
-            return 1
-
-        return 0
+        return 1
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 0:
             return None
-        if self._in_stock() == 0:
+
+        in_stock = self.tree_html.xpath('//div[contains(@id, "availability")]//text()')
+        in_stock = " ".join(in_stock)
+        if 'currently unavailable' in in_stock.lower():
             return 1
+
+        in_stock = self.tree_html.xpath('//div[contains(@id, "outOfStock")]//text()')
+        in_stock = " ".join(in_stock)
+        if 'currently unavailable' in in_stock.lower():
+            return 1
+
+        in_stock = self.tree_html.xpath("//div[@id='buyBoxContent']//text()")
+        in_stock = " ".join(in_stock)
+        if 'sign up to be notified when this item becomes available' in in_stock.lower():
+            return 1
+
         return 0
 
     def _in_stores_out_of_stock(self):
@@ -1255,18 +1243,6 @@ class AmazonScraper(Scraper):
         return "com"
 
     ##########################################
-    ################ HELPER FUNCTIONS
-    ##########################################
-
-    # clean text inside html tags - remove html entities, trim spaces
-    def _clean_text(self, text):
-        text = text.replace("<br />"," ").replace("\n"," ").replace("\t"," ").replace("\r"," ")
-       	text = re.sub("&nbsp;", " ", text).strip()
-        return  re.sub(r'\s+', ' ', text)
-
-
-
-    ##########################################
     ################ RETURN TYPES
     ##########################################
     # dictionaries mapping type of info to be extracted to the method that does it
@@ -1335,7 +1311,6 @@ class AmazonScraper(Scraper):
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
-        "in_stock" : _in_stock, \
         "owned" : _owned, \
         "owned_out_of_stock" : _owned_out_of_stock, \
 

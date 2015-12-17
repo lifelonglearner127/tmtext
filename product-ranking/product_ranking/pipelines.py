@@ -9,16 +9,13 @@ import unittest
 import json
 import random
 import sys
+import copy
 import os
 
 from scrapy import Selector
 from scrapy.exceptions import DropItem
-from scrapy import logformatter
-from scrapy import log
 from scrapy.xlib.pydispatch import dispatcher
 from scrapy import signals
-from scrapy import log
-from scrapy import logformatter
 import tldextract
 try:
     import mock
@@ -287,24 +284,37 @@ class MergeSubItems(object):
             for url, item in self._mapper.items():
                 fh.write(json.dumps(item, default=self._serializer)+'\n')
 
-    def spider_closed(self, spider):
+    def _dump_output(self, spider):
         if self._subitem_mode:  # rewrite output only if we're in "subitem mode"
             output_fname = self._get_output_filename(spider)
             if output_fname:
                 self._dump_mapper_to_fname(output_fname)
+
+    def spider_closed(self, spider):
+        if self._subitem_mode:  # rewrite output only if we're in "subitem mode"
+            self._dump_output(spider)
             _validation_filename = _get_spider_output_filename(spider)
             self._dump_mapper_to_fname(_validation_filename)
 
     def process_item(self, item, spider):
+        _item = copy.deepcopy(item)
+        item = copy.deepcopy(_item)
+        del _item
         _subitem = item.get('_subitem', None)
         if not _subitem:
             return item  # we don't need to merge sub-items
         self._subitem_mode = True  # switch a flag if there's at least one item with "subitem mode" found
         if 'url' in item:  # sub-items: collect them and dump them on "on_close" call
-            if not item['url'] in self._mapper:
-                self._mapper[item['url']] = {}
-            self._mapper[item['url']].update(item)
+            _url = item['url']
+            if not _url in self._mapper:
+                self._mapper[_url] = {}
+            self._mapper[_url].update(item)
+            del item
+            if random.randint(0, 100) == 0:
+                # dump output from time to time to show progress (non-empty output file)
+                self._dump_output(spider)
             raise DropItem('Multiple Sub-Items found')
+
 
 class CollectStatistics(object):
     """ Gathers server and spider statistics, such as RAM, HDD, CPU etc. """

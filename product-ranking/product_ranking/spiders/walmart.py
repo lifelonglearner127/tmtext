@@ -22,6 +22,7 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
+from product_ranking.validators.walmart_validator import WalmartValidatorSettings
 from spiders_shared_code.walmart_variants import WalmartVariants
 from spiders_shared_code.walmart_categories import WalmartCategoryParser
 #from spiders_shared_code.walmart_extra_data import WalmartExtraData
@@ -92,29 +93,6 @@ def _get_walmart_api_key():
     return key
 
 
-class WalmartValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['model', 'brand', 'description', 'recent_questions',
-                       'related_products', 'upc', 'buyer_reviews', 'price']
-    ignore_fields = ['google_source_site', 'is_in_store_only', 'bestseller_rank',
-                     'is_out_of_stock']
-    ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = False  # ... duplicated requests?
-    ignore_log_filtered = False  # ... filtered requests?
-    ignore_log_duplications_and_ranking_gaps = True
-    test_requests = {
-        'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
-        'nothing_found_123': 0,
-        'vodka': [50, 250],
-        'taker': [100, 500],
-        'socket 775': [10, 150],
-        'hexacore': [50, 700],
-        '300c': [50, 250],
-        'muay': [50, 200],
-        '14-pack': [1, 100],
-        'voltmeter': [50, 250]
-    }
-
-
 class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     """Implements a spider for Walmart.com.
 
@@ -168,10 +146,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     user_agent = 'default'
 
-    def __init__(self, search_sort='best_match', zipcode='94117',
+    def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
-        if zipcode:
-            self.zipcode = zipcode
+        if zip_code:
+            self.zip_code = zip_code
         if search_sort == 'best_sellers':
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         super(WalmartProductsSpider, self).__init__(
@@ -199,7 +177,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod, 'handle_httpstatus_list': [404, 502]},
+                          meta={'product': prod, 'handle_httpstatus_list': [404, 502, 520]},
                           dont_filter=True)
 
     def get_sponsored_links(self, response):
@@ -342,6 +320,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                      response.xpath(
                          '//meta[@itemprop="model"]/@content'
                      ).extract())
+        if response.xpath('//*[contains(@class, "submap-flyout")]'
+                          '//*[contains(@class, "submap-price")]'
+                          '[contains(text(), "See details in cart")]').extract():
+            product['price_details_in_cart'] = True
+
         flag = 'not available'
         if response.xpath('//meta[@name="Keywords"]').extract():
             if not flag in response.body_as_unicode():
@@ -431,7 +414,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         _meta['handle_httpstatus_list'] = [404, 502, 520]
         return Request(
             self.LOCATION_PROD_URL.format(
-                product_id=response.meta['product_id'], zip_code=self.zipcode),
+                product_id=response.meta['product_id'], zip_code=self.zip_code),
             callback=self._on_dynamic_api_response,
             meta=_meta
         )
@@ -508,12 +491,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         )
 
     def _parse_single_product(self, response):
-        if response.status == 404:
+        if response.status in (404, 520):
             if 'product' not in response.meta:
                 product = SiteProductItem()
             else:
                 product = response.meta['product']
-            product['response_code'] = 404
+            product['response_code'] = response.status
             product['not_found'] = True
             if not 'url' in product:
                 product['url'] = getattr(self, 'product_url', '')
@@ -664,12 +647,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 name = is_empty(seller.xpath(
                     './/div[contains(@class, "seller-name")]//a/text()'
                 ).extract()).strip()
-            if price:
-                price = Price(price=price, priceCurrency="USD")
-            else:
-                price = Price(price=0, priceCurrency="USD")
             marketplaces.append({
-                "price": price,
+                'currency': 'USD',
+                "price": float(price) if price else 0.00,
                 "name": name.strip()
             })
 
@@ -699,15 +679,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                                '/@content').extract(),
                 "USD"
             )
-            if price_amount:
-                price = Price(price=price_amount,
-                              priceCurrency=currency)
-            else:
-                price = Price(price=0,
-                              priceCurrency=currency)
             if name:
                 marketplaces.append({
-                    "price": price,
+                    'currency': currency,
+                    "price": float(price_amount) if price_amount else 0.00,
                     "name": name
                 })
             product["marketplace"] = marketplaces
@@ -844,7 +819,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             headers={'x-requested-with': 'XMLHttpRequest',
                      'Content-Type': 'application/json'},
             dont_filter=True)
-        req = req.replace(body='{"postalCode":"' + self.zipcode + '"}')
+        req = req.replace(body='{"postalCode":"' + self.zip_code + '"}')
         return req
 
     def _gen_related_req(self, response):
@@ -949,7 +924,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         _meta['handle_httpstatus_list'] = [404, 502, 520]
         return Request(
             self.LOCATION_PROD_URL.format(
-                product_id=response.meta['product_id'], zip_code=self.zipcode),
+                product_id=response.meta['product_id'], zip_code=self.zip_code),
             callback=self._on_dynamic_api_response,
             meta=response.meta
         )
