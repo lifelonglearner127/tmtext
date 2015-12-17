@@ -676,7 +676,11 @@ class BaseValidator(object):
         return val in (None, '', True, False)
 
     def _validate_all_questions(self, val):
-        # TODO
+        if val in (None, '', []):
+            return True
+        for _d in val:
+            if not isinstance(_d, dict):
+                return False
         return True
 
     def _validate__subitem(self, val):
