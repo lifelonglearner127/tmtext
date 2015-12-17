@@ -1,11 +1,10 @@
-from django.shortcuts import render
 from rest_framework import viewsets
 from walmart_api.serializers import WalmartApiRequestJsonSerializer
 from rest_framework.response import Response
-import requests
-import xmltodict, json
-import json
+import xmltodict
 import os
+import unirest
+import urllib2
 
 # Create your views here.
 
@@ -23,28 +22,40 @@ class InvokeWalmartApiViewSet(viewsets.ViewSet):
 
     def create(self, request):
         try:
-            request_json = request.DATA
-            walmart_api_request_json = {}
-            request_url = ""
-            method = ""
+            request_data = request.DATA
 
-            for key in request_json:
-                if key == "request_url":
-                    request_url = request_json[key]
-                elif key == "method":
-                    method = request_json[key]
-                else:
-                    walmart_api_request_json[key] = request_json[key]
+            try:
+                file_content = urllib2.urlopen(request_data['upload_file_url']).read()
 
-            if method.lower() == "get":
-                response = requests.get(request_url,  headers=walmart_api_request_json).text
-                response = xmltodict.parse(response)
-            elif method.lower() == "post":
-                xml_file = open(os.path.dirname(os.path.realpath(__file__)) + "/supplier-sample.xml", "rb")
-                response = xmltodict.parse(requests.post(request_url, data=walmart_api_request_json, files={'supplier-sample.xml': xml_file}).text)
+                with open(os.path.dirname(os.path.realpath(__file__)) + "/" + request_data['upload_file_url'].split("/")[-1], "wb") as download_file:
+                    download_file.write(file_content)
 
-            return Response(response)
-        except:
+                file_to_upload = open(os.path.dirname(os.path.realpath(__file__)) + "/" + request_data['upload_file_url'].split("/")[-1], "rb")
+            except:
+                file_to_upload = open(os.path.dirname(os.path.realpath(__file__)) + "/not_available_variant.jpg", "rb")
+
+            response = unirest.post("https://marketplace.walmartapis.com/v2/feeds?feedType=item",
+                headers={
+                    "Accept": "application/json",
+                    "WM_CONSUMER.ID": "a8bab1e0-c18c-4be7-b47a-0411153b7514",
+                    "WM_SVC.NAME": request_data["name"],
+                    "WM_QOS.CORRELATION_ID": request_data["correlation_id"],
+                    "WM_SVC.VERSION": request_data["version"],
+                    "WM_SVC.ENV": request_data["env"],
+                    "WM_SEC.AUTH_SIGNATURE": request_data["signature"],
+                    "WM_SEC.TIMESTAMP": int(request_data["timestamp"])
+                },
+                params={
+                    "file": file_to_upload,
+                }
+            )
+
+            if type(response.body) is dict:
+                return Response(response.body)
+            else:
+                return Response(xmltodict(response.body))
+        except Exception, e:
+            print e
             return Response({'data': "Failed to invoke Walmart API - invalid request data"})
 
     def update(self, request, pk=None):
