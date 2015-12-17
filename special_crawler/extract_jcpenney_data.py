@@ -452,9 +452,6 @@ class JcpenneyScraper(Scraper):
     def _price_currency(self):
         return "USD"
 
-    def _owned(self):
-        return 0
-
     def _marketplace(self):
         return 0
 
@@ -462,19 +459,12 @@ class JcpenneyScraper(Scraper):
         return 1
 
     def _in_stores(self):
-        try:
-            if self.tree_html.xpath("//div[contains(@id, 'channelAvailabilitypp')]/text()")[0] == "online":
-                return 0
-        except:
+        if self.tree_html.xpath("//input[@class='bp-pp-btn-check-availability']"):
             return 1
 
-    def _site_online_out_of_stock(self):
         return 0
 
-    def _marketplace_sellers(self):
-        return None
-
-    def _marketplace_out_of_stock(self):
+    def _site_online_out_of_stock(self):
         return 0
 
     ##########################################
@@ -552,13 +542,10 @@ class JcpenneyScraper(Scraper):
         "price" : _price, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
-        "owned" : _owned, \
         "marketplace" : _marketplace, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "in_stores" : _in_stores, \
-        "marketplace_sellers" : _marketplace_sellers, \
-        "marketplace_out_of_stock": _marketplace_out_of_stock, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \

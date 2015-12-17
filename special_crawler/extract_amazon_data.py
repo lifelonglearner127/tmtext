@@ -1141,14 +1141,7 @@ class AmazonScraper(Scraper):
         return seller_info
 
     def _site_online(self):
-        # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
-        if self.tree_html.xpath("//input[@id='add-to-cart-button']"):
-            return 1
-
-        if self.tree_html.xpath("//input[@id='add-to-wishlist-button-submit']"):
-            return 1
-
-        return 0
+        return 1
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
