@@ -274,9 +274,7 @@ class SignalsExtension(object):
         SignalsExtension.CONNECTION.send(dict(name='item_scraped'))
 
     def item_dropped(self, item, spider, exception):
-        # a workaround to report progress to SQS scrapy_daemon.py
-        # ("SubItems" spiders drop items instead of collecting them)
-        return self.item_scraped(item, spider)
+        SignalsExtension.CONNECTION.send(dict(name='item_dropped'))
 
     def spider_error(self, failure, response, spider):
         SignalsExtension.CONNECTION.send(dict(name='spider_error'))

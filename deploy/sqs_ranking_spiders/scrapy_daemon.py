@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import json
+import random
 import zipfile
 import codecs
 import csv
@@ -663,6 +664,22 @@ class ScrapyTask(object):
         if data['name'] == 'item_scraped':
             self.items_scraped += 1
             return None
+        elif data['name'] == 'item_dropped':
+            # items dropped - most likely because of "subitems" mode,
+            # so calculate the number of really scraped items
+            if random.randint(0, 30) == 0:  # do not overload server's filesystem
+                output_path = self.get_output_path() + '.jl'
+                if os.path.exists(output_path):
+                    cont = None
+                    try:
+                        fh = open(output_path, 'r')
+                        cont = fh.readlines()
+                    except Exception as ex:
+                        logger.error('Could not read output file [%s]: %s' % (output_path, str(ex)))
+                    if cont is not None:
+                        if isinstance(cont, (list, tuple)):
+                            self.items_scraped = len(cont)
+            return
         elif data['name'] == 'spider_error':
             self.spider_errors += 1
             return None
