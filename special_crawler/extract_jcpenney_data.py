@@ -426,11 +426,21 @@ class JcpenneyScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        price = self.tree_html.xpath("//div[@id='priceDetails']//span[@class='gallery_page_price flt_wdt comparisonPrice']")[0].text_content().strip()
-        price = re.search(ur'([$])(\d+(?:\.\d{2})?)', price).groups()
-        price = price[0] + price[1]
+        if self.tree_html.xpath("//div[@id='priceDetails']//span[@class='gallery_page_price flt_wdt comparisonPrice']"):
+            price = self.tree_html.xpath("//div[@id='priceDetails']//span[@class='gallery_page_price flt_wdt comparisonPrice']")[0].text_content().strip()
+            price = re.search(ur'([$])(\d+(?:\.\d{2})?)', price).groups()
+            price = price[0] + price[1]
 
-        return price
+            return price
+
+        if self.tree_html.xpath("//span[contains(@class, 'gallery_page_price') and @itemprop='price']"):
+            price = self.tree_html.xpath("//span[contains(@class, 'gallery_page_price') and @itemprop='price']")[0].text_content().strip()
+            price = re.search(ur'([$])(\d+(?:\.\d{2})?)', price).groups()
+            price = price[0] + price[1]
+
+            return price
+
+        return None
 
     def _price_amount(self):
         return float(re.findall(r"\d*\.\d+|\d+", self._price().replace(",", ""))[0])
