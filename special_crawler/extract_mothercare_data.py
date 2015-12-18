@@ -290,7 +290,7 @@ class MotherCareScraper(Scraper):
             price += re.findall(r'"sale" : (\d*\.\d+|\d+)', val.replace(",", ""))
 
         if price:
-            return price[0]
+            return float(price[0])
 
         return None
 

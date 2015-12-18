@@ -291,7 +291,7 @@ class HomebaseScraper(Scraper):
         return self.tree_html.xpath("//span[@itemprop='price']/text()")[0].strip()
 
     def _price_amount(self):
-        return re.findall(r"\d*\.\d+|\d+", self._price().replace(",", ""))[0]
+        return float(re.findall(r"\d*\.\d+|\d+", self._price().replace(",", ""))[0])
 
     def _price_currency(self):
         return self.tree_html.xpath("//span[@itemprop='priceCurrency']/text()")[0]
