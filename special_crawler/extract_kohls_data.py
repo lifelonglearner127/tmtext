@@ -452,7 +452,7 @@ class KohlsScraper(Scraper):
 
     def _price_amount(self):
         price_text = self._price()
-        price = re.findall("\d+.\d+", price_text.replace(",", ""))
+        price = re.findall(r"\d*\.\d+|\d+", price_text.replace(",", ""))
         return float(price[0])
 
     def _price_currency(self):

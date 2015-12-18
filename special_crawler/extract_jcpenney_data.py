@@ -433,7 +433,7 @@ class JcpenneyScraper(Scraper):
         return price
 
     def _price_amount(self):
-        return float(re.findall("\d+\.\d+", self._price().replace(",", ""))[0])
+        return float(re.findall(r"\d*\.\d+|\d+", self._price().replace(",", ""))[0])
 
     def _price_currency(self):
         currency = self._price()[0]

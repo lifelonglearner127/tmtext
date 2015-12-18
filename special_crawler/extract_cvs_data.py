@@ -324,7 +324,7 @@ class CVSScraper(Scraper):
 
     def _price_amount(self):
         price = self._find_between(html.tostring(self.tree_html), "product_price :", ",")
-        price = re.findall("\d+.\d+", price)[0]
+        price = re.findall(r"\d*\.\d+|\d+", price)[0]
 
         return float(price)
 
