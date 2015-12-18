@@ -45,4 +45,5 @@
     <field name="not_found" version="1.2"></field>
     <field name="last_buyer_review_date" version="1.1"></field>
     <field name="price_details_in_cart" version="1.0"></field>
+    <field name="all_questions" version="1.0"></field>
 </fields>
