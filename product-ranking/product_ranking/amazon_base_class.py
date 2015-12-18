@@ -372,6 +372,22 @@ class AmazonBaseClass(BaseProductsSpider):
         )
 
         # Parse marketplaces
+        if response.xpath('//*[contains(@id, "sns-availability")]'
+                          '//*[contains(text(), "sold by Amazon")]').extract():
+            _marketplace = product.get('marketplace', [])
+            _price = product.get('price', None)
+            _currency = None
+            _price_decimal = None
+            if _price is not None:
+                _price_decimal = float(_price.price)
+                _currency = _price.priceCurrency
+            _marketplace.append({
+                'currency': _currency if _price else None,
+                'price': _price_decimal if _price else None,
+                'name': 'amazon.com',
+                'seller_type': 'site',
+            })
+            product['marketplace'] = _marketplace
         marketplace_req = self._parse_marketplace(response)
         if marketplace_req:
             reqs.append(marketplace_req)
