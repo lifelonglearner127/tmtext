@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #!/usr/bin/python
 
 import re
@@ -424,33 +426,22 @@ class JcpenneyScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        self._extract_price_json()
-
-        if not self.price_json:
-            return None
-
-        price = self.price_json["price"]
-
-        if float(price).is_integer():
-            price = int(price)
-
-        return "$" + str(price)
-
-    def _price_amount(self):
-        self._extract_price_json()
-
-        if not self.price_json:
-            return None
-
-        price = self.price_json["price"]
-
-        if float(price).is_integer():
-            price = int(price)
+        price = self.tree_html.xpath("//div[@id='priceDetails']//span[@class='gallery_page_price flt_wdt comparisonPrice']")[0].text_content().strip()
+        price = re.search(ur'([$])(\d+(?:\.\d{2})?)', price).groups()
+        price = price[0] + price[1]
 
         return price
 
+    def _price_amount(self):
+        return float(re.findall("\d+\.\d+", self._price().replace(",", ""))[0])
+
     def _price_currency(self):
-        return "USD"
+        currency = self._price()[0]
+
+        if currency == "$":
+            return "USD"
+
+        return None
 
     def _marketplace(self):
         return 0
