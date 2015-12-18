@@ -284,7 +284,7 @@ class MicrosoftScraper(Scraper):
         return price
 
     def _price_amount(self):
-        return re.findall(r"\d*\.\d+|\d+", self._price())[0]
+        return re.findall(r"\d*\.\d+|\d+", self._price().replace(",", ""))[0]
 
     def _price_currency(self):
         return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]

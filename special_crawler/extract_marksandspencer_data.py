@@ -266,7 +266,7 @@ class MarksAndSpencerScraper(Scraper):
             return None
 
         self.review_list = [[key, review_list[key]] for key in review_list]
-        self.average_review = "%.1f" % float(re.findall("avgRating\"\:(\d*\.\d+|\d+)", contents)[0])
+        self.average_review = "%.1f" % float(re.findall("avgRating\"\:(\d*\.\d+|\d+)", contents.replace(",", ""))[0])
 
         return self.review_list
 

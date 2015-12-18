@@ -324,7 +324,7 @@ class HalfordsScraper(Scraper):
         return price_text
 
     def _price_amount(self):
-        return re.findall(r"\d*\.\d+|\d+", self._price())[0]
+        return re.findall(r"\d*\.\d+|\d+", self._price().replace(",", ""))[0]
 
     def _price_currency(self):
         return self._find_between(html.tostring(self.tree_html), 'currency: "', '"')

@@ -1103,7 +1103,7 @@ class WalmartScraper(Scraper):
         if self._version() == "Walmart v1":
             try:
                 if self.is_bundle_product:
-                    return "$" + re.findall(r"\d*\.\d+|\d+", self.tree_html.xpath("//div[@class='PricingInfo']")[0].text_content())[0]
+                    return "$" + re.findall(r"\d*\.\d+|\d+", self.tree_html.xpath("//div[@class='PricingInfo']")[0].text_content().replace(",", ""))[0]
 
                 body_raw = "" . join(self.tree_html.xpath("//form[@name='SelectProductForm']//script/text()")).strip()
                 body_clean = re.sub("\n", " ", body_raw)
@@ -1141,7 +1141,7 @@ class WalmartScraper(Scraper):
                     price_html = price_html[start_index:end_index]
                     price_html = html.fromstring(price_html)
                     price = price_html.text_content()
-                    price = re.findall("\$\d*\.\d+|\d+", price_html.text_content())
+                    price = re.findall("\$\d*\.\d+|\d+", price_html.text_content().replace(",", ""))
 
                     if not price:
                         raise Exception
