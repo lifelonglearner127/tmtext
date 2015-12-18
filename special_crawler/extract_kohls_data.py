@@ -421,7 +421,7 @@ class KohlsScraper(Scraper):
     ##########################################
     def _price(self):
         if self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_ammount']"):
-            price_text = self.tree_html.xpath("/div[contains(@class,'sale')]//span[@class='price_ammount']")[0].text_content().strip()
+            price_text = self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_ammount']")[0].text_content().strip()
 
             if len(price_text) > 0:
                 return price_text
