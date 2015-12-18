@@ -9,6 +9,7 @@ import os
 import scrapy
 from scrapy.conf import settings
 from scrapy.http import Request
+from scrapy.http.request.form import FormRequest
 
 
 class ScreenshotItem(scrapy.Item):
@@ -44,6 +45,13 @@ class URL2ScreenshotSpider(scrapy.Spider):
         yield req
 
     def parse(self, response):
+        if self._has_captcha(response):
+            yield self._handle_captcha(
+                response,
+                self.parse
+            )
+            return
+
         from selenium import webdriver
         from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
@@ -93,3 +101,50 @@ class URL2ScreenshotSpider(scrapy.Spider):
         item['image'] = base64.b64encode(img_content)
 
         yield item
+
+        # Captcha handling functions.
+    def _has_captcha(self, response):
+        return '.images-amazon.com/captcha/' in response.body_as_unicode()
+
+    def _solve_captcha(self, response):
+        forms = response.xpath('//form')
+        assert len(forms) == 1, "More than one form found."
+
+        captcha_img = forms[0].xpath(
+            '//img[contains(@src, "/captcha/")]/@src').extract()[0]
+
+        self.log("Extracted capcha url: %s" % captcha_img)
+        return self._cbw.solve_captcha(captcha_img)
+
+    def _handle_captcha(self, response, callback):
+        # FIXME This is untested and wrong.
+        captcha_solve_try = response.meta.get('captcha_solve_try', 0)
+        url = response.url
+
+        self.log("Captcha challenge for %s (try %d)."
+                 % (url, captcha_solve_try))
+
+        captcha = self._solve_captcha(response)
+        if captcha is None:
+            self.log(
+                "Failed to guess captcha for '%s' (try: %d)." % (
+                    url, captcha_solve_try))
+            result = None
+        else:
+            self.log(
+                "On try %d, submitting captcha '%s' for '%s'." % (
+                    captcha_solve_try, captcha, url)
+            )
+
+            meta = response.meta.copy()
+            meta['captcha_solve_try'] = captcha_solve_try + 1
+
+            result = FormRequest.from_response(
+                response,
+                formname='',
+                formdata={'field-keywords': captcha},
+                callback=callback,
+                dont_filter=True,
+                meta=meta)
+
+        return result
