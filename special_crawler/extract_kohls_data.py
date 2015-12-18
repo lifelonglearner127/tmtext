@@ -420,11 +420,17 @@ class KohlsScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        if self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_ammount']"):
-            price_text = self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_ammount']")[0].text_content().strip()
+        if self.tree_html.xpath("//div[contains(@class,'sale')]"):
+            if self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_ammount']"):
+                price_text = self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_ammount']")[0].text_content().strip()
 
-            if len(price_text) > 0:
-                return price_text
+                if len(price_text) > 0:
+                    return price_text
+            elif self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_label']"):
+                price_text = re.findall(r"\$\d*\.\d+|\d+", self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_label']")[0].getparent().text_content().strip())
+
+                if price_text:
+                    return price_text[0]
 
         if self.tree_html.xpath("//div[contains(@class, 'original')]"):
             price_text = self.tree_html.xpath("//div[contains(@class, 'original')]")[0].text_content().strip().lower()
