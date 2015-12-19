@@ -48,6 +48,24 @@ def _list_diff(l1, l2):
     return list(set(result))
 
 
+def _collect_errors(errors, prefix='', is_first=True):
+    results = []
+    if isinstance(errors, dict):
+        for k, v in errors.iteritems():
+            results.extend(_collect_errors(v, '%s - %s' % (prefix, k), False))
+    else:  # list
+        if not is_first and len(errors) == 2:
+            results.append({prefix: errors})
+        else:
+            for error in errors:
+                if isinstance(error, dict):
+                    for k, v in error.iteritems():
+                        results.extend(_collect_errors(v, '%s - %s' % (prefix, k), False))
+                else:  # list
+                    results.append({prefix: error})
+    return results
+
+
 def _compare_dicts(d1, d2, exclude_fields):
     results = []
     if not d1 or not d2:
