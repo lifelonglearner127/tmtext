@@ -375,10 +375,14 @@ class AmazonBaseClass(BaseProductsSpider):
         _prod = self._parse_marketplace_from_top_block(response)
         if _prod:
             product = _prod
+        _prod = self._parse_marketplace_from_static_right_block(response)
+        if _prod:
+            product = _prod
 
-        marketplace_req = self._parse_marketplace(response)
-        if marketplace_req:
-            reqs.append(marketplace_req)
+        # TODO: fix the block below - it removes previously scraped marketplaces
+        #marketplace_req = self._parse_marketplace(response)
+        #if marketplace_req:
+        #    reqs.append(marketplace_req)
 
         # Parse category
         categories = self._parse_category(response)
@@ -1286,12 +1290,15 @@ class AmazonBaseClass(BaseProductsSpider):
             return
         sold_by_str = ''.join(top_block.xpath('.//text()').extract()).strip()
         sold_by_str = sold_by_str.replace('.com.', '.com').replace('\t', '')\
-            .replace('\n', '').replace('Gift-wrap available', '').replace(' . ', '').strip()
-        if sold_by_str.count('by') != 1:
-            self.log('Could not find exactly 1 occurrence of "by" in "sold by" top block at %s' \
-                     % response.url, ERROR)
-            return
-        sold_by_whom = sold_by_str.split('by')[1].strip()
+            .replace('\n', '').replace('Gift-wrap available', '').replace(' .', '').strip()
+        sold_by_whom = sold_by_str.split('by', 1)[1].strip()
+        if ' by ' in sold_by_whom:  # most likely it's ' and Fulfilled by' remains
+            sold_by_whom = sold_by_whom.split('and Fulfilled', 1)[0].strip()
+            sold_by_whom = sold_by_whom.split('and fulfilled', 1)[0].strip()
+            sold_by_whom = sold_by_whom.split('Dispatched from', 1)[0].strip()
+            sold_by_whom = sold_by_whom.split('Gift-wrap', 1)[0].strip()
+        if ' by ' in sold_by_whom:
+            self.log('Multiple "by" occurrences found at %s' % response.url, ERROR)
         if sold_by_whom.endswith('.'):
             sold_by_whom = sold_by_whom[0:-1]
         if not sold_by_whom:
@@ -1310,5 +1317,31 @@ class AmazonBaseClass(BaseProductsSpider):
             'price': _price_decimal if _price else None,
             'name': sold_by_whom,
         })
+        product['marketplace'] = _marketplace
+        return product
+
+    @staticmethod
+    def _strip_currency_from_price(val):
+        return val.strip().replace('$', '').replace('£', '')\
+            .replace('CDN', '').replace(u'\uffe5', '').strip()
+
+    def _parse_marketplace_from_static_right_block(self, response):
+        # try to collect marketplaces from the main page first, before sending extra requests
+        product = response.meta['product']
+        _prod_price = product.get('price', [])
+        _prod_price_currency = None
+        if _prod_price:
+            _prod_price_currency = _prod_price.priceCurrency
+
+        _marketplace = product.get('marketplace', [])
+        for mbc_row in response.xpath('//*[@id="mbc"]//*[contains(@class, "mbc-offer-row")]'):
+            _price = mbc_row.xpath('.//*[contains(@class, "a-color-price")]/text()').extract()
+            _name = mbc_row.xpath('.//*[contains(@class, "mbcMerchantName")]/text()').extract()
+            if _price and _name:
+                _marketplace.append({
+                    'name': _name[0].replace('\n', '').strip(),
+                    'price': float(self._strip_currency_from_price(_price[0])),
+                    'currency': _prod_price_currency
+                })
         product['marketplace'] = _marketplace
         return product
