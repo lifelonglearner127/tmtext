@@ -32,7 +32,7 @@ class InvokeWalmartApiViewSet(viewsets.ViewSet):
 
                 file_to_upload = open(os.path.dirname(os.path.realpath(__file__)) + "/" + request_data['upload_file_url'].split("/")[-1], "rb")
             except:
-                file_to_upload = open(os.path.dirname(os.path.realpath(__file__)) + "/not_available_variant.jpg", "rb")
+                file_to_upload = open(os.path.dirname(os.path.realpath(__file__)) + "/supplierTest2.xml", "rb")
 
             response = unirest.post("https://marketplace.walmartapis.com/v2/feeds?feedType=item",
                 headers={
