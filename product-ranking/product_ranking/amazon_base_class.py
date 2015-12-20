@@ -1323,7 +1323,8 @@ class AmazonBaseClass(BaseProductsSpider):
     @staticmethod
     def _strip_currency_from_price(val):
         return val.strip().replace('$', '').replace('£', '')\
-            .replace('CDN', '').replace(u'\uffe5', '').strip()
+            .replace('CDN', '').replace(u'\uffe5', '').replace('EUR', '')\
+            .replace(',', '.').strip()
 
     def _parse_marketplace_from_static_right_block(self, response):
         # try to collect marketplaces from the main page first, before sending extra requests
