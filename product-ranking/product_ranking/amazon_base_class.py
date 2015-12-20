@@ -372,22 +372,10 @@ class AmazonBaseClass(BaseProductsSpider):
         )
 
         # Parse marketplaces
-        if response.xpath('//*[contains(@id, "sns-availability")]'
-                          '//*[contains(text(), "sold by Amazon")]').extract():
-            _marketplace = product.get('marketplace', [])
-            _price = product.get('price', None)
-            _currency = None
-            _price_decimal = None
-            if _price is not None:
-                _price_decimal = float(_price.price)
-                _currency = _price.priceCurrency
-            _marketplace.append({
-                'currency': _currency if _price else None,
-                'price': _price_decimal if _price else None,
-                'name': 'amazon.com',
-                'seller_type': 'site',
-            })
-            product['marketplace'] = _marketplace
+        _prod = self._parse_marketplace_from_top_block(response)
+        if _prod:
+            product = _prod
+
         marketplace_req = self._parse_marketplace(response)
         if marketplace_req:
             reqs.append(marketplace_req)
@@ -1285,4 +1273,42 @@ class AmazonBaseClass(BaseProductsSpider):
         if next_req:
             next_req.replace(meta={"product": product})
             return next_req
+        return product
+
+    def _parse_marketplace_from_top_block(self, response):
+        """ Parses "top block" marketplace ("Sold by ...") """
+        top_block = response.xpath('//*[contains(@id, "sns-availability")]'
+                                   '//*[contains(text(), "old by")]')
+        if not top_block:
+            top_block = response.xpath('//*[contains(@id, "merchant-info")]'
+                                       '[contains(text(), "old by")]')
+        if not top_block:
+            return
+        sold_by_str = ''.join(top_block.xpath('.//text()').extract()).strip()
+        sold_by_str = sold_by_str.replace('.com.', '.com').replace('\t', '')\
+            .replace('\n', '').replace('Gift-wrap available', '').replace(' . ', '').strip()
+        if sold_by_str.count('by') != 1:
+            self.log('Could not find exactly 1 occurrence of "by" in "sold by" top block at %s' \
+                     % response.url, ERROR)
+            return
+        sold_by_whom = sold_by_str.split('by')[1].strip()
+        if sold_by_whom.endswith('.'):
+            sold_by_whom = sold_by_whom[0:-1]
+        if not sold_by_whom:
+            self.log('Invalid "sold by whom" at %s' % response.url, ERROR)
+            return
+        product = response.meta['product']
+        _marketplace = product.get('marketplace', [])
+        _price = product.get('price', None)
+        _currency = None
+        _price_decimal = None
+        if _price is not None:
+            _price_decimal = float(_price.price)
+            _currency = _price.priceCurrency
+        _marketplace.append({
+            'currency': _currency if _price else None,
+            'price': _price_decimal if _price else None,
+            'name': sold_by_whom,
+        })
+        product['marketplace'] = _marketplace
         return product
