@@ -403,7 +403,7 @@ class NeweggScraper(Scraper):
     def _marketplace_prices(self):
         marketplace_prices = self.tree_html.xpath("//div[@id='MBO_{0}']//ul[@class='sellers-list']/li[contains(@class, 'sellers-list-item')]//ul[contains(@class, 'price')]//li[contains(@class, 'price-current')]".format(self.related_item_id))
         marketplace_prices = [price.text_content() for price in marketplace_prices]
-        marketplace_prices = [float(re.compile("\$(\d+.\d+)").search(price_text.replace(',', '')).group(1)) for price_text in marketplace_prices]
+        marketplace_prices = [float(re.compile("\$(\d*\.\d+|\d+)").search(price_text.replace(',', '')).group(1)) for price_text in marketplace_prices]
 
         if self._site_online() == 0:
             seller_text_block = self.tree_html.xpath("//p[@id='grpNotesoldby_{0}']/a[contains(@href, 'http://www.newegg.com/')]/text()".format(self.related_item_id))
