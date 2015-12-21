@@ -247,6 +247,7 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
                 # mis_fields = _get_mismatching_fields(json1, json2,
                 #                                      fields2exclude)
                 mis_fields = _compare_dicts(json1, json2, fields2exclude)
+                mis_fields = _collect_errors(mis_fields)
                 if mis_fields:
                     if print_output:
                         print 'LINE', i
