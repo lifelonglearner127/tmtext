@@ -5,15 +5,27 @@
 import base64
 import tempfile
 import os
+import sys
+import time
+import urllib
 
 import scrapy
 from scrapy.conf import settings
-from scrapy.http import Request
+from scrapy.http import Request, FormRequest
+from scrapy.log import INFO, WARNING, ERROR, DEBUG
+import lxml.html
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CWD, '..', '..', '..', '..', '..'))
+from search.captcha_solver import CaptchaBreakerWrapper
 
 
 class ScreenshotItem(scrapy.Item):
     url = scrapy.Field()
     image = scrapy.Field()
+
+    def __repr__(self):
+        return '[image data]'  # don't dump image data into logs
 
 
 class URL2ScreenshotSpider(scrapy.Spider):
@@ -24,6 +36,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.width = kwargs.get('width', 1280)
         self.height = kwargs.get('height', 1024)
         self.timeout = kwargs.get('timeout', 30)
+        self.image_copy = kwargs.get('image_copy', None)
         self.user_agent = kwargs.get(
             'user_agent',
             ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/53 "
@@ -34,6 +47,9 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.crop_width = kwargs.get('crop_width', None)
         self.crop_height = kwargs.get('crop_height', None)
         self.remove_img = kwargs.get('remove_img', True)
+        self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
+        self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
+        self.code_200_required = kwargs.get('code_200_required', True)
 
         settings.overrides['ITEM_PIPELINES'] = {}
         super(URL2ScreenshotSpider, self).__init__(*args, **kwargs)
@@ -43,7 +59,22 @@ class URL2ScreenshotSpider(scrapy.Spider):
         req.headers.setdefault('User-Agent', self.user_agent)
         yield req
 
+    def _solve_captha_in_phantomjs(self, driver, max_tries=15):
+        for i in xrange(max_tries):
+            if self._has_captcha(driver.page_source):
+                self.log('Found captcha in PhantomJS response at %s' % driver.current_url)
+                driver.save_screenshot('/tmp/_captcha_pre.png')
+                captcha_text = self._solve_captcha(driver.page_source)
+                self.log('Recognized captcha text is %s' % captcha_text)
+                driver.execute_script("document.getElementById('captchacharacters').value='%s'" % captcha_text)
+                time.sleep(2)
+                driver.save_screenshot('/tmp/_captcha_text.png')
+                driver.execute_script("document.getElementsByTagName('button')[0].click()")
+                time.sleep(2)
+                driver.save_screenshot('/tmp/_captcha_after.png')
+
     def parse(self, response):
+
         from selenium import webdriver
         from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
@@ -56,15 +87,32 @@ class URL2ScreenshotSpider(scrapy.Spider):
         dcap = dict(DesiredCapabilities.PHANTOMJS)
         dcap["phantomjs.page.settings.userAgent"] = self.user_agent
 
+        phantom_args = []  # command-line extra args
+        if self.proxy:
+            phantom_args.append('--proxy=' + self.proxy_type + '://' + self.proxy)
+            phantom_args.append('--proxy-type=' + self.proxy_type)
+
+        # check if the page returns code != 200
+        if self.code_200_required:
+            page_code = urllib.urlopen(self.product_url).code
+            if page_code != 200:
+                self.log('Page returned code %s at %s' % (page_code, self.product_url), ERROR)
+                yield ScreenshotItem()  # return empty item
+                return
+
         # initialize webdriver, open the page and make a screenshot
-        driver = webdriver.PhantomJS(desired_capabilities=dcap)
+        driver = webdriver.PhantomJS(desired_capabilities=dcap, service_args=phantom_args)
         driver.set_page_load_timeout(int(self.timeout))
         driver.set_window_size(int(self.width), int(self.height))
+
         try:
             driver.get(self.product_url)
+            self._solve_captha_in_phantomjs(driver)
         except Exception as e:
             print('Exception while loading url: %s' % str(e))
         driver.save_screenshot(t_file.name)
+        if self.image_copy:  # save a copy of the file if needed
+            driver.save_screenshot(self.image_copy)
         driver.quit()
 
         # crop the image if needed
@@ -80,6 +128,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
                    self.crop_top+self.crop_height)
             area = img.crop(box)
             area.save(t_file.name, 'png')
+            if self.image_copy:  # save a copy of the file if needed
+                area.save(self.image_copy, 'png')
 
         with open(t_file.name, 'rb') as fh:
             img_content = fh.read()
@@ -93,3 +143,59 @@ class URL2ScreenshotSpider(scrapy.Spider):
         item['image'] = base64.b64encode(img_content)
 
         yield item
+
+    def _has_captcha(self, response_or_text):
+        if not isinstance(response_or_text, (str, unicode)):
+            response_or_text = response_or_text.body_as_unicode()
+        return '.images-amazon.com/captcha/' in response_or_text
+
+    def _solve_captcha(self, response_or_text):
+        if not isinstance(response_or_text, (str, unicode)):
+            response_or_text = response_or_text.body_as_unicode()
+        doc = lxml.html.fromstring(response_or_text)
+        forms = doc.xpath('//form')
+        assert len(forms) == 1, "More than one form found."
+
+        captcha_img = forms[0].xpath(
+            '//img[contains(@src, "/captcha/")]/@src')[0]
+
+        self.log("Extracted capcha url: %s" % captcha_img, level=WARNING)
+
+        return CaptchaBreakerWrapper().solve_captcha(captcha_img)
+
+    def _handle_captcha(self, response, callback):
+        # FIXME This is untested and wrong.
+        captcha_solve_try = response.meta.get('captcha_solve_try', 0)
+        url = response.url
+
+        self.log("Captcha challenge for %s (try %d)."
+                 % (url, captcha_solve_try),
+                 level=INFO)
+
+        captcha = self._solve_captcha(response)
+        if captcha is None:
+            self.log(
+                "Failed to guess captcha for '%s' (try: %d)." % (
+                    url, captcha_solve_try),
+                level=ERROR
+            )
+            result = None
+        else:
+            self.log(
+                "On try %d, submitting captcha '%s' for '%s'." % (
+                    captcha_solve_try, captcha, url),
+                level=INFO
+            )
+
+            meta = response.meta.copy()
+            meta['captcha_solve_try'] = captcha_solve_try + 1
+
+            result = FormRequest.from_response(
+                response,
+                formname='',
+                formdata={'field-keywords': captcha},
+                callback=callback,
+                dont_filter=True,
+                meta=meta)
+
+        return result
