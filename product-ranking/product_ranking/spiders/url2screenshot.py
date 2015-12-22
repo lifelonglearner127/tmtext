@@ -7,17 +7,22 @@ import tempfile
 import os
 import sys
 import time
-import urllib
 
 import scrapy
 from scrapy.conf import settings
 from scrapy.http import Request, FormRequest
 from scrapy.log import INFO, WARNING, ERROR, DEBUG
 import lxml.html
+import requesocks as requests
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', '..'))
-from search.captcha_solver import CaptchaBreakerWrapper
+
+try:
+    from search.captcha_solver import CaptchaBreakerWrapper
+except ImportError as e:
+    CaptchaBreakerWrapper = None
+    print 'Error loading captcha breaker!', str(e)
 
 
 class ScreenshotItem(scrapy.Item):
@@ -73,6 +78,9 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 time.sleep(2)
                 driver.save_screenshot('/tmp/_captcha_after.png')
 
+    def _log_proxy(self, r_session):
+        self.log("IP via proxy: %s" % r_session.get('http://icanhazip.com'))
+
     def parse(self, response):
 
         from selenium import webdriver
@@ -92,9 +100,19 @@ class URL2ScreenshotSpider(scrapy.Spider):
             phantom_args.append('--proxy=' + self.proxy_type + '://' + self.proxy)
             phantom_args.append('--proxy-type=' + self.proxy_type)
 
+        # we will use requesocks for checking response code
+        r_session = requests.session()
+        r_session.timeout = self.timeout
+        if self.proxy:
+            r_session.proxies = {'http': self.proxy_type+'://'+self.proxy,
+                                 'https': self.proxy_type+'://'+self.proxy}
+        if self.user_agent:
+            r_session.headers = {'User-Agent': self.user_agent}
+        self._log_proxy(r_session)
+
         # check if the page returns code != 200
         if self.code_200_required and str(self.code_200_required).lower() not in ('0', 'false', 'off'):
-            page_code = urllib.urlopen(self.product_url).code
+            page_code = r_session.get(self.product_url).status_code
             if page_code != 200:
                 self.log('Page returned code %s at %s' % (page_code, self.product_url), ERROR)
                 yield ScreenshotItem()  # return empty item
