@@ -7,17 +7,30 @@ import tempfile
 import os
 import sys
 import time
-import urllib
 
 import scrapy
 from scrapy.conf import settings
 from scrapy.http import Request, FormRequest
 from scrapy.log import INFO, WARNING, ERROR, DEBUG
 import lxml.html
+try:
+    from pyvirtualdisplay import Display
+except ImportError:
+    print('pyvirtualdisplay not installed')
+
+try:
+    import requesocks as requests
+except ImportError:
+    import requests
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', '..'))
-from search.captcha_solver import CaptchaBreakerWrapper
+
+try:
+    from search.captcha_solver import CaptchaBreakerWrapper
+except ImportError as e:
+    CaptchaBreakerWrapper = None
+    print 'Error loading captcha breaker!', str(e)
 
 
 class ScreenshotItem(scrapy.Item):
@@ -47,6 +60,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.crop_width = kwargs.get('crop_width', None)
         self.crop_height = kwargs.get('crop_height', None)
         self.remove_img = kwargs.get('remove_img', True)
+        # proxy support has been dropped after we switched to Firefox
         self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
         self.code_200_required = kwargs.get('code_200_required', True)
@@ -59,10 +73,10 @@ class URL2ScreenshotSpider(scrapy.Spider):
         req.headers.setdefault('User-Agent', self.user_agent)
         yield req
 
-    def _solve_captha_in_phantomjs(self, driver, max_tries=15):
+    def _solve_captha_in_selenium(self, driver, max_tries=15):
         for i in xrange(max_tries):
             if self._has_captcha(driver.page_source):
-                self.log('Found captcha in PhantomJS response at %s' % driver.current_url)
+                self.log('Found captcha in selenium response at %s' % driver.current_url)
                 driver.save_screenshot('/tmp/_captcha_pre.png')
                 captcha_text = self._solve_captcha(driver.page_source)
                 self.log('Recognized captcha text is %s' % captcha_text)
@@ -73,10 +87,13 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 time.sleep(2)
                 driver.save_screenshot('/tmp/_captcha_after.png')
 
+    def _log_proxy(self, r_session):
+        self.log("IP via proxy: %s" % r_session.get('http://icanhazip.com').text)
+
     def parse(self, response):
 
         from selenium import webdriver
-        from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+        from selenium.webdriver import FirefoxProfile
 
         # temporary file for the output image
         t_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
@@ -84,32 +101,44 @@ class URL2ScreenshotSpider(scrapy.Spider):
         print('Created temporary image file: %s' % t_file.name)
 
         # tweak user agent
-        dcap = dict(DesiredCapabilities.PHANTOMJS)
-        dcap["phantomjs.page.settings.userAgent"] = self.user_agent
+        ff_profile = FirefoxProfile()
+        ff_profile.set_preference("general.useragent.override", self.user_agent)
 
-        phantom_args = []  # command-line extra args
+        display = Display(visible=0, size=(self.width, self.height))
+        display.start()
+
+        # we will use requesocks for checking response code
+        r_session = requests.session()
+        r_session.timeout = self.timeout
         if self.proxy:
-            phantom_args.append('--proxy=' + self.proxy_type + '://' + self.proxy)
-            phantom_args.append('--proxy-type=' + self.proxy_type)
+            r_session.proxies = {'http': self.proxy_type+'://'+self.proxy,
+                                 'https': self.proxy_type+'://'+self.proxy}
+        if self.user_agent:
+            r_session.headers = {'User-Agent': self.user_agent}
+        self._log_proxy(r_session)
 
         # check if the page returns code != 200
         if self.code_200_required and str(self.code_200_required).lower() not in ('0', 'false', 'off'):
-            page_code = urllib.urlopen(self.product_url).code
+            page_code = r_session.get(self.product_url).status_code
             if page_code != 200:
                 self.log('Page returned code %s at %s' % (page_code, self.product_url), ERROR)
                 yield ScreenshotItem()  # return empty item
+                display.stop()
                 return
 
         # initialize webdriver, open the page and make a screenshot
-        driver = webdriver.PhantomJS(desired_capabilities=dcap, service_args=phantom_args)
+        driver = webdriver.Firefox(ff_profile)
         driver.set_page_load_timeout(int(self.timeout))
+        driver.set_script_timeout(int(self.timeout))
         driver.set_window_size(int(self.width), int(self.height))
 
         try:
             driver.get(self.product_url)
-            self._solve_captha_in_phantomjs(driver)
+            self._solve_captha_in_selenium(driver)
         except Exception as e:
-            print('Exception while loading url: %s' % str(e))
+            self.log('Exception while getting response using selenium! %s' % str(e))
+
+        time.sleep(10)
         driver.save_screenshot(t_file.name)
         if self.image_copy:  # save a copy of the file if needed
             driver.save_screenshot(self.image_copy)
@@ -141,6 +170,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
         item = ScreenshotItem()
         item['url'] = response.url
         item['image'] = base64.b64encode(img_content)
+
+        display.stop()
 
         yield item
 
