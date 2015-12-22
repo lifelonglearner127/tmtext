@@ -30,6 +30,9 @@ class TargetVariants(object):
         url = url.split('?')[0]
         return url
 
+    def _swatches(self):
+        return None
+
     def _variants(self):
         try:
             variation_combinations_values = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])

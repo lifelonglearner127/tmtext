@@ -266,9 +266,10 @@ class Scraper():
         return description
 
     def _clean_text(self, text):
-        text = text.replace("\n"," ").replace("\t"," ").replace("\r"," ")
+        text = text.replace("\n", " ").replace("\t", " ").replace("\r", " ")
        	text = re.sub("&nbsp;", " ", text).strip()
-        return  re.sub(r'\s+', ' ', text)
+
+        return re.sub(r'\s+', ' ', text)
 
     def load_image_hashes():
         '''Read file with image hashes list
