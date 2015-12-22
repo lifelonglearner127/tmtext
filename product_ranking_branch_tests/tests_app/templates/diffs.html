@@ -2,8 +2,8 @@
 <html>
 <head>
     <title></title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-    <script src="https://raw.githubusercontent.com/jasonalvis/show-more/master/jquery.showmore.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script type="text/javascript" src="https://raw.githubusercontent.com/jasonalvis/show-more/master/jquery.showmore.min.js"></script>
     <style>
         .showmore { line-height:18px; }
         .showmore_content { position:relative; overflow:hidden; }
@@ -33,14 +33,14 @@
                         <div style="width:400px" class="showmore">{{ diff.diff.0.f1 }}</div>
                         {% if 'data1' in diff %}
 							<small><a class="more-info-click">Show data line</a></small>
-							<div class="more-info">{{ diff.data1 }}</div>
+							<div class="more-info hidden">{{ diff.data1 }}</div>
                         {% endif %}
                     </td>
                     <td>
                         <div style="width:400px" class="showmore">{{ diff.diff.0.f2 }}</div>
                         {% if 'data2' in diff %}
 							<small><a class="more-info-click">Show data line</a></small>
-							<div class="more-info">{{ diff.data2 }}</div>
+							<div class="more-info hidden">{{ diff.data2 }}</div>
                         {% endif %}
                     </td>
                 {% else %}
@@ -62,7 +62,7 @@
              });
 
             $('.more-info-click').click(function(){
-                $(this).next().toggleClass('hidden');
+                $(this).parent().next().toggleClass('hidden');
             });
         });
     </script>
