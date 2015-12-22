@@ -119,13 +119,13 @@ class InvokeWalmartApiViewSet(viewsets.ViewSet):
                 Check feed status begin
                 '''''''''''''''''''''''''''''''''''
 
-                walmart_api_signature = self.generate_walmart_api_signature('https://marketplace.stg.walmartapis.com/v2/feeds/{0}?includeDetails=true'.format(response.body['feedId']),
+                walmart_api_signature = self.generate_walmart_api_signature('https://marketplace.walmartapis.com/v2/feeds/{0}?includeDetails=true'.format(response.body['feedId']),
                                                                             self.walmart_consumer_id,
                                                                             self.walmart_private_key,
                                                                             "GET",
                                                                             "signature.txt")
 
-                response = unirest.get('https://marketplaces.stg.walmartapis.com/v2/feeds/{0}?includeDetails=true'.format(response.body['feedId']),
+                response = unirest.get('https://marketplace.walmartapis.com/v2/feeds/{0}?includeDetails=true'.format(response.body['feedId']),
                     headers={
                         "Accept": "application/json",
                         "WM_CONSUMER.ID": self.walmart_consumer_id,
