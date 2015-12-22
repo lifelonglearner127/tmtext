@@ -83,7 +83,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 driver.save_screenshot('/tmp/_captcha_after.png')
 
     def _log_proxy(self, r_session):
-        self.log("IP via proxy: %s" % r_session.get('http://icanhazip.com'))
+        self.log("IP via proxy: %s" % r_session.get('http://icanhazip.com').text)
 
     def parse(self, response):
 
