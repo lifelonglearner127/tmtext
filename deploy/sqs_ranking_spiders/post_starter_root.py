@@ -69,6 +69,7 @@ def main():
     _install_system_package('tesseract-ocr')
     _install_system_package('phantomjs')
     _install_system_package('firefox')
+    _install_system_package('xvfb')
     # disable marketplaces (they are too slow)
     disabler = '/tmp/stop_marketplaces'
     os.system('echo "1" > %s' % disabler)
