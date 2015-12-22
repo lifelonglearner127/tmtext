@@ -13,7 +13,11 @@ from scrapy.conf import settings
 from scrapy.http import Request, FormRequest
 from scrapy.log import INFO, WARNING, ERROR, DEBUG
 import lxml.html
-import requesocks as requests
+
+try:
+    import requesocks as requests
+except ImportError:
+    import requests
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', '..'))
