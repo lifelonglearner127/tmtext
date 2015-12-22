@@ -137,7 +137,7 @@ def stats():
         context = dict()
         conn = boto.ec2.autoscale.AutoScaleConnection()
         groups = conn.get_all_groups(
-            names=['SCCluster1', 'SCCluster2', 'SCCluster3'])
+            names=['SCCluster1', 'SCCluster2', 'SCCluster3', 'SCCluster4'])
         instances = {group.name: len(group.instances) for group in groups}
         context['running_instances'] = sum(instances.itervalues())
         context['running_instances_info'] = instances

@@ -8,7 +8,8 @@ import os
 
 import scrapy
 from scrapy.conf import settings
-from scrapy.http import Request
+from scrapy.http import Request, FormRequest
+from scrapy.log import INFO, WARNING, ERROR, DEBUG
 
 
 class ScreenshotItem(scrapy.Item):
@@ -24,6 +25,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.width = kwargs.get('width', 1280)
         self.height = kwargs.get('height', 1024)
         self.timeout = kwargs.get('timeout', 30)
+        self.image_copy = kwargs.get('image_copy', None)
         self.user_agent = kwargs.get(
             'user_agent',
             ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/53 "
@@ -43,7 +45,33 @@ class URL2ScreenshotSpider(scrapy.Spider):
         req.headers.setdefault('User-Agent', self.user_agent)
         yield req
 
+    def _get_scrapy_cookies(self, response):
+        resp_cookies = [c.split(';') for c in response.headers.getlist('Set-Cookie')]
+        cookies_dicts = []
+        for cook in resp_cookies:
+            _cookie = {}
+            for cook_part in cook:
+                if not '=' in cook_part:
+                    continue
+                c_name, c_value = cook_part.split('=', 1)
+                c_name = c_name.strip()
+                c_value = c_value.strip()
+                if c_name not in ('path', 'domain', 'expires'):
+                    _cookie['name'] = c_name
+                    _cookie['value'] = c_value
+            if _cookie:
+                cookies_dicts.append(_cookie)
+        return cookies_dicts
+
     def parse(self, response):
+        if self._has_captcha(response):
+            self.log('Processing captcha at %s' % response.url)
+            yield self._handle_captcha(response, self.parse)
+            self.log('Captcha processing done at %s' % response.url)
+            return
+
+        scrapy_cookies = self._get_scrapy_cookies(response)
+
         from selenium import webdriver
         from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
@@ -60,8 +88,13 @@ class URL2ScreenshotSpider(scrapy.Spider):
         driver = webdriver.PhantomJS(desired_capabilities=dcap)
         driver.set_page_load_timeout(int(self.timeout))
         driver.set_window_size(int(self.width), int(self.height))
+        driver.get(self.product_url)
+        for scrapy_cookie in scrapy_cookies:
+            driver.add_cookie(scrapy_cookie)
         try:
             driver.get(self.product_url)
+            if self._has_captcha(driver.page_source):
+                self.log('Found captcha in PhantomJS response at %s' % driver.current_url)
         except Exception as e:
             print('Exception while loading url: %s' % str(e))
         driver.save_screenshot(t_file.name)
@@ -80,6 +113,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
                    self.crop_top+self.crop_height)
             area = img.crop(box)
             area.save(t_file.name, 'png')
+            if self.image_copy:  # save a copy of the file if needed
+                area.save(self.image_copy, 'png')
 
         with open(t_file.name, 'rb') as fh:
             img_content = fh.read()
@@ -93,3 +128,55 @@ class URL2ScreenshotSpider(scrapy.Spider):
         item['image'] = base64.b64encode(img_content)
 
         yield item
+
+    def _has_captcha(self, response_or_text):
+        if not isinstance(response_or_text, (str, unicode)):
+            response_or_text = response_or_text.body_as_unicode()
+        return '.images-amazon.com/captcha/' in response_or_text
+
+    def _solve_captcha(self, response):
+        forms = response.xpath('//form')
+        assert len(forms) == 1, "More than one form found."
+
+        captcha_img = forms[0].xpath(
+            '//img[contains(@src, "/captcha/")]/@src').extract()[0]
+
+        self.log("Extracted capcha url: %s" % captcha_img, level=DEBUG)
+        return self._cbw.solve_captcha(captcha_img)
+
+    def _handle_captcha(self, response, callback):
+        # FIXME This is untested and wrong.
+        captcha_solve_try = response.meta.get('captcha_solve_try', 0)
+        url = response.url
+
+        self.log("Captcha challenge for %s (try %d)."
+                 % (url, captcha_solve_try),
+                 level=INFO)
+
+        captcha = self._solve_captcha(response)
+        if captcha is None:
+            self.log(
+                "Failed to guess captcha for '%s' (try: %d)." % (
+                    url, captcha_solve_try),
+                level=ERROR
+            )
+            result = None
+        else:
+            self.log(
+                "On try %d, submitting captcha '%s' for '%s'." % (
+                    captcha_solve_try, captcha, url),
+                level=INFO
+            )
+
+            meta = response.meta.copy()
+            meta['captcha_solve_try'] = captcha_solve_try + 1
+
+            result = FormRequest.from_response(
+                response,
+                formname='',
+                formdata={'field-keywords': captcha},
+                callback=callback,
+                dont_filter=True,
+                meta=meta)
+
+        return result

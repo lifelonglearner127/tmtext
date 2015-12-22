@@ -287,10 +287,10 @@ class MotherCareScraper(Scraper):
         price = []
         for i in script:
             val = html.tostring(i)
-            price += re.findall(r'"sale" : (\d+.\d+)', val)
+            price += re.findall(r'"sale" : (\d*\.\d+|\d+)', val.replace(",", ""))
 
         if price:
-            return price[0]
+            return float(price[0])
 
         return None
 
