@@ -5,16 +5,27 @@
 import base64
 import tempfile
 import os
+import sys
+import time
+import urllib
 
 import scrapy
 from scrapy.conf import settings
 from scrapy.http import Request, FormRequest
 from scrapy.log import INFO, WARNING, ERROR, DEBUG
+import lxml.html
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CWD, '..', '..', '..', '..', '..'))
+from search.captcha_solver import CaptchaBreakerWrapper
 
 
 class ScreenshotItem(scrapy.Item):
     url = scrapy.Field()
     image = scrapy.Field()
+
+    def __repr__(self):
+        return '[image data]'  # don't dump image data into logs
 
 
 class URL2ScreenshotSpider(scrapy.Spider):
@@ -36,6 +47,9 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.crop_width = kwargs.get('crop_width', None)
         self.crop_height = kwargs.get('crop_height', None)
         self.remove_img = kwargs.get('remove_img', True)
+        self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
+        self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
+        self.code_200_required = kwargs.get('code_200_required', True)
 
         settings.overrides['ITEM_PIPELINES'] = {}
         super(URL2ScreenshotSpider, self).__init__(*args, **kwargs)
@@ -45,32 +59,21 @@ class URL2ScreenshotSpider(scrapy.Spider):
         req.headers.setdefault('User-Agent', self.user_agent)
         yield req
 
-    def _get_scrapy_cookies(self, response):
-        resp_cookies = [c.split(';') for c in response.headers.getlist('Set-Cookie')]
-        cookies_dicts = []
-        for cook in resp_cookies:
-            _cookie = {}
-            for cook_part in cook:
-                if not '=' in cook_part:
-                    continue
-                c_name, c_value = cook_part.split('=', 1)
-                c_name = c_name.strip()
-                c_value = c_value.strip()
-                if c_name not in ('path', 'domain', 'expires'):
-                    _cookie['name'] = c_name
-                    _cookie['value'] = c_value
-            if _cookie:
-                cookies_dicts.append(_cookie)
-        return cookies_dicts
+    def _solve_captha_in_phantomjs(self, driver, max_tries=15):
+        for i in xrange(max_tries):
+            if self._has_captcha(driver.page_source):
+                self.log('Found captcha in PhantomJS response at %s' % driver.current_url)
+                driver.save_screenshot('/tmp/_captcha_pre.png')
+                captcha_text = self._solve_captcha(driver.page_source)
+                self.log('Recognized captcha text is %s' % captcha_text)
+                driver.execute_script("document.getElementById('captchacharacters').value='%s'" % captcha_text)
+                time.sleep(2)
+                driver.save_screenshot('/tmp/_captcha_text.png')
+                driver.execute_script("document.getElementsByTagName('button')[0].click()")
+                time.sleep(2)
+                driver.save_screenshot('/tmp/_captcha_after.png')
 
     def parse(self, response):
-        if self._has_captcha(response):
-            self.log('Processing captcha at %s' % response.url)
-            yield self._handle_captcha(response, self.parse)
-            self.log('Captcha processing done at %s' % response.url)
-            return
-
-        scrapy_cookies = self._get_scrapy_cookies(response)
 
         from selenium import webdriver
         from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
@@ -84,20 +87,32 @@ class URL2ScreenshotSpider(scrapy.Spider):
         dcap = dict(DesiredCapabilities.PHANTOMJS)
         dcap["phantomjs.page.settings.userAgent"] = self.user_agent
 
+        phantom_args = []  # command-line extra args
+        if self.proxy:
+            phantom_args.append('--proxy=' + self.proxy_type + '://' + self.proxy)
+            phantom_args.append('--proxy-type=' + self.proxy_type)
+
+        # check if the page returns code != 200
+        if self.code_200_required:
+            page_code = urllib.urlopen(self.product_url).code
+            if page_code != 200:
+                self.log('Page returned code %s at %s' % (page_code, self.product_url), ERROR)
+                yield ScreenshotItem()  # return empty item
+                return
+
         # initialize webdriver, open the page and make a screenshot
-        driver = webdriver.PhantomJS(desired_capabilities=dcap)
+        driver = webdriver.PhantomJS(desired_capabilities=dcap, service_args=phantom_args)
         driver.set_page_load_timeout(int(self.timeout))
         driver.set_window_size(int(self.width), int(self.height))
-        driver.get(self.product_url)
-        for scrapy_cookie in scrapy_cookies:
-            driver.add_cookie(scrapy_cookie)
+
         try:
             driver.get(self.product_url)
-            if self._has_captcha(driver.page_source):
-                self.log('Found captcha in PhantomJS response at %s' % driver.current_url)
+            self._solve_captha_in_phantomjs(driver)
         except Exception as e:
             print('Exception while loading url: %s' % str(e))
         driver.save_screenshot(t_file.name)
+        if self.image_copy:  # save a copy of the file if needed
+            driver.save_screenshot(self.image_copy)
         driver.quit()
 
         # crop the image if needed
@@ -134,15 +149,19 @@ class URL2ScreenshotSpider(scrapy.Spider):
             response_or_text = response_or_text.body_as_unicode()
         return '.images-amazon.com/captcha/' in response_or_text
 
-    def _solve_captcha(self, response):
-        forms = response.xpath('//form')
+    def _solve_captcha(self, response_or_text):
+        if not isinstance(response_or_text, (str, unicode)):
+            response_or_text = response_or_text.body_as_unicode()
+        doc = lxml.html.fromstring(response_or_text)
+        forms = doc.xpath('//form')
         assert len(forms) == 1, "More than one form found."
 
         captcha_img = forms[0].xpath(
-            '//img[contains(@src, "/captcha/")]/@src').extract()[0]
+            '//img[contains(@src, "/captcha/")]/@src')[0]
 
-        self.log("Extracted capcha url: %s" % captcha_img, level=DEBUG)
-        return self._cbw.solve_captcha(captcha_img)
+        self.log("Extracted capcha url: %s" % captcha_img, level=WARNING)
+
+        return CaptchaBreakerWrapper().solve_captcha(captcha_img)
 
     def _handle_captcha(self, response, callback):
         # FIXME This is untested and wrong.
