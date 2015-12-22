@@ -93,7 +93,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
             phantom_args.append('--proxy-type=' + self.proxy_type)
 
         # check if the page returns code != 200
-        if self.code_200_required:
+        if self.code_200_required and str(self.code_200_required).lower() not in ('0', 'false', 'off'):
             page_code = urllib.urlopen(self.product_url).code
             if page_code != 200:
                 self.log('Page returned code %s at %s' % (page_code, self.product_url), ERROR)
