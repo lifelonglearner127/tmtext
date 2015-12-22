@@ -13,6 +13,10 @@ from scrapy.conf import settings
 from scrapy.http import Request, FormRequest
 from scrapy.log import INFO, WARNING, ERROR, DEBUG
 import lxml.html
+try:
+    from pyvirtualdisplay import Display
+except ImportError:
+    print('pyvirtualdisplay not installed')
 
 try:
     import requesocks as requests
@@ -90,7 +94,6 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         from selenium import webdriver
         from selenium.webdriver import FirefoxProfile
-        from pyvirtualdisplay import Display
 
         # temporary file for the output image
         t_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
