@@ -9,7 +9,7 @@
         .showmore_content { position:relative; overflow:hidden; }
         .showmore_trigger { width:100%; height:45px; line-height:45px; cursor:pointer; }
         .showmore_trigger span { display:block; }
-        .more-info { display: none; }
+        .more-info.hidden { display: none; }
     </style>
 </head>
 <body>
@@ -32,7 +32,7 @@
                     <td>
                         <div style="width:400px" class="showmore">{{ diff.diff.0.f1 }}</div>
                         {% if 'data1' in diff %}
-							<small><a>Show data line</a></small>
+							<small><a class="more-info-click">Show data line</a></small>
 							<div class="more-info">{{ diff.data1 }}</div>
                         {% endif %}
                     </td>
@@ -62,7 +62,7 @@
              });
 
             $('.more-info-click').click(function(){
-                $(this).next().toggle();
+                $(this).next().toggleClass('hidden');
             });
         });
     </script>
