@@ -135,6 +135,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         except Exception as e:
             self.log('Exception while getting response using selenium! %s' % str(e))
 
+        time.sleep(10)
         driver.save_screenshot(t_file.name)
         if self.image_copy:  # save a copy of the file if needed
             driver.save_screenshot(self.image_copy)
