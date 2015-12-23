@@ -427,7 +427,7 @@ class JcpenneyScraper(Scraper):
     ##########################################
     def _price(self):
         if self.tree_html.xpath("//div[@id='priceDetails']//span[@class='gallery_page_price flt_wdt comparisonPrice']"):
-            price = self.tree_html.xpath("//div[@id='priceDetails']//span[@class='gallery_page_price flt_wdt comparisonPrice']")[0].text_content().strip()
+            price = self.tree_html.xpath("//div[@id='priceDetails']//span[@class='gallery_page_price flt_wdt comparisonPrice']")[0].text_content().strip().replace(",", "")
             price = re.search(ur'([$])(\d+(?:\.\d{2})?)', price).groups()
             price = price[0] + price[1]
 

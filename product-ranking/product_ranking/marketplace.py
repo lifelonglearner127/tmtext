@@ -112,13 +112,15 @@ class Amazon_marketplace(object):
                         link = "img_link"
                     name_links.append({
                         link: get_name_link,
-                        str("price"): Price(price=price, priceCurrency=priceCurrency), 
+                        'price': float(price.price),
+                        'currency': price.priceCurrency,
                         "name": key
                     })
             else:
                 marketplaces.append({
-                    str("price"): Price(price=price, priceCurrency=priceCurrency), 
-                    str("name"): name.strip()
+                    'price': float(price.price),
+                    'currency': price.priceCurrency,
+                    'name': name.strip()
                 })
 
         next_link = self.is_empty(response.xpath(
@@ -346,9 +348,17 @@ class Amazon_marketplace(object):
             seller = seller[0].strip()
 
         if seller:
+            _price = product.get('price', 0)
+            if _price:
+                _currency = _price.priceCurrency
+                _price = float(_price.price)
+            else:
+                _price = None
+                _currency = None
             product["marketplace"] = [
                 {
                     "name": seller,
-                    "price": product.get("price", 0)
+                    "price": _price,
+                    'currency': _currency
                 }
             ]
