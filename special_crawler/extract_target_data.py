@@ -322,18 +322,23 @@ class TargetScraper(Scraper):
                 review_info = jsn['BatchedResults']['q0']['Results'][0]['ReviewStatistics']
                 self.review_count = review_info['TotalReviewCount']
                 self.average_review = review_info['AverageOverallRating']
+                self.reviews = None
 
                 min_ratingval = None
                 max_ratingval = None
-                self.reviews = []
-                for review in review_info['RatingDistribution']:
-                    if min_ratingval == None or review['RatingValue'] < min_ratingval:
-                        if review['Count'] > 0:
-                            min_ratingval = review['RatingValue']
-                    if max_ratingval == None or review['RatingValue'] > max_ratingval:
-                        if review['Count'] > 0:
-                            max_ratingval = review['RatingValue']
-                    self.reviews.append([int(review['RatingValue']), int(review['Count'])])
+
+                if self.review_count > 0:
+                    self.reviews = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0]]
+
+                    for review in review_info['RatingDistribution']:
+                        if min_ratingval == None or review['RatingValue'] < min_ratingval:
+                            if review['Count'] > 0:
+                                min_ratingval = review['RatingValue']
+                        if max_ratingval == None or review['RatingValue'] > max_ratingval:
+                            if review['Count'] > 0:
+                                max_ratingval = review['RatingValue']
+
+                        self.reviews[int(review['RatingValue']) - 1][1] = int(review['Count'])
 
                 self.min_score = min_ratingval
                 self.max_score = max_ratingval
