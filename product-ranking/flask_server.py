@@ -326,5 +326,39 @@ def get_data():
     return ajax_template.replace('{{ url }}', url).replace('{{ spider }}', spider)  # django-like templates =)
 
 
+@app.route('/get_raw_data', methods=['GET'])
+def get_raw_data():
+    url = request.args.get('url', '').strip()
+    spider = request.args.get('spider', '').strip()
+    if not spider:
+        spider = _find_spider_by_url(url)
+    if isinstance(spider, (str, unicode)):
+        if not '_products' in spider:
+            spider = spider + '_products'
+    if spider not in _get_all_spidernames():
+        return 'Invalid spider name. Allowed: <br><br> %s' % '<br>'.join(sorted(_get_all_spidernames()))
+    if not url:
+        return 'Invalid URL param given (use "url" GET param)'
+    if isinstance(url, unicode):
+        url = url.encode('utf-8')
+    print 'SPIDER', spider
+    print 'PROCESSING URL', url
+    output_fname = _start_spider_and_wait_for_finish(spider, url)
+    if output_fname:
+        return open(output_fname).read()
+
+
+@app.route('/get_img_data', methods=['GET'])
+def get_img_data():
+    data = get_raw_data()
+    try:
+        j = json.loads(data)
+    except Exception as e:
+        return "Error while loading json: " + str(e)
+    if not 'image' in j:
+        return '"image" field not found in output data'
+    return '<img alt="Embedded Image" src="data:image/png;base64,%s" />' % j['image']
+
+
 if __name__ == "__main__":
     app.run(debug=True)
