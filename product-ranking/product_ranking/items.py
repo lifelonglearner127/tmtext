@@ -245,6 +245,7 @@ class SiteProductItem(Item):
     price_details_in_cart = Field()  # returns True if the price is available
                                      # only after you put the product in cart
 
+    seller_ranking = Field()  # for Walmart
     _subitem = Field()
 
 
