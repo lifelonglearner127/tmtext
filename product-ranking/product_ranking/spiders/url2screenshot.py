@@ -7,6 +7,7 @@ import tempfile
 import os
 import sys
 import time
+import socket
 
 import scrapy
 from scrapy.conf import settings
@@ -94,6 +95,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         from selenium import webdriver
         from selenium.webdriver import FirefoxProfile
+
+        socket.setdefaulttimeout(self.timeout)
 
         # temporary file for the output image
         t_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
