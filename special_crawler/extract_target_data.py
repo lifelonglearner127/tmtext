@@ -373,12 +373,11 @@ class TargetScraper(Scraper):
         or it can not be ordered online at all and can only be purchased in a local store,
         irrespective of availability - binary
         '''
-        if "not sold in stores" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
-            return 0
-        rows = self.tree_html.xpath("//a[@id='findInStoreActive']/@title")
-        if len(rows) > 0:
+        in_stores_availability = self.tree_html.xpath("//input[@id='ispickUpInStore']/@value")[0].strip().lower()
+
+        if in_stores_availability == "y":
             return 1
-        self.tree_html.xpath("//span[contains(@class,'buttonText')]//text()")
+
         return 0
 
     def _marketplace(self):
@@ -408,32 +407,42 @@ class TargetScraper(Scraper):
 
     def _site_online(self):
         # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
-        if "not sold online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
+        if self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]") and \
+                        "not sold online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content():
             return 0
+
+        '''
         if "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
             return 1
+
         if 'disabled' in self.tree_html.xpath("//button[@id='addToCart']/@class")[0]:
             return 0
+        '''
+
         return 1
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
-        if self._site_online() == 0:
-            return None
-        if "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
-            return 1
-        return 0
+        if self._site_online() == 1:
+            if self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]") and \
+                            "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content():
+                return 1
 
+            return 0
+        else:
+            return None
 
     def _in_stores_out_of_stock(self):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
-        if self._in_stores() == 0:
+        if self._in_stores() == 1:
+            if "out of stock in stores" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content():
+                return 1
+
+            return 0
+        else:
             return None
-        if "out of stock in stores" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
-            return 1
-        return None
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION

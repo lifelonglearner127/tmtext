@@ -19,13 +19,13 @@
     <field name="price_amount" version="1.1"></field>
     <field name="price_currency" version="1.1"></field>
     <field name="temp_price_cut" version="1.1"></field>
-    <field name="in_stores" version="1.1"></field>
+    <field name="in_stores" version="1.2"></field>
     <field name="marketplace" version="1.1"></field>
     <field name="marketplace_sellers" version="1.1"></field>
     <field name="marketplace_lowest_price" version="1.1"></field>
-    <field name="site_online" version="1.1"></field>
-    <field name="site_online_out_of_stock" version="1.1"></field>
-    <field name="in_stores_out_of_stock" version="1.1"></field>
+    <field name="site_online" version="1.2"></field>
+    <field name="site_online_out_of_stock" version="1.2"></field>
+    <field name="in_stores_out_of_stock" version="1.2"></field>
     <field name="categories" version="1.1"></field>
     <field name="category_name" version="1.1"></field>
     <field name="brand" version="1.1"></field>
