@@ -89,24 +89,15 @@ class TargetScraper(Scraper):
 
     def _features(self):
         rows = self.tree_html.xpath("//ul[@class='normal-list']//li")
-        line_txts = []
+        feature_list = []
+
         for row in rows:
-            try:
-                strong = row.xpath(".//strong//text()")[0].strip()
-                if True:
-                # if strong[-1:] == ":":
-                    # feature
-                    row_txt = " ".join([self._clean_text(i) for i in row.xpath(".//text()") if len(self._clean_text(i)) > 0]).strip()
-                    row_txt = row_txt.replace("\t", "")
-                    row_txt = row_txt.replace("\n", "")
-                    row_txt = row_txt.replace(" , ", ", ")
-                    line_txts.append(row_txt)
-            except IndexError:
-                pass
-        all_features_text = line_txts
-        if len(all_features_text) < 1:
-            return None
-        return all_features_text
+            feature_list.append(row.text_content().strip())
+
+        if feature_list:
+            return feature_list
+
+        return None
 
     def _feature_count(self):
         features = len(self._features())
