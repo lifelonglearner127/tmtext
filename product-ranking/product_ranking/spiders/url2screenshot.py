@@ -44,6 +44,7 @@ class ScreenshotItem(scrapy.Item):
 
 class URL2ScreenshotSpider(scrapy.Spider):
     name = 'url2screenshot_products'
+    # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
 
     def __init__(self, *args, **kwargs):
         self.product_url = kwargs['product_url']
