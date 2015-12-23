@@ -39,6 +39,7 @@ class TargetScraper(Scraper):
         Scraper.__init__(self, **kwargs)
 
         self.tv = TargetVariants()
+        self.product_json = None
 
     def check_url_format(self):
         # for ex: http://www.target.com/p/skyline-custom-upholstered-swoop-arm-chair/-/A-15186757#prodSlot=_1_1
@@ -56,7 +57,23 @@ class TargetScraper(Scraper):
 
         if len(self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")) < 1:
             return True
+
+        self._extract_product_json()
+
         return False
+
+    def _extract_product_json(self):
+        if self.tree_html.xpath("//script[contains(text(), 'Target.globals.refreshItems =')]/text()"):
+            product_json = self.tree_html.xpath("//script[contains(text(), 'Target.globals.refreshItems =')]/text()")[0]
+            start_index = product_json.find("Target.globals.refreshItems =") + len("Target.globals.refreshItems =")
+            product_json = product_json[start_index:]
+            product_json = json.loads(product_json)
+        else:
+            product_json = None
+
+        self.product_json = product_json
+
+        return self.product_json
 
     ##########################################
     ############### CONTAINER : NONE
@@ -373,10 +390,11 @@ class TargetScraper(Scraper):
         or it can not be ordered online at all and can only be purchased in a local store,
         irrespective of availability - binary
         '''
-        in_stores_availability = self.tree_html.xpath("//input[@id='ispickUpInStore']/@value")[0].strip().lower()
 
-        if in_stores_availability == "y":
-            return 1
+        if self.product_json:
+            for item in self.product_json:
+                if item["Attributes"]["callToActionDetail"]["soldInStores"] == True:
+                    return 1
 
         return 0
 
@@ -406,20 +424,12 @@ class TargetScraper(Scraper):
         return None
 
     def _site_online(self):
-        # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
-        if self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]") and \
-                        "not sold online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content():
-            return 0
+        if self.product_json:
+            for item in self.product_json:
+                if item["Attributes"]["callToActionDetail"]["soldOnline"] == True:
+                    return 1
 
-        '''
-        if "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
-            return 1
-
-        if 'disabled' in self.tree_html.xpath("//button[@id='addToCart']/@class")[0]:
-            return 0
-        '''
-
-        return 1
+        return 0
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
