@@ -148,7 +148,7 @@ def is_plain_jsonlist_file(fname):
 
 
 def unzip_file(file_path, unzip_path=LOCAL_DUMP_PATH):
-    zf = zipfile.ZipFile(file_path)
+    zf = zipfile.ZipFile(file_path, allowZip64=True)
     content_fielname = zf.namelist()[0]
     path = os.path.dirname(unzip_path)
     zf.extractall(path)

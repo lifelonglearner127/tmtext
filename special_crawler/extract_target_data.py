@@ -89,24 +89,15 @@ class TargetScraper(Scraper):
 
     def _features(self):
         rows = self.tree_html.xpath("//ul[@class='normal-list']//li")
-        line_txts = []
+        feature_list = []
+
         for row in rows:
-            try:
-                strong = row.xpath(".//strong//text()")[0].strip()
-                if True:
-                # if strong[-1:] == ":":
-                    # feature
-                    row_txt = " ".join([self._clean_text(i) for i in row.xpath(".//text()") if len(self._clean_text(i)) > 0]).strip()
-                    row_txt = row_txt.replace("\t", "")
-                    row_txt = row_txt.replace("\n", "")
-                    row_txt = row_txt.replace(" , ", ", ")
-                    line_txts.append(row_txt)
-            except IndexError:
-                pass
-        all_features_text = line_txts
-        if len(all_features_text) < 1:
-            return None
-        return all_features_text
+            feature_list.append(row.text_content().strip())
+
+        if feature_list:
+            return feature_list
+
+        return None
 
     def _feature_count(self):
         features = len(self._features())
@@ -118,12 +109,6 @@ class TargetScraper(Scraper):
         return None
 
     def _description(self):
-        description = self._description_helper()
-        if len(description) < 1:
-            return self._long_description_helper()
-        return description
-
-    def _description_helper(self):
         description = "".join(self.tree_html.xpath("//span[@itemprop='description']//text()")).strip()
         description_copy = "".join(self.tree_html.xpath("//div[@class='details-copy']//text()")).strip()
         if description in description_copy:
@@ -148,12 +133,6 @@ class TargetScraper(Scraper):
             description += description_2nd
         return description
 
-    def _long_description(self):
-        description = self._description_helper()
-        if len(description) < 1:
-            return None
-        return self._long_description_helper()
-
     def _color(self):
         return self.tv._color()
 
@@ -172,22 +151,19 @@ class TargetScraper(Scraper):
     def _variants(self):
         return self.tv._variants()
 
+    def _swatches(self):
+        return self.tv._swatches()
+
     def _price_for_variants(self):
         return self.tv._price_for_variants()
 
     def _selected_variants(self):
         return self.tv._selected_variants()
 
-    def _long_description_helper(self):
-        rows = self.tree_html.xpath("//ul[starts-with(@class,'normal-list reduced-spacing-list')]//li")
-        line_txts = []
-        for row in rows:
-            row_txts = row.xpath(".//text()")
-            row_txts = [self._clean_text(r) for r in row_txts]
-            row_txts = "".join(row_txts)
-            line_txts.append(row_txts)
-        long_description = "\n".join(line_txts)
-        return long_description
+    def _long_description(self):
+        long_desc_block = self.tree_html.xpath("//ul[starts-with(@class,'normal-list reduced-spacing-list')]")[0]
+
+        return self._clean_text(html.tostring(long_desc_block))
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -498,8 +474,8 @@ class TargetScraper(Scraper):
     ################ HELPER FUNCTIONS
     ##########################################
     # clean text inside html tags - remove html entities, trim spaces
-    def _clean_text(self, text):
-        return re.sub("&nbsp;", " ", text).strip()
+#    def _clean_text(self, text):
+#        return re.sub("&nbsp;", " ", text).strip()
 
     ##########################################
     ################ RETURN TYPES
@@ -521,6 +497,7 @@ class TargetScraper(Scraper):
         "model" : _model, \
         "long_description" : _long_description, \
         "variants": _variants, \
+        "swatches": _swatches, \
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \

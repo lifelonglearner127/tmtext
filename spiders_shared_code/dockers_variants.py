@@ -74,8 +74,12 @@ class DockersVariants(object):
                 value_list = []
 
                 if "colorid" in buy_stack_json["sku"][variant_combination]:
-                    properties["color"] = buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]["colorid"]]["finish"]["title"]
+                    _colorid = buy_stack_json["sku"][variant_combination]["colorid"]
+                    if _colorid not in buy_stack_json['colorid']:
+                        continue
+                    properties["color"] = buy_stack_json["colorid"][_colorid]["finish"]["title"]
                     value_list.append(properties["color"])
+
                     if "color" not in attribute_list: attribute_list.append("color")
 
                 if "length" in buy_stack_json["sku"][variant_combination]:
@@ -100,7 +104,7 @@ class DockersVariants(object):
                 variant_item["price"] = None
                 for price in buy_stack_json["sku"][variant_combination]["price"]:
                     if price["il8n"] == "now":
-                        variant_item["price"] = float(re.findall("\d+.\d+", price["amount"])[0])
+                        variant_item["price"] = float(re.findall(r"\d*\.\d+|\d+", price["amount"].replace(",", ""))[0])
                         break
                 variant_item["selected"] = False
                 variant_item["upc"] = buy_stack_json["sku"][variant_combination]["upc"]
@@ -125,7 +129,7 @@ class DockersVariants(object):
                 if "color" in properties:
                     for price in buy_stack_json["colorid"][color_name_id_map[properties["color"]]]["price"]:
                         if price["il8n"] == "now":
-                            variant_item["price"] = float(re.findall("\d+.\d+", price["amount"])[0])
+                            variant_item["price"] = float(re.findall("\d*\.\d+|\d+", price["amount"].replace(",", ""))[0])
                             break
 
                 variant_item["selected"] = False

@@ -48,6 +48,24 @@ def _list_diff(l1, l2):
     return list(set(result))
 
 
+def _collect_errors(errors, prefix='', is_first=True):
+    results = []
+    if isinstance(errors, dict):
+        for k, v in errors.iteritems():
+            results.extend(_collect_errors(v, '%s - %s' % (prefix, k), False))
+    else:  # list
+        if not is_first and len(errors) == 2:
+            results.append({prefix: errors})
+        else:
+            for error in errors:
+                if isinstance(error, dict):
+                    for k, v in error.iteritems():
+                        results.extend(_collect_errors(v, '%s - %s' % (prefix, k), False))
+                else:  # list
+                    results.append({prefix: error})
+    return results
+
+
 def _compare_dicts(d1, d2, exclude_fields):
     results = []
     if not d1 or not d2:
@@ -59,7 +77,7 @@ def _compare_dicts(d1, d2, exclude_fields):
         len1 = len(d1)
         len2 = len(d2)
         if len1 != len2:
-            return 'different length: %s and %s' % (len1, len2)
+            return {'different length': [len1, len2]}
         t1 = d1[:]
         t2 = d2[:]
         l = len(t1)
@@ -69,7 +87,7 @@ def _compare_dicts(d1, d2, exclude_fields):
                 t2.remove(v1)
                 t1.remove(v1)
         if t1 or t2:
-            results.append([t1, t2])
+            results.append({'Not matching lists': [t1, t2]})
 
     if isinstance(d1, dict) and isinstance(d2, dict):
         e_f = set(exclude_fields)
@@ -77,12 +95,15 @@ def _compare_dicts(d1, d2, exclude_fields):
         keys2 = set(d2.keys()) - e_f
         # check their length (missing fields?)
         if keys1 != keys2:
-            return 'fields: %s, %s' % (list(keys1-keys2), list(keys2-keys1))
+            return {'field sets': [list(keys1-keys2), list(keys2-keys1)]}
         for k in keys1:
             v1, v2 = d1[k], d2[k]
             if isinstance(v1, (list, dict)) and isinstance(v2, (list, dict)):
                 res = _compare_dicts(v1, v2, exclude_fields)
                 if res:
+                    # if isinstance(res, dict):
+                        # results.append(res)
+                    # else:
                     results.append({k: res})
             elif v1 != v2:
                 results.append({k: [v1, v2]})
@@ -122,20 +143,32 @@ def print_human_friendly(
         heading_color=colorama.Fore.RED,
         basic_color=colorama.Fore.GREEN
 ):
-    for element in results:
-        if isinstance(element, dict):
-            field, vals = element.items()[0]
-            if field in exclude_fields:
+    if isinstance(results, dict):
+        for k, v in results.iteritems():
+            if k in exclude_fields:
                 continue
-        else:  # string error code?
-            field = 'Field sets are different!'
-            vals = [field, ''] if isinstance(results, (list, tuple))\
-                else [results, '']
-        print ' '*indent, heading_color, field, basic_color
-        print ' '*indent*2, colorama.Fore.YELLOW, '1.', basic_color,  vals[0]
-        if len(vals) > 1:
-            print ' '*indent*2, colorama.Fore.YELLOW, '2.', basic_color, vals[1]
-        print
+            print ' '*indent, heading_color, k, basic_color
+            print ' '*indent*2, colorama.Fore.YELLOW, '1.', basic_color,  v[0]
+            print ' '*indent*2, colorama.Fore.YELLOW, '2.', basic_color,  v[1]
+            print
+    else:
+        for element in results:
+            if isinstance(element, dict):
+                field, vals = element.items()[0]
+                if field in exclude_fields:
+                    continue
+            else:  # string error code?
+                field = 'Field sets are different!'
+                vals = [field, ''] if isinstance(results, (list, tuple))\
+                    else [results, '']
+            print ' '*indent, heading_color, field, basic_color
+            try:
+                print ' '*indent*2, colorama.Fore.YELLOW, '1.', basic_color,  vals[0]
+            except KeyError:
+                print vals
+            if len(vals) > 1:
+                print ' '*indent*2, colorama.Fore.YELLOW, '2.', basic_color, vals[1]
+            print
 
 
 def collect_human_friendly(results, exclude_fields):
@@ -152,7 +185,11 @@ def collect_human_friendly(results, exclude_fields):
             vals = [field, ''] if isinstance(results, (list, tuple))\
                 else [results, '']
         #print ' '*indent, heading_color, field, basic_color
-        output.append({'field': field, 'f1': vals[0], 'f2': vals[1] if len(vals) > 1 else ''})
+        output.append({
+            'field': field,
+            'f1': vals[0] if isinstance(vals, (list, tuple)) else vals,
+            'f2': vals[1] if len(vals) > 1 else ''
+        })
     return output
 
 
@@ -210,6 +247,7 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
                 # mis_fields = _get_mismatching_fields(json1, json2,
                 #                                      fields2exclude)
                 mis_fields = _compare_dicts(json1, json2, fields2exclude)
+                mis_fields = _collect_errors(mis_fields)
                 if mis_fields:
                     if print_output:
                         print 'LINE', i

@@ -98,7 +98,7 @@ class KohlsVariants(object):
             price = item.get("SkuSalePrice") or item.get("SkuRegularPrice") or 0
             if price:
                 try:
-                    price_amount = float(re.findall(r"[-+]?\d*\.\d+|\d+", price.replace("$", ""))[0])
+                    price_amount = float(re.findall(r"[-+]?\d*\.\d+|\d+", price.replace("$", "").replace(",", ""))[0])
                 except:
                     price_amount = None
             inStock = item.get("inventoryStatus")
