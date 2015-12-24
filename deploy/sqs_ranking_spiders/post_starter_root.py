@@ -75,6 +75,7 @@ def main():
         " && wget http://chromedriver.storage.googleapis.com/2.9/chromedriver_linux64.zip"
         " && unzip chromedriver_linux64.zip"
         " && sudo mv chromedriver /usr/sbin/"
+        " && sudo chmod +x /usr/sbin/chromedriver"
     )
     # disable marketplaces (they are too slow)
     disabler = '/tmp/stop_marketplaces'
