@@ -66,6 +66,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
         self.code_200_required = kwargs.get('code_200_required', True)
+        self.close_popups = kwargs.get('close_popups', None)
 
         settings.overrides['ITEM_PIPELINES'] = {}
         super(URL2ScreenshotSpider, self).__init__(*args, **kwargs)
@@ -91,6 +92,15 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
     def _log_proxy(self, r_session):
         self.log("IP via proxy: %s" % r_session.get('http://icanhazip.com').text)
+
+    def _click_on_elements_with_class(self, driver, cls):
+        script = """
+            var elements = document.getElementsByClassName('%s');
+            for (var i=0; i<elements.length; i++) {
+                elements[i].click();
+            }
+        """ % cls
+        driver.execute_script(script)
 
     def parse(self, response):
 
@@ -146,6 +156,10 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self._solve_captha_in_selenium(driver)
         except Exception as e:
             self.log('Exception while getting response using selenium! %s' % str(e))
+
+        if self.close_popups:
+            time.sleep(3)
+            self._click_on_elements_with_class(driver, 'close')
 
         time.sleep(2)
         driver.save_screenshot(t_file.name)
