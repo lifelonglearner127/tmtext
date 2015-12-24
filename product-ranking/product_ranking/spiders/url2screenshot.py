@@ -106,6 +106,9 @@ class URL2ScreenshotSpider(scrapy.Spider):
         # tweak user agent
         chrome_flags = webdriver.DesiredCapabilities.CHROME  # this is for Chrome?
         chrome_options = webdriver.ChromeOptions()  # this is for Chromium
+        if self.proxy:
+            chrome_options.add_argument(
+                '--proxy-server=%s' % self.proxy_type+'://'+self.proxy)
         chrome_flags["chrome.switches"] = ['--user-agent=%s' % self.user_agent]
         chrome_options.add_argument('--user-agent=%s' % self.user_agent)
 
@@ -115,9 +118,9 @@ class URL2ScreenshotSpider(scrapy.Spider):
         # we will use requesocks for checking response code
         r_session = requests.session()
         r_session.timeout = self.timeout
-        if self.proxy:
-            r_session.proxies = {'http': self.proxy_type+'://'+self.proxy,
-                                 'https': self.proxy_type+'://'+self.proxy}
+        #if self.proxy:
+        #    r_session.proxies = {'http': self.proxy_type+'://'+self.proxy,
+        #                         'https': self.proxy_type+'://'+self.proxy}
         if self.user_agent:
             r_session.headers = {'User-Agent': self.user_agent}
         self._log_proxy(r_session)
@@ -144,7 +147,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         except Exception as e:
             self.log('Exception while getting response using selenium! %s' % str(e))
 
-        time.sleep(10)
+        time.sleep(2)
         driver.save_screenshot(t_file.name)
         if self.image_copy:  # save a copy of the file if needed
             driver.save_screenshot(self.image_copy)
