@@ -70,7 +70,7 @@ def main():
     _install_system_package('phantomjs')
     _install_system_package('firefox')
     _install_system_package('xvfb')
-    check_output(
+    os.system(
         "cd ~"
         " && wget http://chromedriver.storage.googleapis.com/2.9/chromedriver_linux64.zip"
         " && unzip chromedriver_linux64.zip"
