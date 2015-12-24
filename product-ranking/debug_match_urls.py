@@ -26,7 +26,7 @@ def parse_cmd_args():
 
 
 def _strip_get_args(url):
-    return url.rsplit('/', 1)[0]
+    return url.rsplit('?', 1)[0]
 
 
 def unify_br(br):
