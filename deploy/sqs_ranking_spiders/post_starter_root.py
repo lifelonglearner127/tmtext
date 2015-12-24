@@ -70,6 +70,8 @@ def main():
     _install_system_package('phantomjs')
     _install_system_package('firefox')
     _install_system_package('xvfb')
+    os.system('sudo apt-get update')
+    _install_system_package('chromium-browser')
     os.system(
         "cd ~"
         " && wget http://chromedriver.storage.googleapis.com/2.9/chromedriver_linux64.zip"

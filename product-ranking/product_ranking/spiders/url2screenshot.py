@@ -66,7 +66,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
         self.code_200_required = kwargs.get('code_200_required', True)
-        self.close_popups = kwargs.get('close_popups', None)
+        self.close_popups = kwargs.get('close_popups', kwargs.get('close_popup', None))
 
         settings.overrides['ITEM_PIPELINES'] = {}
         super(URL2ScreenshotSpider, self).__init__(*args, **kwargs)
