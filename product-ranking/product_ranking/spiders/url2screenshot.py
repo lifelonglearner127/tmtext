@@ -7,6 +7,7 @@ import tempfile
 import os
 import sys
 import time
+import socket
 
 import scrapy
 from scrapy.conf import settings
@@ -43,6 +44,7 @@ class ScreenshotItem(scrapy.Item):
 
 class URL2ScreenshotSpider(scrapy.Spider):
     name = 'url2screenshot_products'
+    # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
 
     def __init__(self, *args, **kwargs):
         self.product_url = kwargs['product_url']
@@ -60,7 +62,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.crop_width = kwargs.get('crop_width', None)
         self.crop_height = kwargs.get('crop_height', None)
         self.remove_img = kwargs.get('remove_img', True)
-        # proxy support has been dropped after we switched to Firefox
+        # proxy support has been dropped after we switched to Chrome
         self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
         self.code_200_required = kwargs.get('code_200_required', True)
@@ -93,7 +95,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
     def parse(self, response):
 
         from selenium import webdriver
-        from selenium.webdriver import FirefoxProfile
+
+        socket.setdefaulttimeout(int(self.timeout))
 
         # temporary file for the output image
         t_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
@@ -101,8 +104,10 @@ class URL2ScreenshotSpider(scrapy.Spider):
         print('Created temporary image file: %s' % t_file.name)
 
         # tweak user agent
-        ff_profile = FirefoxProfile()
-        ff_profile.set_preference("general.useragent.override", self.user_agent)
+        chrome_flags = webdriver.DesiredCapabilities.CHROME  # this is for Chrome?
+        chrome_options = webdriver.ChromeOptions()  # this is for Chromium
+        chrome_flags["chrome.switches"] = ['--user-agent=%s' % self.user_agent]
+        chrome_options.add_argument('--user-agent=%s' % self.user_agent)
 
         display = Display(visible=0, size=(self.width, self.height))
         display.start()
@@ -127,7 +132,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 return
 
         # initialize webdriver, open the page and make a screenshot
-        driver = webdriver.Firefox(ff_profile)
+        driver = webdriver.Chrome(desired_capabilities=chrome_flags,
+                                  chrome_options=chrome_options)
         driver.set_page_load_timeout(int(self.timeout))
         driver.set_script_timeout(int(self.timeout))
         driver.set_window_size(int(self.width), int(self.height))
