@@ -30,6 +30,7 @@ class TripAdvisorSpider(scrapy.Spider):
              "(KHTML, like Gecko) Chrome/15.0.87")
         )
         settings.overrides['ITEM_PIPELINES'] = {'product_ranking.pipelines.MergeSubItems': 1000}
+        settings.overrides['REDIRECT_MAX_TIMES'] = 100
         super(TripAdvisorSpider, self).__init__(*args, **kwargs)
 
     def start_requests(self):
@@ -68,7 +69,11 @@ class TripAdvisorSpider(scrapy.Spider):
             reviews.append(review)
         return reviews
 
+    page = 0
     def _next_page_link(self, response):
+        self.page += 1
+        with open('/tmp/_%s.html' % self.page, 'w') as fh:
+            fh.write(response.body)
         if response.xpath(
                 '//*[contains(@class, "pagination")]'
                 '//*[contains(@class, "next")][contains(@class, "disabled")]'
@@ -78,10 +83,15 @@ class TripAdvisorSpider(scrapy.Spider):
                               '//a[contains(@class, "next")]/@href').extract()
         if not link:
             self.log("Could not get next link @ %s" % response.url, ERROR)
+            return
         return Request(
             urlparse.urljoin('http://'+self.allowed_domains[0], link[0]),
             callback=self.parse, meta=response.meta
         )
+
+    @staticmethod
+    def _get_d(response):
+        return re.search('\-d(\d+)\-', response.url).group(1)
 
     def parse(self, response):
         item = response.meta.get('item', TripAdvisorItem())
@@ -98,6 +108,18 @@ class TripAdvisorSpider(scrapy.Spider):
             review_selectors = response.xpath(
                 '//div[contains(@class, "review")][contains(@id, "review_")]/@id'
             ).extract()
+            ajax_url = ("http://www.tripadvisor.com/UserReviewController?"
+                        "&type=0&tr=false&n=16&d={d}&a=rblock&r={review_selectors_str}")
+            review_selectors_str = ''
+            for rs in review_selectors:
+                if re.match('review_\d+', rs):
+                    rs = rs.replace('review_', '')
+                    review_selectors_str += rs + ':'
+            if review_selectors_str.endswith(':'):
+                review_selectors_str = review_selectors_str[0:-1]
+            ajax_url = ajax_url.format(d=self._get_d(response.url),
+                                       review_selectors_str=review_selectors_str)
+            import pdb; pdb.set_trace()
             # TODO: dynamic ajax requests
             #assert False, review_selectors
 
