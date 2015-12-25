@@ -67,8 +67,6 @@ def main():
         f.write('\n')
     os.system('crontab %s' % tmp_cron_name)
     _install_system_package('tesseract-ocr')
-    _install_system_package('phantomjs')
-    _install_system_package('firefox')
     _install_system_package('xvfb')
     os.system('sudo apt-get update')
     _install_system_package('chromium-browser')
