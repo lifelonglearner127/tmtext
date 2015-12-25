@@ -66,9 +66,9 @@ def main():
         f.write(cmd)
         f.write('\n')
     os.system('crontab %s' % tmp_cron_name)
+    os.system('sudo apt-get update')
     _install_system_package('tesseract-ocr')
     _install_system_package('xvfb')
-    os.system('sudo apt-get update')
     _install_system_package('chromium-browser')
     os.system(
         "cd ~"
