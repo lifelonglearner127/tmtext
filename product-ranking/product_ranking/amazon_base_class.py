@@ -1299,6 +1299,22 @@ class AmazonBaseClass(BaseProductsSpider):
             sold_by_whom = sold_by_whom.split('Gift-wrap', 1)[0].strip()
         if ' by ' in sold_by_whom:
             self.log('Multiple "by" occurrences found at %s' % response.url, ERROR)
+        if 'Inc. ' in sold_by_whom:
+            sold_by_whom = sold_by_whom.split(', Inc.', 1)[0] + ', Inc.'
+        if 'Guarantee Delivery' in sold_by_whom:
+            sold_by_whom = sold_by_whom.split('Guarantee Delivery', 1)[0].strip()
+        if 'Deals in' in sold_by_whom:
+            sold_by_whom = sold_by_whom.split('Deals in', 1)[0].strip()
+        if 'Choose' in sold_by_whom:
+            sold_by_whom = sold_by_whom.split('Choose', 1)[0].strip()
+        if 'tax' in sold_by_whom:
+            sold_by_whom = sold_by_whom.split('tax', 1)[0].strip()
+        if 'in easy-to-open' in sold_by_whom:
+            sold_by_whom = sold_by_whom.split('in easy-to-open', 1)[0].strip()
+        if 'easy-to-open' in sold_by_whom:
+            sold_by_whom = sold_by_whom.split('easy-to-open', 1)[0].strip()
+        if '(' in sold_by_whom:
+            sold_by_whom = sold_by_whom.split('(', 1)[0].strip()
         if sold_by_whom.endswith('.'):
             sold_by_whom = sold_by_whom[0:-1]
         if not sold_by_whom:
