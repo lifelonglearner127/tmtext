@@ -43,8 +43,6 @@
     <field name="site_online" version="1.2"></field>
     <field name="site_online_out_of_stock" version="1.4"></field>
     <field name="in_stores_out_of_stock" version="1.1"></field>
-    <field name="owned" version="1.1"></field>
-    <field name="owned_out_of_stock" version="1.1"></field>
     <field name="categories" version="1.1"></field>
     <field name="category_name" version="1.1"></field>
     <field name="brand" version="1.2"></field>
