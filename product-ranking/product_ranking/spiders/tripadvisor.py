@@ -17,6 +17,9 @@ class TripAdvisorItem(scrapy.Item):
     url = scrapy.Field()
     reviews = scrapy.Field()
 
+    def __repr__(self):
+        return '[item]'
+
 
 class TripAdvisorSpider(scrapy.Spider):
     name = 'tripadvisor_products'  # "_products" left for compatibility only
@@ -30,7 +33,7 @@ class TripAdvisorSpider(scrapy.Spider):
              "(KHTML, like Gecko) Chrome/15.0.87")
         )
         settings.overrides['ITEM_PIPELINES'] = {'product_ranking.pipelines.MergeSubItems': 1000}
-        settings.overrides['REDIRECT_MAX_TIMES'] = 100
+        settings.overrides['REDIRECT_MAX_TIMES'] = 500
         super(TripAdvisorSpider, self).__init__(*args, **kwargs)
 
     def start_requests(self):
@@ -72,8 +75,7 @@ class TripAdvisorSpider(scrapy.Spider):
     page = 0
     def _next_page_link(self, response):
         self.page += 1
-        with open('/tmp/_%s.html' % self.page, 'w') as fh:
-            fh.write(response.body)
+        #print('PAGINATION: %s at %s' % (self.page, response.url))
         if response.xpath(
                 '//*[contains(@class, "pagination")]'
                 '//*[contains(@class, "next")][contains(@class, "disabled")]'
@@ -82,7 +84,7 @@ class TripAdvisorSpider(scrapy.Spider):
         link = response.xpath('//*[contains(@class, "pagination")]'
                               '//a[contains(@class, "next")]/@href').extract()
         if not link:
-            self.log("Could not get next link @ %s" % response.url, ERROR)
+            self.log("Could not get next link @ %s" % response.url, INFO)
             return
         return Request(
             urlparse.urljoin('http://'+self.allowed_domains[0], link[0]),
@@ -93,6 +95,7 @@ class TripAdvisorSpider(scrapy.Spider):
     def _get_d(response):
         return re.search('\-d(\d+)\-', response.url).group(1)
 
+    dyn_ajax = 0
     def parse(self, response):
         item = response.meta.get('item', TripAdvisorItem())
         item['_subitem'] = True
@@ -104,6 +107,7 @@ class TripAdvisorSpider(scrapy.Spider):
             # parse static page
             _reviews.extend(self._parse_reviews(response))
             item['reviews'] = _reviews
+            #print 'SCRAPED DYN AJAX: %s' % response.meta.get('dyn_ajax', None)
         else:
             review_selectors = response.xpath(
                 '//div[contains(@class, "review")][contains(@id, "review_")]/@id'
@@ -117,11 +121,13 @@ class TripAdvisorSpider(scrapy.Spider):
                     review_selectors_str += rs + ':'
             if review_selectors_str.endswith(':'):
                 review_selectors_str = review_selectors_str[0:-1]
-            ajax_url = ajax_url.format(d=self._get_d(response.url),
+            ajax_url = ajax_url.format(d=self._get_d(response),
                                        review_selectors_str=review_selectors_str)
-            import pdb; pdb.set_trace()
-            # TODO: dynamic ajax requests
-            #assert False, review_selectors
+            response.meta['item'] = item
+            self.dyn_ajax += 1
+            response.meta['dyn_ajax'] = self.dyn_ajax
+            #print('DYN AJAX: %s' % self.dyn_ajax)
+            yield Request(ajax_url, meta=response.meta, callback=self.parse)
 
         response.meta['item'] = item
         yield item
