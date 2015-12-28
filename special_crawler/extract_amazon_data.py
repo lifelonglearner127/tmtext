@@ -950,16 +950,6 @@ class AmazonScraper(Scraper):
     def _in_stores(self):
         return 0
 
-    def _owned(self):
-        aa = self.tree_html.xpath("//div[@class='buying' or @id='merchant-info']")
-        for a in aa:
-            if a.text_content().find('old by Amazon')>0: return 1
-        s = self._seller_from_tree()
-        return s['owned']
-
-    def _owned_out_of_stock(self):
-        return None
-
     def _marketplace(self):
         aa = self.tree_html.xpath("//div[@class='buying' or @id='merchant-info']")
         for a in aa:
@@ -1311,8 +1301,6 @@ class AmazonScraper(Scraper):
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
-        "owned" : _owned, \
-        "owned_out_of_stock" : _owned_out_of_stock, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
