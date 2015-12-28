@@ -144,10 +144,13 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 display.stop()
                 return
 
+        executable_path = '/usr/sbin/chromedriver'
+        if not os.path.exists(executable_path):
+            executable_path = '/usr/local/bin/chromedriver'
         # initialize webdriver, open the page and make a screenshot
         driver = webdriver.Chrome(desired_capabilities=chrome_flags,
                                   chrome_options=chrome_options,
-                                  executable_path='/usr/sbin/chromedriver')
+                                  executable_path=executable_path)
         driver.set_page_load_timeout(int(self.timeout))
         driver.set_script_timeout(int(self.timeout))
         driver.set_window_size(int(self.width), int(self.height))

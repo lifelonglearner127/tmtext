@@ -337,6 +337,19 @@ class AmazonScraper(Scraper):
             description = ""
             block = self.tree_html.xpath("//h2[contains(text(),'Product Description')]/following-sibling::*")[0]
 
+            all_items_list = block.xpath(".//*")
+            remove_candidates = []
+
+            for item in all_items_list:
+                if item.tag == "img":
+                    remove_candidates.append(item)
+
+                if item.xpath("./@style") and ('border-top' in item.xpath("./@style")[0] or 'border-bottom' in item.xpath("./@style")[0]):
+                    remove_candidates.append(item)
+
+            for item in remove_candidates:
+                item.getparent().remove(item)
+
             for item in block:
                 description = description + html.tostring(item)
 
@@ -950,16 +963,6 @@ class AmazonScraper(Scraper):
     def _in_stores(self):
         return 0
 
-    def _owned(self):
-        aa = self.tree_html.xpath("//div[@class='buying' or @id='merchant-info']")
-        for a in aa:
-            if a.text_content().find('old by Amazon')>0: return 1
-        s = self._seller_from_tree()
-        return s['owned']
-
-    def _owned_out_of_stock(self):
-        return None
-
     def _marketplace(self):
         aa = self.tree_html.xpath("//div[@class='buying' or @id='merchant-info']")
         for a in aa:
@@ -1311,8 +1314,6 @@ class AmazonScraper(Scraper):
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
-        "owned" : _owned, \
-        "owned_out_of_stock" : _owned_out_of_stock, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \

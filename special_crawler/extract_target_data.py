@@ -102,7 +102,7 @@ class TargetScraper(Scraper):
         return None
 
     def _upc(self):
-        return self.tree_html.xpath("//span[@itemprop='sku']//text()")[0].strip()
+        return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0].strip()
 
     def _features(self):
         rows = self.tree_html.xpath("//ul[@class='normal-list']//li")
@@ -510,6 +510,7 @@ class TargetScraper(Scraper):
         # CONTAINER : NONE
         "url" : _url, \
         "product_id" : _product_id, \
+        "upc" : _upc, \
 
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
