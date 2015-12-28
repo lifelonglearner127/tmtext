@@ -273,6 +273,9 @@ class SignalsExtension(object):
     def item_scraped(self, item, spider):
         SignalsExtension.CONNECTION.send(dict(name='item_scraped'))
 
+    def item_dropped(self, item, spider, exception):
+        SignalsExtension.CONNECTION.send(dict(name='item_dropped'))
+
     def spider_error(self, failure, response, spider):
         SignalsExtension.CONNECTION.send(dict(name='spider_error'))
 
@@ -301,6 +304,7 @@ class SignalsExtension(object):
         crawler.signals.connect(ext.spider_opened, signals.spider_opened)
         crawler.signals.connect(ext.spider_closed, signals.spider_closed)
         crawler.signals.connect(ext.item_scraped, signals.item_scraped)
+        crawler.signals.connect(ext.item_dropped, signals.item_dropped)
         crawler.signals.connect(ext.spider_error, signals.spider_error)
         return ext
 

@@ -75,6 +75,17 @@ class KohlsScraper(Scraper):
     ############### CONTAINER : NONE
     ##########################################
 
+    def _availability_add_to_bag(self):
+        availability = self.tree_html.xpath("//div[@class='addToBag-availability']")
+
+        if availability:
+            availability = availability[0].text_content().lower().strip()
+
+            if availability == "available to ship":
+                return 1
+
+        return 0
+
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
@@ -409,6 +420,25 @@ class KohlsScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
+        if self.tree_html.xpath("//div[contains(@class,'sale')]"):
+            if self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_ammount']"):
+                price_text = self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_ammount']")[0].text_content().strip()
+
+                if len(price_text) > 0:
+                    return price_text
+            elif self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_label']"):
+                price_text = re.findall(r"\$\d*\.\d+|\d+", self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_label']")[0].getparent().text_content().strip())
+
+                if price_text:
+                    return price_text[0]
+
+        if self.tree_html.xpath("//div[contains(@class, 'original')]"):
+            price_text = self.tree_html.xpath("//div[contains(@class, 'original')]")[0].text_content().strip().lower()
+            price_text = price_text.replace("original", "").replace("regular", "").replace("\n", "").strip()
+
+            if len(price_text) > 0:
+                return price_text
+
         self._extract_price_json()
 
         if not self.price_json:
@@ -427,51 +457,67 @@ class KohlsScraper(Scraper):
         return price.strip()
 
     def _price_amount(self):
-        self._extract_price_json()
-
-        if not self.price_json:
-            return None
-
-        price_amount = 0
-
-        if not self.price_json["product_Details"]["itemSalePrice"]:
-            price_amount = self.price_json["product_Details"]["itemOriginalPrice"]
-        else:
-            price_amount = self.price_json["product_Details"]["itemSalePrice"]
-
-        if "|" in price_amount:
-            price_amount = price_amount[:price_amount.find("|")]
-
-        price_amount = price_amount.strip()
-
-        return float(price_amount[1:])
+        price_text = self._price()
+        price = re.findall(r"\d*\.\d+|\d+", price_text.replace(",", ""))
+        return float(price[0])
 
     def _price_currency(self):
         return "USD"
 
-    def _owned(self):
-        return 0
-
     def _marketplace(self):
+        if self._marketplace_sellers():
+            return 1
+
         return 0
 
     def _site_online(self):
-        return 1
-
-    def _in_stores(self):
-        if self.tree_html.xpath("//img[@alt='Online_Exclusive.gif']"):
+        if self._marketplace() == 1:
             return 0
 
         return 1
 
-    def _site_online_out_of_stock(self):
+    def _in_stores(self):
+        if self.tree_html.xpath("//input[contains(@id, 'btn_findInStore_')]"):
+            return 1
+
         return 0
 
+    def _site_online_out_of_stock(self):
+        if self._marketplace() == 1:
+            return None
+
+        return 1 - self._availability_add_to_bag()
+
     def _marketplace_sellers(self):
+        sellers = self.tree_html.xpath("//div[@class='marketplacePDP']//a[@id='pdp_vendor']/text()")
+
+        if sellers:
+            return sellers
+
+        return None
+
+    def _marketplace_lowest_price(self):
+        marketplace_prices = self._marketplace_prices()
+
+        if marketplace_prices:
+            return min(marketplace_prices)
+
+        return None
+
+    def _marketplace_prices(self):
+        if self._marketplace() == 1:
+            return [self._price_amount()]
+
         return None
 
     def _marketplace_out_of_stock(self):
-        return 0
+        if self._marketplace() == 1:
+            if self._availability_add_to_bag() == 0:
+                return 1
+            else:
+                return 0
+
+        return None
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
@@ -539,14 +585,14 @@ class KohlsScraper(Scraper):
         "price" : _price, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
-        "owned" : _owned, \
         "marketplace" : _marketplace, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "in_stores" : _in_stores, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
-
+        "marketplace_prices" : _marketplace_prices, \
+        "marketplace_lowest_price" : _marketplace_lowest_price, \
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
         "category_name" : _category_name, \

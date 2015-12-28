@@ -11,11 +11,11 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
     test_requests = {
         'sdfsdgdf': 0,  # should return 'no products' or just 0 products
         'benny benassi': 0,
-        'red car': [100, 200],
+        'red jeans': [30, 100],
         'black stone': [50, 250],
         'red ball': [5, 180],
         'green jersey': [10, 130],
-        'long term black': [1, 50],
+        'long term red': [1, 80],
         'yellow ion': [15, 100],
         'water ball': [3, 85],
         'levis 511': [10, 100],
@@ -25,9 +25,9 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
 
         'http://www.kohls.com/product/prd-2201224/chaps-surplice-faux-wrap-dress-womens.jsp?color=Heirloom%20Teal',
         'http://www.kohls.com/product/prd-2244381/chaps-georgette-empire-evening-gown-womens.jsp?color=Black',
-        'http://www.kohls.com/product/prd-2196752/mudd-smocked-bodice-skater-dress-girls-6-16-girls-plus.jsp?color=Beach%20Floral',
+        'http://www.kohls.com/product/prd-1992187/Plus-Size-Tek-Gear--Shirred-Fitness-Dress.jsp?pfm=bd-productnotavailable',
         'http://www.kohls.com/product/prd-2206901/simply-vera-vera-wang-print-shift-dress-womens.jsp?color=Diva%20A',
         'http://www.kohls.com/product/prd-2040118/chaps-surplice-drape-front-full-length-dress-womens.jsp?color=Lakehouse%20Red',
-        'http://www.kohls.com/product/prd-2363926/knitworks-girls-7-16-plus-size-fairisle-sweaterdress-scarf.jsp?color=Gray%20Blue',
-        'http://www.kohls.com/product/prd-2209931/emily-west-girls-7-16-glitter-mesh-dress.jsp?color=Black%20Multi',
+        'http://www.kohls.com/product/prd-2154997/tek-gear-womens-puff-winter-boots.jsp?color=Fuchsia',
+        'http://www.kohls.com/product/prd-2213360/urban-pipeline-solid-thermal-tee-men.jsp?color=Charcoal%20Heather',
     }

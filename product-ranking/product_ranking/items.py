@@ -206,6 +206,7 @@ class SiteProductItem(Item):
 
     date_of_last_question = Field()  # now for Walmart only
     recent_questions = Field()  # now for Walmart only; may change in the future
+    all_questions = Field()  # contains all questions (and answers if applicable)
 
     special_pricing = Field()  # True/False/None for TPC, Rollback; target, walmart
 
@@ -241,6 +242,10 @@ class SiteProductItem(Item):
     shelf_name = Field()  # see https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c8
     shelf_path = Field()
 
+    price_details_in_cart = Field()  # returns True if the price is available
+                                     # only after you put the product in cart
+
+    seller_ranking = Field()  # for Walmart
     _subitem = Field()
 
 
