@@ -11,14 +11,14 @@ class MaplinValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
     test_requests = {
         'sdfsdgdf': 0,  # should return 'no products' or just 0 products
         'benny benassi': 0,
-        'red car': [20, 90],
+        'red car': [20, 200],
         'stone': [50, 120],
         'ball': [5, 280],
         'rose': [10, 70],
         'long term black': [1, 12],
         'selling': [15, 50],
         'water proof': [50, 108],
-        'long night': [30, 100],
+        'long night': [30, 200],
     }
 
     test_urls = {
