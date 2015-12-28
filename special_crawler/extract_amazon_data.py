@@ -337,6 +337,19 @@ class AmazonScraper(Scraper):
             description = ""
             block = self.tree_html.xpath("//h2[contains(text(),'Product Description')]/following-sibling::*")[0]
 
+            all_items_list = block.xpath(".//*")
+            remove_candidates = []
+
+            for item in all_items_list:
+                if item.tag == "img":
+                    remove_candidates.append(item)
+
+                if item.xpath("./@style") and ('border-top' in item.xpath("./@style")[0] or 'border-bottom' in item.xpath("./@style")[0]):
+                    remove_candidates.append(item)
+
+            for item in remove_candidates:
+                item.getparent().remove(item)
+
             for item in block:
                 description = description + html.tostring(item)
 
