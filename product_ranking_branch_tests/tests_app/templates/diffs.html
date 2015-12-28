@@ -33,14 +33,14 @@
                     <td>
                         <div style="width:400px" class="showmore">{{ diff.diff.0.f1 }}</div>
                         {% if 'data1' in diff %}
-							<small><a class="more-info-click">Show data line</a></small>
+							<small><a href="#" class="more-info-click">Show data line</a></small>
 							<div class="more-info hidden">{{ diff.data1 }}</div>
                         {% endif %}
                     </td>
                     <td>
                         <div style="width:400px" class="showmore">{{ diff.diff.0.f2 }}</div>
                         {% if 'data2' in diff %}
-							<small><a class="more-info-click">Show data line</a></small>
+							<small><a href="#" class="more-info-click">Show data line</a></small>
 							<div class="more-info hidden">{{ diff.data2 }}</div>
                         {% endif %}
                     </td>
@@ -62,7 +62,8 @@
                   hideText: 'Show less'
              });
 
-            $('.more-info-click').click(function(){
+            $('.more-info-click').click(function(e){
+                e.preventDefault();
                 $(this).parent().next().toggleClass('hidden');
             });
         });
