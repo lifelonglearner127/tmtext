@@ -22,6 +22,9 @@ def parse_cmd_args():
     parser.add_argument(
         "--skip_urls", default=None
     )  # skip URLs containing this substring
+    parser.add_argument(
+        "--remove_false_values", default=True
+    )  # remove fields containing values that are Python's boolean "false"
     return parser.parse_args()
 
 
@@ -66,12 +69,16 @@ def _collect_errors(errors, prefix='', is_first=True):
     return results
 
 
-def _compare_dicts(d1, d2, exclude_fields):
+def _compare_dicts(d1, d2, exclude_fields, remove_false_values=None):
     results = []
     if not d1 or not d2:
         return results
     if exclude_fields is None:
         exclude_fields = []
+
+    if remove_false_values:
+        d1 = {k: v for k, v in d1.items() if v}
+        d2 = {k: v for k, v in d2.items() if v}
 
     if isinstance(d1, list) and isinstance(d2, list):
         len1 = len(d1)
@@ -203,7 +210,8 @@ def _finish_print():
 
 
 def match(f1, f2, fields2exclude=None, strip_get_args=None,
-          skip_urls=None, print_output=True):
+          skip_urls=None, remove_false_values=None,
+          print_output=True):
     total_urls = 0
     matched_urls = 0
 
@@ -246,7 +254,8 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
                 matched_urls += 1
                 # mis_fields = _get_mismatching_fields(json1, json2,
                 #                                      fields2exclude)
-                mis_fields = _compare_dicts(json1, json2, fields2exclude)
+                mis_fields = _compare_dicts(
+                    json1, json2, fields2exclude, remove_false_values)
                 mis_fields = _collect_errors(mis_fields)
                 if mis_fields:
                     if print_output:
@@ -284,5 +293,6 @@ if __name__ == '__main__':
         fields2exclude=fields2exclude,
         strip_get_args=args.strip_get_args,
         skip_urls=args.skip_urls,
+        remove_false_values=not args.remove_false_values in ('0', 'false', 'False'),
         print_output=True
     )
