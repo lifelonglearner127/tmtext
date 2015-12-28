@@ -210,7 +210,7 @@ def _finish_print():
 
 
 def match(f1, f2, fields2exclude=None, strip_get_args=None,
-          skip_urls=None, remove_false_values=None,
+          skip_urls=None, remove_false_values=True,
           print_output=True):
     total_urls = 0
     matched_urls = 0
