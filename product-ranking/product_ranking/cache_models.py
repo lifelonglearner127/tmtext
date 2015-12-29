@@ -4,7 +4,7 @@ import cPickle as pickle
 import subprocess
 import os
 import sys
-from ordereddict import OrderedDict
+from collections import OrderedDict
 
 from sqlalchemy import Column, ForeignKey, \
     String, Integer, SmallInteger, Date, create_engine
