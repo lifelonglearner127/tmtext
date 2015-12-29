@@ -683,12 +683,12 @@ class ServiceScraperTest(unittest.TestCase):
                 row = self.cur.fetchall()
 
                 if not row:
-                    base = "http://localhost/get_data?url=%s"
-                    sample_json = requests.get(base%(urllib.quote(url))).text
-
-                    not_a_product = 0
-
                     try:
+                        base = "http://localhost/get_data?url=%s"
+                        sample_json = requests.get(base%(urllib.quote(url))).text
+
+                        not_a_product = 0
+
                         sample_json = json.loads(sample_json)
                         sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
 
