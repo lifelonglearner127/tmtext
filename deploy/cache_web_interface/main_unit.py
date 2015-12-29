@@ -187,6 +187,15 @@ def autoscale_history():
     return resp
 
 
+@app.route('/fcgi', methods=['GET', 'POST'])
+def fcgi():
+    file_path = '/tmp/reload_uwsgi.ini'
+    if request.method == 'POST':
+        cmd = 'touch %s' % file_path
+        os.system(cmd)
+    return render_template('fcgi.html')
+
+
 # ###################################
 # ####### CACHE METHODS START #######
 # ###################################

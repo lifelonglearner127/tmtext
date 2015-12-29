@@ -23,6 +23,7 @@ class JcpenneyScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www\.jcpenney\.com/.*/prod\.jump\?ppId=.+$"
     REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{}/reviews.djs?format=embeddedhtml"
+    REVIEW_URL_ALTER = "http://sephora.ugc.bazaarvoice.com/8723jcp/{}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -218,12 +219,13 @@ class JcpenneyScraper(Scraper):
         except:
             pass
 
-        video_json = None
+        video_urls_list = None
 
         try:
-            video_json = ast.literal_eval(self._find_between(html.tostring(self.tree_html), "videoIds.push(", ");\n"))
+            video_urls_list = re.findall('videoIds.push\((.*?)\);\n', html.tostring(self.tree_html), re.DOTALL)
+            video_urls_list = [ast.literal_eval(video_url)["url"] for video_url in video_urls_list]
         except:
-            video_json = None
+            video_urls_list = None
 
         #check media contents window existence
         if self.tree_html.xpath("//a[@class='InvodoViewerLink']"):
@@ -291,13 +293,13 @@ class JcpenneyScraper(Scraper):
                     pass
 
         try:
-            if video_json:
+            if video_urls_list:
                 if not self.video_urls:
-                    self.video_urls = [video_json['url']]
-                    self.video_count = 1
+                    self.video_urls = video_urls_list
+                    self.video_count = len(video_urls_list)
                 else:
-                    self.video_urls.append(video_json["url"])
-                    self.video_count = self.video_count + 1
+                    self.video_urls.extend(video_urls_list)
+                    self.video_count = self.video_count + len(video_urls_list)
         except:
             pass
 
@@ -400,23 +402,28 @@ class JcpenneyScraper(Scraper):
 
         review_id = self._find_between(html.tostring(self.tree_html), 'reviewId:"', '",').strip()
         contents = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(review_id))
+        contents_alter = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL_ALTER.format(review_id))
 
-        try:
-            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
-            end_index = contents.find(",\nwidgetInitializers:initializers", start_index)
+        for content in [contents, contents_alter]:
+            try:
+                start_index = content.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
+                end_index = content.find(",\nwidgetInitializers:initializers", start_index)
 
-            self.review_json = contents[start_index:end_index]
-            self.review_json = json.loads(self.review_json)
-        except:
-            self.review_json = None
+                self.review_json = content[start_index:end_index]
+                self.review_json = json.loads(self.review_json)
+            except:
+                self.review_json = None
 
-        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
-        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
-        reviews_by_mark = reviews_by_mark[:5]
-        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
+            review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', content).group(1))
+            reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
+            reviews_by_mark = reviews_by_mark[:5]
+            review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
 
-        if not review_list:
-            review_list = None
+            if not review_list:
+                review_list = None
+
+            if review_list:
+                break
 
         self.review_list = review_list
 
