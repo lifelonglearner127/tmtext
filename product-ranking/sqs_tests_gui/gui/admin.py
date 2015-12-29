@@ -85,7 +85,7 @@ class JobAdmin(admin.ModelAdmin):
         admin_link_to_progress_file
     )
     list_filter = ('status', 'created', 'finished',
-                   'save_s3_cache')
+                   'save_raw_pages')
     search_fields = ('name', 'spider', 'product_url', 'product_urls',
                      'search_term', 'server_name')
     form = JobForm
