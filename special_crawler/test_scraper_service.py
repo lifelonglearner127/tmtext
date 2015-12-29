@@ -778,6 +778,18 @@ class ServiceScraperTest(unittest.TestCase):
             except:
                 pass
 
+    def test_target(self):
+        if specified_website and specified_website != "target":
+            return
+
+        self.initialize_scraper("target")
+
+        for url in self.urls_by_scraper["target"]:
+            try:
+                self._test("target", url)
+            except:
+                pass
+
 if __name__ == '__main__':
     specified_website = ""
 
