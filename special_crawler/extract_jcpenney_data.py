@@ -218,12 +218,13 @@ class JcpenneyScraper(Scraper):
         except:
             pass
 
-        video_json = None
+        video_urls_list = None
 
         try:
-            video_json = ast.literal_eval(self._find_between(html.tostring(self.tree_html), "videoIds.push(", ");\n"))
+            video_urls_list = re.findall('videoIds.push\((.*?)\);\n', html.tostring(self.tree_html), re.DOTALL)
+            video_urls_list = [ast.literal_eval(video_url)["url"] for video_url in video_urls_list]
         except:
-            video_json = None
+            video_urls_list = None
 
         #check media contents window existence
         if self.tree_html.xpath("//a[@class='InvodoViewerLink']"):
@@ -291,13 +292,13 @@ class JcpenneyScraper(Scraper):
                     pass
 
         try:
-            if video_json:
+            if video_urls_list:
                 if not self.video_urls:
-                    self.video_urls = [video_json['url']]
-                    self.video_count = 1
+                    self.video_urls = video_urls_list
+                    self.video_count = len(video_urls_list)
                 else:
-                    self.video_urls.append(video_json["url"])
-                    self.video_count = self.video_count + 1
+                    self.video_urls.extend(video_urls_list)
+                    self.video_count = self.video_count + len(video_urls_list)
         except:
             pass
 
