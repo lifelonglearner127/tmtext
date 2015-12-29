@@ -319,6 +319,17 @@ class SignalsExtension(object):
             print 'no connection'
             raise NotConfigured
 
+
+class IPCollector(object):
+
+    def __init__(self, crawler, *args, **kwargs):
+        dispatcher.connect(_ip_on_spider_open, signals.spider_opened)
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler)
+
+
 if __name__ == '__main__':
     from pprint import pprint
     from boto.s3.connection import S3Connection
@@ -349,13 +360,3 @@ if __name__ == '__main__':
         for f in (list_files_in_bucket(
                 amazon_public_key, amazon_secret_key, bucket_name)):
             print f.key
-
-
-class IPCollector(object):
-
-    def __init__(self, crawler, *args, **kwargs):
-        dispatcher.connect(_ip_on_spider_open, signals.spider_opened)
-
-    @classmethod
-    def from_crawler(cls, crawler):
-        return cls(crawler)
