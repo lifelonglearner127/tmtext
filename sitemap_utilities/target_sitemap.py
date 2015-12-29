@@ -26,12 +26,18 @@ target_sitemap_link = "http://sitemap.target.com/wcsstore/SiteMap/sitemap_index.
 target_product_sitemap_xml_links = requests.get(target_sitemap_link).content
 target_product_sitemap_xml_links = re.findall('<loc>(.*?)</loc>', gzip.GzipFile(fileobj=StringIO(target_product_sitemap_xml_links)).read(), re.DOTALL)
 
-product_list = []
+url_list = []
 output_dir_path = "target_products.csv"
 
 for sitemap_xml_link in target_product_sitemap_xml_links:
     target_sitemap_contents = gzip.GzipFile(fileobj=StringIO(requests.get(sitemap_xml_link).content)).read()
-    product_list.extend(re.findall('<loc>(.*?)</loc>', target_sitemap_contents, re.DOTALL))
+    url_list.extend(re.findall('<loc>(.*?)</loc>', target_sitemap_contents, re.DOTALL))
+
+product_list = []
+
+for url in url_list:
+    if url.startswith("http://www.target.com/p/"):
+        product_list.append(url)
 
 product_list = list(set(product_list))
 
