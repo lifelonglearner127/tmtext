@@ -4,6 +4,7 @@ import cPickle as pickle
 import subprocess
 import os
 import sys
+from ordereddict import OrderedDict
 
 from sqlalchemy import Column, ForeignKey, \
     String, Integer, SmallInteger, Date, create_engine
@@ -193,20 +194,15 @@ def list_db_cache(spider=None, term=None, date=None):
             query = query.join(Term).filter(Term.term == term)
     if date:
         query = query.filter(Run.date == date)
-    runs = query.all()
+    runs = query.order_by(Run.date.desc()).distinct()
 
-    # TODO: possible alternative
-    # get list of strings, representing s3 paths to the needed folders
-    # cache_map = [run.get_folder() for run in runs]
-    # return cache_map
-
-    cache_map = {}
+    cache_map = OrderedDict()
     for r in runs:
         spider = r.spider.name
         date = r.date
         searchterm = r.term.term
         if spider not in cache_map:
-            cache_map[spider] = {}
+            cache_map[spider] = OrderedDict()
         if date not in cache_map[spider]:
             cache_map[spider][date] = []
         if searchterm not in cache_map[spider][date]:
