@@ -248,27 +248,29 @@ class WalmartScraper(Scraper):
         response_text = self.load_page_from_url_with_number_of_retries(request_url)
         tree = html.fromstring(response_text)
 
-        if tree.xpath("//div[@id='iframe-video-content']") and \
-                tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base"):
-            video_base_path = tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base")[0]
-            sIndex = 0
-            eIndex = 0
+        if tree.xpath("//div[@id='iframe-video-content']"):
+            if tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base"):
+                video_base_path = tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base")[0]
+                sIndex = 0
+                eIndex = 0
 
-            while sIndex >= 0:
-                sIndex = response_text.find('{"videos":[', sIndex)
-                eIndex = response_text.find('}]}', sIndex) + 3
+                while sIndex >= 0:
+                    sIndex = response_text.find('{"videos":[', sIndex)
+                    eIndex = response_text.find('}]}', sIndex) + 3
 
-                if sIndex < 0:
-                    break
+                    if sIndex < 0:
+                        break
 
-                jsonVideo = response_text[sIndex:eIndex]
-                jsonVideo = json.loads(jsonVideo)
+                    jsonVideo = response_text[sIndex:eIndex]
+                    jsonVideo = json.loads(jsonVideo)
 
-                if len(jsonVideo['videos']) > 0:
-                    for video_info in jsonVideo['videos']:
-                        self.video_urls.append(video_base_path + video_info['src']['src'])
+                    if len(jsonVideo['videos']) > 0:
+                        for video_info in jsonVideo['videos']:
+                            self.video_urls.append(video_base_path + video_info['src']['src'])
 
-                sIndex = eIndex
+                    sIndex = eIndex
+            else:
+                self.video_urls.extend(list(set(tree.xpath("//img[contains(@class, 'wc-media wc-iframe') and contains(@data-asset-url, 'autostart')]/@data-asset-url"))))
 
         # check sellpoints media if webcollage media doesn't exist
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
@@ -615,7 +617,7 @@ class WalmartScraper(Scraper):
         """Returns the number of pdf
         """
 
-        return len(self.pdf_urls)
+        return len(self.pdf_urls) if self.pdf_urls else 0
 
     def _product_has_pdf(self):
         """Whether product has pdf
