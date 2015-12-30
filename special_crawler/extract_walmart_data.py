@@ -753,17 +753,27 @@ class WalmartScraper(Scraper):
                     if not innerText:
                         short_description = ""
 
+                    short_description_end_index_candiate_list = []
+
                     if "<b>" in sub_description:
                         short_description_end_index = sub_description.find("<b>")
-                    elif "<ul>" in sub_description:
-                        short_description_end_index = sub_description.find("<ul>")
-                    elif "<dl>" in sub_description:
-                        short_description_end_index = sub_description.find("<dl>")
-                    elif "<li>" in sub_description:
-                        short_description_end_index = sub_description.find("<li>")
-                    elif '<section class="product-about js-ingredients health-about">' in sub_description:
-                        short_description_end_index = sub_description.find('<section class="product-about js-ingredients health-about">')
+                        short_description_end_index_candiate_list.append(short_description_end_index)
 
+                    if "<ul>" in sub_description:
+                        short_description_end_index = sub_description.find("<ul>")
+                        short_description_end_index_candiate_list.append(short_description_end_index)
+
+                    if "<dl>" in sub_description:
+                        short_description_end_index = sub_description.find("<dl>")
+                        short_description_end_index_candiate_list.append(short_description_end_index)
+                    if "<li>" in sub_description:
+                        short_description_end_index = sub_description.find("<li>")
+                        short_description_end_index_candiate_list.append(short_description_end_index)
+                    if '<section class="product-about js-ingredients health-about">' in sub_description:
+                        short_description_end_index = sub_description.find('<section class="product-about js-ingredients health-about">')
+                        short_description_end_index_candiate_list.append(short_description_end_index)
+
+                    short_description_end_index = min(short_description_end_index_candiate_list)
                     break
 
                 short_description += sub_description
@@ -909,14 +919,25 @@ class WalmartScraper(Scraper):
                     sub_description = lxml.html.tostring(description_element)
 
                     if long_description_start_index == -2:
+                        long_description_start_index_candiate_list = []
+
                         if "<b>" in lxml.html.tostring(description_element):
                             long_description_start_index = sub_description.find("<b>")
-                        elif "<ul>" in lxml.html.tostring(description_element):
+                            long_description_start_index_candiate_list.append(long_description_start_index)
+
+                        if "<ul>" in lxml.html.tostring(description_element):
                             long_description_start_index = sub_description.find("<ul>")
-                        elif "<dl>" in lxml.html.tostring(description_element):
+                            long_description_start_index_candiate_list.append(long_description_start_index)
+
+                        if "<dl>" in lxml.html.tostring(description_element):
                             long_description_start_index = sub_description.find("<dl>")
-                        elif "<li>" in lxml.html.tostring(description_element):
+                            long_description_start_index_candiate_list.append(long_description_start_index)
+
+                        if "<li>" in lxml.html.tostring(description_element):
                             long_description_start_index = sub_description.find("<li>")
+                            long_description_start_index_candiate_list.append(long_description_start_index)
+
+                        long_description_start_index = min(long_description_start_index_candiate_list)
 
                 if "<strong>Ingredients:" in lxml.html.tostring(description_element) or "<b>Ingredients:" in \
                         lxml.html.tostring(description_element):
