@@ -164,7 +164,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
             # maximize height of the window
             _body_height = URL2ScreenshotSpider._get_js_body_height(driver)
             if _body_height and _body_height > 10:
-                driver.set_window_size(self.width, _body_height)
+                driver.set_window_size(self.width, _body_height+self.height)
             self._solve_captha_in_selenium(driver)
             self._solve_captha_in_selenium(driver)
         except Exception as e:
