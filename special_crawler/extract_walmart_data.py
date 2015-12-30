@@ -2432,9 +2432,12 @@ class WalmartScraper(Scraper):
                     if self.product_info_json["analyticsData"]["onlineAvail"]:
                         return 0
 
-                    for seller in self.product_info_json["buyingOptions"]["marketplaceOptions"]:
-                        if seller["seller"]["displayName"].lower() == "walmart.com" and seller["available"]:
-                            return 0
+                    marketplace_options = self.product_info_json.get("buyingOptions", {}).get("marketplaceOptions")
+
+                    if marketplace_options:
+                        for seller in marketplace_options:
+                            if seller["seller"]["displayName"].lower() == "walmart.com" and seller["available"]:
+                                return 0
 
                     return 1
                 else:
