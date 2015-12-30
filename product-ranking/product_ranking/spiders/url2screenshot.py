@@ -102,6 +102,10 @@ class URL2ScreenshotSpider(scrapy.Spider):
         """ % cls
         driver.execute_script(script)
 
+    @staticmethod
+    def _get_js_body_height(driver):
+        return driver.execute_script('return document.body.scrollHeight;')
+
     def parse(self, response):
 
         from selenium import webdriver
@@ -157,6 +161,10 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         try:
             driver.get(self.product_url)
+            # maximize height of the window
+            _body_height = URL2ScreenshotSpider._get_js_body_height(driver)
+            if _body_height and _body_height > 10:
+                driver.set_window_size(self.width, _body_height+self.height)
             self._solve_captha_in_selenium(driver)
         except Exception as e:
             self.log('Exception while getting response using selenium! %s' % str(e))
