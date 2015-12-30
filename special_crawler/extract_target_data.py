@@ -453,7 +453,8 @@ class TargetScraper(Scraper):
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
         if self._in_stores() == 1:
-            if "out of stock in stores" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content():
+            if self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]") and \
+                            "out of stock in stores" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content():
                 return 1
 
             return 0
