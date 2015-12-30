@@ -278,7 +278,8 @@ class TargetScraper(Scraper):
         wc_pdfs = re.findall(r'href=\\\"([^ ]*?\.pdf)', contents, re.DOTALL)
         wc_pdfs = [r.replace("\\", "") for r in wc_pdfs]
         pdf_hrefs += wc_pdfs
-        return pdf_hrefs
+
+        return pdf_hrefs if pdf_hrefs else None
 
     def _pdf_count(self):
         urls = self._pdf_urls()
