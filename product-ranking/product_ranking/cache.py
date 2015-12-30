@@ -67,7 +67,7 @@ def _get_searchterms_str_or_product_url():
 
 
 def _get_load_from_date():
-    arg = [a for a in sys.argv if 'load_s3_cache' in a]
+    arg = [a for a in sys.argv if 'load_raw_pages' in a]
     if arg:
         arg = arg[0].split('=')[1].strip()
         return datetime.datetime.strptime(arg, '%Y-%m-%d')

@@ -105,7 +105,7 @@ if 'validate' in _args_names:
 
 HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_s3_cache')  # default
 
-if 'save_s3_cache' in _args_names:
+if 'save_raw_pages' in _args_names:
     #DOWNLOADER_MIDDLEWARES['scrapy.contrib.downloadermiddleware.httpcache.HttpCacheMiddleware'] = 50
     #DOWNLOADER_MIDDLEWARES['product_ranking.cache.PersistentCacheMiddleware'] = 50
     HTTPCACHE_ENABLED = True
@@ -114,7 +114,7 @@ if 'save_s3_cache' in _args_names:
     HTTPCACHE_EXPIRATION_SECS = 0  # forever
     EXTENSIONS['product_ranking.extensions.S3CacheUploader'] = 999
 
-if 'load_s3_cache' in _args_names:
+if 'load_raw_pages' in _args_names:
     HTTPCACHE_ENABLED = True
     HTTPCACHE_POLICY = 'product_ranking.cache.CustomCachePolicy'
     HTTPCACHE_STORAGE = 'product_ranking.cache.S3CacheStorage'
