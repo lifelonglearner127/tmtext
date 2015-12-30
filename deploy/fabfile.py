@@ -288,6 +288,7 @@ def _setup_virtual_env_scrapyd():
         run('pip install django-ses')
         run('pip install django_adminplus')
         run('pip install lxml')
+        run('pip install pyvirtualdisplay')
         run('pip install tldextract')
         run('pip install s3peat')
         run('pip install workerpool')
@@ -336,6 +337,7 @@ def _setup_virtual_env_web_runner():
         run('pip install Paste')
         run('pip install flask')
         run('pip install lxml')
+        run('pip install pyvirtualdisplay')
         run('pip install s3peat')
         run('pip install workerpool')
         run('pip install boto')
@@ -377,6 +379,7 @@ def _setup_virtual_env_web_runner_web():
         run('pip install django')
         run('pip install requests')
         run('pip install lxml')
+        run('pip install pyvirtualdisplay')
 
 
 def setup_virtual_env(scrapyd=True, web_runner=True, web_runner_web=True):

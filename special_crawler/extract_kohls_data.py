@@ -420,14 +420,20 @@ class KohlsScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        if self.tree_html.xpath("//div[@class='sale']//span[@class='price_ammount']"):
-            price_text = self.tree_html.xpath("//div[@class='sale']//span[@class='price_ammount']")[0].text_content().strip()
+        if self.tree_html.xpath("//div[contains(@class,'sale')]"):
+            if self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_ammount']"):
+                price_text = self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_ammount']")[0].text_content().strip()
 
-            if len(price_text) > 0:
-                return price_text
+                if len(price_text) > 0:
+                    return price_text
+            elif self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_label']"):
+                price_text = re.findall(r"\$\d*\.\d+|\d+", self.tree_html.xpath("//div[contains(@class,'sale')]//span[@class='price_label']")[0].getparent().text_content().strip())
 
-        if self.tree_html.xpath("//div[@class='original original-reg']"):
-            price_text = self.tree_html.xpath("//div[@class='original original-reg']")[0].text_content().strip().lower()
+                if price_text:
+                    return price_text[0]
+
+        if self.tree_html.xpath("//div[contains(@class, 'original')]"):
+            price_text = self.tree_html.xpath("//div[contains(@class, 'original')]")[0].text_content().strip().lower()
             price_text = price_text.replace("original", "").replace("regular", "").replace("\n", "").strip()
 
             if len(price_text) > 0:
@@ -452,7 +458,7 @@ class KohlsScraper(Scraper):
 
     def _price_amount(self):
         price_text = self._price()
-        price = re.findall("\d+.\d+", price_text.replace(",", ""))
+        price = re.findall(r"\d*\.\d+|\d+", price_text.replace(",", ""))
         return float(price[0])
 
     def _price_currency(self):

@@ -611,10 +611,10 @@ class ScrapyTask(object):
         cmd_args = self.task_data.get('cmd_args', {})
         if not isinstance(cmd_args, dict):
             cmd_args = {}
-        if cmd_args.get('save_s3_cache', False):
+        if cmd_args.get('save_raw_pages', False):
             self.required_signals[SIGNAL_SPIDER_OPENED]['wait'] += \
                 EXTENSION_SIGNALS[ext_cache_up]
-        if cmd_args.get('load_s3_cache'):
+        if cmd_args.get('load_raw_pages'):
             self.required_signals[SIGNAL_SCRIPT_CLOSED]['wait'] += \
                 EXTENSION_SIGNALS[ext_cache_down]
 

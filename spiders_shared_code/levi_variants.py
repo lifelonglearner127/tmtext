@@ -100,7 +100,7 @@ class LeviVariants(object):
                 variant_item["price"] = None
                 for price in buy_stack_json["sku"][variant_combination]["price"]:
                     if price["il8n"] == "now":
-                        variant_item["price"] = float(re.findall("\d+.\d+", price["amount"])[0])
+                        variant_item["price"] = float(re.findall(r"\d*\.\d+|\d+", price["amount"].replace(",", ""))[0])
                         break
                 variant_item["selected"] = False
                 variant_item["upc"] = buy_stack_json["sku"][variant_combination]["upc"]
@@ -125,7 +125,7 @@ class LeviVariants(object):
                 if "color" in properties:
                     for price in buy_stack_json["colorid"][color_name_id_map[properties["color"]]]["price"]:
                         if price["il8n"] == "now":
-                            variant_item["price"] = float(re.findall("\d+.\d+", price["amount"])[0])
+                            variant_item["price"] = float(re.findall("\d*\.\d+|\d+", price["amount"].replace(",", ""))[0])
                             break
 
                 variant_item["selected"] = False

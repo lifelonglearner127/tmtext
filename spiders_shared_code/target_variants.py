@@ -30,6 +30,46 @@ class TargetVariants(object):
         url = url.split('?')[0]
         return url
 
+    def _find_between(self, s, first, last, offset=0):
+        try:
+            start = s.index(first, offset) + len(first)
+            end = s.index(last, start)
+            return s[start:end]
+        except ValueError:
+            return ""
+
+    def _swatches(self):
+        javascript_block = self.tree_html.xpath("//script[contains(text(), 'Target.globals.AltImagesJson')]/text()")[0]
+        alt_image_json = json.loads(self._find_between(javascript_block, "Target.globals.AltImagesJson =", "\n"))
+        alt_name_list = [alt_name.keys()[0] for alt_name in alt_image_json[0][alt_image_json[0].keys()[0]]["items"]]
+
+        for index, alt in enumerate(alt_name_list):
+            if index == 0:
+                alt_name_list[index] = ""
+            else:
+                alt_name_list[index] = "_" + alt_name_list[index]
+
+        color_name_list = self.tree_html.xpath("//*[@class='swatchtool']/img/@title")
+        color_image_list = self.tree_html.xpath("//*[@class='swatchtool']/img/@src")
+
+        color_swatches = []
+
+        for index, color in enumerate(color_name_list):
+            swatch_info = {}
+            swatch_info["swatch_name"] = "color"
+            swatch_info["color"] = color
+            swatch_info["hero"] = len(alt_name_list)
+            swatch_info["thumb"] = len(alt_name_list)
+            original_image_url = color_image_list[index][:color_image_list[index].rfind("_Swatch")]
+            swatch_info["hero_image"] = [original_image_url + alt + "?scl=1" for alt in alt_name_list]
+            swatch_info["thumb_image"] = [original_image_url + alt + "?wid=60&hei=60&qlt=85" for alt in alt_name_list]
+            color_swatches.append(swatch_info)
+
+        if color_swatches:
+            return color_swatches
+
+        return None
+
     def _variants(self):
         try:
             variation_combinations_values = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])

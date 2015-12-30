@@ -87,7 +87,10 @@ class SetMarketplaceSellerType(object):
         for marketplace in marketplaces:
             name = marketplace.get('name', '')
             if name:
-                name_domain = tldextract.extract(name).domain
+                try:
+                    name_domain = tldextract.extract(name).domain
+                except UnicodeEncodeError:  # non-ascii name (not domain)
+                    marketplace['seller_type'] = 'marketplace'
                 if spider_main_domain and name_domain:
                     if spider_main_domain.lower() in name_domain.lower():
                         marketplace['seller_type'] = 'site'
