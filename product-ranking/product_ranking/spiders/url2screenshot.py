@@ -93,6 +93,10 @@ class URL2ScreenshotSpider(scrapy.Spider):
     def _log_proxy(self, r_session):
         self.log("IP via proxy: %s" % r_session.get('http://icanhazip.com').text)
 
+    @staticmethod
+    def _get_js_body_height(driver):
+        return driver.execute_script('return document.body.scrollHeight;')
+
     def _click_on_elements_with_class(self, driver, cls):
         script = """
             var elements = document.getElementsByClassName('%s');
@@ -101,10 +105,6 @@ class URL2ScreenshotSpider(scrapy.Spider):
             }
         """ % cls
         driver.execute_script(script)
-
-    @staticmethod
-    def _get_js_body_height(driver):
-        return driver.execute_script('return document.body.scrollHeight;')
 
     def parse(self, response):
 
