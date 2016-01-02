@@ -35,5 +35,25 @@
             parsed: <span class="date">{% extract_date_from_s3_file result %}</span>
         </div>
     {% endfor %}
+    {% if not results %}
+        <h3>Available S3 raw pages cache</h3>
+        <ul>
+            {% for spider_name, cache_data in cache_list.items %}
+                <li>
+                    <div>
+                        <h4>{{ spider_name }}</h4>
+                        <div>
+                            {% for date, urls in cache_data.items %}
+                                <h5>{{ date }}</h5>
+                                {% for url in urls %}
+                                    <div style="margin-left: 30px">{{ url }}</div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 </body>
 </html>
