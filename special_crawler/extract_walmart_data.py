@@ -2079,11 +2079,11 @@ class WalmartScraper(Scraper):
 
     def _in_stores_out_of_stock(self):
         if self._in_stores() == 1:
-            available_stores = self.product_api_json.get("analyticsData", {}).get("storesAvail", [])
+            available_stores = self.product_api_json.get("product", {}).get("buyingOptions", {}).get("pickupOptions", [])
             available_stores = available_stores if available_stores else []
 
             for store in available_stores:
-                if int(store["isAvail"]) == 1:
+                if store["available"] is True:
                     return 0
 
             for seller in self.product_info_json["buyingOptions"]["marketplaceOptions"]:
