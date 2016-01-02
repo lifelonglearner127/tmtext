@@ -31,4 +31,4 @@ class Command(BaseCommand):
     help = 'Removes old Raw Cache DB records (older than 14 days)'
 
     def handle(self, *args, **options):
-        print remove_db_records()
+        remove_db_records()
