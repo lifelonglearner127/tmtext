@@ -808,6 +808,8 @@ class AmazonBaseClass(BaseProductsSpider):
         else:
             price = '0.00'
 
+        price = self._fix_dots_commas(price)
+
         # Price is parsed in different format:
         # 1,235.00 --> 1235.00
         # 2,99 --> 2.99
@@ -1342,6 +1344,31 @@ class AmazonBaseClass(BaseProductsSpider):
             .replace('CDN', '').replace(u'\uffe5', '').replace('EUR', '')\
             .replace(',', '.').strip()
 
+    @staticmethod
+    def _replace_duplicated_seps(price):
+        """ 1.264.67 --> # 1264.67, 1,264,67 --> # 1264,67 """
+        if '.' in price:
+            sep = '.'
+        elif ',' in price:
+            sep = ','
+        else:
+            return price
+        left_part, reminder = price.rsplit(sep, 1)
+        return left_part.replace(sep, '') + '.' + reminder
+
+    @staticmethod
+    def _fix_dots_commas(price):
+        if '.' and ',' in price:
+            dot_index = price.find('.')
+            comma_index = price.find(',')
+            if dot_index < comma_index:  # 1.264,67
+                price = price.replace('.', '')
+            else:  # 1,264.45
+                price = price.replace(',', '')
+        if price.count('.') >= 2 or price.count(',') >= 2:  # something's wrong - # 1.264.67
+            price = AmazonBaseClass._replace_duplicated_seps(price)
+        return price
+
     def _parse_marketplace_from_static_right_block(self, response):
         # try to collect marketplaces from the main page first, before sending extra requests
         product = response.meta['product']
@@ -1355,9 +1382,11 @@ class AmazonBaseClass(BaseProductsSpider):
             _price = mbc_row.xpath('.//*[contains(@class, "a-color-price")]/text()').extract()
             _name = mbc_row.xpath('.//*[contains(@class, "mbcMerchantName")]/text()').extract()
             if _price and _name:
+                # handle values like 1.264,67
                 _marketplace.append({
                     'name': _name[0].replace('\n', '').strip(),
-                    'price': float(self._strip_currency_from_price(_price[0])),
+                    'price': float(self._strip_currency_from_price(
+                        self._fix_dots_commas(_price[0]))),
                     'currency': _prod_price_currency
                 })
         product['marketplace'] = _marketplace
