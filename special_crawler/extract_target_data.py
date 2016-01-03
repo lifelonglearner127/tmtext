@@ -386,10 +386,7 @@ class TargetScraper(Scraper):
         return float(price_amount)
 
     def _price_currency(self):
-        price = self._price()
-        if price[0] == "$":
-            return "USD"
-        return price[0]
+        return "USD"
 
     def _in_stores(self):
         '''in_stores - the item can be ordered online for pickup in a physical store
