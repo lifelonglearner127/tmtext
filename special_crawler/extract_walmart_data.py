@@ -1919,11 +1919,11 @@ class WalmartScraper(Scraper):
         self.extracted_image_urls = True
 
         if self._version() == "Walmart v1":
-            self.image_urls = self._image_urls_old()
+            self.image_urls = list(set(self._image_urls_old()))
             return self.image_urls
 
         if self._version() == "Walmart v2":
-            self.image_urls = self._image_urls_new()
+            self.image_urls = list(set(self._image_urls_new()))
             return self.image_urls
 
         return None

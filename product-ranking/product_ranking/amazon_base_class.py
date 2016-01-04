@@ -61,6 +61,14 @@ class AmazonBaseClass(BaseProductsSpider):
 
     handle_httpstatus_list = [404]
 
+    AMAZON_PRIME_URL = 'http://www.amazon.com/gp/product/du' \
+                       '/bbop-ms3-ajax-endpoint.html?ASIN={0}&merchantID={1}' \
+                       '&bbopruleID=Acquisition_AddToCart_PrimeBasicFreeTrial' \
+                       'UpsellEligible&sbbopruleID=Acquisition_AddToCart_' \
+                       'PrimeBasicFreeTrialUpsellEligible&deliveryOptions=' \
+                       '%5Bsame-us%2Cnext%2Csecond%2Cstd-n-us%2Csss-us%5D' \
+                       '&preorder=false&releaseDateDeliveryEligible=false'
+
     def __init__(self, captcha_retries='10', *args, **kwargs):
         super(AmazonBaseClass, self).__init__(
             site_name=self.allowed_domains[0],
@@ -345,6 +353,21 @@ class AmazonBaseClass(BaseProductsSpider):
         # Prime & PrimePantry
         if not product.get('prime', None) and self._parse_prime_pantry(response):
             product['prime'] = self._parse_prime_pantry(response)
+
+        if not product.get('prime', None):
+            data_body = response.xpath('//script[contains(text(), '
+                                       '"merchantID")]/text()').extract()
+            if data_body:
+                asin = is_empty(re.findall(r'"ASIN" : "(\w+)"', data_body[0]),
+                                None)
+                merchantID = is_empty(re.findall(r'"merchantID" : "(\w+)"',
+                                                 data_body[0]), None)
+
+                if asin and merchantID:
+                    reqs.append(
+                        Request(url=self.AMAZON_PRIME_URL.format(asin, merchantID),
+                                meta=meta, callback=self._amazon_prime_check)
+                    )
 
         # Parse variants
         variants = self._parse_variants(response)
@@ -975,6 +998,19 @@ class AmazonBaseClass(BaseProductsSpider):
             return 'PrimePantry'
         if response.css('.feature i.a-icon-prime').extract():
             return 'Prime'
+
+    def _amazon_prime_check(self, response):
+        product = response.meta['product']
+        reqs = response.meta.get('reqs')
+
+        if response.xpath('//p[contains(text(), "Yes, I want FREE Two-Day '
+                          'Shipping with Amazon Prime")]'):
+            product['prime'] = 'Prime'
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
 
     def _parse_last_buyer_review_date(self, response):
         if self._has_captcha(response):

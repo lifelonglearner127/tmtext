@@ -165,6 +165,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         try:
             driver.get(self.product_url)
+            time.sleep(6)
             # maximize height of the window
             _body_height = self._get_js_body_height(driver)
             if _body_height and _body_height > 10:

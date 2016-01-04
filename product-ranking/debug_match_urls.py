@@ -209,9 +209,29 @@ def _finish_print():
     print colorama.Back.RESET
 
 
+def _filter_duplicates(array):
+    """ Completely removes products with duplicated urls
+        (no single occurence remains) """
+    result = []
+    urls_count = {}
+    # first pass - map urls
+    for a in array:
+        url = a.get('url', None)
+        if not url in urls_count:
+            urls_count[url] = 0
+        urls_count[url] += 1
+    # second pass - filter products out
+    for a in array:
+        url = a.get('url', None)
+        if urls_count[url] > 1:
+            continue
+        result.append(a)
+    return result
+
+
 def match(f1, f2, fields2exclude=None, strip_get_args=None,
           skip_urls=None, remove_false_values=True,
-          print_output=True):
+          exclude_duplicates=False, print_output=True):
     total_urls = 0
     matched_urls = 0
 
@@ -226,6 +246,10 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
         f2 = [json.loads(l.strip()) for l in f2 if l.strip()]
     except ValueError:
         return {'diff': [], 'total_urls': 0, 'matched_urls': 0}
+
+    if exclude_duplicates:
+        f1 = _filter_duplicates(f1)
+        f2 = _filter_duplicates(f2)
 
     result_mismatched = []
 
@@ -250,6 +274,7 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
             url2 = json2['url']
             if strip_get_args:
                 url2 = _strip_get_args(url2)
+
             if url1 == url2:
                 matched_urls += 1
                 # mis_fields = _get_mismatching_fields(json1, json2,
@@ -294,5 +319,5 @@ if __name__ == '__main__':
         strip_get_args=args.strip_get_args,
         skip_urls=args.skip_urls,
         remove_false_values=not args.remove_false_values in ('0', 'false', 'False'),
-        print_output=True
+        exclude_duplicates=True, print_output=True
     )

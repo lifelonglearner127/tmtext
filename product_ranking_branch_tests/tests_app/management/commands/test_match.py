@@ -123,6 +123,7 @@ def test_match(test_run):
             fields2exclude=test_run.exclude_fields,
             strip_get_args=test_run.strip_get_args,
             skip_urls=test_run.skip_urls,
+            exclude_duplicates=test_run.exclude_duplicates,
             print_output=False
         )
         report_searchterm = ReportSearchterm.objects.create(
