@@ -209,6 +209,9 @@ def _finish_print():
     print colorama.Back.RESET
 
 
+PROCESSED_URLS = []  # to exclude duplicates
+
+
 def match(f1, f2, fields2exclude=None, strip_get_args=None,
           skip_urls=None, remove_false_values=True,
           print_output=True):
@@ -250,7 +253,12 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
             url2 = json2['url']
             if strip_get_args:
                 url2 = _strip_get_args(url2)
+
             if url1 == url2:
+                if url1 in PROCESSED_URLS:
+                    continue
+                PROCESSED_URLS.append(url2)
+
                 matched_urls += 1
                 # mis_fields = _get_mismatching_fields(json1, json2,
                 #                                      fields2exclude)
