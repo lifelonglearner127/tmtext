@@ -13,11 +13,11 @@ class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
         'benny benassi': 0,
         'red jeans': [30, 100],
         'black stone': [50, 250],
-        'red ball': [5, 180],
+        'red ball': [100, 300],
         'green jersey': [10, 130],
         'long term red': [1, 80],
         'yellow ion': [15, 100],
-        'water ball': [3, 85],
+        'water ball': [1, 85],
         'levis 511': [10, 100],
     }
 

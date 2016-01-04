@@ -253,7 +253,7 @@ class Scraper():
             b = requests.adapters.HTTPAdapter(max_retries=3)
             s.mount('http://', a)
             s.mount('https://', b)
-            contents = requests.get(url).text
+            contents = s.get(url, headers=header).text
 
             if not extra_exclude_condition or extra_exclude_condition not in contents:
                 return contents

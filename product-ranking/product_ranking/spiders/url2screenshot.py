@@ -93,6 +93,14 @@ class URL2ScreenshotSpider(scrapy.Spider):
     def _log_proxy(self, r_session):
         self.log("IP via proxy: %s" % r_session.get('http://icanhazip.com').text)
 
+    def _get_js_body_height(self, driver):
+        scroll = driver.execute_script('return document.body.scrollHeight;')
+        window_outer = driver.execute_script('return window.outerHeight;')
+        window_inner = driver.execute_script('return window.innerHeight;')
+        height = scroll + window_outer - window_inner
+        self.log("Detected JS page height: %s" % height, INFO)
+        return height
+
     def _click_on_elements_with_class(self, driver, cls):
         script = """
             var elements = document.getElementsByClassName('%s');
@@ -157,6 +165,10 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         try:
             driver.get(self.product_url)
+            # maximize height of the window
+            _body_height = self._get_js_body_height(driver)
+            if _body_height and _body_height > 10:
+                driver.set_window_size(self.width, _body_height)
             self._solve_captha_in_selenium(driver)
         except Exception as e:
             self.log('Exception while getting response using selenium! %s' % str(e))

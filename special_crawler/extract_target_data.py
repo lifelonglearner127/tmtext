@@ -278,7 +278,8 @@ class TargetScraper(Scraper):
         wc_pdfs = re.findall(r'href=\\\"([^ ]*?\.pdf)', contents, re.DOTALL)
         wc_pdfs = [r.replace("\\", "") for r in wc_pdfs]
         pdf_hrefs += wc_pdfs
-        return pdf_hrefs
+
+        return pdf_hrefs if pdf_hrefs else None
 
     def _pdf_count(self):
         urls = self._pdf_urls()
@@ -385,10 +386,7 @@ class TargetScraper(Scraper):
         return float(price_amount)
 
     def _price_currency(self):
-        price = self._price()
-        if price[0] == "$":
-            return "USD"
-        return price[0]
+        return "USD"
 
     def _in_stores(self):
         '''in_stores - the item can be ordered online for pickup in a physical store
@@ -452,7 +450,8 @@ class TargetScraper(Scraper):
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
         if self._in_stores() == 1:
-            if "out of stock in stores" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content():
+            if self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]") and \
+                            "out of stock in stores" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content():
                 return 1
 
             return 0
