@@ -288,19 +288,22 @@ def _start_spider_and_wait_for_finish(spider, url, max_wait=60*2):
         pass
     # production or local machine?
     if os.path.exists('/home/web_runner/virtual-environments/web-runner/bin/scrapy'):
-        cmd = ("cd /home/web_runner/repos/tmtext/product-ranking;"
-               " /home/web_runner/virtual-environments/web-runner/bin/scrapy"
-               " crawl {spider} -a product_url={url} -o {output} > /tmp/_flask_server_scrapy.log 2>&1")
+        cmd = ('cd /home/web_runner/repos/tmtext/product-ranking;'
+               ' /home/web_runner/virtual-environments/web-runner/bin/scrapy'
+               ' crawl {spider} -a product_url="{url}" -o {output} -a image_copy=/tmp/_img_copy.png'
+               ' > /tmp/_flask_server_scrapy.log 2>&1')
     else:
-        cmd = ("scrapy crawl {spider} -a product_url={url} -o {output}"
-               " > /tmp/_flask_server_scrapy.log 2>&1")
+        cmd = ('scrapy crawl {spider} -a product_url="{url}" -o {output} -a image_copy=/tmp/_img_copy.png'
+               ' > /tmp/_flask_server_scrapy.log 2>&1')
     if isinstance(url, unicode):
         url = url.encode('utf8')
     try:
         url = urllib.unquote(url)
     except Exception as e:
         return str(e)
-    run(cmd.format(spider=spider, url=url, output=output_file.name))
+    _cmd = cmd.format(spider=spider, url=url, output=output_file.name)
+    print('Executing spider command: %s' % _cmd)
+    run(_cmd)
     _total_slept = 0
     while 1:
         _total_slept += 1
