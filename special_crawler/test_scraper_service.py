@@ -683,12 +683,12 @@ class ServiceScraperTest(unittest.TestCase):
                 row = self.cur.fetchall()
 
                 if not row:
-                    base = "http://localhost/get_data?url=%s"
-                    sample_json = requests.get(base%(urllib.quote(url))).text
-
-                    not_a_product = 0
-
                     try:
+                        base = "http://localhost/get_data?url=%s"
+                        sample_json = requests.get(base%(urllib.quote(url))).text
+
+                        not_a_product = 0
+
                         sample_json = json.loads(sample_json)
                         sample_json_str = json.dumps(sample_json, sort_keys=True, indent=4)
 
@@ -775,6 +775,18 @@ class ServiceScraperTest(unittest.TestCase):
         for url in self.urls_by_scraper["macys"]:
             try:
                 self._test("macys", url)
+            except:
+                pass
+
+    def test_target(self):
+        if specified_website and specified_website != "target":
+            return
+
+        self.initialize_scraper("target")
+
+        for url in self.urls_by_scraper["target"]:
+            try:
+                self._test("target", url)
             except:
                 pass
 
