@@ -337,6 +337,19 @@ class AmazonScraper(Scraper):
             description = ""
             block = self.tree_html.xpath("//h2[contains(text(),'Product Description')]/following-sibling::*")[0]
 
+            all_items_list = block.xpath(".//*")
+            remove_candidates = []
+
+            for item in all_items_list:
+                if item.tag == "img":
+                    remove_candidates.append(item)
+
+                if item.xpath("./@style") and ('border-top' in item.xpath("./@style")[0] or 'border-bottom' in item.xpath("./@style")[0]):
+                    remove_candidates.append(item)
+
+            for item in remove_candidates:
+                item.getparent().remove(item)
+
             for item in block:
                 description = description + html.tostring(item)
 
@@ -799,35 +812,11 @@ class AmazonScraper(Scraper):
             return self.review_list
 
         review_list = []
-        try:
-            review_link = self.tree_html.xpath("//a[contains(@class, 'a-link-normal a-text-normal product-reviews-link')]/@href")[0]
-        except:
-            pass
-
-        try:
-            review_link = self.tree_html.xpath("//div[contains(@class, 'acrCount')]/a/@href")[0]
-        except:
-            pass
-
-        if review_link.find("cm_cr_dp_qt_see_all_top") > 0:
-            index_1 = review_link.find("cm_cr_dp_qt_see_all_top") + len("cm_cr_dp_qt_see_all_top")
-            index_2 = review_link.find("ie=UTF8")
-            review_link = review_link[:index_1] + "?" + review_link[index_2:]
-        elif review_link.find("cm_cr_dp_see_all_top") > 0:
-            index_1 = review_link.find("cm_cr_dp_see_all_top") + len("cm_cr_dp_see_all_top")
-            index_2 = review_link.find("ie=UTF8")
-            review_link = review_link[:index_1] + "?" + review_link[index_2:]
-
-        review_link = review_link[:review_link.rfind("sortBy=")]
+        review_link = "http://www.amazon.com/product-reviews/{0}/ref=cm_cr_pr_viewopt_sr?ie=UTF8&showViewpoints=1&filterByStar={1}_star&pageNumber=1"
         mark_list = ["one", "two", "three", "four", "five"]
 
         for index, mark in enumerate(mark_list):
-            if review_link.find("cm_cr_dp_qt_see_all_top") > 0:
-                review_link_mark_star = review_link.replace("cm_cr_dp_qt_see_all_top", "cm_cr_pr_viewopt_sr") + "sortBy=helpful&reviewerType=all_reviews&formatType=all_formats&filterByStar=" + mark + "_star&pageNumber=1"
-            elif review_link.find("cm_cr_dp_see_all_top") > 0:
-                review_link_mark_star = review_link.replace("cm_cr_dp_see_all_top", "cm_cr_pr_viewopt_sr") + "sortBy=helpful&reviewerType=all_reviews&formatType=all_formats&filterByStar=" + mark + "_star&pageNumber=1"
-
-            contents = self.load_page_from_url_with_number_of_retries(review_link_mark_star, 10, "<title>500 Service Unavailable Error</title>")
+            contents = self.load_page_from_url_with_number_of_retries(review_link.format(self._product_id(), mark))
 
             if "Sorry, no reviews match your current selections." in contents:
                 review_list.append([index + 1, 0])
@@ -949,16 +938,6 @@ class AmazonScraper(Scraper):
 
     def _in_stores(self):
         return 0
-
-    def _owned(self):
-        aa = self.tree_html.xpath("//div[@class='buying' or @id='merchant-info']")
-        for a in aa:
-            if a.text_content().find('old by Amazon')>0: return 1
-        s = self._seller_from_tree()
-        return s['owned']
-
-    def _owned_out_of_stock(self):
-        return None
 
     def _marketplace(self):
         aa = self.tree_html.xpath("//div[@class='buying' or @id='merchant-info']")
@@ -1311,8 +1290,6 @@ class AmazonScraper(Scraper):
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
-        "owned" : _owned, \
-        "owned_out_of_stock" : _owned_out_of_stock, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \

@@ -97,9 +97,9 @@ class Job(models.Model):
         help_text='Branch to use at the instance(s); leave blank for sc_production'
     )
 
-    save_s3_cache = models.BooleanField(
+    save_raw_pages = models.BooleanField(
         default=False, help_text='Upload raw cache to S3?')
-    #load_s3_cache = models.DateField(  # DISABLED for now!
+    #load_raw_pages = models.DateField(  # DISABLED for now!
     #    blank=True, null=True, default=timezone.now().date(),
     #    help_text='Load raw cache from S3'
     #)

@@ -39,6 +39,7 @@ class TargetScraper(Scraper):
         Scraper.__init__(self, **kwargs)
 
         self.tv = TargetVariants()
+        self.product_json = None
 
     def check_url_format(self):
         # for ex: http://www.target.com/p/skyline-custom-upholstered-swoop-arm-chair/-/A-15186757#prodSlot=_1_1
@@ -56,7 +57,23 @@ class TargetScraper(Scraper):
 
         if len(self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")) < 1:
             return True
+
+        self._extract_product_json()
+
         return False
+
+    def _extract_product_json(self):
+        if self.tree_html.xpath("//script[contains(text(), 'Target.globals.refreshItems =')]/text()"):
+            product_json = self.tree_html.xpath("//script[contains(text(), 'Target.globals.refreshItems =')]/text()")[0]
+            start_index = product_json.find("Target.globals.refreshItems =") + len("Target.globals.refreshItems =")
+            product_json = product_json[start_index:]
+            product_json = json.loads(product_json)
+        else:
+            product_json = None
+
+        self.product_json = product_json
+
+        return self.product_json
 
     ##########################################
     ############### CONTAINER : NONE
@@ -85,7 +102,7 @@ class TargetScraper(Scraper):
         return None
 
     def _upc(self):
-        return self.tree_html.xpath("//span[@itemprop='sku']//text()")[0].strip()
+        return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0].strip()
 
     def _features(self):
         rows = self.tree_html.xpath("//ul[@class='normal-list']//li")
@@ -261,7 +278,8 @@ class TargetScraper(Scraper):
         wc_pdfs = re.findall(r'href=\\\"([^ ]*?\.pdf)', contents, re.DOTALL)
         wc_pdfs = [r.replace("\\", "") for r in wc_pdfs]
         pdf_hrefs += wc_pdfs
-        return pdf_hrefs
+
+        return pdf_hrefs if pdf_hrefs else None
 
     def _pdf_count(self):
         urls = self._pdf_urls()
@@ -305,18 +323,23 @@ class TargetScraper(Scraper):
                 review_info = jsn['BatchedResults']['q0']['Results'][0]['ReviewStatistics']
                 self.review_count = review_info['TotalReviewCount']
                 self.average_review = review_info['AverageOverallRating']
+                self.reviews = None
 
                 min_ratingval = None
                 max_ratingval = None
-                self.reviews = []
-                for review in review_info['RatingDistribution']:
-                    if min_ratingval == None or review['RatingValue'] < min_ratingval:
-                        if review['Count'] > 0:
-                            min_ratingval = review['RatingValue']
-                    if max_ratingval == None or review['RatingValue'] > max_ratingval:
-                        if review['Count'] > 0:
-                            max_ratingval = review['RatingValue']
-                    self.reviews.append([int(review['RatingValue']), int(review['Count'])])
+
+                if self.review_count > 0:
+                    self.reviews = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0]]
+
+                    for review in review_info['RatingDistribution']:
+                        if min_ratingval == None or review['RatingValue'] < min_ratingval:
+                            if review['Count'] > 0:
+                                min_ratingval = review['RatingValue']
+                        if max_ratingval == None or review['RatingValue'] > max_ratingval:
+                            if review['Count'] > 0:
+                                max_ratingval = review['RatingValue']
+
+                        self.reviews[int(review['RatingValue']) - 1][1] = int(review['Count'])
 
                 self.min_score = min_ratingval
                 self.max_score = max_ratingval
@@ -363,22 +386,19 @@ class TargetScraper(Scraper):
         return float(price_amount)
 
     def _price_currency(self):
-        price = self._price()
-        if price[0] == "$":
-            return "USD"
-        return price[0]
+        return "USD"
 
     def _in_stores(self):
         '''in_stores - the item can be ordered online for pickup in a physical store
         or it can not be ordered online at all and can only be purchased in a local store,
         irrespective of availability - binary
         '''
-        if "not sold in stores" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
-            return 0
-        rows = self.tree_html.xpath("//a[@id='findInStoreActive']/@title")
-        if len(rows) > 0:
-            return 1
-        self.tree_html.xpath("//span[contains(@class,'buttonText')]//text()")
+
+        if self.product_json:
+            for item in self.product_json:
+                if item["Attributes"]["callToActionDetail"]["soldInStores"] == True:
+                    return 1
+
         return 0
 
     def _marketplace(self):
@@ -407,33 +427,36 @@ class TargetScraper(Scraper):
         return None
 
     def _site_online(self):
-        # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
-        if "not sold online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
-            return 0
-        if "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
-            return 1
-        if 'disabled' in self.tree_html.xpath("//button[@id='addToCart']/@class")[0]:
-            return 0
-        return 1
+        if self.product_json:
+            for item in self.product_json:
+                if item["Attributes"]["callToActionDetail"]["soldOnline"] == True:
+                    return 1
+
+        return 0
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
-        if self._site_online() == 0:
-            return None
-        if "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
-            return 1
-        return 0
+        if self._site_online() == 1:
+            if self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]") and \
+                            "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content():
+                return 1
 
+            return 0
+        else:
+            return None
 
     def _in_stores_out_of_stock(self):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
-        if self._in_stores() == 0:
+        if self._in_stores() == 1:
+            if self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]") and \
+                            "out of stock in stores" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content():
+                return 1
+
+            return 0
+        else:
             return None
-        if "out of stock in stores" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]//text()"):
-            return 1
-        return None
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
@@ -486,6 +509,7 @@ class TargetScraper(Scraper):
         # CONTAINER : NONE
         "url" : _url, \
         "product_id" : _product_id, \
+        "upc" : _upc, \
 
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \

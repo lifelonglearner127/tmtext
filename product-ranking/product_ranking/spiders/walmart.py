@@ -396,6 +396,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if _na_text:
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
+
+        seller_ranking = self._scrape_seller_ranking(response)
+        if seller_ranking:
+            product['seller_ranking'] = seller_ranking
+
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
         return Request(
@@ -404,6 +409,28 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             callback=self._on_dynamic_api_response,
             meta=_meta
         )
+
+    def _scrape_seller_ranking(self, response):
+        ranking = response.xpath('//div[@class="Grid-col item-ranks"]/ol')
+        ranking_data = []
+
+        for i in ranking:
+            x = i.xpath('li//text()').extract()
+            x = [i for i in x if i != ' ']
+            ranking_data.append(x)
+
+        seller_ranking = []
+        for i in ranking_data:
+            data = {}
+            rank = i[0].replace('#', '')
+            data['ranking'] = int(rank)
+
+            cat = i[2:]
+            data['categories'] = cat
+            seller_ranking.append(data)
+
+        if seller_ranking:
+            return seller_ranking
 
     def parse_available(self, response):
         available = is_empty(response.xpath(
@@ -937,7 +964,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 opts = data.get('buyingOptions', {})
                 if opts is None:
                     # product "no longer available"?
-                    self.log('buyingOptions are None: %s' % response.url, ERROR)
+                    self.log('buyingOptions are None: %s' % response.url, WARNING)
                     prod.update({"no_longer_available": True})
                 else:
                     prod['is_out_of_stock'] = not opts.get('available', False)
