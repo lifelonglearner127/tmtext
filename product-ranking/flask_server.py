@@ -11,6 +11,7 @@ import cgi
 import subprocess
 import tempfile
 import time
+import urllib
 
 from flask import Flask, jsonify, abort, request
 app = Flask(__name__)
@@ -295,6 +296,10 @@ def _start_spider_and_wait_for_finish(spider, url, max_wait=60*2):
                " > /tmp/_flask_server_scrapy.log 2>&1")
     if isinstance(url, unicode):
         url = url.encode('utf8')
+    try:
+        url = urllib.unquote(url)
+    except Exception as e:
+        return str(e)
     run(cmd.format(spider=spider, url=url, output=output_file.name))
     _total_slept = 0
     while 1:
