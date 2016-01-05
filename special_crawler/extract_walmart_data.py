@@ -1919,11 +1919,11 @@ class WalmartScraper(Scraper):
         self.extracted_image_urls = True
 
         if self._version() == "Walmart v1":
-            self.image_urls = self._image_urls_old()
+            self.image_urls = list(set(self._image_urls_old()))
             return self.image_urls
 
         if self._version() == "Walmart v2":
-            self.image_urls = self._image_urls_new()
+            self.image_urls = list(set(self._image_urls_new()))
             return self.image_urls
 
         return None
@@ -2079,11 +2079,11 @@ class WalmartScraper(Scraper):
 
     def _in_stores_out_of_stock(self):
         if self._in_stores() == 1:
-            available_stores = self.product_api_json.get("analyticsData", {}).get("storesAvail", [])
+            available_stores = self.product_api_json.get("product", {}).get("buyingOptions", {}).get("pickupOptions", [])
             available_stores = available_stores if available_stores else []
 
             for store in available_stores:
-                if int(store["isAvail"]) == 1:
+                if store["displayArrivalDate"] != "Out of stock":
                     return 0
 
             for seller in self.product_info_json["buyingOptions"]["marketplaceOptions"]:

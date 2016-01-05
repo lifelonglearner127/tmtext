@@ -17,7 +17,7 @@ class AmazonDeValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'car navigator garmin': [5, 100],
         'yamaha drums midi': [2, 50],
         'black men shoes size 8 red': [5, 70],
-        'car audio equalizer pioneer': [5, 120]
+        'car audio equalizer pioneer': [100, 600]
     }
 
     test_urls = {
