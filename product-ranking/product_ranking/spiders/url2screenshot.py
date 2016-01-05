@@ -91,7 +91,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 driver.save_screenshot('/tmp/_captcha_after.png')
 
     def _log_proxy(self, r_session):
-        self.log("IP via proxy: %s" % r_session.get('http://icanhazip.com').text)
+        self.log("IP : %s" % r_session.get('http://icanhazip.com').text)
 
     def _get_js_body_height(self, driver):
         scroll = driver.execute_script('return document.body.scrollHeight;')
