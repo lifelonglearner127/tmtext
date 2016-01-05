@@ -70,6 +70,7 @@ def main():
     _install_system_package('tesseract-ocr')
     _install_system_package('xvfb')
     _install_system_package('chromium-browser')
+    _install_system_package('firefox')
     os.system(
         "cd ~"
         " && wget http://chromedriver.storage.googleapis.com/2.9/chromedriver_linux64.zip"
