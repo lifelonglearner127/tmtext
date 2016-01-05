@@ -62,7 +62,8 @@ class MacysProductsSpider(ProductsSpider):
                     'page': 1,
                     },
                 headers={"User-Agent": self.user_agent},
-                dont_filter=True
+                dont_filter=True,
+                cookies={'shippingCountry': 'US', 'currency': 'USD'}
             )
 
         if self.product_url:
