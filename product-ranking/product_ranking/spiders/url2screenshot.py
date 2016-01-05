@@ -46,6 +46,7 @@ class ScreenshotItem(scrapy.Item):
 class URL2ScreenshotSpider(scrapy.Spider):
     name = 'url2screenshot_products'
     # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
+    available_drivers = ['chromium', 'firefox']
 
     def __init__(self, *args, **kwargs):
         self.product_url = kwargs['product_url']
@@ -112,6 +113,11 @@ class URL2ScreenshotSpider(scrapy.Spider):
         """ % cls
         driver.execute_script(script)
 
+    def _choose_another_driver(self):
+        for d in self.available_drivers:
+            if d != self._driver:
+                return d
+
     def _init_chromium(self):
         from selenium import webdriver
         chrome_flags = webdriver.DesiredCapabilities.CHROME  # this is for Chrome?
@@ -138,14 +144,43 @@ class URL2ScreenshotSpider(scrapy.Spider):
         driver = webdriver.Firefox(profile)
         return driver
 
-    def init_driver(self):
-        if not self.driver:
-            _driver = random.choice(['chromium', 'firefox'])
+    def init_driver(self, name=None):
+        if name:
+            self._driver = name
         else:
-            _driver = self.driver
-        print('Using driver: ' + _driver)
-        init_driver = getattr(self, '_init_'+_driver)
+            if not self.driver:
+                self._driver = 'chromium'
+            elif self.driver == 'random':
+                self._driver = random.choice(self.available_drivers)
+            else:
+                self._driver = self.driver
+        print('Using driver: ' + self._driver)
+        init_driver = getattr(self, '_init_'+self._driver)
         return init_driver()
+
+    def prepare_driver(self, driver):
+        driver.set_page_load_timeout(int(self.timeout))
+        driver.set_script_timeout(int(self.timeout))
+        driver.set_window_size(int(self.width), int(self.height))
+
+    def make_screenshot(self, driver, output_fname):
+        driver.get(self.product_url)
+        time.sleep(6)
+        # maximize height of the window
+        _body_height = self._get_js_body_height(driver)
+        if _body_height and _body_height > 10:
+            driver.set_window_size(self.width, _body_height)
+        self._solve_captha_in_selenium(driver)
+
+        if self.close_popups:
+            time.sleep(3)
+            self._click_on_elements_with_class(driver, 'close')
+
+        time.sleep(2)
+        driver.save_screenshot(output_fname)
+        if self.image_copy:  # save a copy of the file if needed
+            driver.save_screenshot(self.image_copy)
+        driver.quit()
 
     def parse(self, response):
         socket.setdefaulttimeout(int(self.timeout))
@@ -178,33 +213,21 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 return
 
         driver = self.init_driver()
-
-        driver.set_page_load_timeout(int(self.timeout))
-        driver.set_script_timeout(int(self.timeout))
-        driver.set_window_size(int(self.width), int(self.height))
-
         try:
-            driver.get(self.product_url)
-            time.sleep(6)
-            # maximize height of the window
-            _body_height = self._get_js_body_height(driver)
-            if _body_height and _body_height > 10:
-                driver.set_window_size(self.width, _body_height)
-            self._solve_captha_in_selenium(driver)
-
-            if self.close_popups:
-                time.sleep(3)
-                self._click_on_elements_with_class(driver, 'close')
-
-            time.sleep(2)
-            driver.save_screenshot(t_file.name)
-            if self.image_copy:  # save a copy of the file if needed
-                driver.save_screenshot(self.image_copy)
-            driver.quit()
-
+            self.prepare_driver(driver)
+            self.make_screenshot(driver, t_file.name)
         except Exception as e:
             self.log('Exception while getting response using selenium! %s' % str(e))
-            return
+            # lets try with another driver
+            another_driver_name = self._choose_another_driver()
+            try:
+                driver.quit()  # clean RAM
+            except Exception as e:
+                pass
+            driver = self.init_driver(name=another_driver_name)
+            self.prepare_driver(driver)
+            self.make_screenshot(driver, t_file.name)
+            driver.quit()
 
         # crop the image if needed
         if self.crop_width and self.crop_height:
