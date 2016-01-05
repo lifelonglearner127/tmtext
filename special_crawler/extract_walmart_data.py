@@ -2083,7 +2083,7 @@ class WalmartScraper(Scraper):
             available_stores = available_stores if available_stores else []
 
             for store in available_stores:
-                if store["displayArrivalDate"] == "In stock":
+                if store["displayArrivalDate"] in ["In stock", "Today"]:
                     return 0
 
             for seller in self.product_info_json["buyingOptions"]["marketplaceOptions"]:
