@@ -216,6 +216,7 @@ class Command(BaseCommand):
                     _delete_queue_message(progress_queue, m)
                     print('Deleted progress message: %s' % str(m_body))
                 if progress == 'failed':
+                    print("DB Job %s reported as failed (in progress message)" % db_job.pk)
                     db_job.status = 'failed'
                     db_job.save()
                     _delete_queue_message(progress_queue, m)
@@ -275,9 +276,11 @@ class Command(BaseCommand):
                     with open(full_local_log_path, 'r') as fh:
                         cont = fh.read()
                         if not "'finish_reason': 'finished'" in cont:
-                            db_job.status = 'failed'
-                            db_job.save()
-                            continue
+                            if not "INFO: Closing spider (finished)" in cont:
+                                print('Successful job ending is not found for job %s' % db_job.pk)
+                                db_job.status = 'failed'
+                                db_job.save()
+                                continue
 
                 if amazon_data_file:
                     print 'For job with task ID %s we found amazon fname [%s]' % (

@@ -871,6 +871,10 @@ class ScrapyTask(object):
         options = ' '
         arg_name = arg_value = None
         for key, value in cmd_line_args.items():
+            # exclude raw s3 cache - otherwise 2 spiders will work in parallel
+            #  with cache enabled
+            if is_bsr and key == 'save_raw_pages':
+                continue
             options += ' -a %s=%s' % (key, value)
         if searchterms_str:
             arg_name = 'searchterms_str'

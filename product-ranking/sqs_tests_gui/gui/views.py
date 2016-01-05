@@ -35,6 +35,7 @@ sys.path.append(os.path.join(CWD,  '..', '..', '..',
 sys.path.append(os.path.join(CWD,  '..', '..'))
 from add_task_to_sqs import read_access_and_secret_keys
 from scrapy_daemon import PROGRESS_QUEUE_NAME
+from product_ranking.cache_models import list_db_cache
 
 
 class AdminOnlyMixin(object):
@@ -214,6 +215,13 @@ class SearchS3Cache(SearchFilesView):
     template_name = 'search_s3_cache.html'
     fname2open = LOCAL_AMAZON_LIST_CACHE
     extra_filter = '__MARKER_URL__'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(SearchS3Cache, self).get_context_data(*args, **kwargs)
+        searchterm = self.request.GET.get('searchterm', '')
+        if not searchterm:
+            context['cache_list'] = list_db_cache()
+        return context
 
 
 class RenderS3CachePage(AdminOnlyMixin, TemplateView):

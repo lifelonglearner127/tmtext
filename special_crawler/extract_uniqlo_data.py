@@ -76,13 +76,7 @@ class UniqloScraper(Scraper):
         if self.product_json:
             return
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
-        contents = s.get(self.PRODUCT_INFO_URL.format(self._product_id()), headers=h, timeout=5).text
+        contents = self.load_page_from_url_with_number_of_retries(self.PRODUCT_INFO_URL.format(self._product_id()))
         self.product_json = json.loads(contents)
 
     def _canonical_link(self):
@@ -109,13 +103,13 @@ class UniqloScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//h1[@class="pdp-h1-headline"]/text()')[0].strip()
+        return self.tree_html.xpath('//h1[@class="pdp-title" and @itemprop="name"]/text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//h1[@class="pdp-h1-headline"]/text()')[0].strip()
+        return self.tree_html.xpath('//h1[@class="pdp-title" and @itemprop="name"]/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//h1[@class="pdp-h1-headline"]/text()')[0].strip()
+        return self.tree_html.xpath('//h1[@class="pdp-title" and @itemprop="name"]/text()')[0].strip()
 
     def _model(self):
         return None
@@ -185,14 +179,8 @@ class UniqloScraper(Scraper):
         failed_count = 0
 
         for index in range(1, 20):
-            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-            s = requests.Session()
-            a = requests.adapters.HTTPAdapter(max_retries=1)
-            b = requests.adapters.HTTPAdapter(max_retries=1)
-            s.mount('http://', a)
-            s.mount('https://', b)
             try:
-                contents = s.get(thumb_images.format(index), headers=h, timeout=5).text
+                contents = self.load_page_from_url_with_number_of_retries(thumb_images.format(index))
 
                 if "AQSTa" in contents and len(contents) == 806:
                     failed_count = failed_count + 1
@@ -290,13 +278,7 @@ class UniqloScraper(Scraper):
 
         self.is_review_checked = True
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
-        contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
+        contents = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(self._product_id()))
 
         try:
             start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
@@ -331,9 +313,6 @@ class UniqloScraper(Scraper):
     def _price_currency(self):
         return "USD"
 
-    def _owned(self):
-        return 0
-
     def _marketplace(self):
         return 0
 
@@ -347,13 +326,10 @@ class UniqloScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
-        return 0
+        if int(self.product_json['stock_cnt_l1']) > 0:
+            return 0
 
-    def _marketplace_sellers(self):
-        return None
-
-    def _marketplace_out_of_stock(self):
-        return 0
+        return 1
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
@@ -420,13 +396,10 @@ class UniqloScraper(Scraper):
         "price" : _price, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
-        "owned" : _owned, \
         "marketplace" : _marketplace, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "in_stores" : _in_stores, \
-        "marketplace_sellers" : _marketplace_sellers, \
-        "marketplace_out_of_stock": _marketplace_out_of_stock, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
