@@ -227,7 +227,10 @@ class URL2ScreenshotSpider(scrapy.Spider):
             driver = self.init_driver(name=another_driver_name)
             self.prepare_driver(driver)
             self.make_screenshot(driver, t_file.name)
-            driver.quit()
+            try:
+                driver.quit()
+            except:
+                pass
 
         # crop the image if needed
         if self.crop_width and self.crop_height:
