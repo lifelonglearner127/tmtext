@@ -25,6 +25,9 @@ def parse_cmd_args():
     parser.add_argument(
         "--remove_false_values", default=True
     )  # remove fields containing values that are Python's boolean "false"
+    parser.add_argument(
+        "--exclude_duplicates", default=True
+    )
     return parser.parse_args()
 
 
