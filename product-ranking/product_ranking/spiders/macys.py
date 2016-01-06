@@ -18,6 +18,7 @@ from product_ranking.spiders import cond_set, cond_set_value, \
 from contrib.product_spider import ProductsSpider
 from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.macys_variants import MacysVariants
+from product_ranking.validators.macys_validator import MacysValidatorSettings
 
 
 class MacysProductsSpider(ProductsSpider):
@@ -41,6 +42,8 @@ class MacysProductsSpider(ProductsSpider):
     }
 
     REQUIRE_PRODUCT_PAGE = False
+
+    settings = MacysValidatorSettings
 
     def __init__(self, sort_mode='default', *args, **kwargs):
         super(MacysProductsSpider, self).__init__(*args, **kwargs)
