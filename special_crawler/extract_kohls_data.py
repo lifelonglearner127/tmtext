@@ -20,6 +20,7 @@ class KohlsScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.kohls.com/product/prd-<product-id>/<optional-part-of-product-name>.jsp"
     REVIEW_URL = "http://kohls.ugc.bazaarvoice.com/9025/{}/reviews.djs?format=embeddedhtml"
+    WEBCOLLAGE_CHANNEL_URL = "http://content.webcollage.net/kohls/product-content-page?channel-product-id={0}"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -35,6 +36,15 @@ class KohlsScraper(Scraper):
 
         self.variants = None
         self.is_variant_checked = False
+
+        self.wc_360 = 0
+        self.wc_emc = 0
+        self.wc_video = 0
+        self.wc_pdf = 0
+        self.wc_prodtour = 0
+        self.is_webcollage_contents_checked = False
+
+        self.video_urls = []
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -295,7 +305,8 @@ class KohlsScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        return None
+        self._extract_webcollage_contents()
+        return self.video_urls if self.video_urls else None
 
     def _video_count(self):
         video_count = 0
@@ -315,8 +326,74 @@ class KohlsScraper(Scraper):
     def _pdf_count(self):
         return 0
 
+    def _extract_webcollage_contents(self):
+        if self.is_webcollage_contents_checked:
+            return
+
+        self.is_webcollage_contents_checked = True
+
+        try:
+            webcollage_page_contents = self.load_page_from_url_with_number_of_retries(self.WEBCOLLAGE_CHANNEL_URL.format(self._product_id()))
+
+            if webcollage_page_contents.startswith("<HTML><HEAD></HEAD><BODY><P>Product information is currently unavailable</P>"):
+                raise Exception
+
+            webcollage_page_contents = html.fromstring(webcollage_page_contents)
+
+#            <div data-resources-base="http://media.webcollage.net/rlfp/wc/live/module/crockpotus/" id="videoGallery-5248">
+
+            video_gallery_element = webcollage_page_contents.xpath("//div[@data-resources-base and starts-with(@id, 'videoGallery')]")
+
+            if video_gallery_element:
+                video_gallery_element = video_gallery_element[0]
+            else:
+                raise Exception
+
+            base_video_url = video_gallery_element.xpath("./@data-resources-base")[0]
+            wc_json_data = json.loads(video_gallery_element.xpath(".//div[@class='wc-json-data']/text()")[0].strip())
+            webcollage_video_list = [base_video_url + video_info["src"]["src"] for video_info in wc_json_data["videos"]]
+
+            if webcollage_video_list:
+                self.video_urls.extend(webcollage_video_list)
+                self.wc_video = 1
+
+            if webcollage_page_contents.xpath("//div[@id='navbar']//ul/li//span[text()='Interactive Tour']"):
+                self.wc_prodtour = 1
+
+            if webcollage_page_contents.xpath("//div[@id='navbar']//ul/li//span[text()='360 Zoom']"):
+                self.wc_360 = 1
+
+            return
+        except:
+            pass
+
+        return
+
     def _webcollage(self):
+        if self._wc_360() + self._wc_emc() + self._wc_pdf() + self._wc_prodtour() + self._wc_video() > 0:
+            return 1
+
         return 0
+
+    def _wc_360(self):
+        self._extract_webcollage_contents()
+        return self.wc_360
+
+    def _wc_emc(self):
+        self._extract_webcollage_contents()
+        return self.wc_emc
+
+    def _wc_video(self):
+        self._extract_webcollage_contents()
+        return self.wc_video
+
+    def _wc_pdf(self):
+        self._extract_webcollage_contents()
+        return self.wc_pdf
+
+    def _wc_prodtour(self):
+        self._extract_webcollage_contents()
+        return self.wc_prodtour
 
     def _htags(self):
         htags_dict = {}
@@ -570,7 +647,12 @@ class KohlsScraper(Scraper):
         "video_urls" : _video_urls, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
-        "webcollage" : _webcollage, \
+        "wc_360": _wc_360, \
+        "wc_emc": _wc_emc, \
+        "wc_video": _wc_video, \
+        "wc_pdf": _wc_pdf, \
+        "wc_prodtour": _wc_prodtour, \
+        "webcollage": _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "canonical_link": _canonical_link,
