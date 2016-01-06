@@ -24,6 +24,13 @@ class JcpenneyScraper(Scraper):
     INVALID_URL_MESSAGE = "Expected URL format is http://www\.jcpenney\.com/.*/prod\.jump\?ppId=.+$"
     REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{}/reviews.djs?format=embeddedhtml"
     REVIEW_URL_ALTER = "http://sephora.ugc.bazaarvoice.com/8723jcp/{}/reviews.djs?format=embeddedhtml"
+    STOCK_STATUS_URL = "http://www.jcpenney.com/jsp/browse/pp/graphical/graphicalSKUOptions.jsp?fromEditBag=&" \
+                       "fromEditFav=&grView=&_dyncharset=UTF-8&_dynSessConf=-{0}&sucessUrl=%2Fjsp" \
+                       "%2Fbrowse%2Fpp%2Fgraphical%2FgraphicalSKUOptions.jsp%" \
+                       "3FfromEditBag%3D%26fromEditFav%3D%26grView%3D&_D%3AsucessUrl=+&" \
+                       "ppType=regular&_D%3AppType=+&shipToCountry=US&_D%3AshipToCountry=+&" \
+                       "ppId={1}&_D%3AppId=+&selectedLotValue=1+OZ+EAU+DE+PARFUM&_D%3AselectedLotValue=+" \
+                       "&_DARGS=%2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%2FgraphicalLotSKUSelection.jsp"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -476,8 +483,17 @@ class JcpenneyScraper(Scraper):
         return 0
 
     def _site_online_out_of_stock(self):
-        return 0
+        try:
+            session_value = self.tree_html.xpath("//input[@name='_dynSessConf']/@value")[0]
+            stock_status_json = self.load_page_from_url_with_number_of_retries(self.STOCK_STATUS_URL.format(session_value, self._product_id()))
+            stock_status_json = json.loads(stock_status_json)
 
+            if "Out of stock online." in stock_status_json["estimatedDeliveryMsg"]:
+                return 1
+        except:
+            pass
+
+        return 0
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
