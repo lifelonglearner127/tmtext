@@ -334,8 +334,6 @@ class KohlsScraper(Scraper):
 
             webcollage_page_contents = html.fromstring(webcollage_page_contents)
 
-#            <div data-resources-base="http://media.webcollage.net/rlfp/wc/live/module/crockpotus/" id="videoGallery-5248">
-
             video_gallery_element = webcollage_page_contents.xpath("//div[@data-resources-base and starts-with(@id, 'videoGallery')]")
 
             if video_gallery_element:
@@ -345,7 +343,13 @@ class KohlsScraper(Scraper):
 
             base_video_url = video_gallery_element.xpath("./@data-resources-base")[0]
             wc_json_data = json.loads(video_gallery_element.xpath(".//div[@class='wc-json-data']/text()")[0].strip())
-            webcollage_video_list = [base_video_url + video_info["src"]["src"] for video_info in wc_json_data["videos"]]
+            webcollage_video_list = []
+
+            for video_info in wc_json_data["videos"]:
+                if base_video_url[-1] == "/" and video_info["src"]["src"][0] == "/":
+                    webcollage_video_list.append(base_video_url + video_info["src"]["src"][1:])
+                else:
+                    webcollage_video_list.append(base_video_url + video_info["src"]["src"])
 
             if webcollage_video_list:
                 self.video_urls.extend(webcollage_video_list)
