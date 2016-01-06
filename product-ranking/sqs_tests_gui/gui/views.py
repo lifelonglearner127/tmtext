@@ -131,6 +131,9 @@ class ViewBase64Image(AdminOnlyMixin, View):
     def get(self, request, *args, **kwargs):
         job = Job.objects.get(pk=kwargs['job'])
         output_fname = get_data_filename(job)
+        if output_fname.startswith('/'):
+            output_fname = output_fname[1:]
+        output_fname = settings.MEDIA_URL + output_fname
         if not os.path.exists(output_fname):
             return HttpResponse('Output filename for job with ID %s does not exist' % job.pk)
         with open(output_fname, 'r') as fh:
