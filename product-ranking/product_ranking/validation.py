@@ -378,8 +378,8 @@ class BaseValidator(object):
             return False
         if val.strip().count(u' ') > 50:  # too many spaces
             return False
-        # if '<' in val or '>' in val:  # no tags
-        #     return False
+        if '<' in val and '>' in val:  # no tags
+            return False
         return True
 
     def _validate_total_matches(self, val):
