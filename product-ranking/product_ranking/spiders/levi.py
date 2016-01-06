@@ -208,7 +208,7 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_title(self, response):
         title = response.xpath(
-            '//h1[contains(@class, "title")]').extract()
+            '//h1[contains(@class, "title")]/text()').extract()
 
         return title
 
@@ -241,8 +241,8 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         html = data['Resonance']['Response'][2]['output']
 
         s = Selector(text=html)
-        titles = s.xpath('//h4/text()').extract() # Title
-        urls = s.xpath('//img/@src').extract() # Img url
+        titles = s.xpath('//h4/text()').extract()  # Title
+        urls = s.xpath('//img/@src').extract()  # Img url
         for title, url in zip(titles, urls):
             if url and title:
                 related_prods.append(
