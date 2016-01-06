@@ -309,15 +309,9 @@ class KohlsScraper(Scraper):
         return self.video_urls if self.video_urls else None
 
     def _video_count(self):
-        video_count = 0
-        image_urls = self.tree_html.xpath("//div[@id='leftCarousel']/div[@class='ver-carousel']/ul/li//img/@src")
+        video_urls = self.video_urls()
 
-        video_urls = [x for x in image_urls if "videoPlayer_Icon.png" in x]
-
-        if not video_urls:
-            return 0
-
-        return len(video_urls)
+        return len(video_urls) if video_urls else 0
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
