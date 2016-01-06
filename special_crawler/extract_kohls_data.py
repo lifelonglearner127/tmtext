@@ -309,7 +309,7 @@ class KohlsScraper(Scraper):
         return self.video_urls if self.video_urls else None
 
     def _video_count(self):
-        video_urls = self.video_urls()
+        video_urls = self._video_urls()
 
         return len(video_urls) if video_urls else 0
 
