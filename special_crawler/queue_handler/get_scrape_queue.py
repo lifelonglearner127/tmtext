@@ -14,6 +14,8 @@ import requests
 import threading
 import urllib
 from datetime import datetime
+from boto.s3.connection import S3Connection
+
 
 # initialize the logger
 logger = logging.getLogger('basic_logger')
@@ -40,6 +42,13 @@ def main( environment, scrape_queue_name, thread_id):
     # establish the scrape queue
     sqs_scrape = SQS_Queue( scrape_queue_name)
     base = "http://localhost/get_data?url=%s"
+    s3 = S3Connection('AKIAJPOFQWU54DCMDKLQ', '/aebM4IZ97NEwVnfS6Jys6sKVvDXa6eDZsB2X7gP')
+    bucket = None
+
+    if s3.lookup('contentanalytcis.inc.ch.s3.{0}'.format(scrape_queue_name)):
+        bucket = s3.get_bucket('contentanalytcis.inc.ch.s3.{0}'.format(scrape_queue_name))
+    else:
+        bucket = s3.create_bucket('contentanalytcis.inc.ch.s3.{0}'.format(scrape_queue_name))
 
     # Continually pull off the SQS Scrape Queue
     while True:
