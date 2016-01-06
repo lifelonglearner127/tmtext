@@ -31,9 +31,6 @@ used item from the queue.
 from boto.sqs.message import Message
 import boto.sqs
 import zlib
-import time
-import json
-
 
 class SQS_Queue():
     # Connect to the SQS Queue
@@ -44,30 +41,12 @@ class SQS_Queue():
 
     # Add message/a list of messages to the queue
     # Messages are strings (or at least serialized to strings)
-    def put(self, message, scrape_queue_name, site, product_id, event, site_id, url, hash_id, key_string):
+    def put(self, message):
         m = Message()
         try:
             if isinstance(message, basestring):
-                # switch to S3 cache way
-                if hash_id:
-                    response_msg = {}
-                    response_msg['url'] = url
-                    response_msg['site_id'] = site_id
-                    response_msg['product_id'] = product_id
-                    response_msg['event'] = event
-                    response_msg["site"] = site
-                    response_msg["product_id"] = product_id
-                    response_msg["hash"] = hash_id
-                    response_msg["s3_key"] = key_string
-                    response_msg = json.dumps(response_msg)
-
-                    m.set_body(response_msg)
-                    self.q.write(m)
-                # legacy way
-                else:
-                    m.set_body(zlib.compress(message))
-                    self.q.write(m)
-
+                m.set_body(zlib.compress(message))
+                self.q.write(m)
         except NameError:
             if isinstance(message, str):
                 m.set_body(message)
@@ -116,6 +95,7 @@ class SQS_Queue():
     # (IE if you think the queue is full but it's really not)
     def empty(self):
         return self.q.count()<=0
+
 
 
 #Some trial connection stuff for testing, may become outdated as the above is continually integrated into other components

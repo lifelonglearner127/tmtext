@@ -2,7 +2,7 @@
 
 '''
 Gist : Scrape Queue -> Scrape -> Process Queue
-sqs test
+
 '''
 
 from sqs_connect import SQS_Queue
@@ -14,8 +14,6 @@ import requests
 import threading
 import urllib
 from datetime import datetime
-from boto.s3.connection import S3Connection
-
 
 # initialize the logger
 logger = logging.getLogger('basic_logger')
@@ -42,13 +40,6 @@ def main( environment, scrape_queue_name, thread_id):
     # establish the scrape queue
     sqs_scrape = SQS_Queue( scrape_queue_name)
     base = "http://localhost/get_data?url=%s"
-    s3 = S3Connection('AKIAJPOFQWU54DCMDKLQ', '/aebM4IZ97NEwVnfS6Jys6sKVvDXa6eDZsB2X7gP')
-    bucket = None
-
-    if s3.lookup('contentanalytcis.inc.ch.s3.{0}'.format(scrape_queue_name)):
-        bucket = s3.get_bucket('contentanalytcis.inc.ch.s3.{0}'.format(scrape_queue_name))
-    else:
-        bucket = s3.create_bucket('contentanalytcis.inc.ch.s3.{0}'.format(scrape_queue_name))
 
     # Continually pull off the SQS Scrape Queue
     while True:
@@ -82,98 +73,39 @@ def main( environment, scrape_queue_name, thread_id):
                 server_name = message_json['server_name']
                 product_id = message_json['product_id']
                 event = message_json['event']
-                is_s3_cache_way = False
+                
+                logger.info("Received: thread %d server %s url %s" % ( thread_id, server_name, url))
 
-                logger.info("Received: thread %d server %s url %s" % (thread_id, server_name, url))
+                for i in range(3):
+                    # Scrape the page using the scraper running on localhost
+                    get_start = time.time()
+                    output_text = requests.get(base%(urllib.quote(url))).text
+                    get_end = time.time()
 
-                key_string = None
-                output_message = None
-                hash_id = None
+                    # Add the processing fields to the return object and re-serialize it
+                    try:
+                        output_json = json.loads(output_text)
+                    except Exception as e:
+                        output_json = {
+                            "error":e,
+                            "date":datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
+                            "status":"failure",
+                            "page_attributes":{"loaded_in_seconds":round(get_end-get_start,2)}}
+                    output_json['attempt'] = i+1
+                    if not "error" in output_json:
+                        break
+                    time.sleep( 1)
 
-                # switch to S3 cache way
-                if 'hash' in message_json:
-                    is_s3_cache_way = True
-                    hash_id = message_json['hash']
-
-                    # check valid cached value existence
-                    folder_string = "{0}/{1}/{2}".format(site, time.strftime("%Y/%m/%d"), product_id)
-                    valid_cached_key_list = bucket.list(folder_string)
-                    valid_cached_key_list = [key.name for key in valid_cached_key_list]
-
-                    if valid_cached_key_list:
-                        key_string = valid_cached_key_list[0]
-                        key = bucket.get_key(key_string)
-                        output_message = key.get_contents_as_string()
-                    else:
-                        for index in range(3):
-                            # Scrape the page using the scraper running on localhost
-                            get_start = time.time()
-                            output_text = requests.get(base % (urllib.quote(url))).text
-                            get_end = time.time()
-
-                            # Add the processing fields to the return object and re-serialize it
-                            try:
-                                output_json = json.loads(output_text)
-                            except Exception as e:
-                                output_json = {
-                                    "error": e,
-                                    "date": datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
-                                    "status": "failure",
-                                    "page_attributes": {"loaded_in_seconds": round(get_end-get_start, 2)}}
-
-                            output_json['attempt'] = index + 1
-
-                            if "error" not in output_json:
-                                break
-
-                            time.sleep(1)
-
-                        output_json['url'] = url
-                        output_json['site_id'] = site_id
-                        output_json['product_id'] = product_id
-                        output_json['event'] = event
-                        output_message = json.dumps(output_json)
-
-                        key_string = "{0}/{1}/{2}/{3}".format(site, time.strftime("%Y/%m/%d"), product_id, hash_id)
-                        key = bucket.new_key(key_string)
-                        key.set_contents_from_string(output_message.encode("utf-8"))
-                        key.set_acl('public-read')
-                else:
-                    for index in range(3):
-                        # Scrape the page using the scraper running on localhost
-                        get_start = time.time()
-                        output_text = requests.get(base % (urllib.quote(url))).text
-                        get_end = time.time()
-
-                        # Add the processing fields to the return object and re-serialize it
-                        try:
-                            output_json = json.loads(output_text)
-                        except Exception as e:
-                            output_json = {
-                                "error": e,
-                                "date": datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
-                                "status": "failure",
-                                "page_attributes": {"loaded_in_seconds": round(get_end-get_start, 2)}}
-                        output_json['attempt'] = index + 1
-
-                        if "error" not in output_json:
-                            break
-
-                        time.sleep(1)
-
-                    output_json['url'] = url
-                    output_json['site_id'] = site_id
-                    output_json['product_id'] = product_id
-                    output_json['event'] = event
-                    output_message = json.dumps(output_json)
+                output_json['url'] = url
+                output_json['site_id'] = site_id
+                output_json['product_id'] = product_id
+                output_json['event'] = event
+                output_message = json.dumps( output_json)
+                #print(output_message)
 
                 # Add the scraped page to the processing queue ...
-                sqs_process = SQS_Queue('%s_process' % server_name)
-
-                if is_s3_cache_way:
-                    sqs_process.put(output_message, scrape_queue_name, site, product_id, event, site_id, url, hash_id, key_string)
-                else:
-                    sqs_process.put(output_message, scrape_queue_name, site, product_id, event, site_id, url, None, None)
+                sqs_process = SQS_Queue('%s_process'%server_name)
+                sqs_process.put( output_message)
                 # ... and remove it from the scrape queue
                 sqs_scrape.task_done()
                 
