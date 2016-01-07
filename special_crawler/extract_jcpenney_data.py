@@ -216,15 +216,16 @@ class JcpenneyScraper(Scraper):
 
         #check pdf
         try:
-            pdf_url = re.search('href="(.+\.pdf?)"', page_raw_text).group(1)
+            pdf_urls = re.findall(r'href="(.+\.pdf?)"', page_raw_text)
 
-            if not pdf_url:
+            if not pdf_urls:
                 raise Exception
 
-            if not pdf_url.startswith("http://"):
-                pdf_url = "http://www.jcpenney.com" + pdf_url
+            for index, url in enumerate(pdf_urls):
+                if not url.startswith("http://"):
+                    pdf_urls[index] = "http://www.jcpenney.com" + url
 
-            self.pdf_urls = [pdf_url]
+            self.pdf_urls = pdf_urls
             self.pdf_count = len(self.pdf_urls)
         except:
             pass
