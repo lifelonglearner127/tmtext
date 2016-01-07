@@ -5,6 +5,8 @@ class MacysValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
         'google_source_site', 'description', 'special_pricing'
     ]
     ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = False
+    ignore_log_filtered = False
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
