@@ -17,7 +17,7 @@ from product_ranking.validators.amazoncouk_validator import AmazoncoukValidatorS
 
 class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     name = "amazoncouk_products"
-    allowed_domains = ["www.amazon.co.uk"]
+    allowed_domains = ["www.amazon.co.uk", "amazon.com"]
 
     settings = AmazoncoukValidatorSettings
     #use_proxies = True
