@@ -8,6 +8,7 @@ import os
 import sys
 import time
 import socket
+import random
 
 import scrapy
 from scrapy.conf import settings
@@ -45,6 +46,7 @@ class ScreenshotItem(scrapy.Item):
 class URL2ScreenshotSpider(scrapy.Spider):
     name = 'url2screenshot_products'
     # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
+    available_drivers = ['chromium', 'firefox']
 
     def __init__(self, *args, **kwargs):
         self.product_url = kwargs['product_url']
@@ -67,6 +69,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
         self.code_200_required = kwargs.get('code_200_required', True)
         self.close_popups = kwargs.get('close_popups', kwargs.get('close_popup', None))
+        self.driver = kwargs.get('driver', None)  # if None, then a random UA will be used
 
         settings.overrides['ITEM_PIPELINES'] = {}
         super(URL2ScreenshotSpider, self).__init__(*args, **kwargs)
@@ -91,7 +94,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 driver.save_screenshot('/tmp/_captcha_after.png')
 
     def _log_proxy(self, r_session):
-        self.log("IP via proxy: %s" % r_session.get('http://icanhazip.com').text)
+        self.log("IP : %s" % r_session.get('http://icanhazip.com').text)
 
     def _get_js_body_height(self, driver):
         scroll = driver.execute_script('return document.body.scrollHeight;')
@@ -110,18 +113,13 @@ class URL2ScreenshotSpider(scrapy.Spider):
         """ % cls
         driver.execute_script(script)
 
-    def parse(self, response):
+    def _choose_another_driver(self):
+        for d in self.available_drivers:
+            if d != self._driver:
+                return d
 
+    def _init_chromium(self):
         from selenium import webdriver
-
-        socket.setdefaulttimeout(int(self.timeout))
-
-        # temporary file for the output image
-        t_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-        t_file.close()
-        print('Created temporary image file: %s' % t_file.name)
-
-        # tweak user agent
         chrome_flags = webdriver.DesiredCapabilities.CHROME  # this is for Chrome?
         chrome_options = webdriver.ChromeOptions()  # this is for Chromium
         if self.proxy:
@@ -129,6 +127,68 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 '--proxy-server=%s' % self.proxy_type+'://'+self.proxy)
         chrome_flags["chrome.switches"] = ['--user-agent=%s' % self.user_agent]
         chrome_options.add_argument('--user-agent=%s' % self.user_agent)
+        executable_path = '/usr/sbin/chromedriver'
+        if not os.path.exists(executable_path):
+            executable_path = '/usr/local/bin/chromedriver'
+        # initialize webdriver, open the page and make a screenshot
+        driver = webdriver.Chrome(desired_capabilities=chrome_flags,
+                                  chrome_options=chrome_options,
+                                  executable_path=executable_path)
+        return driver
+
+    def _init_firefox(self):
+        # TODO: proxies
+        from selenium import webdriver
+        profile = webdriver.FirefoxProfile()
+        profile.set_preference("general.useragent.override", self.user_agent)
+        driver = webdriver.Firefox(profile)
+        return driver
+
+    def init_driver(self, name=None):
+        if name:
+            self._driver = name
+        else:
+            if not self.driver:
+                self._driver = 'chromium'
+            elif self.driver == 'random':
+                self._driver = random.choice(self.available_drivers)
+            else:
+                self._driver = self.driver
+        print('Using driver: ' + self._driver)
+        init_driver = getattr(self, '_init_'+self._driver)
+        return init_driver()
+
+    def prepare_driver(self, driver):
+        driver.set_page_load_timeout(int(self.timeout))
+        driver.set_script_timeout(int(self.timeout))
+        driver.set_window_size(int(self.width), int(self.height))
+
+    def make_screenshot(self, driver, output_fname):
+        driver.get(self.product_url)
+        time.sleep(6)
+        # maximize height of the window
+        _body_height = self._get_js_body_height(driver)
+        if _body_height and _body_height > 10:
+            driver.set_window_size(self.width, _body_height)
+        self._solve_captha_in_selenium(driver)
+
+        if self.close_popups:
+            time.sleep(3)
+            self._click_on_elements_with_class(driver, 'close')
+
+        time.sleep(2)
+        driver.save_screenshot(output_fname)
+        if self.image_copy:  # save a copy of the file if needed
+            driver.save_screenshot(self.image_copy)
+        driver.quit()
+
+    def parse(self, response):
+        socket.setdefaulttimeout(int(self.timeout))
+
+        # temporary file for the output image
+        t_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+        t_file.close()
+        print('Created temporary image file: %s' % t_file.name)
 
         display = Display(visible=0, size=(self.width, self.height))
         display.start()
@@ -152,36 +212,25 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 display.stop()
                 return
 
-        executable_path = '/usr/sbin/chromedriver'
-        if not os.path.exists(executable_path):
-            executable_path = '/usr/local/bin/chromedriver'
-        # initialize webdriver, open the page and make a screenshot
-        driver = webdriver.Chrome(desired_capabilities=chrome_flags,
-                                  chrome_options=chrome_options,
-                                  executable_path=executable_path)
-        driver.set_page_load_timeout(int(self.timeout))
-        driver.set_script_timeout(int(self.timeout))
-        driver.set_window_size(int(self.width), int(self.height))
-
+        driver = self.init_driver()
         try:
-            driver.get(self.product_url)
-            # maximize height of the window
-            _body_height = self._get_js_body_height(driver)
-            if _body_height and _body_height > 10:
-                driver.set_window_size(self.width, _body_height)
-            self._solve_captha_in_selenium(driver)
+            self.prepare_driver(driver)
+            self.make_screenshot(driver, t_file.name)
         except Exception as e:
             self.log('Exception while getting response using selenium! %s' % str(e))
-
-        if self.close_popups:
-            time.sleep(3)
-            self._click_on_elements_with_class(driver, 'close')
-
-        time.sleep(2)
-        driver.save_screenshot(t_file.name)
-        if self.image_copy:  # save a copy of the file if needed
-            driver.save_screenshot(self.image_copy)
-        driver.quit()
+            # lets try with another driver
+            another_driver_name = self._choose_another_driver()
+            try:
+                driver.quit()  # clean RAM
+            except Exception as e:
+                pass
+            driver = self.init_driver(name=another_driver_name)
+            self.prepare_driver(driver)
+            self.make_screenshot(driver, t_file.name)
+            try:
+                driver.quit()
+            except:
+                pass
 
         # crop the image if needed
         if self.crop_width and self.crop_height:

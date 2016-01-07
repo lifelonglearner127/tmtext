@@ -182,11 +182,11 @@ class AmazonScraper(Scraper):
 
     def _product_id(self):
         if self.scraper_version == "uk":
-            product_id = re.match("^http://www.amazon.co.uk/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+            product_id = re.match("^http://www.amazon.co.uk/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         elif self.scraper_version == "ca":
-            product_id = re.match("^http://www.amazon.ca/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+            product_id = re.match("^http://www.amazon.ca/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         else:
-            product_id = re.match("^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+            product_id = re.match("^http://www.amazon.com/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         return product_id
 
     def _site_id(self):
@@ -295,6 +295,32 @@ class AmazonScraper(Scraper):
             return short_description.replace("\n"," ")
 
         return self._long_description_helper()
+
+    def _seller_ranking(self):
+        seller_ranking = []
+
+        if self.tree_html.xpath("//li[@id='SalesRank']"):
+            ranking_info = self.tree_html.xpath("//li[@id='SalesRank']/text()")[1].strip()
+            seller_ranking.append({"category": ranking_info[ranking_info.find(" in ") + 4:ranking_info.find("(")].strip(),
+                                   "ranking": int(ranking_info[1:ranking_info.find(" ")].strip().replace(",", ""))})
+
+            ranking_info_list = [item.text_content().strip() for item in self.tree_html.xpath("//li[@id='SalesRank']/ul[@class='zg_hrsr']/li")]
+
+            for ranking_info in ranking_info_list:
+                seller_ranking.append({"category": ranking_info[ranking_info.find("in") + 2:].strip(),
+                                       "ranking": int(ranking_info[1:ranking_info.find(" ")].replace(",", "").strip())})
+        else:
+            ranking_info_list = self.tree_html.xpath("//td[preceding-sibling::th/@class='a-color-secondary a-size-base prodDetSectionEntry' and contains(preceding-sibling::th/text(), 'Best Sellers Rank')]/span/span")
+            ranking_info_list = [ranking_info.text_content().strip() for ranking_info in ranking_info_list]
+
+            for ranking_info in ranking_info_list:
+                seller_ranking.append({"category": ranking_info[ranking_info.find("in") + 2:ranking_info.find("(See Top ")].strip(),
+                                       "ranking": int(ranking_info[1:ranking_info.find(" ")].replace(",", "").strip())})
+
+        if seller_ranking:
+            return seller_ranking
+
+        return None
 
     def _long_description(self):
         d1 = self._description()
@@ -812,11 +838,23 @@ class AmazonScraper(Scraper):
             return self.review_list
 
         review_list = []
-        review_link = "http://www.amazon.com/product-reviews/{0}/ref=cm_cr_pr_viewopt_sr?ie=UTF8&showViewpoints=1&filterByStar={1}_star&pageNumber=1"
+
+        try:
+            review_summary_link = self.tree_html.xpath("//a[@class='a-link-emphasis a-nowrap']/@href")[0]
+        except:
+            review_summary_link = "http://www.amazon.com/product-reviews/{0}/ref=acr_dpx_see_all?ie=UTF8&showViewpoints=1".format(self._product_id())
+
         mark_list = ["one", "two", "three", "four", "five"]
 
         for index, mark in enumerate(mark_list):
-            contents = self.load_page_from_url_with_number_of_retries(review_link.format(self._product_id(), mark))
+            if "cm_cr_dp_see_all_summary" in review_summary_link:
+                review_link = review_summary_link.replace("cm_cr_dp_see_all_summary", "cm_cr_pr_viewopt_sr")
+                review_link = review_link + "&filterByStar={0}_star&pageNumber=1".format(mark)
+            elif "acr_dpx_see_all" in review_summary_link:
+                review_link = review_summary_link.replace("acr_dpx_see_all", "cm_cr_pr_viewopt_sr")
+                review_link = review_link + "&filterByStar={0}_star&pageNumber=1".format(mark)
+
+            contents = self.load_page_from_url_with_number_of_retries(review_link)
 
             if "Sorry, no reviews match your current selections." in contents:
                 review_list.append([index + 1, 0])
@@ -1245,6 +1283,7 @@ class AmazonScraper(Scraper):
         "feature_count" : _feature_count, \
         "model_meta" : _model_meta, \
         "description" : _description, \
+        "seller_ranking": _seller_ranking, \
         "long_description" : _long_description, \
         "apluscontent_desc" : _apluscontent_desc, \
         "variants": _variants, \
