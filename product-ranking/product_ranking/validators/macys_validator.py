@@ -1,5 +1,5 @@
 class MacysValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['bestseller_rank', 'buyer_reviews', 'brand']
+    optional_fields = ['buyer_reviews', 'brand']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
         'google_source_site', 'description', 'special_pricing', 'model',
