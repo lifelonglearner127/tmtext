@@ -838,11 +838,13 @@ class AmazonScraper(Scraper):
             return self.review_list
 
         review_list = []
-        review_link = "http://www.amazon.com/product-reviews/{0}/ref=cm_cr_pr_viewopt_sr?ie=UTF8&showViewpoints=1&filterByStar={1}_star&pageNumber=1"
+        review_summary_link = self.tree_html.xpath("//a[@class='a-link-emphasis a-nowrap']/@href")[0]
         mark_list = ["one", "two", "three", "four", "five"]
 
         for index, mark in enumerate(mark_list):
-            contents = self.load_page_from_url_with_number_of_retries(review_link.format(self._product_id(), mark))
+            review_link = review_summary_link.replace("cm_cr_dp_see_all_summary", "cm_cr_pr_viewopt_sr")
+            review_link = review_link + "&filterByStar={0}_star&pageNumber=1".format(mark)
+            contents = self.load_page_from_url_with_number_of_retries(review_link)
 
             if "Sorry, no reviews match your current selections." in contents:
                 review_list.append([index + 1, 0])
