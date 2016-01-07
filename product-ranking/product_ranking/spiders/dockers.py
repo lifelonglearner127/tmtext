@@ -209,7 +209,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_title(self, response):
         title = response.xpath(
-            '//h1[contains(@class, "title")]').extract()
+            '//h1[contains(@class, "title")]/text()').extract()
 
         return title
 
