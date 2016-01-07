@@ -611,9 +611,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if not overall_text.strip():
             return ZERO_REVIEWS_VALUE
         buyer_reviews = {}
-        num_of_reviews = int(overall_text.split('review')[0].strip())
-        if not num_of_reviews:
+        num_of_reviews = overall_text.split('review')[0].strip()
+        if not num_of_reviews.strip():
             return ZERO_REVIEWS_VALUE
+        num_of_reviews = int(num_of_reviews)
         buyer_reviews['num_of_reviews'] = num_of_reviews
         buyer_reviews['average_rating'] = float(
             overall_text.split('|')[1].split('out')[0].strip())
