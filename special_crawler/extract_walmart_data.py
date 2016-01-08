@@ -1382,8 +1382,8 @@ class WalmartScraper(Scraper):
     def _shelf_links_by_level(self):
         # assume new page design
         if self._version() == "Walmart v2":
-            categories_list = self.tree_html.xpath("//li[@class='breadcrumb']//a/span/text()")
-            shelf_link_list = self.tree_html.xpath("//li[@class='breadcrumb']//a/@href")
+            categories_list = self.tree_html.xpath("*//ol[@class='breadcrumb-list breadcrumb-list-mini']//li[@class='breadcrumb']//a/span/text()")
+            shelf_link_list = self.tree_html.xpath("*//ol[@class='breadcrumb-list breadcrumb-list-mini']//li[@class='breadcrumb']//a/@href")
 
             shelf_links_by_level = [{"name": categories_list[index], "level": index + 1, "link": "http://www.walmart.com" + shelf_link} for index, shelf_link in enumerate(shelf_link_list)]
 
