@@ -120,7 +120,12 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(product, 'price', price)
 
         # Parse variants
-        variants = self._parse_variants(response)
+        try:
+            variants = self._parse_variants(response)
+        except KeyError:
+            product['not_found'] = True
+            return product
+
         product['variants'] = variants
 
         response.meta['marks'] = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
