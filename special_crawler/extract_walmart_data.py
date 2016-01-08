@@ -2101,7 +2101,7 @@ class WalmartScraper(Scraper):
             available_stores = available_stores if available_stores else []
 
             for store in available_stores:
-                if store["displayArrivalDate"] != "Out of stock":
+                if store["displayArrivalDate"].lower().strip() != "out of stock":
                     return 0
 
             for seller in self.product_info_json["buyingOptions"]["marketplaceOptions"]:
