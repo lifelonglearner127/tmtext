@@ -79,4 +79,5 @@
     <field name="bundle_components" version="1.2"></field>
     <field name="seller_ranking" version="1.2"></field>
     <field name="in_stores_out_of_stock" version="1.4"></field>
+    <field name="shelf_links_by_level" version="1.1"></field>
 </fields>
