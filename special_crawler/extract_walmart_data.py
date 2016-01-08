@@ -1382,20 +1382,13 @@ class WalmartScraper(Scraper):
     def _shelf_links_by_level(self):
         # assume new page design
         if self._version() == "Walmart v2":
-            if self.is_bundle_product:
-                product_info_json = self._extract_product_info_json()
-                if type(product_info_json["analyticsData"]["catPath"]) == dict:
-                    return product_info_json["analyticsData"]["catPath"]["categoryPathName"].split("/")
-                else:
-                    return product_info_json["analyticsData"]["catPath"].split("/")
-            else:
-                categories_list = self.tree_html.xpath("//li[@class='breadcrumb']/a/span/text()")
-                shelf_link_list = self.tree_html.xpath("//li[@class='breadcrumb']/a/@href")
+            categories_list = self.tree_html.xpath("//li[@class='breadcrumb']//a/span/text()")
+            shelf_link_list = self.tree_html.xpath("//li[@class='breadcrumb']//a/@href")
 
-                shelf_links_by_level = [{"name": categories_list[index], "level": index + 1, "link": "http://www.walmart.com" + shelf_link} for index, shelf_link in enumerate(shelf_link_list)]
+            shelf_links_by_level = [{"name": categories_list[index], "level": index + 1, "link": "http://www.walmart.com" + shelf_link} for index, shelf_link in enumerate(shelf_link_list)]
 
-                if shelf_links_by_level:
-                    return shelf_links_by_level
+            if shelf_links_by_level:
+                return shelf_links_by_level
 
         if self._version() == "Walmart v1":
             # assume old page design
