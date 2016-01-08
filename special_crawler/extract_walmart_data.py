@@ -1379,6 +1379,24 @@ class WalmartScraper(Scraper):
 
             return category
 
+    def _shelf_links_by_level(self):
+        # assume new page design
+        if self._version() == "Walmart v2":
+            categories_list = self.tree_html.xpath("*//ol[@class='breadcrumb-list breadcrumb-list-mini']//li[@class='breadcrumb']//a/span/text()")
+            shelf_link_list = self.tree_html.xpath("*//ol[@class='breadcrumb-list breadcrumb-list-mini']//li[@class='breadcrumb']//a/@href")
+
+            shelf_links_by_level = [{"name": categories_list[index], "level": index + 1, "link": "http://www.walmart.com" + shelf_link} for index, shelf_link in enumerate(shelf_link_list)]
+
+            if shelf_links_by_level:
+                return shelf_links_by_level
+
+        if self._version() == "Walmart v1":
+            # assume old page design
+            try:
+                return self._categories_hierarchy_old()
+            except Exception:
+                return None
+
     # extract product features list from its product product page tree, return as string
     def _features_from_tree(self):
         """Extracts product features
@@ -2083,7 +2101,7 @@ class WalmartScraper(Scraper):
             available_stores = available_stores if available_stores else []
 
             for store in available_stores:
-                if store["displayArrivalDate"] != "Out of stock":
+                if store["displayArrivalDate"].lower().strip() != "out of stock":
                     return 0
 
             for seller in self.product_info_json["buyingOptions"]["marketplaceOptions"]:
@@ -3028,7 +3046,7 @@ class WalmartScraper(Scraper):
         "image_dimensions": _image_dimensions, \
         "categories": _categories_hierarchy, \
         "category_name": _category, \
-
+        "shelf_links_by_level": _shelf_links_by_level, \
         "scraper": _version, \
         }
 

@@ -125,6 +125,32 @@ class AddJob(View):
             return HttpResponse('Job object created')
 
 
+class ViewBase64Image(AdminOnlyMixin, View):
+    # Displays output file as image
+
+    def get(self, request, *args, **kwargs):
+        job = Job.objects.get(pk=kwargs['job'])
+        output_fname = get_data_filename(job)
+        output_fname = settings.MEDIA_ROOT + output_fname
+        if not os.path.exists(output_fname):
+            return HttpResponse('Output filename %s for job with ID %s does not exist' %
+                                (output_fname, job.pk))
+        with open(output_fname, 'r') as fh:
+            content = fh.read()
+        if not content:
+            return "Empty file - nothing to show"
+        if not '\n' in content:
+            return "No newlines in file - corrupted file?"
+        content = content.split('\n', 1)[1]
+        sep = '","'
+        if not sep in content:
+            return "No fields separator found - corrupted file?"
+        content = content.split(sep, 1)[1]
+        if content.endswith('"'):
+            content = content[0:-1]
+        return HttpResponse('<img src="data:image/png;base64,%s" />' % content)
+
+
 class ProgressMessagesView(AdminOnlyMixin, TemplateView):
     template_name = 'progress_messages.html'
     max_messages = 999

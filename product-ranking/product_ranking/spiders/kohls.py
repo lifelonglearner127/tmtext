@@ -77,6 +77,8 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                   "r5R3Hr2yextBMfdBluokiEGnVwVqprBs9_dcYQYmmCp0Jeu8ZCNAVX69phHt&" \
                   "l=1"
 
+    handle_httpstatus_list = [404]
+
     def __init__(self, sort_mode=None, *args, **kwargs):
         self.start_pos = 0
         if sort_mode:
@@ -108,16 +110,27 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         if self.product_url:
             prod = SiteProductItem()
             prod['is_single_result'] = True
-            yield Request(self.product_url,
-                          self._parse_single_product,
-                          meta={'product': prod})
+            yield Request(
+                self.product_url, self._parse_single_product,
+                dont_filter=True, meta={
+                    'product': prod,
+                    'handle_httpstatus_list': self.handle_httpstatus_list}
+            )
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
+    def _is_not_found(self, response):
+        if response.status == 404:
+            return True
+
     def parse_product(self, response):
         prod = response.meta['product']
         prod['url'] = response.url
+
+        if self._is_not_found(response):
+            prod['not_found'] = True
+            return prod
 
         kv = KohlsVariants()
         kv.setupSC(response)

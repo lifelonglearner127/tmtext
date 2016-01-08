@@ -16,11 +16,13 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import cond_set, cond_set_value, \
     FLOATING_POINT_RGEX, cond_replace
 from contrib.product_spider import ProductsSpider
+from product_ranking.validation import BaseValidator
 from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.macys_variants import MacysVariants
+from product_ranking.validators.macys_validator import MacysValidatorSettings
 
 
-class MacysProductsSpider(ProductsSpider):
+class MacysProductsSpider(BaseValidator, ProductsSpider):
     name = 'macys_products'
     allowed_domains = ['macys.com']
     SEARCH_URL = "http://www1.macys.com/shop/search?keyword={search_term}" \
@@ -42,13 +44,15 @@ class MacysProductsSpider(ProductsSpider):
 
     REQUIRE_PRODUCT_PAGE = False
 
+    settings = MacysValidatorSettings
+
     def __init__(self, sort_mode='default', *args, **kwargs):
         super(MacysProductsSpider, self).__init__(*args, **kwargs)
         self.sort_mode = self.SORT_MODES.get(sort_mode, 'ORIGINAL')
-        self.url_formatter.defaults['page'] = 1
 
     def start_requests(self):  # Stolen from walmart
         """Generate Requests from the SEARCH_URL and the search terms."""
+        self.url_formatter.defaults['page'] = 1
         for st in self.searchterms:
             yield Request(
                 self.url_formatter.format(

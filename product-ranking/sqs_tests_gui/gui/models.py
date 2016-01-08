@@ -3,6 +3,7 @@ import sys
 
 from django.db import models
 from django.utils import timezone
+from django.core.urlresolvers import reverse_lazy
 
 
 CWD = os.path.dirname(os.path.abspath(__file__))
@@ -117,6 +118,15 @@ class Job(models.Model):
         return ('SearchTerm [%s]' % self.search_term if self.search_term
                 else 'URL')
     searchterm_or_url.short_description = 'Type'
+
+    def view_as_image(self):
+        # for url2screenshot spider
+        if 'url2screenshot' in self.spider:
+            return "<a href='%s' target='_blank'>Image</a>" % reverse_lazy(
+                'view_base64_image', kwargs={'job': self.pk})
+        return ''
+    view_as_image.short_description = 'Image'
+    view_as_image.allow_tags = True
 
     def get_input_queue(self):
         if self.mode == 'no cache':

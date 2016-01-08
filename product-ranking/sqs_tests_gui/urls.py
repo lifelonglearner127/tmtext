@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from gui.views import LogFileView, CSVDataFileView, AddJob, ProgressMessagesView,\
     ProgressFileView, SearchFilesView, GetS3FileView, SearchS3Cache, \
-    RenderS3CachePage
+    RenderS3CachePage, ViewBase64Image
 
 
 from django.conf import settings
@@ -26,6 +26,8 @@ urlpatterns = [
         name='progress_file_view'),
     url(r'^add-job', csrf_exempt(AddJob.as_view()),
         name='add_job_view'),
+    url(r'^view-base64-image/(?P<job>[0-9]+)/$', ViewBase64Image.as_view(),
+        name='view_base64_image'),
     url(r'^progress/', ProgressMessagesView.as_view(), name='progress'),
     url(r'^search-files/', SearchFilesView.as_view(), name='search-files'),
     url(r'^get-file/', GetS3FileView.as_view(), name='get-file'),

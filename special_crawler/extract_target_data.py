@@ -464,7 +464,7 @@ class TargetScraper(Scraper):
     def _categories(self):
         all = self.tree_html.xpath("//div[contains(@id, 'breadcrumbs')]//a/text()")
         out = [self._clean_text(r) for r in all]
-        return out[1:]
+        return out[1:] if out else None
 
     def _category_name(self):
         return self._categories()[-1]

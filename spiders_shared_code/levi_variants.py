@@ -74,6 +74,9 @@ class LeviVariants(object):
                 value_list = []
 
                 if "colorid" in buy_stack_json["sku"][variant_combination]:
+                    if buy_stack_json["sku"][variant_combination]["colorid"] not in buy_stack_json["colorid"]:
+                        continue
+
                     properties["color"] = buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]["colorid"]]["finish"]["title"]
                     value_list.append(properties["color"])
                     if "color" not in attribute_list: attribute_list.append("color")

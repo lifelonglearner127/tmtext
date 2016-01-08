@@ -296,32 +296,6 @@ class AmazonScraper(Scraper):
 
         return self._long_description_helper()
 
-    def _seller_ranking(self):
-        seller_ranking = []
-
-        if self.tree_html.xpath("//li[@id='SalesRank']"):
-            ranking_info = self.tree_html.xpath("//li[@id='SalesRank']/text()")[1].strip()
-            seller_ranking.append({"category": ranking_info[ranking_info.find(" in ") + 4:ranking_info.find("(")].strip(),
-                                   "ranking": int(ranking_info[1:ranking_info.find(" ")].strip().replace(",", ""))})
-
-            ranking_info_list = [item.text_content().strip() for item in self.tree_html.xpath("//li[@id='SalesRank']/ul[@class='zg_hrsr']/li")]
-
-            for ranking_info in ranking_info_list:
-                seller_ranking.append({"category": ranking_info[ranking_info.find("in") + 2:].strip(),
-                                       "ranking": int(ranking_info[1:ranking_info.find(" ")].replace(",", "").strip())})
-        else:
-            ranking_info_list = self.tree_html.xpath("//td[preceding-sibling::th/@class='a-color-secondary a-size-base prodDetSectionEntry' and contains(preceding-sibling::th/text(), 'Best Sellers Rank')]/span/span")
-            ranking_info_list = [ranking_info.text_content().strip() for ranking_info in ranking_info_list]
-
-            for ranking_info in ranking_info_list:
-                seller_ranking.append({"category": ranking_info[ranking_info.find("in") + 2:ranking_info.find("(See Top ")].strip(),
-                                       "ranking": int(ranking_info[1:ranking_info.find(" ")].replace(",", "").strip())})
-
-        if seller_ranking:
-            return seller_ranking
-
-        return None
-
     def _long_description(self):
         d1 = self._description()
         d2 = self._long_description_helper()
@@ -1271,7 +1245,6 @@ class AmazonScraper(Scraper):
         "feature_count" : _feature_count, \
         "model_meta" : _model_meta, \
         "description" : _description, \
-        "seller_ranking": _seller_ranking, \
         "long_description" : _long_description, \
         "apluscontent_desc" : _apluscontent_desc, \
         "variants": _variants, \
