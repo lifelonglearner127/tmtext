@@ -104,8 +104,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             )
             yield Request(
                 url,
-                meta={'search_term': st, 'remaining': self.quantity},
-                errback=self.parse_product
+                meta={'search_term': st, 'remaining': self.quantity}
             )
 
         if self.product_url:
@@ -113,7 +112,6 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(
                 self.product_url, self._parse_single_product,
-                errback=self.parse_product,
                 dont_filter=True, meta={
                     'product': prod,
                     'handle_httpstatus_list': self.handle_httpstatus_list}
