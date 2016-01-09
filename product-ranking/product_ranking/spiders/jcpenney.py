@@ -335,11 +335,17 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                         '&_D%3AskuSelectionMap.COLOR=+'
                         '&_DARGS=%2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%2FgraphicalLotSKUSelection.jsp').format(**_format_args)
 
-            _rp = RandomProxy({'PROXY_LIST': PROXY_LIST})
+            try:
+                _rp = RandomProxy({'PROXY_LIST': PROXY_LIST})
+            except TypeError:
+                _rp = None
 
             # try to fetch the page using a random proxy until it works
             for _ in range(100):
-                random_proxy = random.choice(_rp.proxies.keys())
+                if _rp is not None:
+                    random_proxy = random.choice(_rp.proxies.keys())
+                else:
+                    random_proxy = None
                 proxies = {"http": random_proxy, "https": random_proxy}
                 self.log('Using "Requests" lib to scrape the following url: %s, proxy: %s' % (
                     size_url, random_proxy))
@@ -359,7 +365,6 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     self.log(str(result.text.encode('utf8')))
                     continue
             return lot, new_variants_structure
-
 
     def _on_variant_response(self, response):
         variant = response.meta['variant']
@@ -401,6 +406,11 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         prod = response.meta['product']
         prod['url'] = response.url
         prod['_subitem'] = True
+
+        if "what you are looking for is currently unavailable" in response.body_as_unicode().lower():
+            prod['not_found'] = True
+            yield prod
+            return
 
         product_id = is_empty(re.findall('ppId=([a-zA-Z0-9]+)&{0,1}', response.url))
 

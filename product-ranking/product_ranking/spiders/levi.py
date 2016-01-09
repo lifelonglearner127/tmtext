@@ -62,7 +62,7 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
                       "&ur=http%3A%2F%2Fwww.levi.com%2FUS%2Fen_US%" \
                       "2Fwomens-jeans%2Fp%2F095450043&plk=&"
 
-    use_proxies=True
+    use_proxies = True
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
@@ -120,7 +120,12 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(product, 'price', price)
 
         # Parse variants
-        variants = self._parse_variants(response)
+        try:
+            variants = self._parse_variants(response)
+        except KeyError:
+            product['not_found'] = True
+            return product
+
         product['variants'] = variants
 
         response.meta['marks'] = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
