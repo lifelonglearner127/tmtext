@@ -13,12 +13,13 @@ from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
 from spiders_shared_code.jet_variants import JetVariants
-
+from product_ranking.validators.jet_validator import JetValidatorSettings
+from product_ranking.validation import BaseValidator
 
 is_empty = lambda x, y=None: x[0] if x else y
 
 
-class JetProductsSpider(BaseProductsSpider):
+class JetProductsSpider(BaseValidator, BaseProductsSpider):
     name = 'jet_products'
     allowed_domains = ["jet.com"]
 
@@ -52,6 +53,8 @@ class JetProductsSpider(BaseProductsSpider):
     product_links = []
 
     DEFAULT_MARKETPLACE = "Jet"
+
+    settings = JetValidatorSettings
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         super(JetProductsSpider, self).__init__(*args, **kwargs)
