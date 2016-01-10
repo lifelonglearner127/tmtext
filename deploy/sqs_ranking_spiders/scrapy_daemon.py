@@ -1366,13 +1366,13 @@ def main():
             with_best_seller_ranking = task_data.get('with_best_seller_ranking', None)
             if task_quantity > 300:
                 # decrease num of parallel tasks for "heavy" Walmart jobs
-                MAX_CONCURRENT_TASKS -= 4 if MAX_CONCURRENT_TASKS > 0 else 0
+                MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
                 logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
                             ' (because of big walmart quantity)' % MAX_CONCURRENT_TASKS)
                 if with_best_seller_ranking:
                     # decrease max_concurrent_tasks even more if it's BS task
                     #  which actually runs 2x spiders
-                    MAX_CONCURRENT_TASKS -= 4 if MAX_CONCURRENT_TASKS > 0 else 0
+                    MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
                     logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
                                 ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
 
