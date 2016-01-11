@@ -340,6 +340,9 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                 })
                 product["marketplace"] = marketplace
 
+        if data.get('unavailable', None):
+            product['not_found'] = True
+
         if reqs:
             return self.send_next_request(reqs, response)
 
