@@ -456,8 +456,12 @@ class TargetScraper(Scraper):
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 1:
-            if self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]") and \
-                            "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content():
+            if (self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")
+                and "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content()):
+                return 1
+
+            if self.tree_html.xpath("//div[@class='shipping']//span[starts-with(@class, 'pdpOneButton-')]") and \
+                            "not available" in self.tree_html.xpath("//div[@class='shipping']//span[starts-with(@class, 'pdpOneButton-')]")[0].text_content():
                 return 1
 
             return 0
