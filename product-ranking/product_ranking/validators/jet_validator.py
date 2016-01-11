@@ -1,10 +1,10 @@
 class JetValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand', 'price',
-                       'related_products', 'upc']
+    optional_fields = ['brand', 'price', 'upc']
     ignore_fields = [
-        'is_in_store_only', 'is_out_of_stock',
+        'is_in_store_only', 'is_out_of_stock', 'model',
         'google_source_site', 'description', 'special_pricing',
-        'bestseller_rank', 'img_count', 'video_count'
+        'bestseller_rank', 'img_count', 'video_count',
+        'related_products'
     ]
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = False  # ... duplicated requests?

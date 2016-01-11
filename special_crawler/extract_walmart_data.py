@@ -110,7 +110,7 @@ class WalmartScraper(Scraper):
         self.product_info_json = None
         self.product_choice_info_json = None
         self.product_api_json = None
-        self.key_fields_list = ["upc", "price"]
+        self.key_fields_list = ["upc", "price", "description", "long_description"]
         self.failure_type = None
 
         self.review_json = None
@@ -166,6 +166,10 @@ class WalmartScraper(Scraper):
                         return self.product_api_json["product"]["upc"] if self.product_api_json["product"]["upc"] else self.product_api_json["product"]["wupc"]
                     if field_name == "price":
                         return self.product_api_json["product"]["buyingOptions"]["price"]["displayPrice"]
+                    if field_name == "description":
+                        return self.product_api_json["product"]["mediumDescription"]
+                    if field_name == "long_description":
+                        return self.product_api_json["product"]["longDescription"]
             except Exception, e:
                 print "Error (Walmart - _filter_key_fields)" + str(e)
 
@@ -743,7 +747,12 @@ class WalmartScraper(Scraper):
             for description_element in description_elements:
                 sub_description = lxml.html.tostring(description_element)
 
-                if "<b>" in sub_description or "<ul>" in sub_description or "<dl>" in sub_description or "<li>" in sub_description or '<section class="product-about js-ingredients health-about">' in sub_description:
+                if "<b>" in sub_description or \
+                                "<ul>" in sub_description or \
+                                "<dl>" in sub_description or \
+                                "<li>" in sub_description or \
+                                "<strong>" in sub_description or \
+                                '<section class="product-about js-ingredients health-about">' in sub_description:
                     innerText = ""
 
                     try:
@@ -768,9 +777,15 @@ class WalmartScraper(Scraper):
                     if "<dl>" in sub_description:
                         short_description_end_index = sub_description.find("<dl>")
                         short_description_end_index_candiate_list.append(short_description_end_index)
+
                     if "<li>" in sub_description:
                         short_description_end_index = sub_description.find("<li>")
                         short_description_end_index_candiate_list.append(short_description_end_index)
+
+                    if "<strong>" in sub_description:
+                        short_description_end_index = sub_description.find("<strong>")
+                        short_description_end_index_candiate_list.append(short_description_end_index)
+
                     if '<section class="product-about js-ingredients health-about">' in sub_description:
                         short_description_end_index = sub_description.find('<section class="product-about js-ingredients health-about">')
                         short_description_end_index_candiate_list.append(short_description_end_index)
@@ -808,6 +823,9 @@ class WalmartScraper(Scraper):
                 return None
 
         return short_description.strip()
+
+    def _short_description_from_api(self):
+        return self._filter_key_fields("description")
 
     def _short_description_wrapper(self):
         """Extracts product short description.
@@ -915,7 +933,7 @@ class WalmartScraper(Scraper):
 
             for description_element in description_elements:
                 if (not long_description_start and "<b>" in lxml.html.tostring(description_element)) or \
-                        (not long_description_start and ("<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element) or "<li>" in lxml.html.tostring(description_element))):
+                        (not long_description_start and ("<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element) or "<li>" in lxml.html.tostring(description_element) or "<strong>" in lxml.html.tostring(description_element))):
                     long_description_start = True
 
                     sub_description = lxml.html.tostring(description_element)
@@ -937,6 +955,10 @@ class WalmartScraper(Scraper):
 
                         if "<li>" in lxml.html.tostring(description_element):
                             long_description_start_index = sub_description.find("<li>")
+                            long_description_start_index_candiate_list.append(long_description_start_index)
+
+                        if "<strong>" in lxml.html.tostring(description_element):
+                            long_description_start_index = sub_description.find("<strong>")
                             long_description_start_index_candiate_list.append(long_description_start_index)
 
                         long_description_start_index = min(long_description_start_index_candiate_list)
@@ -1011,6 +1033,9 @@ class WalmartScraper(Scraper):
             long_description = long_description_new
 
         return long_description
+
+    def _long_description_from_api(self):
+        return self._filter_key_fields("long_description")
 
     def _long_description_wrapper(self):
         """Extracts product long description.

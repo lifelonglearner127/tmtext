@@ -326,6 +326,8 @@ class BaseValidator(object):
         return True
 
     def _validate_price(self, val):
+        if val is None:
+            return True
         if not bool(val.strip()):  # empty
             return False
         if len(val.strip()) > 50:  # too long
