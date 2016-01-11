@@ -747,7 +747,12 @@ class WalmartScraper(Scraper):
             for description_element in description_elements:
                 sub_description = lxml.html.tostring(description_element)
 
-                if "<b>" in sub_description or "<ul>" in sub_description or "<dl>" in sub_description or "<li>" in sub_description or '<section class="product-about js-ingredients health-about">' in sub_description:
+                if "<b>" in sub_description or \
+                                "<ul>" in sub_description or \
+                                "<dl>" in sub_description or \
+                                "<li>" in sub_description or \
+                                "<strong>" in sub_description or \
+                                '<section class="product-about js-ingredients health-about">' in sub_description:
                     innerText = ""
 
                     try:
@@ -772,9 +777,15 @@ class WalmartScraper(Scraper):
                     if "<dl>" in sub_description:
                         short_description_end_index = sub_description.find("<dl>")
                         short_description_end_index_candiate_list.append(short_description_end_index)
+
                     if "<li>" in sub_description:
                         short_description_end_index = sub_description.find("<li>")
                         short_description_end_index_candiate_list.append(short_description_end_index)
+
+                    if "<strong>" in sub_description:
+                        short_description_end_index = sub_description.find("<strong>")
+                        short_description_end_index_candiate_list.append(short_description_end_index)
+
                     if '<section class="product-about js-ingredients health-about">' in sub_description:
                         short_description_end_index = sub_description.find('<section class="product-about js-ingredients health-about">')
                         short_description_end_index_candiate_list.append(short_description_end_index)
@@ -922,7 +933,7 @@ class WalmartScraper(Scraper):
 
             for description_element in description_elements:
                 if (not long_description_start and "<b>" in lxml.html.tostring(description_element)) or \
-                        (not long_description_start and ("<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element) or "<li>" in lxml.html.tostring(description_element))):
+                        (not long_description_start and ("<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element) or "<li>" in lxml.html.tostring(description_element) or "<strong>" in lxml.html.tostring(description_element))):
                     long_description_start = True
 
                     sub_description = lxml.html.tostring(description_element)
@@ -944,6 +955,10 @@ class WalmartScraper(Scraper):
 
                         if "<li>" in lxml.html.tostring(description_element):
                             long_description_start_index = sub_description.find("<li>")
+                            long_description_start_index_candiate_list.append(long_description_start_index)
+
+                        if "<strong>" in lxml.html.tostring(description_element):
+                            long_description_start_index = sub_description.find("<strong>")
                             long_description_start_index_candiate_list.append(long_description_start_index)
 
                         long_description_start_index = min(long_description_start_index_candiate_list)
@@ -2987,10 +3002,10 @@ class WalmartScraper(Scraper):
         "meta_tag_count": _meta_tag_count,\
         "canonical_link": _canonical_link,
         "brand": _meta_brand_from_tree, \
-        "description": _short_description_from_api, \
+        "description": _short_description_wrapper, \
         # TODO: check if descriptions work right
         "seller_ranking": _seller_ranking, \
-        "long_description": _long_description_from_api, \
+        "long_description": _long_description_wrapper, \
         "shelf_description": _shelf_description, \
         "variants": _variants, \
         "swatches": _swatches, \
