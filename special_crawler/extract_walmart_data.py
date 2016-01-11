@@ -110,7 +110,7 @@ class WalmartScraper(Scraper):
         self.product_info_json = None
         self.product_choice_info_json = None
         self.product_api_json = None
-        self.key_fields_list = ["upc", "price"]
+        self.key_fields_list = ["upc", "price", "description", "long_description"]
         self.failure_type = None
 
         self.review_json = None
@@ -166,6 +166,10 @@ class WalmartScraper(Scraper):
                         return self.product_api_json["product"]["upc"] if self.product_api_json["product"]["upc"] else self.product_api_json["product"]["wupc"]
                     if field_name == "price":
                         return self.product_api_json["product"]["buyingOptions"]["price"]["displayPrice"]
+                    if field_name == "description":
+                        return self.product_api_json["product"]["mediumDescription"]
+                    if field_name == "long_description":
+                        return self.product_api_json["product"]["longDescription"]
             except Exception, e:
                 print "Error (Walmart - _filter_key_fields)" + str(e)
 
@@ -809,6 +813,9 @@ class WalmartScraper(Scraper):
 
         return short_description.strip()
 
+    def _short_description_from_api(self):
+        return self._filter_key_fields("mediumDescription")
+
     def _short_description_wrapper(self):
         """Extracts product short description.
         If not found, returns long description instead,
@@ -1011,6 +1018,9 @@ class WalmartScraper(Scraper):
             long_description = long_description_new
 
         return long_description
+
+    def _long_description_from_api(self):
+        return self._filter_key_fields("long_description")
 
     def _long_description_wrapper(self):
         """Extracts product long description.
@@ -2977,10 +2987,10 @@ class WalmartScraper(Scraper):
         "meta_tag_count": _meta_tag_count,\
         "canonical_link": _canonical_link,
         "brand": _meta_brand_from_tree, \
-        "description": _short_description_wrapper, \
+        "description": _short_description_from_api, \
         # TODO: check if descriptions work right
         "seller_ranking": _seller_ranking, \
-        "long_description": _long_description_wrapper, \
+        "long_description": _long_description_from_api, \
         "shelf_description": _shelf_description, \
         "variants": _variants, \
         "swatches": _swatches, \
