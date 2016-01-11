@@ -814,7 +814,7 @@ class WalmartScraper(Scraper):
         return short_description.strip()
 
     def _short_description_from_api(self):
-        return self._filter_key_fields("mediumDescription")
+        return self._filter_key_fields("description")
 
     def _short_description_wrapper(self):
         """Extracts product short description.
