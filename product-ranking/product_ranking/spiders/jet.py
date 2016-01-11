@@ -199,7 +199,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set(
             product, "title", response.xpath(
                 "//div[contains(@class, 'content')]"
-                "//div[contains(@class, 'title')]"
+                "//div[contains(@class, 'title')]/text()"
             ).extract()
         )
 
@@ -240,6 +240,8 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
 
         brand = is_empty(response.xpath("//div[contains(@class, 'content')]"
                                         "/div[contains(@class, 'brand')]/text()").extract())
+        if not brand:
+            brand = is_empty(response.css('.manufacturer ::text').extract())
         if brand:
             brand = brand.replace("by ", "")
             product["brand"] = brand
@@ -261,6 +263,12 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                 image_url = is_empty(re.findall(
                     "background\:url\(([^\)]*)", image_url))
             product["image_url"] = image_url
+
+        if not product.get('image_url'):
+            cond_set(product, 'image_url',
+                response.xpath(
+                    '//*[contains(@class, "container-image")]/img/@src').extract()
+            )
 
         cond_set(
             product, "description", response.xpath(
