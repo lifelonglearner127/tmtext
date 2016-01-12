@@ -6,14 +6,16 @@ import lxml.html
 
 class TargetVariants(object):
 
-    def setupSC(self, response):
+    def setupSC(self, response, debug=False):
         """ Call it from SC spiders """
         self.response = response
         self.tree_html = lxml.html.fromstring(response.body)
+        self.debug = debug
 
-    def setupCH(self, tree_html):
+    def setupCH(self, tree_html, debug=False):
         """ Call it from CH spiders """
         self.tree_html = tree_html
+        self.debug = debug
 
     def _scrape_possible_variant_urls(self):
         """ Returns possible variants (URLs) as scraped from HTML blocks (see #3930) """
@@ -71,8 +73,7 @@ class TargetVariants(object):
 
         return None
 
-    @staticmethod
-    def _swap_data_for_colors(possible_variant_ids, stockstatus_for_variation_combinations):
+    def _swap_data_for_colors(self, possible_variant_ids, stockstatus_for_variation_combinations):
         """ swap data for colors if one is missing """
 
         def swap_variants(data, used_part_id_color_pairs, used_part_id_color_pairs_indx):
@@ -100,9 +101,12 @@ class TargetVariants(object):
             #combination = sv['Attributes'].get('preselect', {})
             part_id = sv['Attributes']['partNumber']
             color = sv['Attributes'].get('preselect', {}).get('var1', None)
-            if color not in used_part_id_color_pairs:
-                used_part_id_color_pairs[color] = []
-            used_part_id_color_pairs[color].append((i, part_id))
+            if color:
+                if color not in used_part_id_color_pairs:
+                    used_part_id_color_pairs[color] = []
+                used_part_id_color_pairs[color].append((i, part_id))
+        if self.debug:
+            print '/'*20, used_part_id_color_pairs
         # and now when we have possible duplications - filter the data
         for indx, (color, parts) in enumerate(used_part_id_color_pairs.items()):
             if len(parts) > 1:
@@ -130,10 +134,12 @@ class TargetVariants(object):
                 possible_variant_ids, stockstatus_for_variation_combinations)
 
             # this is for [future] debugging! don't remove
-            for sv in stockstatus_for_variation_combinations:
-                print '*'*20, sv['catentry_id'], '-', sv['Attributes']['partNumber'], ':', \
-                    sv['Attributes']["price"]["formattedOfferPrice"], '-->', \
-                    sv['Attributes'].get('preselect', {}).get('var1')
+            if self.debug:
+                print '-'*20, 'Allowed IDs:', possible_variant_ids
+                for sv in stockstatus_for_variation_combinations:
+                    print '*'*20, sv['catentry_id'], '-', sv['Attributes']['partNumber'], ':', \
+                        sv['Attributes']["price"]["formattedOfferPrice"], '-->', \
+                        sv['Attributes'].get('preselect', {}).get('var1')
 
             hash_catentryid_to_stockstatus = {}
 
