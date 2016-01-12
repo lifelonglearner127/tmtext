@@ -112,8 +112,7 @@ class TargetVariants(object):
         return stockstatus_for_variation_combinations
 
     def _variants(self):
-        #try:
-        if 1 == 1:
+        try:
             variation_combinations_values = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
 
             possible_variant_urls = self._scrape_possible_variant_urls()
@@ -186,5 +185,6 @@ class TargetVariants(object):
                 return None
             else:
                 return stockstatus_for_variants_list
-        #except:
-        #    return None
+        except Exception as e:
+            print str(e)
+            return None
