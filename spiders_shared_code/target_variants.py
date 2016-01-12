@@ -1,4 +1,5 @@
 import json
+from pprint import pprint
 
 import lxml.html
 
@@ -70,8 +71,49 @@ class TargetVariants(object):
 
         return None
 
+    @staticmethod
+    def _swap_data_for_colors(possible_variant_ids, stockstatus_for_variation_combinations):
+        """ swap data for colors if one is missing """
+
+        def swap_variants(data, used_part_id_color_pairs, used_part_id_color_pairs_indx):
+            # find indexes to swap
+            index1 = None
+            index2 = None
+            for _index, (_color, _part_ids) in enumerate(used_part_id_color_pairs.items()):
+                if _index == used_part_id_color_pairs_indx:
+                    index1 = _part_ids[0][0]
+                    index2 = _part_ids[1][0]
+            sv1 = data[index1]
+            sv2 = data[index2]
+            sv1['Attributes']['partNumber'], sv2['Attributes']['partNumber'] \
+                = sv2['Attributes']['partNumber'], sv1['Attributes']['partNumber']
+            sv1['catentry_id'], sv2['catentry_id'] = sv2['catentry_id'], sv1['catentry_id']
+            sv1["Attributes"]["price"], sv2["Attributes"]["price"] \
+                = sv2["Attributes"]["price"], sv1["Attributes"]["price"]
+            # remove 1st variant which does not exist on the page
+            data.remove(sv1)
+            return data
+
+        #used_combinations = []
+        used_part_id_color_pairs = {}
+        for i, sv in enumerate(stockstatus_for_variation_combinations):
+            #combination = sv['Attributes'].get('preselect', {})
+            part_id = sv['Attributes']['partNumber']
+            color = sv['Attributes'].get('preselect', {}).get('var1', None)
+            if color not in used_part_id_color_pairs:
+                used_part_id_color_pairs[color] = []
+            used_part_id_color_pairs[color].append((i, part_id))
+        # and now when we have possible duplications - filter the data
+        for indx, (color, parts) in enumerate(used_part_id_color_pairs.items()):
+            if len(parts) > 1:
+                stockstatus_for_variation_combinations = \
+                    swap_variants(stockstatus_for_variation_combinations, used_part_id_color_pairs, indx)
+
+        return stockstatus_for_variation_combinations
+
     def _variants(self):
-        try:
+        #try:
+        if 1 == 1:
             variation_combinations_values = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
 
             possible_variant_urls = self._scrape_possible_variant_urls()
@@ -85,22 +127,14 @@ class TargetVariants(object):
             else:
                 return None
 
-            # filter out duplicated combinations
-            used_combinations = []
-            duplicated_combinations_filtered = False  # this flag will be used later
-            for sv in stockstatus_for_variation_combinations:
-                combination = sv['Attributes'].get('preselect', {})
-                if combination and combination not in used_combinations:
-                    used_combinations.append(combination)
-                else:
-                    stockstatus_for_variation_combinations.remove(sv)
-                    duplicated_colors_filtered = True
+            stockstatus_for_variation_combinations = self._swap_data_for_colors(
+                possible_variant_ids, stockstatus_for_variation_combinations)
 
             # this is for [future] debugging! don't remove
-            #for sv in stockstatus_for_variation_combinations:
-            #    print '*'*20, sv['catentry_id'], '-', sv['Attributes']['partNumber'], ':', \
-            #        sv['Attributes']["price"]["formattedOfferPrice"], '-->', \
-            #        sv['Attributes'].get('preselect', {}).get('var1')
+            for sv in stockstatus_for_variation_combinations:
+                print '*'*20, sv['catentry_id'], '-', sv['Attributes']['partNumber'], ':', \
+                    sv['Attributes']["price"]["formattedOfferPrice"], '-->', \
+                    sv['Attributes'].get('preselect', {}).get('var1')
 
             hash_catentryid_to_stockstatus = {}
 
@@ -138,7 +172,7 @@ class TargetVariants(object):
 
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
 
-
+            """
             if possible_variant_urls and not duplicated_colors_filtered:
                 # variants with duplicated colors often use wrong partNumbers,
                 # so we don't filter this if there were duplicated colors
@@ -146,10 +180,11 @@ class TargetVariants(object):
                     _url = _variant.get('image_url')
                     if _url and self._get_variant_id_from_image_url(_url) not in possible_variant_ids:
                         del stockstatus_for_variants_list[i]
+            """
 
             if not stockstatus_for_variants_list:
                 return None
             else:
                 return stockstatus_for_variants_list
-        except:
-            return None
+        #except:
+        #    return None
