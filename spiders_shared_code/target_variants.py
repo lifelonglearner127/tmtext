@@ -100,11 +100,13 @@ class TargetVariants(object):
         for i, sv in enumerate(stockstatus_for_variation_combinations):
             #combination = sv['Attributes'].get('preselect', {})
             part_id = sv['Attributes']['partNumber']
-            color = sv['Attributes'].get('preselect', {}).get('var1', None)
+            color = sv['Attributes'].get('preselect', {}).get('var1', '')
+            size = sv['Attributes'].get('preselect', {}).get('var2', '')
+            var3 = sv['Attributes'].get('preselect', {}).get('var3', '')  # wtf is var3?
             if color:
-                if color not in used_part_id_color_pairs:
-                    used_part_id_color_pairs[color] = []
-                used_part_id_color_pairs[color].append((i, part_id))
+                if color+'|'+size+'|'+var3 not in used_part_id_color_pairs:
+                    used_part_id_color_pairs[color+'|'+size+'|'+var3] = []
+                used_part_id_color_pairs[color+'|'+size+'|'+var3].append((i, part_id))
         if self.debug:
             print '/'*20, used_part_id_color_pairs
         # and now when we have possible duplications - filter the data
@@ -130,16 +132,27 @@ class TargetVariants(object):
             else:
                 return None
 
-            stockstatus_for_variation_combinations = self._swap_data_for_colors(
-                possible_variant_ids, stockstatus_for_variation_combinations)
-
             # this is for [future] debugging! don't remove
             if self.debug:
                 print '-'*20, 'Allowed IDs:', possible_variant_ids
                 for sv in stockstatus_for_variation_combinations:
                     print '*'*20, sv['catentry_id'], '-', sv['Attributes']['partNumber'], ':', \
                         sv['Attributes']["price"]["formattedOfferPrice"], '-->', \
-                        sv['Attributes'].get('preselect', {}).get('var1')
+                        sv['Attributes'].get('preselect', {}).get('var1'), \
+                        sv['Attributes'].get('preselect', {}).get('var2'), \
+                        sv['Attributes'].get('preselect', {}).get('var3')
+
+            stockstatus_for_variation_combinations = self._swap_data_for_colors(
+                possible_variant_ids, stockstatus_for_variation_combinations)
+
+            # this is for [future] debugging! don't remove
+            if self.debug:
+                for sv in stockstatus_for_variation_combinations:
+                    print '#'*20, sv['catentry_id'], '-', sv['Attributes']['partNumber'], ':', \
+                        sv['Attributes']["price"]["formattedOfferPrice"], '-->', \
+                        sv['Attributes'].get('preselect', {}).get('var1'), \
+                        sv['Attributes'].get('preselect', {}).get('var2'), \
+                        sv['Attributes'].get('preselect', {}).get('var2')
 
             hash_catentryid_to_stockstatus = {}
 
