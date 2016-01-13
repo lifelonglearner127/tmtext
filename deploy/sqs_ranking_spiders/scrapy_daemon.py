@@ -611,10 +611,10 @@ class ScrapyTask(object):
         cmd_args = self.task_data.get('cmd_args', {})
         if not isinstance(cmd_args, dict):
             cmd_args = {}
-        if cmd_args.get('save_s3_cache', False):
+        if cmd_args.get('save_raw_pages', False):
             self.required_signals[SIGNAL_SPIDER_OPENED]['wait'] += \
                 EXTENSION_SIGNALS[ext_cache_up]
-        if cmd_args.get('load_s3_cache'):
+        if cmd_args.get('load_raw_pages'):
             self.required_signals[SIGNAL_SCRIPT_CLOSED]['wait'] += \
                 EXTENSION_SIGNALS[ext_cache_down]
 
@@ -871,6 +871,10 @@ class ScrapyTask(object):
         options = ' '
         arg_name = arg_value = None
         for key, value in cmd_line_args.items():
+            # exclude raw s3 cache - otherwise 2 spiders will work in parallel
+            #  with cache enabled
+            if is_bsr and key == 'save_raw_pages':
+                continue
             options += ' -a %s=%s' % (key, value)
         if searchterms_str:
             arg_name = 'searchterms_str'
@@ -1359,9 +1363,19 @@ def main():
                 MAX_CONCURRENT_TASKS += 1
         if task_data['site'] == 'walmart':
             task_quantity = task_data.get('cmd_args', {}).get('quantity', 20)
+            with_best_seller_ranking = task_data.get('with_best_seller_ranking', None)
             if task_quantity > 300:
                 # decrease num of parallel tasks for "heavy" Walmart jobs
-                MAX_CONCURRENT_TASKS -= 4 if MAX_CONCURRENT_TASKS > 0 else 0
+                MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
+                logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
+                            ' (because of big walmart quantity)' % MAX_CONCURRENT_TASKS)
+                if with_best_seller_ranking:
+                    # decrease max_concurrent_tasks even more if it's BS task
+                    #  which actually runs 2x spiders
+                    MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
+                    logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
+                                ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
+
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))
         # prepare to run task

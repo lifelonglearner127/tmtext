@@ -14,8 +14,8 @@ class AmazoncaValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'kaspersky total': [3, 50],
         'learn python the hard way': [2, 10],
         'yamaha drums midi': [5, 100],
-        'black men shoes size 8 red': [5, 150],
-        'green wooden plug': [3, 10],
+        'black men shoes size 8 red': [5, 300],
+        'yellow laptop case 10': [100, 500],
         'apple ipod nano gold': [50, 300],
         'programming product best': [5, 100],
     }

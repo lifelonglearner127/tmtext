@@ -13,11 +13,16 @@
     <field name="ingredient_count" version="1.1"></field>
     <field name="image_count" version="1.2"></field>
     <field name="image_urls" version="1.6"></field>
-    <field name="video_count" version="1.2"></field>
-    <field name="video_urls" version="1.2"></field>
+    <field name="video_count" version="1.3"></field>
+    <field name="video_urls" version="1.4"></field>
     <field name="pdf_count" version="1.1"></field>
     <field name="pdf_urls" version="1.1"></field>
-    <field name="webcollage" version="1.1"></field>
+    <field name="wc_360" version="1.1"></field>
+    <field name="wc_emc" version="1.1"></field>
+    <field name="wc_pdf" version="1.1"></field>
+    <field name="wc_video" version="1.2"></field>
+    <field name="wc_prodtour" version="1.1"></field>
+    <field name="webcollage" version="1.2"></field>
     <field name="htags" version="1.1"></field>
     <field name="keywords" version="1.1"></field>
     <field name="review_count" version="1.4"></field>

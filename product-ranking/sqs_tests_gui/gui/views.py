@@ -35,6 +35,7 @@ sys.path.append(os.path.join(CWD,  '..', '..', '..',
 sys.path.append(os.path.join(CWD,  '..', '..'))
 from add_task_to_sqs import read_access_and_secret_keys
 from scrapy_daemon import PROGRESS_QUEUE_NAME
+from product_ranking.cache_models import list_db_cache
 
 
 class AdminOnlyMixin(object):
@@ -118,10 +119,36 @@ class AddJob(View):
                 quantity=quantity,
                 task_id=random.randrange(100000, 900000),
                 mode='no cache',
-                save_s3_cache=True,
+                save_raw_pages=True,
                 branch_name=branch
             )
             return HttpResponse('Job object created')
+
+
+class ViewBase64Image(AdminOnlyMixin, View):
+    # Displays output file as image
+
+    def get(self, request, *args, **kwargs):
+        job = Job.objects.get(pk=kwargs['job'])
+        output_fname = get_data_filename(job)
+        output_fname = settings.MEDIA_ROOT + output_fname
+        if not os.path.exists(output_fname):
+            return HttpResponse('Output filename %s for job with ID %s does not exist' %
+                                (output_fname, job.pk))
+        with open(output_fname, 'r') as fh:
+            content = fh.read()
+        if not content:
+            return "Empty file - nothing to show"
+        if not '\n' in content:
+            return "No newlines in file - corrupted file?"
+        content = content.split('\n', 1)[1]
+        sep = '","'
+        if not sep in content:
+            return "No fields separator found - corrupted file?"
+        content = content.split(sep, 1)[1]
+        if content.endswith('"'):
+            content = content[0:-1]
+        return HttpResponse('<img src="data:image/png;base64,%s" />' % content)
 
 
 class ProgressMessagesView(AdminOnlyMixin, TemplateView):
@@ -214,6 +241,13 @@ class SearchS3Cache(SearchFilesView):
     template_name = 'search_s3_cache.html'
     fname2open = LOCAL_AMAZON_LIST_CACHE
     extra_filter = '__MARKER_URL__'
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(SearchS3Cache, self).get_context_data(*args, **kwargs)
+        searchterm = self.request.GET.get('searchterm', '')
+        if not searchterm:
+            context['cache_list'] = list_db_cache()
+        return context
 
 
 class RenderS3CachePage(AdminOnlyMixin, TemplateView):

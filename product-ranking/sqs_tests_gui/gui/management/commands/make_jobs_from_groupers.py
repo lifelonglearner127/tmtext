@@ -46,7 +46,7 @@ class Command(BaseCommand):
                 quantity=200,
                 task_id=random.randrange(100000, 900000),
                 mode='no cache',
-                save_s3_cache=True,
+                save_raw_pages=True,
                 branch_name=extra_args['branch_name']
             )
 

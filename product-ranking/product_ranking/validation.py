@@ -326,6 +326,8 @@ class BaseValidator(object):
         return True
 
     def _validate_price(self, val):
+        if val is None:
+            return True
         if not bool(val.strip()):  # empty
             return False
         if len(val.strip()) > 50:  # too long
@@ -378,8 +380,8 @@ class BaseValidator(object):
             return False
         if val.strip().count(u' ') > 50:  # too many spaces
             return False
-        # if '<' in val or '>' in val:  # no tags
-        #     return False
+        if '<' in val and '>' in val:  # no tags
+            return False
         return True
 
     def _validate_total_matches(self, val):
@@ -513,6 +515,18 @@ class BaseValidator(object):
             if not isinstance(v, (str, unicode)):
                 return False
         return True
+
+    def _validate_seller_ranking(self, val):
+        if not val:
+            return True
+        if isinstance(val, basestring):
+            try:
+                val = json.loads(val)
+            except Exception as e:
+                return False
+        if isinstance(val, (tuple, list)):
+            return True
+
 
     def _validate_bestseller_rank(self, val):
         if isinstance(val, int):
@@ -676,7 +690,11 @@ class BaseValidator(object):
         return val in (None, '', True, False)
 
     def _validate_all_questions(self, val):
-        # TODO
+        if val in (None, '', []):
+            return True
+        for _d in val:
+            if not isinstance(_d, dict):
+                return False
         return True
 
     def _validate__subitem(self, val):

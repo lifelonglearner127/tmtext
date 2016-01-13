@@ -177,6 +177,7 @@ class Scraper():
             # classification
             "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
             "category_name", # category for this product, string
+            "shelf_links_by_level", # list of category urls
             "brand" # brand of product, string
 
             # Deprecated:
@@ -224,7 +225,7 @@ class Scraper():
                     "site_online", "site_online_in_stock", "site_online_out_of_stock", "marketplace_in_stock", \
                     "marketplace_out_of_stock", "marketplace_prices", "in_stores_in_stock", \
                     "in_stores_out_of_stock", "online_only"],
-        "classification": ["categories", "category_name", "brand"]
+        "classification": ["categories", "category_name", "brand", "shelf_links_by_level"]
     }
 
     # response in case of error
@@ -253,7 +254,7 @@ class Scraper():
             b = requests.adapters.HTTPAdapter(max_retries=3)
             s.mount('http://', a)
             s.mount('https://', b)
-            contents = requests.get(url).text
+            contents = s.get(url, headers=header).text
 
             if not extra_exclude_condition or extra_exclude_condition not in contents:
                 return contents

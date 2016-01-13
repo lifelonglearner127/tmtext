@@ -18,7 +18,7 @@ from product_ranking.items import SiteProductItem
 
 # Regular expression to match integer or floating point number with optional comma:
 # 1; 12; 1,132,334; 1.05; 1,123.09
-FLOATING_POINT_RGEX = re.compile('\d{1,3}[,\d{3}]*\.?\d*')
+FLOATING_POINT_RGEX = re.compile('\d{1,3}[,\.\d{3}]*\.?\d*')
 
 
 def compose(*funcs):

@@ -7,6 +7,7 @@ from scrapy.http import HtmlResponse
 from scrapy.log import ERROR, DEBUG
 
 from product_ranking.items import SiteProductItem
+from product_ranking.validation import BaseValidator
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set_value
 
@@ -82,8 +83,9 @@ class ProductsSpider(BaseProductsSpider):
 
     def __init__(self, order='default', *args, **kwargs):
         # Handle multiple allowed domains
-        if len(self.allowed_domains) > 1 and 'site' not in kwargs:
-            kwargs['site_name'] = self.allowed_domains[0]
+        if getattr(self, 'allowed_domains', None):
+            if len(self.allowed_domains) > 1 and 'site' not in kwargs:
+                kwargs['site_name'] = self.allowed_domains[0]
 
         # Decorate optional fields request and parse methods
         # with _option_requester and _option_parser

@@ -47,7 +47,7 @@ def generate_tasks():
 
         dict(site='kohls',
              searchterms_str='book',
-             cmd_args=dict(quantity=100, save_s3_cache=True)),  # save s3 cache
+             cmd_args=dict(quantity=100, save_raw_pages=True)),  # save s3 cache
 
         dict(site='target',
              searchterms_str='chair',

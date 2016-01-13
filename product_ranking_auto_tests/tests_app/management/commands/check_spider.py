@@ -143,7 +143,8 @@ def get_scrapy_spider_and_settings(spider):
             elif (hasattr(getattr(module, obj), 'name')
                     and hasattr(getattr(module, obj), 'start_urls')):
                 if not 'Base' in str(getattr(module, obj)):
-                    scrapy_spider = getattr(module, obj)
+                    if '.ProductsSpider' not in str(getattr(module, obj)):
+                        scrapy_spider = getattr(module, obj)
     return scrapy_spider, validator
 
 
