@@ -1,10 +1,13 @@
 class MacysValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['bestseller_rank', 'buyer_reviews']
+    optional_fields = ['buyer_reviews']
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'description', 'special_pricing'
+        'google_source_site', 'description', 'special_pricing', 'model',
+        'bestseller_rank', 'brand'
     ]
     ignore_log_errors = False  # don't check logs for errors?
+    ignore_log_duplications = False
+    ignore_log_filtered = False
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
@@ -21,10 +24,10 @@ class MacysValidatorSettings(object):  # do NOT set BaseValidatorSettings as par
     test_urls = [
         'http://www1.macys.com/shop/product/e-live-from-the-red-carpet-e0045-evening-sandals?ID=770652&CategoryID=17570&LinkType=#fn=sp%3D1%26spc%3D202%26slotId%3D3%26kws%3Dred%20carpet',
         'http://www1.macys.com/shop/product/kenneth-mink-area-rug-set-roma-collection-3-piece-set-kerman-red?ID=657298&CategoryID=16905&LinkType=#fn=sp%3D1%26spc%3D202%26slotId%3D8%26kws%3Dred%20carpet',
-        'http://www1.macys.com/shop/product/nourison-rugs-persian-legacy-pl04-terracotta?ID=312435&CategoryID=16905&LinkType=#fn=sp%3D1%26spc%3D202%26slotId%3D23%26kws%3Dred%20carpet',
-        'http://www1.macys.com/shop/product/oriental-weavers-rugs-generations-544x-shadow-vine?ID=125608&CategoryID=16905&LinkType=#fn=sp%3D1%26spc%3D202%26slotId%3D29%26kws%3Dred%20carpet',
+        'http://www1.macys.com/shop/product/style-co.-curvy-fit-skinny-jeans-black-wash-only-at-macys?ID=2351352&CategoryID=3111&LinkType=#fn=sp%3D1%26spc%3D2731%26slotId%3D2%26kws%3Djeans',
+        'http://www1.macys.com/shop/product/levis-541-athletic-fit-jeans?ID=1656539&CategoryID=11221&LinkType=#fn=sp%3D1%26spc%3D2731%26slotId%3D4%26kws%3Djeans',
         'http://www1.macys.com/shop/product/levis-541-athletic-fit-jeans?ID=1656539&CategoryID=11221&LinkType=#fn=sp%3D1%26spc%3D2762%26slotId%3D6%26kws%3Djeans',
-        'http://www1.macys.com/shop/product/celebrity-pink-jeans-juniors-skinny-jeans-white-wash?ID=578507&CategoryID=28754&LinkType=#fn=sp%3D1%26spc%3D2762%26slotId%3D10%26kws%3Djeans',
+        'http://www1.macys.com/shop/product/style-co.-skinny-leg-curvy-fit-jeans?ID=2132416&CategoryID=3111&LinkType=#fn=sp%3D1%26spc%3D2731%26slotId%3D18%26kws%3Djeans',
         'http://www1.macys.com/shop/product/charter-club-lexington-straight-leg-jeans-black-wash?ID=2147715&CategoryID=3111&LinkType=#fn=sp%3D1%26spc%3D2762%26slotId%3D20%26kws%3Djeans',
         'http://www1.macys.com/shop/product/style-co.-slim-leg-tummy-control-jeans-colored-wash?ID=1377210&CategoryID=3111&LinkType=#fn=sp%3D1%26spc%3D2762%26slotId%3D27%26kws%3Djeans',
         'http://www1.macys.com/shop/product/jessica-simpson-juniors-kiss-me-super-skinny-jeggings?ID=740695&CategoryID=28754&LinkType=#fn=sp%3D1%26spc%3D2762%26slotId%3D41%26kws%3Djeans',

@@ -43,7 +43,7 @@ class KohlsScraper(Scraper):
         self.wc_pdf = 0
         self.wc_prodtour = 0
         self.is_webcollage_contents_checked = False
-
+        self.is_video_checked = False
         self.video_urls = []
 
     def check_url_format(self):
@@ -305,7 +305,24 @@ class KohlsScraper(Scraper):
         return 0
 
     def _video_urls(self):
+        if self.is_video_checked:
+            return self.video_urls
+
+        self.is_video_checked = True
+
         self._extract_webcollage_contents()
+
+        video_player_button = self.tree_html.xpath("//div[@id='leftCarousel']//a[@id='viewProductVideo']")
+
+        if video_player_button:
+            video_page_link = video_player_button[0].xpath("./@href")[0]
+
+            video_page_html = html.fromstring(self.load_page_from_url_with_number_of_retries(video_page_link))
+            video_urls = list(set(video_page_html.xpath("//video[@id='product-video']//source[@type='video/mp4']/@src")))
+
+            if video_urls:
+                self.video_urls.extend(video_urls)
+
         return self.video_urls if self.video_urls else None
 
     def _video_count(self):

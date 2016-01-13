@@ -40,6 +40,7 @@ class TargetScraper(Scraper):
 
         self.tv = TargetVariants()
         self.product_json = None
+        self.image_json = None
 
     def check_url_format(self):
         # for ex: http://www.target.com/p/skyline-custom-upholstered-swoop-arm-chair/-/A-15186757#prodSlot=_1_1
@@ -71,7 +72,16 @@ class TargetScraper(Scraper):
         else:
             product_json = None
 
+        try:
+            page_raw_text = html.tostring(self.tree_html)
+            start_index = page_raw_text.find("Target.globals.AltImagesJson =") + len("Target.globals.AltImagesJson =")
+            end_index = page_raw_text.find("\n", start_index)
+            image_json = json.loads(page_raw_text[start_index:end_index])
+        except:
+            image_json = None
+
         self.product_json = product_json
+        self.image_json = image_json
 
         return self.product_json
 
@@ -190,14 +200,23 @@ class TargetScraper(Scraper):
         return None
 
     def _image_urls(self):
-        image_urls = self.tree_html.xpath("//ul[@id='carouselContainer']//li//img/@src")
+        start_index = self.product_page_url.find("/-/A-") + len("/-/A-")
+        end_index = self.product_page_url.rfind("?")
 
-        if not image_urls:
-            image_urls = self.tree_html.xpath("//div[@class='HeroPrimContainer']//a//img//@src")
+        if start_index > end_index:
+            product_id = self.product_page_url[start_index:]
+        else:
+            product_id = self.product_page_url[start_index:end_index]
 
-        image_urls = [url.replace("wid=60&hei=60?qlt=85", "wid=480&hei=480") for url in image_urls]
+        for item in self.image_json:
+            if product_id in item.keys():
+                image_urls = [alt[alt.keys()[0]]["altImage"] for alt in item[product_id]["items"]]
+                break
 
-        return image_urls
+        if image_urls:
+            return image_urls
+
+        return None
 
     def _image_count(self):
         image_urls = self._image_urls()
@@ -437,8 +456,12 @@ class TargetScraper(Scraper):
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 1:
-            if self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]") and \
-                            "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content():
+            if (self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")
+                and "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content()):
+                return 1
+
+            if self.tree_html.xpath("//div[@class='shipping']//span[starts-with(@class, 'pdpOneButton-')]") and \
+                            "not available" in self.tree_html.xpath("//div[@class='shipping']//span[starts-with(@class, 'pdpOneButton-')]")[0].text_content():
                 return 1
 
             return 0

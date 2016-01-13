@@ -131,15 +131,24 @@ class JcpenneyScraper(Scraper):
         return 0
 
     def _description(self):
-        #check long description existence
-        if self.tree_html.xpath("//div[@id='longCopyCont']//ul"):
-            page_raw_text = html.tostring(self.tree_html)
-            nIndex2 = page_raw_text.find('id="longCopyCont"')
-            nIndex1 = page_raw_text.find('>', nIndex2)
-            nIndex2= page_raw_text.find('<ul', nIndex1)
-            return page_raw_text[nIndex1 + 1:nIndex2].strip()
-        elif self.tree_html.xpath("//div[@id='longCopyCont']"):
-            return html.tostring(self.tree_html.xpath("//div[@id='longCopyCont']")[0]).strip()
+        if self.tree_html.xpath("//div[@id='longCopyCont']"):
+            description_html_text = html.tostring(self.tree_html.xpath("//div[@id='longCopyCont']")[0])
+
+            if description_html_text.startswith('<div id="longCopyCont" class="pdp_brand_desc_info" itemprop="description">'):
+                short_description_start_index = len('<div id="longCopyCont" class="pdp_brand_desc_info" itemprop="description">')
+            else:
+                short_description_start_index = 0
+
+            if description_html_text.find('<div style="page-break-after: always;">') > 0:
+                short_description_end_index = description_html_text.find('<div style="page-break-after: always;">')
+            elif description_html_text.find('<ul>') > 0:
+                short_description_end_index = description_html_text.find('<ul>')
+            elif short_description_start_index > 0:
+                short_description_end_index = description_html_text.rfind("</div>")
+            else:
+                short_description_end_index = len(description_html_text)
+
+            return description_html_text[short_description_start_index:short_description_end_index].strip()
 
         return None
 
@@ -148,16 +157,21 @@ class JcpenneyScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        #check long description existence
-        if self.tree_html.xpath("//div[@id='longCopyCont']//ul"):
-            page_raw_text = html.tostring(self.tree_html)
-            nIndex2 = page_raw_text.find('id="longCopyCont"')
-            nIndex1 = page_raw_text.find('>', nIndex2)
-            nIndex2= page_raw_text.find('<ul', nIndex1)
-            page_raw_text_exclude_short_description = page_raw_text[:nIndex1 + 1] + page_raw_text[nIndex2:]
-            page_html_exclude_short_description = html.fromstring(page_raw_text_exclude_short_description)
+        if self.tree_html.xpath("//div[@id='longCopyCont']"):
+            description_html_text = html.tostring(self.tree_html.xpath("//div[@id='longCopyCont']")[0])
 
-            return html.tostring(page_html_exclude_short_description.xpath("//div[@id='longCopyCont']")[0])
+            if description_html_text.find('<div style="page-break-after: always;">') > 0:
+                long_description_start_index = description_html_text.find('<div style="page-break-after: always;">')
+                long_description_start_index = description_html_text.find('</div>', long_description_start_index) + len("</div>")
+                long_description_end_index = description_html_text.rfind("</div>")
+
+                return description_html_text[long_description_start_index:long_description_end_index].strip()
+
+            if description_html_text.find('<ul>') > 0:
+                long_description_start_index = description_html_text.find('<ul>')
+                long_description_end_index = description_html_text.rfind("</div>")
+
+                return description_html_text[long_description_start_index:long_description_end_index].strip()
 
         return None
 
@@ -216,15 +230,16 @@ class JcpenneyScraper(Scraper):
 
         #check pdf
         try:
-            pdf_url = re.search('href="(.+\.pdf?)"', page_raw_text).group(1)
+            pdf_urls = re.findall(r'href="(.+\.pdf?)"', page_raw_text)
 
-            if not pdf_url:
+            if not pdf_urls:
                 raise Exception
 
-            if not pdf_url.startswith("http://"):
-                pdf_url = "http://www.jcpenney.com" + pdf_url
+            for index, url in enumerate(pdf_urls):
+                if not url.startswith("http://"):
+                    pdf_urls[index] = "http://www.jcpenney.com" + url
 
-            self.pdf_urls = [pdf_url]
+            self.pdf_urls = pdf_urls
             self.pdf_count = len(self.pdf_urls)
         except:
             pass
