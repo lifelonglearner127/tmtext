@@ -33,7 +33,7 @@ if bucket:
         deleted_key_count += 1
 
     print "bucket name: " + bucket_name
-    print "bucket length: " + bucket_length
-    print "deleted key count: " + deleted_key_count
+    print "bucket length: " + str(bucket_length)
+    print "deleted key count: " + str(deleted_key_count)
 else:
     print "There's no bucket for specified queue."
