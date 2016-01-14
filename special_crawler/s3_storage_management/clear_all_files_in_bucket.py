@@ -28,7 +28,7 @@ if bucket:
     deleted_key_count = 0
     bucket_length = len(key_list)
 
-    result = bucket.delete_keys([key.name for key in key_list])
+    result = bucket.delete_keys(key_list)
 
     rs = bucket.list()
     key_list = [key.name for key in rs]
