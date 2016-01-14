@@ -183,7 +183,10 @@ class TargetVariants(object):
 
                 stockstatus_for_variants["image_url"] = hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["primary_image"]
 
-                if hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["inventory"]["status"] == "in stock":
+                if self.debug:
+                    print 'STOCK STATUS:', hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["inventory"]["status"]
+                if hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["inventory"]["status"] \
+                        in ("in stock", "out of stock online"):
                     stockstatus_for_variants["in_stock"] = True
                 else:
                     stockstatus_for_variants["in_stock"] = False
