@@ -202,6 +202,8 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
             ).re(FLOATING_POINT_RGEX)
         if response.css('.priceSale::text'):
             price = response.css('.priceSale::text').re(FLOATING_POINT_RGEX)
+        if not price:
+            price = response.xpath('//*[contains(@id, "priceInfo")]').re(FLOATING_POINT_RGEX)
         if price:
                 product['price'] = Price(price=price[0],
                                          priceCurrency='USD')
