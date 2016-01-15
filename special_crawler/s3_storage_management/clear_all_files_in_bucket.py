@@ -62,7 +62,6 @@ else:
 subject = "Cleaned content health aws s3 storage for queue '" + queue_name + "'"
 fromaddr = "jenkins@contentanalyticsinc.com"
 toaddrs = ["diogo.medeiros1115@gmail.com"] # must be a list
-subject = "Master CH Scrapers Updated"
 msg = """\
 From: %s
 To: %s
