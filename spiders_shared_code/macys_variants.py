@@ -16,6 +16,18 @@ class MacysVariants(object):
         """ Call it from CH spiders """
         self.tree_html = tree_html
 
+    def _extract_product_info_json(self):
+        try:
+            product_info_json = self.tree_html.xpath("//script[@id='pdpMainData' and @type='application/json']/text()")
+
+            if product_info_json:
+                product_info_json = json.loads(product_info_json[0])
+                return product_info_json
+        except:
+            print "Parsing error of product info json"
+
+        return None
+
     def _variants(self):
         try:
             colors = self.tree_html.xpath('//img[@class="colorSwatch"]/@alt')
@@ -27,9 +39,18 @@ class MacysVariants(object):
             product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0].strip()
             variants_json = json.loads(re.search('MACYS\.pdp\.upcmap\["' + product_id + '"\] = (.+?);\nMACYS\.pdp', page_raw_text).group(1))
 
-            price = self.tree_html.xpath("//meta[@itemprop='price']/@content")[0].strip()
-            price = price.replace(",", "")
-            price_amount = float(re.findall(r"[\d\.]+", price)[0])
+            product_info_json = self._extract_product_info_json()
+
+            price_amount = None
+
+            if product_info_json:
+                sale_price = product_info_json.get("productDetail", {}).get("salePrice", "")
+                regular_price = product_info_json.get("productDetail", {}).get("regularPrice", "")
+
+                if sale_price:
+                    price_amount = float(sale_price)
+                elif regular_price:
+                    price_amount = float(regular_price)
 
             stockstatus_for_variants_list = []
             instock_variation_combinations_values = []
