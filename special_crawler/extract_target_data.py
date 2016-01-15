@@ -320,7 +320,10 @@ class TargetScraper(Scraper):
                     base_video_url = webcollage_page_contents.xpath("//*[@data-resources-base]/@data-resources-base")[0].replace("\/", "/")
                     self.video_urls.extend([base_video_url + video["src"]["src"] for video in wc_json_data["videos"]])
                     self.wc_video = 1
-            elif webcollage_page_contents.xpath("//*[contains(@class, 'wc-media wc-iframe') and @data-asset-url]/@data-asset-url"):
+                elif wc_json_data.get("tourViews", {}):
+                    self.wc_prodtour = 1
+
+            if webcollage_page_contents.xpath("//*[contains(@class, 'wc-media wc-iframe') and @data-asset-url]/@data-asset-url"):
                 data_asset_url = webcollage_page_contents.xpath("//*[contains(@class, 'wc-media wc-iframe') and @data-asset-url]/@data-asset-url")[0].replace("\/", "/")
                 data_asset_contents = html.fromstring(self.load_page_from_url_with_number_of_retries(data_asset_url))
                 video_id_list = data_asset_contents.xpath("//*[contains(@class, 'video_slider_item interactive_click_action')]/@video_id")
