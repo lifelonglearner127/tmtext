@@ -58,8 +58,20 @@ else:
     print "Invalid queue name '" + queue_name + "'."
     response_message = "Invalid queue name '" + queue_name + "'."
 
+
+subject = "Cleaned content health aws s3 storage for queue '" + queue_name + "'"
 fromaddr = "jenkins@contentanalyticsinc.com"
 toaddrs = ["diogo.medeiros1115@gmail.com"] # must be a list
+subject = "Master CH Scrapers Updated"
+msg = """\
+From: %s
+To: %s
+Subject: %s
+
+%s
+""" % (fromaddr, ", ".join(toaddrs), subject, response_message)
+
+print "Message length is " + repr(len(msg))
 
 #Change according to your settings
 smtp_server = 'email-smtp.us-east-1.amazonaws.com'
@@ -68,26 +80,14 @@ smtp_password = 'AgWhl58LTqq36BpcFmKPs++24oz6DuS/J1k2GrAmp1T6'
 smtp_port = '587'
 smtp_do_tls = True
 
-msg = MIMEMultipart(
-        From=fromaddr,
-        To=COMMASPACE.join(toaddrs),
-        Date=formatdate(localtime=True)
-        )
-subject = "Cleaned content health aws s3 storage for queue '" + queue_name + "'"
-msg['Subject'] = subject
-msg.preamble = subject
-
 server = smtplib.SMTP(
     host = smtp_server,
     port = smtp_port,
     timeout = 10
 )
-
 server.set_debuglevel(10)
 server.starttls()
 server.ehlo()
 server.login(smtp_username, smtp_password)
-server.sendmail(fromaddr, toaddrs, msg.as_string())
-
+server.sendmail(fromaddr, toaddrs, msg)
 print server.quit()
-
