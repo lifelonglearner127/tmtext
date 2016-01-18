@@ -166,7 +166,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
         cond_set(
             product,
-            'image_url',
+            KohlsProductsSpider._fix_image_url('image_url'),
             response.xpath(
                 '//div[@id="easyzoom_wrap"]/div/a/img/@src'
             ).extract()
@@ -316,6 +316,12 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
         return product
 
+    @staticmethod
+    def _fix_image_url(url):
+        url = url.rstrip('&op_sharpen')
+        url = url.replace('wid=130', 'wid=256').replace('hei=130', 'hei=256')
+        return url
+
     def _parse_reviews(self, response):
         product = response.meta['product']
         product_id = response.meta['product_id']
@@ -415,7 +421,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
                 cond_set(
                     product,
-                    'image_url',
+                    KohlsProductsSpider._fix_image_url('image_url'),
                     block.xpath('.//a/img/@src').extract())
 
                 self._set_price(response, product)
