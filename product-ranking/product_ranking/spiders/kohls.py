@@ -164,6 +164,9 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         product['description'] = self.parse_description(response)
         # cond_set_value(product, 'description', description)
 
+        if product.get('image_url'):
+            product['image_url'] = KohlsProductsSpider._fix_image_url(product['image_url'])
+
         cond_set(
             product,
             'image_url',
