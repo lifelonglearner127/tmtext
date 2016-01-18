@@ -1,6 +1,7 @@
 import sys
 import smtplib
 from boto.s3.connection import S3Connection
+from datetime import date
 from email.mime.multipart import MIMEMultipart
 from email.utils import COMMASPACE, formatdate
 
