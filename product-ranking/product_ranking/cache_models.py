@@ -106,19 +106,19 @@ class Run(Base):
         return '<Run for %s>' % self.date
 
 
-# engine = create_engine('mysql://root:root@localhost/test', echo=True)
+engine = create_engine('mysql://root:root@localhost/test', echo=True)
 # use echo for debug purposes, to see produced sql queries
-if os.path.exists('cache_models.db'):  # local mode with SQLite
-    engine = create_engine('sqlite:///cache_models.db')
-else:
-    engine = create_engine(
-        'postgresql://sccache:DetVoFremjokIrnEttat'
-        '@sc-cache-map.cmuq9py90auz.us-east-1.rds.amazonaws.com/sccache'
-    )
-
-sess = sessionmaker()
-sess.configure(bind=engine)
-session = sess()
+# if os.path.exists('cache_models.db'):  # local mode with SQLite
+#     engine = create_engine('sqlite:///cache_models.db')
+# else:
+#     engine = create_engine(
+#         'postgresql://sccache:DetVoFremjokIrnEttat'
+#         '@sc-cache-map.cmuq9py90auz.us-east-1.rds.amazonaws.com/sccache'
+#     )
+#
+# sess = sessionmaker()
+# sess.configure(bind=engine)
+# session = sess()
 
 
 def create_tables():
