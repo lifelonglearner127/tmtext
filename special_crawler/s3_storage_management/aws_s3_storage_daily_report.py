@@ -45,7 +45,7 @@ for queue_name in queue_names_list:
 
 today = date.today()
 
-subject = "Aws s3 storage daily report for all queue: {0}".format(today.isoformat())
+subject = "Content health aws s3 storage daily report for all queue: {0}".format(today.isoformat())
 fromaddr = "jenkins@contentanalyticsinc.com"
 toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com", "support@contentanalyticsinc.com"] # must be a list
 msg = """\
