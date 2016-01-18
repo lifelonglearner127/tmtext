@@ -166,10 +166,10 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
         cond_set(
             product,
-            KohlsProductsSpider._fix_image_url('image_url'),
-            response.xpath(
-                '//div[@id="easyzoom_wrap"]/div/a/img/@src'
-            ).extract()
+            'image_url',
+            KohlsProductsSpider._fix_image_url(
+                response.xpath('//div[@id="easyzoom_wrap"]/div/a/img/@src').extract()
+            )
         )
 
         upc_codes = []
@@ -318,6 +318,10 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _fix_image_url(url):
+        if isinstance(url, (list, tuple)):
+            if not url:
+                return
+            url = url[0]
         url = url.rstrip('&op_sharpen')
         url = url.replace('wid=130', 'wid=256').replace('hei=130', 'hei=256')
         return url
@@ -421,8 +425,9 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
                 cond_set(
                     product,
-                    KohlsProductsSpider._fix_image_url('image_url'),
-                    block.xpath('.//a/img/@src').extract())
+                    'image_url',
+                    KohlsProductsSpider._fix_image_url(block.xpath('.//a/img/@src').extract())
+                )
 
                 self._set_price(response, product)
 
