@@ -22,6 +22,7 @@
             <li><a href="/killer">Killer logs</a></li>
             <li><a href="/settings">Cache settings</a></li>
             <li><a href="/clear_cache">Clear cache</a></li>
+            <li><a href="/fcgi">Reload server</a></li>
         </ul>
     </header>
 </div>
@@ -58,6 +59,20 @@
         </li>
     </ul>
 </div>
+
+{% if messages %}
+	<div>
+    	{% for message in messages %}
+            <div class="alert alert-success alert-dismissible">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            	{{ message }}
+            </div>
+    	{% endfor %}
+
+    </div>
+{% endif %}
+
+{% endfor %}
 
 <div>
     <h3>Cache stats</h3>
