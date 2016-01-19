@@ -614,8 +614,11 @@ class Scraper():
         Returns:
             True if it's a "no image" image, False otherwise
         """
-
+        print "***********test start*************"
         first_hash = self._image_hash(image_url)
+        print first_hash
+        print "***********test end*************"
+
         if first_hash in self.NO_IMAGE_HASHES:
             print "not an image"
             return True
