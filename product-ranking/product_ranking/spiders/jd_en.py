@@ -6,6 +6,7 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value, populate_from_open_graph
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
+from spiders_shared_code.jden_variants import JdVariants
 
 
 class JdProductsSpider(BaseProductsSpider):
@@ -66,8 +67,8 @@ class JdProductsSpider(BaseProductsSpider):
         prod['locale'] = 'en-GB'  # ?
         prod['is_out_of_stock'] = False  # ?
         cond_set(prod, 'title', response.css('h1.tit::text').extract())
-        cond_set(prod, 'image_url', response.xpath(
-            '//meta[property="og:image"]/@content').extract())
+        cond_set(prod, 'image_url', response.css('meta[property="og:image"]::'
+                                                 'attr(content)').extract())
         sku = response.css('#summary-price::attr(skuid)').extract()[0]
         prod_id = response.css('#summary::attr(data-ware-id)').extract()[0]
         cond_set_value(prod, 'sku', sku)
@@ -82,15 +83,9 @@ class JdProductsSpider(BaseProductsSpider):
 
     def _parse_variants(self, response):
         prod = response.meta['product']
-        options = response.css('ul.saleAttr')
-        variants = []
-        for option in options:
-            option_name = option.xpath('../preceding-sibling::'
-                                       'div[@class="dt"]/text()').extract()[0]
-            values = option.xpath('li/a/@title').extract()
-            variants.append({option_name: [value for value in values]})
-        print '@' * 50
-        print variants
+        jv = JdVariants()
+        jv.setupSC(response)
+        prod['variants'] = jv._variants()
 
     def _parse_price(self, response):
         prod = response.meta['product']
@@ -142,4 +137,3 @@ class JdProductsSpider(BaseProductsSpider):
             new_meta["reqs"] = reqs
 
         return req.replace(meta=new_meta)
-# todo: variants, reviews
