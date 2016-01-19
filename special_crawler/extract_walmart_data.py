@@ -1970,7 +1970,7 @@ class WalmartScraper(Scraper):
         self.extracted_image_urls = True
 
         if self._version() == "Walmart v1":
-            self.image_urls = list(set(self._image_urls_old()))
+            self.image_urls = self.remove_duplication_keeping_order_in_list(self._image_urls_old())
             return self.image_urls
 
         if self._version() == "Walmart v2":
