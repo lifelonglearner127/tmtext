@@ -622,6 +622,7 @@ class Scraper():
             else:
                 return False
         except Exception, e:
+            return True
             if e.message == 'argument 1 must be string or read-only buffer, not None':
                 return True
             else:
