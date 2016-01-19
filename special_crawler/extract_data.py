@@ -614,13 +614,18 @@ class Scraper():
         Returns:
             True if it's a "no image" image, False otherwise
         """
-
-        first_hash = self._image_hash(image_url)
-        if first_hash in self.NO_IMAGE_HASHES:
-            print "not an image"
-            return True
-        else:
-            return False
+        try:
+            first_hash = self._image_hash(image_url)
+            if first_hash in self.NO_IMAGE_HASHES:
+                print "not an image"
+                return True
+            else:
+                return False
+        except Exception, e:
+            if e.message == 'argument 1 must be string or read-only buffer, not None':
+                return True
+            else:
+                raise e
 
     def is_energy_label(self, image_url):
         """Verifies if image with URL given as argument is an
