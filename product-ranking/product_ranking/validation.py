@@ -297,6 +297,16 @@ class BaseValidator(object):
             return False
         return True
 
+    def _validate_categories_full_info(self, val):
+        if val in ('', None):
+            return True
+        if not isinstance(val, list):
+            return False
+        for _v in val:
+            if 'name' not in _v or 'url' not in _v:
+                return False
+        return True
+
     def _validate_is_in_store_only(self, val):
         return val in ('True', 'False')
 
