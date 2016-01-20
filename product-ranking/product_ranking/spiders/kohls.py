@@ -134,7 +134,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
         kv = KohlsVariants()
         kv.setupSC(response)
-        #prod['variants'] = kv._variants()
+        prod['variants'] = kv._variants()
 
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
