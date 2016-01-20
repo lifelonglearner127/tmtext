@@ -134,7 +134,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
         kv = KohlsVariants()
         kv.setupSC(response)
-        prod['variants'] = kv._variants()
+        #prod['variants'] = kv._variants()
 
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
@@ -257,7 +257,10 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             '//div[@class="sale"]/text()[normalize-space()] |'
             '//div[contains(@class, "main_price")]/text()'
         ).re("\d+.?\d{0,2}")
-
+        if not price:
+            price = response.xpath(
+                '//*[contains(@class, "price-holder")]'
+                '//*[contains(@class, "price_label")]/..//text()').re("\d+.?\d{0,2}")
         if price:
             product['price'] = Price(price=price[0], priceCurrency='USD')
         else:
