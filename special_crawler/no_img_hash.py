@@ -90,6 +90,12 @@ def fetch_bytes(url):
             img.save(b, format='png')
             data = b.getvalue()
             return data
+        elif response != 'Error' and response.content:
+            img = Image.open(StringIO(response.content))
+            b = BytesIO()
+            img.save(b, format='png')
+            data = b.getvalue()
+            return data
 
 @app.errorhandler(500)
 def handle_internal_error(error):

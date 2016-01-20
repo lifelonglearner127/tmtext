@@ -1786,7 +1786,10 @@ class WalmartScraper(Scraper):
         if re.match(".*no.image\..*", url):
             return True
         else:
-            return Scraper._no_image(self, url)
+            try:
+                return Scraper._no_image(self, url)
+            except:
+                return True
 
     def _image_count(self):
         """Counts number of (valid) images found
