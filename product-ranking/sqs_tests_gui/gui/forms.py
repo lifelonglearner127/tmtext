@@ -40,6 +40,7 @@ class JobForm(forms.ModelForm):
         super(JobForm, self).__init__(*args, **kwargs)
         self.fields['task_id'].initial = self.fields['task_id'].initial + random.randint(10000, 99999)
         self.fields['spider'] = forms.CharField(
+            help_text='Start entering a spider name to see autocompletion',
             widget=CustomSelectWidget(choices=generate_spider_choices()))
         if self.instance and self.instance.pk:
             for field in self.fields.keys():

@@ -62,7 +62,7 @@ class Job(models.Model):
 
     name = models.CharField(max_length=100, blank=True, null=True,
                             help_text='Optional, just for convenience')
-    spider = models.CharField(max_length=100, choices=[])
+    spider = models.CharField(max_length=100, choices=[])  # see gui/forms.py
 
     search_term = models.CharField(
         max_length=255, blank=True, null=True,
