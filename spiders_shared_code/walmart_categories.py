@@ -1,6 +1,7 @@
 import re
 import json
 import string
+import urlparse
 
 import lxml.html
 
@@ -15,6 +16,20 @@ class WalmartCategoryParser:
     def setupCH(self, tree_html):
         """ Call it from CH spiders """
         self.tree_html = tree_html
+
+    def full_categories_with_links(self, domain='walmart.com'):
+        result = []
+        categories_list = self.tree_html.xpath(
+            "//*[contains(@class, 'prod-breadcrumb')]//li[@class='breadcrumb']/.//a")
+        for a in categories_list:
+            url = a.xpath('./@href')[0]
+            if not url.startswith('http'):
+                url = urlparse.urljoin('http://'+domain, url)
+            result.append({
+                'name': a.xpath('.//*//text()')[0],
+                'url': url
+            })
+        return result
 
     def _categories_hierarchy(self):
         """Extracts full path of hierarchy of categories

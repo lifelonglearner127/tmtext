@@ -168,7 +168,8 @@ class TargetScraper(Scraper):
         description_2nd = "\n".join(lis)
         if len(description_2nd) > 0:
             description += description_2nd
-        return description
+
+        return description if description else None
 
     def _color(self):
         return self.tv._color()
