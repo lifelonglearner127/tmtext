@@ -5,6 +5,7 @@ import random
 from django import forms
 
 from .models import Job
+from .fields import CustomSelectWidget
 
 
 CWD = os.path.dirname(os.path.abspath(__file__))
@@ -38,8 +39,8 @@ class JobForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(JobForm, self).__init__(*args, **kwargs)
         self.fields['task_id'].initial = self.fields['task_id'].initial + random.randint(10000, 99999)
-        self.fields['spider'] = forms.ChoiceField(
-            choices=generate_spider_choices())
+        self.fields['spider'] = forms.CharField(
+            widget=CustomSelectWidget(choices=generate_spider_choices()))
         if self.instance and self.instance.pk:
             for field in self.fields.keys():
                 self.fields[field].widget = ReadOnlyWidget()
