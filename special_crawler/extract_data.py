@@ -616,7 +616,6 @@ class Scraper():
         """
         print "***********test start*************"
         first_hash = self._image_hash(image_url)
-        print image_url
         print first_hash
         print "***********test end*************"
 
