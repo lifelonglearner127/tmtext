@@ -54,7 +54,7 @@ class TargetScraper(Scraper):
 
     def check_url_format(self):
         # for ex: http://www.target.com/p/skyline-custom-upholstered-swoop-arm-chair/-/A-15186757#prodSlot=_1_1
-        m = re.match(r"^http://www\.target\.com/p/([a-zA-Z0-9\-]+)/-/A-([0-9A-Za-z]+)", self.product_page_url)
+        m = re.match(r"^http://(www|intl)\.target\.com/p/([a-zA-Z0-9\-]+)/-/A-([0-9A-Za-z]+)", self.product_page_url)
         return not not m
 
     def not_a_product(self):

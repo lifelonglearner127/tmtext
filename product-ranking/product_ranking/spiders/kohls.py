@@ -23,6 +23,7 @@ from product_ranking.validators.kohls_validator import KohlsValidatorSettings
 
 is_empty = lambda x, y="": x[0] if x else y
 
+
 class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
     """ kohls.com product ranking spider.
 
@@ -78,6 +79,8 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                   "l=1"
 
     handle_httpstatus_list = [404]
+
+    use_proxies = True
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         self.start_pos = 0

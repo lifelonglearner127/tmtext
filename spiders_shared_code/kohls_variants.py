@@ -69,7 +69,7 @@ class KohlsVariants(object):
             variants_count = 0
 
         if variants_count == 0:
-            return []
+            return None
 
         try:
             variants_json = json.loads(variants_text)
