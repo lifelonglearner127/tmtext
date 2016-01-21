@@ -48,11 +48,29 @@ class MacysScraper(Scraper):
         self.pdf_urls = None
         self.pdf_count = None
         self.is_review_checked = False
+        self.product_info_json = None
+        self.is_product_info_json_checked = False
 
     def check_url_format(self):
         # for ex: http://www1.macys.com/shop/product/closeout-biddeford-comfort-knit-fleece-heated-king-blanket?ID=694761
         m = re.match(r"^http://www1\.macys\.com/shop/(.*)", self.product_page_url)
         return not not m
+
+    def _extract_product_info_json(self):
+        if self.is_product_info_json_checked:
+            return self.product_info_json
+
+        self.is_product_info_json_checked = True
+
+        try:
+            product_info_json = self.tree_html.xpath("//script[@id='pdpMainData' and @type='application/json']/text()")
+
+            if product_info_json:
+                product_info_json = json.loads(product_info_json[0])
+        except:
+            product_info_json = None
+
+        self.product_info_json = product_info_json
 
     def not_a_product(self):
         '''Overwrites parent class method that determines if current page
@@ -70,6 +88,9 @@ class MacysScraper(Scraper):
         if len(self.tree_html.xpath("//div[@id='viewCollectionItemsButton']")) > 0:
             self.ERROR_RESPONSE["failure_type"] = "Bundle"
             return True
+
+        self._extract_product_info_json()
+
         return False
 
     ##########################################
@@ -403,8 +424,19 @@ class MacysScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
+        '''---deprecated---
         price = self.tree_html.xpath("//meta[@itemprop='price']/@content")[0].strip()
-        return price
+        ---deprecated---'''
+        if self.product_info_json:
+            sale_price = self.product_info_json.get("productDetail", {}).get("salePrice", "")
+            regular_price = self.product_info_json.get("productDetail", {}).get("regularPrice", "")
+
+            if sale_price:
+                return "$" + sale_price
+            elif regular_price:
+                return "$" + regular_price
+
+        return None
 
     def _price_amount(self):
         price = self._price()

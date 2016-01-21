@@ -75,7 +75,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         super(URL2ScreenshotSpider, self).__init__(*args, **kwargs)
 
     def start_requests(self):
-        req = Request(self.product_url)
+        req = Request(self.product_url, dont_filter=True)
         req.headers.setdefault('User-Agent', self.user_agent)
         yield req
 
@@ -111,6 +111,13 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 elements[i].click();
             }
         """ % cls
+        driver.execute_script(script)
+
+    def _click_on_element_with_id(self, driver, _id):
+        script = """
+            var element = document.getElementById('%s');
+            element.click();
+        """ % _id
         driver.execute_script(script)
 
     def _choose_another_driver(self):
@@ -175,6 +182,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         if self.close_popups:
             time.sleep(3)
             self._click_on_elements_with_class(driver, 'close')
+            self._click_on_element_with_id(driver, 'closeBtn')
 
         time.sleep(2)
         driver.save_screenshot(output_fname)

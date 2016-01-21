@@ -13,12 +13,13 @@ from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
 from spiders_shared_code.jet_variants import JetVariants
-
+from product_ranking.validators.jet_validator import JetValidatorSettings
+from product_ranking.validation import BaseValidator
 
 is_empty = lambda x, y=None: x[0] if x else y
 
 
-class JetProductsSpider(BaseProductsSpider):
+class JetProductsSpider(BaseValidator, BaseProductsSpider):
     name = 'jet_products'
     allowed_domains = ["jet.com"]
 
@@ -52,6 +53,8 @@ class JetProductsSpider(BaseProductsSpider):
     product_links = []
 
     DEFAULT_MARKETPLACE = "Jet"
+
+    settings = JetValidatorSettings
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         super(JetProductsSpider, self).__init__(*args, **kwargs)
@@ -196,7 +199,7 @@ class JetProductsSpider(BaseProductsSpider):
         cond_set(
             product, "title", response.xpath(
                 "//div[contains(@class, 'content')]"
-                "//div[contains(@class, 'title')]"
+                "//div[contains(@class, 'title')]/text()"
             ).extract()
         )
 
@@ -237,6 +240,8 @@ class JetProductsSpider(BaseProductsSpider):
 
         brand = is_empty(response.xpath("//div[contains(@class, 'content')]"
                                         "/div[contains(@class, 'brand')]/text()").extract())
+        if not brand:
+            brand = is_empty(response.css('.manufacturer ::text').extract())
         if brand:
             brand = brand.replace("by ", "")
             product["brand"] = brand
@@ -258,6 +263,12 @@ class JetProductsSpider(BaseProductsSpider):
                 image_url = is_empty(re.findall(
                     "background\:url\(([^\)]*)", image_url))
             product["image_url"] = image_url
+
+        if not product.get('image_url'):
+            cond_set(product, 'image_url',
+                response.xpath(
+                    '//*[contains(@class, "container-image")]/img/@src').extract()
+            )
 
         cond_set(
             product, "description", response.xpath(
@@ -336,6 +347,9 @@ class JetProductsSpider(BaseProductsSpider):
                     "price": product["price"]
                 })
                 product["marketplace"] = marketplace
+
+        if data.get('unavailable', None):
+            product['not_found'] = True
 
         if reqs:
             return self.send_next_request(reqs, response)

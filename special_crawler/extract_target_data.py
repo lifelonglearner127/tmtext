@@ -33,17 +33,28 @@ class TargetScraper(Scraper):
     review_count = None
     average_review = None
     reviews = None
-    video_count = None
+    WEBCOLLAGE_CHANNEL_URL = "http://content.webcollage.net/target/product-content-page?channel-product-id={0}"
+    WEBCOLLAGE_CHANNEL_URL1 = "http://content.webcollage.net/target/power-page?ird=true&channel-product-id={0}"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         self.tv = TargetVariants()
         self.product_json = None
+        self.image_json = None
+
+        self.wc_360 = 0
+        self.wc_emc = 0
+        self.wc_video = 0
+        self.wc_pdf = 0
+        self.wc_prodtour = 0
+        self.is_webcollage_contents_checked = False
+        self.is_video_checked = False
+        self.video_urls = []
 
     def check_url_format(self):
         # for ex: http://www.target.com/p/skyline-custom-upholstered-swoop-arm-chair/-/A-15186757#prodSlot=_1_1
-        m = re.match(r"^http://www\.target\.com/p/([a-zA-Z0-9\-]+)/-/A-([0-9A-Za-z]+)", self.product_page_url)
+        m = re.match(r"^http://(www|intl)\.target\.com/p/([a-zA-Z0-9\-]+)/-/A-([0-9A-Za-z]+)", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -71,7 +82,16 @@ class TargetScraper(Scraper):
         else:
             product_json = None
 
+        try:
+            page_raw_text = html.tostring(self.tree_html)
+            start_index = page_raw_text.find("Target.globals.AltImagesJson =") + len("Target.globals.AltImagesJson =")
+            end_index = page_raw_text.find("\n", start_index)
+            image_json = json.loads(page_raw_text[start_index:end_index])
+        except:
+            image_json = None
+
         self.product_json = product_json
+        self.image_json = image_json
 
         return self.product_json
 
@@ -148,7 +168,8 @@ class TargetScraper(Scraper):
         description_2nd = "\n".join(lis)
         if len(description_2nd) > 0:
             description += description_2nd
-        return description
+
+        return description if description else None
 
     def _color(self):
         return self.tv._color()
@@ -190,30 +211,47 @@ class TargetScraper(Scraper):
         return None
 
     def _image_urls(self):
-        image_urls = self.tree_html.xpath("//ul[@id='carouselContainer']//li//img/@src")
+        start_index = self.product_page_url.find("/-/A-") + len("/-/A-")
+        end_index = self.product_page_url.rfind("?")
 
-        if not image_urls:
-            image_urls = self.tree_html.xpath("//div[@class='HeroPrimContainer']//a//img//@src")
+        if start_index > end_index:
+            product_id = self.product_page_url[start_index:]
+        else:
+            product_id = self.product_page_url[start_index:end_index]
 
-        image_urls = [url.replace("wid=60&hei=60?qlt=85", "wid=480&hei=480") for url in image_urls]
+        for item in self.image_json:
+            if product_id in item.keys():
+                image_urls = [alt[alt.keys()[0]]["altImage"] for alt in item[product_id]["items"]]
+                break
 
-        return image_urls
+        if image_urls:
+            return image_urls
+
+        return None
 
     def _image_count(self):
         image_urls = self._image_urls()
         return len(image_urls)
 
     def _video_urls(self):
-        self.video_count = 0
+        if self.is_video_checked:
+            return self.video_urls
+
+        self.is_video_checked = True
+
+        self._extract_webcollage_contents()
+
         video_url = self.tree_html.xpath("//div[@class='videoblock']//div//a/@href")
         video_url = [("http://www.target.com%s" % r) for r in video_url]
         video_url2 = video_url[:]
         video_url = []
+
         for item in video_url2:
             contents = urllib.urlopen(item).read()
             tree = html.fromstring(contents)
             links = tree.xpath("//ul[@class='media-thumbnails']//a/@href")
             flag = False
+
             for link in links:
                 try:
                     link = re.findall(r'^(.*?),', link)[0]
@@ -221,50 +259,22 @@ class TargetScraper(Scraper):
                     flag = True
                 except:
                     pass
-            # if not flag:
-            #     video_url.append(item)
-            if len(video_url) < 1:
-                self.video_count = len(tree.xpath("//ul[@id='carouselContainer']//li//img"))
-        demo_url = self.tree_html.xpath("//div[starts-with(@class, 'demoblock')]//span//a/@href")
-        demo_url = [r for r in demo_url if len(self._clean_text(r)) > 0]
-        for item in demo_url:
-            contents = urllib.urlopen(item).read()
-            tree = html.fromstring(contents)
-            redirect_link = tree.xpath("//div[@id='slow-reporting-message']//a/@href")[0]
-            redirect_contents = urllib.urlopen(redirect_link).read()
-            redirect_tree = html.fromstring(redirect_contents)
-            tabs = redirect_tree.xpath("//div[@class='wc-ms-navbar']//li//a")
-            for tab in tabs:
-                tab_txt = ""
-                try:
-                    tab_txt = tab.xpath(".//span/text()")[0].strip()
-                except IndexError:
-                    continue
-                # if tab_txt == "Video" or tab_txt == "Videos" or tab_txt == "360 View Video":
-                # if "video" in tab_txt.lower():
-                if '360 view video' == tab_txt.lower() or 'videos' == tab_txt.lower() or 'video' == tab_txt.lower():
-                    redirect_link2 = tab.xpath("./@href")[0]
-                    redirect_link2 = "http://content.webcollage.net" + redirect_link2
-                    redirect_contents2 = urllib.urlopen(redirect_link2).read()
-                    redirect_tree2 = html.fromstring(redirect_contents2)
-                    video_urls_tmp = redirect_tree2.xpath("//div[@class='wc-gallery-thumb']//img/@wcobj")
-                    if len(video_urls_tmp) > 0:
-                        video_url += video_urls_tmp
-                    else:
-                        video_url.append(item)
-        self.video_count += len(video_url)
-        if len(video_url) < 1:
-            return None
-        return video_url
+
+        if video_url:
+            self.video_urls.extend(video_url)
+
+        if self.video_urls:
+            self.video_urls = list(set(self.video_urls))
+        else:
+            self.video_urls = None
+
+        return self.video_urls
 
     def _video_count(self):
-        # urls = self._video_urls()
-        # if urls:
-        #     return len(urls)
-        # return 0
-        if self.video_count is None:
-            self._video_urls()
-        return self.video_count
+        if self._video_urls():
+            return len(self._video_urls())
+
+        return 0
 
     def _pdf_urls(self):
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
@@ -287,10 +297,76 @@ class TargetScraper(Scraper):
             return len(urls)
         return 0
 
+    def _extract_webcollage_contents(self):
+        if self.is_webcollage_contents_checked:
+            return
+
+        self.is_webcollage_contents_checked = True
+
+        try:
+            webcollage_page_contents = self.load_page_from_url_with_number_of_retries(self.WEBCOLLAGE_CHANNEL_URL1.format(self._product_id()))
+
+            if "_wccontent" not in webcollage_page_contents:
+                raise Exception
+
+            self.wc_emc = 1
+
+            webcollage_page_contents = self._find_between(webcollage_page_contents, 'html: "', '"\n').decode('string_escape')
+            webcollage_page_contents = html.fromstring(webcollage_page_contents)
+
+            if webcollage_page_contents.xpath("//div[@class='wc-json-data']/text()"):
+                wc_json_data = json.loads(webcollage_page_contents.xpath("//div[@class='wc-json-data']/text()")[0])
+
+                if wc_json_data.get("videos", {}):
+                    base_video_url = webcollage_page_contents.xpath("//*[@data-resources-base]/@data-resources-base")[0].replace("\/", "/")
+                    self.video_urls.extend([base_video_url + video["src"]["src"] for video in wc_json_data["videos"]])
+                    self.wc_video = 1
+                elif wc_json_data.get("tourViews", {}):
+                    self.wc_prodtour = 1
+
+            if webcollage_page_contents.xpath("//*[contains(@class, 'wc-media wc-iframe') and @data-asset-url]/@data-asset-url"):
+                data_asset_url = webcollage_page_contents.xpath("//*[contains(@class, 'wc-media wc-iframe') and @data-asset-url]/@data-asset-url")[0].replace("\/", "/")
+                data_asset_contents = html.fromstring(self.load_page_from_url_with_number_of_retries(data_asset_url))
+                video_id_list = data_asset_contents.xpath("//*[contains(@class, 'video_slider_item interactive_click_action')]/@video_id")
+                base_video_url = "http://client.expotv.com/vurl/"
+                self.video_urls.extend([base_video_url + video_id for video_id in video_id_list])
+                self.wc_video = 1
+        except:
+            pass
+
+        return
+
+    def _wc_360(self):
+        self._extract_webcollage_contents()
+        return self.wc_360
+
+    def _wc_emc(self):
+        self._extract_webcollage_contents()
+        return self.wc_emc
+
+    def _wc_video(self):
+        self._extract_webcollage_contents()
+        return self.wc_video
+
+    def _wc_pdf(self):
+        self._extract_webcollage_contents()
+        return self.wc_pdf
+
+    def _wc_prodtour(self):
+        self._extract_webcollage_contents()
+        return self.wc_prodtour
+
     def _webcollage(self):
+        self._extract_webcollage_contents()
+
+        if self.wc_video == 1 or self.wc_emc or self.wc_360 == 1 or self.wc_pdf == 1 or self.wc_prodtour == 1:
+            return 1
+
         atags = self.tree_html.xpath("//a[contains(@href, 'webcollage.net/')]")
+
         if len(atags) > 0:
             return 1
+
         return 0
 
     # extract htags (h1, h2) from its product product page tree
@@ -437,8 +513,12 @@ class TargetScraper(Scraper):
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 1:
-            if self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]") and \
-                            "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content():
+            if (self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")
+                and "out of stock online" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content()):
+                return 1
+
+            if self.tree_html.xpath("//div[@class='shipping']//span[starts-with(@class, 'pdpOneButton-')]") and \
+                            "not available" in self.tree_html.xpath("//div[@class='shipping']//span[starts-with(@class, 'pdpOneButton-')]")[0].text_content():
                 return 1
 
             return 0
@@ -464,7 +544,7 @@ class TargetScraper(Scraper):
     def _categories(self):
         all = self.tree_html.xpath("//div[contains(@id, 'breadcrumbs')]//a/text()")
         out = [self._clean_text(r) for r in all]
-        return out[1:]
+        return out[1:] if out else None
 
     def _category_name(self):
         return self._categories()[-1]
@@ -525,6 +605,11 @@ class TargetScraper(Scraper):
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \
+        "wc_360": _wc_360, \
+        "wc_emc": _wc_emc, \
+        "wc_video": _wc_video, \
+        "wc_pdf": _wc_pdf, \
+        "wc_prodtour": _wc_prodtour, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \

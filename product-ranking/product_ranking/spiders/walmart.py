@@ -290,6 +290,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             product['department'] = wcp._category()
         except Exception as e:
             self.log('No department to parse: '+str(e), WARNING)
+        product['categories_full_info'] = wcp.full_categories_with_links()
 
         model = is_empty(
             response.xpath('//tr[@class="js-product-specs-row"]/'

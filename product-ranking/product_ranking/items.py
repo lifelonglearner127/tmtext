@@ -184,7 +184,8 @@ class SiteProductItem(Item):
     bestseller_rank = Field()
     department = Field()  # now for Amazons only; may change in the future
     category = Field()  # now for Amazons only; may change in the future
-    categories = Field() # now for amazon and maybe walmart
+    categories = Field()  # now for amazon and maybe walmart
+    categories_full_info = Field()  # for Walmart, see BZ 5828
 
     # Calculated data.
     search_term_in_title_partial = Field()  # Bool

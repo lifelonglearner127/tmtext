@@ -110,7 +110,7 @@ class WalmartScraper(Scraper):
         self.product_info_json = None
         self.product_choice_info_json = None
         self.product_api_json = None
-        self.key_fields_list = ["upc", "price"]
+        self.key_fields_list = ["upc", "price", "description", "long_description"]
         self.failure_type = None
 
         self.review_json = None
@@ -166,6 +166,10 @@ class WalmartScraper(Scraper):
                         return self.product_api_json["product"]["upc"] if self.product_api_json["product"]["upc"] else self.product_api_json["product"]["wupc"]
                     if field_name == "price":
                         return self.product_api_json["product"]["buyingOptions"]["price"]["displayPrice"]
+                    if field_name == "description":
+                        return self.product_api_json["product"]["mediumDescription"]
+                    if field_name == "long_description":
+                        return self.product_api_json["product"]["longDescription"]
             except Exception, e:
                 print "Error (Walmart - _filter_key_fields)" + str(e)
 
@@ -743,7 +747,12 @@ class WalmartScraper(Scraper):
             for description_element in description_elements:
                 sub_description = lxml.html.tostring(description_element)
 
-                if "<b>" in sub_description or "<ul>" in sub_description or "<dl>" in sub_description or "<li>" in sub_description or '<section class="product-about js-ingredients health-about">' in sub_description:
+                if "<b>" in sub_description or \
+                                "<ul>" in sub_description or \
+                                "<dl>" in sub_description or \
+                                "<li>" in sub_description or \
+                                "<strong>" in sub_description or \
+                                '<section class="product-about js-ingredients health-about">' in sub_description:
                     innerText = ""
 
                     try:
@@ -768,9 +777,15 @@ class WalmartScraper(Scraper):
                     if "<dl>" in sub_description:
                         short_description_end_index = sub_description.find("<dl>")
                         short_description_end_index_candiate_list.append(short_description_end_index)
+
                     if "<li>" in sub_description:
                         short_description_end_index = sub_description.find("<li>")
                         short_description_end_index_candiate_list.append(short_description_end_index)
+
+                    if "<strong>" in sub_description:
+                        short_description_end_index = sub_description.find("<strong>")
+                        short_description_end_index_candiate_list.append(short_description_end_index)
+
                     if '<section class="product-about js-ingredients health-about">' in sub_description:
                         short_description_end_index = sub_description.find('<section class="product-about js-ingredients health-about">')
                         short_description_end_index_candiate_list.append(short_description_end_index)
@@ -808,6 +823,9 @@ class WalmartScraper(Scraper):
                 return None
 
         return short_description.strip()
+
+    def _short_description_from_api(self):
+        return self._filter_key_fields("description")
 
     def _short_description_wrapper(self):
         """Extracts product short description.
@@ -915,7 +933,7 @@ class WalmartScraper(Scraper):
 
             for description_element in description_elements:
                 if (not long_description_start and "<b>" in lxml.html.tostring(description_element)) or \
-                        (not long_description_start and ("<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element) or "<li>" in lxml.html.tostring(description_element))):
+                        (not long_description_start and ("<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element) or "<li>" in lxml.html.tostring(description_element) or "<strong>" in lxml.html.tostring(description_element))):
                     long_description_start = True
 
                     sub_description = lxml.html.tostring(description_element)
@@ -937,6 +955,10 @@ class WalmartScraper(Scraper):
 
                         if "<li>" in lxml.html.tostring(description_element):
                             long_description_start_index = sub_description.find("<li>")
+                            long_description_start_index_candiate_list.append(long_description_start_index)
+
+                        if "<strong>" in lxml.html.tostring(description_element):
+                            long_description_start_index = sub_description.find("<strong>")
                             long_description_start_index_candiate_list.append(long_description_start_index)
 
                         long_description_start_index = min(long_description_start_index_candiate_list)
@@ -1011,6 +1033,9 @@ class WalmartScraper(Scraper):
             long_description = long_description_new
 
         return long_description
+
+    def _long_description_from_api(self):
+        return self._filter_key_fields("long_description")
 
     def _long_description_wrapper(self):
         """Extracts product long description.
@@ -1379,6 +1404,24 @@ class WalmartScraper(Scraper):
 
             return category
 
+    def _shelf_links_by_level(self):
+        # assume new page design
+        if self._version() == "Walmart v2":
+            categories_list = self.tree_html.xpath("*//ol[@class='breadcrumb-list breadcrumb-list-mini']//li[@class='breadcrumb']//a/span/text()")
+            shelf_link_list = self.tree_html.xpath("*//ol[@class='breadcrumb-list breadcrumb-list-mini']//li[@class='breadcrumb']//a/@href")
+
+            shelf_links_by_level = [{"name": categories_list[index], "level": index + 1, "link": "http://www.walmart.com" + shelf_link} for index, shelf_link in enumerate(shelf_link_list)]
+
+            if shelf_links_by_level:
+                return shelf_links_by_level
+
+        if self._version() == "Walmart v1":
+            # assume old page design
+            try:
+                return self._categories_hierarchy_old()
+            except Exception:
+                return None
+
     # extract product features list from its product product page tree, return as string
     def _features_from_tree(self):
         """Extracts product features
@@ -1743,7 +1786,10 @@ class WalmartScraper(Scraper):
         if re.match(".*no.image\..*", url):
             return True
         else:
-            return Scraper._no_image(self, url)
+            try:
+                return Scraper._no_image(self, url)
+            except:
+                return True
 
     def _image_count(self):
         """Counts number of (valid) images found
@@ -1868,7 +1914,11 @@ class WalmartScraper(Scraper):
                 if len(images_carousel) == 1:
                     try:
                         if self._no_image(images_carousel[0]):
-                            return None
+                            if self._no_image(hero_image_url):
+                                return None
+                            else:
+                                images_carousel = [hero_image_url]
+                                image_dimensions = [0]
                     except Exception, e:
                         print "WARNING: ", e.message
 
@@ -1906,6 +1956,14 @@ class WalmartScraper(Scraper):
             # nothing found
             return None
 
+    def remove_duplication_keeping_order_in_list(self, seq):
+        if seq:
+            seen = set()
+            seen_add = seen.add
+            return [x for x in seq if not (x in seen or seen_add(x))]
+
+        return None
+
     def _image_urls(self):
         """Extracts image urls for this product.
         Works on both old and new version of walmart pages.
@@ -1919,11 +1977,11 @@ class WalmartScraper(Scraper):
         self.extracted_image_urls = True
 
         if self._version() == "Walmart v1":
-            self.image_urls = list(set(self._image_urls_old()))
+            self.image_urls = self.remove_duplication_keeping_order_in_list(self._image_urls_old())
             return self.image_urls
 
         if self._version() == "Walmart v2":
-            self.image_urls = list(set(self._image_urls_new()))
+            self.image_urls = self.remove_duplication_keeping_order_in_list(self._image_urls_new())
             return self.image_urls
 
         return None
@@ -2083,7 +2141,7 @@ class WalmartScraper(Scraper):
             available_stores = available_stores if available_stores else []
 
             for store in available_stores:
-                if store["displayArrivalDate"] != "Out of stock":
+                if store["displayArrivalDate"].lower().strip() != "out of stock":
                     return 0
 
             for seller in self.product_info_json["buyingOptions"]["marketplaceOptions"]:
@@ -3028,7 +3086,7 @@ class WalmartScraper(Scraper):
         "image_dimensions": _image_dimensions, \
         "categories": _categories_hierarchy, \
         "category_name": _category, \
-
+        "shelf_links_by_level": _shelf_links_by_level, \
         "scraper": _version, \
         }
 

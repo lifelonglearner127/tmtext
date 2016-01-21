@@ -177,6 +177,7 @@ class Scraper():
             # classification
             "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
             "category_name", # category for this product, string
+            "shelf_links_by_level", # list of category urls
             "brand" # brand of product, string
 
             # Deprecated:
@@ -224,7 +225,7 @@ class Scraper():
                     "site_online", "site_online_in_stock", "site_online_out_of_stock", "marketplace_in_stock", \
                     "marketplace_out_of_stock", "marketplace_prices", "in_stores_in_stock", \
                     "in_stores_out_of_stock", "online_only"],
-        "classification": ["categories", "category_name", "brand"]
+        "classification": ["categories", "category_name", "brand", "shelf_links_by_level"]
     }
 
     # response in case of error
@@ -266,9 +267,10 @@ class Scraper():
         return description
 
     def _clean_text(self, text):
-        text = text.replace("\n"," ").replace("\t"," ").replace("\r"," ")
+        text = text.replace("\n", " ").replace("\t", " ").replace("\r", " ")
        	text = re.sub("&nbsp;", " ", text).strip()
-        return  re.sub(r'\s+', ' ', text)
+
+        return re.sub(r'\s+', ' ', text)
 
     def load_image_hashes():
         '''Read file with image hashes list
@@ -612,8 +614,11 @@ class Scraper():
         Returns:
             True if it's a "no image" image, False otherwise
         """
-
+        print "***********test start*************"
         first_hash = self._image_hash(image_url)
+        print first_hash
+        print "***********test end*************"
+
         if first_hash in self.NO_IMAGE_HASHES:
             print "not an image"
             return True

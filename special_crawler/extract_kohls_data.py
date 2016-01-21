@@ -20,6 +20,7 @@ class KohlsScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.kohls.com/product/prd-<product-id>/<optional-part-of-product-name>.jsp"
     REVIEW_URL = "http://kohls.ugc.bazaarvoice.com/9025/{}/reviews.djs?format=embeddedhtml"
+    WEBCOLLAGE_CHANNEL_URL = "http://content.webcollage.net/kohls/product-content-page?channel-product-id={0}"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -35,6 +36,15 @@ class KohlsScraper(Scraper):
 
         self.variants = None
         self.is_variant_checked = False
+
+        self.wc_360 = 0
+        self.wc_emc = 0
+        self.wc_video = 0
+        self.wc_pdf = 0
+        self.wc_prodtour = 0
+        self.is_webcollage_contents_checked = False
+        self.is_video_checked = False
+        self.video_urls = []
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -295,18 +305,30 @@ class KohlsScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        return None
+        if self.is_video_checked:
+            return self.video_urls
+
+        self.is_video_checked = True
+
+        self._extract_webcollage_contents()
+
+        video_player_button = self.tree_html.xpath("//div[@id='leftCarousel']//a[@id='viewProductVideo']")
+
+        if video_player_button:
+            video_page_link = video_player_button[0].xpath("./@href")[0]
+
+            video_page_html = html.fromstring(self.load_page_from_url_with_number_of_retries(video_page_link))
+            video_urls = list(set(video_page_html.xpath("//video[@id='product-video']//source[@type='video/mp4']/@src")))
+
+            if video_urls:
+                self.video_urls.extend(video_urls)
+
+        return self.video_urls if self.video_urls else None
 
     def _video_count(self):
-        video_count = 0
-        image_urls = self.tree_html.xpath("//div[@id='leftCarousel']/div[@class='ver-carousel']/ul/li//img/@src")
+        video_urls = self._video_urls()
 
-        video_urls = [x for x in image_urls if "videoPlayer_Icon.png" in x]
-
-        if not video_urls:
-            return 0
-
-        return len(video_urls)
+        return len(video_urls) if video_urls else 0
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
@@ -315,8 +337,78 @@ class KohlsScraper(Scraper):
     def _pdf_count(self):
         return 0
 
+    def _extract_webcollage_contents(self):
+        if self.is_webcollage_contents_checked:
+            return
+
+        self.is_webcollage_contents_checked = True
+
+        try:
+            webcollage_page_contents = self.load_page_from_url_with_number_of_retries(self.WEBCOLLAGE_CHANNEL_URL.format(self._product_id()))
+
+            if webcollage_page_contents.startswith("<HTML><HEAD></HEAD><BODY><P>Product information is currently unavailable</P>"):
+                raise Exception
+
+            webcollage_page_contents = html.fromstring(webcollage_page_contents)
+
+            video_gallery_element = webcollage_page_contents.xpath("//div[@data-resources-base and starts-with(@id, 'videoGallery')]")
+
+            if video_gallery_element:
+                video_gallery_element = video_gallery_element[0]
+            else:
+                raise Exception
+
+            base_video_url = video_gallery_element.xpath("./@data-resources-base")[0]
+            wc_json_data = json.loads(video_gallery_element.xpath(".//div[@class='wc-json-data']/text()")[0].strip())
+            webcollage_video_list = []
+
+            for video_info in wc_json_data["videos"]:
+                if base_video_url[-1] == "/" and video_info["src"]["src"][0] == "/":
+                    webcollage_video_list.append(base_video_url + video_info["src"]["src"][1:])
+                else:
+                    webcollage_video_list.append(base_video_url + video_info["src"]["src"])
+
+            if webcollage_video_list:
+                self.video_urls.extend(webcollage_video_list)
+                self.wc_video = 1
+
+            if webcollage_page_contents.xpath("//div[@id='navbar']//ul/li//span[text()='Interactive Tour']"):
+                self.wc_prodtour = 1
+
+            if webcollage_page_contents.xpath("//div[@id='navbar']//ul/li//span[text()='360 Zoom']"):
+                self.wc_360 = 1
+
+            return
+        except:
+            pass
+
+        return
+
     def _webcollage(self):
+        if self._wc_360() + self._wc_emc() + self._wc_pdf() + self._wc_prodtour() + self._wc_video() > 0:
+            return 1
+
         return 0
+
+    def _wc_360(self):
+        self._extract_webcollage_contents()
+        return self.wc_360
+
+    def _wc_emc(self):
+        self._extract_webcollage_contents()
+        return self.wc_emc
+
+    def _wc_video(self):
+        self._extract_webcollage_contents()
+        return self.wc_video
+
+    def _wc_pdf(self):
+        self._extract_webcollage_contents()
+        return self.wc_pdf
+
+    def _wc_prodtour(self):
+        self._extract_webcollage_contents()
+        return self.wc_prodtour
 
     def _htags(self):
         htags_dict = {}
@@ -570,7 +662,12 @@ class KohlsScraper(Scraper):
         "video_urls" : _video_urls, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
-        "webcollage" : _webcollage, \
+        "wc_360": _wc_360, \
+        "wc_emc": _wc_emc, \
+        "wc_video": _wc_video, \
+        "wc_pdf": _wc_pdf, \
+        "wc_prodtour": _wc_prodtour, \
+        "webcollage": _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "canonical_link": _canonical_link,

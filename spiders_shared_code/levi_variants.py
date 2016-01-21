@@ -67,6 +67,7 @@ class LeviVariants(object):
             out_of_stock_combination_list = [list(tup) for tup in out_of_stock_combination_list]
             attribute_list = []
             variant_list = []
+            registered_value_list = []
 
             for variant_combination in buy_stack_json["sku"]:
                 variant_item = {}
@@ -74,24 +75,44 @@ class LeviVariants(object):
                 value_list = []
 
                 if "colorid" in buy_stack_json["sku"][variant_combination]:
-                    properties["color"] = buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]["colorid"]]["finish"]["title"]
-                    value_list.append(properties["color"])
-                    if "color" not in attribute_list: attribute_list.append("color")
+                    if color_list:
+                        if buy_stack_json["sku"][variant_combination]["colorid"] not in buy_stack_json["colorid"]:
+                            continue
+
+                        properties["color"] = buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]["colorid"]]["finish"]["title"]
+                        value_list.append(properties["color"])
+                        if "color" not in attribute_list: attribute_list.append("color")
+                    else:
+                        continue
 
                 if "length" in buy_stack_json["sku"][variant_combination]:
-                    properties["length"] = buy_stack_json["sku"][variant_combination]["length"]
-                    value_list.append(properties["length"])
-                    if "length" not in attribute_list: attribute_list.append("length")
+                    if length_list:
+                        properties["length"] = buy_stack_json["sku"][variant_combination]["length"]
+                        value_list.append(properties["length"])
+                        if "length" not in attribute_list: attribute_list.append("length")
+                    else:
+                        continue
 
                 if "size" in buy_stack_json["sku"][variant_combination]:
-                    properties["size"] = buy_stack_json["sku"][variant_combination]["size"]
-                    value_list.append(properties["size"])
-                    if "size" not in attribute_list: attribute_list.append("size")
+                    if size_list:
+                        properties["size"] = buy_stack_json["sku"][variant_combination]["size"]
+                        value_list.append(properties["size"])
+                        if "size" not in attribute_list: attribute_list.append("size")
+                    else:
+                        continue
 
                 if "waist" in buy_stack_json["sku"][variant_combination]:
-                    properties["waist"] = buy_stack_json["sku"][variant_combination]["waist"]
-                    value_list.append(properties["waist"])
-                    if "waist" not in attribute_list: attribute_list.append("waist")
+                    if waist_list:
+                        properties["waist"] = buy_stack_json["sku"][variant_combination]["waist"]
+                        value_list.append(properties["waist"])
+                        if "waist" not in attribute_list: attribute_list.append("waist")
+                    else:
+                        continue
+
+                if value_list in registered_value_list:
+                    continue
+
+                registered_value_list.append(value_list)
 
                 if value_list in out_of_stock_combination_list:
                     out_of_stock_combination_list.remove(value_list)

@@ -38,6 +38,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'rest_framework',
     'walmart_developer_accounts',
+    'nutrition_info_images',
 )
 
 REST_FRAMEWORK = {

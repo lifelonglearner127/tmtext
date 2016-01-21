@@ -145,9 +145,9 @@ class AmazonScraper(Scraper):
 
 
     def check_url_format(self):
-        m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
-        n = re.match(r"^http://www.amazon.co.uk/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
-        o = re.match(r"^http://www.amazon.ca/([a-zA-Z0-9\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9%\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        n = re.match(r"^http://www.amazon.co.uk/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        o = re.match(r"^http://www.amazon.ca/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         l = re.match(r"^http://www.amazon.co.uk/.*$", self.product_page_url)
         self.scraper_version = "com"
 
@@ -182,11 +182,11 @@ class AmazonScraper(Scraper):
 
     def _product_id(self):
         if self.scraper_version == "uk":
-            product_id = re.match("^http://www.amazon.co.uk/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+            product_id = re.match("^http://www.amazon.co.uk/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         elif self.scraper_version == "ca":
-            product_id = re.match("^http://www.amazon.ca/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+            product_id = re.match("^http://www.amazon.ca/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         else:
-            product_id = re.match("^http://www.amazon.com/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+            product_id = re.match("^http://www.amazon.com/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         return product_id
 
     def _site_id(self):
@@ -838,11 +838,23 @@ class AmazonScraper(Scraper):
             return self.review_list
 
         review_list = []
-        review_link = "http://www.amazon.com/product-reviews/{0}/ref=cm_cr_pr_viewopt_sr?ie=UTF8&showViewpoints=1&filterByStar={1}_star&pageNumber=1"
+
+        try:
+            review_summary_link = self.tree_html.xpath("//a[@class='a-link-emphasis a-nowrap']/@href")[0]
+        except:
+            review_summary_link = "http://www.amazon.com/product-reviews/{0}/ref=acr_dpx_see_all?ie=UTF8&showViewpoints=1".format(self._product_id())
+
         mark_list = ["one", "two", "three", "four", "five"]
 
         for index, mark in enumerate(mark_list):
-            contents = self.load_page_from_url_with_number_of_retries(review_link.format(self._product_id(), mark))
+            if "cm_cr_dp_see_all_summary" in review_summary_link:
+                review_link = review_summary_link.replace("cm_cr_dp_see_all_summary", "cm_cr_pr_viewopt_sr")
+                review_link = review_link + "&filterByStar={0}_star&pageNumber=1".format(mark)
+            elif "acr_dpx_see_all" in review_summary_link:
+                review_link = review_summary_link.replace("acr_dpx_see_all", "cm_cr_pr_viewopt_sr")
+                review_link = review_link + "&filterByStar={0}_star&pageNumber=1".format(mark)
+
+            contents = self.load_page_from_url_with_number_of_retries(review_link)
 
             if "Sorry, no reviews match your current selections." in contents:
                 review_list.append([index + 1, 0])
