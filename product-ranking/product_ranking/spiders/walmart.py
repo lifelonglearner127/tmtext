@@ -423,7 +423,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         seller_ranking = []
         for i in ranking_data:
             data = {}
-            rank = i[0].replace('#', '')
+            rank = i[0].replace('#', '').replace(',', '')
             data['ranking'] = int(rank)
 
             cat = i[2:]
