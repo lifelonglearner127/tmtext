@@ -1062,7 +1062,7 @@ class WalmartScraper(Scraper):
             shelf_description_html = shelf_description_html[:shelf_description_html.rfind("</div>")]
 
             if shelf_description_html and shelf_description_html.strip():
-                return shelf_description_html
+                return shelf_description_html.strip()
 
         return None
 
