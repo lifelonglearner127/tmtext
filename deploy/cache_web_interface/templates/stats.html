@@ -38,7 +38,13 @@
             </ul>
         </li>
         <li>Today started instances: {{ today_instances }}</li>
-        <li>Today executed tasks: {{ today_executed_tasks }}</li>
+        <li>
+            Today executed tasks: {{ today_executed_tasks }}
+            <ul>
+                <li>Search terms - {{ completed_stats.term_total }}</li>
+                <li>Product urls - {{ completed_stats.url_total }}</li>
+            </ul>
+        </li>
         <li>Last hour executed tasks: {{ last_hour_executed_tasks }}</li>
         <li>Task left in queues: {{ left_tasks_total }}
             <ul>

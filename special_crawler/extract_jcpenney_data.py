@@ -513,10 +513,20 @@ class JcpenneyScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        return self.tree_html.xpath("//div[@id='breadcrumb']/ul/li/a/text()")[1:-1]
+        categoryies = self.tree_html.xpath("//div[@id='breadcrumb']/ul/li/a/text()")
+
+        if categoryies[0].strip() == "jcpenney":
+            categoryies = categoryies[1:]
+
+        if categoryies[-1].strip() == "return to product results":
+            categoryies = categoryies[:-1]
+
+        return categoryies if categoryies else None
 
     def _category_name(self):
-        return self.tree_html.xpath("//div[@id='breadcrumb']/ul/li/a/text()")[-2]
+        categories = self._categories()
+
+        return categories[-1] if categories else None
 
     def _brand(self):
         self._extract_price_json()

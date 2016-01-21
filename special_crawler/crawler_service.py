@@ -256,7 +256,7 @@ def extract_domain(url):
     if "amazon.fr" in url:
         return "amazonfr"
 
-    m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)
+    m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:
         return m.group(2)
     # TODO: return error message about bad URL if it does not match the regex
