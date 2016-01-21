@@ -1914,7 +1914,11 @@ class WalmartScraper(Scraper):
                 if len(images_carousel) == 1:
                     try:
                         if self._no_image(images_carousel[0]):
-                            return None
+                            if self._no_image(hero_image_url):
+                                return None
+                            else:
+                                images_carousel = [hero_image_url]
+                                image_dimensions = [0]
                     except Exception, e:
                         print "WARNING: ", e.message
 
