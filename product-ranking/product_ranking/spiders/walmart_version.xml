@@ -22,7 +22,7 @@
     <field name="is_in_store_only" version="1.2"></field>
     <field name="is_out_of_stock" version="1.2"></field>
     <field name="buyer_reviews" version="1.2"></field>
-    <field name="bestseller_rank" version="1.1"></field>
+    <field name="bestseller_rank" version="1.2"></field>
     <field name="department" version="1.2"></field>
     <field name="categories" version="1.2"></field>
     <field name="search_term_in_title_partial" version="1.1"></field>
