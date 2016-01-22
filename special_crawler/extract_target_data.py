@@ -446,17 +446,7 @@ class TargetScraper(Scraper):
         return 0
 
     def _price(self):
-        try:
-            return self.product_json[0]["Attributes"]["price"]["formattedOfferPrice"]
-        except:
-            pass
-
-        try:
-            return self.tree_html.xpath("//span[@itemprop='price']//text()")[0].strip()
-        except:
-            pass
-
-        return None
+        return self.tree_html.xpath("//span[@itemprop='price']//text()")[0].strip()
 
     def _price_amount(self):
         price = self._price()
