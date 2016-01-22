@@ -39,9 +39,6 @@ class AmazonScraper(Scraper):
 
     MAX_CAPTCHA_RETRIES = 10
 
-    marketplace_prices = None
-    marketplace_sellers = None
-
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
@@ -50,6 +47,9 @@ class AmazonScraper(Scraper):
         self.review_list = None
         self.max_review = None
         self.min_review = None
+        self.is_marketplace_sellers_checked = False
+        self.marketplace_prices = None
+        self.marketplace_sellers = None
 
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
@@ -854,7 +854,8 @@ class AmazonScraper(Scraper):
                 review_link = review_summary_link.replace("acr_dpx_see_all", "cm_cr_pr_viewopt_sr")
                 review_link = review_link + "&filterByStar={0}_star&pageNumber=1".format(mark)
 
-            contents = self.load_page_from_url_with_number_of_retries(review_link)
+            #contents = self.load_page_from_url_with_number_of_retries(review_link)
+            contents = self.load_page_from_url_with_number_of_retries(review_link, 5, "<title>500 Service Unavailable Error</title>")
 
             if "Sorry, no reviews match your current selections." in contents:
                 review_list.append([index + 1, 0])
@@ -1007,10 +1008,11 @@ class AmazonScraper(Scraper):
 
 
     def _marketplace_sellers(self):
-        if self.marketplace_sellers != None:
+        if self.is_marketplace_sellers_checked:
             return self.marketplace_sellers
 
-        self.marketplace_prices = []
+        self.is_marketplace_sellers_checked = True
+
         mps = []
         mpp = []
         path = '/tmp/amazon_sellers.json'
@@ -1121,18 +1123,14 @@ class AmazonScraper(Scraper):
         return None
 
     def _marketplace_prices(self):
-        if self.marketplace_prices is None :
-            self._marketplace_sellers()
-        if len(self.marketplace_prices) > 0:
-            return self.marketplace_prices
-        return None
+        self._marketplace_sellers()
+
+        return self.marketplace_prices
 
     def _marketplace_lowest_price(self):
-        if self.marketplace_prices is None:
-            self._marketplace_sellers()
-        if len(self.marketplace_prices) > 0:
-            return min(self.marketplace_prices)
-        return None
+        self._marketplace_sellers()
+
+        return min(self.marketplace_prices) if self.marketplace_prices else None
 
     def _marketplace_out_of_stock(self):
         """Extracts info on whether currently unavailable from any marketplace seller - binary
