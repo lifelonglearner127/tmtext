@@ -854,8 +854,7 @@ class AmazonScraper(Scraper):
                 review_link = review_summary_link.replace("acr_dpx_see_all", "cm_cr_pr_viewopt_sr")
                 review_link = review_link + "&filterByStar={0}_star&pageNumber=1".format(mark)
 
-            #contents = self.load_page_from_url_with_number_of_retries(review_link)
-            contents = self.load_page_from_url_with_number_of_retries(review_link, 5, "<title>500 Service Unavailable Error</title>")
+            contents = self.load_page_from_url_with_number_of_retries(review_link)
 
             if "Sorry, no reviews match your current selections." in contents:
                 review_list.append([index + 1, 0])
