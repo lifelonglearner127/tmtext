@@ -854,21 +854,27 @@ class AmazonScraper(Scraper):
                 review_link = review_summary_link.replace("acr_dpx_see_all", "cm_cr_pr_viewopt_sr")
                 review_link = review_link + "&filterByStar={0}_star&pageNumber=1".format(mark)
 
-            contents = self.load_page_from_url_with_number_of_retries(review_link)
+            for index in range(10):
+                try:
+                    contents = self.load_page_from_url_with_number_of_retries(review_link)
 
-            if "Sorry, no reviews match your current selections." in contents:
-                review_list.append([index + 1, 0])
-            else:
-                if not self.max_review or self.max_review < index + 1:
-                    self.max_review = index + 1
+                    if "Sorry, no reviews match your current selections." in contents:
+                        review_list.append([index + 1, 0])
+                    else:
+                        if not self.max_review or self.max_review < index + 1:
+                            self.max_review = index + 1
 
-                if not self.min_review or self.min_review > index + 1:
-                    self.min_review = index + 1
+                        if not self.min_review or self.min_review > index + 1:
+                            self.min_review = index + 1
 
-                review_html = html.fromstring(contents)
-                review_count = review_html.xpath("//div[@id='cm_cr-review_list']//div[contains(@class, 'a-section a-spacing-medium')]//span[@class='a-size-base']/text()")[0]
-                review_count = int(re.search('of (.*) reviews', review_count).group(1).replace(",", ""))
-                review_list.append([index + 1, review_count])
+                        review_html = html.fromstring(contents)
+                        review_count = review_html.xpath("//div[@id='cm_cr-review_list']//div[contains(@class, 'a-section a-spacing-medium')]//span[@class='a-size-base']/text()")[0]
+                        review_count = int(re.search('of (.*) reviews', review_count).group(1).replace(",", ""))
+                        review_list.append([index + 1, review_count])
+
+                    break
+                except:
+                    continue
 
         if not review_list:
             self.review_list = None
