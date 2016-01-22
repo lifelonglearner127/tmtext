@@ -854,7 +854,7 @@ class AmazonScraper(Scraper):
                 review_link = review_summary_link.replace("acr_dpx_see_all", "cm_cr_pr_viewopt_sr")
                 review_link = review_link + "&filterByStar={0}_star&pageNumber=1".format(mark)
 
-            for index in range(10):
+            for retry_index in range(10):
                 try:
                     contents = self.load_page_from_url_with_number_of_retries(review_link)
 
