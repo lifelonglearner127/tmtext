@@ -1054,14 +1054,15 @@ class WalmartScraper(Scraper):
         return self._exclude_javascript_from_description(long_description)
 
     def _shelf_description(self):
-        shelf_description_li_list = self.tree_html.xpath("//div[@class='product-short-description module']/li")
-        shelf_description = ""
+        shelf_description_html = self.tree_html.xpath("//div[@class='product-short-description module']")
 
-        if shelf_description_li_list:
-            for li in shelf_description_li_list:
-                shelf_description = shelf_description + html.tostring(li)
+        if shelf_description_html:
+            shelf_description_html = html.tostring(shelf_description_html[0])
+            shelf_description_html = shelf_description_html.replace('<div class="product-short-description module">', '')
+            shelf_description_html = shelf_description_html[:shelf_description_html.rfind("</div>")]
 
-            return shelf_description
+            if shelf_description_html and shelf_description_html.strip():
+                return shelf_description_html.strip()
 
         return None
 

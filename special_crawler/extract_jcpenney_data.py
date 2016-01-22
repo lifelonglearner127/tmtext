@@ -425,7 +425,7 @@ class JcpenneyScraper(Scraper):
 
         self.is_review_checked = True
 
-        review_id = self._find_between(html.tostring(self.tree_html), 'reviewId:"', '",').strip()
+        review_id = self._find_between(html.tostring(self.tree_html), 'reviewIdNew = "', '";').strip()
         contents = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(review_id))
         contents_alter = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL_ALTER.format(review_id))
 
