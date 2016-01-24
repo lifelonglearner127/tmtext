@@ -80,8 +80,6 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
     handle_httpstatus_list = [404]
 
-    use_proxies = True
-
     def __init__(self, sort_mode=None, *args, **kwargs):
         self.start_pos = 0
         if sort_mode:
