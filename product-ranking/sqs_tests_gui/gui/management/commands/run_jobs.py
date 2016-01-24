@@ -49,6 +49,8 @@ class Command(BaseCommand):
                 msg['branch_name'] = job.branch_name
             if job.extra_cmd_args and job.extra_cmd_args.strip():
                 for _arg in job.extra_cmd_args.split('\n'):
+                    if not _arg.strip():
+                        continue  # skip empty lines
                     extra_arg_name, extra_arg_value = _arg.split('=')
                     extra_arg_name = extra_arg_name.strip()
                     extra_arg_value = extra_arg_value.strip()
