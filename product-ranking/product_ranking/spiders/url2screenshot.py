@@ -111,14 +111,21 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 elements[i].click();
             }
         """ % cls
-        driver.execute_script(script)
+        try:
+            driver.execute_script(script)
+        except Exception as e:
+            self.log('Error on clicking element with class %s: %s' % (cls, str(e)))
+
 
     def _click_on_element_with_id(self, driver, _id):
         script = """
             var element = document.getElementById('%s');
             element.click();
         """ % _id
-        driver.execute_script(script)
+        try:
+            driver.execute_script(script)
+        except Exception as e:
+            self.log('Error on clicking element with ID %s: %s' % (_id, str(e)))
 
     def _choose_another_driver(self):
         for d in self.available_drivers:
