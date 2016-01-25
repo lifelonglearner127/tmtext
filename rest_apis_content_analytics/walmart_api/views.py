@@ -1,9 +1,9 @@
 from rest_framework import viewsets
-from walmart_api.serializers import WalmartApiFeedRequestSerializer, WalmartApiItemsWithXmlFileRequestSerializer, WalmartApiItemsWithXmlTextRequestSerializer
+from walmart_api.serializers import WalmartApiFeedRequestSerializer, WalmartApiItemsWithXmlFileRequestSerializer, WalmartApiItemsWithXmlTextRequestSerializer, WalmartApiValidateXmlRequestSerializer
 from rest_framework.response import Response
 from subprocess import Popen, PIPE, STDOUT
-from xml.etree import ElementTree as ET
 from lxml import etree
+from cStringIO import StringIO
 import xmltodict
 import os
 import unirest
@@ -443,6 +443,45 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         except Exception, e:
             print e
             return Response({'data': "Failed to invoke Walmart API - invalid request data"})
+
+    def update(self, request, pk=None):
+        pass
+
+    def partial_update(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+    def destroy(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+
+class ValidateWalmartProductXmlViewSet(viewsets.ViewSet):
+    """
+    API endpoint that allows groups to be viewed or edited.
+    """
+    serializer_class = WalmartApiValidateXmlRequestSerializer
+
+    def list(self, request):
+        return Response({'data': 'OK'})
+
+    def retrieve(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+    def create(self, request):
+        request_data = request.DATA
+
+        current_path = os.path.dirname(os.path.realpath(__file__))
+        xmlschema_doc = etree.parse(current_path + "/walmart_suppliers_product_xsd/SupplierProductFeed.xsd")
+        xmlschema = etree.XMLSchema(xmlschema_doc)
+        xmlparser = etree.XMLParser(schema=xmlschema)
+
+        try:
+            etree.fromstring(request_data["xml_content_to_validate"], xmlparser)
+            return Response({'success': 'This xml is validated by Walmart product xsd files.'})
+        except Exception, e:
+            print e
+            return Response({'error': str(e)})
+
+        return Response({'data': 'OK'})
 
     def update(self, request, pk=None):
         pass

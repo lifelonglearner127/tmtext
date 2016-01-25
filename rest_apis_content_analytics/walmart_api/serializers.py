@@ -21,3 +21,7 @@ class WalmartApiFeedRequestSerializer(serializers.Serializer):
     request_url = serializers.ChoiceField(
         choices=["https://marketplace.walmartapis.com/v2/feeds/{feedId}?includeDetails=true"])
     feed_id = serializers.CharField()
+
+
+class WalmartApiValidateXmlRequestSerializer(serializers.Serializer):
+    xml_content_to_validate = serializers.CharField(style={'base_template': 'textarea.html'})
