@@ -56,8 +56,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.image_copy = kwargs.get('image_copy', None)
         self.user_agent = kwargs.get(
             'user_agent',
-            ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/53 "
-             "(KHTML, like Gecko) Chrome/15.0.87")
+            ("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0) Gecko/20100101 Firefox/32.0")
         )
         self.crop_left = kwargs.get('crop_left', 0)
         self.crop_top = kwargs.get('crop_top', 0)
@@ -114,8 +113,12 @@ class URL2ScreenshotSpider(scrapy.Spider):
         try:
             driver.execute_script(script)
         except Exception as e:
+            self.log('Error on clicking (JS) element with class %s: %s' % (cls, str(e)))
+        try:
+            for element in driver.find_elements_by_class_name(cls):
+                element.click()
+        except Exception as e:
             self.log('Error on clicking element with class %s: %s' % (cls, str(e)))
-
 
     def _click_on_element_with_id(self, driver, _id):
         script = """
@@ -220,7 +223,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         # check if the page returns code != 200
         if self.code_200_required and str(self.code_200_required).lower() not in ('0', 'false', 'off'):
-            page_code = r_session.get(self.product_url).status_code
+            page_code = r_session.get(self.product_url, verify=False).status_code
             if page_code != 200:
                 self.log('Page returned code %s at %s' % (page_code, self.product_url), ERROR)
                 yield ScreenshotItem()  # return empty item
