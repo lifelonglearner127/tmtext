@@ -56,8 +56,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.image_copy = kwargs.get('image_copy', None)
         self.user_agent = kwargs.get(
             'user_agent',
-            ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/53 "
-             "(KHTML, like Gecko) Chrome/15.0.87")
+            ("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0) Gecko/20100101 Firefox/32.0")
         )
         self.crop_left = kwargs.get('crop_left', 0)
         self.crop_top = kwargs.get('crop_top', 0)
@@ -127,6 +126,12 @@ class URL2ScreenshotSpider(scrapy.Spider):
         except Exception as e:
             self.log('Error on clicking element with ID %s: %s' % (_id, str(e)))
 
+    def _click_on_element_with_xpath(self, driver, xpath):
+        try:
+            driver.find_elements_by_xpath(xpath)[0].click()
+        except Exception as e:
+            self.log('Error on clicking element with xpath %s: %s' % (xpath, str(e)))
+
     def _choose_another_driver(self):
         for d in self.available_drivers:
             if d != self._driver:
@@ -190,6 +195,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
             time.sleep(3)
             self._click_on_elements_with_class(driver, 'close')
             self._click_on_element_with_id(driver, 'closeBtn')
+            self._click_on_element_with_xpath(driver, '//svg')
 
         time.sleep(2)
         driver.save_screenshot(output_fname)
