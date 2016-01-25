@@ -9,14 +9,18 @@ import os
 import unirest
 
 
-def validate(xmlparser, xmlfilename):
-    try:
-        with open(xmlfilename, 'r') as f:
-            etree.fromstring(f.read(), xmlparser)
-        return True
-    except etree.XMLSchemaError:
-        return False
+def validate_walmart_product_xml_against_xsd(product_xml_string):
+    current_path = os.path.dirname(os.path.realpath(__file__))
+    xmlschema_doc = etree.parse(current_path + "/walmart_suppliers_product_xsd/SupplierProductFeed.xsd")
+    xmlschema = etree.XMLSchema(xmlschema_doc)
+    xmlparser = etree.XMLParser(schema=xmlschema)
 
+    try:
+        etree.fromstring(product_xml_string, xmlparser)
+        return {'success': 'This xml is validated by Walmart product xsd files.'}
+    except Exception, e:
+        print e
+        return {'error': str(e)}
 
 # Create your views here.
 
@@ -82,19 +86,6 @@ class InvokeWalmartApiViewSet(viewsets.ViewSet):
                     upload_file.write((xml_row + "\n").encode("utf-8"))
 
             upload_file = open(os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml", "rb")
-
-            '''
-            with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_suppliers_product_xsd/SupplierProduct.xsd", 'r') as f:
-                schema_root = etree.XML(f.read())
-
-            schema = etree.XMLSchema(schema_root)
-            xmlparser = etree.XMLParser(schema=schema)
-
-            if validate(xmlparser, os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml"):
-                print "%s validates" % (os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml")
-            else:
-                print "%s doesn't validate" % (os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml")
-            '''
 
             response = unirest.post(request_data["request_url"],
                 headers={
@@ -202,15 +193,6 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         try:
             request_data = request.DATA
             request_files = request.FILES
-            walmart_api_signature = self.generate_walmart_api_signature(request_data["request_url"],
-                                                                        self.walmart_consumer_id,
-                                                                        self.walmart_private_key,
-                                                                        request_data["request_method"].upper(),
-                                                                        "signature.txt")
-
-            if not walmart_api_signature:
-                print "Failed in generating walmart api signature."
-                return Response({'data': "Failed in generating walmart api signature."})
 
             with open(os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml", "wb") as upload_file:
                 xml_data_by_list = request_files["xml_file_to_upload"].read()
@@ -220,19 +202,21 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                     upload_file.write((xml_row + "\n").encode("utf-8"))
 
             upload_file = open(os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml", "rb")
+            validation_results = validate_walmart_product_xml_against_xsd(upload_file.read())
 
-            '''
-            with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_suppliers_product_xsd/SupplierProduct.xsd", 'r') as f:
-                schema_root = etree.XML(f.read())
+            if "error" in validation_results:
+                print validation_results
+                return Response(validation_results)
 
-            schema = etree.XMLSchema(schema_root)
-            xmlparser = etree.XMLParser(schema=schema)
+            walmart_api_signature = self.generate_walmart_api_signature(request_data["request_url"],
+                                                                        self.walmart_consumer_id,
+                                                                        self.walmart_private_key,
+                                                                        request_data["request_method"].upper(),
+                                                                        "signature.txt")
 
-            if validate(xmlparser, os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml"):
-                print "%s validates" % (os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml")
-            else:
-                print "%s doesn't validate" % (os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml")
-            '''
+            if not walmart_api_signature:
+                print "Failed in generating walmart api signature."
+                return Response({'data': "Failed in generating walmart api signature."})
 
             response = unirest.post(request_data["request_url"],
                 headers={
@@ -311,6 +295,13 @@ class ItemsUpdateWithXmlTextByWalmartApiViewSet(viewsets.ViewSet):
     def create(self, request):
         try:
             request_data = request.DATA
+
+            validation_results = validate_walmart_product_xml_against_xsd(request_data["xml_content_to_upload"])
+
+            if "error" in validation_results:
+                print validation_results
+                return Response(validation_results)
+
             walmart_api_signature = self.generate_walmart_api_signature(request_data["request_url"],
                                                                         self.walmart_consumer_id,
                                                                         self.walmart_private_key,
@@ -328,19 +319,6 @@ class ItemsUpdateWithXmlTextByWalmartApiViewSet(viewsets.ViewSet):
                     upload_file.write((xml_row + "\n").encode("utf-8"))
 
             upload_file = open(os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml", "rb")
-
-            '''
-            with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_suppliers_product_xsd/SupplierProduct.xsd", 'r') as f:
-                schema_root = etree.XML(f.read())
-
-            schema = etree.XMLSchema(schema_root)
-            xmlparser = etree.XMLParser(schema=schema)
-
-            if validate(xmlparser, os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml"):
-                print "%s validates" % (os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml")
-            else:
-                print "%s doesn't validate" % (os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml")
-            '''
 
             response = unirest.post(request_data["request_url"],
                 headers={
@@ -469,19 +447,7 @@ class ValidateWalmartProductXmlViewSet(viewsets.ViewSet):
     def create(self, request):
         request_data = request.DATA
 
-        current_path = os.path.dirname(os.path.realpath(__file__))
-        xmlschema_doc = etree.parse(current_path + "/walmart_suppliers_product_xsd/SupplierProductFeed.xsd")
-        xmlschema = etree.XMLSchema(xmlschema_doc)
-        xmlparser = etree.XMLParser(schema=xmlschema)
-
-        try:
-            etree.fromstring(request_data["xml_content_to_validate"], xmlparser)
-            return Response({'success': 'This xml is validated by Walmart product xsd files.'})
-        except Exception, e:
-            print e
-            return Response({'error': str(e)})
-
-        return Response({'data': 'OK'})
+        return Response(validate_walmart_product_xml_against_xsd(request_data["xml_content_to_validate"]))
 
     def update(self, request, pk=None):
         pass
