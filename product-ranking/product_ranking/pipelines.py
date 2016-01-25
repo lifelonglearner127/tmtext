@@ -34,6 +34,11 @@ except ImportError as e:
     STATISTICS_ERROR_MSG = str(e)
 
 
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CWD, '..', '..', 'deploy'))
+from sqs_ranking_spiders.libs import convert_json_to_csv
+
+
 class CheckGoogleSourceSiteFieldIsCorrectJson(object):
 
     def process_item(self, item, spider):
@@ -260,6 +265,8 @@ class MergeSubItems(object):
     def __init__(self):
         dispatcher.connect(self.spider_opened, signals.spider_opened)
         dispatcher.connect(self.spider_closed, signals.spider_closed)
+        # use extra 'create_csv_output' option for debugging
+        self.create_csv_output = 'create_csv_output' in ''.join(sys.argv)
 
     @staticmethod
     def _get_output_filename(spider):
@@ -298,6 +305,14 @@ class MergeSubItems(object):
             self._dump_output(spider)
             _validation_filename = _get_spider_output_filename(spider)
             self._dump_mapper_to_fname(_validation_filename)
+            if self.create_csv_output and self._get_output_filename(spider):
+                # create CSV file as well
+                _output_file = self._get_output_filename(spider).lower().rstrip('.jl')
+                try:
+                    _output_csv = convert_json_to_csv(_output_file)
+                    print('Created CSV output: %s.csv' % _output_csv)
+                except Exception as e:
+                    print('Could not create CSV output: %s' % str(e))
 
     def process_item(self, item, spider):
         _item = copy.deepcopy(item)
