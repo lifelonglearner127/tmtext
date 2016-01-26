@@ -46,6 +46,15 @@ class ScreenshotItem(scrapy.Item):
         return '[image data]'  # don't dump image data into logs
 
 
+def _get_random_proxy():
+    proxy_file = '/tmp/http_proxies.txt'
+    if os.path.exists(proxy_file):
+        with open(proxy_file, 'r') as fh:
+            lines = [l.strip().replace('http://', '')
+                     for l in fh.readlines() if l.strip()]
+            return random.choice(lines)
+
+
 class URL2ScreenshotSpider(scrapy.Spider):
     name = 'url2screenshot_products'
     # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
@@ -73,8 +82,21 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.close_popups = kwargs.get('close_popups', kwargs.get('close_popup', None))
         self.driver = kwargs.get('driver', None)  # if None, then a random UA will be used
 
+        self.disable_site_settings = kwargs.get('disable_site_settings', None)
+        if not self.disable_site_settings:
+            self.set_site_specified_settings()
+
         settings.overrides['ITEM_PIPELINES'] = {}
         super(URL2ScreenshotSpider, self).__init__(*args, **kwargs)
+
+    def set_site_specified_settings(self):
+        """ Override some settings if they are site-specified """
+        if '/hm.com' in self.product_url or 'www.hm.com' in self.product_url:
+            self.proxy = _get_random_proxy()
+            self.proxy_type = 'http'
+            self.code_200_required = False
+            self._site_settings_activated_for = 'hm.com'
+            self.log('Site-specified settings activated for: %s' % self._site_settings_activated_for)
 
     def start_requests(self):
         req = Request(self.product_url, dont_filter=True)
@@ -299,6 +321,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         # yield the item
         item['url'] = response.url
         item['image'] = base64.b64encode(img_content)
+        item['site_settings'] = getattr(self, '_site_settings_activated_for', None)
 
         display.stop()
 
