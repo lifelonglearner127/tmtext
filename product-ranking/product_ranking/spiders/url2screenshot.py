@@ -92,9 +92,6 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 time.sleep(2)
                 driver.save_screenshot('/tmp/_captcha_after.png')
 
-    def _log_proxy(self, r_session):
-        self.log("IP : %s" % r_session.get('http://icanhazip.com').text)
-
     def _get_js_body_height(self, driver):
         scroll = driver.execute_script('return document.body.scrollHeight;')
         window_outer = driver.execute_script('return window.outerHeight;')
@@ -154,10 +151,17 @@ class URL2ScreenshotSpider(scrapy.Spider):
         return driver
 
     def _init_firefox(self):
-        # TODO: proxies
         from selenium import webdriver
         profile = webdriver.FirefoxProfile()
         profile.set_preference("general.useragent.override", self.user_agent)
+        profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
+        if 'socks' in self.proxy_type:
+            profile.set_preference("network.proxy.socks", self.proxy.split(':')[0])
+            profile.set_preference("network.proxy.socks_port", int(self.proxy.split(':')[1]))
+        else:
+            profile.set_preference("network.proxy.http", self.proxy.split(':')[0])
+            profile.set_preference("network.proxy.http_port", int(self.proxy.split(':')[1]))
+        profile.update_preferences()
         driver = webdriver.Firefox(profile)
         return driver
 
@@ -200,6 +204,11 @@ class URL2ScreenshotSpider(scrapy.Spider):
             driver.save_screenshot(self.image_copy)
         driver.quit()
 
+    @staticmethod
+    def _get_proxy_ip(driver):
+        driver.get('http://icanhazip.com')
+        return driver.page_source
+
     def parse(self, response):
         socket.setdefaulttimeout(int(self.timeout))
 
@@ -219,7 +228,6 @@ class URL2ScreenshotSpider(scrapy.Spider):
         #                         'https': self.proxy_type+'://'+self.proxy}
         if self.user_agent:
             r_session.headers = {'User-Agent': self.user_agent}
-        self._log_proxy(r_session)
 
         # check if the page returns code != 200
         if self.code_200_required and str(self.code_200_required).lower() not in ('0', 'false', 'off'):
@@ -231,6 +239,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 return
 
         driver = self.init_driver()
+        print 'IP via proxy (if any):', URL2ScreenshotSpider._get_proxy_ip(driver)
         try:
             self.prepare_driver(driver)
             self.make_screenshot(driver, t_file.name)
