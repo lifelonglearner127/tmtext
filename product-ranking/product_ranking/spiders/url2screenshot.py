@@ -65,6 +65,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
     # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
     available_drivers = ['chromium', 'firefox']
 
+    handle_httpstatus_list = [403, 404, 502, 500]
+
     def __init__(self, *args, **kwargs):
         self.product_url = kwargs['product_url']
         self.width = kwargs.get('width', 1280)
