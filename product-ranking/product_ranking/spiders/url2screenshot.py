@@ -113,8 +113,12 @@ class URL2ScreenshotSpider(scrapy.Spider):
         try:
             driver.execute_script(script)
         except Exception as e:
+            self.log('Error on clicking (JS) element with class %s: %s' % (cls, str(e)))
+        try:
+            for element in driver.find_elements_by_class_name(cls):
+                element.click()
+        except Exception as e:
             self.log('Error on clicking element with class %s: %s' % (cls, str(e)))
-
 
     def _click_on_element_with_id(self, driver, _id):
         script = """
@@ -125,12 +129,6 @@ class URL2ScreenshotSpider(scrapy.Spider):
             driver.execute_script(script)
         except Exception as e:
             self.log('Error on clicking element with ID %s: %s' % (_id, str(e)))
-
-    def _click_on_element_with_xpath(self, driver, xpath):
-        try:
-            driver.find_elements_by_xpath(xpath)[0].click()
-        except Exception as e:
-            self.log('Error on clicking element with xpath %s: %s' % (xpath, str(e)))
 
     def _choose_another_driver(self):
         for d in self.available_drivers:
@@ -195,7 +193,6 @@ class URL2ScreenshotSpider(scrapy.Spider):
             time.sleep(3)
             self._click_on_elements_with_class(driver, 'close')
             self._click_on_element_with_id(driver, 'closeBtn')
-            self._click_on_element_with_xpath(driver, '//svg')
 
         time.sleep(2)
         driver.save_screenshot(output_fname)
@@ -226,7 +223,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         # check if the page returns code != 200
         if self.code_200_required and str(self.code_200_required).lower() not in ('0', 'false', 'off'):
-            page_code = r_session.get(self.product_url).status_code
+            page_code = r_session.get(self.product_url, verify=False).status_code
             if page_code != 200:
                 self.log('Page returned code %s at %s' % (page_code, self.product_url), ERROR)
                 yield ScreenshotItem()  # return empty item
