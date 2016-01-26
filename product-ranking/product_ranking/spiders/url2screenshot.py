@@ -9,6 +9,8 @@ import sys
 import time
 import socket
 import random
+import re
+import urlparse
 
 import scrapy
 from scrapy.conf import settings
@@ -38,9 +40,24 @@ except ImportError as e:
 class ScreenshotItem(scrapy.Item):
     url = scrapy.Field()
     image = scrapy.Field()
+    via_proxy = scrapy.Field()  # IP via webdriver
+    site_settings = scrapy.Field()  # site-specified settings that were activated (if any)
 
     def __repr__(self):
         return '[image data]'  # don't dump image data into logs
+
+
+def _get_random_proxy():
+    proxy_file = '/tmp/http_proxies.txt'
+    if os.path.exists(proxy_file):
+        with open(proxy_file, 'r') as fh:
+            lines = [l.strip().replace('http://', '')
+                     for l in fh.readlines() if l.strip()]
+            return random.choice(lines)
+
+
+def _get_domain(url):
+    return urlparse.urlparse(url).netloc.replace('www.', '')
 
 
 class URL2ScreenshotSpider(scrapy.Spider):
@@ -70,8 +87,22 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.close_popups = kwargs.get('close_popups', kwargs.get('close_popup', None))
         self.driver = kwargs.get('driver', None)  # if None, then a random UA will be used
 
+        self.disable_site_settings = kwargs.get('disable_site_settings', None)
+        if not self.disable_site_settings:
+            self.set_site_specified_settings()
+
         settings.overrides['ITEM_PIPELINES'] = {}
         super(URL2ScreenshotSpider, self).__init__(*args, **kwargs)
+
+    def set_site_specified_settings(self):
+        """ Override some settings if they are site-specified """
+        domain = _get_domain(self.product_url)
+        if domain == 'hm.com':
+            self.proxy = _get_random_proxy()
+            self.proxy_type = 'http'
+            self.code_200_required = False
+            self._site_settings_activated_for = domain
+            self.log('Site-specified settings activated for: %s' % domain)
 
     def start_requests(self):
         req = Request(self.product_url, dont_filter=True)
@@ -91,9 +122,6 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 driver.execute_script("document.getElementsByTagName('button')[0].click()")
                 time.sleep(2)
                 driver.save_screenshot('/tmp/_captcha_after.png')
-
-    def _log_proxy(self, r_session):
-        self.log("IP : %s" % r_session.get('http://icanhazip.com').text)
 
     def _get_js_body_height(self, driver):
         scroll = driver.execute_script('return document.body.scrollHeight;')
@@ -154,10 +182,17 @@ class URL2ScreenshotSpider(scrapy.Spider):
         return driver
 
     def _init_firefox(self):
-        # TODO: proxies
         from selenium import webdriver
         profile = webdriver.FirefoxProfile()
         profile.set_preference("general.useragent.override", self.user_agent)
+        profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
+        if 'socks' in self.proxy_type:
+            profile.set_preference("network.proxy.socks", self.proxy.split(':')[0])
+            profile.set_preference("network.proxy.socks_port", int(self.proxy.split(':')[1]))
+        else:
+            profile.set_preference("network.proxy.http", self.proxy.split(':')[0])
+            profile.set_preference("network.proxy.http_port", int(self.proxy.split(':')[1]))
+        profile.update_preferences()
         driver = webdriver.Firefox(profile)
         return driver
 
@@ -172,6 +207,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
             else:
                 self._driver = self.driver
         print('Using driver: ' + self._driver)
+        self.log('Using driver: ' + self._driver)
         init_driver = getattr(self, '_init_'+self._driver)
         return init_driver()
 
@@ -200,6 +236,14 @@ class URL2ScreenshotSpider(scrapy.Spider):
             driver.save_screenshot(self.image_copy)
         driver.quit()
 
+    @staticmethod
+    def _get_proxy_ip(driver):
+        driver.get('http://icanhazip.com')
+        ip = re.search('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', driver.page_source)
+        if ip:
+            ip = ip.group(1)
+            return ip
+
     def parse(self, response):
         socket.setdefaulttimeout(int(self.timeout))
 
@@ -207,6 +251,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         t_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
         t_file.close()
         print('Created temporary image file: %s' % t_file.name)
+        self.log('Created temporary image file: %s' % t_file.name)
 
         display = Display(visible=0, size=(self.width, self.height))
         display.start()
@@ -219,7 +264,6 @@ class URL2ScreenshotSpider(scrapy.Spider):
         #                         'https': self.proxy_type+'://'+self.proxy}
         if self.user_agent:
             r_session.headers = {'User-Agent': self.user_agent}
-        self._log_proxy(r_session)
 
         # check if the page returns code != 200
         if self.code_200_required and str(self.code_200_required).lower() not in ('0', 'false', 'off'):
@@ -231,6 +275,14 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 return
 
         driver = self.init_driver()
+        item = ScreenshotItem()
+
+        if self.proxy:
+            ip_via_proxy = URL2ScreenshotSpider._get_proxy_ip(driver)
+            item['via_proxy'] = ip_via_proxy
+            print 'IP via proxy:', ip_via_proxy
+            self.log('IP via proxy: %s' % ip_via_proxy)
+
         try:
             self.prepare_driver(driver)
             self.make_screenshot(driver, t_file.name)
@@ -272,14 +324,15 @@ class URL2ScreenshotSpider(scrapy.Spider):
         if self.remove_img is True:
             os.unlink(t_file.name)  # remove old output file
 
-        # create and yield item
-        item = ScreenshotItem()
+        # yield the item
         item['url'] = response.url
         item['image'] = base64.b64encode(img_content)
+        item['site_settings'] = getattr(self, '_site_settings_activated_for', None)
 
         display.stop()
 
-        yield item
+        if img_content:
+            yield item
 
     def _has_captcha(self, response_or_text):
         if not isinstance(response_or_text, (str, unicode)):
