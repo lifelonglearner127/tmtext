@@ -160,6 +160,13 @@ class URL2ScreenshotSpider(scrapy.Spider):
         except Exception as e:
             self.log('Error on clicking element with ID %s: %s' % (_id, str(e)))
 
+    def _click_on_element_with_xpath(self, driver, xpath):
+        try:
+            for element in driver.find_elements_by_xpath(xpath):
+                element.click()
+        except Exception as e:
+            self.log('Error on clicking elements with XPath %s: %s' % (xpath, str(e)))
+
     def _choose_another_driver(self):
         for d in self.available_drivers:
             if d != self._driver:
@@ -231,6 +238,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
             time.sleep(3)
             self._click_on_elements_with_class(driver, 'close')
             self._click_on_element_with_id(driver, 'closeBtn')
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "cookiebar")]//button')
 
         time.sleep(2)
         driver.save_screenshot(output_fname)
