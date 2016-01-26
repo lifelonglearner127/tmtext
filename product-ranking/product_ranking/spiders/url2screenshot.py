@@ -10,6 +10,7 @@ import time
 import socket
 import random
 import re
+import urlparse
 
 import scrapy
 from scrapy.conf import settings
@@ -55,6 +56,10 @@ def _get_random_proxy():
             return random.choice(lines)
 
 
+def _get_domain(url):
+    return urlparse.urlparse(url).netloc.replace('www.', '')
+
+
 class URL2ScreenshotSpider(scrapy.Spider):
     name = 'url2screenshot_products'
     # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
@@ -91,12 +96,13 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
     def set_site_specified_settings(self):
         """ Override some settings if they are site-specified """
-        if '/hm.com' in self.product_url or 'www.hm.com' in self.product_url:
+        domain = _get_domain(self.product_url)
+        if domain == 'hm.com':
             self.proxy = _get_random_proxy()
             self.proxy_type = 'http'
             self.code_200_required = False
-            self._site_settings_activated_for = 'hm.com'
-            self.log('Site-specified settings activated for: %s' % self._site_settings_activated_for)
+            self._site_settings_activated_for = domain
+            self.log('Site-specified settings activated for: %s' % domain)
 
     def start_requests(self):
         req = Request(self.product_url, dont_filter=True)
