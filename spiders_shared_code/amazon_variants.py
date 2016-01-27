@@ -56,6 +56,10 @@ class AmazonVariants(object):
             original_product_canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
             page_raw_text = lxml.html.tostring(self.tree_html)
             variation_key_values = json.loads(re.search('"variation_values":(.+?),"deviceType', page_raw_text).group(1), object_pairs_hook=collections.OrderedDict)
+
+            if not variation_key_values:
+                variation_key_values = json.loads(self._find_between(page_raw_text, '"variation_values":', ',"deviceType"'), object_pairs_hook=collections.OrderedDict)
+
             variation_key_list = variation_key_values.keys()
 
             if not variation_key_list:
