@@ -14,6 +14,10 @@ def validate_walmart_product_xml_against_xsd(product_xml_string):
     xmlschema_doc = etree.parse(current_path + "/walmart_suppliers_product_xsd/SupplierProductFeed.xsd")
     xmlschema = etree.XMLSchema(xmlschema_doc)
     xmlparser = etree.XMLParser(schema=xmlschema)
+    product_xml_string = product_xml_string.strip()
+
+    if product_xml_string.startswith("<?xml"):
+        product_xml_string = product_xml_string[product_xml_string.find("<", 2):]
 
     try:
         etree.fromstring(product_xml_string, xmlparser)
