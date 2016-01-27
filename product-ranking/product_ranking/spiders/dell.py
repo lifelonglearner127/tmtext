@@ -1,9 +1,11 @@
 from __future__ import division, absolute_import, unicode_literals
 
+import os
 import json
 import re
 import time
 import urlparse
+import socket
 
 from scrapy import Request
 from scrapy.log import ERROR, WARNING
@@ -17,10 +19,15 @@ from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 
 
+socket.setdefaulttimeout(60)
+
+
 def _init_webdriver():
     from selenium import webdriver
-    driver = webdriver.PhantomJS()
+    driver = webdriver.Firefox()
     driver.set_window_size(1280, 1024)
+    driver.set_page_load_timeout(60)
+    driver.set_script_timeout(60)
     return driver
 
 
@@ -71,6 +78,7 @@ class DellProductSpider(BaseProductsSpider):
             # scrape "quantity" products
             driver = _init_webdriver()
             driver.get(response.url)
+            time.sleep(3)  # let AJAX finish
             new_meta = response.meta.copy()
             # get all products we need (or till the "show more products" button exists)
             paging_button = '//button[contains(@id, "paging-button")]'
@@ -86,7 +94,7 @@ class DellProductSpider(BaseProductsSpider):
                 except Exception as e:
                     print str(e)
                     break
-            driver.save_screenshot('/tmp/1.png')
+            #driver.save_screenshot('/tmp/1.png')
             new_meta['is_product_page'] = True
             for i, product_link in enumerate(product_links):
                 new_meta['_ranking'] = i+1
@@ -145,7 +153,16 @@ class DellProductSpider(BaseProductsSpider):
 
     def parse_buyer_reviews(self, response):
         buyer_reviews_per_page = self.br.parse_buyer_reviews_per_page(response)
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
+        pass
+        # TODO!
+
+    def _parse_stock_status(self, response):
+        element = response.xpath(
+            '//a[contains(@class, "smallBlueBodyText")]'
+            '[contains(@href, "makeWin")]//text()').extract()
+        if element:
+            return element[0]
 
     def parse_product(self, response):
         prod = response.meta.get('product', SiteProductItem())
@@ -164,6 +181,7 @@ class DellProductSpider(BaseProductsSpider):
         prod['description'] = 'TODO'
         prod['brand'] = DellProductSpider._parse_brand(response)
         prod['related_products'] = self._related_products(response)
+        prod['description'] = self._parse_stock_status(response)  # this should be OOS field
 
         meta = {}
         meta['product'] = prod
