@@ -12,6 +12,7 @@ from product_ranking.items import RelatedProduct, BuyerReviews
 from product_ranking.items import SiteProductItem, Price
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 
@@ -29,6 +30,8 @@ class DellProductSpider(BaseProductsSpider):
 
     SEARCH_URL = "http://pilot.search.dell.com/{search_term}"
 
+    REVIEW_URL = "http://reviews.dell.com/2341_mg/{product_id}/reviews.htm?format=embedded"
+
     def __init__(self, sort_mode=None, *args, **kwargs):
         from scrapy.conf import settings
         settings.overrides['DEPTH_PRIORITY'] = 1
@@ -36,6 +39,8 @@ class DellProductSpider(BaseProductsSpider):
         settings.overrides['SCHEDULER_MEMORY_QUEUE'] = 'scrapy.squeue.FifoMemoryQueue'
 
         self.quantity = kwargs.get('quantity', 1000)  # default is 1000
+
+        self.br = BuyerReviewsBazaarApi(called_class=self)
 
         super(DellProductSpider, self).__init__(
             site_name=self.allowed_domains[0],
@@ -119,8 +124,33 @@ class DellProductSpider(BaseProductsSpider):
         if img_src:
             return img_src[0]
 
+    @staticmethod
+    def _parse_brand(response):
+        # <meta itemprop="brand" content = "DELL"/>
+        brand = response.xpath('//meta[contains(@itermprop, "brand")]/@content').extract()
+        if not brand:
+            brand = response.xpath('//a[contains(@href, "/brand.aspx")]/img/@alt').extract()
+        if brand:
+            return brand[0].title()
+
+    def _related_products(self, response):
+        results = []
+        rps = response.xpath('//*[contains(@class, "psItemDescription")]//'
+                            'div[contains(@class, "psTeaser")]//a[contains(@href, "productdetail.aspx")]')
+        for rp in rps:
+            results.append(RelatedProduct(rp.xpath('text()').extract()[0].strip(),
+                                          rp.xpath('@href').extract()[0].strip()))  # TODO: check if it's a valid format
+        # TODO: scrape dynamic related products
+        return results
+
+    def parse_buyer_reviews(self, response):
+        buyer_reviews_per_page = self.br.parse_buyer_reviews_per_page(response)
+        import pdb; pdb.set_trace()
+
     def parse_product(self, response):
         prod = response.meta.get('product', SiteProductItem())
+
+        prod['_subitem'] = True
 
         _ranking = response.meta.get('_ranking', None)
         prod['ranking'] = _ranking
@@ -129,4 +159,19 @@ class DellProductSpider(BaseProductsSpider):
         cond_set(prod, 'title', response.css('h1 ::text').extract())
         prod['price'] = DellProductSpider._parse_price(response)
         prod['image_url'] = DellProductSpider._parse_image(response)
+        prod['sku'] = 'TODO'
+        prod['model'] = 'TODO'
+        prod['description'] = 'TODO'
+        prod['brand'] = DellProductSpider._parse_brand(response)
+        prod['related_products'] = self._related_products(response)
+
+        meta = {}
+        meta['product'] = prod
+        yield Request(
+            url=self.REVIEW_URL.format(product_id='inspiron-15-5558-laptop'),
+            dont_filter=True,
+            callback=self.parse_buyer_reviews,
+            meta=meta
+        )
+
         yield prod
