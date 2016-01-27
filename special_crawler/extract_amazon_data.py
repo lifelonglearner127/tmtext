@@ -50,6 +50,8 @@ class AmazonScraper(Scraper):
         self.is_marketplace_sellers_checked = False
         self.marketplace_prices = None
         self.marketplace_sellers = None
+        self.is_variants_checked = False
+        self.variants = None
 
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
@@ -417,7 +419,14 @@ class AmazonScraper(Scraper):
         return None
 
     def _variants(self):
-        return self.av._variants()
+        if self.is_variants_checked:
+            return self.variants
+
+        self.is_variants_checked = True
+
+        self.variants = self.av._variants()
+
+        return self.variants
 
     def _swatches(self):
         return self.av._swatches()

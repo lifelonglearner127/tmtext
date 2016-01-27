@@ -58,6 +58,9 @@ class AmazonVariants(object):
             variation_key_values = json.loads(re.search('"variation_values":(.+?),"deviceType', page_raw_text).group(1), object_pairs_hook=collections.OrderedDict)
             variation_key_list = variation_key_values.keys()
 
+            if not variation_key_list:
+                raise Exception
+
             # reversing variant key list if the site is amazon.in
             if "amazon.in" in original_product_canonical_link:
                 variation_key_list = list(reversed(variation_key_list))
