@@ -78,7 +78,11 @@ class LeviScraper(Scraper):
             product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\r")
             self.product_json = json.loads(product_json_text)
         except:
-            self.product_json = None
+            try:
+                product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\n")
+                self.product_json = json.loads(product_json_text)
+            except:
+                self.product_json = None
 
         try:
             buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
