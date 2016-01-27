@@ -23,5 +23,9 @@ class WalmartApiFeedRequestSerializer(serializers.Serializer):
     feed_id = serializers.CharField()
 
 
-class WalmartApiValidateXmlRequestSerializer(serializers.Serializer):
+class WalmartApiValidateXmlTextRequestSerializer(serializers.Serializer):
     xml_content_to_validate = serializers.CharField(style={'base_template': 'textarea.html'})
+
+
+class WalmartApiValidateXmlFileRequestSerializer(serializers.Serializer):
+    xml_file_to_validate = serializers.FileField()

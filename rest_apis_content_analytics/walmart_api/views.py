@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from walmart_api.serializers import WalmartApiFeedRequestSerializer, WalmartApiItemsWithXmlFileRequestSerializer, WalmartApiItemsWithXmlTextRequestSerializer, WalmartApiValidateXmlRequestSerializer
+from walmart_api.serializers import WalmartApiFeedRequestSerializer, WalmartApiItemsWithXmlFileRequestSerializer, WalmartApiItemsWithXmlTextRequestSerializer, WalmartApiValidateXmlTextRequestSerializer, WalmartApiValidateXmlFileRequestSerializer
 from rest_framework.response import Response
 from subprocess import Popen, PIPE, STDOUT
 from lxml import etree
@@ -436,11 +436,11 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
 
-class ValidateWalmartProductXmlViewSet(viewsets.ViewSet):
+class ValidateWalmartProductXmlTextViewSet(viewsets.ViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
     """
-    serializer_class = WalmartApiValidateXmlRequestSerializer
+    serializer_class = WalmartApiValidateXmlTextRequestSerializer
 
     def list(self, request):
         return Response({'data': 'OK'})
@@ -452,6 +452,36 @@ class ValidateWalmartProductXmlViewSet(viewsets.ViewSet):
         request_data = request.DATA
 
         return Response(validate_walmart_product_xml_against_xsd(request_data["xml_content_to_validate"]))
+
+    def update(self, request, pk=None):
+        pass
+
+    def partial_update(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+    def destroy(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+
+class ValidateWalmartProductXmlFileViewSet(viewsets.ViewSet):
+    """
+    API endpoint that allows groups to be viewed or edited.
+    """
+    serializer_class = WalmartApiValidateXmlFileRequestSerializer
+
+    def list(self, request):
+        return Response({'data': 'OK'})
+
+    def retrieve(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+    def create(self, request):
+        request_data = request.DATA
+        request_files = request.FILES
+
+        xml_content_to_validate = request_files["xml_file_to_validate"].read().encode("utf-8")
+
+        return Response(validate_walmart_product_xml_against_xsd(xml_content_to_validate))
 
     def update(self, request, pk=None):
         pass

@@ -2,7 +2,7 @@ from django.conf.urls import url, include
 from rest_framework import routers
 from image_duplication.views import CompareTwoImageViewSet, ClassifyImagesBySimilarity, FindSimilarityInImageList
 from walmart_developer_accounts.views import WalmartAccountViewSet
-from walmart_api.views import InvokeWalmartApiViewSet, ItemsUpdateWithXmlFileByWalmartApiViewSet, ItemsUpdateWithXmlTextByWalmartApiViewSet, CheckFeedStatusByWalmartApiViewSet, ValidateWalmartProductXmlViewSet
+from walmart_api.views import InvokeWalmartApiViewSet, ItemsUpdateWithXmlFileByWalmartApiViewSet, ItemsUpdateWithXmlTextByWalmartApiViewSet, CheckFeedStatusByWalmartApiViewSet, ValidateWalmartProductXmlTextViewSet, ValidateWalmartProductXmlFileViewSet
 from nutrition_info_images.views import ClassifyTextImagesByNutritionInfoViewSet
 
 router = routers.SimpleRouter()
@@ -15,7 +15,8 @@ router.register(r'invokewalmartapi', InvokeWalmartApiViewSet, 'invokewalmartapi'
 router.register(r'items_update_with_xml_file_by_walmart_api', ItemsUpdateWithXmlFileByWalmartApiViewSet, 'items_update_with_xml_file_by_walmart_api')
 router.register(r'items_update_with_xml_text_by_walmart_api', ItemsUpdateWithXmlTextByWalmartApiViewSet, 'items_update_with_xml_text_by_walmart_api')
 router.register(r'check_feed_status_by_walmart_api', CheckFeedStatusByWalmartApiViewSet, 'check_feed_status_by_walmart_api')
-router.register(r'validate_walmart_product_xml', ValidateWalmartProductXmlViewSet, 'validate_walmart_product_xml')
+router.register(r'validate_walmart_product_xml_text', ValidateWalmartProductXmlTextViewSet, 'validate_walmart_product_xml_text')
+router.register(r'validate_walmart_product_xml_file', ValidateWalmartProductXmlFileViewSet, 'validate_walmart_product_xml_file')
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
