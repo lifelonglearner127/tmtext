@@ -376,7 +376,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 if prod_data.endswith(')'):
                     prod_data = prod_data[0:-1]
                 prod_data = json.loads(prod_data.strip())
-                display_price = prod_data['buyingOptions']['price']['displayPrice']
+                display_price = prod_data['buyingOptions'].get('price', {}).get('displayPrice', '')
+
+                if not display_price:
+                    display_price = prod_data['buyingOptions'].get('minPrice', {}).get('displayPrice', '')
 
                 display_price = re.search('[\d\.]+', display_price)
                 if display_price:
