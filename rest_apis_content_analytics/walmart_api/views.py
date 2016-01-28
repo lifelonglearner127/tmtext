@@ -3,7 +3,7 @@ from walmart_api.serializers import WalmartApiFeedRequestSerializer, WalmartApiI
 from rest_framework.response import Response
 from subprocess import Popen, PIPE, STDOUT
 from lxml import etree
-from cStringIO import StringIO
+import datetime
 import xmltodict
 import os
 import unirest
@@ -239,6 +239,16 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
             )
 
             if type(response.body) is dict:
+                if "feedId" in response.body:
+                    feed_id = response.body["feedId"]
+                    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+
+                    with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "a") as myfile:
+                        myfile.write(current_time + " " + feed_id + "\n")
+
+                    with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "r") as myfile:
+                        response.body["log"] = myfile.read().splitlines()
+
                 return Response(response.body)
             else:
                 return Response(xmltodict(response.body))

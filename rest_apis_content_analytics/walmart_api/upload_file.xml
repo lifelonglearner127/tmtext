@@ -2,45 +2,44 @@
 <SupplierProductFeed xmlns="http://walmart.com/suppliers/">
 	<version>1.4.1</version>
 	<SupplierProduct>
-		<productName>Just My Style®Designer Hair Wear Kit by Horizon Group USA</productName>
-		<longDescription>6 Satin Headbands
-4 Hair Ties
-50 Sparkling Gemstones
-1 Fabric Glue Net Wt 0.023 Fl oz (6ml)
-8 Colorful Feathers
-3 Ribbon Bows
-2 Flower Embellishments
-5 Felt Circles
+		<productName>Just My Style® Hip Hemp Jewelry Kit by Horizon Group USA</productName>
+		<longDescription>150 Assorted Wood Beads
+10 Cowry Shells
+Seed Beads Net Wt 0.5oz (14g)
+2 Beading Cords 26yd (23.7m) total
+1 Hemp Cord 12yd (10.9m)
+8 Rubber Beads
+1 Metal Charm
 Easy-to-Follow Instructions</longDescription>
-		<shortDescription>The Just My Style® Designer Hair Wear comes with everything you need to create 10 creations for your hair! The kit comes with satin headbands, hair ties, sparkling gemstones, fabric glue, colorful feathers, ribbon bows, flower embellishments and felt circles.</shortDescription>
+		<shortDescription>The Just My Style® Hip Hemp Jewelry comes with everything you need to create 38 bohemian bracelets! Mix and match colorful beading cord and hemp cord to create braided or knotted jewelry pieces with an assortment of wooden beads, seed beads, shells and a metal charm.</shortDescription>
 		<mainImage>
-			<mainImageUrl>https://albert-test.contentanalyticsinc.com/temp/2016012746237F.jpg</mainImageUrl>
+			<mainImageUrl>https://albert-test.contentanalyticsinc.com/temp/2016012735766C.jpg</mainImageUrl>
 		</mainImage>
 		<additionalAssets>
 			<additionalAsset>
-				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/20160127EAAFEE.jpg</assetUrl>
+				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/201601273D8998.jpg</assetUrl>
 				<assetType>Additional Image</assetType>
 			</additionalAsset>
 			<additionalAsset>
-				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/20160127AC9FE9.jpg</assetUrl>
+				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/20160127DD407E.jpg</assetUrl>
 				<assetType>Additional Image</assetType>
 			</additionalAsset>
 			<additionalAsset>
-				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/20160127F4170F.jpg</assetUrl>
+				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/201601273AFA43.jpg</assetUrl>
 				<assetType>Additional Image</assetType>
 			</additionalAsset>
 		</additionalAssets>
 		<productIdentifiers>
 			<productIdentifier>
 				<productIdType>UPC</productIdType>
-				<productId>765940578834</productId>
+				<productId>076594052112</productId>
 			</productIdentifier>
 		</productIdentifiers>
 		<unitsPerConsumerUnit>1</unitsPerConsumerUnit>
 		<countryOfOriginAssembly>CN</countryOfOriginAssembly>
 		<countryOfOriginComponents>Imported</countryOfOriginComponents>
 		<isAerosol>false</isAerosol>
-		<isChemical>true</isChemical>
+		<isChemical>false</isChemical>
 		<isPesticide>false</isPesticide>
 		<hasBatteries>false</hasBatteries>
 		<containsMercury>false</containsMercury>
@@ -50,7 +49,7 @@ Easy-to-Follow Instructions</longDescription>
 			<measure>1</measure>
 		</pricePerUnitQuantity>
 		<containsPaperWood>false</containsPaperWood>
-		<compositeWoodCertificationCode>1</compositeWoodCertificationCode>
+		<compositeWoodCertificationCode>3</compositeWoodCertificationCode>
 		<hasExpiration>false</hasExpiration>
 		<hasWarnings>false</hasWarnings>
 		<hasWarranty>false</hasWarranty>
@@ -65,7 +64,7 @@ Easy-to-Follow Instructions</longDescription>
 			<isRefillable>false</isRefillable>
 			<isRecyclable>false</isRecyclable>
 			<brand>Just My Style</brand>
-			<factoryId>36113895</factoryId>
+			<factoryId>28037767</factoryId>
 			<gender>Unisex</gender>
 		</ArtAndCraft>
 	</SupplierProduct>
