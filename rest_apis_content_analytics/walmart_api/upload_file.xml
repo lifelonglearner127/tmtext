@@ -1,67 +1,72 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<SupplierProductFeed>
+<SupplierProductFeed xmlns="http://walmart.com/suppliers/">
 	<version>1.4.1</version>
 	<SupplierProduct>
-		<productName>285 Herb-Ox Sodium Free Instant Beef Broth, 1.1 oz, (Pack
-			of 12)</productName>
-		<longDescription>p2</longDescription>
-		<shortDescription>285 Herb-Ox Sodium Free Instant Beef Broth, 1.1 oz,
-			(Pack of 12)</shortDescription>
+		<productName>Just My Style®Designer Hair Wear Kit by Horizon Group USA</productName>
+		<longDescription>6 Satin Headbands
+4 Hair Ties
+50 Sparkling Gemstones
+1 Fabric Glue Net Wt 0.023 Fl oz (6ml)
+8 Colorful Feathers
+3 Ribbon Bows
+2 Flower Embellishments
+5 Felt Circles
+Easy-to-Follow Instructions</longDescription>
+		<shortDescription>The Just My Style® Designer Hair Wear comes with everything you need to create 10 creations for your hair! The kit comes with satin headbands, hair ties, sparkling gemstones, fabric glue, colorful feathers, ribbon bows, flower embellishments and felt circles.</shortDescription>
 		<mainImage>
-			<mainImageUrl>http://i5.walmartimages.com/dfw/dce07b8c-253b/k2-_078fec54-92af-4838-a1bf-91a8c3ec0cee.v1.jpg</mainImageUrl>
-			<altText>video</altText>
+			<mainImageUrl>https://albert-test.contentanalyticsinc.com/temp/2016012746237F.jpg</mainImageUrl>
 		</mainImage>
+		<additionalAssets>
+			<additionalAsset>
+				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/20160127EAAFEE.jpg</assetUrl>
+				<assetType>Additional Image</assetType>
+			</additionalAsset>
+			<additionalAsset>
+				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/20160127AC9FE9.jpg</assetUrl>
+				<assetType>Additional Image</assetType>
+			</additionalAsset>
+			<additionalAsset>
+				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/20160127F4170F.jpg</assetUrl>
+				<assetType>Additional Image</assetType>
+			</additionalAsset>
+		</additionalAssets>
 		<productIdentifiers>
 			<productIdentifier>
 				<productIdType>UPC</productIdType>
-				<productId>Y12343</productId>
+				<productId>765940578834</productId>
 			</productIdentifier>
 		</productIdentifiers>
 		<unitsPerConsumerUnit>1</unitsPerConsumerUnit>
-		<countryOfOriginAssembly>CC</countryOfOriginAssembly>
-		<countryOfOriginComponents>USA</countryOfOriginComponents>
-		<isAerosol>true</isAerosol>
-		<isChemical>false</isChemical>
-		<isPesticide>true</isPesticide>
-		<hasBatteries>true</hasBatteries>
-		<containsMercury>true</containsMercury>
-		<hasFuelContainer>true</hasFuelContainer>
+		<countryOfOriginAssembly>CN</countryOfOriginAssembly>
+		<countryOfOriginComponents>Imported</countryOfOriginComponents>
+		<isAerosol>false</isAerosol>
+		<isChemical>true</isChemical>
+		<isPesticide>false</isPesticide>
+		<hasBatteries>false</hasBatteries>
+		<containsMercury>false</containsMercury>
+		<hasFuelContainer>false</hasFuelContainer>
 		<pricePerUnitQuantity>
 			<unit>Kilogram</unit>
-			<measure>12</measure>
+			<measure>1</measure>
 		</pricePerUnitQuantity>
-		<containsPaperWood>true</containsPaperWood>
-		<compositeWoodCertificationCode>4</compositeWoodCertificationCode>
-		<hasExpiration>true</hasExpiration>
-		<hasWarnings>true</hasWarnings>
+		<containsPaperWood>false</containsPaperWood>
+		<compositeWoodCertificationCode>1</compositeWoodCertificationCode>
+		<hasExpiration>false</hasExpiration>
+		<hasWarnings>false</hasWarnings>
 		<hasWarranty>false</hasWarranty>
-		<isProp65WarningRequired>true</isProp65WarningRequired>
-		<isTemperatureSensitive>true</isTemperatureSensitive>
+		<isProp65WarningRequired>false</isProp65WarningRequired>
+		<isTemperatureSensitive>false</isTemperatureSensitive>
 		<smallPartsWarnings>
-			<smallPartsWarning>3</smallPartsWarning>
+			<smallPartsWarning>0</smallPartsWarning>
 		</smallPartsWarnings>
-		<isControlledSubstance>true</isControlledSubstance>
-		<hasStateRestrictions>true</hasStateRestrictions>
-		<Baby>
-			<fabricContent>
-				<fabricContentValue>
-					<materialName>cotton</materialName>
-					<materialPercentage>98</materialPercentage>
-				</fabricContentValue>
-			</fabricContent>
-			<fabricCareInstructions>
-				<fabricCareInstruction>1</fabricCareInstruction>
-			</fabricCareInstructions>
-			<brand>HP</brand>
-			<manufacturer>k</manufacturer>
-			<gender>Women</gender>
-			<screenSize>
-				<unit>Feet</unit>
-				<measure>34</measure>
-			</screenSize>
-			<Strollers>
-				<strollerType>jogger</strollerType>
-			</Strollers>
-		</Baby>
+		<isControlledSubstance>false</isControlledSubstance>
+		<hasStateRestrictions>false</hasStateRestrictions>
+		<ArtAndCraft>
+			<isRefillable>false</isRefillable>
+			<isRecyclable>false</isRecyclable>
+			<brand>Just My Style</brand>
+			<factoryId>36113895</factoryId>
+			<gender>Unisex</gender>
+		</ArtAndCraft>
 	</SupplierProduct>
 </SupplierProductFeed>

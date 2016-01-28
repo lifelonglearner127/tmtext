@@ -203,7 +203,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                 xml_data_by_list = xml_data_by_list.splitlines()
 
                 for xml_row in xml_data_by_list:
-                    upload_file.write((xml_row + "\n").encode("utf-8"))
+                    upload_file.write((xml_row + "\n").decode("utf-8").encode("utf-8"))
 
             upload_file = open(os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml", "rb")
             validation_results = validate_walmart_product_xml_against_xsd(upload_file.read())
