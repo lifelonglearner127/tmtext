@@ -479,7 +479,8 @@ class ValidateWalmartProductXmlFileViewSet(viewsets.ViewSet):
         request_data = request.DATA
         request_files = request.FILES
 
-        xml_content_to_validate = request_files["xml_file_to_validate"].read().encode("utf-8")
+        xml_content_to_validate = request_files["xml_file_to_validate"].read()
+        xml_content_to_validate = xml_content_to_validate.decode("utf-8").encode("utf-8")
 
         return Response(validate_walmart_product_xml_against_xsd(xml_content_to_validate))
 
