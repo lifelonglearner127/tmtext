@@ -11,7 +11,7 @@ from scrapy import Request
 from scrapy.log import ERROR, WARNING
 
 from product_ranking.items import RelatedProduct, BuyerReviews
-from product_ranking.items import SiteProductItem, Price
+from product_ranking.items import SiteProductItem, Price, LimitedStock
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
@@ -24,7 +24,7 @@ socket.setdefaulttimeout(60)
 
 def _init_webdriver():
     from selenium import webdriver
-    driver = webdriver.Firefox()
+    driver = webdriver.PhantomJS()
     driver.set_window_size(1280, 1024)
     driver.set_page_load_timeout(60)
     driver.set_script_timeout(60)
@@ -157,12 +157,23 @@ class DellProductSpider(BaseProductsSpider):
         pass
         # TODO!
 
-    def _parse_stock_status(self, response):
-        element = response.xpath(
+    def _parse_stock_status(self, response, product):
+        oos_element = response.xpath(
             '//a[contains(@class, "smallBlueBodyText")]'
             '[contains(@href, "makeWin")]//text()').extract()
-        if element:
-            return element[0]
+        print '*'*20, oos_element
+        if oos_element:
+            oos_element = oos_element[0].lower()
+            import pdb; pdb.set_trace()
+            if ('temporarily out of stock' in oos_element
+                    or 'pre-order' in oos_element):
+                product['is_out_of_stock'] = True
+                yield product
+                return
+            if 'limited supply available' in oos_element:
+                product['is_out_of_stock'] = False
+                product['limited_stock'] = LimitedStock(is_limited=True, items_left=-1)
+                yield product
 
     def parse_product(self, response):
         prod = response.meta.get('product', SiteProductItem())
@@ -181,7 +192,8 @@ class DellProductSpider(BaseProductsSpider):
         prod['description'] = 'TODO'
         prod['brand'] = DellProductSpider._parse_brand(response)
         prod['related_products'] = self._related_products(response)
-        prod['description'] = self._parse_stock_status(response)  # this should be OOS field
+
+        self._parse_stock_status(response, prod)  # this should be OOS field
 
         meta = {}
         meta['product'] = prod
