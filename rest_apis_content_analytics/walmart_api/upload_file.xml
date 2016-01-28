@@ -2,37 +2,19 @@
 <SupplierProductFeed xmlns="http://walmart.com/suppliers/">
 	<version>1.4.1</version>
 	<SupplierProduct>
-		<productName>Just My Style® Hip Hemp Jewelry Kit by Horizon Group USA</productName>
-		<longDescription>150 Assorted Wood Beads
-10 Cowry Shells
-Seed Beads Net Wt 0.5oz (14g)
-2 Beading Cords 26yd (23.7m) total
-1 Hemp Cord 12yd (10.9m)
-8 Rubber Beads
-1 Metal Charm
-Easy-to-Follow Instructions</longDescription>
-		<shortDescription>The Just My Style® Hip Hemp Jewelry comes with everything you need to create 38 bohemian bracelets! Mix and match colorful beading cord and hemp cord to create braided or knotted jewelry pieces with an assortment of wooden beads, seed beads, shells and a metal charm.</shortDescription>
+		<productName>Next Style™ Fabric Embellishing Kit by Horizon Group USA</productName>
+		<longDescription>1 Fabric Glue Pen
+1 Foam Brush
+200 Sequins (Teal, Silver, Black, Fuschia)
+Glitter Pots (Teal, Silver, Black, Fuschia)</longDescription>
+		<shortDescription>Use the Next Style Fabric Embellishing Kit to create unique designs  and add details to any fabric surface. The kit includes a fabric glue pen, a small foam brush, black sequins, silver sequins, fuchsia sequins, teal sequins, silver glitter, black glitter, teal glitter and fuchsia glitter.</shortDescription>
 		<mainImage>
-			<mainImageUrl>https://albert-test.contentanalyticsinc.com/temp/2016012735766C.jpg</mainImageUrl>
+			<mainImageUrl>https://albert-test.contentanalyticsinc.com/temp/20160127C0B901.jpg</mainImageUrl>
 		</mainImage>
-		<additionalAssets>
-			<additionalAsset>
-				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/201601273D8998.jpg</assetUrl>
-				<assetType>Additional Image</assetType>
-			</additionalAsset>
-			<additionalAsset>
-				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/20160127DD407E.jpg</assetUrl>
-				<assetType>Additional Image</assetType>
-			</additionalAsset>
-			<additionalAsset>
-				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/201601273AFA43.jpg</assetUrl>
-				<assetType>Additional Image</assetType>
-			</additionalAsset>
-		</additionalAssets>
 		<productIdentifiers>
 			<productIdentifier>
 				<productIdType>UPC</productIdType>
-				<productId>076594052112</productId>
+				<productId>016318259771</productId>
 			</productIdentifier>
 		</productIdentifiers>
 		<unitsPerConsumerUnit>1</unitsPerConsumerUnit>
@@ -49,7 +31,7 @@ Easy-to-Follow Instructions</longDescription>
 			<measure>1</measure>
 		</pricePerUnitQuantity>
 		<containsPaperWood>false</containsPaperWood>
-		<compositeWoodCertificationCode>3</compositeWoodCertificationCode>
+		<compositeWoodCertificationCode>1</compositeWoodCertificationCode>
 		<hasExpiration>false</hasExpiration>
 		<hasWarnings>false</hasWarnings>
 		<hasWarranty>false</hasWarranty>
@@ -63,8 +45,8 @@ Easy-to-Follow Instructions</longDescription>
 		<ArtAndCraft>
 			<isRefillable>false</isRefillable>
 			<isRecyclable>false</isRecyclable>
-			<brand>Just My Style</brand>
-			<factoryId>28037767</factoryId>
+			<brand>Next Style</brand>
+			<factoryId>36116938</factoryId>
 			<gender>Unisex</gender>
 		</ArtAndCraft>
 	</SupplierProduct>

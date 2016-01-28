@@ -6,6 +6,7 @@ from lxml import etree
 import datetime
 import xmltodict
 import os
+import os.path
 import unirest
 
 
@@ -171,10 +172,22 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
     walmart_qos_correlation_id = "123456abcdef"
 
     def list(self, request):
-        return Response({'data': 'OK'})
+        if os.path.isfile(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt"):
+            with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "r") as myfile:
+                log_history = myfile.read().splitlines()
+        else:
+            log_history = None
+
+        return Response({'log': log_history})
 
     def retrieve(self, request, pk=None):
-        return Response({'data': 'OK'})
+        if os.path.isfile(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt"):
+            with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "r") as myfile:
+                log_history = myfile.read().splitlines()
+        else:
+            log_history = None
+
+        return Response({'log': log_history})
 
     def generate_walmart_api_signature(self, walmart_api_end_point, consumer_id, private_key, request_method, file_path):
         cmd = ('java -jar "' + os.path.dirname(os.path.realpath(__file__)) +
