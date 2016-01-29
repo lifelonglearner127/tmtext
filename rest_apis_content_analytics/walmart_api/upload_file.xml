@@ -2,19 +2,29 @@
 <SupplierProductFeed xmlns="http://walmart.com/suppliers/">
 	<version>1.4.1</version>
 	<SupplierProduct>
-		<productName>Next Style™ Fabric Embellishing Kit by Horizon Group USA</productName>
-		<longDescription>1 Fabric Glue Pen
-1 Foam Brush
-200 Sequins (Teal, Silver, Black, Fuschia)
-Glitter Pots (Teal, Silver, Black, Fuschia)</longDescription>
-		<shortDescription>Use the Next Style Fabric Embellishing Kit to create unique designs  and add details to any fabric surface. The kit includes a fabric glue pen, a small foam brush, black sequins, silver sequins, fuchsia sequins, teal sequins, silver glitter, black glitter, teal glitter and fuchsia glitter.</shortDescription>
+		<productName>Your Décor™ Water Bottle Decorating Kit by Horizon Group USA</productName>
+		<longDescription>1 Water Bottle
+5 Doodle Markers
+20 Peel &amp; Stick Gemstones
+1 Carabiner Clip</longDescription>
+		<shortDescription>Decorate your very own Your Décor™  Water Bottle! Kit includes 1 water bottle, 1 carabiner clip, 5 doodle markers, 20 peel and stick gemstones!</shortDescription>
 		<mainImage>
-			<mainImageUrl>https://albert-test.contentanalyticsinc.com/temp/20160127C0B901.jpg</mainImageUrl>
+			<mainImageUrl>https://albert-test.contentanalyticsinc.com/temp/20160127580B72.jpg</mainImageUrl>
 		</mainImage>
+		<additionalAssets>
+			<additionalAsset>
+				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/2016012743ADEC.jpg</assetUrl>
+				<assetType>Additional Image</assetType>
+			</additionalAsset>
+			<additionalAsset>
+				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/201601271326C6.jpg</assetUrl>
+				<assetType>Additional Image</assetType>
+			</additionalAsset>
+		</additionalAssets>
 		<productIdentifiers>
 			<productIdentifier>
 				<productIdType>UPC</productIdType>
-				<productId>016318259771</productId>
+				<productId>765940477731</productId>
 			</productIdentifier>
 		</productIdentifiers>
 		<unitsPerConsumerUnit>1</unitsPerConsumerUnit>
@@ -45,8 +55,7 @@ Glitter Pots (Teal, Silver, Black, Fuschia)</longDescription>
 		<ArtAndCraft>
 			<isRefillable>false</isRefillable>
 			<isRecyclable>false</isRecyclable>
-			<brand>Next Style</brand>
-			<factoryId>36116938</factoryId>
+			<brand>Your Décor</brand>
 			<gender>Unisex</gender>
 		</ArtAndCraft>
 	</SupplierProduct>

@@ -1,5 +1,6 @@
 from rest_framework import viewsets
 from walmart_api.serializers import WalmartApiFeedRequestSerializer, WalmartApiItemsWithXmlFileRequestSerializer, WalmartApiItemsWithXmlTextRequestSerializer, WalmartApiValidateXmlTextRequestSerializer, WalmartApiValidateXmlFileRequestSerializer
+import re
 from rest_framework.response import Response
 from subprocess import Popen, PIPE, STDOUT
 from lxml import etree
@@ -173,6 +174,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
 
     def list(self, request):
         if os.path.isfile(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt"):
+
             with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "r") as myfile:
                 log_history = myfile.read().splitlines()
         else:
@@ -219,7 +221,9 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                     upload_file.write((xml_row + "\n").decode("utf-8").encode("utf-8"))
 
             upload_file = open(os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml", "rb")
-            validation_results = validate_walmart_product_xml_against_xsd(upload_file.read())
+            product_xml_text = upload_file.read()
+            upc = re.findall(r'<productId>(.*)</productId>', product_xml_text)[0].strip()
+            validation_results = validate_walmart_product_xml_against_xsd(product_xml_text)
 
             if "error" in validation_results:
                 print validation_results
@@ -257,7 +261,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
                     with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "a") as myfile:
-                        myfile.write(current_time + " " + feed_id + "\n")
+                        myfile.write(current_time + ", " + upc + ", " + feed_id + "\n")
 
                     with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "r") as myfile:
                         response.body["log"] = myfile.read().splitlines()
