@@ -174,6 +174,16 @@ class InvokeWalmartApiViewSet(viewsets.ViewSet):
 class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
+    Pay attention to the field names: if you send multiple groups, name them like this:
+    <br/>
+    <pre>
+    {
+      "request_url_1": "http://some_url_1", "request_method_1": "POST", "xml_file_to_upload_1": "/path_to_file_1",
+      "request_url_2": "http://some_url_2", "request_method_2": "POST", "xml_file_to_upload_2": "/path_to_file_2",
+      "request_url_3": "http://some_url_3", "request_method_2": "POST", "xml_file_to_upload_3": "/path_to_file_3",
+      ...
+    }
+    </pre>
     """
     serializer_class = WalmartApiItemsWithXmlFileRequestSerializer
 
@@ -224,70 +234,132 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
 
         return walmart_api_signature
 
+    @staticmethod
+    def group_params(data, files, patterns):
+        """ data = request.data, files=request.files,
+            patterns = [param1_to_group, param2_to_group, etc.]
+        """
+        output = {}
+        for data_item_name, data_item_value in data.items():
+            for pattern in patterns:
+                if pattern in data_item_name:
+                    param_reminder = data_item_name.replace(pattern, '').strip()
+                    if not param_reminder:
+                        param_reminder = 'default'
+                    if not param_reminder in output:
+                        output[param_reminder] = []
+                    _item = {'name': data_item_name, 'value': data_item_value, 'type': 'data',
+                             'cleaned_name': data_item_name.replace(param_reminder, '')}
+                    if not _item in output[param_reminder]:
+                        output[param_reminder].append(_item)
+        for data_item_name, data_item_value in files.items():
+            for pattern in patterns:
+                if pattern in data_item_name:
+                    param_reminder = data_item_name.replace(pattern, '').strip()
+                    if not param_reminder:
+                        param_reminder = 'default'
+                    if not param_reminder in output:
+                        output[param_reminder] = []
+                    _item = {'name': data_item_name, 'value': data_item_value, 'type': 'file',
+                             'cleaned_name': data_item_name.replace(param_reminder, '')}
+                    if not _item in output[param_reminder]:
+                        output[param_reminder].append(_item)
+        return output
+
+    @staticmethod
+    def find_in_list(lst, key_name, search_in_values=True):
+        """ Returns the element of the list which has the given key_name in it """
+        for e in lst:
+            if key_name in e:
+                return e['value']
+            if search_in_values:
+                for _key, _value in e.items():
+                    if _value == key_name:
+                        return e['value']
+
     def create(self, request):
-        try:
-            request_data = request.DATA
-            request_files = request.FILES
+        request_url_pattern = 'request_url'
+        request_method_pattern = 'request_method'
+        xml_file_to_upload_pattern = 'xml_file_to_upload'
+        # output
+        output = {}
+        # group the fields we received
+        groupped_fields = self.group_params(request.data, request.FILES,
+                                            [request_url_pattern, request_method_pattern, xml_file_to_upload_pattern])
+        for group_name, group_data in groupped_fields.items():
+            sent_file = self.find_in_list(group_data, xml_file_to_upload_pattern)
+            request_url = self.find_in_list(group_data, request_url_pattern)
+            request_method = self.find_in_list(group_data, request_url_pattern)
+            if not sent_file or not request_method or not request_url:
+                output[group_name] = {'error': 'one (or more) required params missing'}
+                continue
+            try:
+                result_for_this_group = self.process_one_set(
+                     sent_file=sent_file, request_url=request_url, request_method=request_method)
+                output[group_name] = result_for_this_group
+            except Exception, e:
+                output[group_name] = {'error': str(e)}
+        return Response(output)
 
-            with open(os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml", "wb") as upload_file:
-                xml_data_by_list = request_files["xml_file_to_upload"].read()
-                xml_data_by_list = xml_data_by_list.splitlines()
+    def process_one_set(self, sent_file, request_url, request_method):
+        with open(os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml", "wb") as upload_file:
+            xml_data_by_list = sent_file.read()
+            xml_data_by_list = xml_data_by_list.splitlines()
 
-                for xml_row in xml_data_by_list:
-                    upload_file.write((xml_row + "\n").decode("utf-8").encode("utf-8"))
+            for xml_row in xml_data_by_list:
+                upload_file.write((xml_row + "\n").decode("utf-8").encode("utf-8"))
 
-            upload_file = open(os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml", "rb")
-            product_xml_text = upload_file.read()
-            upc = re.findall(r'<productId>(.*)</productId>', product_xml_text)[0].strip()
-            validation_results = validate_walmart_product_xml_against_xsd(product_xml_text)
+        upload_file = open(os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml", "rb")
+        product_xml_text = upload_file.read()
+        upc = re.findall(r'<productId>(.*)</productId>', product_xml_text)
+        if not upc:
+            return {'error': 'could not find <productId> element'}
+        validation_results = validate_walmart_product_xml_against_xsd(product_xml_text)
 
-            if "error" in validation_results:
-                print validation_results
-                return Response(validation_results)
+        if "error" in validation_results:
+            print validation_results
+            return validation_results
 
-            walmart_api_signature = self.generate_walmart_api_signature(request_data["request_url"],
-                                                                        self.walmart_consumer_id,
-                                                                        self.walmart_private_key,
-                                                                        request_data["request_method"].upper(),
-                                                                        "signature.txt")
+        walmart_api_signature = self.generate_walmart_api_signature(request_url,
+                                                                    self.walmart_consumer_id,
+                                                                    self.walmart_private_key,
+                                                                    request_method.upper(),
+                                                                    "signature.txt")
 
-            if not walmart_api_signature:
-                print "Failed in generating walmart api signature."
-                return Response({'data': "Failed in generating walmart api signature."})
+        if not walmart_api_signature:
+            print "Failed in generating walmart api signature."
+            return {'data': "Failed in generating walmart api signature."}
 
-            response = unirest.post(request_data["request_url"],
-                headers={
-                    "Accept": "application/json",
-                    "WM_CONSUMER.ID": self.walmart_consumer_id,
-                    "WM_SVC.NAME": self.walmart_svc_name,
-                    "WM_QOS.CORRELATION_ID": self.walmart_qos_correlation_id,
-                    "WM_SVC.VERSION": self.walmart_version,
-                    "WM_SVC.ENV": self.walmart_environment,
-                    "WM_SEC.AUTH_SIGNATURE": walmart_api_signature["signature"],
-                    "WM_SEC.TIMESTAMP": int(walmart_api_signature["timestamp"])
-                },
-                params={
-                    "file": upload_file,
-                }
-            )
+        response = unirest.post(request_url,
+            headers={
+                "Accept": "application/json",
+                "WM_CONSUMER.ID": self.walmart_consumer_id,
+                "WM_SVC.NAME": self.walmart_svc_name,
+                "WM_QOS.CORRELATION_ID": self.walmart_qos_correlation_id,
+                "WM_SVC.VERSION": self.walmart_version,
+                "WM_SVC.ENV": self.walmart_environment,
+                "WM_SEC.AUTH_SIGNATURE": walmart_api_signature["signature"],
+                "WM_SEC.TIMESTAMP": int(walmart_api_signature["timestamp"])
+            },
+            params={
+                "file": upload_file,
+            }
+        )
 
-            if type(response.body) is dict:
-                if "feedId" in response.body:
-                    feed_id = response.body["feedId"]
-                    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+        if type(response.body) is dict:
+            if "feedId" in response.body:
+                feed_id = response.body["feedId"]
+                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
-                    with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "a") as myfile:
-                        myfile.write(current_time + ", " + upc + ", " + feed_id + "\n")
+                with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "a") as myfile:
+                    myfile.write(current_time + ", " + upc + ", " + feed_id + "\n")
 
-                    with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "r") as myfile:
-                        response.body["log"] = myfile.read().splitlines()
+                with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "r") as myfile:
+                    response.body["log"] = myfile.read().splitlines()
 
-                return Response(response.body)
-            else:
-                return Response(xmltodict(response.body))
-        except Exception, e:
-            print e
-            return Response({'data': "Failed to invoke Walmart API - invalid request data"})
+            return response.body
+        else:
+            return xmltodict(response.body)
 
     def update(self, request, pk=None):
         pass
