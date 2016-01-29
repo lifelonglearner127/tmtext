@@ -29,3 +29,5 @@ class WalmartApiValidateXmlTextRequestSerializer(serializers.Serializer):
 
 class WalmartApiValidateXmlFileRequestSerializer(serializers.Serializer):
     xml_file_to_validate = serializers.FileField()
+    xml_file_to_validate_2 = serializers.FileField()
+    xml_file_to_validate_3 = serializers.FileField()
