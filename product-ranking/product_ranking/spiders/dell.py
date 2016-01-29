@@ -6,8 +6,9 @@ import re
 import time
 import urlparse
 import socket
+import urlparse
 
-from scrapy import Request
+from scrapy import Request, Selector
 from scrapy.log import ERROR, WARNING
 
 from product_ranking.items import RelatedProduct, BuyerReviews
@@ -176,7 +177,7 @@ class DellProductSpider(BaseProductsSpider):
         cond_set(prod, 'title', response.css('h1 ::text').extract())
         prod['price'] = DellProductSpider._parse_price(response)
         prod['image_url'] = DellProductSpider._parse_image(response)
-        prod['sku'] = 'TODO'
+        prod['sku'] = urlparse.parse_qs(urlparse.urlparse(response.url).query)
         prod['model'] = 'TODO'
         prod['description'] = 'TODO'
         prod['brand'] = DellProductSpider._parse_brand(response)
@@ -193,3 +194,19 @@ class DellProductSpider(BaseProductsSpider):
         )
 
         yield prod
+
+    def _parse_related_products(self, response):
+        # todo: extract rich relevance url and pass this method as callback
+        html = re.search(r"html:'(.+?)'\}\]\},", response.body_as_unicode())
+        html = Selector(text=html.group(1))
+        key_name = html.css('.rrStrat::text').extract()[0]
+        items = html.css('.rrRecs > ul > li')
+        rel_prods = []
+        for item in items:
+            title = item.css('span.rrFullName::text').extract()[0]
+            url = item.css('a.rrLinkUrl::attr(href)').extract()[0]
+            url = urlparse.urlparse(url)
+            qs = urlparse.parse_qs(url.query)
+            url = qs['ct'][0]
+            rel_prods.append(RelatedProduct(title=title, url=url))
+        return {key_name: rel_prods}
