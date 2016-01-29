@@ -177,7 +177,7 @@ class DellProductSpider(BaseProductsSpider):
         cond_set(prod, 'title', response.css('h1 ::text').extract())
         prod['price'] = DellProductSpider._parse_price(response)
         prod['image_url'] = DellProductSpider._parse_image(response)
-        prod['sku'] = urlparse.parse_qs(urlparse.urlparse(response.url).query)
+        prod['sku'] = 'TODO'
         prod['model'] = 'TODO'
         prod['description'] = 'TODO'
         prod['brand'] = DellProductSpider._parse_brand(response)
