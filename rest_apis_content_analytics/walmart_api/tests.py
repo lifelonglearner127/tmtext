@@ -10,17 +10,6 @@ import lxml.html
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 
-"""
->>> from django.test import Client
->>> c = Client()
->>> response = c.post('/login/', {'username': 'john', 'password': 'smith'})
->>> response.status_code
-200
->>> response = c.get('/customer/details/')
->>> response.content
-b'<!DOCTYPE html...'
-"""
-
 
 from django.test import LiveServerTestCase
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
@@ -60,7 +49,6 @@ class RestAPIsTests(StaticLiveServerTestCase):
         time.sleep(1)  # let the database commit transactions?
 
     def _auth_requests(self):
-        """ Returns "logged-in" requests session """
         session = requests.Session()
         session.auth = (self.username, self.password)
         return session
@@ -78,17 +66,11 @@ class RestAPIsTests(StaticLiveServerTestCase):
         self.assertIn('success', self.selenium.page_source)
         self.assertIn('This xml is validated by Walmart product xsd files', self.selenium.page_source)
 
-    @staticmethod
-    def _get_csrf_cookie_from_html(html):
-        doc = lxml.html.fromstring(html)
-        return doc.xpath('//input[@name="csrfmiddlewaretoken"]/@value')[0]
-
     def _test_validate_walmart_product_xml_file_requests(self, xml_file):
         session = self._auth_requests()
         with open(xml_file, 'rb') as payload:
             result = session.post(self.live_server_url+'/validate_walmart_product_xml_file/',
                                   files={'xml_file_to_validate': payload}, verify=False)
-            #self.assertIn('CSRF Failed: CSRF cookie not set', result.text)  # this is correct
             self.assertEqual(json.loads(result.text)['success'], 'This xml is validated by Walmart product xsd files.')
 
     def test_validate_walmart_product_xml_file(self):
