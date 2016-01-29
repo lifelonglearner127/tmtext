@@ -11,6 +11,22 @@ import os.path
 import unirest
 
 
+class ErrorResponse(object):
+    """ A custom error notification """
+    def __init__(self, error_type, msg):
+        self.error_type = str(error_type)
+        self.msg = msg
+
+    def to_json(self):
+        return {'error_type': self.error_type, 'error_message': self.msg}
+
+    def to_html(self):
+        raise NotImplementedError
+
+    def to_response(self):
+        return Response(self.to_json())
+
+
 def validate_walmart_product_xml_against_xsd(product_xml_string):
     current_path = os.path.dirname(os.path.realpath(__file__))
     xmlschema_doc = etree.parse(current_path + "/walmart_suppliers_product_xsd/SupplierProductFeed.xsd")
@@ -502,15 +518,23 @@ class ValidateWalmartProductXmlFileViewSet(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         return Response({'data': 'OK'})
 
+    @staticmethod
+    def is_multiple_files_sent(request):
+        for f in request.FILES.keys():
+            if f.endswith('_0') or f.endswith('_1'):
+                return True
+
     def create(self, request):
         request_data = request.data
         request_files = request.FILES
 
         # TODO: it does not work if the content-type is application/x-www-form-urlencoded', is this correct?
-        xml_content_to_validate = request_files["xml_file_to_validate"].read()
-        xml_content_to_validate = xml_content_to_validate.decode("utf-8").encode("utf-8")
-
-        return Response(validate_walmart_product_xml_against_xsd(xml_content_to_validate))
+        results = {}
+        for rf_name, rf_content in request_files.items():
+            rf_content = rf_content.read()
+            xml_content_to_validate = rf_content.decode("utf-8").encode("utf-8")
+            results[rf_name] = validate_walmart_product_xml_against_xsd(xml_content_to_validate)
+        return Response(results)
 
     def update(self, request, pk=None):
         pass

@@ -71,10 +71,23 @@ class RestAPIsTests(StaticLiveServerTestCase):
         with open(xml_file, 'rb') as payload:
             result = session.post(self.live_server_url+'/validate_walmart_product_xml_file/',
                                   files={'xml_file_to_validate': payload}, verify=False)
-            self.assertEqual(json.loads(result.text)['success'], 'This xml is validated by Walmart product xsd files.')
+            self.assertIn('success', result.text)
+            self.assertIn('This xml is validated by Walmart product xsd files', result.text)
+
+    def _test_validate_walmart_product_xml_file_requests_multiple(self, *xml_files):
+        session = self._auth_requests()
+        xml_files_opened = [open(f, 'rb') for f in xml_files]
+        files2post = {'file_'+str(i): f for (i, f) in enumerate(xml_files_opened)}
+        result = session.post(self.live_server_url+'/validate_walmart_product_xml_file/',
+                              files=files2post, verify=False)
+        result_json = json.loads(result.text)
+        self.assertIn('success', result_json['file_1'])
+        self.assertIn('error', result_json['file_0'])
+        self.assertIn('This element is not expected', result_json['file_0']['error'])
 
     def test_validate_walmart_product_xml_file(self):
         xml_file1 = os.path.join(CWD, 'walmart_product_xml_samples', 'SupplierProductFeed.xsd.xml')
         xml_file2 = os.path.join(CWD, 'walmart_product_xml_samples', 'Verified Furniture Sample Product XML.xml')
         self._test_validate_walmart_product_xml_file_browser(xml_file2)
         self._test_validate_walmart_product_xml_file_requests(xml_file2)
+        self._test_validate_walmart_product_xml_file_requests_multiple(xml_file1, xml_file2)
