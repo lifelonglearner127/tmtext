@@ -43,7 +43,11 @@ INSTALLED_APPS = (
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
-    'PAGE_SIZE': 10
+    'PAGE_SIZE': 10,
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    )
 }
 
 MIDDLEWARE_CLASSES = (
@@ -98,6 +102,43 @@ STATICFILES_DIRS = (
 )
 
 
-
-
-
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        # Include the default Django email handler for errors
+        # This is what you'd get without configuring logging at all.
+        'mail_admins': {
+            'class': 'django.utils.log.AdminEmailHandler',
+            'level': 'ERROR',
+             # But the emails are plain text by default - HTML is nicer
+            'include_html': True,
+        },
+        # Log to a text file that can be rotated by logrotate
+        'logfile': {
+            'class': 'logging.handlers.WatchedFileHandler',
+            'filename': os.path.join(BASE_DIR, 'django.errors'),
+            'filters': []
+        },
+    },
+    'loggers': {
+        # Again, default Django configuration to email unhandled exceptions
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        # Might as well log any errors anywhere else in Django
+        'django': {
+            'handlers': ['logfile'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        # Your own app - this assumes all your logger names start with "myapp."
+        'keys': {
+            'handlers': ['logfile'],
+            'level': 'WARNING', # Or maybe INFO or DEBUG
+            'propagate': False
+        },
+    },
+}

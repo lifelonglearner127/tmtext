@@ -503,9 +503,10 @@ class ValidateWalmartProductXmlFileViewSet(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def create(self, request):
-        request_data = request.DATA
+        request_data = request.data
         request_files = request.FILES
 
+        # TODO: it does not work if the content-type is application/x-www-form-urlencoded', is this correct?
         xml_content_to_validate = request_files["xml_file_to_validate"].read()
         xml_content_to_validate = xml_content_to_validate.decode("utf-8").encode("utf-8")
 
