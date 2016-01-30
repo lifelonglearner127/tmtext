@@ -289,7 +289,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         for group_name, group_data in groupped_fields.items():
             sent_file = self.find_in_list(group_data, xml_file_to_upload_pattern)
             request_url = self.find_in_list(group_data, request_url_pattern)
-            request_method = self.find_in_list(group_data, request_url_pattern)
+            request_method = self.find_in_list(group_data, request_method_pattern)
             if not sent_file or not request_method or not request_url:
                 output[group_name] = {'error': 'one (or more) required params missing'}
                 continue
@@ -564,7 +564,7 @@ class ValidateWalmartProductXmlTextViewSet(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def create(self, request):
-        request_data = request.DATA
+        request_data = request.data
 
         return Response(validate_walmart_product_xml_against_xsd(request_data["xml_content_to_validate"]))
 
