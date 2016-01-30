@@ -314,6 +314,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         upc = re.findall(r'<productId>(.*)</productId>', product_xml_text)
         if not upc:
             return {'error': 'could not find <productId> element'}
+        upc = upc[0]
         validation_results = validate_walmart_product_xml_against_xsd(product_xml_text)
 
         if "error" in validation_results:
