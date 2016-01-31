@@ -6,19 +6,19 @@ class WalmartApiItemsWithXmlFileRequestSerializer(serializers.Serializer):
         choices=["https://marketplace.walmartapis.com/v2/feeds?feedType=item"])
     request_method = serializers.ChoiceField(
         choices=["POST"])
-    xml_file_to_upload = serializers.FileField()
+    xml_file_to_upload = serializers.FileField(style={'template': 'multiple_file_field.html'})
 
     request_url_2 = serializers.ChoiceField(
         choices=["https://marketplace.walmartapis.com/v2/feeds?feedType=item"])
     request_method_2 = serializers.ChoiceField(
         choices=["POST"])
-    xml_file_to_upload_2 = serializers.FileField()
+    xml_file_to_upload_2 = serializers.FileField(style={'template': 'multiple_file_field.html'})
 
     request_url_3 = serializers.ChoiceField(
         choices=["https://marketplace.walmartapis.com/v2/feeds?feedType=item"])
     request_method_3 = serializers.ChoiceField(
         choices=["POST"])
-    xml_file_to_upload_3 = serializers.FileField()
+    xml_file_to_upload_3 = serializers.FileField(style={'template': 'multiple_file_field.html'})
 
 
 class WalmartApiItemsWithXmlTextRequestSerializer(serializers.Serializer):

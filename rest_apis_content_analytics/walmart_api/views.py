@@ -1,14 +1,68 @@
-from rest_framework import viewsets
-from walmart_api.serializers import WalmartApiFeedRequestSerializer, WalmartApiItemsWithXmlFileRequestSerializer, WalmartApiItemsWithXmlTextRequestSerializer, WalmartApiValidateXmlTextRequestSerializer, WalmartApiValidateXmlFileRequestSerializer
 import re
-from rest_framework.response import Response
-from subprocess import Popen, PIPE, STDOUT
-from lxml import etree
+from pprint import pprint
 import datetime
-import xmltodict
 import os
 import os.path
+
+from rest_framework.response import Response
+from subprocess import Popen, PIPE, STDOUT
+from rest_framework import viewsets
+from walmart_api.serializers import (WalmartApiFeedRequestSerializer, WalmartApiItemsWithXmlFileRequestSerializer,
+                                     WalmartApiItemsWithXmlTextRequestSerializer, WalmartApiValidateXmlTextRequestSerializer,
+                                     WalmartApiValidateXmlFileRequestSerializer)
+from lxml import etree
+import xmltodict
 import unirest
+
+
+def group_params(data, files, patterns):
+    """ data = request.data, files=request.files,
+        patterns = [param1_to_group, param2_to_group, etc.]
+    """
+    output = {}
+    for data_item_name in data.keys():
+        # there may be multiple files/fields being uploaded/sent at the same time
+        for data_item_value in data.getlist(data_item_name):
+            for pattern in patterns:
+                if pattern in data_item_name:
+                    param_reminder = data_item_name.replace(pattern, '').strip()
+                    if not param_reminder:
+                        param_reminder = 'default'
+                    if not param_reminder in output:
+                        output[param_reminder] = []
+                    _item = {'name': data_item_name, 'value': data_item_value, 'type': 'data',
+                             'cleaned_name': data_item_name.replace(param_reminder, '')}
+                    if not _item in output[param_reminder]:
+                        output[param_reminder].append(_item)
+    for data_item_name in files.keys():
+        for data_item_value in files.getlist(data_item_name):
+            for pattern in patterns:
+                if pattern in data_item_name:
+                    param_reminder = data_item_name.replace(pattern, '').strip()
+                    if not param_reminder:
+                        param_reminder = 'default'
+                    if not param_reminder in output:
+                        output[param_reminder] = []
+                    _item = {'name': data_item_name, 'value': data_item_value, 'type': 'file',
+                             'cleaned_name': data_item_name.replace(param_reminder, '')}
+                    if not _item in output[param_reminder]:
+                        output[param_reminder].append(_item)
+    return output
+
+
+def find_in_list(lst, key_name, search_in_values=True):
+    """ Returns the element of the list which has the given key_name in it """
+    result = []
+    for e in lst:
+        if key_name in e:
+            if e['value'] not in result:
+                result.append(e['value'])
+        if search_in_values:
+            for _key, _value in e.items():
+                if _value == key_name:
+                    if e['value'] not in result:
+                        result.append(e['value'])
+    return result
 
 
 class ErrorResponse(object):
@@ -234,49 +288,6 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
 
         return walmart_api_signature
 
-    @staticmethod
-    def group_params(data, files, patterns):
-        """ data = request.data, files=request.files,
-            patterns = [param1_to_group, param2_to_group, etc.]
-        """
-        output = {}
-        for data_item_name, data_item_value in data.items():
-            for pattern in patterns:
-                if pattern in data_item_name:
-                    param_reminder = data_item_name.replace(pattern, '').strip()
-                    if not param_reminder:
-                        param_reminder = 'default'
-                    if not param_reminder in output:
-                        output[param_reminder] = []
-                    _item = {'name': data_item_name, 'value': data_item_value, 'type': 'data',
-                             'cleaned_name': data_item_name.replace(param_reminder, '')}
-                    if not _item in output[param_reminder]:
-                        output[param_reminder].append(_item)
-        for data_item_name, data_item_value in files.items():
-            for pattern in patterns:
-                if pattern in data_item_name:
-                    param_reminder = data_item_name.replace(pattern, '').strip()
-                    if not param_reminder:
-                        param_reminder = 'default'
-                    if not param_reminder in output:
-                        output[param_reminder] = []
-                    _item = {'name': data_item_name, 'value': data_item_value, 'type': 'file',
-                             'cleaned_name': data_item_name.replace(param_reminder, '')}
-                    if not _item in output[param_reminder]:
-                        output[param_reminder].append(_item)
-        return output
-
-    @staticmethod
-    def find_in_list(lst, key_name, search_in_values=True):
-        """ Returns the element of the list which has the given key_name in it """
-        for e in lst:
-            if key_name in e:
-                return e['value']
-            if search_in_values:
-                for _key, _value in e.items():
-                    if _value == key_name:
-                        return e['value']
-
     def create(self, request):
         request_url_pattern = 'request_url'
         request_method_pattern = 'request_method'
@@ -284,21 +295,35 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         # output
         output = {}
         # group the fields we received
-        groupped_fields = self.group_params(request.data, request.FILES,
-                                            [request_url_pattern, request_method_pattern, xml_file_to_upload_pattern])
+        groupped_fields = group_params(request.data, request.FILES,
+                                       [request_url_pattern, request_method_pattern, xml_file_to_upload_pattern])
         for group_name, group_data in groupped_fields.items():
-            sent_file = self.find_in_list(group_data, xml_file_to_upload_pattern)
-            request_url = self.find_in_list(group_data, request_url_pattern)
-            request_method = self.find_in_list(group_data, request_method_pattern)
+            sent_file = find_in_list(group_data, xml_file_to_upload_pattern)
+            request_url = find_in_list(group_data, request_url_pattern)
+            request_method = find_in_list(group_data, request_method_pattern)
             if not sent_file or not request_method or not request_url:
                 output[group_name] = {'error': 'one (or more) required params missing'}
                 continue
-            try:
-                result_for_this_group = self.process_one_set(
-                     sent_file=sent_file, request_url=request_url, request_method=request_method)
-                output[group_name] = result_for_this_group
-            except Exception, e:
-                output[group_name] = {'error': str(e)}
+            request_url = request_url[0]  # this value can only have 1 element
+            request_method = request_method[0]  # this value can only have 1 element
+            # there may be multiple files being uploaded at the same group - so create new sub_groups if needed
+            if len(sent_file) > 1:
+                group_name_postfix = '_file_%i'
+                for file_i, _sent_file in enumerate(sent_file):
+                    new_group_name = group_name + group_name_postfix % file_i
+                    try:
+                        result_for_this_group = self.process_one_set(
+                             sent_file=_sent_file, request_url=request_url, request_method=request_method)
+                        output[new_group_name] = result_for_this_group
+                    except Exception, e:
+                        output[new_group_name] = {'error': str(e)}
+            else:
+                try:
+                    result_for_this_group = self.process_one_set(
+                         sent_file=sent_file[0], request_url=request_url, request_method=request_method)
+                    output[group_name] = result_for_this_group
+                except Exception, e:
+                    output[group_name] = {'error': str(e)}
         return Response(output)
 
     def process_one_set(self, sent_file, request_url, request_method):
