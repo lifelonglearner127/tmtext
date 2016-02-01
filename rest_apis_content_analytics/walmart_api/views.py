@@ -301,7 +301,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
             sent_file = find_in_list(group_data, xml_file_to_upload_pattern)
             request_url = find_in_list(group_data, request_url_pattern)
             request_method = find_in_list(group_data, request_method_pattern)
-            if not sent_file or not request_method or not request_url:
+            if not any(sent_file) or not any(request_method) or not any(request_url):
                 output[group_name] = {'error': 'one (or more) required params missing'}
                 continue
             request_url = request_url[0]  # this value can only have 1 element
@@ -558,7 +558,7 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         for group_name, group_data in groupped_fields.items():
             request_url = find_in_list(group_data, request_url_pattern)
             request_feed_id = find_in_list(group_data, request_feed_id_pattern)
-            if not request_url or not request_feed_id:
+            if not any(request_url) or not any(request_feed_id):
                 output[group_name] = {'error': 'one (or more) required params missing'}
                 continue
             request_url = request_url[0]  # this value can only have 1 element
