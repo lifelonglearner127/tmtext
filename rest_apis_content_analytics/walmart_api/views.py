@@ -3,6 +3,7 @@ from pprint import pprint
 import datetime
 import os
 import os.path
+import tempfile
 
 from rest_framework.response import Response
 from subprocess import Popen, PIPE, STDOUT
@@ -63,6 +64,30 @@ def find_in_list(lst, key_name, search_in_values=True):
                     if e['value'] not in result:
                         result.append(e['value'])
     return result
+
+
+def merge_xml_files_into_one(*files):
+    """ See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=6198 """
+    output_file_template = """
+<SupplierProductFeed xmlns="http://walmart.com/suppliers/">
+    <version>1.4.1</version>
+%s
+</SupplierProductFeed>
+"""
+    output_file = tempfile.NamedTemporaryFile('wb', suffix='.xml', delete=False)
+    _sub_templates = ""
+    for f in files:
+        file_cont = f.read()
+        pos1 = file_cont.find('<SupplierProduct>')
+        pos2 = file_cont.find('</SupplierProduct>') + len('</SupplierProduct>')
+        if pos1 == -1 or pos2 == -1:
+            print('Invalid XML file content - could not find "SupplierProduct" opening or closing tag')
+            continue
+        _sub_templates += ' '*4 + file_cont[pos1:pos2].strip() + '\n'
+    output_file.seek(0)
+    output_file.write((output_file_template % _sub_templates.strip('\n')).strip())
+    output_file.close()
+    return output_file.name
 
 
 class ErrorResponse(object):
@@ -297,33 +322,60 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         # group the fields we received
         groupped_fields = group_params(request.data, request.FILES,
                                        [request_url_pattern, request_method_pattern, xml_file_to_upload_pattern])
-        for group_name, group_data in groupped_fields.items():
-            sent_file = find_in_list(group_data, xml_file_to_upload_pattern)
-            request_url = find_in_list(group_data, request_url_pattern)
-            request_method = find_in_list(group_data, request_method_pattern)
-            if not any(sent_file) or not any(request_method) or not any(request_url):
-                output[group_name] = {'error': 'one (or more) required params missing'}
-                continue
-            request_url = request_url[0]  # this value can only have 1 element
-            request_method = request_method[0]  # this value can only have 1 element
-            # there may be multiple files being uploaded at the same group - so create new sub_groups if needed
-            if len(sent_file) > 1:
-                group_name_postfix = '_file_%i'
-                for file_i, _sent_file in enumerate(sent_file):
-                    new_group_name = group_name + group_name_postfix % file_i
-                    try:
-                        result_for_this_group = self.process_one_set(
-                             sent_file=_sent_file, request_url=request_url, request_method=request_method)
-                        output[new_group_name] = result_for_this_group
-                    except Exception, e:
-                        output[new_group_name] = {'error': str(e)}
-            else:
+        # check if we need to merge all the uploaded files into one
+        if request.POST.get('submit_as_one_xml_file', None):
+            # this option ("submit_as_one_xml_file") merges all the selected files of each group into a single file
+            groupped_fields = group_params(request.data, request.FILES,
+                                           [request_url_pattern, request_method_pattern, xml_file_to_upload_pattern])
+            print('Submitting as a single XML file')
+            for group_name, group_data in groupped_fields.items():
+                sent_file = find_in_list(group_data, xml_file_to_upload_pattern)
+                request_url = find_in_list(group_data, request_url_pattern)
+                request_method = find_in_list(group_data, request_method_pattern)
+                if not any(sent_file) or not any(request_method) or not any(request_url):
+                    output[group_name] = {'error': 'one (or more) required params missing'}
+                    continue
+                request_url = request_url[0]  # this value can only have 1 element
+                request_method = request_method[0]  # this value can only have 1 element
+                # there may be multiple files being uploaded at the same group - so create new sub_groups if needed
+                merged_file = merge_xml_files_into_one(*sent_file)
+                print('Merged files into one: %s' % merged_file)
+                merged_file = open(merged_file, 'r')
                 try:
                     result_for_this_group = self.process_one_set(
-                         sent_file=sent_file[0], request_url=request_url, request_method=request_method)
+                         sent_file=merged_file, request_url=request_url, request_method=request_method)
                     output[group_name] = result_for_this_group
                 except Exception, e:
                     output[group_name] = {'error': str(e)}
+        else:
+            print('Submitting as a bunch of files')
+            for group_name, group_data in groupped_fields.items():
+                sent_file = find_in_list(group_data, xml_file_to_upload_pattern)
+                request_url = find_in_list(group_data, request_url_pattern)
+                request_method = find_in_list(group_data, request_method_pattern)
+                if not any(sent_file) or not any(request_method) or not any(request_url):
+                    output[group_name] = {'error': 'one (or more) required params missing'}
+                    continue
+                request_url = request_url[0]  # this value can only have 1 element
+                request_method = request_method[0]  # this value can only have 1 element
+                # there may be multiple files being uploaded at the same group - so create new sub_groups if needed
+                if len(sent_file) > 1:
+                    group_name_postfix = '_file_%i'
+                    for file_i, _sent_file in enumerate(sent_file):
+                        new_group_name = group_name + group_name_postfix % file_i
+                        try:
+                            result_for_this_group = self.process_one_set(
+                                 sent_file=_sent_file, request_url=request_url, request_method=request_method)
+                            output[new_group_name] = result_for_this_group
+                        except Exception, e:
+                            output[new_group_name] = {'error': str(e)}
+                else:
+                    try:
+                        result_for_this_group = self.process_one_set(
+                             sent_file=sent_file[0], request_url=request_url, request_method=request_method)
+                        output[group_name] = result_for_this_group
+                    except Exception, e:
+                        output[group_name] = {'error': str(e)}
         return Response(output)
 
     def process_one_set(self, sent_file, request_url, request_method):
