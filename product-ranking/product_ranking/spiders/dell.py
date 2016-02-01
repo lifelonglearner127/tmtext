@@ -24,7 +24,7 @@ socket.setdefaulttimeout(60)
 
 def _init_webdriver():
     from selenium import webdriver
-    driver = webdriver.PhantomJS()
+    driver = webdriver.Firefox()
     driver.set_window_size(1280, 1024)
     driver.set_page_load_timeout(60)
     driver.set_script_timeout(60)
@@ -144,7 +144,7 @@ class DellProductSpider(BaseProductsSpider):
     def _related_products(self, response):
         results = []
         rps = response.xpath('//*[contains(@class, "psItemDescription")]//'
-                            'div[contains(@class, "psTeaser")]//a[contains(@href, "productdetail.aspx")]')
+                             'div[contains(@class, "psTeaser")]//a[contains(@href, "productdetail.aspx")]')
         for rp in rps:
             results.append(RelatedProduct(rp.xpath('text()').extract()[0].strip(),
                                           rp.xpath('@href').extract()[0].strip()))  # TODO: check if it's a valid format
@@ -152,28 +152,25 @@ class DellProductSpider(BaseProductsSpider):
         return results
 
     def parse_buyer_reviews(self, response):
+        product = response.meta['product']
         buyer_reviews_per_page = self.br.parse_buyer_reviews_per_page(response)
-        #import pdb; pdb.set_trace()
         pass
         # TODO!
 
-    def _parse_stock_status(self, response, product):
+    def _get_stock_status(self, response, product):
         oos_element = response.xpath(
             '//a[contains(@class, "smallBlueBodyText")]'
             '[contains(@href, "makeWin")]//text()').extract()
-        print '*'*20, oos_element
         if oos_element:
             oos_element = oos_element[0].lower()
-            import pdb; pdb.set_trace()
             if ('temporarily out of stock' in oos_element
                     or 'pre-order' in oos_element):
                 product['is_out_of_stock'] = True
-                yield product
-                return
+                return product
             if 'limited supply available' in oos_element:
                 product['is_out_of_stock'] = False
                 product['limited_stock'] = LimitedStock(is_limited=True, items_left=-1)
-                yield product
+                return product
 
     def parse_product(self, response):
         prod = response.meta.get('product', SiteProductItem())
@@ -193,15 +190,16 @@ class DellProductSpider(BaseProductsSpider):
         prod['brand'] = DellProductSpider._parse_brand(response)
         prod['related_products'] = self._related_products(response)
 
-        self._parse_stock_status(response, prod)  # this should be OOS field
+        yield self._get_stock_status(response, prod)  # this should be OOS field
 
         meta = {}
         meta['product'] = prod
         yield Request(
-            url=self.REVIEW_URL.format(product_id='inspiron-15-5558-laptop'),
+            url=self.REVIEW_URL.format(product_id='inspiron-15-7568-laptop'),  # TODO
             dont_filter=True,
             callback=self.parse_buyer_reviews,
             meta=meta
         )
+        import pdb; pdb.set_trace()
 
         yield prod
