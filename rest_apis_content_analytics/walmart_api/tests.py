@@ -84,9 +84,9 @@ class RestAPIsTests(StaticLiveServerTestCase):
         result = session.post(self.live_server_url+'/validate_walmart_product_xml_file/',
                               files=files2post, verify=False)
         result_json = json.loads(result.text)
-        self.assertIn('success', result_json['file_1'])
-        self.assertIn('error', result_json['file_0'])
-        self.assertIn('This element is not expected', result_json['file_0']['error'])
+        self.assertIn('success', result_json['Verified Furniture Sample Product XML.xml'])
+        self.assertIn('error', result_json['SupplierProductFeed.xsd.xml'])
+        self.assertIn('This element is not expected', result_json['SupplierProductFeed.xsd.xml']['error'])
 
     def test_validate_walmart_product_xml_file(self):
         self._test_validate_walmart_product_xml_file_browser(self.xml_file2)
