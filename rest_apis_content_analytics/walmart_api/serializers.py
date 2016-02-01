@@ -8,6 +8,7 @@ class WalmartApiItemsWithXmlFileRequestSerializer(serializers.Serializer):
         choices=["POST"])
     xml_file_to_upload = serializers.FileField(style={'template': 'multiple_file_field.html'})
 
+    """ There can be also the code below (our backend supports this):
     request_url_2 = serializers.ChoiceField(
         choices=["https://marketplace.walmartapis.com/v2/feeds?feedType=item"])
     request_method_2 = serializers.ChoiceField(
@@ -19,6 +20,7 @@ class WalmartApiItemsWithXmlFileRequestSerializer(serializers.Serializer):
     request_method_3 = serializers.ChoiceField(
         choices=["POST"])
     xml_file_to_upload_3 = serializers.FileField(style={'template': 'multiple_file_field.html'})
+    """
 
 
 class WalmartApiItemsWithXmlTextRequestSerializer(serializers.Serializer):
