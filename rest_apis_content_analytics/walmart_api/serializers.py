@@ -7,7 +7,7 @@ class WalmartApiItemsWithXmlFileRequestSerializer(serializers.Serializer):
     request_method = serializers.ChoiceField(
         choices=["POST"])
     xml_file_to_upload = serializers.FileField(style={'template': 'multiple_file_field.html'})
-    submit_as_one_xml_file = serializers.BooleanField(initial=True)
+    #submit_as_one_xml_file = serializers.BooleanField(initial=True)
 
     """ There can be also the code below (our backend supports this):
     request_url_2 = serializers.ChoiceField(
