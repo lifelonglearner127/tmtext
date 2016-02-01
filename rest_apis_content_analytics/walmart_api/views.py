@@ -654,10 +654,22 @@ class ValidateWalmartProductXmlFileViewSet(viewsets.ViewSet):
 
         # TODO: it does not work if the content-type is application/x-www-form-urlencoded', is this correct?
         results = {}
-        for rf_name, rf_content in request_files.items():
-            rf_content = rf_content.read()
-            xml_content_to_validate = rf_content.decode("utf-8").encode("utf-8")
-            results[rf_name] = validate_walmart_product_xml_against_xsd(xml_content_to_validate)
+        for rf_key in request_files.keys():
+            rf_values = request.FILES.getlist(rf_key)
+            if not rf_values:
+                return ErrorResponse(error_type='', msg='file is missing').to_response()
+            if len(rf_values) == 1:
+                # single-file upload
+                rf_content = rf_values[0].read()
+                xml_content_to_validate = rf_content.decode("utf-8").encode("utf-8")
+                results[rf_values[0].name] = validate_walmart_product_xml_against_xsd(xml_content_to_validate)
+            else:
+                # multi-file upload
+                for i, file_ in enumerate(rf_values):
+                    rf_content = file_.read()
+                    xml_content_to_validate = rf_content.decode("utf-8").encode("utf-8")
+                    results[file_.name] = validate_walmart_product_xml_against_xsd(xml_content_to_validate)
+
         return Response(results)
 
     def update(self, request, pk=None):
