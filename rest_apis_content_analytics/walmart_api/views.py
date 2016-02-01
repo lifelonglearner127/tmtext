@@ -502,6 +502,16 @@ class ItemsUpdateWithXmlTextByWalmartApiViewSet(viewsets.ViewSet):
 class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
+    Pay attention to the field names: if you send multiple groups, name them like this:
+    <br/>
+    <pre>
+    {
+      "request_url_1": "http://some_url_1", "feed_id_1": "abc123",
+      "request_url_2": "http://some_url_2", "feed_id_2": "abc123",
+      "request_url_3": "http://some_url_3", "feed_id_3": "abc123",
+      ...
+    }
+    </pre>
     """
     serializer_class = WalmartApiFeedRequestSerializer
 
@@ -540,32 +550,48 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         return walmart_api_signature
 
     def create(self, request):
-        try:
-            request_data = request.DATA
+        output = {}
+        request_url_pattern = 'request_url'
+        request_feed_id_pattern = "feed_id"
+        groupped_fields = group_params(request.POST, request.FILES,
+                                       [request_url_pattern, request_feed_id_pattern])
+        for group_name, group_data in groupped_fields.items():
+            request_url = find_in_list(group_data, request_url_pattern)
+            request_feed_id = find_in_list(group_data, request_feed_id_pattern)
+            if not request_url or not request_feed_id:
+                output[group_name] = {'error': 'one (or more) required params missing'}
+                continue
+            request_url = request_url[0]  # this value can only have 1 element
+            request_feed_id = request_feed_id[0]  # this value can only have 1 element
+            try:
+                result_for_group = self.process_one_set(request_url=request_url, request_feed_id=request_feed_id)
+            except Exception as e:
+                output[group_name] = {'error': str(e)}
+                continue
+            output[group_name] = result_for_group
+        return Response(output)
 
-            walmart_api_signature = self.generate_walmart_api_signature('https://marketplace.walmartapis.com/v2/feeds/{0}?includeDetails=true'.format(request_data['feed_id']),
-                                                                        self.walmart_consumer_id,
-                                                                        self.walmart_private_key,
-                                                                        "GET",
-                                                                        "signature.txt")
+    def process_one_set(self, request_url, request_feed_id):
+        walmart_api_signature = self.generate_walmart_api_signature(
+            request_url.format(feedId=request_feed_id),
+            self.walmart_consumer_id,
+            self.walmart_private_key,
+            "GET",
+            "signature.txt")
 
-            response = unirest.get('https://marketplace.walmartapis.com/v2/feeds/{0}?includeDetails=true'.format(request_data['feed_id']),
-                headers={
-                    "Accept": "application/json",
-                    "WM_CONSUMER.ID": self.walmart_consumer_id,
-                    "WM_SVC.NAME": self.walmart_svc_name,
-                    "WM_QOS.CORRELATION_ID": self.walmart_qos_correlation_id,
-                    "WM_SVC.VERSION": self.walmart_version,
-                    "WM_SVC.ENV": self.walmart_environment,
-                    "WM_SEC.AUTH_SIGNATURE": walmart_api_signature["signature"],
-                    "WM_SEC.TIMESTAMP": int(walmart_api_signature["timestamp"])
-                }
-            )
-            return Response(response.body)
-
-        except Exception, e:
-            print e
-            return Response({'data': "Failed to invoke Walmart API - invalid request data"})
+        response = unirest.get(request_url.format(feedId=request_feed_id),
+            headers={
+                "Accept": "application/json",
+                "WM_CONSUMER.ID": self.walmart_consumer_id,
+                "WM_SVC.NAME": self.walmart_svc_name,
+                "WM_QOS.CORRELATION_ID": self.walmart_qos_correlation_id,
+                "WM_SVC.VERSION": self.walmart_version,
+                "WM_SVC.ENV": self.walmart_environment,
+                "WM_SEC.AUTH_SIGNATURE": walmart_api_signature["signature"],
+                "WM_SEC.TIMESTAMP": int(walmart_api_signature["timestamp"])
+            }
+        )
+        return response.body
 
     def update(self, request, pk=None):
         pass

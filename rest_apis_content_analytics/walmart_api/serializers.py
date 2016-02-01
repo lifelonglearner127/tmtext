@@ -36,6 +36,14 @@ class WalmartApiFeedRequestSerializer(serializers.Serializer):
         choices=["https://marketplace.walmartapis.com/v2/feeds/{feedId}?includeDetails=true"])
     feed_id = serializers.CharField()
 
+    request_url_2 = serializers.ChoiceField(
+        choices=["https://marketplace.walmartapis.com/v2/feeds/{feedId}?includeDetails=true"])
+    feed_id_2 = serializers.CharField()
+
+    request_url_3 = serializers.ChoiceField(
+        choices=["https://marketplace.walmartapis.com/v2/feeds/{feedId}?includeDetails=true"])
+    feed_id_3 = serializers.CharField()
+
 
 class WalmartApiValidateXmlTextRequestSerializer(serializers.Serializer):
     xml_content_to_validate = serializers.CharField(style={'base_template': 'textarea.html'})
