@@ -3,7 +3,10 @@ from rest_framework import routers
 from rest_framework.urlpatterns import format_suffix_patterns
 from image_duplication.views import CompareTwoImageViewSet, ClassifyImagesBySimilarity, FindSimilarityInImageList
 from walmart_developer_accounts.views import WalmartAccountViewSet
-from walmart_api.views import InvokeWalmartApiViewSet, ItemsUpdateWithXmlFileByWalmartApiViewSet, ItemsUpdateWithXmlTextByWalmartApiViewSet, CheckFeedStatusByWalmartApiViewSet, ValidateWalmartProductXmlTextViewSet, ValidateWalmartProductXmlFileViewSet
+from walmart_api.views import (InvokeWalmartApiViewSet, ItemsUpdateWithXmlFileByWalmartApiViewSet,
+                               ItemsUpdateWithXmlTextByWalmartApiViewSet, CheckFeedStatusByWalmartApiViewSet,
+                               ValidateWalmartProductXmlTextViewSet, ValidateWalmartProductXmlFileViewSet,
+                               FeedIDRedirectView)
 from nutrition_info_images.views import ClassifyTextImagesByNutritionInfoViewSet
 
 
@@ -19,6 +22,10 @@ urlpatterns = format_suffix_patterns([
         ValidateWalmartProductXmlFileViewSet.as_view({'get': 'list', 'post': 'create'}),
         name='validate_walmart_product_xml_file'),
 ])
+
+urlpatterns += [
+    url(r'^feed-redirect/(?P<feed_id>[A-Za-z0-9\-]+)', FeedIDRedirectView.as_view(), name='feed_redirect')
+]
 
 router = routers.SimpleRouter()
 router.register(r'comparetwoimages', CompareTwoImageViewSet, 'comparetwoimages')

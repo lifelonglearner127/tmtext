@@ -5,6 +5,9 @@ import os
 import os.path
 import tempfile
 
+from django.views.generic import View as DjangoView
+from django.http import HttpResponse
+from django.shortcuts import render_to_response
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from subprocess import Popen, PIPE, STDOUT
@@ -279,6 +282,9 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
     walmart_environment = "Walmart Marketplace"
     walmart_version = "2nd"
     walmart_qos_correlation_id = "123456abcdef"
+
+    def get_template_names(self, *args, **kwargs):
+        import pdb; pdb.set_trace()
 
     def list(self, request):
         if os.path.isfile(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt"):
@@ -756,3 +762,9 @@ class ValidateWalmartProductXmlFileViewSet(viewsets.ViewSet):
 
     def destroy(self, request, pk=None):
         return Response({'data': 'OK'})
+
+
+class FeedIDRedirectView(DjangoView):
+    def get(self, request, *args, **kwargs):
+        return render_to_response(template_name='redirect_to_feed_check.html',
+                                  context={'feed_id': kwargs.get('feed_id', None)})

@@ -25,6 +25,27 @@
     {% endblock %}
 
   {% endblock %}
+
+  <style>
+      .prettyprint_replaced_link {border-bottom:1px dashed;}
+  </style>
+
+  <script type="text/javascript">
+      function linkify(inputText) {
+          // feed ID example: 5e1bc52a-a9f8-4114-9f50-23d567e02f4d
+          var replacedText, replacePattern1;
+          replacePattern1 = /([0-9a-zA-Z]{5,10}\-[0-9a-zA-Z]{2,8}\-[0-9a-zA-Z]{2,8}\-[0-9a-zA-Z]{2,8}\-[0-9a-zA-Z]{8,20})/gim;
+          replacedText = inputText.replace(
+              replacePattern1,
+              '<a href="/feed-redirect/$1" target="_blank" class="prettyprint_replaced_link">$1</a>'
+          );
+          return replacedText;
+      }
+      document.addEventListener("DOMContentLoaded", function() {
+          var response_block = $('.response-info .prettyprint');
+          response_block[0].innerHTML = linkify(response_block[0].innerHTML);
+      });
+  </script>
 </head>
 
 {% block body %}
