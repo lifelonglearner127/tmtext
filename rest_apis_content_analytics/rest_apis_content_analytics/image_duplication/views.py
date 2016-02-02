@@ -4,7 +4,6 @@ import cv2
 import urllib
 import cStringIO
 import copy
-import sys
 import traceback
 
 from PIL import Image
