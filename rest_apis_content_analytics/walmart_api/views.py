@@ -6,6 +6,7 @@ import os.path
 import tempfile
 
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 from subprocess import Popen, PIPE, STDOUT
 from rest_framework import viewsets
 from walmart_api.serializers import (WalmartApiFeedRequestSerializer, WalmartApiItemsWithXmlFileRequestSerializer,
@@ -130,6 +131,7 @@ class InvokeWalmartApiViewSet(viewsets.ViewSet):
     API endpoint that allows groups to be viewed or edited.
     """
     serializer_class = WalmartApiItemsWithXmlFileRequestSerializer
+    parser_classes = (FormParser, MultiPartParser,)
 
     """
     Walmart API credential info
@@ -265,6 +267,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
     </pre>
     """
     serializer_class = WalmartApiItemsWithXmlFileRequestSerializer
+    parser_classes = (FormParser, MultiPartParser,)
 
     """
     Walmart API credential info
@@ -585,6 +588,7 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
     </pre>
     """
     serializer_class = WalmartApiFeedRequestSerializer
+    parser_classes = (FormParser, MultiPartParser,)
 
     """
     Walmart API credential info
@@ -706,6 +710,7 @@ class ValidateWalmartProductXmlFileViewSet(viewsets.ViewSet):
     API endpoint that allows groups to be viewed or edited.
     """
     serializer_class = WalmartApiValidateXmlFileRequestSerializer
+    parser_classes = (FormParser, MultiPartParser,)
 
     def list(self, request):
         return Response({'data': 'OK'})
