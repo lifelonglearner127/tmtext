@@ -29,7 +29,7 @@ class DockersScraper(Scraper):
         self.buy_stack_json = None
         # whether product has any webcollage media
         self.review_json = None
-        self.review_list = None
+        self.rev_list = None
         self.is_review_checked = False
         self.dk = DockersVariants()
 
@@ -267,6 +267,11 @@ class DockersScraper(Scraper):
                 return i + 1
 
     def _reviews(self):
+        if self.is_review_checked:
+            return self.rev_list
+
+        self.is_review_checked = True
+
         h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()
         a = requests.adapters.HTTPAdapter(max_retries=3)
@@ -291,8 +296,12 @@ class DockersScraper(Scraper):
         real_count = []
         real_count += re.findall(r'<div class=\\"BVRRHeaderPagingControls\\">'
                                  r'SHOWING \d+-\d+ OF (\d+)', contents)
-        review_count = int(real_count[0])
-        self.glob_review_count = int(real_count[0]) # for transfer to another method
+
+        review_count = self.glob_review_count = 0
+
+        if real_count:
+            review_count = int(real_count[0])
+            self.glob_review_count = int(real_count[0]) # for transfer to another method
 
         if review_count > 8:
             for index, i in enumerate(xrange(9, review_count + 1, 30)):
