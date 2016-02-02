@@ -1900,7 +1900,7 @@ class WalmartScraper(Scraper):
             image_dimensions = []
 
             for item in pinfo_dict['imageAssets']:
-                if item["assetType"] == "VIDEO":
+                if "assetType" in item and item["assetType"].lower() == "video":
                     continue
 
                 hero_image_url = item.get('versions', {}).get('hero', None)
