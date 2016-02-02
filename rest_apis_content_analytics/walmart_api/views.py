@@ -313,6 +313,14 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
 
         return walmart_api_signature
 
+    @staticmethod
+    def _group_of_files_contain_invalid_xml(*files):
+        for file_ in files:
+            validation_results = validate_walmart_product_xml_against_xsd(file_.read())
+            file_.seek(0)
+            if "error" in validation_results:
+                return file_.name, validation_results
+
     def create(self, request):
         request_url_pattern = 'request_url'
         request_method_pattern = 'request_method'
@@ -338,12 +346,19 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                 request_url = request_url[0]  # this value can only have 1 element
                 request_method = request_method[0]  # this value can only have 1 element
                 # there may be multiple files being uploaded at the same group - so create new sub_groups if needed
+                invalid_files = ItemsUpdateWithXmlFileByWalmartApiViewSet._group_of_files_contain_invalid_xml(*sent_file)
+                if invalid_files:
+                    output[group_name] = {}
+                    output[group_name][invalid_files[0]] = invalid_files[1]
+                    continue
+
                 merged_file = merge_xml_files_into_one(*sent_file)
                 print('Merged files into one: %s' % merged_file)
                 merged_file = open(merged_file, 'r')
                 try:
                     result_for_this_group = self.process_one_set(
-                         sent_file=merged_file, request_url=request_url, request_method=request_method)
+                         sent_file=merged_file, request_url=request_url, request_method=request_method,
+                         do_not_validate_xml=True)
                     output[group_name] = result_for_this_group
                 except Exception, e:
                     output[group_name] = {'error': str(e)}
@@ -378,7 +393,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                         output[group_name] = {'error': str(e)}
         return Response(output)
 
-    def process_one_set(self, sent_file, request_url, request_method):
+    def process_one_set(self, sent_file, request_url, request_method, do_not_validate_xml=False):
         with open(os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml", "wb") as upload_file:
             xml_data_by_list = sent_file.read()
             xml_data_by_list = xml_data_by_list.splitlines()
@@ -392,7 +407,11 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         if not upc:
             return {'error': 'could not find <productId> element'}
         upc = upc[0]
-        validation_results = validate_walmart_product_xml_against_xsd(product_xml_text)
+        # we don't use validation against XSD because it fails - instead,
+        #  we assume we have checked each sub-product already
+        validation_results = 'okay'
+        if not do_not_validate_xml:
+            validation_results = validate_walmart_product_xml_against_xsd(product_xml_text)
 
         if "error" in validation_results:
             print validation_results
