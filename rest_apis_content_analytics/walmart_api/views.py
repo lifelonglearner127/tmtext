@@ -1,14 +1,34 @@
 from rest_framework import viewsets
-from walmart_api.serializers import WalmartApiFeedRequestSerializer, WalmartApiItemsWithXmlFileRequestSerializer, WalmartApiItemsWithXmlTextRequestSerializer, WalmartApiValidateXmlTextRequestSerializer, WalmartApiValidateXmlFileRequestSerializer
+from walmart_api.serializers import \
+    WalmartApiFeedRequestSerializer, \
+    WalmartApiItemsWithXmlFileRequestSerializer, \
+    WalmartApiItemsWithXmlTextRequestSerializer, \
+    WalmartApiValidateXmlTextRequestSerializer, \
+    WalmartApiValidateXmlFileRequestSerializer, \
+    WalmartDetectDuplicateContentRequestSerializer
 import re
+import urllib
+import json
+import requests
 from rest_framework.response import Response
 from subprocess import Popen, PIPE, STDOUT
 from lxml import etree
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
 import datetime
 import xmltodict
 import os
 import os.path
 import unirest
+
+
+def remove_duplication_keeping_order_in_list(seq):
+    if seq:
+        seen = set()
+        seen_add = seen.add
+        return [x for x in seq if not (x in seen or seen_add(x))]
+
+    return None
 
 
 def validate_walmart_product_xml_against_xsd(product_xml_string):
@@ -510,6 +530,48 @@ class ValidateWalmartProductXmlFileViewSet(viewsets.ViewSet):
         xml_content_to_validate = xml_content_to_validate.decode("utf-8").encode("utf-8")
 
         return Response(validate_walmart_product_xml_against_xsd(xml_content_to_validate))
+
+    def update(self, request, pk=None):
+        pass
+
+    def partial_update(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+    def destroy(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+
+class DetectDuplicateContent(viewsets.ViewSet):
+    """
+    API endpoint that allows groups to be viewed or edited.
+    """
+    serializer_class = WalmartDetectDuplicateContentRequestSerializer
+
+    def list(self, request):
+        return Response({'data': 'OK'})
+
+    def retrieve(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+    def create(self, request):
+        serializer = self.serializer_class(data=request.DATA)
+        urls = serializer.data["urls"]
+        driver = webdriver.PhantomJS()
+        driver.set_window_size(1440, 900)
+
+        urls = remove_duplication_keeping_order_in_list(urls)
+
+        url_duplication_dict = {}
+
+        for url in urls:
+            try:
+                product_json = json.loads(requests.get("http://chscraper.contentanalyticsinc.com/get_data?url={0}".format(urllib.quote(url))))
+                url_duplication_dict[url] = product_json
+            except Exception, e:
+                print e
+                continue
+
+        return None
 
     def update(self, request, pk=None):
         pass

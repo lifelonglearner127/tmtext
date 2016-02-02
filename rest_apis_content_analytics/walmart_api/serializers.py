@@ -1,6 +1,10 @@
 from rest_framework import serializers
 
 
+class StringListField(serializers.ListField):
+    child = serializers.CharField()
+
+
 class WalmartApiItemsWithXmlFileRequestSerializer(serializers.Serializer):
     request_url = serializers.ChoiceField(
         choices=["https://marketplace.walmartapis.com/v2/feeds?feedType=item"])
@@ -29,3 +33,7 @@ class WalmartApiValidateXmlTextRequestSerializer(serializers.Serializer):
 
 class WalmartApiValidateXmlFileRequestSerializer(serializers.Serializer):
     xml_file_to_validate = serializers.FileField()
+
+
+class WalmartDetectDuplicateContentRequestSerializer(serializers.Serializer):
+    urls = StringListField()
