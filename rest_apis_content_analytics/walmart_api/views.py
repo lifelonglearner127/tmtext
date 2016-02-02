@@ -6,7 +6,7 @@ import os.path
 import tempfile
 
 from django.views.generic import View as DjangoView
-from django.http import HttpResponse
+from django.core.context_processors import csrf
 from django.shortcuts import render_to_response
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -766,5 +766,6 @@ class ValidateWalmartProductXmlFileViewSet(viewsets.ViewSet):
 
 class FeedIDRedirectView(DjangoView):
     def get(self, request, *args, **kwargs):
-        return render_to_response(template_name='redirect_to_feed_check.html',
-                                  context={'feed_id': kwargs.get('feed_id', None)})
+        context = {'feed_id': kwargs.get('feed_id', None)}
+        context.update(csrf(request))
+        return render_to_response(template_name='redirect_to_feed_check.html', context=context)
