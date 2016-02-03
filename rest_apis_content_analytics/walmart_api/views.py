@@ -570,7 +570,21 @@ class DetectDuplicateContentViewset(viewsets.ViewSet):
                 try:
                     product_json = json.loads(requests.get("http://chscraper.contentanalyticsinc.com/get_data?url={0}".format(urllib.quote(url))).text)
 
-                    search_product_content = html.fromstring("<html>" + product_json["product_info"]["description"] + "</html>")[0].text_content().split(".")[0].strip()
+                    short_description = long_description = ""
+
+                    if product_json["product_info"]["description"]:
+                        short_description = product_json["product_info"]["description"]
+
+                    if product_json["product_info"]["long_description"]:
+                        long_description = product_json["product_info"]["long_description"]
+
+                    description = short_description + " " + long_description
+                    description = html.fromstring("<html>" + description + "</html>")[0].text_content()
+
+                    if len(description.split(".")) > 1:
+                        search_product_content = (description.split(".")[0].strip() + ". " + description.split(".")[1].strip()).strip()
+                    else:
+                        search_product_content = description.strip()
 
                     input_tax_id = driver.find_element_by_xpath("//input[@title='Search']")
                     input_tax_id.clear()
