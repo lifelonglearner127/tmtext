@@ -575,21 +575,22 @@ class DetectDuplicateContentViewset(viewsets.ViewSet):
                     input_tax_id = driver.find_element_by_xpath("//input[@title='Search']")
                     input_tax_id.send_keys('"' + search_product_content + '"')
                     input_tax_id.send_keys(Keys.ENTER)
-
+                    time.sleep(3)
                     google_search_results_page_raw_text = driver.page_source
                     google_search_results_page_html_tree = html.fromstring(google_search_results_page_raw_text)
 
-                    retailer_block_list = google_search_results_page_html_tree.xpath("//div[@class='pslline']")
+                    seller_block = None
 
-                    if retailer_block_list:
-                        url_duplication_dict[url] = "Found duplicate content from other retailers."
-                    else:
+                    for left_block in google_search_results_page_html_tree.xpath("//ul[@class='sr__group']"):
+                        if left_block.xpath("./li[@class='sr__title sr__item']/text()")[0].strip().lower() == "seller":
+                            seller_block = left_block
+                            break
+
+                    if not seller_block or len((" ".join(seller_block.xpath(".//li[@class='sr__item']/a/text()"))).
+                                                       lower().replace("walmart", "").strip()) == 0:
                         url_duplication_dict[url] = "Unique content."
-                    '''
-                    for retailer in retailer_block_list:
-                        retailer_info_text = retailer.text_content().lower()
-                        url_duplication_dict[url] = retailer_info_text
-                    '''
+                    else:
+                        url_duplication_dict[url] = "Found duplicate content from other retailers."
                 except Exception, e:
                     print e
 #                    url_duplication_dict[url] = "Error occurred while checking."
