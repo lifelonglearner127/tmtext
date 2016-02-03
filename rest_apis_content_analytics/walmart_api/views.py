@@ -587,11 +587,21 @@ class DetectDuplicateContentViewset(viewsets.ViewSet):
                             seller_block = left_block
                             break
 
+                    seller_name_list = seller_block.xpath(".//li[@class='sr__item']//a/text()")
+                    seller_name_list = [seller for seller in seller_name_list if seller.lower() != "walmart"]
+
+                    '''
                     if not seller_block or len((" ".join(seller_block.xpath(".//li[@class='sr__item']/a/text()"))).
                                                        lower().replace("walmart", "").strip()) == 0:
                         url_duplication_dict[url] = "Unique content."
                     else:
-                        url_duplication_dict[url] = "Found duplicate content from other retailers."
+                        url_duplication_dict[url] = "Found duplicate content from other sellers."
+                    '''
+
+                    if not seller_name_list:
+                        url_duplication_dict[url] = "Unique content."
+                    else:
+                        url_duplication_dict[url] = "Found duplicate content from other sellers: ." + ", ".join(seller_name_list)
                 except Exception, e:
                     print e
 #                    url_duplication_dict[url] = "Error occurred while checking."
