@@ -1,4 +1,6 @@
 from __future__ import division, absolute_import, unicode_literals
+from collections import OrderedDict
+from itertools import product
 
 import os
 import json
@@ -8,7 +10,7 @@ import urlparse
 import socket
 import urlparse
 
-from scrapy import Request, Selector
+from scrapy import Request, Selector, FormRequest
 from scrapy.log import ERROR, WARNING
 
 from product_ranking.items import RelatedProduct, BuyerReviews
@@ -31,14 +33,22 @@ def _init_webdriver():
     driver.set_script_timeout(60)
     return driver
 
+is_empty = lambda x, y="": x[0] if x else y
+
 
 class DellProductSpider(BaseProductsSpider):
     name = 'dell_products'
     allowed_domains = ["dell.com"]
 
     SEARCH_URL = "http://pilot.search.dell.com/{search_term}"
-
     REVIEW_URL = "http://reviews.dell.com/2341_mg/{product_id}/reviews.htm?format=embedded"
+    VARIANTS_URL = "http://www.dell.com/api/configService.svc/postmoduleoverrides/json"
+    VARIANTS_DATA = {
+        'c': 'us', 'l': 'en', 's': 'dhs', 'cs': '19',
+        'moduleTemplate': 'products/ProductDetails/mag/config_popup_mag',
+        'modErrorTemplate': 'products/module_option_validation',
+        'resultType': 'SingleModule', 'productCode': 'undefined'
+    }
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         from scrapy.conf import settings
@@ -183,9 +193,13 @@ class DellProductSpider(BaseProductsSpider):
         prod['brand'] = DellProductSpider._parse_brand(response)
         prod['related_products'] = self._related_products(response)
         prod['description'] = self._parse_stock_status(response)  # this should be OOS field
-
-        meta = {}
-        meta['product'] = prod
+        is_links, variants = self._parse_variants(response)
+        print variants
+        if is_links:
+            yield variants.pop(0)
+        else:
+            cond_set_value(prod, 'variants', variants)
+        meta = {'product': prod}
         yield Request(
             url=self.REVIEW_URL.format(product_id='inspiron-15-5558-laptop'),
             dont_filter=True,
@@ -210,3 +224,103 @@ class DellProductSpider(BaseProductsSpider):
             url = qs['ct'][0]
             rel_prods.append(RelatedProduct(title=title, url=url))
         return {key_name: rel_prods}
+
+    def _collect_common_variants_data(self, response):
+        data = self.VARIANTS_DATA.copy()
+        _ = is_empty(response.xpath('//meta[@name="Country"]/@content').extract())
+        if _:
+            data['c'] = _
+        _ = is_empty(response.xpath('//meta[@name="Language"]/@content').extract())
+        if _:
+            data['l'] = _
+        _ = is_empty(response.xpath('//meta[@name="Segment"]/@content').extract())
+        if _:
+            data['s'] = _
+        _ = is_empty(response.xpath('//meta[@name="CustomerSet"]/@content').extract())
+        if _:
+            data['cs'] = _
+        _ = is_empty(response.xpath('//meta[@name="currentOcId"]/@content').extract())
+        if _:
+            data['oc'] = _
+            uniq_id = is_empty(response.xpath(
+                '//input[@value="%s"][contains(@id, "OrderCode")]/@id' % data['oc']).extract())
+        else:
+            self.log('No "OC" and/or "modId data found"', ERROR)
+            return None
+        return data
+
+    def _collect_specific_variants_data(self, variant, common_data):
+        data = common_data.copy()
+        oc = data.get('oc')
+        if not oc:
+            self.log('No OC data', ERROR)
+        uniq_id = is_empty(variant.xpath('//input[@value="%s"][contains(@id, "OrderCode")]/@id' % oc).extract())
+        uniq_id = uniq_id.replace('OrderCode', '')
+        mod_id = is_empty(variant.xpath('.//span[contains(@class,"spec~%s~")]/@class' % uniq_id).extract())
+        mod_id = mod_id.split('~')[-1]
+        data['modId'] = mod_id
+        data['uiParameters'] = 'mainModuleId=%s&uniqueId=%s' % (mod_id, uniq_id)
+        return data
+
+    def _collect_variants_from_dict(self, variants):
+        max_options = 4
+        _variants = OrderedDict()
+        keys = sorted(variants.keys()[:max_options])
+        for tmp in keys:
+            _variants[tmp] = variants[tmp]
+        options = product(*_variants.values()[:max_options])
+        data = []
+        for option in options:
+            tmp = {}
+            for i, key in enumerate(keys):
+                tmp[key] = option[i]
+            data.append(
+                dict(in_stock=None, price=None, selected=None, properties=tmp)
+            )
+        return data
+
+    def _parse_variant_data(self, response):
+        json_resp = json.loads(response.body_as_unicode())
+        html = json_resp['ModulesHtml']
+        html = Selector(text=html)
+        add_requests = response.meta.get('additional_requests')
+        variants = response.meta['variants']
+        cur_var = response.meta['cur_variant']
+        choices = html.css('.catContent .optDescription::text').extract()
+        variants[cur_var] = choices
+        if add_requests:
+            next_request = add_requests.pop(0)
+            return next_request
+        vs = self._collect_variants_from_dict(variants)
+        prod = response.meta['product']
+        prod['variants'] = vs
+        return prod
+
+    def _parse_variants(self, response):
+        variants_exist = bool(response.css('#Configurations').extract())
+        if variants_exist:
+            common_req_params = self._collect_common_variants_data(response)
+            variants_names = response.xpath('//div[contains(@class, "specContent")]')
+            data = {}
+            additional_requests = []
+            for v_n in variants_names:
+                k = is_empty(v_n.xpath('normalize-space(preceding-sibling::div[@class="specTitle"][1]/h5/text())').extract())
+                v = is_empty(v_n.xpath('span/text()').extract())
+                is_ajax = bool(v_n.xpath('div[@class="dropdown"]').extract())
+                if is_ajax:
+                    form_data = self._collect_specific_variants_data(v_n, common_req_params)
+                    meta = response.meta.copy()
+                    meta['variants'] = data
+                    meta['cur_variant'] = k
+                    meta['additional_requests'] = additional_requests
+                    additional_requests.append(
+                        FormRequest(self.VARIANTS_URL, callback=self._parse_variant_data,
+                                    formdata=form_data, meta=meta)
+                    )
+                else:
+                    data[k] = [v]
+            if additional_requests:
+                return True, additional_requests
+            else:
+                return False, data
+        return None, None
