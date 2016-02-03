@@ -587,6 +587,8 @@ class DetectDuplicateContentViewset(viewsets.ViewSet):
                             seller_block = left_block
                             break
 
+                    seller_name_list = None
+
                     if seller_block:
                         seller_name_list = seller_block.xpath(".//li[@class='sr__item']//a/text()")
                         seller_name_list = [seller for seller in seller_name_list if seller.lower() != "walmart"]
