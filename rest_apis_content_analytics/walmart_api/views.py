@@ -572,7 +572,7 @@ class DetectDuplicateContentViewset(viewsets.ViewSet):
 
                     search_product_content = html.fromstring("<html>" + product_json["product_info"]["description"] + "</html>")[0].text_content().split(".")[0].strip()
 
-                    input_tax_id = driver.find_element_by_xpath("//input[@id='gbqfq']")
+                    input_tax_id = driver.find_element_by_xpath("//input[@title='Search']")
                     input_tax_id.send_keys('"' + search_product_content + '"')
                     input_tax_id.send_keys(Keys.ENTER)
 
