@@ -4,8 +4,6 @@ import time
 import json
 import random
 import zipfile
-import codecs
-import csv
 import unidecode
 import string
 import redis
@@ -56,6 +54,7 @@ except ImportError:
 sys.path.insert(
     3, os.path.join(REPO_BASE_PATH, 'deploy', 'sqs_ranking_spiders'))
 from sqs_queue import SQS_Queue
+from libs import convert_json_to_csv
 from cache_layer import REDIS_HOST, REDIS_PORT, INSTANCES_COUNTER_REDIS_KEY, \
     TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET
 
@@ -432,43 +431,6 @@ def put_file_into_s3(bucket_name, fname,
                        "Check file path and amazon keys/permissions.")
 
 
-def convert_json_to_csv(filepath):
-    json_filepath = filepath + '.jl'
-    logger.info("Convert %s to .csv", json_filepath)
-    field_names = set()
-    items = []
-    with codecs.open(json_filepath, "r", "utf-8") as jsonfile:
-        for line in jsonfile:
-            item = json.loads(line.strip())
-            items.append(item)
-            fields = [name for name, val in item.items()]
-            field_names = field_names | set(fields)
-
-    csv.register_dialect(
-        'json',
-        delimiter=',',
-        doublequote=True,
-        quoting=csv.QUOTE_ALL)
-
-    csv_filepath = filepath + '.csv'
-
-    with open(csv_filepath, "w") as csv_out_file:
-        csv_out_file.write(codecs.BOM_UTF8)
-        writer = csv.writer(csv_out_file, 'json')
-        writer.writerow(list(field_names))
-        for item in items:
-            vals = []
-            for name in field_names:
-                val = item.get(name, '')
-                if name == 'description':
-                    val = val.replace("\n", '\\n')
-                if type(val) == type(unicode("")):
-                    val = val.encode('utf-8')
-                vals.append(val)
-            writer.writerow(vals)
-    return csv_filepath
-
-
 def dump_result_data_into_sqs(data_key, logs_key, csv_data_key,
                               queue_name, metadata):
     if TEST_MODE:
@@ -784,7 +746,7 @@ class ScrapyTask(object):
         global CONVERT_TO_CSV
         if CONVERT_TO_CSV:
             try:
-                csv_filepath = convert_json_to_csv(output_path)
+                csv_filepath = convert_json_to_csv(output_path, logger)
                 logger.info('Zip created at: %r.', csv_filepath)
                 csv_data_key = put_file_into_s3(
                     AMAZON_BUCKET_NAME, csv_filepath)

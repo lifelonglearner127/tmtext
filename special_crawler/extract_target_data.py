@@ -192,12 +192,6 @@ class TargetScraper(Scraper):
     def _swatches(self):
         return self.tv._swatches()
 
-    def _price_for_variants(self):
-        return self.tv._price_for_variants()
-
-    def _selected_variants(self):
-        return self.tv._selected_variants()
-
     def _long_description(self):
         long_desc_block = self.tree_html.xpath("//ul[starts-with(@class,'normal-list reduced-spacing-list')]")[0]
 
@@ -452,8 +446,7 @@ class TargetScraper(Scraper):
         return 0
 
     def _price(self):
-        price = self.tree_html.xpath("//span[@itemprop='price']//text()")[0].strip()
-        return price
+        return self.tree_html.xpath("//span[@itemprop='price']//text()")[0].strip()
 
     def _price_amount(self):
         price = self._price()

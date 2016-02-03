@@ -863,7 +863,7 @@ class WalmartScraper(Scraper):
                 category_name = category_name + sub_category_name + " > "
 
             category_name = category_name[:-3]
-            seller_ranking.append({"category": category_name, "ranking": int(ranking[1:])})
+            seller_ranking.append({"category": category_name, "ranking": int(ranking[1:].replace(",", ""))})
 
         if seller_ranking:
             return seller_ranking

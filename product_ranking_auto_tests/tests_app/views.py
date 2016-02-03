@@ -14,7 +14,7 @@ import settings
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..', '..', 'deploy',
                                 'sqs_ranking_spiders'))
-from scrapy_daemon import convert_json_to_csv
+from libs import convert_json_to_csv
 
 
 class AuthViewMixin(object):
