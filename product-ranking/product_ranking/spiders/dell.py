@@ -27,11 +27,12 @@ socket.setdefaulttimeout(60)
 
 def _init_webdriver():
     from selenium import webdriver
-    driver = webdriver.Firefox()
+    driver = webdriver.PhantomJS()
     driver.set_window_size(1280, 1024)
     driver.set_page_load_timeout(60)
     driver.set_script_timeout(60)
     return driver
+
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -89,7 +90,7 @@ class DellProductSpider(BaseProductsSpider):
             # scrape "quantity" products
             driver = _init_webdriver()
             driver.get(response.url)
-            time.sleep(3)  # let AJAX finish
+            time.sleep(6)  # let AJAX finish
             new_meta = response.meta.copy()
             # get all products we need (or till the "show more products" button exists)
             paging_button = '//button[contains(@id, "paging-button")]'
@@ -116,7 +117,7 @@ class DellProductSpider(BaseProductsSpider):
     @staticmethod
     def _parse_price(response):
         dell_price = response.xpath('//*[contains(text(), "Dell Price")]')
-        dell_price = re.search('\$(\d+\.\d+)', ''.join(dell_price.xpath('./..//text()').extract()))
+        dell_price = re.search('\$([\d,]+\.\d+)', ''.join(dell_price.xpath('./..//text()').extract()))
         if dell_price:
             dell_price = dell_price.group(1)
             price = Price(price=dell_price, priceCurrency='USD')
@@ -200,6 +201,7 @@ class DellProductSpider(BaseProductsSpider):
         prod['description'] = 'TODO'
         prod['brand'] = DellProductSpider._parse_brand(response)
         prod['related_products'] = self._related_products(response)
+        response.meta['product'] = prod
         is_links, variants = self._parse_variants(response)
         if is_links:
             yield variants.pop(0)
@@ -215,7 +217,6 @@ class DellProductSpider(BaseProductsSpider):
             callback=self.parse_buyer_reviews,
             meta=meta
         )
-        # import pdb; pdb.set_trace()
 
         yield prod
 
@@ -323,6 +324,7 @@ class DellProductSpider(BaseProductsSpider):
                     meta['variants'] = data
                     meta['cur_variant'] = k
                     meta['additional_requests'] = additional_requests
+                    meta['product'] = response.meta['product']
                     additional_requests.append(
                         FormRequest(self.VARIANTS_URL, callback=self._parse_variant_data,
                                     formdata=form_data, meta=meta)
