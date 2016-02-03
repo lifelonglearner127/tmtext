@@ -2,7 +2,13 @@ from django.conf.urls import url, include
 from rest_framework import routers
 from image_duplication.views import CompareTwoImageViewSet, ClassifyImagesBySimilarity, FindSimilarityInImageList
 from walmart_developer_accounts.views import WalmartAccountViewSet
-from walmart_api.views import InvokeWalmartApiViewSet, ItemsUpdateWithXmlFileByWalmartApiViewSet, ItemsUpdateWithXmlTextByWalmartApiViewSet, CheckFeedStatusByWalmartApiViewSet, ValidateWalmartProductXmlTextViewSet, ValidateWalmartProductXmlFileViewSet
+from walmart_api.views import InvokeWalmartApiViewSet, \
+    ItemsUpdateWithXmlFileByWalmartApiViewSet, \
+    ItemsUpdateWithXmlTextByWalmartApiViewSet, \
+    CheckFeedStatusByWalmartApiViewSet, \
+    ValidateWalmartProductXmlTextViewSet, \
+    ValidateWalmartProductXmlFileViewSet, \
+    DetectDuplicateContentViewset
 from nutrition_info_images.views import ClassifyTextImagesByNutritionInfoViewSet
 
 router = routers.SimpleRouter()
@@ -17,6 +23,7 @@ router.register(r'items_update_with_xml_text_by_walmart_api', ItemsUpdateWithXml
 router.register(r'check_feed_status_by_walmart_api', CheckFeedStatusByWalmartApiViewSet, 'check_feed_status_by_walmart_api')
 router.register(r'validate_walmart_product_xml_text', ValidateWalmartProductXmlTextViewSet, 'validate_walmart_product_xml_text')
 router.register(r'validate_walmart_product_xml_file', ValidateWalmartProductXmlFileViewSet, 'validate_walmart_product_xml_file')
+router.register(r'detect_duplicate_content', DetectDuplicateContentViewset, 'detect_duplicate_content')
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.

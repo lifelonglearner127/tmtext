@@ -12,7 +12,7 @@ import json
 import requests
 from rest_framework.response import Response
 from subprocess import Popen, PIPE, STDOUT
-from lxml import etree
+from lxml import etree, html
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import datetime
@@ -20,7 +20,7 @@ import xmltodict
 import os
 import os.path
 import unirest
-
+import time
 
 def remove_duplication_keeping_order_in_list(seq):
     if seq:
@@ -541,7 +541,7 @@ class ValidateWalmartProductXmlFileViewSet(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
 
-class DetectDuplicateContent(viewsets.ViewSet):
+class DetectDuplicateContentViewset(viewsets.ViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
     """
@@ -555,21 +555,50 @@ class DetectDuplicateContent(viewsets.ViewSet):
 
     def create(self, request):
         serializer = self.serializer_class(data=request.DATA)
-        urls = serializer.data["urls"]
-        driver = webdriver.PhantomJS()
-        driver.set_window_size(1440, 900)
 
-        urls = remove_duplication_keeping_order_in_list(urls)
+        if serializer.is_valid():
+            driver = webdriver.PhantomJS()
+            driver.set_window_size(1440, 900)
+            driver.get("https://www.google.com/shopping?hl=en")
 
-        url_duplication_dict = {}
+            urls = serializer.data["urls"]
+            urls = remove_duplication_keeping_order_in_list(urls)
 
-        for url in urls:
-            try:
-                product_json = json.loads(requests.get("http://chscraper.contentanalyticsinc.com/get_data?url={0}".format(urllib.quote(url))))
-                url_duplication_dict[url] = product_json
-            except Exception, e:
-                print e
-                continue
+            url_duplication_dict = {}
+
+            for url in urls:
+                try:
+                    product_json = json.loads(requests.get("http://chscraper.contentanalyticsinc.com/get_data?url={0}".format(urllib.quote(url))).text)
+
+                    search_product_content = html.fromstring("<html>" + product_json["product_info"]["description"] + "</html>")[0].text_content().split(".")[0].strip()
+
+                    input_tax_id = driver.find_element_by_xpath("//input[@id='gbqfq']")
+                    input_tax_id.send_keys('"' + search_product_content + '"')
+                    input_tax_id.send_keys(Keys.ENTER)
+
+                    google_search_results_page_raw_text = driver.page_source
+                    google_search_results_page_html_tree = html.fromstring(google_search_results_page_raw_text)
+
+                    retailer_block_list = google_search_results_page_html_tree.xpath("//div[@class='pslline']")
+
+                    if retailer_block_list:
+                        url_duplication_dict[url] = "Found duplicate content from other retailers."
+                    else:
+                        url_duplication_dict[url] = "Unique content."
+                    '''
+                    for retailer in retailer_block_list:
+                        retailer_info_text = retailer.text_content().lower()
+                        url_duplication_dict[url] = retailer_info_text
+                    '''
+                except Exception, e:
+                    print e
+                    url_duplication_dict[url] = "Error occurred while checking."
+                    continue
+
+            driver.close()
+            driver.quit()
+
+            return Response(url_duplication_dict)
 
         return None
 
