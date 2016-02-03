@@ -592,7 +592,8 @@ class DetectDuplicateContentViewset(viewsets.ViewSet):
                     '''
                 except Exception, e:
                     print e
-                    url_duplication_dict[url] = "Error occurred while checking."
+#                    url_duplication_dict[url] = "Error occurred while checking."
+                    url_duplication_dict[url] = str(e)
                     continue
 
             driver.close()
