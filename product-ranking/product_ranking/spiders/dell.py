@@ -1,14 +1,13 @@
 from __future__ import division, absolute_import, unicode_literals
-from collections import OrderedDict
-from itertools import product
 
-import os
-import json
+import hjson
 import re
 import time
-import urlparse
 import socket
 import urlparse
+from collections import OrderedDict
+from itertools import product
+from datetime import datetime
 
 from scrapy import Request, Selector, FormRequest
 from scrapy.log import ERROR, WARNING
@@ -38,7 +37,7 @@ is_empty = lambda x, y="": x[0] if x else y
 
 class DellProductSpider(BaseProductsSpider):
     name = 'dell_products'
-    allowed_domains = ["dell.com"]
+    allowed_domains = ["dell.com", "recs.richrelevance.com"]
 
     SEARCH_URL = "http://pilot.search.dell.com/{search_term}"
     REVIEW_URL = "http://reviews.dell.com/2341_mg/{product_id}/reviews.htm?format=embedded"
@@ -49,6 +48,21 @@ class DellProductSpider(BaseProductsSpider):
         'modErrorTemplate': 'products/module_option_validation',
         'resultType': 'SingleModule', 'productCode': 'undefined'
     }
+    # there are two types of product pages, each of them requires different related products processing
+    RELATED_PROD_URL_V1 = (
+        "http://recs.richrelevance.com/rrserver/p13n_generated.js?"
+        "pt=|item_page.mag_syspdpoc1|item_page.mag_syspdpoc2|item_page.mag_syspdpoc3|item_page.mag_syspdpoc4|item_page.mag_syspdpoc5&"
+        "a=usdhsa5d5af7012d61fd1&rid=us_19_en_dhs&sgs=|us_19_en_dhs:us_19_en_dhs&flv=15.0.0&"
+        "s=undefined{date}&n={n}&chi={chi}&ts={ts}&p={p}"
+    )
+    RELATED_PROD_URL_V2 = (
+        "http://recs.richrelevance.com/rrserver/p13n_generated.js?"
+        "pt=|item_page.storm_snp_pdp1|item_page.storm_snp_pdp2|item_page.storm_snp_pdp3|item_page.storm_snp_pdp4|item_page.storm_snp_pdp5&"
+        "sgs=|us_04_en_bsd:us_04_en_bsd&rid=us_04_en_bsd&flv=11.2.999&l=1&"
+        "u=ykOA15fokzi417dpJeveUF65A0NwWJeGhQ6pvWEfbCuYOurQKpNgzVVXCdsYKqf4&"
+        "s=ykOA15fokzi417dpJeveUF65A0NwWJeGhQ6pvWEfbCuYOurQKpNgzVVXCdsYKqf4{date}&"
+        "a=usbsda5d5af7012d61fd1&ts={ts}&p={p}"
+    )
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         from scrapy.conf import settings
@@ -204,12 +218,12 @@ class DellProductSpider(BaseProductsSpider):
         if is_links:
             yield variants.pop(0)
         else:
-            cond_set_value(prod, 'variants', variants)
+            cond_set_value(prod, 'variants', self._collect_variants_from_dict(variants))
 
         yield self._get_stock_status(response, prod)  # this should be OOS field
 
         meta = {'product': prod}
-        yield Request(
+        yield Request(  # reviews request
             url=self.REVIEW_URL.format(product_id='inspiron-15-7568-laptop'),  # TODO
             dont_filter=True,
             callback=self.parse_buyer_reviews,
@@ -217,23 +231,17 @@ class DellProductSpider(BaseProductsSpider):
         )
         # import pdb; pdb.set_trace()
 
-        yield prod
+        try:
+            r_url, related_data = self.RELATED_PROD_URL_V1, self._collect_related_products_data_v1(response)
+        except Exception:
+            r_url, related_data = self.RELATED_PROD_URL_V2, self._collect_related_products_data_v2(response)
+        yield Request(  # related products request
+            r_url.format(**related_data),
+            callback=self._parse_related_products,
+            meta=meta
+        )
 
-    def _parse_related_products(self, response):
-        # todo: extract rich relevance url and pass this method as callback
-        html = re.search(r"html:'(.+?)'\}\]\},", response.body_as_unicode())
-        html = Selector(text=html.group(1))
-        key_name = html.css('.rrStrat::text').extract()[0]
-        items = html.css('.rrRecs > ul > li')
-        rel_prods = []
-        for item in items:
-            title = item.css('span.rrFullName::text').extract()[0]
-            url = item.css('a.rrLinkUrl::attr(href)').extract()[0]
-            url = urlparse.urlparse(url)
-            qs = urlparse.parse_qs(url.query)
-            url = qs['ct'][0]
-            rel_prods.append(RelatedProduct(title=title, url=url))
-        return {key_name: rel_prods}
+        yield prod
 
     def _collect_common_variants_data(self, response):
         data = self.VARIANTS_DATA.copy()
@@ -252,10 +260,8 @@ class DellProductSpider(BaseProductsSpider):
         _ = is_empty(response.xpath('//meta[@name="currentOcId"]/@content').extract())
         if _:
             data['oc'] = _
-            uniq_id = is_empty(response.xpath(
-                '//input[@value="%s"][contains(@id, "OrderCode")]/@id' % data['oc']).extract())
         else:
-            self.log('No "OC" and/or "modId data found"', ERROR)
+            self.log('No "OC" and/or "modId data found" <%s>' % response.url, WARNING)
             return None
         return data
 
@@ -273,6 +279,8 @@ class DellProductSpider(BaseProductsSpider):
         return data
 
     def _collect_variants_from_dict(self, variants):
+        if not variants:
+            return None
         max_options = 4
         _variants = OrderedDict()
         keys = sorted(variants.keys()[:max_options])
@@ -290,7 +298,7 @@ class DellProductSpider(BaseProductsSpider):
         return data
 
     def _parse_variant_data(self, response):
-        json_resp = json.loads(response.body_as_unicode())
+        json_resp = hjson.loads(response.body_as_unicode())
         html = json_resp['ModulesHtml']
         html = Selector(text=html)
         add_requests = response.meta.get('additional_requests')
@@ -334,3 +342,45 @@ class DellProductSpider(BaseProductsSpider):
             else:
                 return False, data
         return None, None
+
+    def _collect_related_products_data_v1(self, response):
+        data = dict()
+        cur_date = datetime.now()
+        js_node = response.xpath('//div[@id="mbox_default"]/following-sibling::script[1]')
+        js_data = js_node.xpath('following-sibling::script[1]/text()').re('profile = (\{.*\})')
+        js_data = hjson.loads(js_data[0])
+        data['p'] = is_empty(response.css('meta[name=currentOcId]::attr(content)').extract())
+        data['date'] = cur_date.today().strftime('%Y%m%d')
+        data['ts'] = '%s000' % int(time.mktime(cur_date.timetuple()))
+        data['n'] = js_data['catid']
+        data['chi'] = is_empty(js_node.xpath('text()').re("'profile.catid=(.*?)'"))
+        return data
+
+    def _collect_related_products_data_v2(self, response):
+        data = dict()
+        js_data = response.xpath('normalize-space(/html/head/script[@type="text/javascript"][1]/text())').re('\{.*\}')
+        js_data = hjson.loads(js_data[0])
+        cur_date = datetime.now()
+        data['date'] = cur_date.today().strftime('%Y%m%d')
+        data['ts'] = '%s000' % int(time.mktime(cur_date.timetuple()))
+        data['p'] = js_data['CJ']['ORDERCODE'].lower()
+        return data
+
+    def _parse_related_products(self, response):
+        prod = response.meta['product']
+        html = re.search(r"html:'(.+?)'\}\]\},", response.body_as_unicode())
+        if not html:
+            return prod
+        html = Selector(text=html.group(1))
+        key_name = is_empty(html.css('.rrStrat::text').extract())
+        items = html.css('.rrRecs > ul > li')
+        rel_prods = []
+        for item in items:
+            title = is_empty(item.css('.rrItemName > a ::text').extract())
+            url = is_empty(item.css('a.rrLinkUrl::attr(href)').extract())
+            url = urlparse.urlparse(url)
+            qs = urlparse.parse_qs(url.query)
+            url = is_empty(qs['ct'])
+            rel_prods.append(RelatedProduct(title=title, url=url))
+        prod['related_products'] = {key_name: rel_prods}
+        return prod
