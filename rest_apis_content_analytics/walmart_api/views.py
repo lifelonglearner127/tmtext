@@ -300,9 +300,6 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
     walmart_version = "2nd"
     walmart_qos_correlation_id = "123456abcdef"
 
-    def get_template_names(self, *args, **kwargs):
-        import pdb; pdb.set_trace()
-
     def list(self, request):
         if os.path.isfile(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt"):
 
