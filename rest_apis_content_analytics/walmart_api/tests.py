@@ -21,6 +21,9 @@ class RestAPIsTests(StaticLiveServerTestCase):
     # TODO: browserless authentication
     reset_sequences = True
 
+    xml_file1 = os.path.join(CWD, 'walmart_product_xml_samples', 'SupplierProductFeed.xsd.xml')
+    xml_file2 = os.path.join(CWD, 'walmart_product_xml_samples', 'Verified Furniture Sample Product XML.xml')
+
     @classmethod
     def setUpClass(cls):
         super(RestAPIsTests, cls).setUpClass()
@@ -81,13 +84,32 @@ class RestAPIsTests(StaticLiveServerTestCase):
         result = session.post(self.live_server_url+'/validate_walmart_product_xml_file/',
                               files=files2post, verify=False)
         result_json = json.loads(result.text)
-        self.assertIn('success', result_json['file_1'])
-        self.assertIn('error', result_json['file_0'])
-        self.assertIn('This element is not expected', result_json['file_0']['error'])
+        self.assertIn('success', result_json['Verified Furniture Sample Product XML.xml'])
+        self.assertIn('error', result_json['SupplierProductFeed.xsd.xml'])
+        self.assertIn('This element is not expected', result_json['SupplierProductFeed.xsd.xml']['error'])
 
     def test_validate_walmart_product_xml_file(self):
-        xml_file1 = os.path.join(CWD, 'walmart_product_xml_samples', 'SupplierProductFeed.xsd.xml')
-        xml_file2 = os.path.join(CWD, 'walmart_product_xml_samples', 'Verified Furniture Sample Product XML.xml')
-        self._test_validate_walmart_product_xml_file_browser(xml_file2)
-        self._test_validate_walmart_product_xml_file_requests(xml_file2)
-        self._test_validate_walmart_product_xml_file_requests_multiple(xml_file1, xml_file2)
+        self._test_validate_walmart_product_xml_file_browser(self.xml_file2)
+        self._test_validate_walmart_product_xml_file_requests(self.xml_file2)
+        self._test_validate_walmart_product_xml_file_requests_multiple(self.xml_file1, self.xml_file2)
+
+    def test_items_update_with_xml_file_by_walmart_api(self):
+        request_url_pattern = 'request_url'
+        request_method_pattern = 'request_method'
+        xml_file_to_upload_pattern = 'xml_file_to_upload'
+        payload = {
+            request_url_pattern: 'https://marketplace.walmartapis.com/v2/feeds?feedType=item',
+            request_method_pattern: 'POST',
+            request_url_pattern+'_2': 'https://marketplace.walmartapis.com/v2/feeds?feedType=item',
+            request_method_pattern+'_2': 'POST',
+        }
+        files = {
+            xml_file_to_upload_pattern: open(self.xml_file1, 'rb'),
+            xml_file_to_upload_pattern+'_2': open(self.xml_file2, 'rb')
+        }
+        session = self._auth_requests()
+        result = session.post(self.live_server_url+'/items_update_with_xml_file_by_walmart_api/',
+                              data=payload, files=files, verify=False)
+        result_json = json.loads(result.text)
+        self.assertEqual(result_json.get('default', {}).get('error', ''), 'could not find <productId> element')
+        self.assertIn('feedId', result_json.get('_2', ''))
