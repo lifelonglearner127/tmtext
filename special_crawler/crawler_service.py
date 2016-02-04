@@ -76,6 +76,7 @@ from extract_riverisland_data import RiverislandScraper
 from extract_mothercare_data import MotherCareScraper
 from extract_toysrus_data import ToysRusScraper
 from extract_microsoft_data import MicrosoftScraper
+from extract_nike_data import NikeScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -159,7 +160,8 @@ SUPPORTED_SITES = {
                     "riverisland": RiverislandScraper,
                     "mothercare": MotherCareScraper,
                     "toysrus": ToysRusScraper,
-                    "microsoftstore": MicrosoftScraper
+                    "microsoftstore": MicrosoftScraper,
+                    "nike": NikeScraper
                     }
 
 # add logger
@@ -255,6 +257,8 @@ def extract_domain(url):
         return "clarkscouk"
     if "amazon.fr" in url:
         return "amazonfr"
+    if "store.nike.com" in url:
+        return "nike"
 
     m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:

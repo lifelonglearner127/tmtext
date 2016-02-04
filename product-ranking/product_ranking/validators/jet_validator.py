@@ -11,7 +11,7 @@ class JetValidatorSettings(object):  # do NOT set BaseValidatorSettings as paren
     ignore_log_filtered = False  # ... filtered requests?
     test_requests = {
         'sdfsdgdf': 0,  # should return 'no products' or just 0 products
-        'benny benassi': 0,
+        'benny45984596845benassi': 0,
         'black men long shirt': [50, 400],
         'woman green jacket': [50, 300],
         'sneakers': [10, 300],
