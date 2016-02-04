@@ -19,6 +19,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
+from product_ranking.guess_brand import guess_brand_from_first_words
 
 
 socket.setdefaulttimeout(60)
@@ -26,11 +27,12 @@ socket.setdefaulttimeout(60)
 
 def _init_webdriver():
     from selenium import webdriver
-    driver = webdriver.Firefox()
+    driver = webdriver.PhantomJS()
     driver.set_window_size(1280, 1024)
     driver.set_page_load_timeout(60)
     driver.set_script_timeout(60)
     return driver
+
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -103,7 +105,7 @@ class DellProductSpider(BaseProductsSpider):
             # scrape "quantity" products
             driver = _init_webdriver()
             driver.get(response.url)
-            time.sleep(3)  # let AJAX finish
+            time.sleep(6)  # let AJAX finish
             new_meta = response.meta.copy()
             # get all products we need (or till the "show more products" button exists)
             paging_button = '//button[contains(@id, "paging-button")]'
@@ -130,7 +132,7 @@ class DellProductSpider(BaseProductsSpider):
     @staticmethod
     def _parse_price(response):
         dell_price = response.xpath('//*[contains(text(), "Dell Price")]')
-        dell_price = re.search('\$(\d+\.\d+)', ''.join(dell_price.xpath('./..//text()').extract()))
+        dell_price = re.search('\$([\d,]+\.\d+)', ''.join(dell_price.xpath('./..//text()').extract()))
         if dell_price:
             dell_price = dell_price.group(1)
             price = Price(price=dell_price, priceCurrency='USD')
@@ -154,17 +156,36 @@ class DellProductSpider(BaseProductsSpider):
         if not img_src:
             img_src = response.xpath('//*[contains(@class, "leftRightMainImg")]'
                                      '//img[contains(@src, ".jp")]/@src').extract()
+        if not img_src:
+            img_src = response.xpath('//*[contains(@class, "oneImageUp")]'
+                                     '//img[contains(@data-original, ".jp")]/@data-original').extract()
         if img_src:
             return img_src[0]
 
     @staticmethod
-    def _parse_brand(response):
+    def _parse_brand(response, prod_title):
         # <meta itemprop="brand" content = "DELL"/>
         brand = response.xpath('//meta[contains(@itermprop, "brand")]/@content').extract()
         if not brand:
             brand = response.xpath('//a[contains(@href, "/brand.aspx")]/img/@alt').extract()
         if brand:
             return brand[0].title()
+        if prod_title:
+            brand = guess_brand_from_first_words(prod_title)
+            if not brand:
+                prod_title = prod_title.replace('New ', '').strip()
+                brand = guess_brand_from_first_words(prod_title)
+            if brand:
+                return brand
+
+    @staticmethod
+    def _parse_description(response):
+        desc = response.xpath('//*[@id="cntTabsCnt"]').extract()
+        if not desc:
+            desc = response.xpath('.//*[@id="AnchorZone3"]'
+                                  '//div[not(contains(@class, "anchored_returntotop"))]').extract()
+        if desc:
+            return desc[0]
 
     def _related_products(self, response):
         results = []
@@ -209,18 +230,21 @@ class DellProductSpider(BaseProductsSpider):
         cond_set(prod, 'title', response.css('h1 ::text').extract())
         prod['price'] = DellProductSpider._parse_price(response)
         prod['image_url'] = DellProductSpider._parse_image(response)
-        prod['sku'] = 'TODO'
-        prod['model'] = 'TODO'
-        prod['description'] = 'TODO'
-        prod['brand'] = DellProductSpider._parse_brand(response)
+
+        prod['description'] = DellProductSpider._parse_description(response)
+        prod['brand'] = DellProductSpider._parse_brand(response, prod.get('title', ''))
         prod['related_products'] = self._related_products(response)
+        response.meta['product'] = prod
         is_links, variants = self._parse_variants(response)
         if is_links:
             yield variants.pop(0)
         else:
             cond_set_value(prod, 'variants', self._collect_variants_from_dict(variants))
 
-        yield self._get_stock_status(response, prod)  # this should be OOS field
+        if 'This product is currently unavailable.' in response.body_as_unicode():
+            prod['is_out_of_stock'] = True
+        else:
+            yield self._get_stock_status(response, prod)  # this should be OOS field
 
         meta = {'product': prod}
         yield Request(  # reviews request
@@ -229,7 +253,6 @@ class DellProductSpider(BaseProductsSpider):
             callback=self.parse_buyer_reviews,
             meta=meta
         )
-        # import pdb; pdb.set_trace()
 
         try:
             r_url, related_data = self.RELATED_PROD_URL_V1, self._collect_related_products_data_v1(response)
@@ -331,6 +354,7 @@ class DellProductSpider(BaseProductsSpider):
                     meta['variants'] = data
                     meta['cur_variant'] = k
                     meta['additional_requests'] = additional_requests
+                    meta['product'] = response.meta['product']
                     additional_requests.append(
                         FormRequest(self.VARIANTS_URL, callback=self._parse_variant_data,
                                     formdata=form_data, meta=meta)
