@@ -64,4 +64,10 @@ class WalmartApiValidateXmlFileRequestSerializer(serializers.Serializer):
 
 
 class WalmartDetectDuplicateContentRequestSerializer(serializers.Serializer):
-    urls = StringListField()
+    product_url_1 = serializers.CharField()
+    product_url_2 = serializers.CharField()
+    product_url_3 = serializers.CharField()
+    product_url_4 = serializers.CharField()
+    product_url_5 = serializers.CharField()
+
+    detect_duplication_in_sellers_only = serializers.BooleanField(initial=True, style={'template': 'checkbox_next_to_submit_button.html'})

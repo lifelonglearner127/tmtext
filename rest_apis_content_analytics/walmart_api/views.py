@@ -794,46 +794,68 @@ class DetectDuplicateContentViewset(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.DATA)
+        output = {}
 
-        if serializer.is_valid():
-            driver = webdriver.PhantomJS()
-            driver.set_window_size(1440, 900)
-            driver.get("https://www.google.com/shopping?hl=en")
+        sellers_search_only = True
 
-            urls = serializer.data["urls"]
-            urls = remove_duplication_keeping_order_in_list(urls)
+        if not request.POST.get('detect_duplication_in_sellers_only', None):
+            sellers_search_only = False
 
-            url_duplication_dict = {}
+        product_url_pattern = 'product_url'
+        groupped_fields = group_params(request.POST, request.FILES, [product_url_pattern])
 
-            for url in urls:
-                try:
-                    product_json = json.loads(requests.get("http://chscraper.contentanalyticsinc.com/get_data?url={0}".format(urllib.quote(url))).text)
+        driver = webdriver.PhantomJS()
+        driver.set_window_size(1440, 900)
 
-                    short_description = long_description = ""
+        for group_name, group_data in groupped_fields.items():
+            if sellers_search_only:
+                driver.get("https://www.google.com/shopping?hl=en")
+            else:
+                #means broad search
+                driver.get("https://www.google.com/")
 
-                    if product_json["product_info"]["description"]:
-                        short_description = product_json["product_info"]["description"]
+            product_url = find_in_list(group_data, product_url_pattern)
 
-                    if product_json["product_info"]["long_description"]:
-                        long_description = product_json["product_info"]["long_description"]
+            if not any(product_url):
+                output[group_name] = {'error': 'one (or more) required params missing'}
+                continue
 
-                    description = short_description + " " + long_description
-                    description = html.fromstring("<html>" + description + "</html>")[0].text_content()
+            product_url = product_url[0]  # this value can only have 1 element
 
-                    if len(description.split(".")) > 1:
-                        search_product_content = (description.split(".")[0].strip() + ". " + description.split(".")[1].strip()).strip()
-                    else:
-                        search_product_content = description.strip()
+            try:
+                product_json = json.loads(requests.get("http://chscraper.contentanalyticsinc.com/get_data?url={0}".format(urllib.quote(product_url))).text)
 
-                    input_tax_id = driver.find_element_by_xpath("//input[@title='Search']")
-                    input_tax_id.clear()
-                    input_tax_id.send_keys('"' + search_product_content + '"')
-                    input_tax_id.send_keys(Keys.ENTER)
-                    time.sleep(3)
-                    google_search_results_page_raw_text = driver.page_source
-                    google_search_results_page_html_tree = html.fromstring(google_search_results_page_raw_text)
+                short_description = long_description = ""
 
+                if product_json["product_info"]["description"]:
+                    short_description = product_json["product_info"]["description"]
+
+                if product_json["product_info"]["long_description"]:
+                    long_description = product_json["product_info"]["long_description"]
+
+                description = short_description + " " + long_description
+                description = html.fromstring("<html>" + description + "</html>")[0].text_content()
+
+                if len(description.split(".")) > 1:
+                    search_product_content = (description.split(".")[0].strip() + ". " + description.split(".")[1].strip()).strip()
+                else:
+                    search_product_content = description.strip()
+
+                input_search_text = None
+
+                if sellers_search_only:
+                    input_search_text = driver.find_element_by_xpath("//input[@title='Search']")
+                else:
+                    input_search_text = driver.find_element_by_xpath("//input[@title='Google Search']")
+
+                input_search_text.clear()
+                input_search_text.send_keys('"' + search_product_content + '"')
+                input_search_text.send_keys(Keys.ENTER)
+                time.sleep(3)
+                google_search_results_page_raw_text = driver.page_source
+                google_search_results_page_html_tree = html.fromstring(google_search_results_page_raw_text)
+
+                if sellers_search_only:
                     seller_block = None
 
                     for left_block in google_search_results_page_html_tree.xpath("//ul[@class='sr__group']"):
@@ -847,28 +869,32 @@ class DetectDuplicateContentViewset(viewsets.ViewSet):
                         seller_name_list = seller_block.xpath(".//li[@class='sr__item']//a/text()")
                         seller_name_list = [seller for seller in seller_name_list if seller.lower() != "walmart"]
 
-                    '''
-                    if not seller_block or len((" ".join(seller_block.xpath(".//li[@class='sr__item']/a/text()"))).
-                                                       lower().replace("walmart", "").strip()) == 0:
-                        url_duplication_dict[url] = "Unique content."
-                    else:
-                        url_duplication_dict[url] = "Found duplicate content from other sellers."
-                    '''
-
                     if not seller_name_list:
-                        url_duplication_dict[url] = "Unique content."
+                        output[product_url] = "Unique content."
                     else:
-                        url_duplication_dict[url] = "Found duplicate content from other sellers: ." + ", ".join(seller_name_list)
-                except Exception, e:
-                    print e
+                        output[product_url] = "Found duplicate content from other sellers: ." + ", ".join(seller_name_list)
+                else:
+                    duplicate_content_links = google_search_results_page_html_tree.xpath("//div[@id='search']//cite/text()")
+
+                    if duplicate_content_links:
+                        duplicate_content_links = [url for url in duplicate_content_links if "walmart.com" not in url.lower()]
+
+                    if not duplicate_content_links:
+                        output[product_url] = "Unique content."
+                    else:
+                        output[product_url] = "Found duplicate content from other links."
+
+            except Exception, e:
+                print e
 #                    url_duplication_dict[url] = "Error occurred while checking."
-                    url_duplication_dict[url] = str(e)
-                    continue
+                output[product_url] = str(e)
+                continue
 
-            driver.close()
-            driver.quit()
+        driver.close()
+        driver.quit()
 
-            return Response(url_duplication_dict)
+        if output:
+            return Response(output)
 
         return None
 
