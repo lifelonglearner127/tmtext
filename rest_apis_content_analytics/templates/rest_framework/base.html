@@ -34,7 +34,7 @@
       function linkify(inputText) {
           // feed ID example: 5e1bc52a-a9f8-4114-9f50-23d567e02f4d
           var replacedText, replacePattern1;
-          replacePattern1 = /([0-9a-zA-Z]{5,10}\-[0-9a-zA-Z]{2,8}\-[0-9a-zA-Z]{2,8}\-[0-9a-zA-Z]{2,8}\-[0-9a-zA-Z]{8,20})/gim;
+          replacePattern1 = /([0-9a-zA-Z]{8}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{12})/gim;
           replacedText = inputText.replace(
               replacePattern1,
               '<a href="/feed-redirect/$1" target="_blank" class="prettyprint_replaced_link">$1</a>'
