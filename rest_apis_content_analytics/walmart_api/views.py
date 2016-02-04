@@ -1,34 +1,14 @@
 from rest_framework import viewsets
-from walmart_api.serializers import \
-    WalmartApiFeedRequestSerializer, \
-    WalmartApiItemsWithXmlFileRequestSerializer, \
-    WalmartApiItemsWithXmlTextRequestSerializer, \
-    WalmartApiValidateXmlTextRequestSerializer, \
-    WalmartApiValidateXmlFileRequestSerializer, \
-    WalmartDetectDuplicateContentRequestSerializer
+from walmart_api.serializers import WalmartApiFeedRequestSerializer, WalmartApiItemsWithXmlFileRequestSerializer, WalmartApiItemsWithXmlTextRequestSerializer, WalmartApiValidateXmlTextRequestSerializer, WalmartApiValidateXmlFileRequestSerializer
 import re
-import urllib
-import json
-import requests
 from rest_framework.response import Response
 from subprocess import Popen, PIPE, STDOUT
-from lxml import etree, html
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
+from lxml import etree
 import datetime
 import xmltodict
 import os
 import os.path
 import unirest
-import time
-
-def remove_duplication_keeping_order_in_list(seq):
-    if seq:
-        seen = set()
-        seen_add = seen.add
-        return [x for x in seq if not (x in seen or seen_add(x))]
-
-    return None
 
 
 def validate_walmart_product_xml_against_xsd(product_xml_string):
@@ -530,107 +510,6 @@ class ValidateWalmartProductXmlFileViewSet(viewsets.ViewSet):
         xml_content_to_validate = xml_content_to_validate.decode("utf-8").encode("utf-8")
 
         return Response(validate_walmart_product_xml_against_xsd(xml_content_to_validate))
-
-    def update(self, request, pk=None):
-        pass
-
-    def partial_update(self, request, pk=None):
-        return Response({'data': 'OK'})
-
-    def destroy(self, request, pk=None):
-        return Response({'data': 'OK'})
-
-
-class DetectDuplicateContentViewset(viewsets.ViewSet):
-    """
-    API endpoint that allows groups to be viewed or edited.
-    """
-    serializer_class = WalmartDetectDuplicateContentRequestSerializer
-
-    def list(self, request):
-        return Response({'data': 'OK'})
-
-    def retrieve(self, request, pk=None):
-        return Response({'data': 'OK'})
-
-    def create(self, request):
-        serializer = self.serializer_class(data=request.DATA)
-
-        if serializer.is_valid():
-            driver = webdriver.PhantomJS()
-            driver.set_window_size(1440, 900)
-            driver.get("https://www.google.com/shopping?hl=en")
-
-            urls = serializer.data["urls"]
-            urls = remove_duplication_keeping_order_in_list(urls)
-
-            url_duplication_dict = {}
-
-            for url in urls:
-                try:
-                    product_json = json.loads(requests.get("http://chscraper.contentanalyticsinc.com/get_data?url={0}".format(urllib.quote(url))).text)
-
-                    short_description = long_description = ""
-
-                    if product_json["product_info"]["description"]:
-                        short_description = product_json["product_info"]["description"]
-
-                    if product_json["product_info"]["long_description"]:
-                        long_description = product_json["product_info"]["long_description"]
-
-                    description = short_description + " " + long_description
-                    description = html.fromstring("<html>" + description + "</html>")[0].text_content()
-
-                    if len(description.split(".")) > 1:
-                        search_product_content = (description.split(".")[0].strip() + ". " + description.split(".")[1].strip()).strip()
-                    else:
-                        search_product_content = description.strip()
-
-                    input_tax_id = driver.find_element_by_xpath("//input[@title='Search']")
-                    input_tax_id.clear()
-                    input_tax_id.send_keys('"' + search_product_content + '"')
-                    input_tax_id.send_keys(Keys.ENTER)
-                    time.sleep(3)
-                    google_search_results_page_raw_text = driver.page_source
-                    google_search_results_page_html_tree = html.fromstring(google_search_results_page_raw_text)
-
-                    seller_block = None
-
-                    for left_block in google_search_results_page_html_tree.xpath("//ul[@class='sr__group']"):
-                        if left_block.xpath("./li[@class='sr__title sr__item']/text()")[0].strip().lower() == "seller":
-                            seller_block = left_block
-                            break
-
-                    seller_name_list = None
-
-                    if seller_block:
-                        seller_name_list = seller_block.xpath(".//li[@class='sr__item']//a/text()")
-                        seller_name_list = [seller for seller in seller_name_list if seller.lower() != "walmart"]
-
-                    '''
-                    if not seller_block or len((" ".join(seller_block.xpath(".//li[@class='sr__item']/a/text()"))).
-                                                       lower().replace("walmart", "").strip()) == 0:
-                        url_duplication_dict[url] = "Unique content."
-                    else:
-                        url_duplication_dict[url] = "Found duplicate content from other sellers."
-                    '''
-
-                    if not seller_name_list:
-                        url_duplication_dict[url] = "Unique content."
-                    else:
-                        url_duplication_dict[url] = "Found duplicate content from other sellers: ." + ", ".join(seller_name_list)
-                except Exception, e:
-                    print e
-#                    url_duplication_dict[url] = "Error occurred while checking."
-                    url_duplication_dict[url] = str(e)
-                    continue
-
-            driver.close()
-            driver.quit()
-
-            return Response(url_duplication_dict)
-
-        return None
 
     def update(self, request, pk=None):
         pass
