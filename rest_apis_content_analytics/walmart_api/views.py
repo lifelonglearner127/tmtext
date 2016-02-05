@@ -8,7 +8,7 @@ import datetime
 import os
 import os.path
 import tempfile
-
+from collections import OrderedDict
 from django.views.generic import View as DjangoView
 from django.core.context_processors import csrf
 from django.shortcuts import render_to_response
@@ -137,12 +137,22 @@ def validate_walmart_product_xml_against_xsd(product_xml_string):
     if product_xml_string.startswith("<?xml"):
         product_xml_string = product_xml_string[product_xml_string.find("<", 2):]
 
-    try:
-        etree.fromstring(product_xml_string, xmlparser)
-        return {'success': 'This xml is validated by Walmart product xsd files.'}
-    except Exception, e:
-        print e
-        return {'error': str(e)}
+    proudct_xml_list = re.findall('<SupplierProduct>(.*?)</SupplierProduct>', product_xml_string, re.DOTALL)
+    product_xml_version = re.findall('<version>(.*?)</version>', product_xml_string, re.DOTALL)[0]
+    validation_results = OrderedDict()
+
+    for index, product_xml in enumerate(proudct_xml_list):
+        try:
+            etree.fromstring(u"<SupplierProductFeed xmlns='http://walmart.com/suppliers/'>"
+                             u"<version>{0}</version>"
+                             u"<SupplierProduct>{1}</SupplierProduct>"
+                             u"</SupplierProductFeed>".format(product_xml_version, product_xml.strip()), xmlparser)
+            validation_results['product index ' + str(index + 1)] = 'success - this product is validated by Walmart product xsd files.'
+        except Exception, e:
+            print e
+            validation_results['product index ' + str(index + 1)] = 'error - ' + str(e)
+
+    return validation_results
 
 # Create your views here.
 
