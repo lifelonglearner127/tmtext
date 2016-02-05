@@ -266,7 +266,7 @@ class MergeSubItems(object):
         dispatcher.connect(self.spider_opened, signals.spider_opened)
         dispatcher.connect(self.spider_closed, signals.spider_closed)
         # use extra 'create_csv_output' option for debugging
-        self.create_csv_output = 'create_csv_output' in ''.join(sys.argv)
+        self.create_csv_output = u'create_csv_output' in u''.join([a.decode('utf8') for a in sys.argv])
 
     @staticmethod
     def _get_output_filename(spider):
