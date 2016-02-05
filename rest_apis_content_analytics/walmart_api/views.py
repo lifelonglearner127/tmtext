@@ -143,10 +143,12 @@ def validate_walmart_product_xml_against_xsd(product_xml_string):
 
     for index, product_xml in enumerate(proudct_xml_list):
         try:
-            etree.fromstring(u"<SupplierProductFeed xmlns='http://walmart.com/suppliers/'>"
-                             u"<version>{0}</version>"
-                             u"<SupplierProduct>{1}</SupplierProduct>"
-                             u"</SupplierProductFeed>".format(product_xml_version, product_xml.strip()), xmlparser)
+            product_xml = "<SupplierProductFeed xmlns='http://walmart.com/suppliers/'>" \
+                          "<version>{0}</version>" \
+                          "<SupplierProduct>{1}</SupplierProduct>" \
+                          "</SupplierProductFeed>".format(product_xml_version, product_xml.strip())
+            product_xml.decode("utf-8").encode("utf-8")
+            etree.fromstring(product_xml, xmlparser)
             validation_results['product index ' + str(index + 1)] = 'success - this product is validated by Walmart product xsd files.'
         except Exception, e:
             print e
