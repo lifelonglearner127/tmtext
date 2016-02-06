@@ -110,6 +110,12 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                 result.append(href)
         return result
 
+    @staticmethod
+    def last_three_digits_the_same(lst):
+        if len(lst) < 4:
+            return
+        return lst[-1] == lst[-2] == lst[-3]
+
     def parse(self, response):
         proxy = response.request.meta.get('proxy', None)
 
@@ -129,11 +135,15 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             time.sleep(6)  # let AJAX finish
             new_meta = response.meta.copy()
             # get all products we need (scroll down)
-            for _ in xrange(5):  # TODO: this will be an infinte loop!
+            collected_products_len = []
+            while True:
                 try:
                     driver.execute_script("scrollTo(0,50000)")
                     time.sleep(6)
                     product_links = self._get_product_links_from_serp(driver)
+                    collected_products_len.append(len(product_links))
+                    if self.last_three_digits_the_same(collected_products_len):
+                        break  # last three iterations collected equal num of products
                     if len(product_links) > self.quantity:
                         break
                     print 'Collected %i product links' % len(product_links)
