@@ -47,6 +47,8 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
     PAGINATE_BY = 12  # 12 products
     TOTAL_MATCHES = None  # for pagination
 
+    total_matches = None
+
     REVIEW_URL = "http://dockers.ugc.bazaarvoice.com/2080-en_us/{product_id}" \
                  "/reviews.djs?format=embeddedhtml&page={index}&"
 
@@ -66,7 +68,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                       "&ur=http%3A%2F%2Fwww.levi.com%2FUS%2Fen_US%" \
                       "2Fwomens-jeans%2Fp%2F095450043&plk=&"
 
-    use_proxies=True
+    use_proxies = True
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
@@ -120,6 +122,8 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
         proxy = response.request.meta.get('proxy', None)
 
         if not self._is_product_page(response):
+            self.total_matches = self._scrape_total_matches(response)
+
             display = Display(visible=0, size=(1280, 1024))
             display.start()
 
@@ -166,6 +170,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
         meta['reqs'] = reqs
 
         product['ranking'] = response.meta.get('_ranking', None)
+        product['total_matches'] = self.total_matches
 
         # product id
         self.product_id = is_empty(response.xpath('//meta[@itemprop="model"]/@content').extract())
