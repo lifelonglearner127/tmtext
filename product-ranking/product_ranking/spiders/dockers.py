@@ -174,6 +174,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
         product['url'] = response.url
         product['site'] = self.allowed_domains[0]
         product['search_term'] = self.searchterms[0] if self.searchterms else None
+        product['scraped_results_per_page'] = product['results_per_page'] = self.PAGINATE_BY
 
         # product id
         self.product_id = is_empty(response.xpath('//meta[@itemprop="model"]/@content').extract())
