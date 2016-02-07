@@ -136,7 +136,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                 print(str(e))
                 self.log(str(e))
             driver.find_element_by_name('Ntt').send_keys(self.searchterms[0] + '\n')
-            time.sleep(6)  # let AJAX finish
+            time.sleep(10)  # let AJAX finish
             new_meta = response.meta.copy()
             # get all products we need (scroll down)
             collected_products_len = []
