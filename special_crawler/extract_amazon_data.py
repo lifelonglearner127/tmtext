@@ -78,7 +78,7 @@ class AmazonScraper(Scraper):
         #br.set_debug_responses(True)
 
         # User-Agent (this is cheating, ok?)
-        self.browser.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1')]
+        self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
 
     def _extract_page_tree(self, captcha_data=None, retries=0):
         self._initialize_browser_settings()
