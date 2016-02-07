@@ -12,6 +12,7 @@ import requests
 from extract_data import Scraper
 import os
 from PIL import Image
+import cookielib
 import cStringIO # *much* faster than StringIO
 from pytesseract import image_to_string
 
@@ -56,7 +57,31 @@ class AmazonScraper(Scraper):
 
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
+    def _initialize_browser_settings(self):
+        # Cookie Jar
+        cj = cookielib.LWPCookieJar()
+        self.browser.set_cookiejar(cj)
+
+        # Browser options
+        self.browser.set_handle_equiv(True)
+        self.browser.set_handle_gzip(True)
+        self.browser.set_handle_redirect(True)
+        self.browser.set_handle_referer(True)
+        self.browser.set_handle_robots(False)
+
+        # Follows refresh 0 but not hangs on refresh > 0
+        self.browser.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
+
+        # Want debugging messages?
+        #br.set_debug_http(True)
+        #br.set_debug_redirects(True)
+        #br.set_debug_responses(True)
+
+        # User-Agent (this is cheating, ok?)
+        self.browser.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1')]
+
     def _extract_page_tree(self, captcha_data=None, retries=0):
+        self._initialize_browser_settings()
         self.browser.open(self.store_url)
         self.page_raw_text = self.browser.open(self.product_page_url).read()
         self.tree_html = html.fromstring(self.page_raw_text)
