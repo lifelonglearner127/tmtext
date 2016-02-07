@@ -896,7 +896,7 @@ class AmazonScraper(Scraper):
 
             for retry_index in range(10):
                 try:
-                    contents = self.browser.open(review_link).load()
+                    contents = self.browser.open(review_link).read()
 
                     if "Sorry, no reviews match your current selections." in contents:
                         review_list.append([index + 1, 0])
@@ -1108,14 +1108,13 @@ class AmazonScraper(Scraper):
 
                             if seller_name == "":
                                 if seller_link[0].startswith("http://www.amazon."):
-                                    seller_content = self.browser.open(seller_link[0]).load()
-                                else:
+                                    seller_content = self.browser.open(seller_link[0]).read()
                                     if self.scraper_version == "uk":
-                                        seller_content = self.browser.open("http://www.amazon.co.uk" + seller_link[0]).load()
+                                        seller_content = self.browser.open("http://www.amazon.co.uk" + seller_link[0]).read()
                                     elif self.scraper_version == "ca":
-                                        seller_content = self.browser.open("http://www.amazon.ca" + seller_link[0]).load()
+                                        seller_content = self.browser.open("http://www.amazon.ca" + seller_link[0]).read()
                                     else:
-                                        seller_content = self.browser.open("http://www.amazon.com" + seller_link[0]).load()
+                                        seller_content = self.browser.open("http://www.amazon.com" + seller_link[0]).read()
 
                                 seller_tree = html.fromstring(seller_content)
                                 seller_names = seller_tree.xpath("//h2[@id='s-result-count']/span/span//text()")
