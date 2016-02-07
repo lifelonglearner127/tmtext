@@ -1030,6 +1030,7 @@ class AmazonScraper(Scraper):
                             if seller_name == "":
                                 if seller_link[0].startswith("http://www.amazon."):
                                     seller_content = self.browser.open(seller_link[0]).read()
+                                else:
                                     if self.scraper_version == "uk":
                                         seller_content = self.browser.open("http://www.amazon.co.uk" + seller_link[0]).read()
                                     elif self.scraper_version == "ca":
