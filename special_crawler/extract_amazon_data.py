@@ -6,9 +6,8 @@ import urllib, urllib2
 import re
 import sys
 import json
-import lxml
 from lxml import html
-import time
+import mechanize
 import requests
 from extract_data import Scraper
 import os
@@ -48,6 +47,7 @@ class AmazonScraper(Scraper):
         self.max_review = None
         self.min_review = None
         self.is_marketplace_sellers_checked = False
+        self.store_url = 'http://www.amazon.com/'
         self.marketplace_prices = None
         self.marketplace_sellers = None
         self.is_variants_checked = False
@@ -56,6 +56,13 @@ class AmazonScraper(Scraper):
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
     def _extract_page_tree(self, captcha_data=None, retries=0):
+        browser = mechanize.Browser()
+        response = browser.open(self.store_url)
+        response = browser.open(self.product_page_url)
+        self.page_raw_text = response.read()
+        self.tree_html = html.fromstring(self.page_raw_text)
+
+        return
         """Builds and sets as instance variable the xml tree of the product page
         :param captcha_data: dictionary containing the data to be sent to the form for captcha solving
         This method will be used either to get a product page directly (null captcha_data),
