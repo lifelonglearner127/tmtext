@@ -289,6 +289,9 @@ class JcpenneyVariants(object):
                 variation_values_list.append(visible_color_list)
                 stockstatus_list_by_variation.append(dict(zip(visible_color_list, stockstatus_list)))
 
+            if not variation_values_list:
+                return None
+
             variation_combinations_values = list(itertools.product(*variation_values_list))
 
             variation_combinations_values = map(list, variation_combinations_values)

@@ -7,38 +7,45 @@ import json
 
 from lxml import html, etree
 import time
+import mechanize
 import requests
 from extract_data import Scraper
-from spiders_shared_code.levi_variants import LeviVariants
 
-class LeviScraper(Scraper):
+
+class NikeScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.levi.com/US/en_US/<category-name>/p/<product-id>"
-    REVIEW_URL = "http://levistrauss.ugc.bazaarvoice.com/9090-en_us/{0}/reviews.djs?format=embeddedhtml"
-    ADD_REVIEW_URL = "http://levistrauss.ugc.bazaarvoice.com/9090-en_us/{0}/reviews.djs?format=embeddedhtml&page={1}&"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.homedepot.com/p/<product-name>/<product-id>"
+    REVIEW_URL = "http://homedepot.ugc.bazaarvoice.com/1999aa/{0}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
         self.product_json = None
-        self.buy_stack_json = None
         # whether product has any webcollage media
         self.review_json = None
-        self.rev_list = None
+        self.review_list = None
         self.is_review_checked = False
-        self.lv = LeviVariants()
+        self.store_url = 'http://store.nike.com/us/en_us'
+        self.page_raw_text = ""
+
+    def _extract_page_tree(self, captcha_data=None, retries=0):
+        browser = mechanize.Browser()
+        response = browser.open(self.store_url)
+        response = browser.open(self.product_page_url)
+        self.page_raw_text = response.read()
+        self.tree_html = html.fromstring(self.page_raw_text)
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.levi.com/US/en_US/.*/p/[a-zA-Z0-9\-]+$", self.product_page_url)
+        m = re.match(r"^http://store.nike.com/us/en_us/pd/.*?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -49,11 +56,6 @@ class LeviScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        try:
-            self.lv.setupCH(self.tree_html)
-        except:
-            pass
-
         try:
             itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
 
@@ -72,23 +74,15 @@ class LeviScraper(Scraper):
 
     def _extract_product_json(self):
         if self.product_json:
-            return
+            return self.product_json
 
         try:
-            product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\r")
+            product_json_text = self.tree_html.xpath("//script[@id='product-data']/text()")[0]
             self.product_json = json.loads(product_json_text)
         except:
-            try:
-                product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\n")
-                self.product_json = json.loads(product_json_text)
-            except:
-                self.product_json = None
+            self.product_json = None
 
-        try:
-            buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
-            self.buy_stack_json = json.loads(buy_stack_json_text)
-        except:
-            self.buy_stack_json = None
+        return self.product_json
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -102,10 +96,11 @@ class LeviScraper(Scraper):
         return None
 
     def _product_id(self):
-        return self.product_json["product"][0]["product_id"]
+        product_id = self.product_json["productId"]
+        return product_id
 
     def _site_id(self):
-        return self.product_json["product"][0]["product_id"]
+        return None
 
     def _status(self):
         return "success"
@@ -119,61 +114,59 @@ class LeviScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
+        return self.tree_html.xpath('//div[@class="exp-product-header"]//h1/text()')[0]
 
     def _product_title(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
+        return self.tree_html.xpath('//div[@class="exp-product-header"]//h1/text()')[0]
 
     def _title_seo(self):
-        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0]
+        return self.tree_html.xpath('//div[@class="exp-product-header"]//h1/text()')[0]
 
     def _model(self):
-        return self.tree_html.xpath("//meta[@itemprop='model']/@content")[0]
+        return None
 
     def _upc(self):
         return None
 
     def _features(self):
-        features_string = ""
+        features_list = self.tree_html.xpath("//div[@class='pi-pdpmainbody']//li/text()")
 
-        for colorid in self.buy_stack_json["colorid"]:
-            features_string = self.buy_stack_json["colorid"][colorid]["fabric"]
-            break
-
-        features = features_string.split("<br>")
-
-        if features:
-            return features
+        if features_list:
+            return features_list
 
         return None
 
     def _feature_count(self):
-        features = self._features()
+        if self._features():
+            return len(self._features())
 
-        if features:
-            return len(features)
+        return None
 
-        return 0
+    def _model_meta(self):
+        return None
 
     def _description(self):
-        short_description = self.tree_html.xpath("//meta[@property='og:description']/@content")[0].strip()
-
-        if short_description:
-            return short_description
-
-        return None
+        return self.tree_html.xpath("//div[@class='pi-pdpmainbody']/p/text()")[1].strip()
 
     def _long_description(self):
-        for colorid in self.buy_stack_json["colorid"]:
-            return self.buy_stack_json["colorid"][colorid]["fabric"]
+        description_block = self.tree_html.xpath("//div[@class='pi-pdpmainbody']")[0]
+        long_description = ""
+        long_description_start = 4
+
+        for description_item in description_block:
+            long_description_start -= 1
+
+            if long_description_start < 0:
+                long_description = long_description + html.tostring(description_item)
+
+        long_description = long_description.strip()
+
+        if long_description:
+            return long_description
 
         return None
 
-    def _variants(self):
-        return self.lv._variants()
 
-    def _swatches(self):
-        return self.lv._swatches()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -182,10 +175,16 @@ class LeviScraper(Scraper):
         return None
 
     def _image_urls(self):
+        selected_product_image_url_suffixes = [url[url[:url.rfind("_")].rfind("_"):] for url in self.product_json["imagesHeroZoom"]]
+        variants_images = [variant["imageUrl"] for variant in self.product_json["inStockColorways"]]
+
         image_urls = []
 
-        for url in self.buy_stack_json["colorid"][self._product_id()]["altViews"]:
-            image_urls.append(self.buy_stack_json["colorid"][self._product_id()]["imageURL"] + url)
+        for variant_image in variants_images:
+            variant_image = variant_image.replace("PDP_THUMB", "PDP_HERO_ZOOM")
+
+            for suffix in selected_product_image_url_suffixes:
+                image_urls.append(variant_image[:variant_image.rfind(".")] + suffix)
 
         if image_urls:
             return image_urls
@@ -202,12 +201,20 @@ class LeviScraper(Scraper):
         return None
 
     def _video_count(self):
+        videos = self._video_urls()
+
+        if videos:
+            return len(videos)
+
         return 0
 
     def _pdf_urls(self):
         return None
 
     def _pdf_count(self):
+        if self._pdf_urls():
+            return len(self._pdf_urls())
+
         return 0
 
     def _webcollage(self):
@@ -226,124 +233,37 @@ class LeviScraper(Scraper):
 
     def _no_image(self):
         return None
-
+    
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
 
     def _average_review(self):
-        if self._review_count() == 0:
-            return None
-
-        average_review = round(float(self.review_json["jsonData"]["attributes"]["avgRating"]), 1)
-
-        if str(average_review).split('.')[1] == '0':
-            return int(average_review)
-        else:
-            return float(average_review)
+        return None
 
     def _review_count(self):
-        self._reviews()
-
-        if not self.glob_review_count:
-            return 0
-
-        return self.glob_review_count
+        return 0
 
     def _max_review(self):
-        if self._review_count() == 0:
-            return None
-
-        for i, review in enumerate(self.rev_list):
-            if review[1] > 0:
-                return 5 - i
+        return None
 
     def _min_review(self):
-        if self._review_count() == 0:
-            return None
-
-        for i, review in enumerate(reversed(self.rev_list)):
-            if review[1] > 0:
-                return i + 1
+        return None
 
     def _reviews(self):
-        if self.is_review_checked:
-            return self.rev_list
-
-        self.is_review_checked = True
-
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
-        contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
-
-        try:
-            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
-            end_index = contents.find(",\nwidgetInitializers:initializers", start_index)
-
-            self.review_json = contents[start_index:end_index]
-            self.review_json = json.loads(self.review_json)
-        except:
-            self.review_json = None
-            return None
-
-        offset = 0
-        number_of_passes = int(self.review_json["jsonData"]["attributes"]["numReviews"])
-
-        real_count = []
-        real_count += re.findall(r'<div class=\\"BVRRHeaderPagingControls\\">'
-                                 r'SHOWING \d+-\d+ OF (\d+)', contents)
-
-        review_count = self.glob_review_count = 0
-
-        if real_count:
-            review_count = int(real_count[0])
-            self.glob_review_count = int(real_count[0]) # for transfer to another method
-
-        if review_count > 0:
-            for index, i in enumerate(xrange(1, review_count + 1, 30)):
-                contents += s.get(self.ADD_REVIEW_URL.
-                                  format(self._product_id(), index + 2),
-                                  headers=h, timeout=5).text
-
-            marks = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
-
-            while number_of_passes > 0:
-                ratingValue = self._find_between(contents, '<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', "<\\/span>", offset).strip()
-
-                if offset == 0:
-                    offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">') + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
-                    continue
-
-                if not ratingValue:
-                    break
-
-                offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', offset) + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
-
-                if ratingValue.endswith('0'):
-                    ratingValue = int(float(ratingValue))
-                    marks[ratingValue] += 1
-
-                number_of_passes -= 1
-
-            self.rev_list = [[item, marks[item]] for item in sorted(marks.keys(),
-                                                                    reverse=True)]
-        return self.rev_list
+        return None
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return "$" + str(self.product_json["product"][0]["online_price"])
+        return None
 
     def _price_amount(self):
-        return float(self.product_json["product"][0]["online_price"])
+        return None
 
     def _price_currency(self):
-        return "USD"
+        return None
 
     def _in_stores(self):
         return 0
@@ -352,14 +272,7 @@ class LeviScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
-        out_of_stock = 1
-
-        for sku in self.buy_stack_json["sku"]:
-            if self.buy_stack_json["sku"][sku]["stock"] > 0:
-                out_of_stock = 0
-                break
-
-        return out_of_stock
+        return 0
 
     def _in_stores_out_of_stock(self):
         return 0
@@ -384,13 +297,13 @@ class LeviScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        return [self.product_json["page"]["page_department"], self.product_json["page"]["page_category"]]
+        return None
 
     def _category_name(self):
-        return self.product_json["page"]["page_category"]
-
+        return None
+    
     def _brand(self):
-        return self.product_json["page"]["brand"]
+        return None
 
 
     ##########################################
@@ -425,10 +338,9 @@ class LeviScraper(Scraper):
         "upc" : _upc,\
         "features" : _features, \
         "feature_count" : _feature_count, \
+        "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
-        "variants": _variants, \
-        "swatches": _swatches, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\

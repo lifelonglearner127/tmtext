@@ -10,7 +10,7 @@ class AmazoncoukValidatorSettings(object):  # do NOT set BaseValidatorSettings a
     test_requests = {
         'abrakadabrasdafsdfsdf': 0,  # should return 'no products' or just 0 products
         'nothing_found_1234654654': 0,
-        'nothing_fou': [5, 50],
+        'msi graphic cards twin': [5, 150],
         'kaspersky total': [5, 70],
         'gold sold fold': [5, 200],  # spider should return from 5 to 200 products
         'yamaha drums midi': [5, 100],

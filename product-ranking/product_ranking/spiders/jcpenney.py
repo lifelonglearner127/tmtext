@@ -435,41 +435,42 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         processed_lots = []  # lots for which we collected dynamic variants
         new_lot_structure = {}
         p_l = 0
-        for var_indx, variant in enumerate(prod['variants']):
-            if getattr(self, 'scrape_variants_with_extra_requests', None):
+        if prod.get('variants'):
+            for var_indx, variant in enumerate(prod['variants']):
+                if getattr(self, 'scrape_variants_with_extra_requests', None):
 
-                if variant.get('properties', {}).get('lot', '').lower() in processed_lots:
-                    continue
-                _lot, _dynamic_structure = self._ajax_variant_request(
-                    product_id, response, prod['variants'], variant, var_indx,
-                    async=False, null_values=['size']
-                )
-                if variant.get('properties', {}).get('lot', '').lower():
-                    processed_lots.append(variant.get('properties', {}).get('lot', '').lower())
-                else:
-                    processed_lots.append(variant.get('lot', '').lower())
+                    if variant.get('properties', {}).get('lot', '').lower() in processed_lots:
+                        continue
+                    _lot, _dynamic_structure = self._ajax_variant_request(
+                        product_id, response, prod['variants'], variant, var_indx,
+                        async=False, null_values=['size']
+                    )
+                    if variant.get('properties', {}).get('lot', '').lower():
+                        processed_lots.append(variant.get('properties', {}).get('lot', '').lower())
+                    else:
+                        processed_lots.append(variant.get('lot', '').lower())
 
-                new_lot_structure[_lot] = _dynamic_structure
-                if _lot:
-                    self.remove_old_static_variants_of_lot(prod['variants'], _lot)
-                    self.append_new_dynamic_variants(prod, prod['variants'], _lot, _dynamic_structure, self.log)
-        try:
-            processed_lots[1] = processed_lots[0]
-        except:
-            pass
-        for var_indx, variant in enumerate(prod['variants']):
-            if getattr(self, 'scrape_variants_with_extra_requests', None):
+                    new_lot_structure[_lot] = _dynamic_structure
+                    if _lot:
+                        self.remove_old_static_variants_of_lot(prod['variants'], _lot)
+                        self.append_new_dynamic_variants(prod, prod['variants'], _lot, _dynamic_structure, self.log)
+            try:
+                processed_lots[1] = processed_lots[0]
+            except:
+                pass
+            for var_indx, variant in enumerate(prod['variants']):
+                if getattr(self, 'scrape_variants_with_extra_requests', None):
 
-                if processed_lots:
-                    lot_id = processed_lots[p_l]
-                    p_l += 1
-                    if p_l >= len(processed_lots):
-                        p_l = 0
-                else:
-                    lot_id = ''
-                yield self._ajax_variant_request(
-                    product_id, response, prod['variants'], variant, var_indx,
-                    Lot=lot_id)
+                    if processed_lots:
+                        lot_id = processed_lots[p_l]
+                        p_l += 1
+                        if p_l >= len(processed_lots):
+                            p_l = 0
+                    else:
+                        lot_id = ''
+                    yield self._ajax_variant_request(
+                        product_id, response, prod['variants'], variant, var_indx,
+                        Lot=lot_id)
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
