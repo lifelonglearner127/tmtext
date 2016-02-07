@@ -255,24 +255,15 @@ class WalmartScraper(Scraper):
         if tree.xpath("//div[@id='iframe-video-content']"):
             if tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base"):
                 video_base_path = tree.xpath("//table[contains(@class, 'wc-gallery-table')]/@data-resources-base")[0]
-                sIndex = 0
-                eIndex = 0
 
-                while sIndex >= 0:
-                    sIndex = response_text.find('{"videos":[', sIndex)
-                    eIndex = response_text.find('}]}', sIndex) + 3
+                for video_json_text in tree.xpath("//div[@class='wc-json-data']/text()"):
+                    video_json = json.loads(video_json_text)
 
-                    if sIndex < 0:
-                        break
-
-                    jsonVideo = response_text[sIndex:eIndex]
-                    jsonVideo = json.loads(jsonVideo)
-
-                    if len(jsonVideo['videos']) > 0:
-                        for video_info in jsonVideo['videos']:
+                    if len(video_json['videos']) > 0:
+                        for video_info in video_json['videos']:
                             self.video_urls.append(video_base_path + video_info['src']['src'])
 
-                    sIndex = eIndex
+
             else:
                 self.video_urls.extend(list(set(tree.xpath("//img[contains(@class, 'wc-media wc-iframe') and contains(@data-asset-url, 'autostart')]/@data-asset-url"))))
 
@@ -1900,6 +1891,9 @@ class WalmartScraper(Scraper):
             image_dimensions = []
 
             for item in pinfo_dict['imageAssets']:
+                if "assetType" in item and item["assetType"].lower() == "video":
+                    continue
+
                 hero_image_url = item.get('versions', {}).get('hero', None)
                 zoom_image_url = item.get('versions', {}).get('zoom', None)
 
@@ -1956,14 +1950,6 @@ class WalmartScraper(Scraper):
 
             # nothing found
             return None
-
-    def remove_duplication_keeping_order_in_list(self, seq):
-        if seq:
-            seen = set()
-            seen_add = seen.add
-            return [x for x in seq if not (x in seen or seen_add(x))]
-
-        return None
 
     def _image_urls(self):
         """Extracts image urls for this product.

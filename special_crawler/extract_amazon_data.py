@@ -6,13 +6,13 @@ import urllib, urllib2
 import re
 import sys
 import json
-import lxml
 from lxml import html
-import time
+import mechanize
 import requests
 from extract_data import Scraper
 import os
 from PIL import Image
+import cookielib
 import cStringIO # *much* faster than StringIO
 from pytesseract import image_to_string
 
@@ -48,6 +48,8 @@ class AmazonScraper(Scraper):
         self.max_review = None
         self.min_review = None
         self.is_marketplace_sellers_checked = False
+        self.store_url = 'http://www.amazon.com/'
+        self.browser = mechanize.Browser()
         self.marketplace_prices = None
         self.marketplace_sellers = None
         self.is_variants_checked = False
@@ -55,7 +57,36 @@ class AmazonScraper(Scraper):
 
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
+    def _initialize_browser_settings(self):
+        # Cookie Jar
+        cj = cookielib.LWPCookieJar()
+        self.browser.set_cookiejar(cj)
+
+        # Browser options
+        self.browser.set_handle_equiv(True)
+        self.browser.set_handle_gzip(True)
+        self.browser.set_handle_redirect(True)
+        self.browser.set_handle_referer(True)
+        self.browser.set_handle_robots(False)
+
+        # Follows refresh 0 but not hangs on refresh > 0
+        self.browser.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
+
+        # Want debugging messages?
+        #br.set_debug_http(True)
+        #br.set_debug_redirects(True)
+        #br.set_debug_responses(True)
+
+        # User-Agent (this is cheating, ok?)
+        self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
+
     def _extract_page_tree(self, captcha_data=None, retries=0):
+        self._initialize_browser_settings()
+        self.browser.open(self.store_url)
+        self.page_raw_text = self.browser.open(self.product_page_url).read()
+        self.tree_html = html.fromstring(self.page_raw_text)
+
+        return
         """Builds and sets as instance variable the xml tree of the product page
         :param captcha_data: dictionary containing the data to be sent to the form for captcha solving
         This method will be used either to get a product page directly (null captcha_data),
@@ -865,7 +896,7 @@ class AmazonScraper(Scraper):
 
             for retry_index in range(10):
                 try:
-                    contents = self.load_page_from_url_with_number_of_retries(review_link)
+                    contents = self.browser.open(review_link).read()
 
                     if "Sorry, no reviews match your current selections." in contents:
                         review_list.append([index + 1, 0])
@@ -1046,7 +1077,7 @@ class AmazonScraper(Scraper):
         fl = 0
 
         while len(url) > 10:
-            contents = self.load_page_from_url_with_number_of_retries(url)
+            contents = self.browser.open(url).read()
             tree = html.fromstring(contents)
             sells = tree.xpath('//div[@class="a-row a-spacing-mini olpOffer"]')
 
@@ -1077,14 +1108,13 @@ class AmazonScraper(Scraper):
 
                             if seller_name == "":
                                 if seller_link[0].startswith("http://www.amazon."):
-                                    seller_content = self.load_page_from_url_with_number_of_retries(seller_link[0])
-                                else:
+                                    seller_content = self.browser.open(seller_link[0]).read()
                                     if self.scraper_version == "uk":
-                                        seller_content = self.load_page_from_url_with_number_of_retries("http://www.amazon.co.uk" + seller_link[0])
+                                        seller_content = self.browser.open("http://www.amazon.co.uk" + seller_link[0]).read()
                                     elif self.scraper_version == "ca":
-                                        seller_content = self.load_page_from_url_with_number_of_retries("http://www.amazon.ca" + seller_link[0])
+                                        seller_content = self.browser.open("http://www.amazon.ca" + seller_link[0]).read()
                                     else:
-                                        seller_content = self.load_page_from_url_with_number_of_retries("http://www.amazon.com" + seller_link[0])
+                                        seller_content = self.browser.open("http://www.amazon.com" + seller_link[0]).read()
 
                                 seller_tree = html.fromstring(seller_content)
                                 seller_names = seller_tree.xpath("//h2[@id='s-result-count']/span/span//text()")

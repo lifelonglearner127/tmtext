@@ -10,6 +10,8 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set_value
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -135,17 +137,17 @@ class HagelshopProductSpider(BaseProductsSpider):
         for point in points:
             rating_by_star[str(point)] += 1
 
-        average_rating = float(sum(points))/len(points)
-        num_of_reviews = len(points)
+        if rating_by_star and points:
+            average_rating = float(sum(points))/len(points)
+            num_of_reviews = len(points)
 
-        if rating_by_star:
             buyer_reviews = {
                     'num_of_reviews': int(num_of_reviews),
                     'average_rating': float(average_rating),
                     'rating_by_star': rating_by_star
             }
         else:
-            buyer_reviews = self.ZERO_REVIEWS_VALUE
+            return ZERO_REVIEWS_VALUE
 
         return BuyerReviews(**buyer_reviews)
 
