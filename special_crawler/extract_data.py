@@ -464,16 +464,16 @@ class Scraper():
                     raise
             try:
                 # replace NULL characters
-                contents = self._clean_null(contents)
-
-                self.tree_html = html.fromstring(contents.decode("utf8"))
+                contents = self._clean_null(contents).decode("utf8")
+                self.page_raw_text = contents
+                self.tree_html = html.fromstring(contents)
             except UnicodeError, e:
                 # if string was not utf8, don't deocde it
                 print "Warning creating html tree from page content: ", e.message
 
                 # replace NULL characters
                 contents = self._clean_null(contents)
-
+                self.page_raw_text = contents
                 self.tree_html = html.fromstring(contents)
 
             # if we got it we can exit the loop and stop retrying
@@ -488,6 +488,7 @@ class Scraper():
             contents = urllib2.urlopen(request).read()
             # replace NULL characters
             contents = self._clean_null(contents)
+            self.page_raw_text = contents
             self.tree_html = html.fromstring(contents)
 
 
