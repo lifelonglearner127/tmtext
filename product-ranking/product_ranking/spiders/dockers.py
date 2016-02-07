@@ -171,6 +171,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
 
         product['ranking'] = response.meta.get('_ranking', None)
         product['total_matches'] = self.total_matches
+        product['url'] = response.url
 
         # product id
         self.product_id = is_empty(response.xpath('//meta[@itemprop="model"]/@content').extract())
