@@ -303,8 +303,8 @@ class DockersScraper(Scraper):
             review_count = int(real_count[0])
             self.glob_review_count = int(real_count[0]) # for transfer to another method
 
-        if review_count > 8:
-            for index, i in enumerate(xrange(9, review_count + 1, 30)):
+        if review_count > 0:
+            for index, i in enumerate(xrange(1, review_count + 1, 30)):
                 contents += s.get(self.ADD_REVIEW_URL.
                                   format(self._product_id(), index + 2),
                                   headers=h, timeout=5).text

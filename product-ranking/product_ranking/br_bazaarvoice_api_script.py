@@ -20,7 +20,7 @@ class BuyerReviewsBazaarApi(object):
             'rating_by_star': {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
         }
 
-    def parse_buyer_reviews_per_page(self, response):
+    def parse_buyer_reviews_per_page(self, response, body_data=None):
         """
         return dict for buyer_reviews
         """
@@ -28,7 +28,8 @@ class BuyerReviewsBazaarApi(object):
         product = meta['product']
         reqs = meta.get('reqs', [])
 
-        body_data = response.body_as_unicode()
+        if body_data is None:
+            body_data = response.body_as_unicode()
 
         # Get dictionary for BR analytics data from response body
         base_reviews_data = is_empty(
