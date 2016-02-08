@@ -369,7 +369,7 @@ class NikeScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath("//div[@class='exp-product-header']//span[@class='exp-pdp-local-price']/text()")[0].strip()
+        return self.tree_html.xpath("//div[@class='exp-product-header']//span[contains(@class, 'exp-pdp-local-price')]/text()")[0].strip()
 
     def _price_amount(self):
         return float(self.tree_html.xpath("//meta[@property='og:price:amount']/@content")[0])
