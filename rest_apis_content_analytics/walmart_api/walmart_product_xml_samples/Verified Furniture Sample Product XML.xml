@@ -1,5 +1,4 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<SupplierProductFeed>
+<SupplierProductFeed xmlns="http://walmart.com/suppliers/">
 	<version>1.4.1</version>
 	<SupplierProduct>
 		<productName>Mainstays Multi-Purpose Wood Cart, Natural Finish with Chrome Handles</productName>

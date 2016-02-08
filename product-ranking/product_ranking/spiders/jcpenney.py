@@ -31,6 +31,8 @@ from spiders_shared_code.jcpenney_variants import JcpenneyVariants
 from spiders_shared_code.jcpenney_variants import JcpenneyVariants, extract_ajax_variants
 from product_ranking.validation import BaseValidator
 from product_ranking.validators.jcpenney_validator import JcpenneyValidatorSettings
+from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
+
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -78,6 +80,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
     REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{product_id}" \
                  "/reviews.djs?format=embeddedhtml"
+    SEPHORA_REVIEW_URL = 'http://sephora.ugc.bazaarvoice.com/8723jcp/' \
+                         '{product_id}/reviews.djs?format=embeddedhtml'
 
     RELATED_URL = "http://recs.richrelevance.com/rrserver/p13n_generated.js?" \
                   "a=5387d7af823640a7&" \
@@ -100,6 +104,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     settings = JcpenneyValidatorSettings
 
     def __init__(self, sort_mode=None, *args, **kwargs):
+        self.buyer_reviews = BuyerReviewsBazaarApi(called_class=self)
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
@@ -402,6 +407,11 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                 variant['in_stock'] = _avail[color]
         yield product
 
+    @staticmethod
+    def _is_sephora_reviews(response):
+        return ('varisSephora=true'
+                in response.body_as_unicode().replace(' ', '').replace("'", ''))
+
     def parse_product(self, response):
         prod = response.meta['product']
         prod['url'] = response.url
@@ -470,16 +480,20 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         review_id = is_empty(response.xpath(
             '//script/text()[contains(.,"reviewId")]'
         ).re('reviewId:\"(\d+)\",'))
-        if review_id:
-            yield Request(self.url_formatter.format(self.REVIEW_URL,
-                                                     product_id=review_id),
-                           meta=new_meta, callback=self._parse_reviews,
-                           dont_filter=True)
-        elif product_id:
-            yield Request(self.url_formatter.format(self.REVIEW_URL,
-                                                     product_id=product_id),
-                           meta=new_meta, callback=self._parse_reviews,
-                           dont_filter=True)
+        if not review_id:
+            review_id = is_empty(response.xpath(
+                '//script/text()[contains(.,"reviewIdNew")]'
+            ).re('reviewId.*?\=.*?([a-zA-Z\d]+)'))
+
+        if JcpenneyProductsSpider._is_sephora_reviews(response):
+            review_url = self.url_formatter.format(
+                self.SEPHORA_REVIEW_URL, product_id=review_id or product_id)
+        else:
+            review_url = self.url_formatter.format(
+                self.REVIEW_URL, product_id=review_id or product_id)
+        yield Request(review_url, meta=new_meta,
+                      callback=self._parse_reviews, dont_filter=True)
+
         yield prod
 
     def _populate_from_html(self, response, product):
@@ -594,7 +608,22 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         product = response.meta['product']
         product_id = response.meta.get('product_id')
         text = response.body_as_unicode().encode('utf-8')
-        if response.status == 200:
+
+        """ for debugging only!
+        import requests
+        text2 = requests.get('http://sephora.ugc.bazaarvoice.com/8723jcp/P261621/reviews.djs?format=embeddedhtml&page=0').text
+        result = self.buyer_reviews.parse_buyer_reviews_per_page(response)
+        open('/tmp/text', 'w').write(text)
+        open('/tmp/text2', 'w').write(text2.encode('utf8'))
+        import pdb; pdb.set_trace()
+        """
+
+        brs = self.buyer_reviews.parse_buyer_reviews_per_page(response)
+        if brs.get('average_rating', None):
+            if brs.get('rating_by_star', None):
+                product['buyer_reviews'] = brs
+
+        if not product.get('buyer_reviews', None) and response.status == 200:
             x = re.search(
                 r"var materials=(.*),\sinitializers=", text, re.M + re.S)
             if x:
@@ -608,6 +637,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     "/div[@class='BVRRRatingNormalOutOf']"
                     "/span[contains(@class,'BVRRRatingNumber')]"
                     "/text()").extract()
+                if not avrg:
+                    avrg = sel.css('.BVRRNumber .BVRRRatingNumber ::text').extract()
                 if avrg:
                     try:
                         avrg = float(avrg[0])

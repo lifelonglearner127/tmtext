@@ -4,18 +4,27 @@ import cv2
 import urllib
 import cStringIO
 import copy
-import sys
 import traceback
 
 from PIL import Image
 import numpy as np
 from StringIO import StringIO
-
-from walmart_developer_accounts.models import Account
 from rest_framework import viewsets
 from rest_apis_content_analytics.image_duplication.serializers import ImageUrlSerializer
 from rest_apis_content_analytics.image_duplication.compare_images import url_to_image, compare_two_images_a, compare_two_images_b, compare_two_images_c
 from rest_framework.response import Response
+import linecache
+import sys
+
+
+def PrintException():
+    exc_type, exc_obj, tb = sys.exc_info()
+    f = tb.tb_frame
+    lineno = tb.tb_lineno
+    filename = f.f_code.co_filename
+    linecache.checkcache(filename)
+    line = linecache.getline(filename, lineno, f.f_globals)
+    print 'EXCEPTION IN ({}, LINE {} "{}"): {}'.format(filename, lineno, line.strip(), exc_obj)
 
 
 class CompareTwoImageViewSet(viewsets.ViewSet):
@@ -153,8 +162,9 @@ class ClassifyImagesBySimilarity(viewsets.ViewSet):
                     results.append(group_image_indexes)
 
                 return Response(results)
-            except:
-                pass
+            except Exception, e:
+                PrintException()
+                print e
 
         return Response({'data': 'NO OK'})
 

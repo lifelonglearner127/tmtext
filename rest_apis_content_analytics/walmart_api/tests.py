@@ -1,3 +1,115 @@
-from django.test import TestCase
+import os
+import time
+import sys
+import json
 
-# Create your tests here.
+from django.test import TestCase, Client
+from django.contrib.auth.models import AnonymousUser, User
+import requests
+import lxml.html
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+
+
+from django.test import LiveServerTestCase
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+
+
+class RestAPIsTests(StaticLiveServerTestCase):
+    # TODO: browserless authentication
+    reset_sequences = True
+
+    xml_file1 = os.path.join(CWD, 'walmart_product_xml_samples', 'SupplierProductFeed.xsd.xml')
+    xml_file2 = os.path.join(CWD, 'walmart_product_xml_samples', 'Verified Furniture Sample Product XML.xml')
+
+    @classmethod
+    def setUpClass(cls):
+        super(RestAPIsTests, cls).setUpClass()
+        cls.selenium = webdriver.Firefox()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.selenium.quit()
+        super(RestAPIsTests, cls).tearDownClass()
+
+    def setUp(self):
+        # create user
+        self.username = 'admin4'
+        self.email = 'admin@admin.com'
+        self.password = 'admin46'
+        self.user = User.objects.create_superuser(self.username, self.email, self.password)
+
+    def tearDown(self):
+        self.user.delete()
+
+    def _auth(self):
+        #self.selenium.get(self.live_server_url+'/admin/')
+        self.selenium.get(self.live_server_url+'/api-auth/login/')
+        self.selenium.find_element_by_name('username').send_keys(self.username)
+        self.selenium.find_element_by_name('password').send_keys(self.password + '\n')
+        time.sleep(1)  # let the database commit transactions?
+
+    def _auth_requests(self):
+        session = requests.Session()
+        session.auth = (self.username, self.password)
+        return session
+
+    def test_login(self):
+        self._auth()
+        self.assertIn('/accounts/profile/', self.selenium.current_url)
+        self.assertTrue(self.selenium.get_cookie('sessionid'))
+
+    def _test_validate_walmart_product_xml_file_browser(self, xml_file):
+        self._auth()
+        self.selenium.get(self.live_server_url+'/validate_walmart_product_xml_file/')
+        self.selenium.find_element_by_name('xml_file_to_validate').send_keys(xml_file)
+        self.selenium.find_element_by_xpath('//*[contains(@class, "form-actions")]/button').click()
+        self.assertIn('success', self.selenium.page_source)
+        self.assertIn('This xml is validated by Walmart product xsd files', self.selenium.page_source)
+
+    def _test_validate_walmart_product_xml_file_requests(self, xml_file):
+        session = self._auth_requests()
+        with open(xml_file, 'rb') as payload:
+            result = session.post(self.live_server_url+'/validate_walmart_product_xml_file/',
+                                  files={'xml_file_to_validate': payload}, verify=False)
+            self.assertIn('success', result.text)
+            self.assertIn('This xml is validated by Walmart product xsd files', result.text)
+
+    def _test_validate_walmart_product_xml_file_requests_multiple(self, *xml_files):
+        session = self._auth_requests()
+        xml_files_opened = [open(f, 'rb') for f in xml_files]
+        files2post = {'file_'+str(i): f for (i, f) in enumerate(xml_files_opened)}
+        result = session.post(self.live_server_url+'/validate_walmart_product_xml_file/',
+                              files=files2post, verify=False)
+        result_json = json.loads(result.text)
+        self.assertIn('success', result_json['Verified Furniture Sample Product XML.xml'])
+        self.assertIn('error', result_json['SupplierProductFeed.xsd.xml'])
+        self.assertIn('This element is not expected', result_json['SupplierProductFeed.xsd.xml']['error'])
+
+    def test_validate_walmart_product_xml_file(self):
+        self._test_validate_walmart_product_xml_file_browser(self.xml_file2)
+        self._test_validate_walmart_product_xml_file_requests(self.xml_file2)
+        self._test_validate_walmart_product_xml_file_requests_multiple(self.xml_file1, self.xml_file2)
+
+    def test_items_update_with_xml_file_by_walmart_api(self):
+        request_url_pattern = 'request_url'
+        request_method_pattern = 'request_method'
+        xml_file_to_upload_pattern = 'xml_file_to_upload'
+        payload = {
+            request_url_pattern: 'https://marketplace.walmartapis.com/v2/feeds?feedType=item',
+            request_method_pattern: 'POST',
+            request_url_pattern+'_2': 'https://marketplace.walmartapis.com/v2/feeds?feedType=item',
+            request_method_pattern+'_2': 'POST',
+        }
+        files = {
+            xml_file_to_upload_pattern: open(self.xml_file1, 'rb'),
+            xml_file_to_upload_pattern+'_2': open(self.xml_file2, 'rb')
+        }
+        session = self._auth_requests()
+        result = session.post(self.live_server_url+'/items_update_with_xml_file_by_walmart_api/',
+                              data=payload, files=files, verify=False)
+        result_json = json.loads(result.text)
+        self.assertEqual(result_json.get('default', {}).get('error', ''), 'could not find <productId> element')
+        self.assertIn('feedId', result_json.get('_2', ''))
