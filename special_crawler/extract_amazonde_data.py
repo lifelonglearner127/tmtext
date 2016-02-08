@@ -807,7 +807,7 @@ class AmazonDEScraper(Scraper):
                 try:
                     contents = self.browser.open(review_link).read()
 
-                    if u"Leider stimmen keine Rezensionen mit ihrer derzeitiger Auswahl überein." in contents:
+                    if "Leider stimmen keine Rezensionen mit ihrer derzeitiger" in contents:
                         review_list.append([index + 1, 0])
                     else:
                         if not self.max_review or self.max_review < index + 1:
@@ -818,7 +818,7 @@ class AmazonDEScraper(Scraper):
 
                         review_html = html.fromstring(contents)
                         review_count = review_html.xpath("//div[@id='cm_cr-review_list']//div[contains(@class, 'a-section a-spacing-medium')]//span[@class='a-size-base']/text()")[0]
-                        review_count = int(re.sub("[^0-9]", "", self._find_between(review_count, 'sur', 'commentaires')))
+                        review_count = int(re.sub("[^0-9]", "", self._find_between(review_count, 'von', 'Rezensionen')))
                         review_list.append([index + 1, review_count])
 
                     break
