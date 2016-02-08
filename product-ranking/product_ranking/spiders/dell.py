@@ -205,9 +205,9 @@ class DellProductSpider(BaseProductsSpider):
 
     def parse_buyer_reviews(self, response):
         product = response.meta['product']
-        buyer_reviews_per_page = self.br.parse_buyer_reviews_per_page(response)
-        pass
-        # TODO!
+        buyer_reviews = self.br.parse_buyer_reviews_per_page(response)
+        product['buyer_reviews'] = buyer_reviews
+        yield product
 
     def _get_stock_status(self, response, product):
         oos_element = response.xpath(
@@ -223,6 +223,12 @@ class DellProductSpider(BaseProductsSpider):
                 product['is_out_of_stock'] = False
                 product['limited_stock'] = LimitedStock(is_limited=True, items_left=-1)
                 return product
+
+    @staticmethod
+    def _get_product_id(response):
+        prod_id = re.findall(':productdetails:([\da-zA-Z\-\.]{1,50})\",', response.body_as_unicode())
+        if prod_id:
+            return prod_id[0]
 
     def parse_product(self, response):
         prod = response.meta.get('product', SiteProductItem())
@@ -253,12 +259,25 @@ class DellProductSpider(BaseProductsSpider):
             yield self._get_stock_status(response, prod)  # this should be OOS field
 
         meta = {'product': prod}
-        yield Request(  # reviews request
-            url=self.REVIEW_URL.format(product_id='inspiron-15-7568-laptop'),  # TODO
-            dont_filter=True,
-            callback=self.parse_buyer_reviews,
-            meta=meta
-        )
+        prod_id = self._get_product_id(response)
+        if prod_id:  # first page type
+            if response.css('#bazaarVoice').extract():
+                meta.update({'br_page_type': 1})
+                yield Request(  # reviews request
+                    url=self.REVIEW_URL.format(product_id=prod_id),
+                    dont_filter=True,
+                    callback=self.parse_buyer_reviews,
+                    meta=meta
+                )
+        buyer_reviews_iframe_src = response.xpath('//iframe[contains(@src,"reviews.htm")]/@src').extract()
+        if buyer_reviews_iframe_src:  # second page type
+            meta.update({'br_page_type': 2})
+            yield Request(  # reviews request
+                url=buyer_reviews_iframe_src[0].replace('format=noscript', ''),
+                dont_filter=True,
+                callback=self.parse_buyer_reviews,
+                meta=meta
+            )
 
         try:
             r_url, related_data = self.RELATED_PROD_URL_V1, self._collect_related_products_data_v1(response)
