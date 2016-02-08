@@ -249,6 +249,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
             time.sleep(3)
             self._click_on_elements_with_class(driver, 'close')
             self._click_on_element_with_id(driver, 'closeBtn')
+            self._click_on_elements_with_class(driver, 'brdialog-close')  # for madewell.com
+            self._click_on_element_with_id(driver, 'skipSignup')  # for madewell.com
             self._click_on_element_with_xpath(driver, '//*[contains(@id, "cookiebar")]//button')  # for HM.com
             self._remove_element_with_xpath(driver, '//*[contains(@id, "emailAcqPopupContainer")]')  # for http://bananarepublic.gap.com
 
