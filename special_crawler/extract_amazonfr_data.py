@@ -244,14 +244,14 @@ class AmazonFRScraper(Scraper):
 
         if self.tree_html.xpath("//li[@id='SalesRank']"):
             ranking_info = self.tree_html.xpath("//li[@id='SalesRank']/text()")[1].strip()
-            seller_ranking.append({"category": ranking_info[ranking_info.find(" in ") + 4:ranking_info.find("(")].strip(),
-                                   "ranking": int(ranking_info[1:ranking_info.find(" ")].strip().replace(",", ""))})
+            seller_ranking.append({"category": ranking_info[ranking_info.find(" en ") + 4:ranking_info.find("(")].strip(),
+                                   "ranking": int(ranking_info[:ranking_info.find(" ")].strip().replace(",", "").replace(".", ""))})
 
             ranking_info_list = [item.text_content().strip() for item in self.tree_html.xpath("//li[@id='SalesRank']/ul[@class='zg_hrsr']/li")]
 
             for ranking_info in ranking_info_list:
-                seller_ranking.append({"category": ranking_info[ranking_info.find("in") + 2:].strip(),
-                                       "ranking": int(ranking_info[1:ranking_info.find(" ")].replace(",", "").strip())})
+                seller_ranking.append({"category": ranking_info[ranking_info.find("dans") + 4:].strip(),
+                                       "ranking": int(ranking_info[2:ranking_info.find(" ")].replace(",", "").replace(".", "").strip())})
         else:
             ranking_info_list = self.tree_html.xpath("//td[preceding-sibling::th/@class='a-color-secondary a-size-base prodDetSectionEntry' and contains(preceding-sibling::th/text(), 'Best Sellers Rank')]/span/span")
             ranking_info_list = [ranking_info.text_content().strip() for ranking_info in ranking_info_list]
@@ -808,7 +808,7 @@ class AmazonFRScraper(Scraper):
                 try:
                     contents = self.browser.open(review_link).read()
 
-                    if "Sorry, no reviews match your current selections." in contents:
+                    if "aucun commentaire ne correspond" in contents:
                         review_list.append([index + 1, 0])
                     else:
                         if not self.max_review or self.max_review < index + 1:
