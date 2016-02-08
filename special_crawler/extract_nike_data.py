@@ -11,6 +11,7 @@ import time
 import mechanize
 import requests
 from extract_data import Scraper
+from spiders_shared_code.nike_variants import NikeVariants
 
 
 class NikeScraper(Scraper):
@@ -33,6 +34,9 @@ class NikeScraper(Scraper):
         self.is_review_checked = False
         self.store_url = 'http://store.nike.com/us/en_us'
         self.browser = mechanize.Browser()
+        self.nv = NikeVariants()
+        self.variants = None
+        self.is_variant_checked = False
 
     def _initialize_browser_settings(self):
         # Cookie Jar
@@ -94,6 +98,11 @@ class NikeScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
+        try:
+            self.nv.setupCH(self.tree_html)
+        except:
+            pass
+
         try:
             itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
 
@@ -204,7 +213,18 @@ class NikeScraper(Scraper):
 
         return None
 
+    def _variants(self):
+        if self.is_variant_checked:
+            return self.variants
 
+        self.is_variant_checked = True
+
+        self.variants = self.nv._variants()
+
+        return self.variants
+
+    def _swatches(self):
+        return self.nv.swatches()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -436,7 +456,8 @@ class NikeScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
-
+        "variants": _variants,
+        "swatches": _swatches,
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
