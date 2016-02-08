@@ -819,7 +819,7 @@ class AmazonFRScraper(Scraper):
 
                         review_html = html.fromstring(contents)
                         review_count = review_html.xpath("//div[@id='cm_cr-review_list']//div[contains(@class, 'a-section a-spacing-medium')]//span[@class='a-size-base']/text()")[0]
-                        review_count = int(self._find_between(unicode(review_count), 'sur', 'commentaires').replace(",", "").replace("\xc2", "").strip())
+                        review_count = int(re.sub("[^0-9]", "", self._find_between(review_count, 'sur', 'commentaires')))
                         review_list.append([index + 1, review_count])
 
                     break
