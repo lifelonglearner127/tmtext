@@ -807,7 +807,7 @@ class AmazonDEScraper(Scraper):
                 try:
                     contents = self.browser.open(review_link).read()
 
-                    if "Sorry, no reviews match your current selections." in contents:
+                    if u"Leider stimmen keine Rezensionen mit ihrer derzeitiger Auswahl überein." in contents:
                         review_list.append([index + 1, 0])
                     else:
                         if not self.max_review or self.max_review < index + 1:
