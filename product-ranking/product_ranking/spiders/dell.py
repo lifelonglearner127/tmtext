@@ -11,6 +11,7 @@ from datetime import datetime
 
 from scrapy import Request, Selector, FormRequest
 from scrapy.log import ERROR, WARNING
+from pyvirtualdisplay import Display
 
 from product_ranking.items import RelatedProduct, BuyerReviews
 from product_ranking.items import SiteProductItem, Price, LimitedStock
@@ -27,7 +28,7 @@ socket.setdefaulttimeout(60)
 
 def _init_webdriver():
     from selenium import webdriver
-    driver = webdriver.PhantomJS()
+    driver = webdriver.Firefox()
     driver.set_window_size(1280, 1024)
     driver.set_page_load_timeout(60)
     driver.set_script_timeout(60)
@@ -103,6 +104,7 @@ class DellProductSpider(BaseProductsSpider):
         if not self._is_product_page(response):
             product_links = []
             # scrape "quantity" products
+            display = Display(visible=0, size=(1280, 1024))
             driver = _init_webdriver()
             driver.get(response.url)
             time.sleep(6)  # let AJAX finish
@@ -128,6 +130,7 @@ class DellProductSpider(BaseProductsSpider):
                 yield Request(product_link, meta=new_meta, callback=self.parse_product)
 
             driver.quit()
+            display.stop()
 
     @staticmethod
     def _parse_price(response):
