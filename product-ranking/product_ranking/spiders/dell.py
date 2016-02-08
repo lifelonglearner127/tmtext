@@ -130,7 +130,10 @@ class DellProductSpider(BaseProductsSpider):
                 yield Request(product_link, meta=new_meta, callback=self.parse_product)
 
             driver.quit()
-            display.stop()
+            try:
+                display.stop()
+            except Exception as e:
+                self.log('Exception on display.stop(): [%s]' % str(e))
 
     @staticmethod
     def _parse_price(response):
