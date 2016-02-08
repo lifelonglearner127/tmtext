@@ -823,7 +823,8 @@ class AmazonFRScraper(Scraper):
                         review_list.append([index + 1, review_count])
 
                     break
-                except:
+                except Exception, e:
+                    print str(e)
                     continue
 
         if not review_list:
