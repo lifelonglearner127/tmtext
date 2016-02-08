@@ -255,8 +255,10 @@ class AmazonScraper(Scraper):
 
         if self.tree_html.xpath("//li[@id='SalesRank']"):
             ranking_info = self.tree_html.xpath("//li[@id='SalesRank']/text()")[1].strip()
-            seller_ranking.append({"category": ranking_info[ranking_info.find(" in ") + 4:ranking_info.find("(")].strip(),
-                                   "ranking": int(ranking_info[1:ranking_info.find(" ")].strip().replace(",", ""))})
+
+            if ranking_info:
+                seller_ranking.append({"category": ranking_info[ranking_info.find(" in ") + 4:ranking_info.find("(")].strip(),
+                                       "ranking": int(ranking_info[1:ranking_info.find(" ")].strip().replace(",", ""))})
 
             ranking_info_list = [item.text_content().strip() for item in self.tree_html.xpath("//li[@id='SalesRank']/ul[@class='zg_hrsr']/li")]
 
