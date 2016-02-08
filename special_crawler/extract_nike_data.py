@@ -59,14 +59,14 @@ class NikeScraper(Scraper):
         #br.set_debug_responses(True)
 
         # User-Agent (this is cheating, ok?)
-        self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
+        self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly("Safari"))]
 
     def _extract_page_tree(self, captcha_data=None, retries=0):
         try:
             self._initialize_browser_settings()
             self.browser.open(self.store_url)
             contents = self.browser.open(self.product_page_url).read()
-        except:
+        except Exception, e:
             contents = requests.get(self.product_page_url).text
 
         try:
