@@ -75,6 +75,7 @@ class NikeScraper(Scraper):
             # replace NULL characters
             contents = self._clean_null(contents)
 
+        print contents
         self.page_raw_text = contents
         self.tree_html = html.fromstring(contents)
 
