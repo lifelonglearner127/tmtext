@@ -100,7 +100,7 @@ class AmazonFRScraper(Scraper):
 
     def check_url_format(self):
         m = re.match(r"^http://www.amazon.fr/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
-        self.scraper_version = "de"
+        self.scraper_version = "fr"
 
         return not not m
 
@@ -770,7 +770,7 @@ class AmazonFRScraper(Scraper):
         nr_reviews = self.tree_html.xpath("//a[@class='a-link-normal a-text-normal product-reviews-link']//text()")
         if len(nr_reviews) > 1:
             return self._toint(nr_reviews[0].replace('(','').replace(')','').replace(',',''))
-        if self.scraper_version == "de":
+        if self.scraper_version == "fr":
             nr_reviews = self.tree_html.xpath("//span[@class='crAvgStars']/a//text()")
             if len(nr_reviews) > 0:
                 res = nr_reviews[0].split()
@@ -878,7 +878,7 @@ class AmazonFRScraper(Scraper):
     def _price(self):
         price = None
 
-        if self.scraper_version == "de":
+        if self.scraper_version == "fr":
             currency = u"EUR"
 
         try:
@@ -1194,7 +1194,7 @@ class AmazonFRScraper(Scraper):
             "com" for Amazon.com
         """
          # using url to distinguish between page versions.
-        return "de"
+        return "fr"
 
     ##########################################
     ################ RETURN TYPES
