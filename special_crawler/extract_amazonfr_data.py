@@ -789,24 +789,42 @@ class AmazonFRScraper(Scraper):
 
         review_list = []
 
-        for index, tr in enumerate(self.tree_html.xpath("//table[@id='histogramTable']//tr")):
-            mark_count = tr.xpath(".//td[3]/a/text()")
+        try:
+            review_summary_link = self.tree_html.xpath("//a[@class='a-link-emphasis a-nowrap']/@href")[0]
+        except:
+            review_summary_link = "http://www.amazon.com/product-reviews/{0}/ref=acr_dpx_see_all?ie=UTF8&showViewpoints=1".format(self._product_id())
 
-            if mark_count:
-                mark_count = int(mark_count[0])
+        mark_list = ["one", "two", "three", "four", "five"]
 
-                if not self.max_review:
-                    self.max_review = self.min_review = 5 - index
-                else:
-                    if self.max_review < 5 - index:
-                        self.max_review = 5 - index
+        for index, mark in enumerate(mark_list):
+            if "cm_cr_dp_see_all_summary" in review_summary_link:
+                review_link = review_summary_link.replace("cm_cr_dp_see_all_summary", "cm_cr_pr_viewopt_sr")
+                review_link = review_link + "&filterByStar={0}_star&pageNumber=1".format(mark)
+            elif "acr_dpx_see_all" in review_summary_link:
+                review_link = review_summary_link.replace("acr_dpx_see_all", "cm_cr_pr_viewopt_sr")
+                review_link = review_link + "&filterByStar={0}_star&pageNumber=1".format(mark)
 
-                    if self.min_review > 5 - index:
-                        self.min_review = 5 - index
-            else:
-                mark_count = 0
+            for retry_index in range(10):
+                try:
+                    contents = self.browser.open(review_link).read()
 
-            review_list.append([5 - index, mark_count])
+                    if "Sorry, no reviews match your current selections." in contents:
+                        review_list.append([index + 1, 0])
+                    else:
+                        if not self.max_review or self.max_review < index + 1:
+                            self.max_review = index + 1
+
+                        if not self.min_review or self.min_review > index + 1:
+                            self.min_review = index + 1
+
+                        review_html = html.fromstring(contents)
+                        review_count = review_html.xpath("//div[@id='cm_cr-review_list']//div[contains(@class, 'a-section a-spacing-medium')]//span[@class='a-size-base']/text()")[0]
+                        review_count = int(re.search('of (.*) reviews', review_count).group(1).replace(",", ""))
+                        review_list.append([index + 1, review_count])
+
+                    break
+                except:
+                    continue
 
         if not review_list:
             self.review_list = None
