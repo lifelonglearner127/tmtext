@@ -1,67 +1,62 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<SupplierProductFeed>
+<SupplierProductFeed xmlns="http://walmart.com/suppliers/">
 	<version>1.4.1</version>
 	<SupplierProduct>
-		<productName>285 Herb-Ox Sodium Free Instant Beef Broth, 1.1 oz, (Pack
-			of 12)</productName>
-		<longDescription>p2</longDescription>
-		<shortDescription>285 Herb-Ox Sodium Free Instant Beef Broth, 1.1 oz,
-			(Pack of 12)</shortDescription>
+		<productName>Your Décor™ Water Bottle Decorating Kit by Horizon Group USA</productName>
+		<longDescription>1 Water Bottle
+5 Doodle Markers
+20 Peel &amp; Stick Gemstones
+1 Carabiner Clip</longDescription>
+		<shortDescription>Decorate your very own Your Décor™  Water Bottle! Kit includes 1 water bottle, 1 carabiner clip, 5 doodle markers, 20 peel and stick gemstones!</shortDescription>
 		<mainImage>
-			<mainImageUrl>http://i5.walmartimages.com/dfw/dce07b8c-253b/k2-_078fec54-92af-4838-a1bf-91a8c3ec0cee.v1.jpg</mainImageUrl>
-			<altText>video</altText>
+			<mainImageUrl>https://albert-test.contentanalyticsinc.com/temp/20160127580B72.jpg</mainImageUrl>
 		</mainImage>
+		<additionalAssets>
+			<additionalAsset>
+				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/2016012743ADEC.jpg</assetUrl>
+				<assetType>Additional Image</assetType>
+			</additionalAsset>
+			<additionalAsset>
+				<assetUrl>https://albert-test.contentanalyticsinc.com/temp/201601271326C6.jpg</assetUrl>
+				<assetType>Additional Image</assetType>
+			</additionalAsset>
+		</additionalAssets>
 		<productIdentifiers>
 			<productIdentifier>
 				<productIdType>UPC</productIdType>
-				<productId>Y12343</productId>
+				<productId>765940477731</productId>
 			</productIdentifier>
 		</productIdentifiers>
 		<unitsPerConsumerUnit>1</unitsPerConsumerUnit>
-		<countryOfOriginAssembly>CC</countryOfOriginAssembly>
-		<countryOfOriginComponents>USA</countryOfOriginComponents>
-		<isAerosol>true</isAerosol>
+		<countryOfOriginAssembly>CN</countryOfOriginAssembly>
+		<countryOfOriginComponents>Imported</countryOfOriginComponents>
+		<isAerosol>false</isAerosol>
 		<isChemical>false</isChemical>
-		<isPesticide>true</isPesticide>
-		<hasBatteries>true</hasBatteries>
-		<containsMercury>true</containsMercury>
-		<hasFuelContainer>true</hasFuelContainer>
+		<isPesticide>false</isPesticide>
+		<hasBatteries>false</hasBatteries>
+		<containsMercury>false</containsMercury>
+		<hasFuelContainer>false</hasFuelContainer>
 		<pricePerUnitQuantity>
 			<unit>Kilogram</unit>
-			<measure>12</measure>
+			<measure>1</measure>
 		</pricePerUnitQuantity>
-		<containsPaperWood>true</containsPaperWood>
-		<compositeWoodCertificationCode>4</compositeWoodCertificationCode>
-		<hasExpiration>true</hasExpiration>
-		<hasWarnings>true</hasWarnings>
+		<containsPaperWood>false</containsPaperWood>
+		<compositeWoodCertificationCode>1</compositeWoodCertificationCode>
+		<hasExpiration>false</hasExpiration>
+		<hasWarnings>false</hasWarnings>
 		<hasWarranty>false</hasWarranty>
-		<isProp65WarningRequired>true</isProp65WarningRequired>
-		<isTemperatureSensitive>true</isTemperatureSensitive>
+		<isProp65WarningRequired>false</isProp65WarningRequired>
+		<isTemperatureSensitive>false</isTemperatureSensitive>
 		<smallPartsWarnings>
-			<smallPartsWarning>3</smallPartsWarning>
+			<smallPartsWarning>0</smallPartsWarning>
 		</smallPartsWarnings>
-		<isControlledSubstance>true</isControlledSubstance>
-		<hasStateRestrictions>true</hasStateRestrictions>
-		<Baby>
-			<fabricContent>
-				<fabricContentValue>
-					<materialName>cotton</materialName>
-					<materialPercentage>98</materialPercentage>
-				</fabricContentValue>
-			</fabricContent>
-			<fabricCareInstructions>
-				<fabricCareInstruction>1</fabricCareInstruction>
-			</fabricCareInstructions>
-			<brand>HP</brand>
-			<manufacturer>k</manufacturer>
-			<gender>Women</gender>
-			<screenSize>
-				<unit>Feet</unit>
-				<measure>34</measure>
-			</screenSize>
-			<Strollers>
-				<strollerType>jogger</strollerType>
-			</Strollers>
-		</Baby>
+		<isControlledSubstance>false</isControlledSubstance>
+		<hasStateRestrictions>false</hasStateRestrictions>
+		<ArtAndCraft>
+			<isRefillable>false</isRefillable>
+			<isRecyclable>false</isRecyclable>
+			<brand>Your Décor</brand>
+			<gender>Unisex</gender>
+		</ArtAndCraft>
 	</SupplierProduct>
 </SupplierProductFeed>

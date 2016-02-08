@@ -6,13 +6,13 @@ import urllib, urllib2
 import re
 import sys
 import json
-import lxml
 from lxml import html
-import time
+import mechanize
 import requests
 from extract_data import Scraper
 import os
 from PIL import Image
+import cookielib
 import cStringIO # *much* faster than StringIO
 from pytesseract import image_to_string
 
@@ -48,6 +48,8 @@ class AmazonScraper(Scraper):
         self.max_review = None
         self.min_review = None
         self.is_marketplace_sellers_checked = False
+        self.store_url = 'http://www.amazon.com/'
+        self.browser = mechanize.Browser()
         self.marketplace_prices = None
         self.marketplace_sellers = None
         self.is_variants_checked = False
@@ -55,96 +57,46 @@ class AmazonScraper(Scraper):
 
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
+    def _initialize_browser_settings(self):
+        # Cookie Jar
+        cj = cookielib.LWPCookieJar()
+        self.browser.set_cookiejar(cj)
+
+        # Browser options
+        self.browser.set_handle_equiv(True)
+        self.browser.set_handle_gzip(True)
+        self.browser.set_handle_redirect(True)
+        self.browser.set_handle_referer(True)
+        self.browser.set_handle_robots(False)
+
+        # Follows refresh 0 but not hangs on refresh > 0
+        self.browser.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
+
+        # Want debugging messages?
+        #br.set_debug_http(True)
+        #br.set_debug_redirects(True)
+        #br.set_debug_responses(True)
+
+        # User-Agent (this is cheating, ok?)
+        self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
+
     def _extract_page_tree(self, captcha_data=None, retries=0):
-        """Builds and sets as instance variable the xml tree of the product page
-        :param captcha_data: dictionary containing the data to be sent to the form for captcha solving
-        This method will be used either to get a product page directly (null captcha_data),
-        or to solve the form and get the product page this way, in which case it will use captcha_data
-        :param retries: number of retries to solve captcha so far; relevant only if solving captcha form
-        Returns:
-            lxml tree object
-        """
+        self._initialize_browser_settings()
+        self.browser.open(self.store_url)
+        contents = self.browser.open(self.product_page_url).read()
 
-        # TODO: implement maximum number of retries
-        if captcha_data:
-            data = urllib.urlencode(captcha_data)
-            request = urllib2.Request(self.product_page_url, data)
-        else:
-            request = urllib2.Request(self.product_page_url)
+        try:
+            # replace NULL characters
+            contents = self._clean_null(contents).decode("utf8")
+        except UnicodeError, e:
+            # if string was not utf8, don't deocde it
+            print "Warning creating html tree from page content: ", e.message
 
-        # set user agent to avoid blocking
-        agent = ''
-        if self.bot_type == "google":
-            print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
-            agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-        else:
-      #      agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
-            agent = getUserAgent()  #random User Agent
-        request.add_header('User-Agent', agent)
-
-        for i in range(self.MAX_RETRIES):
-            try:
-                contents = urllib2.urlopen(request).read()
-
-            # handle urls with special characters
-            except UnicodeEncodeError, e:
-
-                if captcha_data:
-                    request = urllib2.Request(self.product_page_url.encode("utf-8"), data)
-                else:
-                    request = urllib2.Request(self.product_page_url.encode("utf-8"))
-                request.add_header('User-Agent', agent)
-                contents = urllib2.urlopen(request, timeout=20).read()
-
-            except IncompleteRead, e:
-                continue
-            except timeout:
-                self.is_timeout = True
-                self.ERROR_RESPONSE["failure_type"] = "Timeout"
-                return
-
-            try:
-                # replace NULL characters
-                contents = self._clean_null(contents)
-
-                self.tree_html = html.fromstring(contents.decode("utf8"))
-            except UnicodeError, e:
-                # if string was not utf8, don't deocde it
-                print "Warning creating html tree from page content: ", e.message
-
-                # replace NULL characters
-                contents = self._clean_null(contents)
-
-                self.tree_html = html.fromstring(contents)
-
-            # it's a captcha page
-            if self.tree_html.xpath("//form[contains(@action,'Captcha')]") and retries <= self.MAX_CAPTCHA_RETRIES:
-                image = self.tree_html.xpath(".//img/@src")
-                if image:
-                    captcha_text = self.CB.solve_captcha(image[0])
-
-                # value to use if there was an exception
-                if not captcha_text:
-                    captcha_text = ''
-
-                retries += 1
-                return self._extract_page_tree(captcha_data={'field-keywords' : captcha_text}, retries=retries)
-
-            # if we got it we can exit the loop and stop retrying
-            return
-
-
-            # try getting it again, without catching exception.
-            # if it had worked by now, it would have returned.
-            # if it still doesn't work, it will throw exception.
-            # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
-
-            contents = urllib2.urlopen(request).read()
             # replace NULL characters
             contents = self._clean_null(contents)
-            self.tree_html = html.fromstring(contents)
 
-
+        self.page_raw_text = contents
+        self.tree_html = html.fromstring(contents)
 
     def check_url_format(self):
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9%\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
@@ -303,8 +255,10 @@ class AmazonScraper(Scraper):
 
         if self.tree_html.xpath("//li[@id='SalesRank']"):
             ranking_info = self.tree_html.xpath("//li[@id='SalesRank']/text()")[1].strip()
-            seller_ranking.append({"category": ranking_info[ranking_info.find(" in ") + 4:ranking_info.find("(")].strip(),
-                                   "ranking": int(ranking_info[1:ranking_info.find(" ")].strip().replace(",", ""))})
+
+            if ranking_info:
+                seller_ranking.append({"category": ranking_info[ranking_info.find(" in ") + 4:ranking_info.find("(")].strip(),
+                                       "ranking": int(ranking_info[1:ranking_info.find(" ")].strip().replace(",", ""))})
 
             ranking_info_list = [item.text_content().strip() for item in self.tree_html.xpath("//li[@id='SalesRank']/ul[@class='zg_hrsr']/li")]
 
@@ -865,7 +819,7 @@ class AmazonScraper(Scraper):
 
             for retry_index in range(10):
                 try:
-                    contents = self.load_page_from_url_with_number_of_retries(review_link)
+                    contents = self.browser.open(review_link).read()
 
                     if "Sorry, no reviews match your current selections." in contents:
                         review_list.append([index + 1, 0])
@@ -1046,7 +1000,7 @@ class AmazonScraper(Scraper):
         fl = 0
 
         while len(url) > 10:
-            contents = self.load_page_from_url_with_number_of_retries(url)
+            contents = self.browser.open(url).read()
             tree = html.fromstring(contents)
             sells = tree.xpath('//div[@class="a-row a-spacing-mini olpOffer"]')
 
@@ -1077,14 +1031,14 @@ class AmazonScraper(Scraper):
 
                             if seller_name == "":
                                 if seller_link[0].startswith("http://www.amazon."):
-                                    seller_content = self.load_page_from_url_with_number_of_retries(seller_link[0])
+                                    seller_content = self.browser.open(seller_link[0]).read()
                                 else:
                                     if self.scraper_version == "uk":
-                                        seller_content = self.load_page_from_url_with_number_of_retries("http://www.amazon.co.uk" + seller_link[0])
+                                        seller_content = self.browser.open("http://www.amazon.co.uk" + seller_link[0]).read()
                                     elif self.scraper_version == "ca":
-                                        seller_content = self.load_page_from_url_with_number_of_retries("http://www.amazon.ca" + seller_link[0])
+                                        seller_content = self.browser.open("http://www.amazon.ca" + seller_link[0]).read()
                                     else:
-                                        seller_content = self.load_page_from_url_with_number_of_retries("http://www.amazon.com" + seller_link[0])
+                                        seller_content = self.browser.open("http://www.amazon.com" + seller_link[0]).read()
 
                                 seller_tree = html.fromstring(seller_content)
                                 seller_names = seller_tree.xpath("//h2[@id='s-result-count']/span/span//text()")
