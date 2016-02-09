@@ -307,7 +307,7 @@ class MergeSubItems(object):
             self._dump_mapper_to_fname(_validation_filename)
             if self.create_csv_output and self._get_output_filename(spider):
                 # create CSV file as well
-                _output_file = self._get_output_filename(spider).lower().rstrip('.jl')
+                _output_file = self._get_output_filename(spider).lower().replace('.jl', '')
                 try:
                     _output_csv = convert_json_to_csv(_output_file)
                     print('Created CSV output: %s.csv' % _output_csv)
