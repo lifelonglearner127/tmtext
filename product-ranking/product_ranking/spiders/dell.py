@@ -104,6 +104,7 @@ class DellProductSpider(BaseProductsSpider):
             product_links = []
             # scrape "quantity" products
             display = Display(visible=0, size=(1280, 1024))
+            display.start()
             driver = self._init_webdriver()
             driver.get(response.url)
             time.sleep(6)  # let AJAX finish
