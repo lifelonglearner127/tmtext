@@ -1951,14 +1951,6 @@ class WalmartScraper(Scraper):
             # nothing found
             return None
 
-    def remove_duplication_keeping_order_in_list(self, seq):
-        if seq:
-            seen = set()
-            seen_add = seen.add
-            return [x for x in seq if not (x in seen or seen_add(x))]
-
-        return None
-
     def _image_urls(self):
         """Extracts image urls for this product.
         Works on both old and new version of walmart pages.
