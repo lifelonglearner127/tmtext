@@ -244,7 +244,7 @@ class Scraper():
         if agent_type and agent_type in self.BROWSER_AGENT_STRING_LIST:
             return random.choice(self.BROWSER_AGENT_STRING_LIST[agent_type])
 
-        return random.choice(self.BROWSER_AGENT_STRING_LIST.values())
+        return random.choice(random.choice(self.BROWSER_AGENT_STRING_LIST.values()))
 
     def load_page_from_url_with_number_of_retries(self, url, max_retries=3, extra_exclude_condition=None):
         for index in range(1, max_retries):
@@ -258,6 +258,14 @@ class Scraper():
 
             if not extra_exclude_condition or extra_exclude_condition not in contents:
                 return contents
+
+        return None
+
+    def remove_duplication_keeping_order_in_list(self, seq):
+        if seq:
+            seen = set()
+            seen_add = seen.add
+            return [x for x in seq if not (x in seen or seen_add(x))]
 
         return None
 
@@ -456,16 +464,16 @@ class Scraper():
                     raise
             try:
                 # replace NULL characters
-                contents = self._clean_null(contents)
-
-                self.tree_html = html.fromstring(contents.decode("utf8"))
+                contents = self._clean_null(contents).decode("utf8")
+                self.page_raw_text = contents
+                self.tree_html = html.fromstring(contents)
             except UnicodeError, e:
                 # if string was not utf8, don't deocde it
                 print "Warning creating html tree from page content: ", e.message
 
                 # replace NULL characters
                 contents = self._clean_null(contents)
-
+                self.page_raw_text = contents
                 self.tree_html = html.fromstring(contents)
 
             # if we got it we can exit the loop and stop retrying
@@ -480,6 +488,7 @@ class Scraper():
             contents = urllib2.urlopen(request).read()
             # replace NULL characters
             contents = self._clean_null(contents)
+            self.page_raw_text = contents
             self.tree_html = html.fromstring(contents)
 
 

@@ -205,12 +205,13 @@ class URL2ScreenshotSpider(scrapy.Spider):
         profile = webdriver.FirefoxProfile()
         profile.set_preference("general.useragent.override", self.user_agent)
         profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
-        if 'socks' in self.proxy_type:
-            profile.set_preference("network.proxy.socks", self.proxy.split(':')[0])
-            profile.set_preference("network.proxy.socks_port", int(self.proxy.split(':')[1]))
-        else:
-            profile.set_preference("network.proxy.http", self.proxy.split(':')[0])
-            profile.set_preference("network.proxy.http_port", int(self.proxy.split(':')[1]))
+        if self.proxy:
+            if 'socks' in self.proxy_type:
+                profile.set_preference("network.proxy.socks", self.proxy.split(':')[0])
+                profile.set_preference("network.proxy.socks_port", int(self.proxy.split(':')[1]))
+            else:
+                profile.set_preference("network.proxy.http", self.proxy.split(':')[0])
+                profile.set_preference("network.proxy.http_port", int(self.proxy.split(':')[1]))
         profile.update_preferences()
         driver = webdriver.Firefox(profile)
         return driver

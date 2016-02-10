@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import urllib
+import cookielib
 import re
 import sys
 import json
@@ -10,6 +11,7 @@ import time
 import mechanize
 import requests
 from extract_data import Scraper
+from spiders_shared_code.nike_variants import NikeVariants
 
 
 class NikeScraper(Scraper):
@@ -19,7 +21,7 @@ class NikeScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.homedepot.com/p/<product-name>/<product-id>"
-    REVIEW_URL = "http://homedepot.ugc.bazaarvoice.com/1999aa/{0}/reviews.djs?format=embeddedhtml"
+    REVIEW_URL = "http://nike.ugc.bazaarvoice.com/9191-en_us/{0}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -31,14 +33,54 @@ class NikeScraper(Scraper):
         self.review_list = None
         self.is_review_checked = False
         self.store_url = 'http://store.nike.com/us/en_us'
-        self.page_raw_text = ""
+        self.browser = mechanize.Browser()
+        self.nv = NikeVariants()
+        self.variants = None
+        self.is_variant_checked = False
+
+    def _initialize_browser_settings(self):
+        # Cookie Jar
+        cj = cookielib.LWPCookieJar()
+        self.browser.set_cookiejar(cj)
+
+        # Browser options
+        self.browser.set_handle_equiv(True)
+        self.browser.set_handle_gzip(True)
+        self.browser.set_handle_redirect(True)
+        self.browser.set_handle_referer(True)
+        self.browser.set_handle_robots(False)
+
+        # Follows refresh 0 but not hangs on refresh > 0
+        self.browser.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
+
+        # Want debugging messages?
+        #br.set_debug_http(True)
+        #br.set_debug_redirects(True)
+        #br.set_debug_responses(True)
+
+        # User-Agent (this is cheating, ok?)
+        self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly("Safari"))]
 
     def _extract_page_tree(self, captcha_data=None, retries=0):
-        browser = mechanize.Browser()
-        response = browser.open(self.store_url)
-        response = browser.open(self.product_page_url)
-        self.page_raw_text = response.read()
-        self.tree_html = html.fromstring(self.page_raw_text)
+        try:
+            self._initialize_browser_settings()
+            self.browser.open(self.store_url)
+            contents = self.browser.open(self.product_page_url).read()
+        except Exception, e:
+            contents = requests.get(self.product_page_url).text
+
+        try:
+            # replace NULL characters
+            contents = self._clean_null(contents).decode("utf8")
+        except UnicodeError, e:
+            # if string was not utf8, don't deocde it
+            print "Warning creating html tree from page content: ", e.message
+
+            # replace NULL characters
+            contents = self._clean_null(contents)
+
+        self.page_raw_text = contents
+        self.tree_html = html.fromstring(contents)
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -56,6 +98,11 @@ class NikeScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
+        try:
+            self.nv.setupCH(self.tree_html)
+        except:
+            pass
+
         try:
             itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
 
@@ -146,7 +193,7 @@ class NikeScraper(Scraper):
         return None
 
     def _description(self):
-        return self.tree_html.xpath("//div[@class='pi-pdpmainbody']/p/text()")[1].strip()
+        return self.tree_html.xpath("//div[@class='pi-pdpmainbody']/p")[1].text_content().strip()
 
     def _long_description(self):
         description_block = self.tree_html.xpath("//div[@class='pi-pdpmainbody']")[0]
@@ -166,7 +213,18 @@ class NikeScraper(Scraper):
 
         return None
 
+    def _variants(self):
+        if self.is_variant_checked:
+            return self.variants
 
+        self.is_variant_checked = True
+
+        self.variants = self.nv._variants()
+
+        return self.variants
+
+    def _swatches(self):
+        return self.nv.swatches()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -176,18 +234,23 @@ class NikeScraper(Scraper):
 
     def _image_urls(self):
         selected_product_image_url_suffixes = [url[url[:url.rfind("_")].rfind("_"):] for url in self.product_json["imagesHeroZoom"]]
-        variants_images = [variant["imageUrl"] for variant in self.product_json["inStockColorways"]]
+        variants_images = None
 
-        image_urls = []
+        if self.product_json["inStockColorways"]:
+            variants_images = [variant["imageUrl"] for variant in self.product_json["inStockColorways"]]
 
-        for variant_image in variants_images:
-            variant_image = variant_image.replace("PDP_THUMB", "PDP_HERO_ZOOM")
+            image_urls = []
 
-            for suffix in selected_product_image_url_suffixes:
-                image_urls.append(variant_image[:variant_image.rfind(".")] + suffix)
+            for variant_image in variants_images:
+                variant_image = variant_image.replace("PDP_THUMB", "PDP_HERO_ZOOM")
 
-        if image_urls:
-            return image_urls
+                for suffix in selected_product_image_url_suffixes:
+                    image_urls.append(variant_image[:variant_image.rfind(".")] + suffix)
+
+            if image_urls:
+                return image_urls
+        else:
+            return self.product_json["imagesHeroZoom"]
 
         return None
 
@@ -239,31 +302,80 @@ class NikeScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        average_review = round(float(self.review_json["jsonData"]["attributes"]["avgRating"]), 1)
+
+        if str(average_review).split('.')[1] == '0':
+            return int(average_review)
+        else:
+            return float(average_review)
 
     def _review_count(self):
-        return 0
+        self._reviews()
+
+        if not self.review_json:
+            return 0
+
+        return int(self.review_json["jsonData"]["attributes"]["numReviews"])
 
     def _max_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        for i, review in enumerate(self.review_list):
+            if review[1] > 0:
+                return 5 - i
 
     def _min_review(self):
-        return None
+        if self._review_count() == 0:
+            return None
+
+        for i, review in enumerate(reversed(self.review_list)):
+            if review[1] > 0:
+                return i + 1
 
     def _reviews(self):
-        return None
+        if self.is_review_checked:
+            return self.review_list
+
+        self.is_review_checked = True
+
+        contents = requests.get(self.REVIEW_URL.format(self.product_json['styleNumber'])).text
+
+        try:
+            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
+            end_index = contents.find(",\nwidgetInitializers:initializers", start_index)
+
+            self.review_json = contents[start_index:end_index]
+            self.review_json = json.loads(self.review_json)
+        except:
+            self.review_json = None
+
+        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
+        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
+        reviews_by_mark = reviews_by_mark[:5]
+        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
+
+        if not review_list:
+            review_list = None
+
+        self.review_list = review_list
+
+        return self.review_list
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return None
+        return self.tree_html.xpath("//div[@class='exp-product-header']//span[contains(@class, 'exp-pdp-local-price')]/text()")[0].strip()
 
     def _price_amount(self):
-        return None
+        return float(self.tree_html.xpath("//meta[@property='og:price:amount']/@content")[0])
 
     def _price_currency(self):
-        return None
+        return self.tree_html.xpath("//meta[@property='og:price:currency']/@content")[0]
 
     def _in_stores(self):
         return 0
@@ -272,10 +384,13 @@ class NikeScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
+        if not self.product_json["trackingData"]["product"]["inStock"]:
+            return 1
+
         return 0
 
     def _in_stores_out_of_stock(self):
-        return 0
+        return None
 
     def _marketplace(self):
         return 0
@@ -297,10 +412,10 @@ class NikeScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        return None
+        return [self.product_json["trackingData"]["product"]["category"]]
 
     def _category_name(self):
-        return None
+        return self._categories()[-1]
     
     def _brand(self):
         return None
@@ -341,7 +456,8 @@ class NikeScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
-
+        "variants": _variants,
+        "swatches": _swatches,
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
