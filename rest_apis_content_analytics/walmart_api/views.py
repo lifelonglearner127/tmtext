@@ -914,7 +914,11 @@ class DetectDuplicateContentBySeleniumViewset(viewsets.ViewSet):
                 input_search_text.send_keys(Keys.ENTER)
                 time.sleep(3)
                 google_search_results_page_raw_text = driver.page_source
-                print google_search_results_page_raw_text
+
+                current_path = os.path.dirname(os.path.realpath(__file__))
+                output_file = open(current_path + "/search_page.html", "w")
+                output_file.write(google_search_results_page_raw_text)
+
                 google_search_results_page_html_tree = html.fromstring(google_search_results_page_raw_text)
 
                 if sellers_search_only:
