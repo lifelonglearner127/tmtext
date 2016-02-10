@@ -894,8 +894,8 @@ class DetectDuplicateContentBySeleniumViewset(viewsets.ViewSet):
                 if not description:
                     raise Exception('No description in product')
 
-                if len(description) > 800:
-                    description = description[:800]
+                if len(description) > 500:
+                    description = description[:500]
 
                     if description.rfind(" ") > 0:
                         description = description[:description.rfind(" ")].strip()
