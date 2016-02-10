@@ -918,6 +918,7 @@ class DetectDuplicateContentBySeleniumViewset(viewsets.ViewSet):
                 current_path = os.path.dirname(os.path.realpath(__file__))
                 output_file = open(current_path + "/search_page.html", "w")
                 output_file.write(google_search_results_page_raw_text)
+                output_file.close()
 
                 google_search_results_page_html_tree = html.fromstring(google_search_results_page_raw_text)
 
