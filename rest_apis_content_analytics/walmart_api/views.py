@@ -1009,16 +1009,10 @@ class DetectDuplicateByMechanizeContentViewset(viewsets.ViewSet):
         product_url_pattern = 'product_url'
         groupped_fields = group_params(request.POST, request.FILES, [product_url_pattern])
 
-        driver = webdriver.PhantomJS()
-        driver.set_window_size(1440, 900)
+        mechanize_browser = mechanize.Browser()
+        mechanize_browser = initialize_browser_settings(mechanize_browser)
 
         for group_name, group_data in groupped_fields.items():
-            if sellers_search_only:
-                driver.get("https://www.google.com/shopping?hl=en")
-            else:
-                #means broad search
-                driver.get("https://www.google.com/")
-
             product_url = find_in_list(group_data, product_url_pattern)
 
             if not any(product_url):
@@ -1028,37 +1022,60 @@ class DetectDuplicateByMechanizeContentViewset(viewsets.ViewSet):
             product_url = product_url[0]  # this value can only have 1 element
 
             try:
-                product_json = json.loads(requests.get("http://chscraper.contentanalyticsinc.com/get_data?url={0}".format(urllib.quote(product_url))).text)
+                product_id = product_url.split("/")[-1]
+                product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id)).read())
 
-                short_description = long_description = ""
+                description = None
 
-                if product_json["product_info"]["description"]:
-                    short_description = product_json["product_info"]["description"]
+                if "product" in product_json:
+                    if "mediumDescription" in product_json["product"]:
+                        description = product_json["product"]["mediumDescription"]
+                        description = html.fromstring("<html>" + description + "</html>").text_content().strip()
 
-                if product_json["product_info"]["long_description"]:
-                    long_description = product_json["product_info"]["long_description"]
+                    if not description and "longDescription" in product_json["product"]:
+                        description = product_json["product"]["longDescription"]
+                        description = html.fromstring("<html>" + description + "</html>").text_content().strip()
 
-                description = short_description + " " + long_description
-                description = html.fromstring("<html>" + description + "</html>")[0].text_content()
+                if not description:
+                    raise Exception('No description in product')
 
-                if len(description.split(".")) > 1:
-                    search_product_content = (description.split(".")[0].strip() + ". " + description.split(".")[1].strip()).strip()
-                else:
-                    search_product_content = description.strip()
+                if len(description) > 500:
+                    description = description[:500]
+
+                    if description.rfind(" ") > 0:
+                        description = description[:description.rfind(" ")].strip()
 
                 input_search_text = None
 
-                if sellers_search_only:
-                    input_search_text = driver.find_element_by_xpath("//input[@title='Search']")
-                else:
-                    input_search_text = driver.find_element_by_xpath("//input[@title='Google Search']")
+                google_search_results_page_raw_text = None
 
-                input_search_text.clear()
-                input_search_text.send_keys('"' + search_product_content + '"')
-                input_search_text.send_keys(Keys.ENTER)
-                time.sleep(3)
-                google_search_results_page_raw_text = driver.page_source
+                if sellers_search_only:
+                    mechanize_browser.open("https://www.google.com/shopping?hl=en")
+                    mechanize_browser.select_form('f')
+                    mechanize_browser.form['q'] = '"{0}"'.format(description)
+                    mechanize_browser.submit()
+                else:
+                    #means broad search
+                    mechanize_browser.open("https://www.google.com/")
+                    mechanize_browser.select_form('f')
+                    mechanize_browser.form['q'] = '"{0}"'.format(description)
+                    mechanize_browser.submit()
+
+                google_search_results_page_raw_text = mechanize_browser.response().read()
+
+                current_path = os.path.dirname(os.path.realpath(__file__))
+                output_file = open(current_path + "/search_page.html", "w")
+                output_file.write(google_search_results_page_raw_text.decode("utf-8").encode("utf-8"))
+                output_file.close()
+
                 google_search_results_page_html_tree = html.fromstring(google_search_results_page_raw_text)
+
+                if google_search_results_page_html_tree.xpath("//form[@action='CaptchaRedirect']"):
+                    raise Exception('Google blocks search requests and claim to input captcha.')
+
+                if google_search_results_page_html_tree.xpath("//title") and \
+                                "Error 400 (Bad Request)" in google_search_results_page_html_tree.xpath("//title")[0].text_content():
+                    raise Exception('Error 400 (Bad Request)')
 
                 if sellers_search_only:
                     seller_block = None
@@ -1091,12 +1108,10 @@ class DetectDuplicateByMechanizeContentViewset(viewsets.ViewSet):
 
             except Exception, e:
                 print e
-#                    url_duplication_dict[url] = "Error occurred while checking."
                 output[product_url] = str(e)
                 continue
 
-        driver.close()
-        driver.quit()
+        mechanize_browser.close()
 
         if output:
             return Response(output)
