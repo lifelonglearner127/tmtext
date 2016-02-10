@@ -891,10 +891,14 @@ class DetectDuplicateContentBySeleniumViewset(viewsets.ViewSet):
                         description = product_json["product"]["longDescription"]
                         description = html.fromstring("<html>" + description + "</html>").text_content().strip()
 
-#                description = product_json.get("product", None).get("mediumDescription", product_json["product"].get("longDescription", None))
-
                 if not description:
                     raise Exception('No description in product')
+
+                if len(description) > 800:
+                    description = description[:800]
+
+                    if description.rfind(" ") > 0:
+                        description = description[:description.rfind(" ")].strip()
 
                 if sellers_search_only:
                     driver.get("https://www.google.com/shopping?hl=en")
@@ -924,6 +928,10 @@ class DetectDuplicateContentBySeleniumViewset(viewsets.ViewSet):
 
                 if google_search_results_page_html_tree.xpath("//form[@action='CaptchaRedirect']"):
                     raise Exception('Google blocks search requests and claim to input captcha.')
+
+                if google_search_results_page_html_tree.xpath("//title") and \
+                                "Error 400 (Bad Request)" in google_search_results_page_html_tree.xpath("//title")[0].text_content():
+                    raise Exception('Error 400 (Bad Request)')
 
                 if sellers_search_only:
                     seller_block = None
