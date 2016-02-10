@@ -986,7 +986,7 @@ class DetectDuplicateContentBySeleniumViewset(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
 
-class DetectDuplicateByMechanizeContentViewset(viewsets.ViewSet):
+class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
     """
