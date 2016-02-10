@@ -880,11 +880,20 @@ class DetectDuplicateContentBySeleniumViewset(viewsets.ViewSet):
                 product_id = product_url.split("/")[-1]
                 product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id)).read())
 
-                description = product_json.get("product", None).get("mediumDescription", product_json["product"].get("longDescription", None))
+                description = None
 
-                if description:
-                    description = html.fromstring("<html>" + description + "</html>")[0].text_content()
-                else:
+                if "product" in product_json:
+                    if "mediumDescription" in product_json["product"]:
+                        description = product_json["product"]["mediumDescription"]
+                        description = html.fromstring("<html>" + description + "</html>").text_content().strip()
+
+                    if not description and "longDescription" in product_json["product"]:
+                        description = product_json["product"]["longDescription"]
+                        description = html.fromstring("<html>" + description + "</html>").text_content().strip()
+
+#                description = product_json.get("product", None).get("mediumDescription", product_json["product"].get("longDescription", None))
+
+                if not description:
                     raise Exception('No description in product')
 
                 if sellers_search_only:
