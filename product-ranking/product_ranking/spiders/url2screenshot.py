@@ -246,6 +246,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         if self.close_popups:
             time.sleep(3)
+            self._click_on_element_with_xpath(driver, '//*[contains(@class, "monetate_lightbox_close_")]')  # for ralphlauren.com
             self._click_on_elements_with_class(driver, 'close')
             self._remove_element_with_xpath(
                 driver, '//body/*[contains(@class, "email-lightbox")]')  # for levi.com
