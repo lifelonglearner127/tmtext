@@ -5,7 +5,10 @@ import json
 import requests
 from pprint import pprint
 import datetime
+import mechanize
+import cookielib
 import os
+import random
 import os.path
 import tempfile
 from collections import OrderedDict
@@ -28,6 +31,20 @@ import xmltodict
 import unirest
 import time
 
+
+BROWSER_AGENT_STRING_LIST = {"Firefox": ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1",
+                                         "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0",
+                                         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10; rv:33.0) Gecko/20100101 Firefox/33.0"],
+                             "Chrome":  ["Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36",
+                                         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.1 Safari/537.36",
+                                         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.0 Safari/537.36",
+                                         "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.0 Safari/537.36"],
+                             "Safari":  ["Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A",
+                                         "Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5355d Safari/8536.25",
+                                         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.13+ (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2"]
+                             }
+
+
 def remove_duplication_keeping_order_in_list(seq):
     if seq:
         seen = set()
@@ -36,6 +53,38 @@ def remove_duplication_keeping_order_in_list(seq):
 
     return None
 
+
+def select_browser_agents_randomly(agent_type=None):
+    if agent_type and agent_type in BROWSER_AGENT_STRING_LIST:
+        return random.choice(BROWSER_AGENT_STRING_LIST[agent_type])
+
+    return random.choice(random.choice(BROWSER_AGENT_STRING_LIST.values()))
+
+
+def initialize_browser_settings(browser):
+    # Cookie Jar
+    cj = cookielib.LWPCookieJar()
+    browser.set_cookiejar(cj)
+
+    # Browser options
+    browser.set_handle_equiv(True)
+    browser.set_handle_gzip(True)
+    browser.set_handle_redirect(True)
+    browser.set_handle_referer(True)
+    browser.set_handle_robots(False)
+
+    # Follows refresh 0 but not hangs on refresh > 0
+    browser.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
+
+    # Want debugging messages?
+    #br.set_debug_http(True)
+    #br.set_debug_redirects(True)
+    #br.set_debug_responses(True)
+
+    # User-Agent (this is cheating, ok?)
+    browser.addheaders = [('User-agent', select_browser_agents_randomly())]
+
+    return browser
 
 def group_params(data, files, patterns):
     """ data = request.data, files=request.files,
@@ -790,7 +839,128 @@ class ValidateWalmartProductXmlFileViewSet(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
 
-class DetectDuplicateContentViewset(viewsets.ViewSet):
+class DetectDuplicateContentBySeleniumViewset(viewsets.ViewSet):
+    """
+    API endpoint that allows groups to be viewed or edited.
+    """
+    serializer_class = WalmartDetectDuplicateContentRequestSerializer
+
+    def list(self, request):
+        return Response({'data': 'OK'})
+
+    def retrieve(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+    def create(self, request):
+        output = {}
+
+        sellers_search_only = True
+
+        if not request.POST.get('detect_duplication_in_sellers_only', None):
+            sellers_search_only = False
+
+        product_url_pattern = 'product_url'
+        groupped_fields = group_params(request.POST, request.FILES, [product_url_pattern])
+
+        driver = webdriver.PhantomJS()
+        driver.set_window_size(1440, 900)
+        mechanize_browser = mechanize.Browser()
+        mechanize_browser = initialize_browser_settings(mechanize_browser)
+
+        for group_name, group_data in groupped_fields.items():
+            product_url = find_in_list(group_data, product_url_pattern)
+
+            if not any(product_url):
+                output[group_name] = {'error': 'one (or more) required params missing'}
+                continue
+
+            product_url = product_url[0]  # this value can only have 1 element
+
+            try:
+                product_id = product_url.split("/")[-1]
+                product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id)).read())
+
+                description = product_json.get("product", None).get("mediumDescription", product_json["product"].get("longDescription", None))
+
+                if description:
+                    description = html.fromstring("<html>" + description + "</html>")[0].text_content()
+                else:
+                    raise Exception('No description in product')
+
+                if sellers_search_only:
+                    driver.get("https://www.google.com/shopping?hl=en")
+                else:
+                    #means broad search
+                    driver.get("https://www.google.com/")
+
+                input_search_text = None
+
+                if sellers_search_only:
+                    input_search_text = driver.find_element_by_xpath("//input[@title='Search']")
+                else:
+                    input_search_text = driver.find_element_by_xpath("//input[@title='Google Search']")
+
+                input_search_text.clear()
+                input_search_text.send_keys('"' + description + '"')
+                input_search_text.send_keys(Keys.ENTER)
+                time.sleep(3)
+                google_search_results_page_raw_text = driver.page_source
+                google_search_results_page_html_tree = html.fromstring(google_search_results_page_raw_text)
+
+                if sellers_search_only:
+                    seller_block = None
+
+                    for left_block in google_search_results_page_html_tree.xpath("//ul[@class='sr__group']"):
+                        if left_block.xpath("./li[@class='sr__title sr__item']/text()")[0].strip().lower() == "seller":
+                            seller_block = left_block
+                            break
+
+                    seller_name_list = None
+
+                    if seller_block:
+                        seller_name_list = seller_block.xpath(".//li[@class='sr__item']//a/text()")
+                        seller_name_list = [seller for seller in seller_name_list if seller.lower() != "walmart"]
+
+                    if not seller_name_list:
+                        output[product_url] = "Unique content."
+                    else:
+                        output[product_url] = "Found duplicate content from other sellers: ." + ", ".join(seller_name_list)
+                else:
+                    duplicate_content_links = google_search_results_page_html_tree.xpath("//div[@id='search']//cite/text()")
+
+                    if duplicate_content_links:
+                        duplicate_content_links = [url for url in duplicate_content_links if "walmart.com" not in url.lower()]
+
+                    if not duplicate_content_links:
+                        output[product_url] = "Unique content."
+                    else:
+                        output[product_url] = "Found duplicate content from other links."
+
+            except Exception, e:
+                print e
+                output[product_url] = str(e)
+                continue
+
+        driver.close()
+        driver.quit()
+        mechanize_browser.close()
+
+        if output:
+            return Response(output)
+
+        return None
+
+    def update(self, request, pk=None):
+        pass
+
+    def partial_update(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+    def destroy(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+
+class DetectDuplicateByMechanizeContentViewset(viewsets.ViewSet):
     """
     API endpoint that allows groups to be viewed or edited.
     """
