@@ -33,24 +33,18 @@ import unirest
 import time
 
 
-FREE_PROXY_IP_PORT_LIST = [{"http": "107.151.152.218:80"},
-                           {"http": "107.151.152.210:80"},
-                           {"http": "107.151.142.125:80"},
-                           {"http": "64.26.95.14:8080"},
-                           {"http": "54.68.135.82:80"},
-                           {"http": "107.151.142.122:80"},
-                           {"http": "159.203.71.65:80"},
-                           {"http": "95.213.194.94:3128"},
-                           {"http": "107.151.142.116:80"},
-                           {"http": "107.151.142.123:80"},
-                           {"http": "52.76.197.151:80"},
-                           {"http": "107.151.142.115:80"},
-                           {"http": "107.151.142.118:80"},
-                           {"http": "204.14.188.53:80"},
-                           {"http": "107.151.152.210:7004"},
-                           {"http": "134.249.168.16:80"},
-                           {"http": "107.151.142.114:80"},
-                           {"http": "64.132.113.118:80"}]
+FREE_PROXY_IP_PORT_LIST = [{"http": "165.139.149.169:3128"},
+                           {"http": "220.143.1.93:8088"},
+                           {"http": "114.44.191.105:8088"},
+                           {"http": "49.159.143.106:8088"},
+                           {"http": "202.77.96.150:80"},
+                           {"http": "180.253.132.134:8080"},
+                           {"http": "104.236.54.196:8080"},
+                           {"http": "92.237.118.170:8083"},
+                           {"http": "114.44.191.170:8088"},
+                           {"http": "86.158.13.130:8118"},
+                           {"http": "112.104.13.181:8088"},
+                           {"http": "190.77.52.116:8088"}]
 
 BROWSER_AGENT_STRING_LIST = {"Firefox": ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1",
                                          "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0",
@@ -1051,7 +1045,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                     #mechanize_browser.set_proxies({"http": "107.151.152.218:80"})
 
                     product_id = product_url.split("/")[-1]
-                    product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id), timeout=3.0).read())
+                    product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id), timeout=2.0).read())
 
                     description = None
 
@@ -1080,13 +1074,13 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                     mechanize_browser.set_proxies(random.choice(FREE_PROXY_IP_PORT_LIST))
 
                     if sellers_search_only:
-                        mechanize_browser.open("https://www.google.com/shopping?hl=en", timeout=3.0)
+                        mechanize_browser.open("https://www.google.com/shopping?hl=en", timeout=2.0)
                         mechanize_browser.select_form('f')
                         mechanize_browser.form['q'] = '"{0}"'.format(description)
                         mechanize_browser.submit()
                     else:
                         #means broad search
-                        mechanize_browser.open("https://www.google.com/", timeout=3.0)
+                        mechanize_browser.open("https://www.google.com/", timeout=2.0)
                         mechanize_browser.select_form('f')
                         mechanize_browser.form['q'] = '"{0}"'.format(description)
                         mechanize_browser.submit()
@@ -1141,7 +1135,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                     print e
                     output[product_url] = str(e)
 
-                    if retry_number > 5:
+                    if retry_number > 2:
                         break
 
                     continue
