@@ -1294,7 +1294,7 @@ class DetectDuplicateContentFromCsvFilesByMechanizeViewset(viewsets.ViewSet):
                     output[product_url] = str(e)
 
                     current_path = os.path.dirname(os.path.realpath(__file__))
-                    output_file = open(current_path + "/search_page.html", "w")
+                    output_file = open(current_path + "/search_page.html", "a")
                     output_file.write(str(e))
                     output_file.close()
 
