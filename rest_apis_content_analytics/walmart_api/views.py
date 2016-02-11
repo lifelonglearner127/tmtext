@@ -1200,12 +1200,12 @@ class DetectDuplicateContentFromCsvFilesByMechanizeViewset(viewsets.ViewSet):
             while True:
                 try:
                     retry_number += 1
-                    #mechanize_browser.set_proxies(random.choice(FREE_PROXY_IP_PORT_LIST))
+                    mechanize_browser.set_proxies(random.choice(FREE_PROXY_IP_PORT_LIST))
 
-                    mechanize_browser.set_proxies({"http": "107.151.152.218:80"})
+                    #mechanize_browser.set_proxies({"http": "107.151.152.218:80"})
 
                     product_id = product_url.split("/")[-1]
-                    product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id), timeout=10.0).read())
+                    product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id), timeout=3.0).read())
 
                     description = None
 
@@ -1231,14 +1231,16 @@ class DetectDuplicateContentFromCsvFilesByMechanizeViewset(viewsets.ViewSet):
 
                     google_search_results_page_raw_text = None
 
+                    mechanize_browser.set_proxies(random.choice(FREE_PROXY_IP_PORT_LIST))
+
                     if sellers_search_only:
-                        mechanize_browser.open("https://www.google.com/shopping?hl=en", timeout=10.0)
+                        mechanize_browser.open("https://www.google.com/shopping?hl=en", timeout=3.0)
                         mechanize_browser.select_form('f')
                         mechanize_browser.form['q'] = '"{0}"'.format(description)
                         mechanize_browser.submit()
                     else:
                         #means broad search
-                        mechanize_browser.open("https://www.google.com/", timeout=10.0)
+                        mechanize_browser.open("https://www.google.com/", timeout=3.0)
                         mechanize_browser.select_form('f')
                         mechanize_browser.form['q'] = '"{0}"'.format(description)
                         mechanize_browser.submit()
