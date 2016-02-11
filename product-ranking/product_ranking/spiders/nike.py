@@ -1,5 +1,11 @@
 from __future__ import division, absolute_import, unicode_literals
 
+# TODO:
+# 1) buyer reveiws
+# 2) tweak line 167 ("this will be an infinte loop")
+# 3) individual url parsing
+# 4) remove unused methods and code
+
 import os
 import json
 import re
@@ -19,21 +25,10 @@ from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
+from spiders_shared_code.nike_variants import NikeVariants
 
 
 socket.setdefaulttimeout(60)
-
-
-"""
-def _init_webdriver():
-    from selenium import webdriver
-    driver = webdriver.PhantomJS()
-    driver.set_window_size(1280, 1024)
-    driver.set_page_load_timeout(60)
-    driver.set_script_timeout(60)
-
-    return driver
-"""
 
 
 class NikeProductSpider(BaseProductsSpider):
@@ -60,12 +55,48 @@ class NikeProductSpider(BaseProductsSpider):
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
         self.user_agent = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0) Gecko/20100101 Firefox/32.0'
 
-        #self.br = BuyerReviewsBazaarApi(called_class=self)
+        self.br = BuyerReviewsBazaarApi(called_class=self)
 
         super(NikeProductSpider, self).__init__(
             site_name=self.allowed_domains[0],
             *args,
             **kwargs)
+
+    @staticmethod
+    def _get_antiban_headers():
+        return {
+            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0) Gecko/20100101 Firefox/32.0',
+            'Connection': 'keep-alive',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Encoding': 'gzip, deflate'
+        }
+
+    def _get_store_cookies(self):
+        raise NotImplementedError
+
+    def start_requests(self):
+        yield Request('http://store.nike.com',
+                      callback=self._get_store_cookies,
+                      headers=self._get_antiban_headers(),
+                      priority=99999)
+
+        for st in self.searchterms:
+            yield Request(
+                self.url_formatter.format(
+                    self.SEARCH_URL,
+                    search_term=st.encode('utf-8'),
+                ),
+                meta={'search_term': st, 'remaining': self.quantity},
+                headers=self._get_antiban_headers()
+            )
+        if self.product_url:
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            yield Request(self.product_url,
+                          self._parse_single_product,
+                          meta={'product': prod},
+                          headers=self._get_antiban_headers())
 
     def _init_firefox(self):
         from selenium import webdriver
@@ -93,7 +124,7 @@ class NikeProductSpider(BaseProductsSpider):
     def _get_product_links_from_serp(self, driver):
         results = []
         links = driver.find_elements_by_xpath(
-            '//*[contains(@class, "grid-item-image")]//a[contains(@href, "id=")]')
+            '//*[contains(@class, "grid-item-image")]//a[contains(@href, "/pd/")]')
         for l in links:
             href = l.get_attribute('href')
             if href:
@@ -135,7 +166,7 @@ class NikeProductSpider(BaseProductsSpider):
             time.sleep(6)  # let AJAX finish
             new_meta = response.meta.copy()
             # get all products we need (scroll down)
-            for _ in xrange(5):  # TODO: this will be an infinte loop!
+            for _ in xrange(7):  # TODO: this will be an infinte loop!
                 try:
                     driver.execute_script("scrollTo(0,50000)")
                     time.sleep(6)
@@ -146,96 +177,197 @@ class NikeProductSpider(BaseProductsSpider):
                 except Exception as e:
                     print str(e)
                     break
+            selenium_cookies = driver.get_cookies()
+            try:
+                driver.quit()
+                display.stop()
+            except Exception as e:
+                self.log('Error on clearing resources: %s' % str(e))
             #driver.save_screenshot('/tmp/1.png')
             new_meta['is_product_page'] = True
+            new_meta['proxy'] = 'http://127.0.0.1:8118'
             for i, product_link in enumerate(product_links):
                 new_meta['_ranking'] = i+1
-                yield Request(product_link, meta=new_meta, callback=self.parse_product)
-
-            driver.quit()
-
-    @staticmethod
-    def _parse_price(response):
-        dell_price = response.xpath('//*[contains(text(), "Dell Price")]')
-        dell_price = re.search('\$(\d+\.\d+)', ''.join(dell_price.xpath('./..//text()').extract()))
-        if dell_price:
-            dell_price = dell_price.group(1)
-            price = Price(price=dell_price, priceCurrency='USD')
-            return price
-        price = response.xpath('//*[contains(@name, "pricing_sale_price")]'
-                               '[contains(text(), "$")]//text()').extract()
-        if not price:
-            price = response.xpath('//*[contains(@name, "pricing_retail_price")]'
-                                   '[contains(text(), "$")]//text()').extract()
-        if price:
-            price = Price(price=price[0].strip().replace('$', ''), priceCurrency='USD')
-            return price
-
-    @staticmethod
-    def _parse_image(response):
-        img_src = response.xpath('//*[contains(@class, "zoom-image-holder")]'
-                                 '/img[contains(@class, "active")]/@src').extract()
-        if img_src:
-            return img_src[0]
-
-    @staticmethod
-    def _parse_brand(response):
-        # <meta itemprop="brand" content = "DELL"/>
-        brand = response.xpath('//meta[contains(@itermprop, "brand")]/@content').extract()
-        if not brand:
-            brand = response.xpath('//a[contains(@href, "/brand.aspx")]/img/@alt').extract()
-        if brand:
-            return brand[0].title()
-
-    def _related_products(self, response):
-        results = []
-        rps = response.xpath('//*[contains(@class, "psItemDescription")]//'
-                            'div[contains(@class, "psTeaser")]//a[contains(@href, "productdetail.aspx")]')
-        for rp in rps:
-            results.append(RelatedProduct(rp.xpath('text()').extract()[0].strip(),
-                                          rp.xpath('@href').extract()[0].strip()))  # TODO: check if it's a valid format
-        # TODO: scrape dynamic related products
-        return results
-
-    def parse_buyer_reviews(self, response):
-        buyer_reviews_per_page = self.br.parse_buyer_reviews_per_page(response)
-        #import pdb; pdb.set_trace()
-        pass
-        # TODO!
-
-    def _parse_stock_status(self, response):
-        element = response.xpath(
-            '//a[contains(@class, "smallBlueBodyText")]'
-            '[contains(@href, "makeWin")]//text()').extract()
-        if element:
-            return element[0]
+                yield Request(product_link, meta=new_meta, callback=self.parse_product,
+                              headers=self._get_antiban_headers(),
+                              cookies=selenium_cookies)
 
     def parse_product(self, response):
-        prod = response.meta.get('product', SiteProductItem())
+        meta = response.meta.copy()
+        product = meta.get('product', SiteProductItem())
 
-        prod['_subitem'] = True
+        product['_subitem'] = True
 
         _ranking = response.meta.get('_ranking', None)
-        prod['ranking'] = _ranking
-        prod['url'] = response.url
+        product['ranking'] = _ranking
+        product['url'] = response.url
 
-        cond_set(prod, 'title', response.css('h1 ::text').extract())
-        #prod['price'] = DellProductSpider._parse_price(response)
-        prod['image_url'] = NikeProductSpider._parse_image(response)
-        #prod['sku'] = 'TODO'
-        #prod['model'] = 'TODO'
-        #prod['description'] = 'TODO'
-        #prod['brand'] = DellProductSpider._parse_brand(response)
-        #prod['related_products'] = self._related_products(response)
-        #prod['description'] = self._parse_stock_status(response)  # this should be OOS field
+        # product data in json
+        js_data = self.parse_data(response)
 
-        meta = {}
-        meta['product'] = prod
-        yield Request(
-            url=self.REVIEW_URL.format(product_id='inspiron-15-5558-laptop'),
-            dont_filter=True,
-            callback=self.parse_buyer_reviews,
-            meta=meta
-        )
+        # product id
+        self.product_id = self.parse_product_id(response, js_data)
 
-        yield prod
+        print('--------------- product_id  %s' % self.product_id)
+        self.product_color = self.parse_product_color(response, js_data)
+        self.product_price = 0
+
+        # Parse product_id
+        title = self.parse_title(response, js_data)
+        cond_set_value(product, 'title', title)
+
+        # Parse locate
+        locale = 'en_US'
+        cond_set_value(product, 'locale', locale)
+
+        # Parse model
+        self.product_model = self.parse_product_model(response)
+        cond_set_value(product, 'model', self.product_model)
+
+        # Parse title
+        title = self.parse_title(response, js_data)
+        cond_set_value(product, 'title', title)
+
+        # Parse image
+        image = self.parse_image(response, js_data)
+        cond_set_value(product, 'image_url', image)
+
+        # Parse brand
+        # brand = self.parse_brand(response)
+        # cond_set_value(product, 'brand', brand)
+
+        # Parse upc
+        # upc = self.parse_upc(response)
+        # cond_set_value(product, 'upc', upc)
+
+        
+
+        # Parse sku
+        sku = self.parse_sku(response)
+        cond_set_value(product, 'sku', sku)
+
+        # Parse description
+        description = self.parse_description(response)
+        cond_set(product, 'description', description)
+
+        # Parse price
+        price = self.parse_price(response, js_data)
+        cond_set_value(product, 'price', price)
+
+        # Parse variants
+        nv = NikeVariants()
+        nv.setupSC(response)
+        product['variants'] = nv._variants()
+
+        response.meta['marks'] = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+
+        yield product
+
+    def parse_data(self, response):
+        script_data = response.xpath(
+            '//script[contains(@id, "product-data")]/text()').extract()
+        try:
+            js_data = json.loads(script_data[0])
+            return js_data
+        except:
+            return
+
+    def parse_image(self, response, js_data):
+        if js_data:
+            try:
+                image = js_data['imagesHeroLarge'][0]
+                return image
+            except:
+                return
+
+    def parse_description(self, response):
+        # js_data['content']
+        desc = response.xpath(
+            '//div[contains(@class, "pi-pdpmainbody")]').extract()
+
+        return desc
+
+    def parse_sku(self, response):
+        skuid = response.xpath(
+            '//span[contains(@class, "exp-style-color")]/text()').extract()
+        if skuid:
+            return skuid[0].replace('Style: ', '')
+
+    def parse_price(self, response, js_data):
+        if js_data:
+            try:
+                currency = js_data['crossSellConfiguration']['currency']
+            except KeyError:
+                currency = "USD"
+
+            try:
+                price = js_data['rawPrice']
+                self.product_price = price
+            except KeyError:
+                price = 0.00
+
+            if price and currency:
+                price = Price(price=price, priceCurrency=currency)
+        else:
+            price = Price(price=0.00, priceCurrency="USD")
+
+        return price
+
+    def _scrape_total_matches(self, response):
+        totals = response.css('.productCount ::text').extract()
+        if totals:
+            totals = totals[0].replace(',', '').replace('.', '').strip()
+            if totals.isdigit():
+                if not self.TOTAL_MATCHES:
+                    self.TOTAL_MATCHES = int(totals)
+                return int(totals)
+
+    def _scrape_product_links(self, response):
+        for link in response.xpath(
+                '//li[contains(@class, "product-tile")]'
+                '//a[contains(@rel, "product")]/@href'
+        ).extract():
+            yield link, SiteProductItem()
+
+    def _get_nao(self, url):
+        nao = re.search(r'nao=(\d+)', url)
+        if not nao:
+            return
+        return int(nao.group(1))
+
+    def _replace_nao(self, url, new_nao):
+        current_nao = self._get_nao(url)
+        if current_nao:
+            return re.sub(r'nao=\d+', 'nao='+str(new_nao), url)
+        else:
+            return url+'&nao='+str(new_nao)
+
+    def parse_product_id(self, response, js_data):
+        if js_data:
+            try:
+                product_id = js_data['productId']
+                return product_id
+            except:
+                return
+
+    def parse_product_model(self, response):
+        model = response.xpath(
+            '//div[contains(@class, "hero-product-style-color-info")]/@data-stylenumber'
+        ).extract()
+        return model[0] if model else None
+
+    def parse_product_color(self, response, js_data):
+        if js_data:
+            try:
+                product_color = js_data['colorDescription']
+                return product_color
+            except:
+                return
+
+    def parse_title(self, response, js_data):
+        if js_data:
+            try:
+                title = js_data['productTitle']
+                return title
+            except:
+                return
