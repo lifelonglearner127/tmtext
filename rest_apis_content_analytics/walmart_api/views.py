@@ -64,6 +64,20 @@ def choose_free_proxy_from_candidates():
     driver.set_window_size(1440, 900)
 
     driver.get("https://proxy-list.org/english/index.php")
+
+    select_country = driver.find_element_by_xpath("//form[@id='form-search']//select[@name='country']")
+    select_country.click()
+    option_usa_and_canada = driver.find_element_by_xpath("//form[@id='form-search']//select[@name='country']/option[@value='usa-and-canada']")
+    option_usa_and_canada.click()
+
+    select_type = driver.find_element_by_xpath("//form[@id='form-search']//select[@name='type']")
+    select_type.click()
+    option_anonymous_and_elite = driver.find_element_by_xpath("//form[@id='form-search']//select[@name='type']/option[@value='anonymous-and-elite']")
+    option_anonymous_and_elite.click()
+
+    submit_button = driver.find_element_by_xpath("//form[@id='form-search']//input[@value='Search proxy servers']")
+    submit_button.click()
+
     page_raw_text = driver.page_source
     html_tree = html.fromstring(page_raw_text)
 
@@ -1158,7 +1172,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                     print e
                     output[product_url] = str(e)
 
-                    if retry_number > 3:
+                    if retry_number > 10:
                         break
 
                     continue
