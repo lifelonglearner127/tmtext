@@ -71,3 +71,7 @@ class WalmartDetectDuplicateContentRequestSerializer(serializers.Serializer):
     product_url_5 = serializers.CharField()
 
     detect_duplication_in_sellers_only = serializers.BooleanField(initial=False, style={'template': 'checkbox_next_to_submit_button.html'})
+
+
+class WalmartDetectDuplicateContentFromCsvFileRequestSerializer(serializers.Serializer):
+    csv_file_to_check = serializers.FileField()
