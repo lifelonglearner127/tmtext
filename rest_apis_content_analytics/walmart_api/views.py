@@ -33,6 +33,33 @@ import unirest
 import time
 
 
+FREE_PROXY_IP_PORT_LIST = [{"http": "107.151.152.218:80"},
+                           {"http": "107.151.152.210:80"},
+                           {"http": "107.151.142.125:80"},
+                           {"http": "64.26.95.14:8080"},
+                           {"http": "54.68.135.82:80"},
+                           {"http": "107.151.142.122:80"},
+                           {"http": "159.203.71.65:80"},
+                           {"http": "95.213.194.94:3128"},
+                           {"http": "107.151.142.116:80"},
+                           {"http": "107.151.142.123:80"},
+                           {"http": "52.76.197.151:80"},
+                           {"http": "107.151.142.115:80"},
+                           {"http": "107.151.142.118:80"},
+                           {"http": "204.14.188.53:80"},
+                           {"http": "107.151.152.210:7004"},
+                           {"http": "134.249.168.16:80"},
+                           {"http": "107.151.142.114:80"},
+                           {"http": "64.132.113.118:80"},
+                           {"http": "107.151.152.210:80"},
+                           {"http": "107.151.152.210:80"},
+                           {"http": "107.151.152.210:80"},
+                           {"http": "107.151.152.210:80"},
+                           {"http": "107.151.152.210:80"},
+                           {"http": "107.151.152.210:80"},
+                           {"http": "107.151.152.210:80"},
+                           {"http": "107.151.152.210:80"},]
+
 BROWSER_AGENT_STRING_LIST = {"Firefox": ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1",
                                          "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0",
                                          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10; rv:33.0) Gecko/20100101 Firefox/33.0"],
@@ -1165,96 +1192,109 @@ class DetectDuplicateContentFromCsvFilesByMechanizeViewset(viewsets.ViewSet):
         mechanize_browser = mechanize.Browser()
         mechanize_browser = initialize_browser_settings(mechanize_browser)
 
+        #mechanize_browser.add_password(url, "test", "test1234")
+
         for product_url in product_url_list:
-            try:
-                product_id = product_url.split("/")[-1]
-                product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id)).read())
+            retry_number = 0
 
-                description = None
+            while True:
+                try:
+                    retry_number += 1
+                    mechanize_browser.set_proxies(random.choice(FREE_PROXY_IP_PORT_LIST))
 
-                if "product" in product_json:
-                    if "mediumDescription" in product_json["product"]:
-                        description = product_json["product"]["mediumDescription"]
-                        description = html.fromstring("<html>" + description + "</html>").text_content().strip()
+                    product_id = product_url.split("/")[-1]
+                    product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id)).read())
 
-                    if not description and "longDescription" in product_json["product"]:
-                        description = product_json["product"]["longDescription"]
-                        description = html.fromstring("<html>" + description + "</html>").text_content().strip()
+                    description = None
 
-                if not description:
-                    raise Exception('No description in product')
+                    if "product" in product_json:
+                        if "mediumDescription" in product_json["product"]:
+                            description = product_json["product"]["mediumDescription"]
+                            description = html.fromstring("<html>" + description + "</html>").text_content().strip()
 
-                if len(description) > 500:
-                    description = description[:500]
+                        if not description and "longDescription" in product_json["product"]:
+                            description = product_json["product"]["longDescription"]
+                            description = html.fromstring("<html>" + description + "</html>").text_content().strip()
 
-                    if description.rfind(" ") > 0:
-                        description = description[:description.rfind(" ")].strip()
+                    if not description:
+                        raise Exception('No description in product')
 
-                input_search_text = None
+                    if len(description) > 500:
+                        description = description[:500]
 
-                google_search_results_page_raw_text = None
+                        if description.rfind(" ") > 0:
+                            description = description[:description.rfind(" ")].strip()
 
-                if sellers_search_only:
-                    mechanize_browser.open("https://www.google.com/shopping?hl=en")
-                    mechanize_browser.select_form('f')
-                    mechanize_browser.form['q'] = '"{0}"'.format(description)
-                    mechanize_browser.submit()
-                else:
-                    #means broad search
-                    mechanize_browser.open("https://www.google.com/")
-                    mechanize_browser.select_form('f')
-                    mechanize_browser.form['q'] = '"{0}"'.format(description)
-                    mechanize_browser.submit()
+                    input_search_text = None
 
-                google_search_results_page_raw_text = mechanize_browser.response().read()
+                    google_search_results_page_raw_text = None
 
-                current_path = os.path.dirname(os.path.realpath(__file__))
-                output_file = open(current_path + "/search_page.html", "w")
-                output_file.write(google_search_results_page_raw_text.decode("utf-8").encode("utf-8"))
-                output_file.close()
-
-                google_search_results_page_html_tree = html.fromstring(google_search_results_page_raw_text)
-
-                if google_search_results_page_html_tree.xpath("//form[@action='CaptchaRedirect']"):
-                    raise Exception('Google blocks search requests and claim to input captcha.')
-
-                if google_search_results_page_html_tree.xpath("//title") and \
-                                "Error 400 (Bad Request)" in google_search_results_page_html_tree.xpath("//title")[0].text_content():
-                    raise Exception('Error 400 (Bad Request)')
-
-                if sellers_search_only:
-                    seller_block = None
-
-                    for left_block in google_search_results_page_html_tree.xpath("//ul[@class='sr__group']"):
-                        if left_block.xpath("./li[@class='sr__title sr__item']/text()")[0].strip().lower() == "seller":
-                            seller_block = left_block
-                            break
-
-                    seller_name_list = None
-
-                    if seller_block:
-                        seller_name_list = seller_block.xpath(".//li[@class='sr__item']//a/text()")
-                        seller_name_list = [seller for seller in seller_name_list if seller.lower() != "walmart"]
-
-                    if not seller_name_list:
-                        output[product_url] = "Unique content."
+                    if sellers_search_only:
+                        mechanize_browser.open("https://www.google.com/shopping?hl=en")
+                        mechanize_browser.select_form('f')
+                        mechanize_browser.form['q'] = '"{0}"'.format(description)
+                        mechanize_browser.submit()
                     else:
-                        output[product_url] = "Found duplicate content from other sellers: ." + ", ".join(seller_name_list)
-                else:
-                    duplicate_content_links = google_search_results_page_html_tree.xpath("//div[@id='search']//cite/text()")
+                        #means broad search
+                        mechanize_browser.open("https://www.google.com/")
+                        mechanize_browser.select_form('f')
+                        mechanize_browser.form['q'] = '"{0}"'.format(description)
+                        mechanize_browser.submit()
 
-                    if duplicate_content_links:
-                        duplicate_content_links = [url for url in duplicate_content_links if "walmart.com" not in url.lower()]
+                    google_search_results_page_raw_text = mechanize_browser.response().read()
 
-                    if not duplicate_content_links:
-                        output[product_url] = "Unique content."
+                    current_path = os.path.dirname(os.path.realpath(__file__))
+                    output_file = open(current_path + "/search_page.html", "w")
+                    output_file.write(google_search_results_page_raw_text.decode("utf-8").encode("utf-8"))
+                    output_file.close()
+
+                    google_search_results_page_html_tree = html.fromstring(google_search_results_page_raw_text)
+
+                    if google_search_results_page_html_tree.xpath("//form[@action='CaptchaRedirect']"):
+                        raise Exception('Google blocks search requests and claim to input captcha.')
+
+                    if google_search_results_page_html_tree.xpath("//title") and \
+                                    "Error 400 (Bad Request)" in google_search_results_page_html_tree.xpath("//title")[0].text_content():
+                        raise Exception('Error 400 (Bad Request)')
+
+                    if sellers_search_only:
+                        seller_block = None
+
+                        for left_block in google_search_results_page_html_tree.xpath("//ul[@class='sr__group']"):
+                            if left_block.xpath("./li[@class='sr__title sr__item']/text()")[0].strip().lower() == "seller":
+                                seller_block = left_block
+                                break
+
+                        seller_name_list = None
+
+                        if seller_block:
+                            seller_name_list = seller_block.xpath(".//li[@class='sr__item']//a/text()")
+                            seller_name_list = [seller for seller in seller_name_list if seller.lower() != "walmart"]
+
+                        if not seller_name_list:
+                            output[product_url] = "Unique content."
+                        else:
+                            output[product_url] = "Found duplicate content from other sellers: ." + ", ".join(seller_name_list)
                     else:
-                        output[product_url] = "Found duplicate content from other links."
+                        duplicate_content_links = google_search_results_page_html_tree.xpath("//div[@id='search']//cite/text()")
 
-            except Exception, e:
-                print e
-                output[product_url] = str(e)
-                continue
+                        if duplicate_content_links:
+                            duplicate_content_links = [url for url in duplicate_content_links if "walmart.com" not in url.lower()]
+
+                        if not duplicate_content_links:
+                            output[product_url] = "Unique content."
+                        else:
+                            output[product_url] = "Found duplicate content from other links."
+
+                    break
+                except Exception, e:
+                    print e
+                    output[product_url] = str(e)
+
+                    if retry_number > 5:
+                        break
+
+                    continue
 
         mechanize_browser.close()
 
