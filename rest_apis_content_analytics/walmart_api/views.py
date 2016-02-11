@@ -59,6 +59,32 @@ BROWSER_AGENT_STRING_LIST = {"Firefox": ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv
                              }
 
 
+def choose_free_proxy_from_candidates():
+    driver = webdriver.PhantomJS()
+    driver.set_window_size(1440, 900)
+
+    driver.get("https://proxy-list.org/english/index.php")
+    page_raw_text = driver.page_source
+    html_tree = html.fromstring(page_raw_text)
+
+    '''
+    select_list_length = driver.find_element_by_xpath("//select[@name='proxylisttable_length']")
+    select_list_length.click()
+    option_length_80 = driver.find_element_by_xpath("//select[@name='proxylisttable_length']/option[@value='80']")
+    option_length_80.click()
+    select_elite_proxy = driver.find_elements_by_xpath("//tfoot/tr//select")[3]
+    select_elite_proxy.click()
+    option_elite_proxy = driver.find_element_by_xpath("//tfoot/tr//select/option[@value='elite proxy']")
+    option_elite_proxy.click()
+    '''
+
+    proxy_info_list = html_tree.xpath("//div[@id='proxy-table']//li[@class='proxy']/text()")[1:]
+    driver.close()
+    driver.quit()
+
+    return {"http": random.choice(proxy_info_list)}
+
+
 def remove_duplication_keeping_order_in_list(seq):
     if seq:
         seen = set()
@@ -1015,11 +1041,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
     def create(self, request):
         output = {}
 
-        sellers_search_only = True
-
-        if not request.POST.get('detect_duplication_in_sellers_only', None):
-            sellers_search_only = False
-
+        sellers_search_only = False
         product_url_pattern = 'product_url'
         groupped_fields = group_params(request.POST, request.FILES, [product_url_pattern])
 
@@ -1040,12 +1062,13 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
             while True:
                 try:
                     retry_number += 1
-                    mechanize_browser.set_proxies(random.choice(FREE_PROXY_IP_PORT_LIST))
+                    proxy_info = choose_free_proxy_from_candidates()
+                    mechanize_browser.set_proxies(proxy_info)
 
                     #mechanize_browser.set_proxies({"http": "107.151.152.218:80"})
 
                     product_id = product_url.split("/")[-1]
-                    product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id), timeout=2.0).read())
+                    product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id), timeout=5.0).read())
 
                     description = None
 
@@ -1074,13 +1097,13 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                     mechanize_browser.set_proxies(random.choice(FREE_PROXY_IP_PORT_LIST))
 
                     if sellers_search_only:
-                        mechanize_browser.open("https://www.google.com/shopping?hl=en", timeout=2.0)
+                        mechanize_browser.open("https://www.google.com/shopping?hl=en", timeout=5.0)
                         mechanize_browser.select_form('f')
                         mechanize_browser.form['q'] = '"{0}"'.format(description)
                         mechanize_browser.submit()
                     else:
                         #means broad search
-                        mechanize_browser.open("https://www.google.com/", timeout=2.0)
+                        mechanize_browser.open("https://www.google.com/", timeout=5.0)
                         mechanize_browser.select_form('f')
                         mechanize_browser.form['q'] = '"{0}"'.format(description)
                         mechanize_browser.submit()
@@ -1135,7 +1158,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                     print e
                     output[product_url] = str(e)
 
-                    if retry_number > 2:
+                    if retry_number > 3:
                         break
 
                     continue
