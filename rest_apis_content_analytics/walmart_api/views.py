@@ -1203,7 +1203,7 @@ class DetectDuplicateContentFromCsvFilesByMechanizeViewset(viewsets.ViewSet):
                     mechanize_browser.set_proxies(random.choice(FREE_PROXY_IP_PORT_LIST))
 
                     product_id = product_url.split("/")[-1]
-                    product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id)).read())
+                    product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id), timeout=5.0).read())
 
                     description = None
 
@@ -1230,13 +1230,13 @@ class DetectDuplicateContentFromCsvFilesByMechanizeViewset(viewsets.ViewSet):
                     google_search_results_page_raw_text = None
 
                     if sellers_search_only:
-                        mechanize_browser.open("https://www.google.com/shopping?hl=en")
+                        mechanize_browser.open("https://www.google.com/shopping?hl=en", timeout=5.0)
                         mechanize_browser.select_form('f')
                         mechanize_browser.form['q'] = '"{0}"'.format(description)
                         mechanize_browser.submit()
                     else:
                         #means broad search
-                        mechanize_browser.open("https://www.google.com/")
+                        mechanize_browser.open("https://www.google.com/", timeout=5.0)
                         mechanize_browser.select_form('f')
                         mechanize_browser.form['q'] = '"{0}"'.format(description)
                         mechanize_browser.submit()
