@@ -1293,6 +1293,11 @@ class DetectDuplicateContentFromCsvFilesByMechanizeViewset(viewsets.ViewSet):
                     print e
                     output[product_url] = str(e)
 
+                    current_path = os.path.dirname(os.path.realpath(__file__))
+                    output_file = open(current_path + "/search_page.html", "w")
+                    output_file.write(str(e))
+                    output_file.close()
+
                     if retry_number > 5:
                         break
 
