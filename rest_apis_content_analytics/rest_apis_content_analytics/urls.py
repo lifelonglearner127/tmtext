@@ -43,7 +43,7 @@ router.register(r'items_update_with_xml_text_by_walmart_api', ItemsUpdateWithXml
 #                CheckFeedStatusByWalmartApiViewSet,
 #                'check_feed_status_by_walmart_api')
 router.register(r'validate_walmart_product_xml_text', ValidateWalmartProductXmlTextViewSet, 'validate_walmart_product_xml_text')
-router.register(r'detect_duplicate_content', DetectDuplicateContentByMechanizeViewset, 'detect_duplicate_content')
+router.register(r'detect_duplicate_content', DetectDuplicateContentBySeleniumViewset, 'detect_duplicate_content')
 router.register(r'detect_duplicate_content_by_mechanize', DetectDuplicateContentByMechanizeViewset, 'detect_duplicate_content_by_mechanize')
 router.register(r'detect_duplicate_content_from_csv_file_by_mechanize', DetectDuplicateContentFromCsvFilesByMechanizeViewset, 'detect_duplicate_content_from_csv_file_by_mechanize')
 #router.register(r'validate_walmart_product_xml_file',
