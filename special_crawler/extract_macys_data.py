@@ -361,6 +361,10 @@ class MacysScraper(Scraper):
                 contents = urllib.urlopen(url).read()
                 # contents = re.findall(r'"BVRRRatingSummarySourceID":"(.*?)"}', contents)[0]
                 reviews = re.findall(r'<span class=\\"BVRRHistAbsLabel\\">(.*?)<\\/span>', contents)[:5]
+
+                if reviews:
+                    reviews = [review.replace(",", "") for review in reviews]
+
                 score = 5
                 for review in reviews:
                     if int(review) > 0:

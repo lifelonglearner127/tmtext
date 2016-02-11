@@ -8,6 +8,7 @@ import urlparse
 from collections import OrderedDict
 from itertools import product
 from datetime import datetime
+import urllib
 
 from scrapy import Request, Selector, FormRequest
 from scrapy.log import ERROR, WARNING
@@ -32,6 +33,8 @@ is_empty = lambda x, y="": x[0] if x else y
 class DellProductSpider(BaseProductsSpider):
     name = 'dell_products'
     allowed_domains = ["dell.com", "recs.richrelevance.com"]
+
+    handle_httpstatus_list = [404, 403, 502, 520]
 
     SEARCH_URL = "http://pilot.search.dell.com/{search_term}"
     REVIEW_URL = "http://reviews.dell.com/2341_mg/{product_id}/reviews.htm?format=embedded"
@@ -72,6 +75,23 @@ class DellProductSpider(BaseProductsSpider):
             site_name=self.allowed_domains[0],
             *args,
             **kwargs)
+
+    def start_requests(self):
+        for st in self.searchterms:
+            yield Request(
+                self.url_formatter.format(
+                    self.SEARCH_URL,
+                    search_term=urllib.quote(st.encode('utf-8')),
+                ),
+                meta={'search_term': st, 'remaining': self.quantity},
+            )
+
+        if self.product_url:
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            yield Request(self.product_url,
+                          self._parse_single_product,
+                          meta={'product': prod})
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
