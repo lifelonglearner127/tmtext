@@ -1200,7 +1200,9 @@ class DetectDuplicateContentFromCsvFilesByMechanizeViewset(viewsets.ViewSet):
             while True:
                 try:
                     retry_number += 1
-                    mechanize_browser.set_proxies(random.choice(FREE_PROXY_IP_PORT_LIST))
+                    #mechanize_browser.set_proxies(random.choice(FREE_PROXY_IP_PORT_LIST))
+
+                    mechanize_browser.set_proxies({"http": "107.151.152.218:80"})
 
                     product_id = product_url.split("/")[-1]
                     product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id), timeout=10.0).read())
