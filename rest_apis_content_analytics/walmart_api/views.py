@@ -1300,7 +1300,7 @@ class DetectDuplicateContentFromCsvFilesByMechanizeViewset(viewsets.ViewSet):
                     output_file.write(str(e))
                     output_file.close()
 
-                    if retry_number > 5:
+                    if retry_number > 10:
                         break
 
                     continue
