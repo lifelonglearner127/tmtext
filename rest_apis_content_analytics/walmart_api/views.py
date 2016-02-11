@@ -1197,10 +1197,10 @@ class DetectDuplicateContentFromCsvFilesByMechanizeViewset(viewsets.ViewSet):
         for product_url in product_url_list:
             retry_number = 0
 
-            while True:
+            for proxy in FREE_PROXY_IP_PORT_LIST:
                 try:
                     retry_number += 1
-                    mechanize_browser.set_proxies(random.choice(FREE_PROXY_IP_PORT_LIST))
+                    mechanize_browser.set_proxies(proxy)
 
                     #mechanize_browser.set_proxies({"http": "107.151.152.218:80"})
 
@@ -1231,7 +1231,7 @@ class DetectDuplicateContentFromCsvFilesByMechanizeViewset(viewsets.ViewSet):
 
                     google_search_results_page_raw_text = None
 
-                    mechanize_browser.set_proxies(random.choice(FREE_PROXY_IP_PORT_LIST))
+                    mechanize_browser.set_proxies(proxy)
 
                     if sellers_search_only:
                         mechanize_browser.open("https://www.google.com/shopping?hl=en", timeout=3.0)
@@ -1299,9 +1299,6 @@ class DetectDuplicateContentFromCsvFilesByMechanizeViewset(viewsets.ViewSet):
                     output_file = open(current_path + "/search_page.html", "a")
                     output_file.write(str(e))
                     output_file.close()
-
-                    if retry_number > 10:
-                        break
 
                     continue
 
