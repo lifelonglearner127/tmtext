@@ -57,7 +57,7 @@ class LeviScraper(Scraper):
         #br.set_debug_responses(True)
 
         # User-Agent (this is cheating, ok?)
-        self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly("Safari"))]
+        self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
 
     def _extract_page_tree(self, captcha_data=None, retries=0):
         try:
