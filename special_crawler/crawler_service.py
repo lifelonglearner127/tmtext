@@ -474,26 +474,6 @@ def google_search():
 
     return jsonify(results)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @app.errorhandler(InvalidUsage)
 def handle_invalid_usage(error):
     #TODO: not leave this as json output? error format should be consistent
