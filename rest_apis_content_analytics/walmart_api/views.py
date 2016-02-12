@@ -41,7 +41,8 @@ FREE_PROXY_IP_PORT_LIST = ["54.174.154.134",
                            "52.72.176.227",
                            "52.70.186.108",
                            "52.71.2.193",
-                           "52.1.156.214"]
+                           "52.1.156.214",
+                           "chbranch.contentanalyticsinc.com"]
 
 BROWSER_AGENT_STRING_LIST = {"Firefox": ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1",
                                          "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0",
