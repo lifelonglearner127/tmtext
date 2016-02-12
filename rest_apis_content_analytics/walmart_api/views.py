@@ -1114,7 +1114,8 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                 if results["success"] == 1:
                     output[product_url] = results["message"]
                 else:
-                    raise Exception(results["message"])
+                    output[product_url] = "Found duplicate content from other links."
+#                    raise Exception(results["message"])
             except Exception, e:
                 print e
                 output[product_url] = str(e)
