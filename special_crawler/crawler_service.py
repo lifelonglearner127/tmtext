@@ -399,10 +399,10 @@ def google_search():
     query = request_arguments['query'][0]
     results = {}
 
-    try:
-        driver = webdriver.PhantomJS()
-        driver.set_window_size(1440, 900)
+    driver = webdriver.PhantomJS()
+    driver.set_window_size(1440, 900)
 
+    try:
         if sellers_search_only:
             driver.get("https://www.google.com/shopping?hl=en")
         else:
