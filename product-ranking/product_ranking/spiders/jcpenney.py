@@ -530,7 +530,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
         if json_data:
             data = json.loads(json_data)
-            brand = is_empty(is_empty(data['products'])['lots'])['brandName']
+            brand = is_empty(is_empty(data['products'])['lots']).get('brandName', None)
             cond_set_value(
                 product,
                 'brand',

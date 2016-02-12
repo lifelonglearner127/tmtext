@@ -67,6 +67,28 @@ class BuyerReviewsBazaarApi(object):
                 )
                 buyer_reviews = self.ZERO_REVIEWS_VALUE
         else:
+            rating_by_star = self.get_rating_by_star(response)
+            if rating_by_star:
+                num_of_reviews = response.xpath(
+                    '//*[contains(@class, "BVRRCount")]/*[contains(@class, "BVRRNumber")]/text()').extract()
+                average_rating = response.xpath(
+                    '//*[contains(@class, "BVRRSReviewsSummaryOutOf")]/*[contains(@class, "BVRRNumber")]/text()'
+                ).extract()
+                if num_of_reviews and average_rating:
+                    invalid_reviews = False
+                    try:
+                        num_of_reviews = int(num_of_reviews[0])
+                        average_rating = float(average_rating[0])
+                    except Exception as e:
+                        print('Invalid reviews: [%s] at %s' % (str(e), response.url))
+                        invalid_reviews = True
+                    if not invalid_reviews:
+                        buyer_reviews = {
+                            'num_of_reviews': num_of_reviews,
+                            'average_rating': round(average_rating, 1),
+                            'rating_by_star': rating_by_star
+                        }
+                        return buyer_reviews
             buyer_reviews = self.ZERO_REVIEWS_VALUE
 
         return buyer_reviews
@@ -88,6 +110,18 @@ class BuyerReviewsBazaarApi(object):
             return self.called_class.send_next_request(reqs, response)
 
         return product
+
+    @staticmethod
+    def _scrape_alternative_rating_by_star(response):
+        rating_by_star = {}
+        for i in xrange(1, 6):
+            num_reviews = response.xpath(
+                '//*[contains(@class, "BVRRHistogramContent")]//*[contains(@class, "BVRRHistogramBarRow%i")]'
+                '/*[contains(@class, "BVRRHistAbsLabel")]//text()' % i).extract()
+            if num_reviews:
+                num_reviews = int(num_reviews[0])
+                rating_by_star[str(i)] = num_reviews
+        return rating_by_star
 
     def get_rating_by_star(self, response):
         meta = response.meta.copy()
@@ -155,8 +189,6 @@ class BuyerReviewsBazaarApi(object):
 
                 return stars
 
-
-
             except (KeyError, IndexError) as exc:
                 self.called_class.log(
                     'Unable to parse buyer reviews on {url}: {exc}'.format(
@@ -166,4 +198,9 @@ class BuyerReviewsBazaarApi(object):
                 )
                 return self.ZERO_REVIEWS_VALUE['rating_by_star']
         else:
+            if not data:
+                # try to scrape alternative rating by star data
+                alternative_rating_by_star = self._scrape_alternative_rating_by_star(response)
+                if alternative_rating_by_star:
+                    return alternative_rating_by_star
             return self.ZERO_REVIEWS_VALUE['rating_by_star']

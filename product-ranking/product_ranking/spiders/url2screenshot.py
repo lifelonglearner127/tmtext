@@ -205,12 +205,13 @@ class URL2ScreenshotSpider(scrapy.Spider):
         profile = webdriver.FirefoxProfile()
         profile.set_preference("general.useragent.override", self.user_agent)
         profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
-        if 'socks' in self.proxy_type:
-            profile.set_preference("network.proxy.socks", self.proxy.split(':')[0])
-            profile.set_preference("network.proxy.socks_port", int(self.proxy.split(':')[1]))
-        else:
-            profile.set_preference("network.proxy.http", self.proxy.split(':')[0])
-            profile.set_preference("network.proxy.http_port", int(self.proxy.split(':')[1]))
+        if self.proxy:
+            if 'socks' in self.proxy_type:
+                profile.set_preference("network.proxy.socks", self.proxy.split(':')[0])
+                profile.set_preference("network.proxy.socks_port", int(self.proxy.split(':')[1]))
+            else:
+                profile.set_preference("network.proxy.http", self.proxy.split(':')[0])
+                profile.set_preference("network.proxy.http_port", int(self.proxy.split(':')[1]))
         profile.update_preferences()
         driver = webdriver.Firefox(profile)
         return driver
@@ -246,8 +247,14 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         if self.close_popups:
             time.sleep(3)
+            self._click_on_element_with_xpath(driver, '//*[contains(@class, "monetate_lightbox_close_")]')  # for ralphlauren.com
             self._click_on_elements_with_class(driver, 'close')
+            self._remove_element_with_xpath(
+                driver, '//body/*[contains(@class, "email-lightbox")]')  # for levi.com
             self._click_on_element_with_id(driver, 'closeBtn')
+            self._click_on_elements_with_class(driver, 'brdialog-close')  # for madewell.com
+            self._click_on_element_with_id(driver, 'skipSignup')  # for madewell.com
+            self._click_on_element_with_id(driver, 'oo_no_thanks')  # for levi.com
             self._click_on_element_with_xpath(driver, '//*[contains(@id, "cookiebar")]//button')  # for HM.com
             self._remove_element_with_xpath(driver, '//*[contains(@id, "emailAcqPopupContainer")]')  # for http://bananarepublic.gap.com
 

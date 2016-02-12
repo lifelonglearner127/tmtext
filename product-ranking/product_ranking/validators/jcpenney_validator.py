@@ -17,7 +17,7 @@ class JcpenneyValidatorSettings(object):  # do NOT set BaseValidatorSettings as 
         'drink': [30, 130],
         'term': [30, 130],
         'tiny': [10, 80],
-        'selling': [20, 100],
+        'golden': [20, 100],
         'night': [40, 190],
     }
 

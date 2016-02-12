@@ -4,7 +4,8 @@ import urllib
 import re
 import sys
 import json
-
+import mechanize
+import cookielib
 from lxml import html, etree
 import time
 import requests
@@ -32,6 +33,52 @@ class LeviScraper(Scraper):
         self.rev_list = None
         self.is_review_checked = False
         self.lv = LeviVariants()
+        self.browser = mechanize.Browser()
+        self.store_url = 'http://www.levi.com/US/en_US/'
+
+    def _initialize_browser_settings(self):
+        # Cookie Jar
+        cj = cookielib.LWPCookieJar()
+        self.browser.set_cookiejar(cj)
+
+        # Browser options
+        self.browser.set_handle_equiv(True)
+        self.browser.set_handle_gzip(True)
+        self.browser.set_handle_redirect(True)
+        self.browser.set_handle_referer(True)
+        self.browser.set_handle_robots(False)
+
+        # Follows refresh 0 but not hangs on refresh > 0
+        self.browser.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
+
+        # Want debugging messages?
+        #br.set_debug_http(True)
+        #br.set_debug_redirects(True)
+        #br.set_debug_responses(True)
+
+        # User-Agent (this is cheating, ok?)
+        self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
+
+    def _extract_page_tree(self, captcha_data=None, retries=0):
+        try:
+            self._initialize_browser_settings()
+            self.browser.open(self.store_url)
+            contents = self.browser.open(self.product_page_url).read()
+        except Exception, e:
+            contents = requests.get(self.product_page_url).text
+
+        try:
+            # replace NULL characters
+            contents = self._clean_null(contents).decode("utf8")
+        except UnicodeError, e:
+            # if string was not utf8, don't deocde it
+            print "Warning creating html tree from page content: ", e.message
+
+            # replace NULL characters
+            contents = self._clean_null(contents)
+
+        self.page_raw_text = contents
+        self.tree_html = html.fromstring(contents)
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
