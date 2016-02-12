@@ -1081,18 +1081,20 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                         description = product_json["product"]["longDescription"]
                         description = html.fromstring("<html>" + description + "</html>").text_content().strip()
 
+                    if not description and "shortDescription" in product_json["product"]:
+                        description = product_json["product"]["shortDescription"]
+                        description = html.fromstring("<html>" + description + "</html>").text_content().strip()
+
                 if not description:
                     raise Exception('No description in product')
+
+                description = description.replace('"', '')
 
                 if len(description) > 500:
                     description = description[:500]
 
                     if description.rfind(" ") > 0:
                         description = description[:description.rfind(" ")].strip()
-
-                input_search_text = None
-
-                google_search_results_page_raw_text = None
 
                 proxy = random.choice(FREE_PROXY_IP_PORT_LIST)
 
