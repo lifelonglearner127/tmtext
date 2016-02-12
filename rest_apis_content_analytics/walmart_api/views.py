@@ -33,18 +33,15 @@ import unirest
 import time
 
 
-FREE_PROXY_IP_PORT_LIST = [{"http": "165.139.149.169:3128"},
-                           {"http": "220.143.1.93:8088"},
-                           {"http": "114.44.191.105:8088"},
-                           {"http": "49.159.143.106:8088"},
-                           {"http": "202.77.96.150:80"},
-                           {"http": "180.253.132.134:8080"},
-                           {"http": "104.236.54.196:8080"},
-                           {"http": "92.237.118.170:8083"},
-                           {"http": "114.44.191.170:8088"},
-                           {"http": "86.158.13.130:8118"},
-                           {"http": "112.104.13.181:8088"},
-                           {"http": "190.77.52.116:8088"}]
+FREE_PROXY_IP_PORT_LIST = ["54.174.154.134",
+                           "52.3.79.40",
+                           "52.4.67.84",
+                           "52.70.213.91",
+                           "52.6.117.88",
+                           "52.72.176.227",
+                           "52.70.186.108",
+                           "52.71.2.193",
+                           "52.1.156.214"]
 
 BROWSER_AGENT_STRING_LIST = {"Firefox": ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1",
                                          "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0",
@@ -1059,9 +1056,6 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
         product_url_pattern = 'product_url'
         groupped_fields = group_params(request.POST, request.FILES, [product_url_pattern])
 
-        mechanize_browser = mechanize.Browser()
-        mechanize_browser = initialize_browser_settings(mechanize_browser)
-
         for group_name, group_data in groupped_fields.items():
             product_url = find_in_list(group_data, product_url_pattern)
 
@@ -1071,113 +1065,51 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
 
             product_url = product_url[0]  # this value can only have 1 element
 
-            retry_number = 0
+            try:
+                product_id = product_url.split("/")[-1]
+                product_json = json.loads(requests.get("http://www.walmart.com/product/api/{0}".format(product_id)).text)
 
-            while True:
-                try:
-                    retry_number += 1
-                    proxy_info = choose_free_proxy_from_candidates()
-                    mechanize_browser.set_proxies(proxy_info)
+                description = None
 
-                    #mechanize_browser.set_proxies({"http": "107.151.152.218:80"})
+                if "product" in product_json:
+                    if "mediumDescription" in product_json["product"]:
+                        description = product_json["product"]["mediumDescription"]
+                        description = html.fromstring("<html>" + description + "</html>").text_content().strip()
 
-                    product_id = product_url.split("/")[-1]
-                    product_json = json.loads(mechanize_browser.open("http://www.walmart.com/product/api/{0}".format(product_id), timeout=5.0).read())
+                    if not description and "longDescription" in product_json["product"]:
+                        description = product_json["product"]["longDescription"]
+                        description = html.fromstring("<html>" + description + "</html>").text_content().strip()
 
-                    description = None
+                if not description:
+                    raise Exception('No description in product')
 
-                    if "product" in product_json:
-                        if "mediumDescription" in product_json["product"]:
-                            description = product_json["product"]["mediumDescription"]
-                            description = html.fromstring("<html>" + description + "</html>").text_content().strip()
+                if len(description) > 500:
+                    description = description[:500]
 
-                        if not description and "longDescription" in product_json["product"]:
-                            description = product_json["product"]["longDescription"]
-                            description = html.fromstring("<html>" + description + "</html>").text_content().strip()
+                    if description.rfind(" ") > 0:
+                        description = description[:description.rfind(" ")].strip()
 
-                    if not description:
-                        raise Exception('No description in product')
+                input_search_text = None
 
-                    if len(description) > 500:
-                        description = description[:500]
+                google_search_results_page_raw_text = None
 
-                        if description.rfind(" ") > 0:
-                            description = description[:description.rfind(" ")].strip()
+                proxy = random.choice(FREE_PROXY_IP_PORT_LIST)
 
-                    input_search_text = None
+                results = None
 
-                    google_search_results_page_raw_text = None
+                if sellers_search_only:
+                    results = json.loads(requests.get('http://{0}/google_search?query="{1}"&sellers_search_only=true'.format(proxy, description)).text)
+                else:
+                    #means broad search
+                    results = json.loads(requests.get('http://{0}/google_search?query="{1}"'.format(proxy, description)).text)
 
-                    mechanize_browser.set_proxies(random.choice(FREE_PROXY_IP_PORT_LIST))
-
-                    if sellers_search_only:
-                        mechanize_browser.open("https://www.google.com/shopping?hl=en", timeout=5.0)
-                        mechanize_browser.select_form('f')
-                        mechanize_browser.form['q'] = '"{0}"'.format(description)
-                        mechanize_browser.submit()
-                    else:
-                        #means broad search
-                        mechanize_browser.open("https://www.google.com/", timeout=5.0)
-                        mechanize_browser.select_form('f')
-                        mechanize_browser.form['q'] = '"{0}"'.format(description)
-                        mechanize_browser.submit()
-
-                    google_search_results_page_raw_text = mechanize_browser.response().read()
-
-                    current_path = os.path.dirname(os.path.realpath(__file__))
-                    output_file = open(current_path + "/search_page.html", "w")
-                    output_file.write(google_search_results_page_raw_text.decode("utf-8").encode("utf-8"))
-                    output_file.close()
-
-                    google_search_results_page_html_tree = html.fromstring(google_search_results_page_raw_text)
-
-                    if google_search_results_page_html_tree.xpath("//form[@action='CaptchaRedirect']"):
-                        raise Exception('Google blocks search requests and claim to input captcha.')
-
-                    if google_search_results_page_html_tree.xpath("//title") and \
-                                    "Error 400 (Bad Request)" in google_search_results_page_html_tree.xpath("//title")[0].text_content():
-                        raise Exception('Error 400 (Bad Request)')
-
-                    if sellers_search_only:
-                        seller_block = None
-
-                        for left_block in google_search_results_page_html_tree.xpath("//ul[@class='sr__group']"):
-                            if left_block.xpath("./li[@class='sr__title sr__item']/text()")[0].strip().lower() == "seller":
-                                seller_block = left_block
-                                break
-
-                        seller_name_list = None
-
-                        if seller_block:
-                            seller_name_list = seller_block.xpath(".//li[@class='sr__item']//a/text()")
-                            seller_name_list = [seller for seller in seller_name_list if seller.lower() != "walmart"]
-
-                        if not seller_name_list:
-                            output[product_url] = "Unique content."
-                        else:
-                            output[product_url] = "Found duplicate content from other sellers: ." + ", ".join(seller_name_list)
-                    else:
-                        duplicate_content_links = google_search_results_page_html_tree.xpath("//div[@id='search']//cite/text()")
-
-                        if duplicate_content_links:
-                            duplicate_content_links = [url for url in duplicate_content_links if "walmart.com" not in url.lower()]
-
-                        if not duplicate_content_links:
-                            output[product_url] = "Unique content."
-                        else:
-                            output[product_url] = "Found duplicate content from other links."
-
-                    break
-                except Exception, e:
-                    print e
-                    output[product_url] = str(e)
-
-                    if retry_number > 10:
-                        break
-
-                    continue
-
-        mechanize_browser.close()
+                if results["success"] == 1:
+                    output[product_url] = results["message"]
+                else:
+                    raise Exception(results["message"])
+            except Exception, e:
+                print e
+                output[product_url] = str(e)
 
         if output:
             return Response(output)
