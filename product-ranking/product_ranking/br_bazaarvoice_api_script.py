@@ -122,7 +122,10 @@ class BuyerReviewsBazaarApi(object):
                     try:
                         last_buyer_review_date = datetime.strptime(date.replace('.', '').replace(',', ''), '%d %B %Y')
                     except:
-                        last_buyer_review_date = datetime.strptime(date.replace('.', '').replace(',', ''), '%B %d %Y')
+                        try:
+                            last_buyer_review_date = datetime.strptime(date.replace('.', '').replace(',', ''), '%B %d %Y')
+                        except:
+                            last_buyer_review_date = datetime.strptime(date.replace('.', '').replace(',', ''), '%b %d %Y')
 
                     product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d-%m-%Y')
 
