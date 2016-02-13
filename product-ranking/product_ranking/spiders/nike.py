@@ -1,10 +1,8 @@
 from __future__ import division, absolute_import, unicode_literals
 
 # TODO:
-# 1) buyer reveiws
-# 2) tweak line 167 ("this will be an infinte loop")
-# 3) individual url parsing
-# 4) remove unused methods and code
+# 1) individual pages scraping without selenium (try mechanize or requests?)
+# 2) not all products are collected by searchterm "black high" (must be 47 but only 30 collected)
 
 import os
 import json
@@ -37,11 +35,12 @@ class NikeProductSpider(BaseProductsSpider):
 
     SEARCH_URL = "http://nike.com/#{search_term}"
 
-    REVIEW_URL = "http://reviews.dell.com/2341_mg/{product_id}/reviews.htm?format=embedded"
+    REVIEW_URL = "http://nike.ugc.bazaarvoice.com/9191-en_us/{product_model}" \
+                 "/reviews.djs?format=embeddedhtml"
 
     handle_httpstatus_list = [404, 403, 429]
 
-    use_proxies = True
+    #use_proxies = True  # TODO: enable it back in production
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         from scrapy.conf import settings
@@ -53,7 +52,8 @@ class NikeProductSpider(BaseProductsSpider):
 
         self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
-        self.user_agent = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0) Gecko/20100101 Firefox/32.0'
+        #self.user_agent = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0) Gecko/20100101 Firefox/32.0'
+        self.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A'
 
         self.br = BuyerReviewsBazaarApi(called_class=self)
 
@@ -93,10 +93,21 @@ class NikeProductSpider(BaseProductsSpider):
         if self.product_url:
             prod = SiteProductItem()
             prod['is_single_result'] = True
+            display = Display(visible=0, size=(1280, 1024)).start()
+            driver = self._init_firefox()
+            driver.get('http://nike.com')
+            selenium_cookies = driver.get_cookies()
+            driver.quit()
+            display.stop()
+            meta = {}
+            meta['is_product_page'] = True
+            meta['proxy'] = 'http://127.0.0.1:8118'
+            meta['product'] = prod
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod},
-                          headers=self._get_antiban_headers())
+                          meta=meta,
+                          headers=self._get_antiban_headers(),
+                          cookies=selenium_cookies)
 
     def _init_firefox(self):
         from selenium import webdriver
@@ -144,6 +155,12 @@ class NikeProductSpider(BaseProductsSpider):
             ip = ip.group(1)
             return ip
 
+    @staticmethod
+    def last_three_digits_the_same(lst):
+        if len(lst) < 4:
+            return
+        return lst[-1] == lst[-2] == lst[-3]
+
     def parse(self, response):
 
         if not self._is_product_page(response):
@@ -166,13 +183,17 @@ class NikeProductSpider(BaseProductsSpider):
             time.sleep(6)  # let AJAX finish
             new_meta = response.meta.copy()
             # get all products we need (scroll down)
-            for _ in xrange(7):  # TODO: this will be an infinte loop!
+            collected_products_len = []
+            while 1:
                 try:
                     driver.execute_script("scrollTo(0,50000)")
-                    time.sleep(6)
+                    time.sleep(8)
                     product_links = self._get_product_links_from_serp(driver)
+                    collected_products_len.append(len(product_links))
                     if len(product_links) > self.quantity:
                         break
+                    if self.last_three_digits_the_same(collected_products_len):
+                        break  # last three iterations collected equal num of products
                     print 'Collected %i product links' % len(product_links)
                 except Exception as e:
                     print str(e)
@@ -181,6 +202,7 @@ class NikeProductSpider(BaseProductsSpider):
             try:
                 driver.quit()
                 display.stop()
+                pass
             except Exception as e:
                 self.log('Error on clearing resources: %s' % str(e))
             #driver.save_screenshot('/tmp/1.png')
@@ -206,11 +228,10 @@ class NikeProductSpider(BaseProductsSpider):
         js_data = self.parse_data(response)
 
         # product id
-        self.product_id = self.parse_product_id(response, js_data)
+        product_id = self.parse_product_id(response, js_data)
 
-        print('--------------- product_id  %s' % self.product_id)
-        self.product_color = self.parse_product_color(response, js_data)
-        self.product_price = 0
+        product_color = self.parse_product_color(response, js_data)
+        product_price = 0
 
         # Parse product_id
         title = self.parse_title(response, js_data)
@@ -221,8 +242,8 @@ class NikeProductSpider(BaseProductsSpider):
         cond_set_value(product, 'locale', locale)
 
         # Parse model
-        self.product_model = self.parse_product_model(response)
-        cond_set_value(product, 'model', self.product_model)
+        product_model = self.parse_product_model(response)
+        cond_set_value(product, 'model', product_model)
 
         # Parse title
         title = self.parse_title(response, js_data)
@@ -239,8 +260,6 @@ class NikeProductSpider(BaseProductsSpider):
         # Parse upc
         # upc = self.parse_upc(response)
         # cond_set_value(product, 'upc', upc)
-
-        
 
         # Parse sku
         sku = self.parse_sku(response)
@@ -259,9 +278,24 @@ class NikeProductSpider(BaseProductsSpider):
         nv.setupSC(response)
         product['variants'] = nv._variants()
 
-        response.meta['marks'] = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+        meta['product'] = product
 
+        # parse buyer reviews
+        yield Request(
+            url=self.REVIEW_URL.format(product_model=product_model),
+            dont_filter=True,
+            callback=self.parse_buyer_reviews,
+            meta=meta
+        )
         yield product
+
+    def parse_count_reviews(self, response):
+        count_review = response.xpath(
+            '//meta[contains(@itemprop, "reviewCount")]/@content').extract()
+        if count_review:
+            return int(count_review[0])
+        else:
+            return 0
 
     def parse_data(self, response):
         script_data = response.xpath(
@@ -271,6 +305,7 @@ class NikeProductSpider(BaseProductsSpider):
             return js_data
         except:
             return
+
 
     def parse_image(self, response, js_data):
         if js_data:
@@ -371,3 +406,9 @@ class NikeProductSpider(BaseProductsSpider):
                 return title
             except:
                 return
+
+    def parse_buyer_reviews(self, response):
+        buyer_reviews_per_page = self.br.parse_buyer_reviews_per_page(response)
+        product = response.meta['product']
+        product['buyer_reviews'] = BuyerReviews(**buyer_reviews_per_page)
+        yield product
