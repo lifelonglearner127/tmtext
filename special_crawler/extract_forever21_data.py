@@ -59,7 +59,7 @@ class Forever21Scraper(Scraper):
         #br.set_debug_responses(True)
 
         # User-Agent (this is cheating, ok?)
-        self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly("Safari"))]
+        self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
 
     def _extract_page_tree(self, captcha_data=None, retries=0):
         try:
@@ -87,7 +87,7 @@ class Forever21Scraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://store.nike.com/us/en_us/pd/.*?$", self.product_page_url)
+        m = re.match(r"^http://www.forever21.com/Product/Product.aspx\?.*?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -109,7 +109,6 @@ class Forever21Scraper(Scraper):
             if itemtype != "product":
                 raise Exception()
 
-            self._extract_product_json()
         except Exception:
             return True
 
@@ -143,8 +142,7 @@ class Forever21Scraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = self.product_json["productId"]
-        return product_id
+        return re.findall('ProductID=(\d+)', self.product_page_url, re.DOTALL)[0]
 
     def _site_id(self):
         return None
@@ -161,13 +159,13 @@ class Forever21Scraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//div[@class="exp-product-header"]//h1/text()')[0]
+        return self.tree_html.xpath('//h1[@class="item_name_p"]/text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//div[@class="exp-product-header"]//h1/text()')[0]
+        return self.tree_html.xpath('//h1[@class="item_name_p"]/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//div[@class="exp-product-header"]//h1/text()')[0]
+        return self.tree_html.xpath('//h1[@class="item_name_p"]/text()')[0].strip()
 
     def _model(self):
         return None
@@ -176,11 +174,6 @@ class Forever21Scraper(Scraper):
         return None
 
     def _features(self):
-        features_list = self.tree_html.xpath("//div[@class='pi-pdpmainbody']//li/text()")
-
-        if features_list:
-            return features_list
-
         return None
 
     def _feature_count(self):
@@ -193,25 +186,29 @@ class Forever21Scraper(Scraper):
         return None
 
     def _description(self):
-        return self.tree_html.xpath("//div[@class='pi-pdpmainbody']/p")[1].text_content().strip()
+        description_block = html.fromstring(html.tostring(self.tree_html.xpath("//article[@class='ac-small']")[0]))
+
+        for style in description_block.xpath('.//style'):
+            style.getparent().remove(style)
+
+        for script in description_block.xpath('.//script'):
+            script.getparent().remove(script)
+
+        return html.tostring(description_block.xpath("./*")[0])
 
     def _long_description(self):
-        description_block = self.tree_html.xpath("//div[@class='pi-pdpmainbody']")[0]
-        long_description = ""
-        long_description_start = 4
+        description_block = html.fromstring(html.tostring(self.tree_html.xpath("//article[@class='ac-small']")[0]))
 
-        for description_item in description_block:
-            long_description_start -= 1
+        for style in description_block.xpath('.//style'):
+            style.getparent().remove(style)
 
-            if long_description_start < 0:
-                long_description = long_description + html.tostring(description_item)
+        for script in description_block.xpath('.//script'):
+            script.getparent().remove(script)
 
-        long_description = long_description.strip()
+        short_description_block = description_block.xpath("./*")[0]
+        short_description_block.getparent().remove(short_description_block)
 
-        if long_description:
-            return long_description
-
-        return None
+        return html.tostring(description_block)
 
     def _variants(self):
         if self.is_variant_checked:
