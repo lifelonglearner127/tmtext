@@ -33,16 +33,7 @@ import unirest
 import time
 
 
-FREE_PROXY_IP_PORT_LIST = ["54.174.154.134",
-                           "52.3.79.40",
-                           "52.4.67.84",
-                           "52.70.213.91",
-                           "52.6.117.88",
-                           "52.72.176.227",
-                           "52.70.186.108",
-                           "52.71.2.193",
-                           "52.1.156.214",
-                           "52.91.67.73",
+FREE_PROXY_IP_PORT_LIST = ["52.91.67.73",
                            "52.90.231.48",
                            "52.91.35.248",
                            "52.90.102.54",
@@ -51,8 +42,7 @@ FREE_PROXY_IP_PORT_LIST = ["54.174.154.134",
                            "54.175.31.207",
                            "52.91.180.193",
                            "54.172.22.183",
-                           "52.90.182.115",
-                           "chbranch.contentanalyticsinc.com"]
+                           "52.90.182.115"]
 
 BROWSER_AGENT_STRING_LIST = {"Firefox": ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1",
                                          "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0",
