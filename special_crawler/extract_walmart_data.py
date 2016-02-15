@@ -261,7 +261,10 @@ class WalmartScraper(Scraper):
 
                     if len(video_json['videos']) > 0:
                         for video_info in video_json['videos']:
-                            self.video_urls.append(video_base_path + video_info['src']['src'])
+                            if video_info['src']['src'].startswith("http://") or video_info['src']['src'].startswith("https://"):
+                                self.video_urls.append(video_info['src']['src'])
+                            else:
+                                self.video_urls.append(video_base_path + video_info['src']['src'])
 
 
             else:
