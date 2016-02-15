@@ -230,24 +230,11 @@ class Forever21Scraper(Scraper):
         return None
 
     def _image_urls(self):
-        selected_product_image_url_suffixes = [url[url[:url.rfind("_")].rfind("_"):] for url in self.product_json["imagesHeroZoom"]]
-        variants_images = None
+        image_urls = self.tree_html.xpath("//ul[@id='pdp_thumbnail']//a/@href")
+        image_urls = [re.findall("ItemImage\.Main','(.*)'\);", url, re.DOTALL)[0] for url in image_urls]
 
-        if self.product_json["inStockColorways"]:
-            variants_images = [variant["imageUrl"] for variant in self.product_json["inStockColorways"]]
-
-            image_urls = []
-
-            for variant_image in variants_images:
-                variant_image = variant_image.replace("PDP_THUMB", "PDP_HERO_ZOOM")
-
-                for suffix in selected_product_image_url_suffixes:
-                    image_urls.append(variant_image[:variant_image.rfind(".")] + suffix)
-
-            if image_urls:
-                return image_urls
-        else:
-            return self.product_json["imagesHeroZoom"]
+        if image_urls:
+            return image_urls
 
         return None
 
@@ -299,80 +286,38 @@ class Forever21Scraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        if self._review_count() == 0:
-            return None
-
-        average_review = round(float(self.review_json["jsonData"]["attributes"]["avgRating"]), 1)
-
-        if str(average_review).split('.')[1] == '0':
-            return int(average_review)
-        else:
-            return float(average_review)
+        return float(self.tree_html.xpath("//span[@class='pr-snippet-rating-decimal pr-rounded']/text()")[0])
 
     def _review_count(self):
-        self._reviews()
+        review_count = self.tree_html.xpath("//a[@data-pr-event='snippet-read-reviews']/span/text()")
 
-        if not self.review_json:
-            return 0
+        if review_count:
+            return int(review_count[0][1:-1])
 
-        return int(self.review_json["jsonData"]["attributes"]["numReviews"])
+        return 0
 
     def _max_review(self):
-        if self._review_count() == 0:
-            return None
-
-        for i, review in enumerate(self.review_list):
-            if review[1] > 0:
-                return 5 - i
+        return None
 
     def _min_review(self):
-        if self._review_count() == 0:
-            return None
-
-        for i, review in enumerate(reversed(self.review_list)):
-            if review[1] > 0:
-                return i + 1
+        return None
 
     def _reviews(self):
-        if self.is_review_checked:
-            return self.review_list
-
-        self.is_review_checked = True
-
-        contents = requests.get(self.REVIEW_URL.format(self.product_json['styleNumber'])).text
-
-        try:
-            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
-            end_index = contents.find(",\nwidgetInitializers:initializers", start_index)
-
-            self.review_json = contents[start_index:end_index]
-            self.review_json = json.loads(self.review_json)
-        except:
-            self.review_json = None
-
-        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
-        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
-        reviews_by_mark = reviews_by_mark[:5]
-        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
-
-        if not review_list:
-            review_list = None
-
-        self.review_list = review_list
-
-        return self.review_list
+        return None
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath("//div[@class='exp-product-header']//span[contains(@class, 'exp-pdp-local-price')]/text()")[0].strip()
+        return self.tree_html.xpath("//span[@itemprop='offerDetails']//span[@itemprop='price']/text()")[0].strip()
 
     def _price_amount(self):
-        return float(self.tree_html.xpath("//meta[@property='og:price:amount']/@content")[0])
+        price_text = self._price()
+        price = re.findall(r"\d*\.\d+|\d+", price_text.replace(",", ""))
+        return float(price[0])
 
     def _price_currency(self):
-        return self.tree_html.xpath("//meta[@property='og:price:currency']/@content")[0]
+        return self.tree_html.xpath("//span[@itemprop='offerDetails']//meta[@itemprop='currency']/@content")[0]
 
     def _in_stores(self):
         return 0
@@ -381,9 +326,6 @@ class Forever21Scraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
-        if not self.product_json["trackingData"]["product"]["inStock"]:
-            return 1
-
         return 0
 
     def _in_stores_out_of_stock(self):
@@ -409,7 +351,7 @@ class Forever21Scraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        return [self.product_json["trackingData"]["product"]["category"]]
+        return self.tree_html.xpath("//div[@id='div_breadcrumb']/span/a/text()")[1:]
 
     def _category_name(self):
         return self._categories()[-1]
