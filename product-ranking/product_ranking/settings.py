@@ -94,7 +94,13 @@ RETRY_HTTP_CODES = [500, 502, 503, 504, 400, 403, 404, 408]
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.contrib.downloadermiddleware.retry.RetryMiddleware': 90,
     'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
+    'scrapy_crawlera.CrawleraMiddleware': 600  # pip install scrapy-crawlera
 }
+
+
+CRAWLERA_ENABLED = False  # false by default
+CRAWLERA_APIKEY = 'eff4d75f7d3a4d1e89115c0b59fab9b2'
+
 
 _args_names = [arg.split('=')[0] if '=' in arg else arg for arg in sys.argv]
 if 'validate' in _args_names:
