@@ -10,7 +10,7 @@ from PIL import Image
 import numpy as np
 from StringIO import StringIO
 from rest_framework import viewsets
-from rest_apis_content_analytics.image_duplication.serializers import ImageUrlSerializer
+from rest_apis_content_analytics.image_duplication.serializers import ImageUrlSerializer, CompareTwoImageListsSerializer
 from rest_apis_content_analytics.image_duplication.compare_images import url_to_image, compare_two_images_a, compare_two_images_b, compare_two_images_c
 from rest_framework.response import Response
 import linecache
@@ -247,3 +247,71 @@ class FindSimilarityInImageList(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
 
+class CompareTwoImageLists(viewsets.ViewSet):
+    """
+    API endpoint that allows groups to be viewed or edited.
+    """
+    serializer_class = CompareTwoImageListsSerializer
+
+    def list(self, request):
+        return Response({'data': 'OK'})
+
+    def retrieve(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+    def create(self, request):
+        serializer = self.serializer_class(data=request.DATA)
+
+        if serializer.is_valid():
+            try:
+                urls1 = serializer.data["urls1"]
+                urls2 = serializer.data["urls2"]
+
+                images_2 = []
+
+                for url2 in urls2:
+                    resp = urllib.urlopen(url2).read()
+                    images_2.append(Image.open(cStringIO.StringIO(resp)))
+
+                results = {}
+
+                for url1 in urls1:
+                    resp = urllib.urlopen(url1).read()
+                    image1 = Image.open(cStringIO.StringIO(resp))
+
+                    images = dict(zip(urls2, images_2))
+
+                    rest_images = copy.copy(images)
+
+                    group_image_indexes = []
+
+                    processed_images = []
+
+                    for url2 in rest_images:
+
+                        similarity_rate = float(compare_two_images_c(image1, rest_images[url2])) * float(compare_two_images_b(image1, rest_images[url2]))
+
+                        if similarity_rate >= 0.8:
+                            processed_images.append(url2)
+                            group_image_indexes.append(url2)
+
+                    if group_image_indexes:
+                        results[url1] = group_image_indexes
+                    else:
+                        results[url1] = None
+
+                if results:
+                    return Response(results)
+            except:
+                pass
+
+        return Response({'data': 'NO OK'})
+
+    def update(self, request, pk=None):
+        pass
+
+    def partial_update(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+    def destroy(self, request, pk=None):
+        return Response({'data': 'OK'})

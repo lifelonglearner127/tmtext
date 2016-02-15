@@ -1,7 +1,7 @@
 from django.conf.urls import url, include
 from rest_framework import routers
 from rest_framework.urlpatterns import format_suffix_patterns
-from image_duplication.views import CompareTwoImageViewSet, ClassifyImagesBySimilarity, FindSimilarityInImageList
+from image_duplication.views import CompareTwoImageViewSet, ClassifyImagesBySimilarity, FindSimilarityInImageList, CompareTwoImageLists
 from walmart_developer_accounts.views import WalmartAccountViewSet
 from walmart_api.views import (InvokeWalmartApiViewSet, ItemsUpdateWithXmlFileByWalmartApiViewSet,
                                ItemsUpdateWithXmlTextByWalmartApiViewSet, CheckFeedStatusByWalmartApiViewSet,
@@ -32,6 +32,7 @@ router = routers.SimpleRouter()
 router.register(r'comparetwoimages', CompareTwoImageViewSet, 'comparetwoimages')
 router.register(r'classifyimagesbysimilarity', ClassifyImagesBySimilarity, 'classifyimagesbysimilarity')
 router.register(r'findsimilarityinimagelist', FindSimilarityInImageList, 'findsimilarityinimagelist')
+router.register(r'comparetwoimagelists', CompareTwoImageLists, 'comparetwoimagelists')
 router.register(r'walmartaccounts', WalmartAccountViewSet, 'walmartaccounts')
 router.register(r'classifytextimagesbynutritioninfo', ClassifyTextImagesByNutritionInfoViewSet, 'classifytextimagesbynutritioninfo')
 router.register(r'invokewalmartapi', InvokeWalmartApiViewSet, 'invokewalmartapi')
