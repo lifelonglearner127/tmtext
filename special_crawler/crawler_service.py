@@ -77,6 +77,7 @@ from extract_mothercare_data import MotherCareScraper
 from extract_toysrus_data import ToysRusScraper
 from extract_microsoft_data import MicrosoftScraper
 from extract_nike_data import NikeScraper
+from extract_forever21_data import Forever21Scraper
 
 from urllib2 import HTTPError
 import datetime
@@ -165,7 +166,8 @@ SUPPORTED_SITES = {
                     "mothercare": MotherCareScraper,
                     "toysrus": ToysRusScraper,
                     "microsoftstore": MicrosoftScraper,
-                    "nike": NikeScraper
+                    "nike": NikeScraper,
+                    "forever21": Forever21Scraper,
                     }
 
 # add logger
