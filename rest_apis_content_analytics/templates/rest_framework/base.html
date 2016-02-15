@@ -28,6 +28,23 @@
 
   <style>
       .prettyprint_replaced_link {border-bottom:1px dashed;}
+      .stats_big_blue_area td{
+          background: #337ab7;
+          font-size: 20px;
+          padding:20px;
+          text-align: center;
+          border-radius: 5px;
+          border: 0;
+          box-shadow: 1px 2px 5px grey;
+          color: white;
+      }
+      .stats_big_blue_area td span {
+          display: block;
+      }
+      .stats_big_blue_area {
+          border-spacing: 20px;
+          border-collapse: separate;
+      }
   </style>
 
   <script type="text/javascript">
@@ -81,6 +98,17 @@
           <a href="{% url 'validate_walmart_product_xml_file' %}">Validate XML</a>&nbsp;&nbsp;&#8226;&nbsp;
           <a href="{% url 'check_feed_status_by_walmart_api' %}">Check Feed Status</a>
       </ul>
+
+      {% comment %} TODO: make this visible only at walmart submit page! {% endcomment %}
+      <div>
+        <table class="stats_big_blue_area">
+          <tr>
+            <td>Total items submitted (all time) <span>{{ stats_all_walmart_xml_items|length }}</span></td>
+            <td>Total successful (all time) <span>{{ stats_failed_walmart_xml_items|length }}</span></td>
+            <td>Today (success/total) <span>{{ stats_successful_walmart_xml_items|length }}</span></td>
+          </tr>
+        </table>
+      </div>
 
       {% block breadcrumbs %}
         <ul class="breadcrumb" style="margin-top:20px">

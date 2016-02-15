@@ -39,6 +39,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'walmart_developer_accounts',
     'nutrition_info_images',
+    'statistics'
 )
 
 REST_FRAMEWORK = {
@@ -106,6 +107,10 @@ TEMPLATE_LOADERS = ['django.template.loaders.filesystem.Loader',
                     'django.template.loaders.app_directories.Loader']
 TEMPLATE_DIRS = [os.path.join(BASE_DIR, 'templates')]
 
+TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.contrib.auth.context_processors.auth',
+)
+
 
 LOGGING = {
     'version': 1,
@@ -147,3 +152,21 @@ LOGGING = {
         },
     },
 }
+
+if 'statistics' in INSTALLED_APPS:
+    TEMPLATE_CONTEXT_PROCESSORS = {} if not 'TEMPLATE_CONTEXT_PROCESSORS' in globals()\
+        else globals()['TEMPLATE_CONTEXT_PROCESSORS']
+    TEMPLATE_CONTEXT_PROCESSORS = list(TEMPLATE_CONTEXT_PROCESSORS)
+    TEMPLATE_CONTEXT_PROCESSORS.append('statistics.context_processors.stats_walmart_xml_items')
+
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'APP_DIRS': True,
+        'DIRS': TEMPLATE_DIRS,
+        'OPTIONS': {
+            'context_processors': TEMPLATE_CONTEXT_PROCESSORS
+        }
+    },
+]

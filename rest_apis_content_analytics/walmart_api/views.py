@@ -27,6 +27,7 @@ from walmart_api.serializers import (WalmartApiFeedRequestSerializer, WalmartApi
                                      WalmartApiItemsWithXmlTextRequestSerializer, WalmartApiValidateXmlTextRequestSerializer,
                                      WalmartApiValidateXmlFileRequestSerializer, WalmartDetectDuplicateContentRequestSerializer,
                                      WalmartDetectDuplicateContentFromCsvFileRequestSerializer)
+from statistics.models import stat_xml_item
 from lxml import etree
 import xmltodict
 import unirest
@@ -457,6 +458,26 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
             if "error" in validation_results:
                 return file_.name, validation_results
 
+    def _parse_submit_output(self, request, output, multi_item):
+        feed_id = output.get('feedId', None)
+        if feed_id:
+            item = output['log'][-1]  # TODO: multiple items will return multiple logs?
+            i_date, i_upc, i_feed = item.split(',')
+            i_date = datetime.datetime.strptime(i_date.strip(), '%Y-%m-%d %H:%M')
+            i_upc = i_upc.strip()
+            i_feed = i_feed.strip()
+            xml_item = stat_xml_item(request.user, 'session', 'successful', multi_item,  # TODO: auth
+                                     error_text=None, upc=i_upc, feed_id=i_feed)
+            xml_item.when = i_date
+            xml_item.save()
+        else:
+            if 'error' in output:
+                xml_item = stat_xml_item(request.user, 'session', 'failed', multi_item,
+                                         error_text=str(output['error']))
+                xml_item.when = datetime.datetime.now()
+                xml_item.save()
+
+
     def create(self, request):
         request_url_pattern = 'request_url'
         request_method_pattern = 'request_method'
@@ -496,8 +517,10 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                          sent_file=merged_file, request_url=request_url, request_method=request_method,
                          do_not_validate_xml=True)
                     output[group_name] = result_for_this_group
+                    self._parse_submit_output(request, result_for_this_group, True)
                 except Exception, e:
                     output[group_name] = {'error': str(e)}
+                    db_stat = stat_xml_item(request.user, 'session', 'failed', True, str(e))
         else:
             print('Submitting as a bunch of files')
             for group_name, group_data in groupped_fields.items():
@@ -525,8 +548,10 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                         result_for_this_group = self.process_one_set(
                              sent_file=sent_file[0], request_url=request_url, request_method=request_method)
                         output[group_name] = result_for_this_group
+                        self._parse_submit_output(request, result_for_this_group, False)
                     except Exception, e:
                         output[group_name] = {'error': str(e)}
+                        db_stat = stat_xml_item(request.user, 'session', 'failed', False, str(e))
         return Response(output)
 
     def process_one_set(self, sent_file, request_url, request_method, do_not_validate_xml=False):
