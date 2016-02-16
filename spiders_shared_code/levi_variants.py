@@ -35,6 +35,7 @@ class LeviVariants(object):
             buy_stack_json = None
 
         if buy_stack_json:
+            product_url = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
             attribute_values_list = []
             out_of_stock_combination_list = []
 
@@ -80,6 +81,7 @@ class LeviVariants(object):
                             continue
 
                         properties["color"] = buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]["colorid"]]["finish"]["title"]
+                        variant_item["url"] = product_url[:product_url.rfind("/") + 1] + buy_stack_json["sku"][variant_combination]["colorid"]
                         value_list.append(properties["color"])
                         if "color" not in attribute_list: attribute_list.append("color")
                     else:
@@ -153,6 +155,7 @@ class LeviVariants(object):
                 variant_item["upc"] = None
                 variant_item["stock"] = 0
                 variant_item["in_stock"] = False
+                variant_item["url"] = None
 
                 variant_list.append(variant_item)
 
