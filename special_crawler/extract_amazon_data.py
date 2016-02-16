@@ -117,7 +117,7 @@ class AmazonScraper(Scraper):
         and returns True if current page is one.
         '''
 
-        self.av.setupCH(self.tree_html)
+        self.av.setupCH(self.tree_html, self.product_page_url)
 
         if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
             return True
