@@ -44,8 +44,8 @@ class SubmitXMLItem(models.Model):
     def metadata(self, upc_and_feed_id_dict):
         if self.metadata:
             return
-        ItemMetadata.objects.create(item=self, upc=upc_and_feed_id_dict['upc'],
-                                    feed_id=upc_and_feed_id_dict['feed_id'])
+        ItemMetadata.objects.create(item=self, upc=upc_and_feed_id_dict.get('upc', None),
+                                    feed_id=upc_and_feed_id_dict.get('feed_id', None))
 
     @property
     def error_text(self):
@@ -71,8 +71,8 @@ class ErrorText(models.Model):
 
 class ItemMetadata(models.Model):
     item = models.ForeignKey(SubmitXMLItem, unique=True)
-    upc = models.CharField(max_length=20)
-    feed_id = models.CharField(max_length=50)
+    upc = models.CharField(max_length=20, blank=True, null=True)
+    feed_id = models.CharField(max_length=50, blank=True, null=True)
 
     def __unicode__(self):
         return u'[%s], upc=>%s, feed_id=>%s' % (self.item, self.upc, self.feed_id)

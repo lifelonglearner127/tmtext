@@ -240,7 +240,10 @@ def validate_walmart_product_xml_against_xsd(product_xml_string):
         product_xml_string = product_xml_string[product_xml_string.find("<", 2):]
 
     proudct_xml_list = re.findall('<SupplierProduct>(.*?)</SupplierProduct>', product_xml_string, re.DOTALL)
-    product_xml_version = re.findall('<version>(.*?)</version>', product_xml_string, re.DOTALL)[0]
+    product_xml_version = re.findall('<version>(.*?)</version>', product_xml_string, re.DOTALL)
+    if not product_xml_version:
+        return 'error - no product xml version found'
+    product_xml_version = product_xml_version[0]
     validation_results = OrderedDict()
 
     for index, product_xml in enumerate(proudct_xml_list):
@@ -459,6 +462,8 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                 return file_.name, validation_results
 
     def _parse_submit_output(self, request, output, multi_item):
+        if not output:
+            return
         feed_id = output.get('feedId', None)
         if feed_id:
             item = output['log'][-1]  # TODO: multiple items will return multiple logs?
@@ -471,12 +476,10 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
             xml_item.when = i_date
             xml_item.save()
         else:
-            if 'error' in output:
-                xml_item = stat_xml_item(request.user, 'session', 'failed', multi_item,
-                                         error_text=str(output['error']))
-                xml_item.when = datetime.datetime.now()
-                xml_item.save()
-
+            xml_item = stat_xml_item(request.user, 'session', 'failed', multi_item,
+                                     error_text=str(output))
+            xml_item.when = datetime.datetime.now()
+            xml_item.save()
 
     def create(self, request):
         request_url_pattern = 'request_url'
@@ -507,6 +510,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                 if invalid_files:
                     output[group_name] = {}
                     output[group_name][invalid_files[0]] = invalid_files[1]
+                    self._parse_submit_output(request, output, True)
                     continue
 
                 merged_file = merge_xml_files_into_one(*sent_file)
@@ -514,12 +518,10 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                 merged_file = open(merged_file, 'r')
                 try:
                     result_for_this_group = self.process_one_set(
-                         sent_file=merged_file, request_url=request_url, request_method=request_method,
-                         do_not_validate_xml=True)
-                    output[group_name] = result_for_this_group
-                    self._parse_submit_output(request, result_for_this_group, True)
+                         request=request, sent_file=merged_file,
+                         request_url=request_url, request_method=request_method,
+                         do_not_validate_xml=True, multi_item=True)
                 except Exception, e:
-                    output[group_name] = {'error': str(e)}
                     db_stat = stat_xml_item(request.user, 'session', 'failed', True, str(e))
         else:
             print('Submitting as a bunch of files')
@@ -539,22 +541,24 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                         new_group_name = group_name + group_name_postfix % file_i
                         try:
                             result_for_this_group = self.process_one_set(
-                                 sent_file=_sent_file, request_url=request_url, request_method=request_method)
+                                request=request, sent_file=_sent_file,
+                                request_url=request_url, request_method=request_method,
+                                multi_item=False)
                             output[new_group_name] = result_for_this_group
                         except Exception, e:
                             output[new_group_name] = {'error': str(e)}
                 else:
                     try:
                         result_for_this_group = self.process_one_set(
-                             sent_file=sent_file[0], request_url=request_url, request_method=request_method)
+                            request=request, sent_file=sent_file[0],
+                            request_url=request_url, request_method=request_method,
+                            multi_item=False)
                         output[group_name] = result_for_this_group
-                        self._parse_submit_output(request, result_for_this_group, False)
                     except Exception, e:
                         output[group_name] = {'error': str(e)}
-                        db_stat = stat_xml_item(request.user, 'session', 'failed', False, str(e))
         return Response(output)
 
-    def process_one_set(self, sent_file, request_url, request_method, do_not_validate_xml=False):
+    def process_one_set(self, request, sent_file, request_url, request_method, do_not_validate_xml=False, multi_item=False):
         with open(os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml", "wb") as upload_file:
             xml_data_by_list = sent_file.read()
             xml_data_by_list = xml_data_by_list.splitlines()
@@ -564,9 +568,18 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
 
         upload_file = open(os.path.dirname(os.path.realpath(__file__)) + "/upload_file.xml", "rb")
         product_xml_text = upload_file.read()
+
+        # create stat report
+        stat_xml_i = stat_xml_item(request.user, 'session', 'successful',
+                                   multi_item, error_text=None, upc=None, feed_id=None)
+
         upc = re.findall(r'<productId>(.*)</productId>', product_xml_text)
         if not upc:
-            return {'error': 'could not find <productId> element'}
+            return_msg = {'error': 'could not find <productId> element'}
+            stat_xml_i.status = 'failed'
+            stat_xml_i.save()
+            stat_xml_i.error_text = str(return_msg)
+            return return_msg
         upc = upc[0]
         # we don't use validation against XSD because it fails - instead,
         #  we assume we have checked each sub-product already
@@ -576,6 +589,10 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
 
         if "error" in validation_results:
             print validation_results
+            stat_xml_i.status = 'failed'
+            stat_xml_i.save()
+            stat_xml_i.metadata = {'upc': upc}
+            stat_xml_i.error_text = str(validation_results)
             return validation_results
 
         walmart_api_signature = self.generate_walmart_api_signature(request_url,
@@ -615,8 +632,20 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                 with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "r") as myfile:
                     response.body["log"] = myfile.read().splitlines()
 
+                stat_xml_i.metadata = {'upc': upc, 'feed_id': feed_id}
+
+            else:
+                stat_xml_i.status = 'failed'
+                stat_xml_i.save()
+                stat_xml_i.metadata = {'upc': upc}
+                stat_xml_i.error_text = str(response.body)
+
             return response.body
         else:
+            stat_xml_i.status = 'failed'
+            stat_xml_i.save()
+            stat_xml_i.metadata = {'upc': upc}
+            stat_xml_i.error_text = str(response.body)
             return xmltodict(response.body)
 
     def update(self, request, pk=None):
