@@ -1203,30 +1203,43 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                 continue
 
             product_url = product_url[0]  # this value can only have 1 element
+            description = ""
 
             try:
-                product_id = product_url.split("/")[-1]
-                product_json = json.loads(requests.get("http://www.walmart.com/product/api/{0}".format(product_id)).text)
+                product_json = json.loads(requests.get("http://52.1.156.214/get_data?url={0}".format(product_url)).text)
 
-                description = None
+                if product_json["product_info"]["description"]:
+                    description = product_json["product_info"]["description"]
 
-                if "product" in product_json:
-                    if "mediumDescription" in product_json["product"]:
-                        description = product_json["product"]["mediumDescription"]
-                        description = html.fromstring("<html>" + description + "</html>").text_content().strip()
+                if product_json["product_info"]["long_description"]:
+                    description += product_json["product_info"]["long_description"]
 
-                    if not description and "longDescription" in product_json["product"]:
-                        description = product_json["product"]["longDescription"]
-                        description = html.fromstring("<html>" + description + "</html>").text_content().strip()
-
-                if not description:
+                if description:
+                    description = html.fromstring("<html>" + description + "</html>").text_content().strip()
+                else:
                     raise Exception('No description in product')
 
-                if len(description) > 300:
-                    description = description[:300]
+                cursor = description.find(" ", 0)
+                word_count = 0
 
-                    if description.rfind(" ") > 0:
-                        description = description[:description.rfind(" ")].strip()
+                while cursor >= 0:
+                    relative_index = cursor + 1
+
+                    if relative_index >= len(description):
+                        break
+
+                    for index in range(relative_index, len(description)):
+                        if description[relative_index] != " ":
+                            break
+
+                    cursor = description.find(" ", relative_index)
+                    word_count += 1
+
+                    if word_count >= 32:
+                        break
+
+                if cursor > 0:
+                    description = description[:cursor]
 
                 description = '"' + description + '"'
                 input_search_text = None
@@ -1247,7 +1260,8 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
 
                 google_search_results_page_raw_text = mechanize_browser.response().read()
                 '''
-                google_search_results_page_raw_text = requests.get(search_url.format(urllib.quote(description)),
+
+                google_search_results_page_raw_text = requests.get(search_url.format(urllib.quote(description.encode("utf-8"))),
                                                                    proxies=proxies,
                                                                    auth=proxy_auth,
                                                                    verify=os.path.dirname(os.path.realpath(__file__)) + "/crawlera-ca.crt").text
