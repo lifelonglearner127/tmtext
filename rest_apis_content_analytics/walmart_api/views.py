@@ -1244,6 +1244,9 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                     short_description = '"' + short_description + '"'
 
                 if long_description:
+                    if long_description.startswith("<b>"):
+                        long_description = long_description[long_description.find("</b>") + 4:]
+
                     long_description = html.fromstring("<html>" + long_description + "</html>").text_content().strip()
                     long_description = long_description.replace('"', '')
                     cursor = long_description.find(" ", 0)
@@ -1338,6 +1341,9 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                                 output[product_url] = "Found duplicate content from other sellers: ." + ", ".join(seller_name_list)
                         else:
                             duplicate_content_links = google_search_results_page_html_tree.xpath("//div[@id='search']//cite/text()")
+
+                            if "No results found for {0}".format(description) in google_search_results_page_html_tree.text_content():
+                                duplicate_content_links = None
 
                             if duplicate_content_links:
                                 duplicate_content_links = [url for url in duplicate_content_links if "walmart.com" not in url.lower()]
