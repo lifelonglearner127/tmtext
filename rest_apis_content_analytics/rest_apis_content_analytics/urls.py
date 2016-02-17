@@ -1,4 +1,5 @@
 from django.conf.urls import url, include
+from django.contrib import admin
 from rest_framework import routers
 from rest_framework.urlpatterns import format_suffix_patterns
 from image_duplication.views import CompareTwoImageViewSet, ClassifyImagesBySimilarity, FindSimilarityInImageList, CompareTwoImageLists
@@ -8,7 +9,11 @@ from walmart_api.views import (InvokeWalmartApiViewSet, ItemsUpdateWithXmlFileBy
                                ValidateWalmartProductXmlTextViewSet, ValidateWalmartProductXmlFileViewSet,
                                FeedIDRedirectView, DetectDuplicateContentBySeleniumViewset, DetectDuplicateContentByMechanizeViewset,
                                DetectDuplicateContentFromCsvFilesByMechanizeViewset)
+from statistics.views import StatsView
 from nutrition_info_images.views import ClassifyTextImagesByNutritionInfoViewSet
+
+
+admin.autodiscover()
 
 
 # API endpoints
@@ -25,7 +30,8 @@ urlpatterns = format_suffix_patterns([
 ])
 
 urlpatterns += [
-    url(r'^feed-redirect/(?P<feed_id>[A-Za-z0-9\-]+)', FeedIDRedirectView.as_view(), name='feed_redirect')
+    url(r'^feed-redirect/(?P<feed_id>[A-Za-z0-9\-]+)', FeedIDRedirectView.as_view(), name='feed_redirect'),
+    url(r'^stats/$', StatsView.as_view(), name='stats_view')
 ]
 
 router = routers.SimpleRouter()
@@ -56,5 +62,6 @@ router.register(r'detect_duplicate_content_from_csv_file_by_mechanize', DetectDu
 urlpatterns += [
     url(r'^', include(router.urls)),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^admin/', include(admin.site.urls)),
 ]
 

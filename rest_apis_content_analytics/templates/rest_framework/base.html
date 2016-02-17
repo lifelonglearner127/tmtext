@@ -28,6 +28,29 @@
 
   <style>
       .prettyprint_replaced_link {border-bottom:1px dashed;}
+      .stats_big_blue_area td{
+          background: #337ab7;
+          font-size: 20px;
+          padding:20px;
+          text-align: center;
+          border-radius: 5px;
+          border: 0;
+          box-shadow: 1px 2px 5px grey;
+          color: white;
+          cursor: pointer;
+      }
+      .stats_big_blue_area td span {
+          display: block;
+      }
+      .stats_big_blue_area {
+          border-spacing: 20px;
+          border-collapse: separate;
+          margin-left: auto;
+          margin-right: auto;
+      }
+      .stats_table {
+          font-size:12px;
+      }
   </style>
 
   <script type="text/javascript">
@@ -81,6 +104,19 @@
           <a href="{% url 'validate_walmart_product_xml_file' %}">Validate XML</a>&nbsp;&nbsp;&#8226;&nbsp;
           <a href="{% url 'check_feed_status_by_walmart_api' %}">Check Feed Status</a>
       </ul>
+
+      {% url "items_update_with_xml_file_by_walmart_api" as items_update_with_xml_file_by_walmart_api_url %}
+      {% if request.path == items_update_with_xml_file_by_walmart_api_url %}
+      <div>
+        <table class="stats_big_blue_area">
+          <tr>
+            <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Total items submitted (all time) <span>{{ stats_all_walmart_xml_items|length }}</span></td>
+            <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Total successful (all time) <span>{{ stats_successful_walmart_xml_items|length }}</span></td>
+            <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Today (success/total) <span>{{ stats_today_successful_xml_items|length }} / {{ stats_today_all_xml_items|length }}</span></td>
+          </tr>
+        </table>
+      </div>
+      {% endif %}
 
       {% block breadcrumbs %}
         <ul class="breadcrumb" style="margin-top:20px">
