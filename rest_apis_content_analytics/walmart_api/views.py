@@ -1197,53 +1197,59 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
         retry_number = 3
 
         for group_name, group_data in groupped_fields.items():
+            product_url = find_in_list(group_data, product_url_pattern)
+
+            if not any(product_url):
+                output[group_name] = {'error': 'one (or more) required params missing'}
+                continue
+
+            product_url = product_url[0]  # this value can only have 1 element
+            description = ""
+
+            try:
+                product_json = json.loads(requests.get("http://52.1.156.214/get_data?url={0}".format(product_url)).text)
+
+                if product_json["product_info"]["description"]:
+                    description = product_json["product_info"]["description"]
+
+                if product_json["product_info"]["long_description"]:
+                    description += product_json["product_info"]["long_description"]
+
+                if description:
+                    description = html.fromstring("<html>" + description + "</html>").text_content().strip()
+
+                if not description:
+                    raise Exception('No description in product')
+
+                cursor = description.find(" ", 0)
+                word_count = 0
+
+                while cursor >= 0:
+                    relative_index = cursor + 1
+
+                    if relative_index >= len(description):
+                        break
+
+                    for index in range(relative_index, len(description)):
+                        if description[relative_index] != " ":
+                            break
+
+                    cursor = description.find(" ", relative_index)
+                    word_count += 1
+
+                    if word_count >= 32:
+                        break
+
+                if cursor > 0:
+                    description = description[:cursor]
+
+                description = '"' + description + '"'
+            except Exception, e:
+                output[product_url] = str(e)
+                continue
+
             for retry_index in range(retry_number):
-                product_url = find_in_list(group_data, product_url_pattern)
-
-                if not any(product_url):
-                    output[group_name] = {'error': 'one (or more) required params missing'}
-                    continue
-
-                product_url = product_url[0]  # this value can only have 1 element
-                description = ""
-
                 try:
-                    product_json = json.loads(requests.get("http://52.1.156.214/get_data?url={0}".format(product_url)).text)
-
-                    if product_json["product_info"]["description"]:
-                        description = product_json["product_info"]["description"]
-
-                    if product_json["product_info"]["long_description"]:
-                        description += product_json["product_info"]["long_description"]
-
-                    if description:
-                        description = html.fromstring("<html>" + description + "</html>").text_content().strip()
-                    else:
-                        raise Exception('No description in product')
-
-                    cursor = description.find(" ", 0)
-                    word_count = 0
-
-                    while cursor >= 0:
-                        relative_index = cursor + 1
-
-                        if relative_index >= len(description):
-                            break
-
-                        for index in range(relative_index, len(description)):
-                            if description[relative_index] != " ":
-                                break
-
-                        cursor = description.find(" ", relative_index)
-                        word_count += 1
-
-                        if word_count >= 32:
-                            break
-
-                    if cursor > 0:
-                        description = description[:cursor]
-
-                    description = '"' + description + '"'
                     input_search_text = None
 
                     google_search_results_page_raw_text = None
