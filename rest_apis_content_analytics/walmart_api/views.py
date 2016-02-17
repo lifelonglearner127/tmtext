@@ -1193,7 +1193,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
         proxy_host = "proxy.crawlera.com"
         proxy_port = "8010"
         proxy_auth = HTTPProxyAuth("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
-        proxies = {"https": "https://{}:{}/".format(proxy_host, proxy_port)}
+        proxies = {"http": "http://{}:{}/".format(proxy_host, proxy_port)}
 
         for group_name, group_data in groupped_fields.items():
             product_url = find_in_list(group_data, product_url_pattern)
@@ -1247,6 +1247,12 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
 
                 google_search_results_page_raw_text = mechanize_browser.response().read()
                 '''
+
+                url = "http://httpbin.org/ip"
+
+                while True:
+                    r = requests.get(url, proxies=proxies, auth=proxy_auth)
+                    print r.text
 
                 google_search_results_page_raw_text = requests.get(search_url.format(urllib.quote(description)),
                                                                    proxies=proxies,
