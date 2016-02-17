@@ -291,7 +291,7 @@ class CompareTwoImageLists(viewsets.ViewSet):
 
                         similarity_rate = float(compare_two_images_c(image1, rest_images[url2])) * float(compare_two_images_b(image1, rest_images[url2]))
 
-                        if similarity_rate >= 0.5:
+                        if similarity_rate >= 0.8:
                             processed_images.append(url2)
                             group_image_indexes.append(url2)
 
