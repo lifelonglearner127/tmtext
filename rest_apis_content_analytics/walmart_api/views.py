@@ -1235,7 +1235,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                         cursor = short_description.find(" ", relative_index)
                         word_count += 1
 
-                        if word_count >=20:
+                        if word_count >= 20:
                             break
 
                     if cursor > 0:
@@ -1338,6 +1338,9 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                                 output[product_url] = "Found duplicate content from other sellers: ." + ", ".join(seller_name_list)
                         else:
                             duplicate_content_links = google_search_results_page_html_tree.xpath("//div[@id='search']//cite/text()")
+
+                            if "No results found for {0}".format(description) in google_search_results_page_html_tree.text_content():
+                                duplicate_content_links = None
 
                             if duplicate_content_links:
                                 duplicate_content_links = [url for url in duplicate_content_links if "walmart.com" not in url.lower()]
