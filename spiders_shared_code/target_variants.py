@@ -177,7 +177,10 @@ class TargetVariants(object):
                 stockstatus_for_variants["properties"] = properties
                 stockstatus_for_variants["selected"] = None
                 try:
-                    stockstatus_for_variants["price"] = float(hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["price"]["formattedOfferPrice"][1:])
+                    if hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["price"]["formattedOfferPrice"] == "Too low to display":
+                        stockstatus_for_variants["price"] = None
+                    else:
+                        stockstatus_for_variants["price"] = float(hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["price"]["formattedOfferPrice"][1:])
                 except:
                     continue
 
