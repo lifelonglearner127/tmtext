@@ -262,6 +262,11 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self._remove_element_with_xpath(driver, '//*[contains(@id, "emailAcqPopupContainer")]')  # for http://bananarepublic.gap.com
             self._click_on_element_with_id(driver, 'welcomeMatStart')  # for jcrew.com
 
+            self._click_on_element_with_xpath(
+                driver, '//*[contains(@class, "featherlight-content")]//*[contains(@class, "featherlight-close")]')  # for agjeans.com
+            time.sleep(2)
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "top")]//*[contains(@id, "closeButton")]')  # for agjeans.com
+
         time.sleep(2)
         driver.save_screenshot(output_fname)
         if self.image_copy:  # save a copy of the file if needed
