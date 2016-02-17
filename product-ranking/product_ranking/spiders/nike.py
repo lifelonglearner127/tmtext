@@ -96,6 +96,8 @@ class NikeProductSpider(BaseProductsSpider):
         profile.set_preference("general.useragent.override", self.user_agent)
         profile.set_preference('intl.accept_languages', 'en-US')
         profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
+        profile.set_preference('permissions.default.image', 2)
+        profile.set_preference('permissions.default.stylesheet', 2)
         if self.proxy:
             profile.set_preference("network.http.phishy-userpass-length", 255)
             if 'socks' in self.proxy_type:
@@ -179,7 +181,7 @@ class NikeProductSpider(BaseProductsSpider):
     def parse(self, response):
 
         if not self._is_product_page(response):
-            display = Display(visible=0, size=(1280, 1024))
+            display = Display(visible=0, size=(1024, 768))
             display.start()
 
             product_links = []
