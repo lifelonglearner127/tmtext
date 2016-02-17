@@ -260,6 +260,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self._click_on_element_with_id(driver, 'oo_no_thanks')  # for levi.com
             self._click_on_element_with_xpath(driver, '//*[contains(@id, "cookiebar")]//button')  # for HM.com
             self._remove_element_with_xpath(driver, '//*[contains(@id, "emailAcqPopupContainer")]')  # for http://bananarepublic.gap.com
+            self._click_on_element_with_id(driver, 'welcomeMatStart')  # for jcrew.com
 
         time.sleep(2)
         driver.save_screenshot(output_fname)
