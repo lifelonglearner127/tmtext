@@ -1235,7 +1235,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                         cursor = short_description.find(" ", relative_index)
                         word_count += 1
 
-                        if word_count >= 32:
+                        if word_count >=20:
                             break
 
                     if cursor > 0:
@@ -1262,7 +1262,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                         cursor = long_description.find(" ", relative_index)
                         word_count += 1
 
-                        if word_count >= 32:
+                        if word_count >= 20:
                             break
 
                     if cursor > 0:
