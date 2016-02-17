@@ -1247,13 +1247,6 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
 
                 google_search_results_page_raw_text = mechanize_browser.response().read()
                 '''
-
-                url = "http://httpbin.org/ip"
-
-                while True:
-                    r = requests.get(url, proxies=proxies, auth=proxy_auth)
-                    print r.text
-
                 google_search_results_page_raw_text = requests.get(search_url.format(urllib.quote(description)),
                                                                    proxies=proxies,
                                                                    auth=proxy_auth,
