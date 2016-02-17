@@ -4,8 +4,6 @@ import urllib
 import re
 import sys
 import json
-import mechanize
-import cookielib
 from lxml import html, etree
 import time
 import requests
@@ -34,7 +32,6 @@ class LeviScraper(Scraper):
         self.rev_list = None
         self.is_review_checked = False
         self.lv = LeviVariants()
-        self.browser = mechanize.Browser()
         self.store_url = 'http://www.levi.com/US/en_US/'
         self.proxy_host = "proxy.crawlera.com"
         self.proxy_port = "8010"
