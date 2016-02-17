@@ -1339,9 +1339,6 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                         else:
                             duplicate_content_links = google_search_results_page_html_tree.xpath("//div[@id='search']//cite/text()")
 
-                            if "No results found for {0}".format(description) in google_search_results_page_html_tree.text_content():
-                                duplicate_content_links = None
-
                             if duplicate_content_links:
                                 duplicate_content_links = [url for url in duplicate_content_links if "walmart.com" not in url.lower()]
 
