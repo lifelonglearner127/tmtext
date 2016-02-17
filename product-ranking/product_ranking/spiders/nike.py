@@ -92,6 +92,8 @@ class NikeProductSpider(BaseProductsSpider):
 
     def _init_firefox(self):
         from selenium import webdriver
+        from selenium.webdriver.remote.remote_connection import RemoteConnection
+        RemoteConnection.set_timeout(30)
         profile = webdriver.FirefoxProfile()
         profile.set_preference("general.useragent.override", self.user_agent)
         profile.set_preference('intl.accept_languages', 'en-US')
@@ -216,7 +218,14 @@ class NikeProductSpider(BaseProductsSpider):
                 except Exception as e:
                     print str(e)
                     break
-            selenium_cookies = driver.get_cookies()
+            for i in xrange(10):
+                time.sleep(3)
+                try:
+                    selenium_cookies = driver.get_cookies()
+                    break
+                except Exception as e:
+                    print('Exception while loading cookies %s attempt %i' % (str(e), i))
+                    self.log('Exception while loading cookies %s attempt %i' % (str(e), i))
             try:
                 driver.quit()
                 display.stop()
