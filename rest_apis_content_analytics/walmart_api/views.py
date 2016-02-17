@@ -4,6 +4,7 @@ import urllib
 import json
 import requests
 from pprint import pprint
+from requests.auth import HTTPProxyAuth
 import datetime
 import mechanize
 import cookielib
@@ -1050,6 +1051,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         return Response({'data': 'OK'})
 
+    '''
     def create(self, request):
         output = {}
 
@@ -1119,6 +1121,131 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
             return Response(output)
 
         return None
+    '''
+
+    def create(self, request):
+        output = {}
+
+        sellers_search_only = True
+
+        if not request.POST.get('detect_duplication_in_sellers_only', None):
+            sellers_search_only = False
+
+        product_url_pattern = 'product_url'
+        groupped_fields = group_params(request.POST, request.FILES, [product_url_pattern])
+
+
+        search_url = "http://www.google.com/search?oe=utf8&ie=utf8&source=uds&start=0&hl=en&q={0}"
+        proxy_host = "proxy.crawlera.com"
+        proxy_port = "8010"
+        proxy_auth = HTTPProxyAuth("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
+        proxies = {"https": "https://{}:{}/".format(proxy_host, proxy_port)}
+
+        for group_name, group_data in groupped_fields.items():
+            product_url = find_in_list(group_data, product_url_pattern)
+
+            if not any(product_url):
+                output[group_name] = {'error': 'one (or more) required params missing'}
+                continue
+
+            product_url = product_url[0]  # this value can only have 1 element
+
+            try:
+                product_id = product_url.split("/")[-1]
+                product_json = json.loads(requests.get("http://www.walmart.com/product/api/{0}".format(product_id)).text)
+
+                description = None
+
+                if "product" in product_json:
+                    if "mediumDescription" in product_json["product"]:
+                        description = product_json["product"]["mediumDescription"]
+                        description = html.fromstring("<html>" + description + "</html>").text_content().strip()
+
+                    if not description and "longDescription" in product_json["product"]:
+                        description = product_json["product"]["longDescription"]
+                        description = html.fromstring("<html>" + description + "</html>").text_content().strip()
+
+                if not description:
+                    raise Exception('No description in product')
+
+                if len(description) > 300:
+                    description = description[:300]
+
+                    if description.rfind(" ") > 0:
+                        description = description[:description.rfind(" ")].strip()
+
+                description = '"' + description + '"'
+                input_search_text = None
+
+                google_search_results_page_raw_text = None
+                '''
+                if sellers_search_only:
+                    mechanize_browser.open("https://www.google.com/shopping?hl=en")
+                    mechanize_browser.select_form('f')
+                    mechanize_browser.form['q'] = '"{0}"'.format(description)
+                    mechanize_browser.submit()
+                else:
+                    #means broad search
+                    mechanize_browser.open("https://www.google.com/")
+                    mechanize_browser.select_form('f')
+                    mechanize_browser.form['q'] = '"{0}"'.format(description)
+                    mechanize_browser.submit()
+
+                google_search_results_page_raw_text = mechanize_browser.response().read()
+                '''
+
+                google_search_results_page_raw_text = requests.get(search_url.format(urllib.quote(description)),
+                                                                   proxies=proxies,
+                                                                   auth=proxy_auth,
+                                                                   verify=os.path.dirname(os.path.realpath(__file__)) + "/crawlera-ca.crt").text
+                google_search_results_page_html_tree = html.fromstring(google_search_results_page_raw_text)
+
+                if google_search_results_page_html_tree.xpath("//form[@action='CaptchaRedirect']"):
+                    raise Exception('Google blocks search requests and claim to input captcha.')
+
+                if google_search_results_page_html_tree.xpath("//title") and \
+                                "Error 400 (Bad Request)" in google_search_results_page_html_tree.xpath("//title")[0].text_content():
+                    raise Exception('Error 400 (Bad Request)')
+
+                if sellers_search_only:
+                    seller_block = None
+
+                    for left_block in google_search_results_page_html_tree.xpath("//ul[@class='sr__group']"):
+                        if left_block.xpath("./li[@class='sr__title sr__item']/text()")[0].strip().lower() == "seller":
+                            seller_block = left_block
+                            break
+
+                    seller_name_list = None
+
+                    if seller_block:
+                        seller_name_list = seller_block.xpath(".//li[@class='sr__item']//a/text()")
+                        seller_name_list = [seller for seller in seller_name_list if seller.lower() != "walmart"]
+
+                    if not seller_name_list:
+                        output[product_url] = "Unique content."
+                    else:
+                        output[product_url] = "Found duplicate content from other sellers: ." + ", ".join(seller_name_list)
+                else:
+                    duplicate_content_links = google_search_results_page_html_tree.xpath("//div[@id='search']//cite/text()")
+
+                    if duplicate_content_links:
+                        duplicate_content_links = [url for url in duplicate_content_links if "walmart.com" not in url.lower()]
+
+                    if not duplicate_content_links:
+                        output[product_url] = "Unique content."
+                    else:
+                        output[product_url] = "Found duplicate content from other links."
+
+            except Exception, e:
+                print e
+                output[product_url] = str(e)
+                continue
+
+        if output:
+            return Response(output)
+
+        return None
+
 
     def update(self, request, pk=None):
         pass
