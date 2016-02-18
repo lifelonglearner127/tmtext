@@ -11,7 +11,6 @@ import time
 import mechanize
 import requests
 from extract_data import Scraper
-from spiders_shared_code.nike_variants import NikeVariants
 
 
 class Forever21Scraper(Scraper):
@@ -34,7 +33,6 @@ class Forever21Scraper(Scraper):
         self.is_review_checked = False
         self.store_url = 'http://store.nike.com/us/en_us'
         self.browser = mechanize.Browser()
-        self.nv = NikeVariants()
         self.variants = None
         self.is_variant_checked = False
 
@@ -98,10 +96,6 @@ class Forever21Scraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        try:
-            self.nv.setupCH(self.tree_html)
-        except:
-            pass
 
         try:
             itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
@@ -117,18 +111,6 @@ class Forever21Scraper(Scraper):
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
-
-    def _extract_product_json(self):
-        if self.product_json:
-            return self.product_json
-
-        try:
-            product_json_text = self.tree_html.xpath("//script[@id='product-data']/text()")[0]
-            self.product_json = json.loads(product_json_text)
-        except:
-            self.product_json = None
-
-        return self.product_json
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -211,17 +193,7 @@ class Forever21Scraper(Scraper):
         return html.tostring(description_block)
 
     def _variants(self):
-        if self.is_variant_checked:
-            return self.variants
-
-        self.is_variant_checked = True
-
-        self.variants = self.nv._variants()
-
-        return self.variants
-
-    def _swatches(self):
-        return self.nv.swatches()
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
