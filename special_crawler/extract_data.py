@@ -314,6 +314,7 @@ class Scraper():
         # if needed. (more specifically overwrite functions for extracting certain data
         # (especially sellers-related fields))
         self._pre_set_fields()
+        self.proxy_config = None
 
         # update data types dictionary to overwrite names of implementing methods for each data type
         # with implmenting function from subclass
@@ -428,68 +429,79 @@ class Scraper():
         Returns:
             lxml tree object
         """
+        if self.proxy_config:
+            for i in range(self.MAX_RETRIES):
+                try:
+                    contents = requests.get(self.product_page_url, proxies=self.proxy_config["proxies"], auth=self.proxy_config["proxy_auth"], timeout=20).text.encode("utf-8")
+                    contents = self._clean_null(contents)
+                    self.page_raw_text = contents
+                    self.tree_html = html.fromstring(contents)
 
-        request = urllib2.Request(self.product_page_url)
-        # set user agent to avoid blocking
-        agent = ''
-        if self.bot_type == "google":
-            print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
-            agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-        else:
-            agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
-        request.add_header('User-Agent', agent)
-
-        for i in range(self.MAX_RETRIES):
-            try:
-                contents = urllib2.urlopen(request, timeout=20).read()
-
-            # handle urls with special characters
-            except UnicodeEncodeError, e:
-
-                request = urllib2.Request(self.product_page_url.encode("utf-8"))
-                request.add_header('User-Agent', agent)
-                contents = urllib2.urlopen(request).read()
-
-            except IncompleteRead, e:
-                continue
-            except timeout:
-                self.is_timeout = True
-                self.ERROR_RESPONSE["failure_type"] = "Timeout"
-                return
-            except urllib2.HTTPError, err:
-                if err.code == 404:
-                    self.ERROR_RESPONSE["failure_type"] = "HTTP 404 - Page Not Found"
                     return
-                else:
-                    raise
-            try:
-                # replace NULL characters
-                contents = self._clean_null(contents).decode("utf8")
-                self.page_raw_text = contents
-                self.tree_html = html.fromstring(contents)
-            except UnicodeError, e:
-                # if string was not utf8, don't deocde it
-                print "Warning creating html tree from page content: ", e.message
+                except Exception, e:
+                    continue
+        else:
+            request = urllib2.Request(self.product_page_url)
+            # set user agent to avoid blocking
+            agent = ''
+            if self.bot_type == "google":
+                print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
+                agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            else:
+                agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+            request.add_header('User-Agent', agent)
 
+            for i in range(self.MAX_RETRIES):
+                try:
+                    contents = urllib2.urlopen(request, timeout=20).read()
+
+                # handle urls with special characters
+                except UnicodeEncodeError, e:
+
+                    request = urllib2.Request(self.product_page_url.encode("utf-8"))
+                    request.add_header('User-Agent', agent)
+                    contents = urllib2.urlopen(request).read()
+
+                except IncompleteRead, e:
+                    continue
+                except timeout:
+                    self.is_timeout = True
+                    self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                    return
+                except urllib2.HTTPError, err:
+                    if err.code == 404:
+                        self.ERROR_RESPONSE["failure_type"] = "HTTP 404 - Page Not Found"
+                        return
+                    else:
+                        raise
+                try:
+                    # replace NULL characters
+                    contents = self._clean_null(contents).decode("utf8")
+                    self.page_raw_text = contents
+                    self.tree_html = html.fromstring(contents)
+                except UnicodeError, e:
+                    # if string was not utf8, don't deocde it
+                    print "Warning creating html tree from page content: ", e.message
+
+                    # replace NULL characters
+                    contents = self._clean_null(contents)
+                    self.page_raw_text = contents
+                    self.tree_html = html.fromstring(contents)
+
+                # if we got it we can exit the loop and stop retrying
+                return
+
+
+                # try getting it again, without catching exception.
+                # if it had worked by now, it would have returned.
+                # if it still doesn't work, it will throw exception.
+                # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
+
+                contents = urllib2.urlopen(request).read()
                 # replace NULL characters
                 contents = self._clean_null(contents)
                 self.page_raw_text = contents
                 self.tree_html = html.fromstring(contents)
-
-            # if we got it we can exit the loop and stop retrying
-            return
-
-
-            # try getting it again, without catching exception.
-            # if it had worked by now, it would have returned.
-            # if it still doesn't work, it will throw exception.
-            # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
-
-            contents = urllib2.urlopen(request).read()
-            # replace NULL characters
-            contents = self._clean_null(contents)
-            self.page_raw_text = contents
-            self.tree_html = html.fromstring(contents)
 
 
     def _clean_null(self, text):
