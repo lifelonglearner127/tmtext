@@ -368,7 +368,6 @@ class Forever21Scraper(Scraper):
         "description" : _description, \
         "long_description" : _long_description, \
         "variants": _variants,
-        "swatches": _swatches,
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
