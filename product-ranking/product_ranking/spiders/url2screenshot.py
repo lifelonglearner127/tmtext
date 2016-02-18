@@ -269,8 +269,12 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self._click_on_element_with_xpath(driver, '/html/body/div[contains(@class, "ui-widget")]'
                                                       '/div[contains(@class, "ui-dialog-titlebar")]'
                                                       '/a/span[contains(@class, "ui-icon-closethick")]')  # for childrensplace.com
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "popup-subcription-closes-link")'
+                                                      ' and contains(text(), "lose")]')  # for luckybrand.com
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "emOv-container")]//*[contains(@id, "emOv-signupClose")]')  # for uniqlo.com
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "topbar")]/*[contains(@id, "close")]/a')  # for gap.com
 
-        time.sleep(2)
+        time.sleep(4)
         driver.save_screenshot(output_fname)
         if self.image_copy:  # save a copy of the file if needed
             driver.save_screenshot(self.image_copy)
