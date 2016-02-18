@@ -432,7 +432,7 @@ class Scraper():
         if self.proxy_config:
             for i in range(self.MAX_RETRIES):
                 try:
-                    contents = requests.get(self.product_page_url, proxies=self.proxy_config["proxies"], auth=self.proxy_config["proxy_auth"], timeout=20).text.encode("utf-8")
+                    contents = requests.get(self.product_page_url, proxies=self.proxy_config["proxies"], auth=self.proxy_config["proxy_auth"]).text.encode("utf-8")
                     contents = self._clean_null(contents)
                     self.page_raw_text = contents
                     self.tree_html = html.fromstring(contents)
