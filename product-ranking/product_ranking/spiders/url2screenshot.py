@@ -251,14 +251,30 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self._click_on_elements_with_class(driver, 'close')
             self._remove_element_with_xpath(
                 driver, '//body/*[contains(@class, "email-lightbox")]')  # for levi.com
-            self._click_on_element_with_id(driver, 'closeBtn')
+            self._click_on_element_with_id(driver, 'closeBtn')  # for macys
+            self._click_on_element_with_id(driver, 'closeBtn')  # 2 times - first time doesn't work sometimes
             self._click_on_elements_with_class(driver, 'brdialog-close')  # for madewell.com
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "lightboximg")]//*[contains(@class, "closePopup")]')  # for madewell.com
             self._click_on_element_with_id(driver, 'skipSignup')  # for madewell.com
+            self._click_on_element_with_xpath(driver, '//*[contains(@class, "padiPopupContent")]//*[contains(@class, "padiClose")]')  # for carters.com
             self._click_on_element_with_id(driver, 'oo_no_thanks')  # for levi.com
             self._click_on_element_with_xpath(driver, '//*[contains(@id, "cookiebar")]//button')  # for HM.com
             self._remove_element_with_xpath(driver, '//*[contains(@id, "emailAcqPopupContainer")]')  # for http://bananarepublic.gap.com
+            self._click_on_element_with_id(driver, 'welcomeMatStart')  # for jcrew.com
 
-        time.sleep(2)
+            self._click_on_element_with_xpath(
+                driver, '//*[contains(@class, "featherlight-content")]//*[contains(@class, "featherlight-close")]')  # for agjeans.com
+            time.sleep(2)
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "top")]//*[contains(@id, "closeButton")]')  # for agjeans.com
+            self._click_on_element_with_xpath(driver, '/html/body/div[contains(@class, "ui-widget")]'
+                                                      '/div[contains(@class, "ui-dialog-titlebar")]'
+                                                      '/a/span[contains(@class, "ui-icon-closethick")]')  # for childrensplace.com
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "popup-subcription-closes-link")'
+                                                      ' and contains(text(), "lose")]')  # for luckybrand.com
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "emOv-container")]//*[contains(@id, "emOv-signupClose")]')  # for uniqlo.com
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "topbar")]/*[contains(@id, "close")]/a')  # for gap.com
+
+        time.sleep(4)
         driver.save_screenshot(output_fname)
         if self.image_copy:  # save a copy of the file if needed
             driver.save_screenshot(self.image_copy)

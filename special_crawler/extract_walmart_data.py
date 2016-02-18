@@ -2500,7 +2500,7 @@ class WalmartScraper(Scraper):
         if self._site_online() == 1:
             try:
                 if self._version() == "Walmart v2":
-                    if self.product_info_json["analyticsData"]["onlineAvail"]:
+                    if self.product_info_json["buyingOptions"]["displayArrivalDate"].lower() == "see dates in checkout":
                         return 0
 
                     marketplace_options = self.product_info_json.get("buyingOptions", {}).get("marketplaceOptions")
