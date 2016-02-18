@@ -18,13 +18,12 @@ class OfficeDepotScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.officedepot.com/a/products/<product-id>/<product-name>/"
-    REVIEW_URL = "http://homedepot.ugc.bazaarvoice.com/1999aa/{0}/reviews.djs?format=embeddedhtml"
+    REVIEW_URL = "http://officedepot.ugc.bazaarvoice.com/2563/{0}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
-        self.product_json = None
         # whether product has any webcollage media
         self.review_json = None
         self.review_list = None
@@ -60,16 +59,6 @@ class OfficeDepotScraper(Scraper):
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
-
-    def _extract_product_json(self):
-        if self.product_json:
-            return
-
-        try:
-            product_json_text = self._find_between(html.tostring(self.tree_html), "THD.PIP.products.primary = new THD.PIP.Product(", ");\n")
-            self.product_json = json.loads(product_json_text)
-        except:
-            self.product_json = None
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -145,7 +134,7 @@ class OfficeDepotScraper(Scraper):
 
             short_description = short_description + html.tostring(description_item)
 
-        short_description = short_description.strip()
+        short_description = self._clean_text(short_description.strip())
 
         if short_description:
             return short_description
@@ -164,7 +153,7 @@ class OfficeDepotScraper(Scraper):
             if long_description_start:
                 long_description = long_description + html.tostring(description_item)
 
-        long_description = long_description.strip()
+        long_description = self._clean_text(long_description.strip())
 
         if long_description:
             return long_description
@@ -179,14 +168,16 @@ class OfficeDepotScraper(Scraper):
     def _mobile_image_same(self):
         return None
 
-    def _image_urls(self):        
-        self._extract_product_json()
-        media_list = self.product_json["media"]["mediaList"]
-        image_list = []
+    def _image_urls(self):
+        image_list = None
 
-        for media_item in media_list:
-            if media_item["mediaType"].startswith("IMAGE") and int(media_item["width"]) == 400:
-                image_list.append(media_item["location"])
+        if self.tree_html.xpath("//div[@id='productImageThumbs']"):
+            image_list = self.tree_html.xpath("//div[@id='productImageThumbs']//ul/li//img/@src")
+            image_list = [url[:url.rfind("?")] for url in image_list]
+        else:
+            main_image_url = self.tree_html.xpath("//img[@id='mainSkuProductImage']/@src")[0]
+            main_image_url = main_image_url[:main_image_url.rfind("?")]
+            image_list = [main_image_url]
 
         if image_list:
             return image_list
@@ -200,17 +191,6 @@ class OfficeDepotScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        self._extract_product_json()
-        media_list = self.product_json["media"]["mediaList"]
-        video_list = []
-
-        for media_item in media_list:
-            if "video" in media_item:
-                video_list.append(media_item["video"])
-
-        if video_list:
-            return video_list
-
         return None
 
     def _video_count(self):
@@ -222,13 +202,6 @@ class OfficeDepotScraper(Scraper):
         return 0
 
     def _pdf_urls(self):
-        moreinfo = self.tree_html.xpath('//div[@id="moreinfo_wrapper"]')[0]
-        html = etree.tostring(moreinfo)
-        pdf_url_list = re.findall(r'(http://.*?\.pdf)', html)
-
-        if pdf_url_list:
-            return pdf_url_list
-
         return None
 
     def _pdf_count(self):
@@ -332,44 +305,52 @@ class OfficeDepotScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        self._extract_product_json()
-
-        return "$" + '{0:,}'.format(float(self.product_json["itemExtension"]["displayPrice"]))
+        return "$" + self.tree_html.xpath("//meta[@itemprop='price']/@content")[0]
 
     def _price_amount(self):
-        self._extract_product_json()
-
-        return float(self.product_json["itemExtension"]["displayPrice"])
+        return float(self.tree_html.xpath("//meta[@itemprop='price']/@content")[0])
 
     def _price_currency(self):
         return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
 
     def _in_stores(self):
-        self._extract_product_json()
+        sold_in_stores = self.tree_html.xpath("//div[@class='soldInStores']")
 
-        if self.product_json["itemAvailability"]["availableInStore"] == True:
+        if sold_in_stores and "sold in stores" in sold_in_stores[0].text_content().lower().strip():
             return 1
 
         return 0
 
     def _site_online(self):
-        self._extract_product_json()
-        '''
-        if self.product_json["itemAvailability"]["availableOnlineStore"] == True:
-            return 1
-        '''
         return 1
 
     def _site_online_out_of_stock(self):
-        self._extract_product_json()
 
-        for message in self.product_json["storeSkus"][0]["storeAvailability"]["itemAvilabilityMessages"]:
-            if message["messageValue"] == u'Out Of Stock Online':
+        if self._site_online() == 0:
+            return None
+
+        delivery_message = self.tree_html.xpath("//div[@class='deliveryMessage']")
+
+        if delivery_message:
+            delivery_message = delivery_message[0].text_content().strip().lower()
+
+            if "out of stock for delivery" in delivery_message:
                 return 1
 
         return 0
 
     def _in_stores_out_of_stock(self):
+        if self._in_stores() == 0:
+            return None
+
+        delivery_message = self.tree_html.xpath("//div[@class='deliveryMessage']")
+
+        if delivery_message:
+            delivery_message = delivery_message[0].text_content().strip().lower()
+
+            if "out of stock for delivery" in delivery_message:
+                return 1
+
         return 0
 
     def _marketplace(self):
@@ -392,23 +373,15 @@ class OfficeDepotScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        scripts = self.tree_html.xpath('//script//text()')
-        for script in scripts:
-            jsonvar = re.findall(r'BREADCRUMB_JSON = (.*?);', script)
-            if len(jsonvar) > 0:
-                jsonvar = jsonvar[0]
-                break
-        jsonvar = json.loads(jsonvar)
-        all = jsonvar['bcEnsightenData']['contentSubCategory'].split(u'\u003e')
-        return all
+        categories = self.tree_html.xpath("//div[@id='siteBreadcrumb']//li//span[@itemprop='name']/text()")
+
+        return categories[1:]
 
     def _category_name(self):
         return self._categories()[-1]
     
     def _brand(self):
-        self._extract_product_json()
-
-        return self.product_json["info"]["brandName"]
+        return self.tree_html.xpath("//td[@id='attributebrand_namekey']/text()")[0].strip()
 
 
 
@@ -416,8 +389,13 @@ class OfficeDepotScraper(Scraper):
     ################ HELPER FUNCTIONS
     ##########################################
     # clean text inside html tags - remove html entities, trim spaces
+
     def _clean_text(self, text):
-        return re.sub("&nbsp;", " ", text).strip()
+        text = text.replace("\n", " ").replace("\t", " ").replace("\r", " ")
+       	text = re.sub("&nbsp;", " ", text).strip()
+
+        return re.sub(r'\s+', ' ', text)
+
 
 
 
