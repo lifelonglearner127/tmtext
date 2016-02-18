@@ -34,7 +34,6 @@ class NikeScraper(Scraper):
         self.review_list = None
         self.is_review_checked = False
         self.store_url = 'http://store.nike.com/us/en_us'
-        self.browser = mechanize.Browser()
         self.nv = NikeVariants()
         self.variants = None
         self.is_variant_checked = False
