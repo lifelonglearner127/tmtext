@@ -166,7 +166,9 @@
 
         {% if options_form %}
           <form class="button-form" action="{{ request.get_full_path }}" data-method="OPTIONS">
-            <a href="#" onclick="return false;" id="scroll_to_file_input">Submit XML File</a> &nbsp;
+            {% if request.path == items_update_with_xml_file_by_walmart_api_url %}
+              <a href="#" onclick="return false;" id="scroll_to_file_input">Submit XML File</a> &nbsp;
+            {% endif %}
             <button class="btn btn-primary js-tooltip" title="Make an OPTIONS request on the {{ name }} resource">OPTIONS</button>
           </form>
         {% endif %}
