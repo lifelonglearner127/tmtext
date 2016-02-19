@@ -1196,6 +1196,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
         proxy_auth = HTTPProxyAuth("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
         proxies = {"http": "http://{}:{}/".format(proxy_host, proxy_port)}
         retry_number = 3
+        word_search_limit = 10
 
         for group_name, group_data in groupped_fields.items():
             product_url = find_in_list(group_data, product_url_pattern)
@@ -1235,7 +1236,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                         cursor = short_description.find(" ", relative_index)
                         word_count += 1
 
-                        if word_count >= 20:
+                        if word_count >= word_search_limit:
                             break
 
                     if cursor > 0:
@@ -1265,7 +1266,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                         cursor = long_description.find(" ", relative_index)
                         word_count += 1
 
-                        if word_count >= 20:
+                        if word_count >= word_search_limit:
                             break
 
                     if cursor > 0:
