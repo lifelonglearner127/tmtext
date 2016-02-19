@@ -1218,6 +1218,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                     long_description = product_json["product_info"]["long_description"]
 
                 if short_description:
+                    short_description = short_description.replace("<", " <")
                     short_description = html.fromstring("<html>" + short_description + "</html>").text_content().strip()
                     short_description = short_description.replace('"', '')
                     cursor = short_description.find(" ", 0)
@@ -1248,6 +1249,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                     if long_description.startswith("<b>"):
                         long_description = long_description[long_description.find("</b>") + 4:]
 
+                    long_description = long_description.replace("<", " <")
                     long_description = html.fromstring("<html>" + long_description + "</html>").text_content().strip()
                     long_description = long_description.replace('"', '')
                     cursor = long_description.find(" ", 0)
