@@ -1238,10 +1238,8 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                         word_count += 1
 
                         if word_count >= word_search_limit:
+                            short_description = short_description[:cursor].strip()
                             break
-
-                    if cursor > 0:
-                        short_description = short_description[:cursor]
 
                     short_description = '"' + short_description + '"'
 
@@ -1269,27 +1267,57 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                         word_count += 1
 
                         if word_count >= word_search_limit:
+                            long_description = long_description[:cursor].strip()
                             break
 
-                    if cursor > 0:
-                        long_description = long_description[:cursor]
-
                     long_description = '"' + long_description + '"'
+                elif product_json["product_info"]["description"]:
+                    description_block = html.fromstring(product_json["product_info"]["description"])
+
+                    if len(description_block.xpath("./p")) > 1:
+                        description_block = description_block.xpath("./p/text()")[1].strip()
+                        description_block = description_block.replace('"', '')
+                        cursor = description_block.find(" ", 0)
+                        word_count = 0
+
+                        while cursor >= 0:
+                            relative_index = cursor + 1
+
+                            if relative_index >= len(description_block):
+                                break
+
+                            for index in range(relative_index, len(description_block)):
+                                if description_block[relative_index] != " ":
+                                    break
+
+                            cursor = description_block.find(" ", relative_index)
+                            word_count += 1
+
+                            if word_count >= word_search_limit:
+                                description_block = description_block[:cursor].strip()
+                                break
+
+                        long_description = '"' + description_block + '"'
 
                 if not short_description and not long_description:
                     raise Exception('No description in product')
             except Exception, e:
-                output[product_url] = str(e)
+#                output[product_url] = str(e)
+                output[product_url] = "Found duplicate content from other links."
                 continue
 
-            description_list = [short_description, long_description]
+            description_list = []
+
+            if short_description:
+                description_list.append(short_description)
+
+            if long_description:
+                description_list.append(long_description)
 
             is_duplicated = False
+            google_search_fail_count = 0
 
             for description in description_list:
-                if not description:
-                    continue
-
                 for retry_index in range(retry_number):
                     try:
                         input_search_text = None
@@ -1325,6 +1353,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                             raise Exception('Error 400 (Bad Request)')
 
                         if sellers_search_only:
+                            '''
                             seller_block = None
 
                             for left_block in google_search_results_page_html_tree.xpath("//ul[@class='sr__group']"):
@@ -1342,6 +1371,7 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                                 output[product_url] = "Unique content."
                             else:
                                 output[product_url] = "Found duplicate content from other sellers: ." + ", ".join(seller_name_list)
+                            '''
                         else:
                             duplicate_content_links = google_search_results_page_html_tree.xpath("//div[@id='search']//cite/text()")
 
@@ -1354,15 +1384,17 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
                             if duplicate_content_links:
                                 is_duplicated = True
                                 break
+
                         break
                     except Exception, e:
+                        google_search_fail_count += 1
                         print e
                         continue
 
                 if is_duplicated:
                     break
 
-            if is_duplicated:
+            if is_duplicated or google_search_fail_count == retry_number * len(description_list):
                 output[product_url] = "Found duplicate content from other links."
             else:
                 output[product_url] = "Unique content."
