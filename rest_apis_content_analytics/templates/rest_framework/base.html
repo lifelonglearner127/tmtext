@@ -5,6 +5,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+  {% url "items_update_with_xml_file_by_walmart_api" as items_update_with_xml_file_by_walmart_api_url %}
+
   {% block head %}
 
     {% block meta %}
@@ -50,6 +52,9 @@
       }
       .stats_table {
           font-size:12px;
+      }
+      .active-link {
+          font-weight: bold;
       }
   </style>
 
@@ -99,13 +104,12 @@
     {% endblock %}
 
     <div class="container">
-      <ul class="well" style="margin-top:80px">
-          <a href="{% url 'items_update_with_xml_file_by_walmart_api' %}">Submit XML</a>&nbsp;&nbsp;&#8226;&nbsp;
+      <ul class="well top-links-block" style="margin-top:80px">
+          <a href="{% url 'items_update_with_xml_file_by_walmart_api' %}" >Submit XML</a>&nbsp;&nbsp;&#8226;&nbsp;
           <a href="{% url 'validate_walmart_product_xml_file' %}">Validate XML</a>&nbsp;&nbsp;&#8226;&nbsp;
           <a href="{% url 'check_feed_status_by_walmart_api' %}">Check Feed Status</a>
       </ul>
 
-      {% url "items_update_with_xml_file_by_walmart_api" as items_update_with_xml_file_by_walmart_api_url %}
       {% if request.path == items_update_with_xml_file_by_walmart_api_url %}
       <div>
         <table class="stats_big_blue_area">
@@ -119,16 +123,18 @@
       {% endif %}
 
       {% block breadcrumbs %}
-        <ul class="breadcrumb" style="margin-top:20px">
-          You are here:
-          {% for breadcrumb_name, breadcrumb_url in breadcrumblist %}
-            {% if forloop.last %}
-              <li class="active"><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
-            {% else %}
-              <li><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
-            {% endif %}
-          {% endfor %}
-        </ul>
+        {% if request.path != items_update_with_xml_file_by_walmart_api_url %}
+          <ul class="breadcrumb" style="margin-top:20px">
+            You are here:
+            {% for breadcrumb_name, breadcrumb_url in breadcrumblist %}
+              {% if forloop.last %}
+                <li class="active"><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
+              {% else %}
+                <li><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        {% endif %}
       {% endblock %}
 
       <!-- Content -->
@@ -160,6 +166,7 @@
 
         {% if options_form %}
           <form class="button-form" action="{{ request.get_full_path }}" data-method="OPTIONS">
+            <a href="#" onclick="return false;" id="scroll_to_file_input">Submit XML File</a> &nbsp;
             <button class="btn btn-primary js-tooltip" title="Make an OPTIONS request on the {{ name }} resource">OPTIONS</button>
           </form>
         {% endif %}
@@ -330,6 +337,16 @@
   {% if filter_form %}
   {{ filter_form }}
   {% endif %}
+
+  <script>
+      $('.top-links-block a[href^="/' + location.pathname.split("/")[1] + '"]').addClass('active-link');
+      $('#scroll_to_file_input').click(function(){
+        $('html, body').animate({
+            scrollTop: $('[name="xml_file_to_upload"]').offset().top
+        }, 500);
+        return false;
+      });
+  </script>
 
 </body>
 {% endblock %}
