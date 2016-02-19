@@ -1892,6 +1892,7 @@ class WalmartScraper(Scraper):
 
             images_carousel = []
             image_dimensions = []
+            no_image_check_count_limit = 5
 
             for item in pinfo_dict['imageAssets']:
                 if "assetType" in item and item["assetType"].lower() == "video":
@@ -1899,27 +1900,30 @@ class WalmartScraper(Scraper):
 
                 hero_image_url = item.get('versions', {}).get('hero', None)
                 zoom_image_url = item.get('versions', {}).get('zoom', None)
+                is_image_selected = False
 
                 if zoom_image_url and zoom_image_url.startswith("http://i5.walmartimages.com"):
-                    images_carousel.append(zoom_image_url)
-                    image_dimensions.append(1)
-                elif hero_image_url and hero_image_url.startswith("http://i5.walmartimages.com"):
-                    images_carousel.append(hero_image_url)
-                    image_dimensions.append(0)
+                    if no_image_check_count_limit < 0:
+                        images_carousel.append(zoom_image_url)
+                        image_dimensions.append(1)
+                        is_image_selected = True
+                    elif no_image_check_count_limit >= 0 and not self._no_image(zoom_image_url):
+                        is_image_selected = True
+                        images_carousel.append(zoom_image_url)
+                        image_dimensions.append(1)
+                        no_image_check_count_limit -= 1
+
+                if not is_image_selected and hero_image_url and hero_image_url.startswith("http://i5.walmartimages.com"):
+                    if no_image_check_count_limit < 0:
+                        images_carousel.append(hero_image_url)
+                        image_dimensions.append(0)
+                    elif no_image_check_count_limit >= 0 and not self._no_image(hero_image_url):
+                        images_carousel.append(hero_image_url)
+                        image_dimensions.append(0)
+                        no_image_check_count_limit -= 1
 
             if images_carousel:
                 # if there's only one image, check to see if it's a "no image"
-                if len(images_carousel) == 1:
-                    try:
-                        if self._no_image(images_carousel[0]):
-                            if self._no_image(hero_image_url):
-                                return None
-                            else:
-                                images_carousel = [hero_image_url]
-                                image_dimensions = [0]
-                    except Exception, e:
-                        print "WARNING: ", e.message
-
                 self.image_dimensions = image_dimensions
 
                 return self._qualify_image_urls(images_carousel)
