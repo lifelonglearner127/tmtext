@@ -238,6 +238,7 @@ class NikeProductSpider(BaseProductsSpider):
         _ranking = response.meta.get('_ranking', None)
         product['ranking'] = _ranking
         product['url'] = response.url
+        product['search_term'] = response.meta['search_term']
 
         # product data in json
         js_data = self.parse_data(response)
@@ -350,18 +351,19 @@ class NikeProductSpider(BaseProductsSpider):
                 currency = js_data['crossSellConfiguration']['currency']
             except KeyError:
                 currency = "USD"
-
             try:
                 price = js_data['rawPrice']
                 self.product_price = price
             except KeyError:
                 price = 0.00
-
             if price and currency:
                 price = Price(price=price, priceCurrency=currency)
         else:
+            price_og = re.search('<meta property="og:price:amount" content="([\d\.]+)" />',
+                                 response.body_as_unicode())
+            if price_og:
+                return Price(price=float(price_og.group(1)), priceCurrency="USD")
             price = Price(price=0.00, priceCurrency="USD")
-
         return price
 
     def _scrape_total_matches(self, response):
