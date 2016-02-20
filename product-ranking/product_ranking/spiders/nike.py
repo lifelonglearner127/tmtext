@@ -92,10 +92,14 @@ class NikeProductSpider(BaseProductsSpider):
 
     def _init_firefox(self):
         from selenium import webdriver
+        from selenium.webdriver.remote.remote_connection import RemoteConnection
+        RemoteConnection.set_timeout(30)
         profile = webdriver.FirefoxProfile()
         profile.set_preference("general.useragent.override", self.user_agent)
         profile.set_preference('intl.accept_languages', 'en-US')
         profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
+        profile.set_preference('permissions.default.image', 2)
+        profile.set_preference('permissions.default.stylesheet', 2)
         if self.proxy:
             profile.set_preference("network.http.phishy-userpass-length", 255)
             if 'socks' in self.proxy_type:
@@ -179,7 +183,7 @@ class NikeProductSpider(BaseProductsSpider):
     def parse(self, response):
 
         if not self._is_product_page(response):
-            display = Display(visible=0, size=(1280, 1024))
+            display = Display(visible=0, size=(1024, 768))
             display.start()
 
             product_links = []
@@ -214,7 +218,14 @@ class NikeProductSpider(BaseProductsSpider):
                 except Exception as e:
                     print str(e)
                     break
-            selenium_cookies = driver.get_cookies()
+            for i in xrange(10):
+                time.sleep(3)
+                try:
+                    selenium_cookies = driver.get_cookies()
+                    break
+                except Exception as e:
+                    print('Exception while loading cookies %s attempt %i' % (str(e), i))
+                    self.log('Exception while loading cookies %s attempt %i' % (str(e), i))
             try:
                 driver.quit()
                 display.stop()

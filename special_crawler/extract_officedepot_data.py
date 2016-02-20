@@ -1,54 +1,40 @@
 #!/usr/bin/python
 
 import urllib
-import cookielib
 import re
 import sys
 import json
 
 from lxml import html, etree
 import time
-import mechanize
 import requests
-from requests.auth import HTTPProxyAuth
 from extract_data import Scraper
-from spiders_shared_code.nike_variants import NikeVariants
 
 
-class NikeScraper(Scraper):
+class OfficeDepotScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.homedepot.com/p/<product-name>/<product-id>"
-    REVIEW_URL = "http://nike.ugc.bazaarvoice.com/9191-en_us/{0}/reviews.djs?format=embeddedhtml"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.officedepot.com/a/products/<product-id>/<product-name>/"
+    REVIEW_URL = "http://officedepot.ugc.bazaarvoice.com/2563/{0}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
-        self.product_json = None
         # whether product has any webcollage media
         self.review_json = None
         self.review_list = None
         self.is_review_checked = False
-        self.store_url = 'http://store.nike.com/us/en_us'
-        self.nv = NikeVariants()
-        self.variants = None
-        self.is_variant_checked = False
-        self.proxy_host = "proxy.crawlera.com"
-        self.proxy_port = "8010"
-        self.proxy_auth = HTTPProxyAuth("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
-        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
-        self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://store.nike.com/us/en_us/pd/.*?$", self.product_page_url)
+        m = re.match(r"^http://www\.officedepot\.com/a/products/[0-9]+/.*?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -60,17 +46,11 @@ class NikeScraper(Scraper):
             False otherwise
         """
         try:
-            self.nv.setupCH(self.tree_html)
-        except:
-            pass
+            itemtype = self.tree_html.xpath('//body[@id="product"]')
 
-        try:
-            itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
-
-            if itemtype != "product":
+            if not itemtype:
                 raise Exception()
 
-            self._extract_product_json()
         except Exception:
             return True
 
@@ -79,18 +59,6 @@ class NikeScraper(Scraper):
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
-
-    def _extract_product_json(self):
-        if self.product_json:
-            return self.product_json
-
-        try:
-            product_json_text = self.tree_html.xpath("//script[@id='product-data']/text()")[0]
-            self.product_json = json.loads(product_json_text)
-        except:
-            self.product_json = None
-
-        return self.product_json
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -104,8 +72,7 @@ class NikeScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = self.product_json["productId"]
-        return product_id
+        return re.findall('http://www.officedepot.com/a/products/(\d+)/', self.product_page_url, re.DOTALL)[0]
 
     def _site_id(self):
         return None
@@ -122,13 +89,13 @@ class NikeScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//div[@class="exp-product-header"]//h1/text()')[0]
+        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//div[@class="exp-product-header"]//h1/text()')[0]
+        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//div[@class="exp-product-header"]//h1/text()')[0]
+        return self.tree_html.xpath('//h1[@itemprop="name"]/text()')[0].strip()
 
     def _model(self):
         return None
@@ -137,7 +104,11 @@ class NikeScraper(Scraper):
         return None
 
     def _features(self):
-        features_list = self.tree_html.xpath("//div[@class='pi-pdpmainbody']//li/text()")
+        features_tr_list = self.tree_html.xpath('//section[@id="productDetails"]//table[@class="data tabDetails gw9"]//tbody//tr')
+        features_list = []
+
+        for tr in features_tr_list:
+            features_list.append(tr.xpath(".//td")[0].text_content().strip() + ": " + tr.xpath(".//td")[1].text_content().strip())
 
         if features_list:
             return features_list
@@ -154,38 +125,42 @@ class NikeScraper(Scraper):
         return None
 
     def _description(self):
-        return self.tree_html.xpath("//div[@class='pi-pdpmainbody']/p")[1].text_content().strip()
-
-    def _long_description(self):
-        description_block = self.tree_html.xpath("//div[@class='pi-pdpmainbody']")[0]
-        long_description = ""
-        long_description_start = 4
+        description_block = self.tree_html.xpath("//div[@class='sku_desc show']")[0]
+        short_description = ""
 
         for description_item in description_block:
-            long_description_start -= 1
+            if description_item.tag == "ul":
+                break
 
-            if long_description_start < 0:
+            short_description = short_description + html.tostring(description_item)
+
+        short_description = self._clean_text(short_description.strip())
+
+        if short_description:
+            return short_description
+
+        return None
+
+    def _long_description(self):
+        description_block = self.tree_html.xpath("//div[@class='sku_desc show']")[0]
+        long_description = ""
+        long_description_start = False
+
+        for description_item in description_block:
+            if description_item.tag == "ul":
+                long_description_start = True
+
+            if long_description_start:
                 long_description = long_description + html.tostring(description_item)
 
-        long_description = long_description.strip()
+        long_description = self._clean_text(long_description.strip())
 
         if long_description:
             return long_description
 
         return None
 
-    def _variants(self):
-        if self.is_variant_checked:
-            return self.variants
 
-        self.is_variant_checked = True
-
-        self.variants = self.nv._variants()
-
-        return self.variants
-
-    def _swatches(self):
-        return self.nv.swatches()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -194,24 +169,18 @@ class NikeScraper(Scraper):
         return None
 
     def _image_urls(self):
-        selected_product_image_url_suffixes = [url[url[:url.rfind("_")].rfind("_"):] for url in self.product_json["imagesHeroZoom"]]
-        variants_images = None
+        image_list = None
 
-        if self.product_json["inStockColorways"]:
-            variants_images = [variant["imageUrl"] for variant in self.product_json["inStockColorways"]]
-
-            image_urls = []
-
-            for variant_image in variants_images:
-                variant_image = variant_image.replace("PDP_THUMB", "PDP_HERO_ZOOM")
-
-                for suffix in selected_product_image_url_suffixes:
-                    image_urls.append(variant_image[:variant_image.rfind(".")] + suffix)
-
-            if image_urls:
-                return image_urls
+        if self.tree_html.xpath("//div[@id='productImageThumbs']"):
+            image_list = self.tree_html.xpath("//div[@id='productImageThumbs']//ul/li//img/@src")
+            image_list = [url[:url.rfind("?")] for url in image_list]
         else:
-            return self.product_json["imagesHeroZoom"]
+            main_image_url = self.tree_html.xpath("//img[@id='mainSkuProductImage']/@src")[0]
+            main_image_url = main_image_url[:main_image_url.rfind("?")]
+            image_list = [main_image_url]
+
+        if image_list:
+            return image_list
 
         return None
 
@@ -303,7 +272,13 @@ class NikeScraper(Scraper):
 
         self.is_review_checked = True
 
-        contents = requests.get(self.REVIEW_URL.format(self.product_json['styleNumber'])).text
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        s = requests.Session()
+        a = requests.adapters.HTTPAdapter(max_retries=3)
+        b = requests.adapters.HTTPAdapter(max_retries=3)
+        s.mount('http://', a)
+        s.mount('https://', b)
+        contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
 
         try:
             start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
@@ -330,28 +305,53 @@ class NikeScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath("//div[@class='exp-product-header']//span[contains(@class, 'exp-pdp-local-price')]/text()")[0].strip()
+        return "$" + self.tree_html.xpath("//meta[@itemprop='price']/@content")[0]
 
     def _price_amount(self):
-        return float(self.tree_html.xpath("//meta[@property='og:price:amount']/@content")[0])
+        return float(self.tree_html.xpath("//meta[@itemprop='price']/@content")[0])
 
     def _price_currency(self):
-        return self.tree_html.xpath("//meta[@property='og:price:currency']/@content")[0]
+        return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
 
     def _in_stores(self):
+        sold_in_stores = self.tree_html.xpath("//div[@class='soldInStores']")
+
+        if sold_in_stores and "sold in stores" in sold_in_stores[0].text_content().lower().strip():
+            return 1
+
         return 0
 
     def _site_online(self):
         return 1
 
     def _site_online_out_of_stock(self):
-        if not self.product_json["trackingData"]["product"]["inStock"]:
-            return 1
+
+        if self._site_online() == 0:
+            return None
+
+        delivery_message = self.tree_html.xpath("//div[@class='deliveryMessage']")
+
+        if delivery_message:
+            delivery_message = delivery_message[0].text_content().strip().lower()
+
+            if "out of stock for delivery" in delivery_message:
+                return 1
 
         return 0
 
     def _in_stores_out_of_stock(self):
-        return None
+        if self._in_stores() == 0:
+            return None
+
+        delivery_message = self.tree_html.xpath("//div[@class='deliveryMessage']")
+
+        if delivery_message:
+            delivery_message = delivery_message[0].text_content().strip().lower()
+
+            if "out of stock for delivery" in delivery_message:
+                return 1
+
+        return 0
 
     def _marketplace(self):
         return 0
@@ -373,21 +373,29 @@ class NikeScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        return [self.product_json["trackingData"]["product"]["category"]]
+        categories = self.tree_html.xpath("//div[@id='siteBreadcrumb']//li//span[@itemprop='name']/text()")
+
+        return categories[1:]
 
     def _category_name(self):
         return self._categories()[-1]
     
     def _brand(self):
-        return None
+        return self.tree_html.xpath("//td[@id='attributebrand_namekey']/text()")[0].strip()
+
 
 
     ##########################################
     ################ HELPER FUNCTIONS
     ##########################################
     # clean text inside html tags - remove html entities, trim spaces
+
     def _clean_text(self, text):
-        return re.sub("&nbsp;", " ", text).strip()
+        text = text.replace("\n", " ").replace("\t", " ").replace("\r", " ")
+       	text = re.sub("&nbsp;", " ", text).strip()
+
+        return re.sub(r'\s+', ' ', text)
+
 
 
 
@@ -417,8 +425,7 @@ class NikeScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
-        "variants": _variants,
-        "swatches": _swatches,
+
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
