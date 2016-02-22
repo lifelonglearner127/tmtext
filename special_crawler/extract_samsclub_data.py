@@ -15,6 +15,7 @@ from lxml import etree
 import time
 import requests
 from extract_data import Scraper
+from spiders_shared_code.samsclub_variants import SamsclubVariants
 
 
 class SamsclubScraper(Scraper):
@@ -40,6 +41,7 @@ class SamsclubScraper(Scraper):
     video_urls = None
     pdf_count = None
     pdf_urls = None
+    sv = SamsclubVariants()
 
     def check_url_format(self):
         # for ex: http://www.samsclub.com/sams/dawson-fireplace-fall-2014/prod14520017.ip?origin=item_page.rr1&campaign=rr&sn=ClickCP&campaign_data=prod14170040
@@ -127,6 +129,9 @@ class SamsclubScraper(Scraper):
 
     def _model_meta(self):
         return None
+
+    def _variants(self):
+        return self.sv._variants()
 
     def _description(self):
         try:
@@ -505,40 +510,17 @@ class SamsclubScraper(Scraper):
 
     def _site_online(self):
         # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
-        rows = self.tree_html.xpath("//*[@id='addtocartsingleajaxonline']")
-        if len(rows) > 0:
-            return 1
-        rows = self.tree_html.xpath("//div[contains(@class,'biggraybtn')]//text()")
-        if "Out of stock online" in rows:
-            return 1
-        rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
-        if "See online price in cart" in rows:
-            return 1
-        rows = self.tree_html.xpath("//button[@class='biggreenbtn']//text()")
-        if len(rows) > 0:
-            return 1
-        return 0
-        #
-        # rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
-        # site_online = None
-        # if "Buy online" in rows:
-        #     return 1
-        # if "Unavailable online" in rows:
-        #     site_online = 0
-        # rows = self.tree_html.xpath("//div[@id='itemPageMoneyBox']//span//text()")
-        # rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
-        # if "Select your Club" in rows and "for price and availability" in rows:
-        #     site_online = 0
-        # if site_online is not None:
-        #     return site_online
-        # return 1
+        return 1
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
-        rows = self.tree_html.xpath("//div[contains(@class,'biggraybtn')]//text()")
-        if "Out of stock online" in rows:
-            return 1
-        return 0
+        if self._site_online() == 1:
+            if self.tree_html.xpath("//*[@itemprop='availability']/@href")[0] == "http://schema.org/OutOfStock":
+                return 1
+
+            return 0
+
+        return None
 
     def _in_stores_out_of_stock(self):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
@@ -591,7 +573,7 @@ class SamsclubScraper(Scraper):
         "feature_count" : _feature_count, \
         "description" : _description, \
         "long_description" : _long_description, \
-
+        "variants": _variants, \
         # CONTAINER : PAGE_ATTRIBUTES
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
