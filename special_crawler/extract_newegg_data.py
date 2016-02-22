@@ -152,13 +152,13 @@ class NeweggScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0].strip()
+        return self.tree_html.xpath("//h1/span[@itemprop='name']/text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0].strip()
+        return self.tree_html.xpath("//h1/span[@itemprop='name']/text()")[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0].strip()
+        return self.tree_html.xpath("//h1/span[@itemprop='name']/text()")[0].strip()
 
     def _model(self):
         for item in self.hdGroupItemModelString_json:
