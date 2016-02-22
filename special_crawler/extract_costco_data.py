@@ -15,12 +15,20 @@ class CostcoScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.costco.com/<product name>.product.<product id>.html"
+    WEBCOLLAGE_CONTENT_URL = "http://content.webcollage.net/costco/smart-button?ird=true&channel-product-id={0}"
 
-    def check_url_format(self):
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
         self.image_urls = None
         self.prod_help = None
+        self.is_webcollage_checked = False
         self.wc_content = None
         self.sp_content = None
+        self.is_video_checked = False
+        self.video_urls = None
+
+    def check_url_format(self):
         url = self.product_page_url.lower()
         if url.find('costco.com') > 0 and url.find('product.') > 0:
             return True
@@ -234,36 +242,32 @@ class CostcoScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        webcollage_url = "http://content.webcollage.net/costco/smart-button?ird=true&channel-product-id=" + self._site_id()
+        if self.is_video_checked:
+            return self.video_urls
 
-        webcollage_contents = requests.get(webcollage_url).text
-        webcollage_contents = webcollage_contents.decode("unicode-escape")
+        self.is_video_checked = True
+        webcollage_contents = self._wc_content()
 
         video_urls = []
 
-        if "_wccontent" in webcollage_contents:
-            wc_video_json_start_index = webcollage_contents.find('{"videos":[{')
+        if webcollage_contents:
+            webcollage_contents = html.fromstring(webcollage_contents)
 
-            if wc_video_json_start_index > 0:
-                wc_video_json_end_index = webcollage_contents.find('}]}', wc_video_json_start_index) + 3
-                wc_video_json = webcollage_contents[wc_video_json_start_index:wc_video_json_end_index]
-                wc_video_json = json.loads(wc_video_json.decode("unicode-escape"))
-
-                wc_video_base_url_start_index = webcollage_contents.rfind('data-resources-base="', 0, wc_video_json_start_index)
-                wc_video_base_url_start_index += len('data-resources-base="')
-                wc_video_base_url_end_index = webcollage_contents.find('"', wc_video_base_url_start_index)
-                wc_video_base_url = webcollage_contents[wc_video_base_url_start_index:wc_video_base_url_end_index]
-                wc_video_base_url = wc_video_base_url.replace("\\", "")
+            if webcollage_contents.xpath("//div[@class='wc-json-data']/text()"):
+                wc_video_json = json.loads(webcollage_contents.xpath("//div[@class='wc-json-data']/text()")[0].decode("unicode-escape"))
+                wc_video_base_url = webcollage_contents.xpath("//*[@data-resources-base]/@data-resources-base")[0]
 
                 for video_item in wc_video_json["videos"]:
                     video_urls.append(wc_video_base_url + video_item["src"]["src"])
 
-        if not video_urls:
-            return None
+        if video_urls:
+            self.video_urls = video_urls
+            return video_urls
 
-        return video_urls
+        return None
 
     def _video_count(self):
+        '''
         sp = self._sp_content()
         n = 0
         m = sp.count('autoplay=true') / 2
@@ -272,13 +276,28 @@ class CostcoScraper(Scraper):
             n = len(self._video_urls())
 
         return m + n
+        '''
+        video_urls = self._video_urls()
+
+        return len(video_urls) if video_urls else 0
 
     # return one element containing the PDF
     def _pdf_urls(self):
         pdf = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
-        if len(pdf)>0 :
+        pdf_list = []
+
+        if len(pdf) > 0:
             pdf = set(pdf)
-            return ["http://www.costco.com/wcsstore"+p for p in pdf if "Cancellation" not in p]
+            pdf_list = ["http://www.costco.com" + p for p in pdf if "Cancellation" not in p]
+
+        webcollage_contents = self._wc_content()
+
+        if webcollage_contents:
+            pdf_list.extend(html.fromstring(webcollage_contents).xpath("//a[contains(@href, '.pdf')]/@href"))
+
+        if pdf_list:
+            return pdf_list
+
         return None
 
     def _pdf_count(self):
@@ -293,51 +312,64 @@ class CostcoScraper(Scraper):
         return m + n
 
     def _wc_content(self):
-        if self.wc_content == None:
-            url = "http://content2.webcollage.net/costco/smart-button?ird=true&channel-product-id=%s" % self._site_id()
-            html = urllib.urlopen(url).read()
-            if "_wccontent" in html:
-                self.wc_content = html
-                return html
-            else:
-                self.wc_content = ""
-                return ""
-        return self.wc_content
+        if self.is_webcollage_checked:
+            return self.wc_content
 
+        self.is_webcollage_checked = True
+
+        try:
+            webcollage_contents = urllib.urlopen(self.WEBCOLLAGE_CONTENT_URL.format(self._site_id())).read()
+        except Exception, e:
+            webcollage_contents = None
+
+        if webcollage_contents and "_wccontent" in webcollage_contents:
+            webcollage_contents = self._find_between(webcollage_contents, 'html: "', "\n")[:-1]
+            webcollage_contents = webcollage_contents.decode("unicode-escape")
+            webcollage_contents = webcollage_contents.replace("\\", "")
+            self.wc_content = webcollage_contents
+            return webcollage_contents
+
+        return None
 
     def _wc_360(self):
         html = self._wc_content()
-        if "wc-360" in html: return 1
-        return 0
 
+        if "wc-360" in html:
+            return 1
+
+        return 0
 
     def _wc_pdf(self):
         html = self._wc_content()
-        if ".pdf" in html: return 1
+
+        if ".pdf" in html:
+            return 1
+
         return 0
 
     def _wc_video(self):
         html = self._wc_content()
-        if ".mp4" in html: return 1
+
+        if ".mp4" in html or ".flv" in html:
+            return 1
+
         return 0
 
     def _wc_emc(self):
         html = self._wc_content()
-        if "wc-aplus" in html: return 1
+
+        if "wc-aplus" in html:
+            return 1
+
         return 0
 
-
+    def _wc_prodtour(self):
+        return 0
 
     def _webcollage(self):
-        wbc = self.tree_html.xpath("//img[contains(@src,'webcollage.net')]")
-        if len(wbc) > 0 : return 1
-        html = self._wc_content()
-        m = re.findall(r'_wccontent = (\{.*?\});', html, re.DOTALL)
-        try:
-            if ".webcollage.net" in m[0]:
-                return 1
-        except IndexError:
-            pass
+        if self._wc_360() == 1 or self._wc_emc() == 1 or self._wc_pdf() == 1 or self._wc_prodtour() == 1 or self._wc_video() == 1:
+            return 1
+
         return 0
 
     def _sellpoints(self):
@@ -582,6 +614,7 @@ class CostcoScraper(Scraper):
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
         "wc_emc" : _wc_emc, \
+        "wc_prodtour": _wc_prodtour, \
         "wc_360" : _wc_360, \
         "wc_pdf" : _wc_pdf, \
         "wc_video" : _wc_video, \
