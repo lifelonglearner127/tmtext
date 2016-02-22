@@ -99,7 +99,6 @@ class NikeProductSpider(BaseProductsSpider):
         profile.set_preference('intl.accept_languages', 'en-US')
         profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
         profile.set_preference('permissions.default.image', 2)
-        profile.set_preference('permissions.default.stylesheet', 2)
         if self.proxy:
             profile.set_preference("network.http.phishy-userpass-length", 255)
             if 'socks' in self.proxy_type:
@@ -162,10 +161,10 @@ class NikeProductSpider(BaseProductsSpider):
         driver.set_page_load_timeout(30)
 
     @staticmethod
-    def last_three_digits_the_same(lst):
-        if len(lst) < 4:
+    def last_five_digits_the_same(lst):
+        if len(lst) < 6:
             return
-        return lst[-1] == lst[-2] == lst[-3]
+        return lst[-1] == lst[-2] == lst[-3] == lst[-4] == lst[-5]
 
     def _reliable_get(self, driver, url, max_attempts=40, check_element='title'):
         """ Acts like driver.get() but with failsafety """
@@ -207,14 +206,14 @@ class NikeProductSpider(BaseProductsSpider):
             while 1:
                 try:
                     driver.execute_script("scrollTo(0,50000)")
-                    time.sleep(8)
+                    time.sleep(10)
                     product_links = self._get_product_links_from_serp(driver)
                     collected_products_len.append(len(product_links))
+                    print 'Collected %i product links' % len(product_links)
                     if len(product_links) > self.quantity:
                         break
-                    if self.last_three_digits_the_same(collected_products_len):
+                    if self.last_five_digits_the_same(collected_products_len):
                         break  # last three iterations collected equal num of products
-                    print 'Collected %i product links' % len(product_links)
                 except Exception as e:
                     print str(e)
                     break
@@ -249,7 +248,7 @@ class NikeProductSpider(BaseProductsSpider):
         _ranking = response.meta.get('_ranking', None)
         product['ranking'] = _ranking
         product['url'] = response.url
-        product['search_term'] = response.meta['search_term']
+        product['search_term'] = response.meta.get('search_term', None)
 
         # product data in json
         js_data = self.parse_data(response)

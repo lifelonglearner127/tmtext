@@ -15,6 +15,7 @@ from lxml import etree
 import time
 import requests
 from extract_data import Scraper
+from spiders_shared_code.samsclub_variants import SamsclubVariants
 
 
 class SamsclubScraper(Scraper):
@@ -40,6 +41,7 @@ class SamsclubScraper(Scraper):
     video_urls = None
     pdf_count = None
     pdf_urls = None
+    sv = SamsclubVariants()
 
     def check_url_format(self):
         # for ex: http://www.samsclub.com/sams/dawson-fireplace-fall-2014/prod14520017.ip?origin=item_page.rr1&campaign=rr&sn=ClickCP&campaign_data=prod14170040
@@ -55,6 +57,12 @@ class SamsclubScraper(Scraper):
 
         if len(self.tree_html.xpath("//div[contains(@class, 'imgCol')]//div[@id='plImageHolder']//img")) < 1:
             return True
+
+        try:
+            self.sv.setupCH(self.tree_html)
+        except:
+            pass
+
         return False
 
     ##########################################
@@ -128,40 +136,30 @@ class SamsclubScraper(Scraper):
     def _model_meta(self):
         return None
 
-    def _description(self):
-        description = self._description_helper()
-        if len(description) < 1:
-            return self._long_description_helper()
-        return description
+    def _variants(self):
+        return self.sv._variants()
 
-    def _description_helper(self):
-        rows = self.tree_html.xpath("//div[contains(@class,'itemBullets')]//text()")
-        rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
-        description = "\n".join(rows)
-        return description
+    def _description(self):
+        try:
+            description = html.tostring(self.tree_html.xpath("//div[contains(@class,'itemBullets')]")[0]).strip()
+        except:
+            description = None
+
+        if description:
+            return description
+
+        return None
 
     def _long_description(self):
-        description = self._description_helper()
-        if len(description) < 1:
-            return None
-        return self._long_description_helper()
+        try:
+            long_description = html.tostring(self.tree_html.xpath("//span[@itemprop='description']")[0]).strip()
+        except:
+            long_description = None
 
-    def _long_description_helper(self):
-        rows = self.tree_html.xpath("//*[@itemprop='description']//text()")
-        long_description = "".join(rows)
-        long_description = long_description.replace("View a video of this product.", "")
-        long_description = long_description.replace("View a video of this product", "")
-        rows = self.tree_html.xpath("//*[@itemprop='description']/*")
-        row_txts = []
-        for row in rows:
-            if row.tag == 'style' or row.tag == 'h3':
-                row_txt = "".join(row.xpath(".//text()"))
-                long_description = long_description.replace(row_txt, "")
-        # row_txts = [self._clean_text(r) for r in row_txts if len(self._clean_text(r)) > 0]
-        # if row_txts[0] == "Description":
-        #     row_txts = row_txts[1:]
-        # long_description = "\n".join(row_txts)
-        return long_description.strip()
+        if long_description:
+            return long_description
+
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -255,20 +253,21 @@ class SamsclubScraper(Scraper):
         html = urllib.urlopen(url).read()
         # \"src\":\"\/_cp\/products\/1374451886781\/tab-6174b48c-58f3-4d4b-8d2f-0d9bf0c90a63
         # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
+        video_base_url = self._find_between(html, 'data-resources-base=\\"', '\\">').replace("\\", "") + "%s"
         m = re.findall(r'"src":"([^"]*?\.mp4)"', html.replace("\\",""), re.DOTALL)
         for item in m:
             if ".blkbry" in item or ".mobile" in item:
                 pass
             else:
-                if "http://content.webcollage.net%s" % item not in rows and item.count(".mp4") < 2:
-                    rows.append("http://content.webcollage.net%s" % item)
+                if video_base_url % item not in rows and item.count(".mp4") < 2:
+                    rows.append(video_base_url % item)
         m = re.findall(r'"src":"([^"]*?\.flv)"', html.replace("\\",""), re.DOTALL)
         for item in m:
             if ".blkbry" in item or ".mobile" in item:
                 pass
             else:
-                if "http://content.webcollage.net%s" % item not in rows and item.count(".flv") < 2:
-                    rows.append("http://content.webcollage.net%s" % item)
+                if video_base_url % item not in rows and item.count(".flv") < 2:
+                    rows.append(video_base_url % item)
         if len(rows) < 1:
             return None
         new_rows = [r for r in rows if ("%s.flash.flv" % r) not in rows]
@@ -547,10 +546,13 @@ class SamsclubScraper(Scraper):
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
-        rows = self.tree_html.xpath("//div[contains(@class,'biggraybtn')]//text()")
-        if "Out of stock online" in rows:
-            return 1
-        return 0
+        if self._site_online() == 1:
+            if self.tree_html.xpath("//*[@itemprop='availability']/@href")[0] == "http://schema.org/OutOfStock":
+                return 1
+
+            return 0
+
+        return None
 
     def _in_stores_out_of_stock(self):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
@@ -563,8 +565,12 @@ class SamsclubScraper(Scraper):
     ##########################################
     def _categories(self):
         all = self.tree_html.xpath("//div[contains(@id, 'breadcrumb')]//a/text()")
-        out = [self._clean_text(r) for r in all]
-        return out[1:]
+        out = [self._clean_text(r) for r in all][1:]
+
+        if out:
+            return out
+
+        return None
 
     def _category_name(self):
         return self._categories()[-1]
@@ -599,7 +605,7 @@ class SamsclubScraper(Scraper):
         "feature_count" : _feature_count, \
         "description" : _description, \
         "long_description" : _long_description, \
-
+        "variants": _variants, \
         # CONTAINER : PAGE_ATTRIBUTES
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
