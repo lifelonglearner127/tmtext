@@ -455,12 +455,23 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         return walmart_api_signature
 
     @staticmethod
+    def _extract_upc(file_):
+        if hasattr(file_, 'name') and hasattr(file_, 'read'):
+            content = file_.read()
+        else:
+            content = file_
+        file_.seek(0)
+        upc = re.findall(r'<productId>(.*)</productId>', content)
+        if upc:
+            return upc[0]
+
+    @staticmethod
     def _group_of_files_contain_invalid_xml(*files):
         for file_ in files:
             validation_results = validate_walmart_product_xml_against_xsd(file_.read())
             file_.seek(0)
             if "error" in validation_results:
-                return file_.name, validation_results
+                return file_, validation_results
 
     def _parse_submit_output(self, request, output, multi_item):
         if not output:
@@ -481,6 +492,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                                      error_text=str(output))
             xml_item.when = datetime.datetime.now()
             xml_item.save()
+        return xml_item
 
     def create(self, request):
         request_url_pattern = 'request_url'
@@ -510,8 +522,11 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                 invalid_files = ItemsUpdateWithXmlFileByWalmartApiViewSet._group_of_files_contain_invalid_xml(*sent_file)
                 if invalid_files:
                     output[group_name] = {}
-                    output[group_name][invalid_files[0]] = invalid_files[1]
-                    self._parse_submit_output(request, output, True)
+                    output[group_name][invalid_files[0].name] = invalid_files[1]
+                    db_stat = self._parse_submit_output(request, output, True)
+                    upc = self._extract_upc(invalid_files[0])
+                    if db_stat and upc:
+                        db_stat.metadata = {'upc': upc}
                     continue
 
                 merged_file = merge_xml_files_into_one(*sent_file)
