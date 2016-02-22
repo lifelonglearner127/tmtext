@@ -222,9 +222,10 @@ class NikeProductSpider(BaseProductsSpider):
                     num_exceptions += 1
                     if num_exceptions > 10:
                         self.log('Maximum number of exceptions reached', ERROR)
-                    driver.quit()
-                    display.stop()
-                    return
+                        driver.quit()
+                        display.stop()
+                        return
+
             for i in xrange(10):
                 time.sleep(3)
                 try:
