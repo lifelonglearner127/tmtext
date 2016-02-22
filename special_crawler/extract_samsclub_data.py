@@ -57,6 +57,12 @@ class SamsclubScraper(Scraper):
 
         if len(self.tree_html.xpath("//div[contains(@class, 'imgCol')]//div[@id='plImageHolder']//img")) < 1:
             return True
+
+        try:
+            self.sv.setupCH(self.tree_html)
+        except:
+            pass
+
         return False
 
     ##########################################
