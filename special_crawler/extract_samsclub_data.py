@@ -516,7 +516,33 @@ class SamsclubScraper(Scraper):
 
     def _site_online(self):
         # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
-        return 1
+        rows = self.tree_html.xpath("//*[@id='addtocartsingleajaxonline']")
+        if len(rows) > 0:
+            return 1
+        rows = self.tree_html.xpath("//div[contains(@class,'biggraybtn')]//text()")
+        if "Out of stock online" in rows:
+            return 1
+        rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
+        if "See online price in cart" in rows:
+            return 1
+        rows = self.tree_html.xpath("//button[@class='biggreenbtn']//text()")
+        if len(rows) > 0:
+            return 1
+        return 0
+        #
+        # rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
+        # site_online = None
+        # if "Buy online" in rows:
+        #     return 1
+        # if "Unavailable online" in rows:
+        #     site_online = 0
+        # rows = self.tree_html.xpath("//div[@id='itemPageMoneyBox']//span//text()")
+        # rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
+        # if "Select your Club" in rows and "for price and availability" in rows:
+        #     site_online = 0
+        # if site_online is not None:
+        #     return site_online
+        # return 1
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
