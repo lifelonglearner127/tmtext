@@ -8,7 +8,7 @@
     <field name="upc" version="1.1"></field>
     <field name="features" version="1.1"></field>
     <field name="feature_count" version="1.1"></field>
-    <field name="description" version="1.1"></field>
+    <field name="description" version="1.2"></field>
     <field name="long_description" version="1.1"></field>
     <field name="video_urls" version="1.2"></field>
     <field name="video_count" version="1.2"></field>
