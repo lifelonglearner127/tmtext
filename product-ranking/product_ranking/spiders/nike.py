@@ -214,7 +214,7 @@ class NikeProductSpider(BaseProductsSpider):
                     if len(product_links) > self.quantity:
                         break
                     if self.last_five_digits_the_same(collected_products_len):
-                        break  # last three iterations collected equal num of products
+                        break  # last five iterations collected equal num of products
                 except Exception as e:
                     print str(e)
                     self.log('Exception while scrolling page: %s' % str(e))
