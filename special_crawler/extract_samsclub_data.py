@@ -129,37 +129,26 @@ class SamsclubScraper(Scraper):
         return None
 
     def _description(self):
-        description = self._description_helper()
-        if len(description) < 1:
-            return self._long_description_helper()
-        return description
+        try:
+            description = html.tostring(self.tree_html.xpath("//div[contains(@class,'itemBullets')]")[0]).strip()
+        except:
+            description = None
 
-    def _description_helper(self):
-        description = html.tostring(self.tree_html.xpath("//div[contains(@class,'itemBullets')]")[0])
-        return description
+        if description:
+            return description
+
+        return None
 
     def _long_description(self):
-        description = self._description_helper()
-        if len(description) < 1:
-            return None
-        return self._long_description_helper()
+        try:
+            long_description = html.tostring(self.tree_html.xpath("//span[@itemprop='description']")[0]).strip()
+        except:
+            long_description = None
 
-    def _long_description_helper(self):
-        rows = self.tree_html.xpath("//*[@itemprop='description']//text()")
-        long_description = "".join(rows)
-        long_description = long_description.replace("View a video of this product.", "")
-        long_description = long_description.replace("View a video of this product", "")
-        rows = self.tree_html.xpath("//*[@itemprop='description']/*")
-        row_txts = []
-        for row in rows:
-            if row.tag == 'style' or row.tag == 'h3':
-                row_txt = "".join(row.xpath(".//text()"))
-                long_description = long_description.replace(row_txt, "")
-        # row_txts = [self._clean_text(r) for r in row_txts if len(self._clean_text(r)) > 0]
-        # if row_txts[0] == "Description":
-        #     row_txts = row_txts[1:]
-        # long_description = "\n".join(row_txts)
-        return long_description.strip()
+        if long_description:
+            return long_description
+
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
