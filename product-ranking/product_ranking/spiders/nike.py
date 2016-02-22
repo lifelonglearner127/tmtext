@@ -203,6 +203,7 @@ class NikeProductSpider(BaseProductsSpider):
             new_meta = response.meta.copy()
             # get all products we need (scroll down)
             collected_products_len = []
+            num_exceptions = 0
             while 1:
                 try:
                     driver.execute_script("scrollTo(0,50000)")
@@ -217,8 +218,13 @@ class NikeProductSpider(BaseProductsSpider):
                         break  # last five iterations collected equal num of products
                 except Exception as e:
                     print str(e)
-                    self.log('Exception while scrolling page: %s' % str(e))
-                    break
+                    self.log('Exception while scrolling page: %s' % str(e), WARNING)
+                    num_exceptions += 1
+                    if num_exceptions > 10:
+                        self.log('Maximum number of exceptions reached', ERROR)
+                    driver.quit()
+                    display.stop()
+                    return
             for i in xrange(10):
                 time.sleep(3)
                 try:
