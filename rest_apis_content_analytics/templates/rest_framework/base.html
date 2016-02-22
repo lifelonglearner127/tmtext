@@ -56,6 +56,8 @@
       .active-link {
           font-weight: bold;
       }
+      .submit_ok {color:green;}
+      .submit_fail {color:red;}
   </style>
 
   <script type="text/javascript">
@@ -65,13 +67,30 @@
           replacePattern1 = /([0-9a-zA-Z]{8}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{12})/gim;
           replacedText = inputText.replace(
               replacePattern1,
-              '<a href="/feed-redirect/$1" target="_blank" class="prettyprint_replaced_link">$1</a>'
+              '<a data-target="$1" href="/feed-redirect/$1" target="_blank" class="prettyprint_replaced_link">$1</a>'
           );
           return replacedText;
       }
       document.addEventListener("DOMContentLoaded", function() {
           var response_block = $('.response-info .prettyprint');
           response_block[0].innerHTML = linkify(response_block[0].innerHTML);
+          {% if request.path == items_update_with_xml_file_by_walmart_api_url %}
+              var submission_history_as_json = "{{ submission_history_as_json }}";
+              $('.prettyprint_replaced_link').each(function(i, link) {
+                  $.ajax({
+                      url: "/feed-status-ajax/" + $(link).attr('data-target'),
+                      success: function (data, textStatus) {
+                          if (data.redirect) {window.location.href = data.redirect;}
+                          else {
+                              var cls = '';
+                              if (data.ok) cls = 'submit_ok';
+                              else cls = 'submit_fail';
+                              $(link).after(" ==> <span class='"+cls+"'>" + data.statuses + "</span>");
+                          }
+                      }
+                  });
+              });
+          {% endif %}
       });
   </script>
 </head>

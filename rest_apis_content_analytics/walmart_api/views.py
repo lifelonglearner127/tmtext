@@ -15,8 +15,11 @@ import tempfile
 from collections import OrderedDict
 from django.views.generic import View as DjangoView
 from django.core.context_processors import csrf
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response
 from rest_framework.response import Response
+from django.http import JsonResponse
 from rest_framework.parsers import MultiPartParser, FormParser
 from subprocess import Popen, PIPE, STDOUT
 from lxml import etree, html
@@ -29,6 +32,7 @@ from walmart_api.serializers import (WalmartApiFeedRequestSerializer, WalmartApi
                                      WalmartApiValidateXmlFileRequestSerializer, WalmartDetectDuplicateContentRequestSerializer,
                                      WalmartDetectDuplicateContentFromCsvFileRequestSerializer)
 from statistics.models import stat_xml_item
+from walmart_api.models import SubmissionHistory
 from lxml import etree
 import xmltodict
 import unirest
@@ -417,6 +421,11 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
     walmart_environment = "Walmart Marketplace"
     walmart_version = "2nd"
     walmart_qos_correlation_id = "123456abcdef"
+
+    def get_renderer_context(self):
+        context = super(ItemsUpdateWithXmlFileByWalmartApiViewSet, self).get_renderer_context()
+        context['submission_history_as_json'] = 'submission_history_as_json666'
+        return context
 
     def list(self, request):
         if os.path.isfile(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt"):
@@ -1723,3 +1732,33 @@ class FeedIDRedirectView(DjangoView):
         context = {'feed_id': kwargs.get('feed_id', None)}
         context.update(csrf(request))
         return render_to_response(template_name='redirect_to_feed_check.html', context=context)
+
+
+class FeedStatusAjaxView(DjangoView):
+
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        feed_id = kwargs.get('feed_id', None)
+        # try to get data from cache
+        feed_history = SubmissionHistory.objects.filter(user=request.user, feed_id=feed_id)
+        if feed_history:
+            return JsonResponse({
+                'statuses': feed_history[0].get_statuses(),
+                'ok': feed_history[0].all_items_ok()
+            })
+        # if no cache found - perform real check and save cache
+        feed_checker = CheckFeedStatusByWalmartApiViewSet()
+        check_results = feed_checker.process_one_set(
+            'https://marketplace.walmartapis.com/v2/feeds/{feedId}?includeDetails=true',
+            feed_id)
+        for result_stat in check_results.get('itemDetails', {}).get('itemIngestionStatus', []):
+            subm_stat = result_stat.get('ingestionStatus', None)
+            if subm_stat and isinstance(subm_stat, (str, unicode)):
+                db_history = SubmissionHistory.objects.create(user=request.user, feed_id=feed_id)
+                db_history.set_statuses([subm_stat])
+        feed_history = SubmissionHistory.objects.filter(user=request.user, feed_id=feed_id)
+        if feed_history:
+            return JsonResponse({
+                'statuses': feed_history[0].get_statuses(),
+                'ok': feed_history[0].all_items_ok()
+            })

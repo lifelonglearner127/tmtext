@@ -8,7 +8,8 @@ from walmart_api.views import (InvokeWalmartApiViewSet, ItemsUpdateWithXmlFileBy
                                ItemsUpdateWithXmlTextByWalmartApiViewSet, CheckFeedStatusByWalmartApiViewSet,
                                ValidateWalmartProductXmlTextViewSet, ValidateWalmartProductXmlFileViewSet,
                                FeedIDRedirectView, DetectDuplicateContentBySeleniumViewset, DetectDuplicateContentByMechanizeViewset,
-                               DetectDuplicateContentFromCsvFilesByMechanizeViewset)
+                               DetectDuplicateContentFromCsvFilesByMechanizeViewset,
+                               FeedStatusAjaxView)
 from statistics.views import StatsView
 from nutrition_info_images.views import ClassifyTextImagesByNutritionInfoViewSet
 
@@ -31,6 +32,7 @@ urlpatterns = format_suffix_patterns([
 
 urlpatterns += [
     url(r'^feed-redirect/(?P<feed_id>[A-Za-z0-9\-]+)', FeedIDRedirectView.as_view(), name='feed_redirect'),
+    url(r'^feed-status-ajax/(?P<feed_id>[A-Za-z0-9\-]+)', FeedStatusAjaxView.as_view(), name='feed_status_ajax'),
     url(r'^stats/$', StatsView.as_view(), name='stats_view')
 ]
 

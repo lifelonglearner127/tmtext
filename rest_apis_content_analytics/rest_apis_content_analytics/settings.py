@@ -39,7 +39,8 @@ INSTALLED_APPS = (
     'rest_framework',
     'walmart_developer_accounts',
     'nutrition_info_images',
-    'statistics'
+    'statistics',
+    'walmart_api'
 )
 
 REST_FRAMEWORK = {
@@ -112,6 +113,9 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.template.context_processors.request',
     'django.contrib.auth.context_processors.auth',
     'django.contrib.messages.context_processors.messages',
+
+    'statistics.context_processors.stats_walmart_xml_items',
+    'walmart_api.context_processors.get_submission_history_as_json',
 )
 
 
@@ -155,12 +159,6 @@ LOGGING = {
         },
     },
 }
-
-if 'statistics' in INSTALLED_APPS:
-    TEMPLATE_CONTEXT_PROCESSORS = {} if not 'TEMPLATE_CONTEXT_PROCESSORS' in globals()\
-        else globals()['TEMPLATE_CONTEXT_PROCESSORS']
-    TEMPLATE_CONTEXT_PROCESSORS = list(TEMPLATE_CONTEXT_PROCESSORS)
-    TEMPLATE_CONTEXT_PROCESSORS.append('statistics.context_processors.stats_walmart_xml_items')
 
 
 TEMPLATES = [
