@@ -225,7 +225,7 @@ class NeweggScraper(Scraper):
         base_url_for_non_s7 = "http://images10.newegg.com/productimage/"
 
         for item in self.imgGalleryConfig_json:
-            if item["itemNumber"] == self._product_id():
+            if item["itemNumber"] == self._product_id() or len(self.imgGalleryConfig_json) == 1:
                 if item["normalImageInfo"]:
                     image_list = [base_url_for_non_s7 + img_name for img_name in item["normalImageInfo"]["imageNameList"].split(",")]
                 elif item["scene7ImageInfo"]:
