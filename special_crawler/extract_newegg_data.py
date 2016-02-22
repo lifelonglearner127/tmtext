@@ -65,6 +65,31 @@ class NeweggScraper(Scraper):
     ############### CONTAINER : NONE
     ##########################################
 
+    def _primary_seller_info(self):
+        seller_text_block = self.tree_html.xpath("//p[@class='grpNote-sold-by']")
+        seller_name = ""
+
+        if "newegg" in seller_text_block[0].text_content().lower():
+            seller_name = "Newegg"
+        else:
+            seller_name = seller_text_block[0].xpath(".//a/text()")[0].strip()
+
+        price = self._price_amount()
+
+        return {seller_name: price}
+
+    def _secondary_seller_list_info(self):
+        secondary_sellers_list = {}
+
+        for seller_block in self.tree_html.xpath("//ul[@class='sellers-list']/li[@class='sellers-list-item normal-available']"):
+            seller_name = seller_block.xpath(".//div[@class='store']")[0].text_content().strip()
+            price = seller_block.xpath(".//li[@class='price-current ']")[0].text_content()
+            price = price[price.find("$"):]
+            price = float(re.findall(r"\d*\.\d+|\d+", price.replace(",", ""))[0])
+            secondary_sellers_list[seller_name] = price
+
+        return secondary_sellers_list
+
     def _extract_product_json(self):
         try:
             self.hdGroupItemModelString_json = json.loads(self._find_between(html.tostring(self.tree_html), "var hdGroupItemModelString = ", ";\r"))
@@ -127,13 +152,13 @@ class NeweggScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0].strip()
+        return self.tree_html.xpath("//h1/span[@itemprop='name']/text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0].strip()
+        return self.tree_html.xpath("//h1/span[@itemprop='name']/text()")[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0].strip()
+        return self.tree_html.xpath("//h1/span[@itemprop='name']/text()")[0].strip()
 
     def _model(self):
         for item in self.hdGroupItemModelString_json:
@@ -165,7 +190,10 @@ class NeweggScraper(Scraper):
         return None
 
     def _description(self):
-        description_block = self.tree_html.xpath("//ul[@id='grpBullet_{0}']".format(self.related_item_id))
+        if self.related_item_id:
+            description_block = self.tree_html.xpath("//ul[@id='grpBullet_{0}']".format(self.related_item_id))
+        else:
+            description_block = self.tree_html.xpath("//ul[@id='grpBullet_']")
 
         if description_block:
             description_block = html.tostring(description_block[0])
@@ -225,7 +253,7 @@ class NeweggScraper(Scraper):
         base_url_for_non_s7 = "http://images10.newegg.com/productimage/"
 
         for item in self.imgGalleryConfig_json:
-            if item["itemNumber"] == self._product_id():
+            if item["itemNumber"] == self._product_id() or len(self.imgGalleryConfig_json) == 1:
                 if item["normalImageInfo"]:
                     image_list = [base_url_for_non_s7 + img_name for img_name in item["normalImageInfo"]["imageNameList"].split(",")]
                 elif item["scene7ImageInfo"]:
@@ -355,11 +383,7 @@ class NeweggScraper(Scraper):
         return "${0}".format(self._price_amount())
 
     def _price_amount(self):
-        for item in self.availableMap_json:
-            if item["info"]["item"] == self.related_item_id:
-                return float(item["info"]["price"])
-
-        return None
+        return float(self._find_between(html.tostring(self.tree_html), "product_sale_price:['", "'],"))
 
     def _price_currency(self):
         return "USD"
@@ -368,8 +392,10 @@ class NeweggScraper(Scraper):
         return 0
 
     def _site_online(self):
-        seller_text_block = self.tree_html.xpath("//p[@id='grpNotesoldby_{0}']/span[@class='grpNote-ship-by']/text()".format(self.related_item_id))
-        return 1 if seller_text_block and seller_text_block[0].strip().lower() == "newegg" else 0
+        if "Newegg" in self._primary_seller_info() or "Newegg" in self._secondary_seller_list_info():
+            return 1
+
+        return 0
 
     def _site_online_out_of_stock(self):
         stock_status = int(self._find_between(html.tostring(self.tree_html), "product_instock:['", "'],"))
@@ -382,36 +408,44 @@ class NeweggScraper(Scraper):
     def _in_stores_out_of_stock(self):
         return 0
 
+    def _primary_seller(self):
+        return self._primary_seller_info().keys()[0]
+
     def _marketplace(self):
         return 1 if self._marketplace_sellers() else 0
 
     def _marketplace_sellers(self):
-        marketplace_sellers = self.tree_html.xpath("//div[@id='MBO_{0}']//ul[@class='sellers-list']/li[contains(@class, 'sellers-list-item')]//div[@class='store']//a/@title".format(self.related_item_id))
+        primary_sellers = self._primary_seller_info()
 
-        if self._site_online() == 0:
-            seller_text_block = self.tree_html.xpath("//p[@id='grpNotesoldby_{0}']/a[contains(@href, 'http://www.newegg.com/')]/text()".format(self.related_item_id))
+        if primary_sellers.keys()[0].lower() == "newegg":
+            primary_sellers = {}
 
-            if seller_text_block and seller_text_block[0].strip() != "":
-                marketplace_sellers.append(seller_text_block[0].strip())
+        secondary_sellers = self._secondary_seller_list_info()
 
-        return marketplace_sellers if marketplace_sellers else None
+        marketplace_sellers = primary_sellers.keys() + secondary_sellers.keys()
+
+        if marketplace_sellers:
+            return marketplace_sellers
+
+        return None
 
     def _marketplace_lowest_price(self):
         marketplace_prices = self._marketplace_prices()
         return sorted(marketplace_prices)[0] if marketplace_prices else None
 
     def _marketplace_prices(self):
-        marketplace_prices = self.tree_html.xpath("//div[@id='MBO_{0}']//ul[@class='sellers-list']/li[contains(@class, 'sellers-list-item')]//ul[contains(@class, 'price')]//li[contains(@class, 'price-current')]".format(self.related_item_id))
-        marketplace_prices = [price.text_content() for price in marketplace_prices]
-        marketplace_prices = [float(re.compile("\$(\d*\.\d+|\d+)").search(price_text.replace(',', '')).group(1)) for price_text in marketplace_prices]
+        primary_sellers = self._primary_seller_info()
+        secondary_sellers = self._secondary_seller_list_info()
 
-        if self._site_online() == 0:
-            seller_text_block = self.tree_html.xpath("//p[@id='grpNotesoldby_{0}']/a[contains(@href, 'http://www.newegg.com/')]/text()".format(self.related_item_id))
+        if primary_sellers.keys()[0].lower() == "newegg":
+            primary_sellers = {}
 
-            if seller_text_block and seller_text_block[0].strip() != "":
-                marketplace_prices.append(self._price_amount())
+        marketplace_prices = primary_sellers.values() + secondary_sellers.values()
 
-        return marketplace_prices if marketplace_prices else None
+        if marketplace_prices:
+            return marketplace_prices
+
+        return None
 
     def _marketplace_out_of_stock(self):
         stock_status = int(self._find_between(html.tostring(self.tree_html), "product_instock:['", "'],"))
@@ -423,6 +457,7 @@ class NeweggScraper(Scraper):
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
+
     def _categories(self):
         return self.tree_html.xpath("//div[@id='baBreadcrumbTop']//dd/a/text()")[1:]
 
@@ -496,6 +531,7 @@ class NeweggScraper(Scraper):
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "in_stores_out_of_stock": _in_stores_out_of_stock, \
+        "primary_seller": _primary_seller, \
         "marketplace" : _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
