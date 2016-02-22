@@ -135,7 +135,7 @@ class SamsclubScraper(Scraper):
         return description
 
     def _description_helper(self):
-        description = html.tostring(self.tree_html.xpath("//div[contains(@class,'itemBullets')]/ul")[0])
+        description = html.tostring(self.tree_html.xpath("//div[contains(@class,'itemBullets')]")[0])
         return description
 
     def _long_description(self):
@@ -562,8 +562,12 @@ class SamsclubScraper(Scraper):
     ##########################################
     def _categories(self):
         all = self.tree_html.xpath("//div[contains(@id, 'breadcrumb')]//a/text()")
-        out = [self._clean_text(r) for r in all]
-        return out[1:]
+        out = [self._clean_text(r) for r in all][1:]
+
+        if out:
+            return out
+
+        return None
 
     def _category_name(self):
         return self._categories()[-1]
