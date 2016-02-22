@@ -255,20 +255,21 @@ class SamsclubScraper(Scraper):
         html = urllib.urlopen(url).read()
         # \"src\":\"\/_cp\/products\/1374451886781\/tab-6174b48c-58f3-4d4b-8d2f-0d9bf0c90a63
         # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
+        video_base_url = self._find_between(html, 'data-resources-base=\\"', '\\">').replace("\\", "") + "%s"
         m = re.findall(r'"src":"([^"]*?\.mp4)"', html.replace("\\",""), re.DOTALL)
         for item in m:
             if ".blkbry" in item or ".mobile" in item:
                 pass
             else:
-                if "http://content.webcollage.net%s" % item not in rows and item.count(".mp4") < 2:
-                    rows.append("http://content.webcollage.net%s" % item)
+                if video_base_url % item not in rows and item.count(".mp4") < 2:
+                    rows.append(video_base_url % item)
         m = re.findall(r'"src":"([^"]*?\.flv)"', html.replace("\\",""), re.DOTALL)
         for item in m:
             if ".blkbry" in item or ".mobile" in item:
                 pass
             else:
-                if "http://content.webcollage.net%s" % item not in rows and item.count(".flv") < 2:
-                    rows.append("http://content.webcollage.net%s" % item)
+                if video_base_url % item not in rows and item.count(".flv") < 2:
+                    rows.append(video_base_url % item)
         if len(rows) < 1:
             return None
         new_rows = [r for r in rows if ("%s.flash.flv" % r) not in rows]
