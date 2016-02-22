@@ -249,7 +249,7 @@ class NikeProductSpider(BaseProductsSpider):
         _ranking = response.meta.get('_ranking', None)
         product['ranking'] = _ranking
         product['url'] = response.url
-        product['search_term'] = response.meta['search_term']
+        product['search_term'] = response.meta.get('search_term', None)
 
         # product data in json
         js_data = self.parse_data(response)
