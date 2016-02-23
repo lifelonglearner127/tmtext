@@ -587,10 +587,7 @@ class SamsclubScraper(Scraper):
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
         if self._in_stores() == 1:
-            if self.tree_html.xpath("//*[@itemprop='availability']/@href")[0] == "http://schema.org/OutOfStock":
-                return 1
-
-            return 0
+            return 1
 
         return None
 
