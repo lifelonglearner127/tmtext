@@ -8,6 +8,7 @@ import time
 import requests
 from extract_data import Scraper
 
+
 class CostcoScraper(Scraper):
 
     ##########################################
@@ -44,7 +45,6 @@ class CostcoScraper(Scraper):
         if len(pid) > 0: return True
         return False
 
-
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -71,10 +71,8 @@ class CostcoScraper(Scraper):
                 return site_id[ft+8:]
         return None
 
-
     def _status(self):
         return 'success'
-
 
     ##########################################
     ################ CONTAINER : PRODUCT_INFO
@@ -89,15 +87,11 @@ class CostcoScraper(Scraper):
     def _product_title(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
-
-
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
-
     def _model(self):
         return None
-
 
     def _features(self):
         rws = self.tree_html.xpath('//div[@id="product-tab2"]//li')
@@ -105,17 +99,14 @@ class CostcoScraper(Scraper):
             return [r.text_content().replace(':',',').strip() for r in rws]
         return None
 
-
     def _feature_count(self): # extract number of features from tree
         rows = self._features()
         if rows == None:
             return 0
         return len(rows)
 
-
     def _model_meta(self):
         return None
-
 
     def _description(self):
         short_description = " ".join(self.tree_html.xpath('//div[@class="tireDetails"]//text()[normalize-space()]')).strip()
@@ -125,7 +116,6 @@ class CostcoScraper(Scraper):
         if short_description != None and  short_description != "":
             return  self._clean_text(short_description)
         return self._long_description()
-
 
     def _long_description(self):
         html = self._wc_content()
@@ -152,22 +142,16 @@ class CostcoScraper(Scraper):
             return  self._clean_text(long_description)
         return None
 
-
-
     def _long_description_helper(self):
         return None
-
 
     def _apluscontent_desc(self):
         res = self._clean_text(' '.join(self.tree_html.xpath('//div[@id="wc-aplus"]//text()')))
         if res != "" : return res
 
-
-
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
     ##########################################
-
 
     def _meta_tag_count(self):
         tags = self._meta_tags()
@@ -192,7 +176,6 @@ class CostcoScraper(Scraper):
         image_url_p = self._image_urls()
         return image_url_p == image_url_m
 
-
     def _image_urls(self, tree = None):
         a = 0
         if tree == None:
@@ -216,13 +199,11 @@ class CostcoScraper(Scraper):
             self.image_urls = None
         return None
 
-
     def _mobile_image_url(self, tree = None):
         if tree == None:
             tree = self.tree_html
         image_url = self._image_urls(tree)
         return image_url
-
 
     def _image_count(self):
         iu = self._image_urls()
@@ -397,8 +378,6 @@ class CostcoScraper(Scraper):
         else:
             return self.sp_content
 
-
-
     # extract htags (h1, h2) from its product product page tree
     def _htags(self):
         htags_dict = {}
@@ -425,13 +404,11 @@ class CostcoScraper(Scraper):
             return round(self._tofloat(avr[0]), 1)
         return None
 
-
     def _review_count(self):
         avr = self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')
         if len(avr) > 0:
             return self._toint(avr[0])
         return None
-
 
     def _reviews(self):
         res = []
@@ -469,7 +446,6 @@ class CostcoScraper(Scraper):
             return rv[0][0]
         return None
 
-
     ##########################################
     ################ CONTAINER : SELLERS
     ##########################################
@@ -484,12 +460,10 @@ class CostcoScraper(Scraper):
             return pr[0]
         return None
 
-
     def _price_amount(self):
         price = self._price()
         clean = re.sub(r'[^0-9.]+', '', price)
         return float(clean)
-
 
     def _price_currency(self):
         price = self._price()
@@ -498,10 +472,6 @@ class CostcoScraper(Scraper):
         if curr=="$":
             return "USD"
         return curr
-
-
-##    def _in_stores_only(self):
-##        return None
 
     def _in_stores(self):
         return 0
@@ -550,13 +520,11 @@ class CostcoScraper(Scraper):
             return cats
         return None
 
-
     def _brand(self):
         rws = self.tree_html.xpath('//div[@id="product-tab2"]//li[child::*[contains(text(),"Brand")]]')
         if len(rws)>0:
             return rws[0].text_content().replace('Brand:','').strip()
         return None
-
 
     def _upc(self):
         bn=self.tree_html.xpath('//meta[@property="og:upc"]/@content')
