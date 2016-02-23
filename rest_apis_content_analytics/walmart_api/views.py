@@ -1,6 +1,7 @@
 from rest_framework import viewsets
 import re
 import urllib
+import sys
 import json
 import requests
 from pprint import pprint
@@ -17,7 +18,8 @@ from django.views.generic import View as DjangoView
 from django.core.context_processors import csrf
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, redirect
+from django.core.urlresolvers import reverse_lazy
 from rest_framework.response import Response
 from django.http import JsonResponse
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -1736,8 +1738,14 @@ class FeedIDRedirectView(DjangoView):
 
 class FeedStatusAjaxView(DjangoView):
 
-    @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
+        #if 'test' in sys.argv:
+        #    return JsonResponse({})
+        if not request.user.is_authenticated():
+            return JsonResponse({
+                'redirect': str(reverse_lazy(
+                    'login')+'?next='+request.GET.get('next', ''))
+            })
         feed_id = kwargs.get('feed_id', None)
         # try to get data from cache
         feed_history = SubmissionHistory.objects.filter(user=request.user, feed_id=feed_id)

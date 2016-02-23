@@ -13,6 +13,7 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 
 from django.test import LiveServerTestCase
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.conf import settings
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 
@@ -58,7 +59,7 @@ class RestAPIsTests(StaticLiveServerTestCase):
 
     def test_login(self):
         self._auth()
-        self.assertIn('/accounts/profile/', self.selenium.current_url)
+        self.assertIn(settings.LOGIN_REDIRECT_URL, self.selenium.current_url)
         self.assertTrue(self.selenium.get_cookie('sessionid'))
 
     def _test_validate_walmart_product_xml_file_browser(self, xml_file):
@@ -67,7 +68,7 @@ class RestAPIsTests(StaticLiveServerTestCase):
         self.selenium.find_element_by_name('xml_file_to_validate').send_keys(xml_file)
         self.selenium.find_element_by_xpath('//*[contains(@class, "form-actions")]/button').click()
         self.assertIn('success', self.selenium.page_source)
-        self.assertIn('This xml is validated by Walmart product xsd files', self.selenium.page_source)
+        self.assertIn('is validated by Walmart product xsd files', self.selenium.page_source)
 
     def _test_validate_walmart_product_xml_file_requests(self, xml_file):
         session = self._auth_requests()
@@ -75,7 +76,7 @@ class RestAPIsTests(StaticLiveServerTestCase):
             result = session.post(self.live_server_url+'/validate_walmart_product_xml_file/',
                                   files={'xml_file_to_validate': payload}, verify=False)
             self.assertIn('success', result.text)
-            self.assertIn('This xml is validated by Walmart product xsd files', result.text)
+            self.assertIn('is validated by Walmart product xsd files', result.text)
 
     def _test_validate_walmart_product_xml_file_requests_multiple(self, *xml_files):
         session = self._auth_requests()
@@ -84,9 +85,8 @@ class RestAPIsTests(StaticLiveServerTestCase):
         result = session.post(self.live_server_url+'/validate_walmart_product_xml_file/',
                               files=files2post, verify=False)
         result_json = json.loads(result.text)
-        self.assertIn('success', result_json['Verified Furniture Sample Product XML.xml'])
+        self.assertIn('success', str(result_json['Verified Furniture Sample Product XML.xml']))
         self.assertIn('error', result_json['SupplierProductFeed.xsd.xml'])
-        self.assertIn('This element is not expected', result_json['SupplierProductFeed.xsd.xml']['error'])
 
     def test_validate_walmart_product_xml_file(self):
         self._test_validate_walmart_product_xml_file_browser(self.xml_file2)

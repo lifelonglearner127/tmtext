@@ -79,6 +79,9 @@
               $('.prettyprint_replaced_link').each(function(i, link) {
                   $.ajax({
                       url: "/feed-status-ajax/" + $(link).attr('data-target'),
+                      data: {
+                          next: "{{ request.path }}"
+                      },
                       success: function (data, textStatus) {
                           if (data.redirect) {window.location.href = data.redirect;}
                           else {

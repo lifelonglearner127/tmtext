@@ -119,6 +119,9 @@ TEMPLATE_CONTEXT_PROCESSORS = (
 )
 
 
+LOGIN_REDIRECT_URL = '/items_update_with_xml_file_by_walmart_api/'
+
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
