@@ -169,7 +169,7 @@ class SamsclubScraper(Scraper):
 
     def _description(self):
         try:
-            description = html.tostring(self.tree_html.xpath("//div[contains(@class,'itemBullets')]")[0]).strip()
+            description = self._exclude_javascript_from_description(html.tostring(self.tree_html.xpath("//div[contains(@class,'itemBullets')]")[0]).strip())
         except:
             description = None
 
@@ -180,7 +180,7 @@ class SamsclubScraper(Scraper):
 
     def _long_description(self):
         try:
-            long_description = html.tostring(self.tree_html.xpath("//span[@itemprop='description']")[0]).strip()
+            long_description = self._exclude_javascript_from_description(html.tostring(self.tree_html.xpath("//span[@itemprop='description']")[0]).strip())
         except:
             long_description = None
 
