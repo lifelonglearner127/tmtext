@@ -15,11 +15,10 @@ from django.test import LiveServerTestCase
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
 
 
 class RestAPIsTests(StaticLiveServerTestCase):
-    # TODO: browserless authentication
+
     reset_sequences = True
 
     xml_file1 = os.path.join(CWD, 'walmart_product_xml_samples', 'SupplierProductFeed.xsd.xml')
@@ -28,12 +27,16 @@ class RestAPIsTests(StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         super(RestAPIsTests, cls).setUpClass()
-        cls.selenium = webdriver.Firefox()
+        cls.selenium = webdriver.Chrome()
+        with open(settings.TEST_TWEAKS['item_upload_ajax_ignore'], 'w') as fh:
+            fh.write('1')
 
     @classmethod
     def tearDownClass(cls):
         cls.selenium.quit()
         super(RestAPIsTests, cls).tearDownClass()
+        if os.path.exists(settings.TEST_TWEAKS['item_upload_ajax_ignore']):
+            os.remove(settings.TEST_TWEAKS['item_upload_ajax_ignore'])
 
     def setUp(self):
         # create user
@@ -51,6 +54,15 @@ class RestAPIsTests(StaticLiveServerTestCase):
         self.selenium.find_element_by_name('username').send_keys(self.username)
         self.selenium.find_element_by_name('password').send_keys(self.password + '\n')
         time.sleep(1)  # let the database commit transactions?
+
+    def _http_auth(self, url):
+        self.selenium.set_page_load_timeout(4)
+        try:
+            self.selenium.get(url)
+        except:
+            self.selenium.set_page_load_timeout(30)
+            self.selenium.get('http://'+self.username+':'+self.password+'@'+url.replace('http://', ''))
+            return
 
     def _auth_requests(self):
         session = requests.Session()
@@ -113,3 +125,14 @@ class RestAPIsTests(StaticLiveServerTestCase):
         result_json = json.loads(result.text)
         self.assertEqual(result_json.get('default', {}).get('error', ''), 'could not find <productId> element')
         self.assertIn('feedId', result_json.get('_2', ''))
+
+    def test_detect_duplicate_content(self):
+        # TODO: better test coverage
+        # now we only check that this view works for both authenticated and non-authenticated users (in browser)
+        self.selenium.delete_all_cookies()  # "logout"
+        self._http_auth(self.live_server_url+'/detect_duplicate_content/')
+        self.selenium.get(self.live_server_url+'/detect_duplicate_content/')
+        self.assertTrue(bool(self.selenium.find_element_by_xpath('//h1[contains(text(), "Detect Duplicate Content")]')))
+        self._auth()
+        self.selenium.get(self.live_server_url+'/detect_duplicate_content/')
+        self.assertTrue(bool(self.selenium.find_element_by_xpath('//h1[contains(text(), "Detect Duplicate Content")]')))

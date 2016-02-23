@@ -20,6 +20,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response, redirect
 from django.core.urlresolvers import reverse_lazy
+from django.conf import settings
 from rest_framework.response import Response
 from django.http import JsonResponse
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -1739,8 +1740,9 @@ class FeedIDRedirectView(DjangoView):
 class FeedStatusAjaxView(DjangoView):
 
     def get(self, request, *args, **kwargs):
-        #if 'test' in sys.argv:
-        #    return JsonResponse({})
+        if os.path.exists(settings.TEST_TWEAKS['item_upload_ajax_ignore']):
+            # do not perform time-consuming operations - return dummy empty response
+            return JsonResponse({})
         if not request.user.is_authenticated():
             return JsonResponse({
                 'redirect': str(reverse_lazy(

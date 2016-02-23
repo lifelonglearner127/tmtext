@@ -174,3 +174,8 @@ TEMPLATES = [
         }
     },
 ]
+
+
+TEST_TWEAKS = {
+    'item_upload_ajax_ignore': '/tmp/_walmart_api_do_not_test_ajax_on_item_upload'
+}
