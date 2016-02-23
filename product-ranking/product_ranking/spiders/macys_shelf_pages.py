@@ -60,7 +60,8 @@ class MacysShelfPagesSpider(MacysProductsSpider):
 
     def start_requests(self):
         yield Request(url=self.valid_url(self.product_url),
-                      meta=self._setup_meta_compatibility())
+                      meta=self._setup_meta_compatibility(),
+                      dont_filter=True)
 
     @staticmethod
     def valid_url(url):
