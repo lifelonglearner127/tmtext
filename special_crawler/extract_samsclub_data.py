@@ -586,6 +586,12 @@ class SamsclubScraper(Scraper):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
+        if self._in_stores() == 1:
+            if self.tree_html.xpath("//*[@itemprop='availability']/@href")[0] == "http://schema.org/OutOfStock":
+                return 1
+
+            return 0
+
         return None
 
     ##########################################
