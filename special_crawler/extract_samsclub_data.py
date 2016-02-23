@@ -443,7 +443,7 @@ class SamsclubScraper(Scraper):
 
     def _average_review(self):
         self._load_reviews()
-        return "%.2f" % self.average_review
+        return float("%.2f" % self.average_review)
 
     def _review_count(self):
         self._load_reviews()
