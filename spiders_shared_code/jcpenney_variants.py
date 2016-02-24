@@ -342,7 +342,7 @@ class JcpenneyVariants(object):
                     yield l[i:i+n]
 
             chunk_size = 100
-            chunk_list = list(chunks(variant_stock_status_url_list, chunk_size))
+            chunk_list = list(chunks(variant_stock_status_url_list[:300], chunk_size))
 
             for index, chunk in enumerate(chunk_list):
                 rs = (grequests.get(u) for u in chunk)
