@@ -448,8 +448,3 @@ class JcpenneyVariants(object):
                     'FgraphicalLotSKUSelection.jsp').format(**_format_args)
 
         return request_url
-        '''
-        variant_stock_status_json = json.loads(requests.get(size_url).text)
-        variant_stock_status_json["availabilityStatus"] == ""
-        return
-        '''
