@@ -41,12 +41,19 @@ class SamsclubScraper(Scraper):
     video_urls = None
     pdf_count = None
     pdf_urls = None
+    failure_type = None
     sv = SamsclubVariants()
 
     def check_url_format(self):
         # for ex: http://www.samsclub.com/sams/dawson-fireplace-fall-2014/prod14520017.ip?origin=item_page.rr1&campaign=rr&sn=ClickCP&campaign_data=prod14170040
-        m = re.match(r"^http://www\.samsclub\.com/sams/(.+)?/(.+)", self.product_page_url)
+        m = re.match(r"^http://www\.samsclub\.com/sams/(.+)?/(.+)\.ip", self.product_page_url)
         return not not m
+
+    def _failure_type(self):
+        if not self.tree_html.xpath("//div[@class='container' and @itemtype='http://schema.org/Product']"):
+            self.failure_type = "Invalid url"
+
+        return self.failure_type
 
     def not_a_product(self):
         '''Overwrites parent class method that determines if current page
@@ -55,19 +62,26 @@ class SamsclubScraper(Scraper):
         and returns True if current page is one.
         '''
 
-        if len(self.tree_html.xpath("//div[contains(@class, 'imgCol')]//div[@id='plImageHolder']//img")) < 1:
-            return True
-
         try:
             self.sv.setupCH(self.tree_html)
         except:
             pass
+
+        self._failure_type()
+
+        if self.failure_type:
+            self.ERROR_RESPONSE["failure_type"] = self.failure_type
+
+            return True
 
         return False
 
     ##########################################
     #### ########### CONTAINER : NONE
     ##########################################
+
+    def _canonical_link(self):
+        return self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
     def _url(self):
         return self.product_page_url
@@ -137,11 +151,25 @@ class SamsclubScraper(Scraper):
         return None
 
     def _variants(self):
+        if self._no_longer_available():
+            return None
+
         return self.sv._variants()
+
+    def _no_longer_available(self):
+        try:
+            txt = self.tree_html.xpath("//span[@class='lgFont ft14']/text()")
+            txt = "" . join(txt)
+            if "We're sorry, this item is not available in your selected Club." in txt:
+                return True
+        except:
+            pass
+
+        return False
 
     def _description(self):
         try:
-            description = html.tostring(self.tree_html.xpath("//div[contains(@class,'itemBullets')]")[0]).strip()
+            description = self._exclude_javascript_from_description(html.tostring(self.tree_html.xpath("//div[contains(@class,'itemBullets')]")[0]).strip())
         except:
             description = None
 
@@ -152,7 +180,7 @@ class SamsclubScraper(Scraper):
 
     def _long_description(self):
         try:
-            long_description = html.tostring(self.tree_html.xpath("//span[@itemprop='description']")[0]).strip()
+            long_description = self._exclude_javascript_from_description(html.tostring(self.tree_html.xpath("//span[@itemprop='description']")[0]).strip())
         except:
             long_description = None
 
@@ -415,7 +443,7 @@ class SamsclubScraper(Scraper):
 
     def _average_review(self):
         self._load_reviews()
-        return "%.2f" % self.average_review
+        return float("%.2f" % self.average_review)
 
     def _review_count(self):
         self._load_reviews()
@@ -558,6 +586,9 @@ class SamsclubScraper(Scraper):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
+        if self._in_stores() == 1:
+            return 1
+
         return None
 
     ##########################################
@@ -606,6 +637,7 @@ class SamsclubScraper(Scraper):
         "description" : _description, \
         "long_description" : _long_description, \
         "variants": _variants, \
+        "no_longer_available": _no_longer_available, \
         # CONTAINER : PAGE_ATTRIBUTES
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
@@ -632,6 +664,7 @@ class SamsclubScraper(Scraper):
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
         "category_name" : _category_name, \
+        "canonical_link": _canonical_link,
         "brand" : _brand, \
 
         "loaded_in_seconds": None \

@@ -15,14 +15,15 @@
     <field name="long_description" version="1.1"></field>
     <field name="image_count" version="2.1"></field>
     <field name="image_urls" version="2.1"></field>
-    <field name="video_count" version="2.1"></field>
-    <field name="video_urls" version="2.1"></field>
+    <field name="video_count" version="2.2"></field>
+    <field name="video_urls" version="2.2"></field>
     <field name="pdf_count" version="2.1"></field>
     <field name="pdf_urls" version="2.1"></field>
-    <field name="wc_emc" version="1.1"></field>
-    <field name="wc_360" version="1.1"></field>
-    <field name="wc_pdf" version="1.1"></field>
-    <field name="wc_video" version="1.1"></field>
+    <field name="wc_360" version="1.2"></field>
+    <field name="wc_emc" version="1.2"></field>
+    <field name="wc_pdf" version="1.2"></field>
+    <field name="wc_video" version="1.2"></field>
+    <field name="wc_prodtour" version="1.2"></field>
     <field name="webcollage" version="1.1"></field>
     <field name="htags" version="1.1"></field>
     <field name="sellpoints" version="1.1"></field>
