@@ -210,12 +210,14 @@ class NikeProductSpider(BaseProductsSpider):
                     product_links = self._get_product_links_from_serp(driver)
                     collected_products_len.append(len(product_links))
                     print 'Collected %i product links' % len(product_links)
+                    self.log('Collected %i product links' % len(product_links))
                     if len(product_links) > self.quantity:
                         break
                     if self.last_five_digits_the_same(collected_products_len):
                         break  # last three iterations collected equal num of products
                 except Exception as e:
                     print str(e)
+                    self.log('Exception while scrolling page: %s' % str(e))
                     break
             for i in xrange(10):
                 time.sleep(3)
