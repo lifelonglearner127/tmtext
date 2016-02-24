@@ -4,6 +4,7 @@ import lxml.html
 import itertools
 import re
 from lxml import html, etree
+import grequests
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -296,12 +297,14 @@ class JcpenneyVariants(object):
 
             variation_combinations_values = map(list, variation_combinations_values)
 
-            price_json= re.search('var jcpPPJSON = (.+?);\njcpDLjcp\.productPresentation = jcpPPJSON;', html.tostring(self.tree_html)).group(1)
+            price_json = re.search('var jcpPPJSON = (.+?);\njcpDLjcp\.productPresentation = jcpPPJSON;', html.tostring(self.tree_html)).group(1)
             self.price_json = json.loads(price_json)
             price = self.price_json["price"]
 
             if float(price).is_integer():
                 price = int(price)
+
+            variant_stock_status_url_list = []
 
             for variation_combination in variation_combinations_values:
                 stockstatus_for_variants = {}
@@ -331,6 +334,21 @@ class JcpenneyVariants(object):
                         stockstatus_for_variants["image_url"] = img.get("img")
 
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
+                variant_stock_status_url_list.append(self._make_variant_stock_status_request_url(product_id, stockstatus_for_variants))
+
+            rs = (grequests.get(u) for u in variant_stock_status_url_list)
+            response_list = grequests.map(rs)
+
+            for index, variant in enumerate(stockstatus_for_variants_list):
+                try:
+                    stockstatus_json = json.loads(response_list[index].text)
+
+                    if stockstatus_json["availabilityStatus"] == "true":
+                        stockstatus_for_variants_list[index]["in_stock"] = True
+                    else:
+                        stockstatus_for_variants_list[index]["in_stock"] = False
+                except Exception, e:
+                    stockstatus_for_variants_list[index]["in_stock"] = False
 
             if not stockstatus_for_variants_list:
                 return None
@@ -338,3 +356,100 @@ class JcpenneyVariants(object):
                 return stockstatus_for_variants_list
         except Exception, e:
             return None
+
+    def _make_variant_stock_status_request_url(self, pp_id, variant):
+        _props = variant['properties'].copy()
+        color = _props.pop('color') if 'color' in _props else None
+        neck = _props.pop('neck') if 'neck' in _props else None
+        lot = _props.pop('lot') if 'lot' in _props else None
+        sleeve = _props.pop('sleeve') if 'sleeve' in _props else None
+        size = _props.pop('size') if 'size' in _props else None
+        inseam = _props.pop('inseam') if 'inseam' in _props else None
+        waist = _props.pop('waist') if 'waist' in _props else None
+        chest = _props.pop('chest') if 'chest' in _props else None
+        length = _props.pop('length') if 'length' in _props else None
+        price = _props.pop('price') if 'price' in _props else None
+        cup = _props.pop('cup') if 'cup' in _props else None
+        width = _props.pop('width') if 'width' in _props else None
+        # check if there are still some keys
+
+        _format_args = {}
+        _format_args['pp_id'] = pp_id if pp_id else ''
+        _format_args['pp_type'] = 'regular'  # TODO: shouldn't this be constant?
+        _format_args['lot_value'] = lot if lot else ''
+        _format_args['size'] = size if size else ''
+        _format_args['waist'] = waist if waist else ''
+        _format_args['inseam'] = inseam if inseam else ''
+        _format_args['chest'] = chest if chest else ''
+        _format_args['length'] = length if length else ''
+        _format_args['price'] = price if price else ''
+        _format_args['cup'] = cup if cup else ''
+        _format_args['width'] = width if width else ''
+
+        attribute_name = re.findall(r'lotSKUAttributes\[\'.*\']=\'\[(\w+)',
+                                   html.tostring(self.tree_html))
+
+        # get attribute name
+        """
+        attribute_name = None
+        #if color:
+        #    attribute_name = 'COLOR'
+        if sleeve:
+            attribute_name = 'SLEEVE'
+        elif neck:
+            attribute_name = 'NECK_SIZE'
+        elif lot:
+            attribute_name = 'Lot'
+        """
+        # TODO: moar `attribute_name` values!
+        _format_args['color'] = color if color else ''
+        _format_args['neck'] = neck if neck else ''
+        _format_args['sleeve'] = sleeve if sleeve else ''
+        _format_args['attribute_name'] = attribute_name[0] \
+            if attribute_name else 'Lot'
+        _format_args['attribute_name_value'] = attribute_name[0].lower() \
+            if attribute_name else 'size'
+        new_lot = _format_args['lot_value']
+        _format_args['new_lot'] = new_lot if new_lot else ''
+        _format_args['param'] = _format_args[_format_args['attribute_name_value']]
+
+        request_url = ('http://www.jcpenney.com/jsp/browse/pp/graphical'
+                    '/graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&grView=&_dyncharset=UTF-8'
+                    '&selectedSKUAttributeName={attribute_name}&_D%'
+                    '3AselectedSKUAttributeName=+'
+                    '&sucessUrl=%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
+                    '2FgraphicalSKUOptions.jsp%3FfromEditBag%3D%26fromEditFav%3D%'
+                    '26grView%3D&_D%3AsucessUrl=+&ppType=regular&_D%'
+                    '3AppType=+&shipToCountry=US&_D%'
+                    '3AshipToCountry=+'
+                    '&ppId={pp_id}'
+                    '&_D%3AppId='
+                    '+&selectedLotValue={new_lot}'
+                    '&_D%3AselectedLotValue=+'
+                    '&skuSelectionMap.WAIST={waist}'
+                    '&_D%3AskuSelectionMap.WAIST=+'
+                    '&skuSelectionMap.INSEAM={inseam}'
+                    '&_D%3AskuSelectionMap.INSEAM=+'
+                    '&skuSelectionMap.SIZE={size}'
+                    '&_D%3AskuSelectionMap.SIZE=+'
+                    '&skuSelectionMap.CUP={cup}'
+                    '&_D%3AskuSelectionMap.CUP=+'
+                    '&skuSelectionMap.WIDTH={width}'
+                    '&_D%3AskuSelectionMap.WIDTH=+'
+                    '&skuSelectionMap.CHEST={chest}'
+                    '&_D%3AskuSelectionMap.CHEST=+'
+                    '&skuSelectionMap.NECK={neck}'
+                    '&_D%3AskuSelectionMap.NECK=+'
+                    '&skuSelectionMap.SLEEVE={sleeve}'
+                    '&_D%3AskuSelectionMap.SLEEVE=+'
+                    '&skuSelectionMap.COLOR={color}'
+                    '&_D%3AskuSelectionMap.COLOR=+'
+                    '&_DARGS=%2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%2'
+                    'FgraphicalLotSKUSelection.jsp').format(**_format_args)
+
+        return request_url
+        '''
+        variant_stock_status_json = json.loads(requests.get(size_url).text)
+        variant_stock_status_json["availabilityStatus"] == ""
+        return
+        '''
