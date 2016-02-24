@@ -355,9 +355,9 @@ class JcpenneyVariants(object):
                         if stockstatus_json["availabilityStatus"] == "true":
                             stockstatus_for_variants_list[chunk_size * index + sub_index]["in_stock"] = True
                         else:
-                            stockstatus_for_variants_list[index]["in_stock"] = False
+                            stockstatus_for_variants_list[chunk_size * index + sub_index]["in_stock"] = False
                     except Exception, e:
-                        stockstatus_for_variants_list[index]["in_stock"] = False
+                        stockstatus_for_variants_list[chunk_size * index + sub_index]["in_stock"] = False
 
             if not stockstatus_for_variants_list:
                 return None
