@@ -6,8 +6,8 @@ import re
 import lxml
 import lxml.html
 import requests
+import os
 import json
-import grequests
 import ast
 
 from itertools import groupby
@@ -275,6 +275,7 @@ class JcpenneyScraper(Scraper):
         return request_url
 
     def _variants(self):
+        '''
         variants = self.jv._variants()
 
         if variants:
@@ -310,6 +311,20 @@ class JcpenneyScraper(Scraper):
             return variants
 
         return None
+        '''
+
+        prescraped_variants_list = open(os.path.dirname(os.path.realpath(__file__)) + "/temp/jl_files_results.jl", "r").read()
+        variants_list = prescraped_variants_list.split("\n")
+        variants_url_map = {}
+
+        for variant in variants_list:
+            variant = json.loads(variant)
+            variants_url_map[variant["given_url"]] = variant["variants"]
+
+        if self.product_page_url in variants_url_map:
+            return variants_url_map[self.product_page_url]
+
+        return self.jv._variants()
 
     def _swatches(self):
         return self.jv.swatches()
