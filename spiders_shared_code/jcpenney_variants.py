@@ -336,19 +336,28 @@ class JcpenneyVariants(object):
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
                 variant_stock_status_url_list.append(self._make_variant_stock_status_request_url(product_id, stockstatus_for_variants))
 
-            rs = (grequests.get(u) for u in variant_stock_status_url_list)
-            response_list = grequests.map(rs)
+            def chunks(l, n):
+                """Yield successive n-sized chunks from l."""
+                for i in xrange(0, len(l), n):
+                    yield l[i:i+n]
 
-            for index, variant in enumerate(stockstatus_for_variants_list):
-                try:
-                    stockstatus_json = json.loads(response_list[index].text)
+            chunk_size = 100
+            chunk_list = list(chunks(variant_stock_status_url_list, chunk_size))
 
-                    if stockstatus_json["availabilityStatus"] == "true":
-                        stockstatus_for_variants_list[index]["in_stock"] = True
-                    else:
+            for index, chunk in enumerate(chunk_list):
+                rs = (grequests.get(u) for u in chunk)
+                response_list = grequests.map(rs)
+
+                for sub_index in range(len(response_list)):
+                    try:
+                        stockstatus_json = json.loads(response_list[index].text)
+
+                        if stockstatus_json["availabilityStatus"] == "true":
+                            stockstatus_for_variants_list[chunk_size * index + sub_index]["in_stock"] = True
+                        else:
+                            stockstatus_for_variants_list[index]["in_stock"] = False
+                    except Exception, e:
                         stockstatus_for_variants_list[index]["in_stock"] = False
-                except Exception, e:
-                    stockstatus_for_variants_list[index]["in_stock"] = False
 
             if not stockstatus_for_variants_list:
                 return None
