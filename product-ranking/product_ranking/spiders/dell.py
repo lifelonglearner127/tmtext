@@ -112,6 +112,8 @@ class DellProductSpider(BaseProductsSpider):
 
     def _init_webdriver(self):
         from selenium import webdriver
+        from selenium.webdriver.remote.remote_connection import RemoteConnection
+        RemoteConnection.set_timeout(30)
         driver = webdriver.Firefox()
         driver.set_window_size(1280, 1024)
         driver.set_page_load_timeout(60)
@@ -131,6 +133,7 @@ class DellProductSpider(BaseProductsSpider):
             new_meta = response.meta.copy()
             # get all products we need (or till the "show more products" button exists)
             paging_button = '//button[contains(@id, "paging-button")]'
+            num_of_errors = 0
             while driver.find_elements_by_xpath(paging_button):
                 try:
                     button = driver.find_elements_by_xpath(paging_button)
@@ -140,9 +143,17 @@ class DellProductSpider(BaseProductsSpider):
                     if len(product_links) > self.quantity:
                         break
                     print 'Collected %i product links' % len(product_links)
+                    self.log('Collected %i product links' % len(product_links))
                 except Exception as e:
                     print str(e)
-                    break
+                    self.log('Error while doing pagination: %s' % str(e), WARNING)
+                    num_of_errors += 1
+                    if num_of_errors > 10:
+                        self.log('Too many webdriver errors', ERROR)
+                        driver.quit()
+                        display.stop()
+                        return
+
             #driver.save_screenshot('/tmp/1.png')
             new_meta['is_product_page'] = True
             for i, product_link in enumerate(product_links):
