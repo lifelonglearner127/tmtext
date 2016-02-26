@@ -35,7 +35,7 @@ class BestBuyScraper(Scraper):
         Returns:
         True if valid, False otherwise
         """
-        m = re.match(r"^http://www.bestbuy.com/.*$", self.product_page_url)
+        m = re.match(r"^http://www\.bestbuy\.com/site/[a-zA-Z0-9%\-\%\_]+/[a-zA-Z0-9]+\.p\?id=[a-zA-Z0-9]+&skuId=[a-zA-Z0-9]+$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -45,11 +45,10 @@ class BestBuyScraper(Scraper):
         and returns True if current page is one.
         '''
 
-        txt = " ".join(self.tree_html.xpath("//div[contains(@class,'alert alert-warning')]//text()"))
-        if "This item is no longer available" in txt:
+        if not self.tree_html.xpath("//meta[@property='og:type' and @content='product']"):
             return True
-        return False
 
+        return False
 
     ##########################################
     ############### CONTAINER : NONE
@@ -81,10 +80,10 @@ class BestBuyScraper(Scraper):
         return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
     
     def _product_title(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
 
     def _title_seo(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
 
     def _model(self):
         return self.tree_html.xpath('//span[@id="model-value"]/text()')[0]
@@ -384,7 +383,10 @@ class BestBuyScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
     def _average_review(self):
-        return self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0]
+        if self._review_count() > 0:
+            return float(self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0])
+
+        return None
 
     def _review_count(self):
         if not self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content'):
@@ -510,8 +512,12 @@ class BestBuyScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        all = self.tree_html.xpath("//ul[@id='breadcrumb-list']/li/a/text()")
-        return all
+        categories = self.tree_html.xpath("//ol[@id='breadcrumb-list']/li/a/text()")[1:]
+
+        if categories:
+            return categories
+
+        return None
 
     def _category_name(self):
         return self._categories()[-1]
