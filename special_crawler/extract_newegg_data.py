@@ -383,7 +383,13 @@ class NeweggScraper(Scraper):
         return "${0}".format(self._price_amount())
 
     def _price_amount(self):
-        return float(self._find_between(html.tostring(self.tree_html), "product_sale_price:['", "'],"))
+        shipping_cost = float(self._find_between(html.tostring(self.tree_html), "product_default_shipping_cost:['", "'],"))
+        sale_price = float(self._find_between(html.tostring(self.tree_html), "product_sale_price:['", "'],"))
+
+        if shipping_cost > 0.01:
+            return sale_price - shipping_cost
+
+        return sale_price
 
     def _price_currency(self):
         return "USD"
