@@ -454,4 +454,3 @@ class StaplesScraper(Scraper):
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
     }
-
