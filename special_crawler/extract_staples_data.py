@@ -269,7 +269,6 @@ class StaplesScraper(Scraper):
         if self.product_info_json["review"]["count"] == 0:
             return None
 
-        self.average_review = float(self.product_info_json["review"]["rating"])
         app_key = "LEb2xjVQAMYaTVrGjJ9vDjkj0wRSmKlIf7sdKxqy"
         widget_version = "2015-08-19_11-39-31"
         pid = self.product_info_json["metadata"]["partnumber"]
@@ -300,6 +299,7 @@ class StaplesScraper(Scraper):
             self.review_count = review_count
             self.max_score = max_score
             self.min_score = min_score
+            self.average_review = float(self.product_info_json["review"]["rating"])
 
             return self.reviews
 
