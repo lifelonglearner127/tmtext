@@ -483,7 +483,7 @@ class BestBuyScraper(Scraper):
         return None
 
     def _marketplace_lowest_price(self):
-        return self._price()
+        return None
 
     def _marketplace_out_of_stock(self):
         """Extracts info on whether currently unavailable from any marketplace seller - binary
