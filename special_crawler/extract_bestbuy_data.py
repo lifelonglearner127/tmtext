@@ -89,7 +89,14 @@ class BestBuyScraper(Scraper):
         return self.tree_html.xpath('//span[@id="model-value"]/text()')[0]
 
     def _upc(self):
-        return self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-sku-id')[0]
+        features = self._features()
+
+        if features:
+            for feature in features:
+                if feature.startswith("UPC:"):
+                    return feature[4:].strip()
+
+        return None
 
     def _features(self):
         if self.feature_count is not None:
@@ -113,13 +120,13 @@ class BestBuyScraper(Scraper):
                 contents = urllib.urlopen(url).read()
                 # document.location.replace('
                 tree = html.fromstring(contents)
-                rows = tree.xpath("//table//tbody//tr")
+                rows = tree.xpath("//div[contains(@class, 'specification-group')]/ul/li")
+
                 for r in rows:
-                    th_txt = " ".join(r.xpath(".//th//text()"))
-                    td_txt = " ".join(r.xpath(".//td//text()"))
-                    if len(th_txt) > 0 and len(td_txt) > 0:
-                        line = "%s: %s" % (th_txt, td_txt)
-                        line_txts.append(line)
+                    feature_text = r.xpath("./div[@class='specification-name']/span/text()")[0] + ": " + \
+                             r.xpath("./div[@class='specification-value']/text()")[0]
+
+                    line_txts.append(feature_text)
 
         if len(line_txts) < 1:
             return None

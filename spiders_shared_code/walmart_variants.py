@@ -5,6 +5,7 @@ import re
 import itertools
 import yaml
 
+
 class WalmartVariants(object):
 
     def setupSC(self, response):
@@ -18,7 +19,7 @@ class WalmartVariants(object):
 
     def _clean_text(self, text):
         text = text.replace("<br />"," ").replace("\n"," ").replace("\t"," ").replace("\r"," ")
-       	text = re.sub("&nbsp;", " ", text).strip()
+        text = re.sub("&nbsp;", " ", text).strip()
         return  re.sub(r'\s+', ' ', text)
 
     def _swatches(self):
