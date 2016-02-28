@@ -149,10 +149,34 @@ class StaplesScraper(Scraper):
         return None
 
     def _long_description(self):
-        long_description = "\n" . join([item["value"] for item in self.product_info_json["description"]["bullets"]])
+        paragraph = ""
+        headliner = ""
+        bullet_list = ""
+        expanded_descr = ""
+
+        description_info_list = self.product_info_json["description"]["details"]
+
+        for description_info in description_info_list:
+            if description_info["description_type"]["name"] == 'Paragraph':
+                for t in description_info["text"]:
+                    paragraph += (t["value"] + "\n")
+
+            if description_info["description_type"]["name"] == 'Bullets':
+                for t in description_info["text"]:
+                    bullet_list += (t["value"] + "\n")
+
+            if description_info["description_type"]["name"] == 'Headliner':
+                for t in description_info["text"]:
+                    headliner += (t["value"] + "\n")
+
+            if description_info["description_type"]["name"] == 'Expanded Descr':
+                for t in description_info["text"]:
+                    expanded_descr += (t["value"] + "\n")
+
+        long_description = headliner + paragraph + bullet_list + expanded_descr
 
         if long_description:
-            return self._clean_text(self._exclude_javascript_from_description(long_description))
+            return long_description
 
         return None
 
