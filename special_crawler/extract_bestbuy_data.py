@@ -120,13 +120,18 @@ class BestBuyScraper(Scraper):
                 contents = urllib.urlopen(url).read()
                 # document.location.replace('
                 tree = html.fromstring(contents)
+
                 rows = tree.xpath("//div[contains(@class, 'specification-group')]/ul/li")
 
-                for index, r in enumerate(rows):
-                    feature_text = r.xpath("./div[@class='specification-name']")[0].text_content().strip() + ": " + \
-                             r.xpath("./div[@class='specification-value']")[0].text_content().strip()
+                if not rows:
+                    rows = tree.xpath("//div[@class='specifications']/ul/li")
 
-                    line_txts.append(feature_text)
+                if rows:
+                    for index, r in enumerate(rows):
+                        feature_text = r.xpath("./div[@class='specification-name']")[0].text_content().strip() + ": " + \
+                                 r.xpath("./div[@class='specification-value']")[0].text_content().strip()
+
+                        line_txts.append(feature_text)
 
         if len(line_txts) < 1:
             return None
