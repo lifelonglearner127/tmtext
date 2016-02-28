@@ -122,9 +122,9 @@ class BestBuyScraper(Scraper):
                 tree = html.fromstring(contents)
                 rows = tree.xpath("//div[contains(@class, 'specification-group')]/ul/li")
 
-                for r in rows:
-                    feature_text = r.xpath("./div[@class='specification-name']/span/text()")[0] + ": " + \
-                             r.xpath("./div[@class='specification-value']/text()")[0]
+                for index, r in enumerate(rows):
+                    feature_text = r.xpath("./div[@class='specification-name']")[0].text_content().strip() + ": " + \
+                             r.xpath("./div[@class='specification-value']")[0].text_content().strip()
 
                     line_txts.append(feature_text)
 
