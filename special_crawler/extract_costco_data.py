@@ -516,8 +516,10 @@ class CostcoScraper(Scraper):
     def _categories(self):
         cats = self.tree_html.xpath('//*[@itemprop="breadcrumb"]//text()')
         cats = [self._clean_text(c) for c in cats if self._clean_text(c) != '']
-        if len(cats)>0:
-            return cats
+
+        if len(cats) > 0:
+            return cats[1:]
+
         return None
 
     def _brand(self):
