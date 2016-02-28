@@ -3,7 +3,8 @@ import re
 import sys
 import json
 import random
-from lxml import html
+from lxml import html, etree
+import lxml.html
 import time
 import requests
 from extract_data import Scraper
@@ -118,6 +119,9 @@ class CostcoScraper(Scraper):
         return self._long_description()
 
     def _long_description(self):
+        if self.tree_html.xpath("//div[@id='product-tab1']"):
+            return lxml.html.tostring(self.tree_html.xpath("//div[@id='product-tab1']")[0])
+
         html = self._wc_content()
         m = re.findall(r'wc-rich-content-description\\">(.*?)<\\/div', html, re.DOTALL)
         long_description = ""
