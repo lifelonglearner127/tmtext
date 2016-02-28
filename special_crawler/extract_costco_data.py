@@ -195,6 +195,10 @@ class CostcoScraper(Scraper):
         if len(img_url) > 0:
             self.image_urls = img_url
             return img_url
+
+        if self.tree_html.xpath("//meta[@property='og:image']/@content"):
+            return self.tree_html.xpath("//meta[@property='og:image']/@content")
+
         if a == 1:
             self.image_urls = None
         return None
