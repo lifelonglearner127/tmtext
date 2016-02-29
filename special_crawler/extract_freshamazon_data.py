@@ -17,7 +17,7 @@ class FreshAmazonScraper(Scraper):
     INVALID_URL_MESSAGE = "Expected URL format is https://fresh.amazon.com/product?asin=<product-id>"
 
     def check_url_format(self):
-        m = re.match(r"^https://fresh.amazon.com/product.*$", self.product_page_url)
+        m = re.match(r"^https://fresh.amazon.com/product\?asin=.*$", self.product_page_url)
         self.image_urls = None
         return (not not m)
 
@@ -83,9 +83,6 @@ class FreshAmazonScraper(Scraper):
     def _status(self):
         return 'success'
 
-
-
-
     ##########################################
     ################ CONTAINER : PRODUCT_INFO
     ##########################################
@@ -99,53 +96,173 @@ class FreshAmazonScraper(Scraper):
     def _product_title(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
-
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _model(self):
         return None
 
-    # Amazon's version of UPC
-    def _asin(self):
-        return self.tree_html.xpath("//li[child::strong[contains(text(),'ASIN')]]//text()")
-
-    def _features(self):
-        rows = self.tree_html.xpath("//h2[contains(text(),'Product Features')]/following-sibling::ul//li//text()")
-        if len(rows)>0:
-            return rows
+    def _upc(self):
         return None
 
+    def _features(self):
+        features = self.tree_html.xpath("//h2[contains(text(),'Product Features')]/following-sibling::ul//li//text()")
+
+        if features:
+            return features
+
+        return None
 
     def _feature_count(self): # extract number of features from tree
-        rows = self._features()
-        if rows == None:
-            return 0
-        return len(rows)
+        features = self._features()
 
+        if features:
+            return len(features)
+
+        return 0
 
     def _model_meta(self):
         return None
 
-
     def _description(self):
-        short_description = " ".join(self.tree_html.xpath("//div[contains(@id,'productDescription')]//*[self::p or self::div]/text()[normalize-space()]")).strip()
-        if short_description is not None and len(short_description)>0:
-            return short_description.replace("\n"," ")
-        return self._long_description_helper()
+        description_elements = self.tree_html.xpath("//div[contains(@id,'productDescription')]/*")
+        short_description = ""
+        short_description_end_index = -1
+        sub_description = ""
 
+        if description_elements:
+            for description_element in description_elements:
+                if description_element.tag == "h2":
+                    continue
 
-    def _long_description(self):
+                sub_description = html.tostring(description_element)
+
+                if "<b>" in sub_description or \
+                                "<ul>" in sub_description or \
+                                "<dl>" in sub_description or \
+                                "<li>" in sub_description or \
+                                "<h4>" in sub_description or \
+                                "<h5>" in sub_description or \
+                                "<strong>" in sub_description:
+                    innerText = ""
+
+                    try:
+                        tree = html.fromstring(short_description)
+                        innerText = tree.xpath("//text()")
+                    except Exception:
+                        pass
+
+                    if not innerText:
+                        short_description = ""
+
+                    short_description_end_index_candiate_list = []
+
+                    if "<b>" in sub_description:
+                        short_description_end_index = sub_description.find("<b>")
+                        short_description_end_index_candiate_list.append(short_description_end_index)
+
+                    if "<ul>" in sub_description:
+                        short_description_end_index = sub_description.find("<ul>")
+                        short_description_end_index_candiate_list.append(short_description_end_index)
+
+                    if "<dl>" in sub_description:
+                        short_description_end_index = sub_description.find("<dl>")
+                        short_description_end_index_candiate_list.append(short_description_end_index)
+
+                    if "<li>" in sub_description:
+                        short_description_end_index = sub_description.find("<li>")
+                        short_description_end_index_candiate_list.append(short_description_end_index)
+
+                    if "<h4>" in sub_description:
+                        short_description_end_index = sub_description.find("<h4>")
+                        short_description_end_index_candiate_list.append(short_description_end_index)
+
+                    if "<h5>" in sub_description:
+                        short_description_end_index = sub_description.find("<h5>")
+                        short_description_end_index_candiate_list.append(short_description_end_index)
+
+                    if "<strong>" in sub_description:
+                        short_description_end_index = sub_description.find("<strong>")
+                        short_description_end_index_candiate_list.append(short_description_end_index)
+
+                    short_description_end_index = min(short_description_end_index_candiate_list)
+                    break
+
+                short_description += sub_description
+
+            if short_description_end_index > 0:
+                short_description = sub_description[:short_description_end_index] + short_description
+
+            # if no short description, return the long description
+            if short_description.strip():
+                return short_description.strip()
+
         return None
 
+    def _long_description(self):
+        description_elements = self.tree_html.xpath("//div[contains(@id,'productDescription')]/*")
+        full_description = ""
 
+        if description_elements:
+            long_description_start = False
+            long_description_start_index = -2
 
-    def _long_description_helper(self):
-         return None
+            for description_element in description_elements:
+                if description_element.tag == "h2":
+                    continue
 
+                if (not long_description_start and "<b>" in html.tostring(description_element)) or \
+                        (not long_description_start and ("<ul>" in html.tostring(description_element) or "<dl>" in html.tostring(description_element) or "<li>" in html.tostring(description_element) or "<strong>" in html.tostring(description_element) or "<h4>" in html.tostring(description_element) or "<h5>" in html.tostring(description_element))):
+                    long_description_start = True
 
+                    sub_description = html.tostring(description_element)
 
+                    if long_description_start_index == -2:
+                        long_description_start_index_candiate_list = []
 
+                        if "<b>" in html.tostring(description_element):
+                            long_description_start_index = sub_description.find("<b>")
+                            long_description_start_index_candiate_list.append(long_description_start_index)
+
+                        if "<ul>" in html.tostring(description_element):
+                            long_description_start_index = sub_description.find("<ul>")
+                            long_description_start_index_candiate_list.append(long_description_start_index)
+
+                        if "<dl>" in html.tostring(description_element):
+                            long_description_start_index = sub_description.find("<dl>")
+                            long_description_start_index_candiate_list.append(long_description_start_index)
+
+                        if "<li>" in html.tostring(description_element):
+                            long_description_start_index = sub_description.find("<li>")
+                            long_description_start_index_candiate_list.append(long_description_start_index)
+
+                        if "<h4>" in html.tostring(description_element):
+                            long_description_start_index = sub_description.find("<h4>")
+                            long_description_start_index_candiate_list.append(long_description_start_index)
+
+                        if "<h5>" in html.tostring(description_element):
+                            long_description_start_index = sub_description.find("<h5>")
+                            long_description_start_index_candiate_list.append(long_description_start_index)
+
+                        if "<strong>" in html.tostring(description_element):
+                            long_description_start_index = sub_description.find("<strong>")
+                            long_description_start_index_candiate_list.append(long_description_start_index)
+
+                        long_description_start_index = min(long_description_start_index_candiate_list)
+
+                if long_description_start:
+                    sub_description = html.tostring(description_element)
+
+                    if long_description_start_index > 0:
+                        full_description += sub_description[long_description_start_index:]
+                        long_description_start_index = -1
+                    else:
+                        full_description += sub_description
+
+            if full_description:
+                return full_description
+
+        return None
 
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
@@ -190,6 +307,7 @@ class FreshAmazonScraper(Scraper):
 
         #The small images are below the big image
         image_url = tree.xpath("//div[@id='thumbnailsWrapper']//span[not(contains(@class,'video'))]//img/@src")
+        image_url = [url.replace("._SR40,40_.", ".") for url in image_url]
         if a == 1:
             self.image_urls = image_url
         if image_url is not None and len(image_url)>0 and self.no_image(image_url)==0:
@@ -199,7 +317,6 @@ class FreshAmazonScraper(Scraper):
 
     def _image_helper(self):
         return []
-
 
     def _mobile_image_url(self, tree = None):
         if tree == None:
@@ -229,7 +346,6 @@ class FreshAmazonScraper(Scraper):
         if len(video_url) > 0: return video_url
         return None
 
-
     def _video_count(self):
         if self._video_urls()==None: return 0
         return len(self._video_urls())
@@ -258,10 +374,6 @@ class FreshAmazonScraper(Scraper):
     # ! may throw exception if not found
     def _keywords(self):
         return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0]
-
-
-
-
 
     ##########################################
     ################ CONTAINER : REVIEWS
@@ -326,7 +438,6 @@ class FreshAmazonScraper(Scraper):
         if rv !=None and len(rv)>0:
             return rv[0][0]
         return None
-
 
     ##########################################
     ################ CONTAINER : SELLERS
@@ -424,9 +535,6 @@ class FreshAmazonScraper(Scraper):
 
         return seller_info
 
-
-
-
     ##########################################
     ################ CONTAINER : CLASSIFICATION
     ##########################################
@@ -445,20 +553,30 @@ class FreshAmazonScraper(Scraper):
             return bn[0]
         return None
 
-
     def _version(self):
         return None
 
-
-    def  _ingredients(self):
+    def _ingredients(self):
         # list of ingredients - list of strings
         ingr = self.tree_html.xpath("//h2[contains(text(),'Ingredients')]/following-sibling::p//text()")
-        if len(ingr) > 0:
+
+        if ingr:
+            ingr = ingr[0]
+        else:
+            ingr = self.tree_html.xpath("//*[contains(text(),'Ingredients:')]")
+
+            if ingr:
+                if ingr[0].xpath("./following::node()")[0].strip():
+                    ingr = ingr[0].xpath("./following::node()")[0].strip()
+                else:
+                    ingr = ingr[0].xpath("./following::node()")[1].strip()
+
+        if ingr:
             res = []
             w = ''
             br = 0
             pr = 0
-            for s in ingr[0].replace(" and ",","):
+            for s in ingr.replace(" and ",","):
                 if s == "," and br == 0 and pr == 0:
                     if w != "":
                         res.append(w.strip())
@@ -484,12 +602,11 @@ class FreshAmazonScraper(Scraper):
         self.ing_count = None
         return None
 
-
-    def  _ingredient_count(self):
+    def _ingredient_count(self):
         # number of ingredients - integer
         return  self.ing_count
 
-    def  _nutrition_facts(self):
+    def _nutrition_facts(self):
         # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries)
         # containing nutrition facts
         res=[]
@@ -520,8 +637,7 @@ class FreshAmazonScraper(Scraper):
         self.nutr_count = None
         return None
 
-
-    def  _nutrition_fact_count(self):
+    def _nutrition_fact_count(self):
         # number of nutrition facts (of elements in the nutrition_facts list) - integer
         return self.nutr_count
 
@@ -555,7 +671,7 @@ class FreshAmazonScraper(Scraper):
         "product_title" : _product_title, \
         "title_seo" : _title_seo, \
         "model" : _model, \
-        "upc" : _asin,\
+        "upc" : _upc,\
         "features" : _features, \
         "feature_count" : _feature_count, \
         "model_meta" : _model_meta, \
