@@ -438,6 +438,9 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         else:
             log_history = None
 
+        if isinstance(log_history, list):
+            log_history.reverse()
+
         return Response({'log': log_history})
 
     def retrieve(self, request, pk=None):
@@ -446,6 +449,9 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                 log_history = myfile.read().splitlines()
         else:
             log_history = None
+
+        if isinstance(log_history, list):
+            log_history.reverse()
 
         return Response({'log': log_history})
 
@@ -491,6 +497,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         feed_id = output.get('feedId', None)
         if feed_id:
             item = output['log'][-1]  # TODO: multiple items will return multiple logs?
+            # TODO: reverse ordering!
             i_date, i_upc, i_feed = item.split(',')
             i_date = datetime.datetime.strptime(i_date.strip(), '%Y-%m-%d %H:%M')
             i_upc = i_upc.strip()
@@ -661,6 +668,9 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
 
                 with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "r") as myfile:
                     response.body["log"] = myfile.read().splitlines()
+
+                if isinstance(response.body['log'], list):
+                    response.body['log'].reverse()
 
                 stat_xml_i.metadata = {'upc': upc, 'feed_id': feed_id}
 
