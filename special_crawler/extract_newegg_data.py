@@ -469,12 +469,16 @@ class NeweggScraper(Scraper):
         return None
 
     def _marketplace_out_of_stock(self):
-        stock_status = int(self._find_between(html.tostring(self.tree_html), "product_instock:['", "'],"))
+        if self._marketplace() == 1:
+            stock_status = int(self._find_between(html.tostring(self.tree_html), "product_instock:['", "'],"))
 
-        if stock_status == 0 and self._marketplace() == 1:
-            return 1
+            if stock_status == 0:
+                return 1
 
-        return 0
+            return 0
+
+        return None
+
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
