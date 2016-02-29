@@ -115,17 +115,21 @@ def scrapy_marketplace_serializer(value):
     result = []
 
     for rec in value:
+        #import pdb; pdb.set_trace()
         if isinstance(rec, Price):
             converted = {u'price': float(rec.price),
                          u'currency': unicode(rec.priceCurrency),
                          u'name': None}
         elif isinstance(rec, dict):
-            converted = {
-                u'price': get(rec, 'price', 'price', float),
-                u'currency': get(rec, 'price', 'priceCurrency', unicode),
-                u'name': conv_or_none(rec.get('name'), unicode),
-                u'seller_type': rec.get('seller_type', None)
-            }
+            if rec.get('price', None) and rec.get('currency', None):
+                converted = rec
+            else:
+                converted = {
+                    u'price': get(rec, 'price', 'price', float),
+                    u'currency': get(rec, 'price', 'priceCurrency', unicode),
+                    u'name': conv_or_none(rec.get('name'), unicode),
+                    u'seller_type': rec.get('seller_type', None)
+                }
         else:
             converted = {u'price': None, u'currency': None,
                          u'name': unicode(rec)}

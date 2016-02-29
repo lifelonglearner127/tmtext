@@ -3,7 +3,8 @@ import re
 import sys
 import json
 import random
-from lxml import html
+from lxml import html, etree
+import lxml.html
 import time
 import requests
 from extract_data import Scraper
@@ -118,6 +119,9 @@ class CostcoScraper(Scraper):
         return self._long_description()
 
     def _long_description(self):
+        if self.tree_html.xpath("//div[@id='product-tab1']"):
+            return lxml.html.tostring(self.tree_html.xpath("//div[@id='product-tab1']")[0])
+
         html = self._wc_content()
         m = re.findall(r'wc-rich-content-description\\">(.*?)<\\/div', html, re.DOTALL)
         long_description = ""
@@ -195,6 +199,10 @@ class CostcoScraper(Scraper):
         if len(img_url) > 0:
             self.image_urls = img_url
             return img_url
+
+        if self.tree_html.xpath("//meta[@property='og:image']/@content"):
+            return self.tree_html.xpath("//meta[@property='og:image']/@content")
+
         if a == 1:
             self.image_urls = None
         return None
@@ -516,8 +524,10 @@ class CostcoScraper(Scraper):
     def _categories(self):
         cats = self.tree_html.xpath('//*[@itemprop="breadcrumb"]//text()')
         cats = [self._clean_text(c) for c in cats if self._clean_text(c) != '']
-        if len(cats)>0:
-            return cats
+
+        if len(cats) > 0:
+            return cats[1:]
+
         return None
 
     def _brand(self):

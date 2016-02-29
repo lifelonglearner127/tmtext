@@ -35,7 +35,7 @@ class BestBuyScraper(Scraper):
         Returns:
         True if valid, False otherwise
         """
-        m = re.match(r"^http://www.bestbuy.com/.*$", self.product_page_url)
+        m = re.match(r"^http://www\.bestbuy\.com/site/[a-zA-Z0-9%\-\%\_]+/[a-zA-Z0-9]+\.p\?id=[a-zA-Z0-9]+&skuId=[a-zA-Z0-9]+$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -45,11 +45,10 @@ class BestBuyScraper(Scraper):
         and returns True if current page is one.
         '''
 
-        txt = " ".join(self.tree_html.xpath("//div[contains(@class,'alert alert-warning')]//text()"))
-        if "This item is no longer available" in txt:
+        if not self.tree_html.xpath("//meta[@property='og:type' and @content='product']"):
             return True
-        return False
 
+        return False
 
     ##########################################
     ############### CONTAINER : NONE
@@ -81,16 +80,23 @@ class BestBuyScraper(Scraper):
         return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
     
     def _product_title(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
 
     def _title_seo(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self.tree_html.xpath('//meta[@itemprop="name"]/@content')[0]
 
     def _model(self):
         return self.tree_html.xpath('//span[@id="model-value"]/text()')[0]
 
     def _upc(self):
-        return self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-sku-id')[0]
+        features = self._features()
+
+        if features:
+            for feature in features:
+                if feature.startswith("UPC:"):
+                    return feature[4:].strip()
+
+        return None
 
     def _features(self):
         if self.feature_count is not None:
@@ -114,13 +120,18 @@ class BestBuyScraper(Scraper):
                 contents = urllib.urlopen(url).read()
                 # document.location.replace('
                 tree = html.fromstring(contents)
-                rows = tree.xpath("//table//tbody//tr")
-                for r in rows:
-                    th_txt = " ".join(r.xpath(".//th//text()"))
-                    td_txt = " ".join(r.xpath(".//td//text()"))
-                    if len(th_txt) > 0 and len(td_txt) > 0:
-                        line = "%s: %s" % (th_txt, td_txt)
-                        line_txts.append(line)
+
+                rows = tree.xpath("//div[contains(@class, 'specification-group')]/ul/li")
+
+                if not rows:
+                    rows = tree.xpath("//div[@class='specifications']/ul/li")
+
+                if rows:
+                    for index, r in enumerate(rows):
+                        feature_text = r.xpath("./div[@class='specification-name']")[0].text_content().strip() + ": " + \
+                                 r.xpath("./div[@class='specification-value']")[0].text_content().strip()
+
+                        line_txts.append(feature_text)
 
         if len(line_txts) < 1:
             return None
@@ -384,7 +395,10 @@ class BestBuyScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
     def _average_review(self):
-        return self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0]
+        if self._review_count() > 0:
+            return float(self.tree_html.xpath('//span[@itemprop="ratingValue"]//text()')[0])
+
+        return None
 
     def _review_count(self):
         if not self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content'):
@@ -474,7 +488,7 @@ class BestBuyScraper(Scraper):
         return None
 
     def _marketplace_lowest_price(self):
-        return self._price()
+        return None
 
     def _marketplace_out_of_stock(self):
         """Extracts info on whether currently unavailable from any marketplace seller - binary
@@ -510,8 +524,12 @@ class BestBuyScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        all = self.tree_html.xpath("//ul[@id='breadcrumb-list']/li/a/text()")
-        return all
+        categories = self.tree_html.xpath("//ol[@id='breadcrumb-list']/li/a/text()")[1:]
+
+        if categories:
+            return categories
+
+        return None
 
     def _category_name(self):
         return self._categories()[-1]
