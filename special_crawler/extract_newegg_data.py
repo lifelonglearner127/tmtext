@@ -69,10 +69,14 @@ class NeweggScraper(Scraper):
         seller_text_block = self.tree_html.xpath("//p[@class='grpNote-sold-by']")
         seller_name = ""
 
+        if len(seller_text_block) > 1:
+            seller_text_block = self.tree_html.xpath("//p[@class='grpNote-sold-by' and @id='grpNotesoldby_{0}']".format(self.related_item_id))
+
         if "newegg" in seller_text_block[0].text_content().lower():
             seller_name = "Newegg"
         else:
             seller_name = seller_text_block[0].xpath(".//a/text()")[0].strip()
+
 
         price = self._price_amount()
 
@@ -81,7 +85,12 @@ class NeweggScraper(Scraper):
     def _secondary_seller_list_info(self):
         secondary_sellers_list = {}
 
-        for seller_block in self.tree_html.xpath("//ul[@class='sellers-list']/li[@class='sellers-list-item normal-available']"):
+        secondary_sellers_block_list = self.tree_html.xpath("//div[@class='grpAction grpActionSecondary additional-sellers']")
+
+        if len(secondary_sellers_block_list) > 1:
+            secondary_sellers_block_list = self.tree_html.xpath("//div[@class='grpAction grpActionSecondary additional-sellers' and @id='MBO_{0}']".format(self.related_item_id))
+
+        for seller_block in secondary_sellers_block_list[0].xpath(".//ul[@class='sellers-list']/li[@class='sellers-list-item normal-available']"):
             seller_name = seller_block.xpath(".//div[@class='store']")[0].text_content().strip()
             price = seller_block.xpath(".//li[@class='price-current ']")[0].text_content()
             price = price[price.find("$"):]
