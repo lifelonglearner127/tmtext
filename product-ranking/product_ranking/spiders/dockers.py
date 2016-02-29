@@ -7,6 +7,7 @@ import time
 import urlparse
 
 from scrapy import Request
+from scrapy.log import ERROR, WARNING
 from pyvirtualdisplay import Display
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
@@ -81,6 +82,8 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _init_firefox(self, proxy):
         from selenium import webdriver
+        from selenium.webdriver.remote.remote_connection import RemoteConnection
+        RemoteConnection.set_timeout(30)
         profile = webdriver.FirefoxProfile()
         #profile.set_preference("general.useragent.override", self.user_agent)
         profile.set_preference('intl.accept_languages', 'en-US')
@@ -140,6 +143,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             new_meta = response.meta.copy()
             # get all products we need (scroll down)
             collected_products_len = []
+            num_of_errors = 0
             while True:
                 try:
                     driver.execute_script("scrollTo(0,50000)")
@@ -151,9 +155,17 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                     if len(product_links) > self.quantity:
                         break
                     print 'Collected %i product links' % len(product_links)
+                    self.log('Collected %i product links' % len(product_links))
                 except Exception as e:
                     print str(e)
-                    break
+                    self.log('Error while doing pagination %s' % str(e), WARNING)
+                    num_of_errors += 1
+                    if num_of_errors > 10:
+                        self.log('Too many webdriver errors', ERROR)
+                        driver.quit()
+                        display.stop()
+                        return
+
             #driver.save_screenshot('/tmp/1.png')
             new_meta['is_product_page'] = True
             for i, product_link in enumerate(product_links):

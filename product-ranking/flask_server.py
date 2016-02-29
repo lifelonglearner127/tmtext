@@ -279,21 +279,25 @@ def check_running_instances(marker):
     return processes
 
 
-def _start_spider_and_wait_for_finish(spider, url, max_wait=60*2):
+def _start_spider_and_wait_for_finish(spider, url, close_popups=False, max_wait=60*2):
     """ Returns output data file name """
     output_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jl')
     try:
         output_file.close()
     except:
         pass
+    close_popups = ' ' if not close_popups else ' -a close_popups=1 '
     # production or local machine?
     if os.path.exists('/home/web_runner/virtual-environments/web-runner/bin/scrapy'):
         cmd = ('cd /home/web_runner/repos/tmtext/product-ranking;'
                ' /home/web_runner/virtual-environments/web-runner/bin/scrapy'
                ' crawl {spider} -a product_url="{url}" -o {output} -a image_copy=/tmp/_img_copy.png'
+               ' {close_popups} '
                ' > /tmp/_flask_server_scrapy.log 2>&1')
     else:
-        cmd = ('scrapy crawl {spider} -a product_url="{url}" -o {output} -a image_copy=/tmp/_img_copy.png'
+        cmd = ('scrapy crawl {spider} -a product_url="{url}" -o {output}'
+               ' -a image_copy=/tmp/_img_copy.png'
+               ' {close_popups} '
                ' > /tmp/_flask_server_scrapy.log 2>&1')
     if isinstance(url, unicode):
         url = url.encode('utf8')
@@ -301,7 +305,7 @@ def _start_spider_and_wait_for_finish(spider, url, max_wait=60*2):
         url = urllib.unquote(url)
     except Exception as e:
         return str(e)
-    _cmd = cmd.format(spider=spider, url=url, output=output_file.name)
+    _cmd = cmd.format(spider=spider, url=url, output=output_file.name, close_popups=close_popups)
     print('Executing spider command: %s' % _cmd)
     run(_cmd)
     _total_slept = 0
@@ -321,9 +325,10 @@ def get_data_ajax():
     if isinstance(url, unicode):
         url = url.encode('utf-8')
     spider = request.args['spider'].strip()
+    close_popups = request.args.get('close_popups', '').strip()
     print 'SPIDER', spider
     print 'PROCESSING URL', url
-    output_fname = _start_spider_and_wait_for_finish(spider, url)
+    output_fname = _start_spider_and_wait_for_finish(spider, url, close_popups)
     if output_fname:
         content = [json.loads(l.strip()) for l in open(output_fname, 'r').readlines()
                    if l.strip()]
@@ -353,6 +358,7 @@ def get_data():
 def get_raw_data():
     url = request.args.get('url', '').strip()
     spider = request.args.get('spider', '').strip()
+    close_popups = request.args.get('close_popups', '').strip()
     if not spider:
         spider = _find_spider_by_url(url)
     if isinstance(spider, (str, unicode)):
@@ -366,7 +372,7 @@ def get_raw_data():
         url = url.encode('utf-8')
     print 'SPIDER', spider
     print 'PROCESSING URL', url
-    output_fname = _start_spider_and_wait_for_finish(spider, url)
+    output_fname = _start_spider_and_wait_for_finish(spider, url, close_popups)
     if output_fname:
         return open(output_fname).read()
 

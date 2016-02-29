@@ -69,10 +69,14 @@ class NeweggScraper(Scraper):
         seller_text_block = self.tree_html.xpath("//p[@class='grpNote-sold-by']")
         seller_name = ""
 
+        if len(seller_text_block) > 1:
+            seller_text_block = self.tree_html.xpath("//p[@class='grpNote-sold-by' and @id='grpNotesoldby_{0}']".format(self.related_item_id))
+
         if "newegg" in seller_text_block[0].text_content().lower():
             seller_name = "Newegg"
         else:
             seller_name = seller_text_block[0].xpath(".//a/text()")[0].strip()
+
 
         price = self._price_amount()
 
@@ -81,14 +85,22 @@ class NeweggScraper(Scraper):
     def _secondary_seller_list_info(self):
         secondary_sellers_list = {}
 
-        for seller_block in self.tree_html.xpath("//ul[@class='sellers-list']/li[@class='sellers-list-item normal-available']"):
-            seller_name = seller_block.xpath(".//div[@class='store']")[0].text_content().strip()
-            price = seller_block.xpath(".//li[@class='price-current ']")[0].text_content()
-            price = price[price.find("$"):]
-            price = float(re.findall(r"\d*\.\d+|\d+", price.replace(",", ""))[0])
-            secondary_sellers_list[seller_name] = price
+        secondary_sellers_block_list = self.tree_html.xpath("//div[@class='grpAction grpActionSecondary additional-sellers']")
 
-        return secondary_sellers_list
+        if len(secondary_sellers_block_list) > 1:
+            secondary_sellers_block_list = self.tree_html.xpath("//div[@class='grpAction grpActionSecondary additional-sellers' and @id='MBO_{0}']".format(self.related_item_id))
+
+        if secondary_sellers_block_list:
+            for seller_block in secondary_sellers_block_list[0].xpath(".//ul[@class='sellers-list']/li[@class='sellers-list-item normal-available']"):
+                seller_name = seller_block.xpath(".//div[@class='store']")[0].text_content().strip()
+                price = seller_block.xpath(".//li[@class='price-current ']")[0].text_content()
+                price = price[price.find("$"):]
+                price = float(re.findall(r"\d*\.\d+|\d+", price.replace(",", ""))[0])
+                secondary_sellers_list[seller_name] = price
+
+            return secondary_sellers_list
+
+        return None
 
     def _extract_product_json(self):
         try:
@@ -383,7 +395,13 @@ class NeweggScraper(Scraper):
         return "${0}".format(self._price_amount())
 
     def _price_amount(self):
-        return float(self._find_between(html.tostring(self.tree_html), "product_sale_price:['", "'],"))
+        shipping_cost = float(self._find_between(html.tostring(self.tree_html), "product_default_shipping_cost:['", "'],"))
+        sale_price = float(self._find_between(html.tostring(self.tree_html), "product_sale_price:['", "'],"))
+
+        if shipping_cost > 0.01:
+            return sale_price - shipping_cost
+
+        return sale_price
 
     def _price_currency(self):
         return "USD"
@@ -421,6 +439,7 @@ class NeweggScraper(Scraper):
             primary_sellers = {}
 
         secondary_sellers = self._secondary_seller_list_info()
+        secondary_sellers = secondary_sellers if secondary_sellers else {}
 
         marketplace_sellers = primary_sellers.keys() + secondary_sellers.keys()
 
@@ -435,10 +454,12 @@ class NeweggScraper(Scraper):
 
     def _marketplace_prices(self):
         primary_sellers = self._primary_seller_info()
-        secondary_sellers = self._secondary_seller_list_info()
 
         if primary_sellers.keys()[0].lower() == "newegg":
             primary_sellers = {}
+
+        secondary_sellers = self._secondary_seller_list_info()
+        secondary_sellers = secondary_sellers if secondary_sellers else {}
 
         marketplace_prices = primary_sellers.values() + secondary_sellers.values()
 
@@ -448,12 +469,16 @@ class NeweggScraper(Scraper):
         return None
 
     def _marketplace_out_of_stock(self):
-        stock_status = int(self._find_between(html.tostring(self.tree_html), "product_instock:['", "'],"))
+        if self._marketplace() == 1:
+            stock_status = int(self._find_between(html.tostring(self.tree_html), "product_instock:['", "'],"))
 
-        if stock_status == 0 and self._marketplace() == 1:
-            return 1
+            if stock_status == 0:
+                return 1
 
-        return 0
+            return 0
+
+        return None
+
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
