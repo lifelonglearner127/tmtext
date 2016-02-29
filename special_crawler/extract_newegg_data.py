@@ -90,14 +90,17 @@ class NeweggScraper(Scraper):
         if len(secondary_sellers_block_list) > 1:
             secondary_sellers_block_list = self.tree_html.xpath("//div[@class='grpAction grpActionSecondary additional-sellers' and @id='MBO_{0}']".format(self.related_item_id))
 
-        for seller_block in secondary_sellers_block_list[0].xpath(".//ul[@class='sellers-list']/li[@class='sellers-list-item normal-available']"):
-            seller_name = seller_block.xpath(".//div[@class='store']")[0].text_content().strip()
-            price = seller_block.xpath(".//li[@class='price-current ']")[0].text_content()
-            price = price[price.find("$"):]
-            price = float(re.findall(r"\d*\.\d+|\d+", price.replace(",", ""))[0])
-            secondary_sellers_list[seller_name] = price
+        if secondary_sellers_block_list:
+            for seller_block in secondary_sellers_block_list[0].xpath(".//ul[@class='sellers-list']/li[@class='sellers-list-item normal-available']"):
+                seller_name = seller_block.xpath(".//div[@class='store']")[0].text_content().strip()
+                price = seller_block.xpath(".//li[@class='price-current ']")[0].text_content()
+                price = price[price.find("$"):]
+                price = float(re.findall(r"\d*\.\d+|\d+", price.replace(",", ""))[0])
+                secondary_sellers_list[seller_name] = price
 
-        return secondary_sellers_list
+            return secondary_sellers_list
+
+        return None
 
     def _extract_product_json(self):
         try:
@@ -436,6 +439,7 @@ class NeweggScraper(Scraper):
             primary_sellers = {}
 
         secondary_sellers = self._secondary_seller_list_info()
+        secondary_sellers = secondary_sellers if secondary_sellers else {}
 
         marketplace_sellers = primary_sellers.keys() + secondary_sellers.keys()
 
@@ -450,10 +454,12 @@ class NeweggScraper(Scraper):
 
     def _marketplace_prices(self):
         primary_sellers = self._primary_seller_info()
-        secondary_sellers = self._secondary_seller_list_info()
 
         if primary_sellers.keys()[0].lower() == "newegg":
             primary_sellers = {}
+
+        secondary_sellers = self._secondary_seller_list_info()
+        secondary_sellers = secondary_sellers if secondary_sellers else {}
 
         marketplace_prices = primary_sellers.values() + secondary_sellers.values()
 
