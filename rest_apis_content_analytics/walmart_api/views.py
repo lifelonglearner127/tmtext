@@ -549,8 +549,10 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                          request=request, sent_file=merged_file,
                          request_url=request_url, request_method=request_method,
                          do_not_validate_xml=True, multi_item=True)
+                    output[group_name] = result_for_this_group
                 except Exception, e:
                     db_stat = stat_xml_item(request.user, 'session', 'failed', True, str(e))
+                    output[group_name] = {'error': str(e)}
         else:
             print('Submitting as a bunch of files')
             for group_name, group_data in groupped_fields.items():
