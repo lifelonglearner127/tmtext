@@ -170,11 +170,18 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 "/span/text()").extract()
             if pr:
                 price = "".join(pr[:-1]) + "." + pr[-1]
-                m = re.search(FLOATING_POINT_RGEX, price)
-                if m:
-                    price = [m.group(0)]
+                if 'too low to show' in price.lower():
+                    # price is visible only after you add the product in cart
+                    product['price_details_in_cart'] = True
+                    price = re.search("'item_price':'([\d\.]+)',",
+                                      response.body_as_unicode()).group(1)
+                    price = [float(price)]
                 else:
-                    price = None
+                    m = re.search(FLOATING_POINT_RGEX, price)
+                    if m:
+                        price = [m.group(0)]
+                    else:
+                        price = None
 
             if not price:
                 price = response.xpath(

@@ -34,7 +34,7 @@ class NikeProductSpider(BaseProductsSpider):
     REVIEW_URL = "http://nike.ugc.bazaarvoice.com/9191-en_us/{product_model}" \
                  "/reviews.djs?format=embeddedhtml"
 
-    handle_httpstatus_list = [404, 403, 429]
+    #handle_httpstatus_list = [404, 403, 429]
 
     use_proxies = False  # we'll be using Crawlera instead
 
@@ -203,6 +203,7 @@ class NikeProductSpider(BaseProductsSpider):
             new_meta = response.meta.copy()
             # get all products we need (scroll down)
             collected_products_len = []
+            num_exceptions = 0
             while 1:
                 try:
                     driver.execute_script("scrollTo(0,50000)")
@@ -210,13 +211,21 @@ class NikeProductSpider(BaseProductsSpider):
                     product_links = self._get_product_links_from_serp(driver)
                     collected_products_len.append(len(product_links))
                     print 'Collected %i product links' % len(product_links)
+                    self.log('Collected %i product links' % len(product_links))
                     if len(product_links) > self.quantity:
                         break
                     if self.last_five_digits_the_same(collected_products_len):
-                        break  # last three iterations collected equal num of products
+                        break  # last five iterations collected equal num of products
                 except Exception as e:
                     print str(e)
-                    break
+                    self.log('Exception while scrolling page: %s' % str(e), WARNING)
+                    num_exceptions += 1
+                    if num_exceptions > 10:
+                        self.log('Maximum number of exceptions reached', ERROR)
+                        driver.quit()
+                        display.stop()
+                        return
+
             for i in xrange(10):
                 time.sleep(3)
                 try:
@@ -236,8 +245,8 @@ class NikeProductSpider(BaseProductsSpider):
             for i, product_link in enumerate(product_links):
                 new_meta['_ranking'] = i+1
                 yield Request(product_link, meta=new_meta, callback=self.parse_product,
-                              headers=self._get_antiban_headers(),
-                              cookies=selenium_cookies)
+                              headers=self._get_antiban_headers())
+                              #cookies=selenium_cookies)
 
     def parse_product(self, response):
         meta = response.meta.copy()

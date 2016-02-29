@@ -1873,7 +1873,20 @@ class WalmartScraper(Scraper):
         """
 
         if self.is_bundle_product:
-            return self.tree_html.xpath("//div[contains(@class, 'choice-hero-non-carousel')]//img/@src")
+            image_list = self.tree_html.xpath("//div[contains(@class, 'choice-hero-non-carousel')]//img/@src")
+
+            for index, url in enumerate(image_list):
+                if ".jpg?" in url:
+                    image_list[index] = url[:url.rfind(".jpg?") + 4]
+                elif ".png" in url:
+                    image_list[index] = url[:url.rfind(".png?") + 4]
+
+            image_list = [url for index, url in enumerate(image_list) if index > 4 or not self._no_image(url)]
+
+            if image_list:
+                return image_list
+
+            return None
         else:
             def _fix_relative_url(relative_url):
                 """Fixes relative image urls by prepending
