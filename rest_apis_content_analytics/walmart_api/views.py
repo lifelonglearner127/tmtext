@@ -497,7 +497,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         feed_id = output.get('feedId', None)
         if feed_id:
             item = output['log'][-1]  # TODO: multiple items will return multiple logs?
-            # TODO: reverse ordering!!
+            # TODO: reverse ordering!
             i_date, i_upc, i_feed = item.split(',')
             i_date = datetime.datetime.strptime(i_date.strip(), '%Y-%m-%d %H:%M')
             i_upc = i_upc.strip()
