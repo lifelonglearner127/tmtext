@@ -604,7 +604,9 @@ class FreshAmazonScraper(Scraper):
 
     def _ingredient_count(self):
         # number of ingredients - integer
-        return  self.ing_count
+        ingredients = self._ingredients()
+
+        return len(ingredients) if ingredients else 0
 
     def _nutrition_facts(self):
         # nutrition facts - list of tuples ((key,value) pairs, values could be dictionaries)
@@ -639,8 +641,20 @@ class FreshAmazonScraper(Scraper):
 
     def _nutrition_fact_count(self):
         # number of nutrition facts (of elements in the nutrition_facts list) - integer
-        return self.nutr_count
+        nutrition_facts = self._nutrition_facts()
 
+        return len(nutrition_facts) if nutrition_facts else 0
+
+    def _nutrition_fact_text_health(self):
+        nutrition_facts = self._nutrition_facts()
+
+        if nutrition_facts:
+            if len(nutrition_facts) > 3:
+                return 2
+
+            return 1
+
+        return 0
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -679,8 +693,9 @@ class FreshAmazonScraper(Scraper):
         "long_description" : _long_description, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
-         "nutrition_facts": _nutrition_facts, \
-         "nutrition_fact_count": _nutrition_fact_count, \
+        "nutrition_facts": _nutrition_facts, \
+        "nutrition_fact_count": _nutrition_fact_count, \
+        "nutrition_fact_text_health": _nutrition_fact_text_health, \
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \

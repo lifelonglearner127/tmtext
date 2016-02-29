@@ -17,6 +17,7 @@
     <field name="ingredient_count" version="1.2"></field>
     <field name="nutrition_facts" version="1.2"></field>
     <field name="nutrition_fact_count" version="1.2"></field>
+    <field name="nutrition_fact_text_health" version="1.1"></field>
     <field name="image_count" version="1.2"></field>
     <field name="image_urls" version="1.2"></field>
     <field name="video_count" version="1.2"></field>
