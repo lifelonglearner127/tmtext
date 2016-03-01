@@ -22,6 +22,7 @@ from django.shortcuts import render_to_response, redirect
 from django.core.urlresolvers import reverse_lazy
 from django.conf import settings
 from rest_framework.response import Response
+from rest_framework.authentication import BasicAuthentication
 from django.http import JsonResponse
 from rest_framework.parsers import MultiPartParser, FormParser
 from subprocess import Popen, PIPE, STDOUT
@@ -34,8 +35,8 @@ from walmart_api.serializers import (WalmartApiFeedRequestSerializer, WalmartApi
                                      WalmartApiItemsWithXmlTextRequestSerializer, WalmartApiValidateXmlTextRequestSerializer,
                                      WalmartApiValidateXmlFileRequestSerializer, WalmartDetectDuplicateContentRequestSerializer,
                                      WalmartDetectDuplicateContentFromCsvFileRequestSerializer)
-from statistics.models import stat_xml_item
 from walmart_api.models import SubmissionHistory
+from statistics.models import process_check_feed_response
 from lxml import etree
 import xmltodict
 import unirest
@@ -491,28 +492,6 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
             if "error" in validation_results:
                 return file_, validation_results
 
-    def _parse_submit_output(self, request, output, multi_item):
-        if not output:
-            return
-        feed_id = output.get('feedId', None)
-        if feed_id:
-            item = output['log'][-1]  # TODO: multiple items will return multiple logs?
-            # TODO: reverse ordering!
-            i_date, i_upc, i_feed = item.split(',')
-            i_date = datetime.datetime.strptime(i_date.strip(), '%Y-%m-%d %H:%M')
-            i_upc = i_upc.strip()
-            i_feed = i_feed.strip()
-            xml_item = stat_xml_item(request.user, 'session', 'successful', multi_item,  # TODO: auth
-                                     error_text=None, upc=i_upc, feed_id=i_feed)
-            xml_item.when = i_date
-            xml_item.save()
-        else:
-            xml_item = stat_xml_item(request.user, 'session', 'failed', multi_item,
-                                     error_text=str(output))
-            xml_item.when = datetime.datetime.now()
-            xml_item.save()
-        return xml_item
-
     def create(self, request):
         request_url_pattern = 'request_url'
         request_method_pattern = 'request_method'
@@ -542,10 +521,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                 if invalid_files:
                     output[group_name] = {}
                     output[group_name][invalid_files[0].name] = invalid_files[1]
-                    db_stat = self._parse_submit_output(request, output, True)
                     upc = self._extract_upc(invalid_files[0])
-                    if db_stat and upc:
-                        db_stat.metadata = {'upc': upc}
                     continue
 
                 merged_file = merge_xml_files_into_one(*sent_file)
@@ -558,7 +534,6 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                          do_not_validate_xml=True, multi_item=True)
                     output[group_name] = result_for_this_group
                 except Exception, e:
-                    db_stat = stat_xml_item(request.user, 'session', 'failed', True, str(e))
                     output[group_name] = {'error': str(e)}
         else:
             print('Submitting as a bunch of files')
@@ -607,16 +582,9 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         product_xml_text = upload_file.read()
 
         # create stat report
-        stat_xml_i = stat_xml_item(request.user, 'session', 'successful',
-                                   multi_item, error_text=None, upc=None, feed_id=None)
-
         upc = re.findall(r'<productId>(.*)</productId>', product_xml_text)
         if not upc:
-            return_msg = {'error': 'could not find <productId> element'}
-            stat_xml_i.status = 'failed'
-            stat_xml_i.save()
-            stat_xml_i.error_text = str(return_msg)
-            return return_msg
+            return {'error': 'could not find <productId> element'}
         upc = upc[0]
         # we don't use validation against XSD because it fails - instead,
         #  we assume we have checked each sub-product already
@@ -625,11 +593,6 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
             validation_results = validate_walmart_product_xml_against_xsd(product_xml_text)
 
         if "error" in validation_results:
-            print validation_results
-            stat_xml_i.status = 'failed'
-            stat_xml_i.save()
-            stat_xml_i.metadata = {'upc': upc}
-            stat_xml_i.error_text = str(validation_results)
             return validation_results
 
         walmart_api_signature = self.generate_walmart_api_signature(request_url,
@@ -672,20 +635,10 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                 if isinstance(response.body['log'], list):
                     response.body['log'].reverse()
 
-                stat_xml_i.metadata = {'upc': upc, 'feed_id': feed_id}
-
-            else:
-                stat_xml_i.status = 'failed'
-                stat_xml_i.save()
-                stat_xml_i.metadata = {'upc': upc}
-                stat_xml_i.error_text = str(response.body)
+                get_feed_status(request, feed_id)
 
             return response.body
         else:
-            stat_xml_i.status = 'failed'
-            stat_xml_i.save()
-            stat_xml_i.metadata = {'upc': upc}
-            stat_xml_i.error_text = str(response.body)
             return xmltodict(response.body)
 
     def update(self, request, pk=None):
@@ -1749,38 +1702,46 @@ class FeedIDRedirectView(DjangoView):
         return render_to_response(template_name='redirect_to_feed_check.html', context=context)
 
 
-class FeedStatusAjaxView(DjangoView):
+def get_feed_status(request, feed_id, process_check_feed=True):
+    if os.path.exists(settings.TEST_TWEAKS['item_upload_ajax_ignore']):
+        # do not perform time-consuming operations - return dummy empty response
+        return {}
+    if not request.user.is_authenticated():
+        return
+    # try to get data from cache
+    feed_history = SubmissionHistory.objects.filter(user=request.user, feed_id=feed_id)
+    if feed_history:
+        return {
+            'statuses': feed_history[0].get_statuses(),
+            'ok': feed_history[0].all_items_ok()
+        }
+    # if no cache found - perform real check, update stats, and save cache
+    feed_checker = CheckFeedStatusByWalmartApiViewSet()
+    check_results = feed_checker.process_one_set(
+        'https://marketplace.walmartapis.com/v2/feeds/{feedId}?includeDetails=true',
+        feed_id)
+    if process_check_feed:
+        process_check_feed_response(request, check_results)
+    for result_stat in check_results.get('itemDetails', {}).get('itemIngestionStatus', []):
+        subm_stat = result_stat.get('ingestionStatus', None)
+        if subm_stat and isinstance(subm_stat, (str, unicode)):
+            db_history = SubmissionHistory.objects.create(user=request.user, feed_id=feed_id)
+            db_history.set_statuses([subm_stat])
+    feed_history = SubmissionHistory.objects.filter(user=request.user, feed_id=feed_id)
+    if feed_history:
+        return {
+            'statuses': feed_history[0].get_statuses(),
+            'ok': feed_history[0].all_items_ok()
+        }
 
+
+class FeedStatusAjaxView(DjangoView):
     def get(self, request, *args, **kwargs):
-        if os.path.exists(settings.TEST_TWEAKS['item_upload_ajax_ignore']):
-            # do not perform time-consuming operations - return dummy empty response
-            return JsonResponse({})
-        if not request.user.is_authenticated():
-            return JsonResponse({
-                'redirect': str(reverse_lazy(
-                    'login')+'?next='+request.GET.get('next', ''))
-            })
-        feed_id = kwargs.get('feed_id', None)
-        # try to get data from cache
-        feed_history = SubmissionHistory.objects.filter(user=request.user, feed_id=feed_id)
-        if feed_history:
-            return JsonResponse({
-                'statuses': feed_history[0].get_statuses(),
-                'ok': feed_history[0].all_items_ok()
-            })
-        # if no cache found - perform real check and save cache
-        feed_checker = CheckFeedStatusByWalmartApiViewSet()
-        check_results = feed_checker.process_one_set(
-            'https://marketplace.walmartapis.com/v2/feeds/{feedId}?includeDetails=true',
-            feed_id)
-        for result_stat in check_results.get('itemDetails', {}).get('itemIngestionStatus', []):
-            subm_stat = result_stat.get('ingestionStatus', None)
-            if subm_stat and isinstance(subm_stat, (str, unicode)):
-                db_history = SubmissionHistory.objects.create(user=request.user, feed_id=feed_id)
-                db_history.set_statuses([subm_stat])
-        feed_history = SubmissionHistory.objects.filter(user=request.user, feed_id=feed_id)
-        if feed_history:
-            return JsonResponse({
-                'statuses': feed_history[0].get_statuses(),
-                'ok': feed_history[0].all_items_ok()
-            })
+        feed_id = kwargs['feed_id']
+        result = get_feed_status(request, feed_id)
+        if isinstance(result, dict):
+            return JsonResponse(result)
+        return JsonResponse({
+            'redirect': str(reverse_lazy(
+                'login')+'?next='+request.GET.get('next', ''))
+        })
