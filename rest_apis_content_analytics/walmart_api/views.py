@@ -22,6 +22,7 @@ from django.shortcuts import render_to_response, redirect
 from django.core.urlresolvers import reverse_lazy
 from django.conf import settings
 from rest_framework.response import Response
+from rest_framework.authentication import BasicAuthentication
 from django.http import JsonResponse
 from rest_framework.parsers import MultiPartParser, FormParser
 from subprocess import Popen, PIPE, STDOUT
@@ -567,7 +568,6 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                         output[group_name] = result_for_this_group
                     except Exception, e:
                         output[group_name] = {'error': str(e)}
-        print('OUTPUT: %s' % str(output))
         return Response(output)
 
     def process_one_set(self, request, sent_file, request_url, request_method, do_not_validate_xml=False, multi_item=False):
@@ -634,6 +634,8 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
 
                 if isinstance(response.body['log'], list):
                     response.body['log'].reverse()
+
+                get_feed_status(request, feed_id)
 
             return response.body
         else:
@@ -1700,39 +1702,46 @@ class FeedIDRedirectView(DjangoView):
         return render_to_response(template_name='redirect_to_feed_check.html', context=context)
 
 
-class FeedStatusAjaxView(DjangoView):
-
-    def get(self, request, *args, **kwargs):
-        if os.path.exists(settings.TEST_TWEAKS['item_upload_ajax_ignore']):
-            # do not perform time-consuming operations - return dummy empty response
-            return JsonResponse({})
-        if not request.user.is_authenticated():
-            return JsonResponse({
-                'redirect': str(reverse_lazy(
-                    'login')+'?next='+request.GET.get('next', ''))
-            })
-        feed_id = kwargs.get('feed_id', None)
-        # try to get data from cache
-        feed_history = SubmissionHistory.objects.filter(user=request.user, feed_id=feed_id)
-        if feed_history:
-            return JsonResponse({
-                'statuses': feed_history[0].get_statuses(),
-                'ok': feed_history[0].all_items_ok()
-            })
-        # if no cache found - perform real check, update stats, and save cache
-        feed_checker = CheckFeedStatusByWalmartApiViewSet()
-        check_results = feed_checker.process_one_set(
-            'https://marketplace.walmartapis.com/v2/feeds/{feedId}?includeDetails=true',
-            feed_id)
+def get_feed_status(request, feed_id, process_check_feed=True):
+    if os.path.exists(settings.TEST_TWEAKS['item_upload_ajax_ignore']):
+        # do not perform time-consuming operations - return dummy empty response
+        return {}
+    if not request.user.is_authenticated():
+        return
+    # try to get data from cache
+    feed_history = SubmissionHistory.objects.filter(user=request.user, feed_id=feed_id)
+    if feed_history:
+        return {
+            'statuses': feed_history[0].get_statuses(),
+            'ok': feed_history[0].all_items_ok()
+        }
+    # if no cache found - perform real check, update stats, and save cache
+    feed_checker = CheckFeedStatusByWalmartApiViewSet()
+    check_results = feed_checker.process_one_set(
+        'https://marketplace.walmartapis.com/v2/feeds/{feedId}?includeDetails=true',
+        feed_id)
+    if process_check_feed:
         process_check_feed_response(request, check_results)
-        for result_stat in check_results.get('itemDetails', {}).get('itemIngestionStatus', []):
-            subm_stat = result_stat.get('ingestionStatus', None)
-            if subm_stat and isinstance(subm_stat, (str, unicode)):
-                db_history = SubmissionHistory.objects.create(user=request.user, feed_id=feed_id)
-                db_history.set_statuses([subm_stat])
-        feed_history = SubmissionHistory.objects.filter(user=request.user, feed_id=feed_id)
-        if feed_history:
-            return JsonResponse({
-                'statuses': feed_history[0].get_statuses(),
-                'ok': feed_history[0].all_items_ok()
-            })
+    for result_stat in check_results.get('itemDetails', {}).get('itemIngestionStatus', []):
+        subm_stat = result_stat.get('ingestionStatus', None)
+        if subm_stat and isinstance(subm_stat, (str, unicode)):
+            db_history = SubmissionHistory.objects.create(user=request.user, feed_id=feed_id)
+            db_history.set_statuses([subm_stat])
+    feed_history = SubmissionHistory.objects.filter(user=request.user, feed_id=feed_id)
+    if feed_history:
+        return {
+            'statuses': feed_history[0].get_statuses(),
+            'ok': feed_history[0].all_items_ok()
+        }
+
+
+class FeedStatusAjaxView(DjangoView):
+    def get(self, request, *args, **kwargs):
+        feed_id = kwargs['feed_id']
+        result = get_feed_status(request, feed_id)
+        if isinstance(result, dict):
+            return JsonResponse(result)
+        return JsonResponse({
+            'redirect': str(reverse_lazy(
+                'login')+'?next='+request.GET.get('next', ''))
+        })

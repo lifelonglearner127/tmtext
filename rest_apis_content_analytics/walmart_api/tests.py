@@ -15,6 +15,7 @@ from django.test import LiveServerTestCase
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.conf import settings
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 
 
 class RestAPIsTests(StaticLiveServerTestCase):
@@ -23,6 +24,7 @@ class RestAPIsTests(StaticLiveServerTestCase):
 
     xml_file1 = os.path.join(CWD, 'walmart_product_xml_samples', 'SupplierProductFeed.xsd.xml')
     xml_file2 = os.path.join(CWD, 'walmart_product_xml_samples', 'Verified Furniture Sample Product XML.xml')
+    xml_file3 = os.path.join(CWD, 'walmart_product_xml_samples', 'Invalid verified furniture sample product xml.xml')
 
     @classmethod
     def setUpClass(cls):
@@ -136,3 +138,28 @@ class RestAPIsTests(StaticLiveServerTestCase):
         self._auth()
         self.selenium.get(self.live_server_url+'/detect_duplicate_content/')
         self.assertTrue(bool(self.selenium.find_element_by_xpath('//h1[contains(text(), "Detect Duplicate Content")]')))
+
+    def test_statistics(self):
+        # TODO: the code below is WRONG! fix it
+        """
+        self.test_items_update_with_xml_file_by_walmart_api()
+        self.selenium.delete_all_cookies()  # "logout"
+        # remove ajax blocker
+        if os.path.exists(settings.TEST_TWEAKS['item_upload_ajax_ignore']):
+            os.remove(settings.TEST_TWEAKS['item_upload_ajax_ignore'])
+        self.selenium.set_page_load_timeout(2)
+        try:
+            self._auth()
+            self.selenium.get(self.live_server_url+'/items_update_with_xml_file_by_walmart_api/')
+        except TimeoutException:
+            pass  # sometimes it takes too long to process all requests
+        self.selenium.set_page_load_timeout(30)
+        import pdb; pdb.set_trace()
+        self.assertEqual(self.selenium.find_element_by_id('stat_counter_today').text, '1 / 1')
+        self.assertEqual(self.selenium.find_element_by_id('stat_counter_all_time').text, '1')
+        self.assertEqual(self.selenium.find_element_by_id('stat_counter_success').text, '1')
+        # put ajax blocker back
+        # remove ajax blocker
+        with open(settings.TEST_TWEAKS['item_upload_ajax_ignore'], 'w') as fh:
+            fh.write('1')
+        """
