@@ -4,6 +4,27 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+def process_check_feed_response(request, check_results_output):
+    if not request.user.is_authenticated():
+        return
+    multi_item = not(check_results_output.get('itemsReceived', 0) == 1)
+    for item in check_results_output.get('itemDetails', {}).get('itemIngestionStatus', []):
+        if not 'ingestionStatus' in item:
+            print('No ingestionStatus found!')
+            continue
+        if item['ingestionStatus'].lower() != 'success':
+            stat_xml_item(request.user, 'session', 'failed', multi_item,
+                          error_text=str(item.get('ingestionErrors')),
+                          upc=item.get('sku'),
+                          feed_id=check_results_output.get('feedId'))
+            print('Stat item created, status: FAILED')
+        else:
+            stat_xml_item(request.user, 'session', 'successful', multi_item,
+                          upc=item.get('sku'),
+                          feed_id=check_results_output.get('feedId'))
+            print('Stat item created, status: SUCCESS')
+
+
 def stat_xml_item(user, auth, status, multi_item, error_text=None, upc=None, feed_id=None):
     item = SubmitXMLItem.objects.create(user=user, auth=auth, status=status, multi_item=multi_item)
     if error_text:
@@ -11,6 +32,15 @@ def stat_xml_item(user, auth, status, multi_item, error_text=None, upc=None, fee
     if upc and feed_id:
         item.metadata = {'upc': upc, 'feed_id': feed_id}
     return item
+
+
+def _filter_qs_by_date(qs, field_name, date):
+    args = {
+        field_name+'__year': date.year,
+        field_name+'__month': date.month,
+        field_name+'__day': date.day
+    }
+    return qs.filter(**args)
 
 
 class SubmitXMLItem(models.Model):
@@ -59,6 +89,30 @@ class SubmitXMLItem(models.Model):
         if self.error_text:
             return
         ErrorText.objects.create(item=self, text=text)
+
+    @classmethod
+    def failed_xml_items(cls, request):
+        return cls.objects.filter(user=request.user, status='failed').order_by(
+            '-when').distinct()
+
+    @classmethod
+    def successful_xml_items(cls, request):
+        return cls.objects.filter(user=request.user, status='successful').order_by(
+            '-when').distinct()
+
+    @classmethod
+    def today_all_xml_items(cls, request):
+        return _filter_qs_by_date(
+            cls.objects.filter(user=request.user),
+            'when', datetime.datetime.today()
+        ).order_by('-when').distinct()
+
+    @classmethod
+    def today_successful_xml_items(cls, request):
+        return _filter_qs_by_date(
+            cls.objects.filter(user=request.user, status='successful'),
+            'when', datetime.datetime.today()
+        ).order_by('-when').distinct()
 
 
 class ErrorText(models.Model):
