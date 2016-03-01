@@ -520,10 +520,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                 if invalid_files:
                     output[group_name] = {}
                     output[group_name][invalid_files[0].name] = invalid_files[1]
-                    db_stat = self._parse_submit_output(request, output, True)
                     upc = self._extract_upc(invalid_files[0])
-                    if db_stat and upc:
-                        db_stat.metadata = {'upc': upc}
                     continue
 
                 merged_file = merge_xml_files_into_one(*sent_file)
