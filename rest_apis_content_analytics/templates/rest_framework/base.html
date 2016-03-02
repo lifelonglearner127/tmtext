@@ -109,7 +109,10 @@
                               var cls = '';
                               if (data.ok) cls = 'submit_ok';
                               else cls = 'submit_fail';
-                              $(link).after(" ==> <span class='"+cls+"'>" + data.statuses + "</span>");
+                              if (data.in_progress) $(link).after(" ==> <span class='"+cls+"'>IN PROGRESS</span>");
+                              else if (data.partial_success) $(link).after(" ==> <span class='"+cls+"'>PARTIAL SUCCESS</span>");
+                              else if (data.ok) $(link).after(" ==> <span class='"+cls+"'>SUCCESS</span>");
+                              else $(link).after(" ==> <span class='"+cls+"'>FAILED</span>");
                           }
                           stat_ajax_request();
                       }

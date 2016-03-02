@@ -5,4 +5,7 @@ from models import SubmissionStatus, SubmissionHistory
 
 
 admin.site.register(SubmissionStatus)
-admin.site.register(SubmissionHistory)
+
+@admin.register(SubmissionHistory)
+class SubmissionHistoryAdmin(admin.ModelAdmin):
+    list_display = ['user', 'feed_id']

@@ -211,7 +211,7 @@ def merge_xml_files_into_one(*files):
     for f in files:
         file_cont = f.read()
         pos1 = file_cont.find('<SupplierProduct>')
-        pos2 = file_cont.find('</SupplierProduct>') + len('</SupplierProduct>')
+        pos2 = file_cont.rfind('</SupplierProduct>') + len('</SupplierProduct>')
         if pos1 == -1 or pos2 == -1:
             print('Invalid XML file content - could not find "SupplierProduct" opening or closing tag')
             continue
@@ -1711,9 +1711,12 @@ def get_feed_status(request, feed_id, process_check_feed=True):
     # try to get data from cache
     feed_history = SubmissionHistory.objects.filter(user=request.user, feed_id=feed_id)
     if feed_history:
+        #import pdb; pdb.set_trace()
         return {
             'statuses': feed_history[0].get_statuses(),
-            'ok': feed_history[0].all_items_ok()
+            'ok': feed_history[0].all_items_ok(),
+            'partial_success': feed_history[0].partial_success(),
+            'in_progress': feed_history[0].in_progress()
         }
     # if no cache found - perform real check, update stats, and save cache
     feed_checker = CheckFeedStatusByWalmartApiViewSet()
@@ -1731,7 +1734,9 @@ def get_feed_status(request, feed_id, process_check_feed=True):
     if feed_history:
         return {
             'statuses': feed_history[0].get_statuses(),
-            'ok': feed_history[0].all_items_ok()
+            'ok': feed_history[0].all_items_ok(),
+            'partial_success': feed_history[0].partial_success(),
+            'in_progress': feed_history[0].in_progress()
         }
 
 
