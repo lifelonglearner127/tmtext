@@ -211,7 +211,7 @@ def merge_xml_files_into_one(*files):
     for f in files:
         file_cont = f.read()
         pos1 = file_cont.find('<SupplierProduct>')
-        pos2 = file_cont.find('</SupplierProduct>') + len('</SupplierProduct>')
+        pos2 = file_cont.rfind('</SupplierProduct>') + len('</SupplierProduct>')
         if pos1 == -1 or pos2 == -1:
             print('Invalid XML file content - could not find "SupplierProduct" opening or closing tag')
             continue
