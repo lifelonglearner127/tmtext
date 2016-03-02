@@ -43,6 +43,9 @@ import unirest
 import time
 
 
+unirest.timeout(15)
+
+
 FREE_PROXY_IP_PORT_LIST = ["52.91.67.73",
                            "52.90.231.48",
                            "52.91.35.248",
