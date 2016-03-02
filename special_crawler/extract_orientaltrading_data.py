@@ -151,6 +151,11 @@ class OrientalTradingScraper(Scraper):
 
     def _image_urls(self):
         image_list = self.tree_html.xpath("//div[@id='product-viewer-thumbnails']/a/@href")
+
+        if not image_list:
+            image_list = self.tree_html.xpath("//div[@id='product-viewer-current-view']/img/@src")
+            image_list = [url.replace("VIEWER_IMAGE_400", "VIEWER_ZOOM") for url in image_list]
+
         image_list = [url[2:] if url.startswith("//") else url for url in image_list]
 
         if image_list:
