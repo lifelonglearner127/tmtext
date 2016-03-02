@@ -8,7 +8,8 @@ class SubmissionHistory(models.Model):
     feed_id = models.CharField(max_length=50)
 
     def get_statuses(self):
-        return [s.status for s in SubmissionStatus.objects.filter(history=self)]
+        return [s.status for s in SubmissionStatus.objects.filter(
+            history__feed_id=self.feed_id, history__user=self.user)]
 
     def set_statuses(self, status_list):
         for status in status_list:
@@ -16,6 +17,14 @@ class SubmissionHistory(models.Model):
 
     def all_items_ok(self):
         return all([s.lower() == 'success' for s in self.get_statuses()])
+
+    def partial_success(self):
+        statuses = [s.lower() for s in self.get_statuses()]
+        return 'success' in statuses and not self.all_items_ok()
+
+    def in_progress(self):
+        statuses = [s.lower() for s in self.get_statuses()]
+        return 'inprogress' in statuses
 
 
 class SubmissionStatus(models.Model):
