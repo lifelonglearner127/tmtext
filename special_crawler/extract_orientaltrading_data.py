@@ -245,8 +245,8 @@ class OrientalTradingScraper(Scraper):
             return self.review_list
 
         self.is_review_checked = True
-
-        contents = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format("_" + self._product_id()[4:]))
+        review_id = self._find_between(self.page_raw_text, "$BV.ui('rr', 'show_reviews', {productId: '", "'});")
+        contents = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(review_id))
 
         try:
             start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
