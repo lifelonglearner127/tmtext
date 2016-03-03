@@ -79,6 +79,7 @@ from extract_microsoft_data import MicrosoftScraper
 from extract_nike_data import NikeScraper
 from extract_forever21_data import Forever21Scraper
 from extract_officedepot_data import OfficeDepotScraper
+from extract_orientaltrading_data import OrientalTradingScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -170,6 +171,7 @@ SUPPORTED_SITES = {
                     "nike": NikeScraper,
                     "forever21": Forever21Scraper,
                     "officedepot": OfficeDepotScraper,
+                    "orientaltrading": OrientalTradingScraper
                     }
 
 # add logger

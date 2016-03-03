@@ -864,13 +864,6 @@ class WalmartScraper(Scraper):
 
         return None
 
-    def _exclude_javascript_from_description(self, description):
-        description = re.subn(r'<(script).*?</\1>(?s)', '', description)[0]
-#        description = re.sub(r"<script type=.+</script>", "", description)
-#       description = re.sub(r"<script>.+</script>", "", description)
-#
-        return description
-
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
@@ -1710,6 +1703,10 @@ class WalmartScraper(Scraper):
         if self.tree_html.xpath('//*[contains(@class, "NotAvailable") and contains(text(), "ot Available")]'):
             return True
 
+        if self.tree_html.xpath("//div[@class='js-product-price product-price clearfix']") and \
+                        "item not available" in self.tree_html.xpath("//div[@class='js-product-price product-price clearfix']")[0].text_content().lower():
+            return True
+
         return False
 
     def _shipping(self):
@@ -2035,19 +2032,30 @@ class WalmartScraper(Scraper):
         self.extracted_product_info_jsons = True
 
         try:
-            self.product_api_json = json.loads(self.load_page_from_url_with_number_of_retries(self.BASE_URL_PRODUCT_API.format(self._extract_product_id())))
+            product_api_json = self.load_page_from_url_with_number_of_retries(self.BASE_URL_PRODUCT_API.format(self._extract_product_id()))
+            self.product_api_json = json.loads(product_api_json)
         except Exception, e:
-            print "Error (Loading product json from Walmart api - not_a_product)" + str(e)
-            self.product_api_json = None
+            try:
+                product_api_json = self._exclude_javascript_from_description(product_api_json)
+                product_api_json = product_api_json.replace("\n", "").replace("\r", "")
+                self.product_api_json = json.loads(product_api_json)
+            except:
+                print "Error (Loading product json from Walmart api)" + str(e)
+                self.product_api_json = None
 
         if self._version() == "Walmart v2":
             if self.is_bundle_product:
-                product_info_json = self._find_between(html.tostring(self.tree_html), 'define("product/data",', ");\n")
-                product_info_json = json.loads(product_info_json)
-                self.product_info_json = product_info_json
+                try:
+                    product_info_json = self._find_between(html.tostring(self.tree_html), 'define("product/data",', ");\n")
+                    product_info_json = json.loads(product_info_json)
+                    self.product_info_json = product_info_json
+                except:
+                    product_info_json = self._find_between(html.tostring(self.tree_html), 'define("product/data",', '); define("ads/data", _WML.MIDAS_CONTEXT)')
+                    product_info_json = json.loads(product_info_json)
+                    self.product_info_json = product_info_json
 
                 try:
-                    product_choice_info_json = self._find_between(html.tostring(self.tree_html), 'define("choice/data",', ");\n")
+                    product_choice_info_json = self._find_between(self.page_raw_text, 'define("choice/data",', ");\n")
                     product_choice_info_json = json.loads(product_choice_info_json)
                     self.product_choice_info_json = product_choice_info_json
                 except:
@@ -2055,7 +2063,7 @@ class WalmartScraper(Scraper):
 
                 if not self.product_choice_info_json:
                     try:
-                        product_choice_info_json = self._find_between(html.tostring(self.tree_html), 'define("non-choice/data",', ");\n")
+                        product_choice_info_json = self._find_between(self.page_raw_text, 'define("non-choice/data",', ");\n")
                         product_choice_info_json = json.loads(product_choice_info_json)
                         self.product_choice_info_json = product_choice_info_json
                     except:
@@ -2063,7 +2071,7 @@ class WalmartScraper(Scraper):
 
                 return self.product_info_json
             else:
-                page_raw_text = html.tostring(self.tree_html)
+                page_raw_text = self.page_raw_text
                 product_info_json = json.loads(re.search('define\("product\/data",\n(.+?)\n', page_raw_text).group(1))
 
                 self.product_info_json = product_info_json
@@ -2161,7 +2169,7 @@ class WalmartScraper(Scraper):
 
     def _in_stores_v1(self):
         try:
-            if self._find_between(html.tostring(self.tree_html), "isBuyableInStore:", ",").strip() == "true":
+            if self._find_between(self.page_raw_text, "isBuyableInStore:", ",").strip() == "true":
                 return 1
 
             try:
@@ -2393,10 +2401,10 @@ class WalmartScraper(Scraper):
         if self._version() == "Walmart v1":
             # assume old page version
             sellers = self._marketplace_sellers()
-            product_info_json_text = self._find_between(html.tostring(self.tree_html), "var DefaultItemWidget =", "addMethodsToDefaultItem(DefaultItemWidget);").strip()
+            product_info_json_text = self._find_between(self.page_raw_text, "var DefaultItemWidget =", "addMethodsToDefaultItem(DefaultItemWidget);").strip()
 
             if not product_info_json_text:
-                product_info_json_text = self._find_between(html.tostring(self.tree_html), "var DefaultItem =", "addMethodsToDefaultItem(DefaultItem);")
+                product_info_json_text = self._find_between(self.page_raw_text, "var DefaultItem =", "addMethodsToDefaultItem(DefaultItem);")
 
             if not sellers:
                 return None
@@ -2463,11 +2471,11 @@ class WalmartScraper(Scraper):
             except:
                 pass
 
-            if "walmart.com" in self._find_between(html.tostring(self.tree_html), "sellerName:", ",").lower() and \
-                            self._find_between(html.tostring(self.tree_html), "isBuyableOnWWW:", ",").strip() == "true":
+            if "walmart.com" in self._find_between(self.page_raw_text, "sellerName:", ",").lower() and \
+                            self._find_between(self.page_raw_text, "isBuyableOnWWW:", ",").strip() == "true":
                 return 1
 
-            if "WalmartMainBody DynamicMode wmBundleItemPage" in html.tostring(self.tree_html):
+            if "WalmartMainBody DynamicMode wmBundleItemPage" in self.page_raw_text:
                 if "online" in (" " . join(self.tree_html.xpath("//tr[@id='WM_ROW']//div[@id='onlinePriceLabel']/text()"))).lower():
                     return 1
         except:
@@ -2543,7 +2551,7 @@ class WalmartScraper(Scraper):
     def _failure_type(self):
         # we ignore bundle product
         if self.tree_html.xpath("//div[@class='js-about-bundle-wrapper']") or \
-                        "WalmartMainBody DynamicMode wmBundleItemPage" in html.tostring(self.tree_html):
+                        "WalmartMainBody DynamicMode wmBundleItemPage" in self.page_raw_text:
             self.is_bundle_product = True
 
         # we ignore video product
@@ -2557,7 +2565,7 @@ class WalmartScraper(Scraper):
                 self.failure_type = "E-Card"
 
         # we ignore incomplete product like http://www.walmart.com/ip/39783867
-        if re.findall(r"<!(-+) preparation (-+)>", html.tostring(self.tree_html)):
+        if re.findall(r"<!(-+) preparation (-+)>", self.page_raw_text):
             self.failure_type = "Incomplete"
 
         try:
