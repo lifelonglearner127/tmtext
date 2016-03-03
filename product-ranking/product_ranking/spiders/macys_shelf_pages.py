@@ -163,6 +163,9 @@ class MacysShelfPagesSpider(MacysProductsSpider):
             brand = [brand]
         cond_set(product, 'brand', brand)
 
+        if product.get('brand', '').lower() == 'levis':
+            product['brand'] = "Levi's"
+
         product_id = response.css('#productId::attr(value)').extract()
 
         if self.scrape_variants_with_extra_requests:
