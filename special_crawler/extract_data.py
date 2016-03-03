@@ -272,6 +272,7 @@ class Scraper():
     def _exclude_javascript_from_description(self, description):
         description = re.subn(r'<(script).*?</\1>(?s)', '', description)[0]
         description = re.subn(r'<(style).*?</\1>(?s)', '', description)[0]
+        description = re.subn("(<!--.*?-->)", "", description)[0]
         return description
 
     def _clean_text(self, text):
