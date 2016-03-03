@@ -1703,6 +1703,10 @@ class WalmartScraper(Scraper):
         if self.tree_html.xpath('//*[contains(@class, "NotAvailable") and contains(text(), "ot Available")]'):
             return True
 
+        if self.tree_html.xpath("//div[@class='js-product-price product-price clearfix']") and \
+                        "item not available" in self.tree_html.xpath("//div[@class='js-product-price product-price clearfix']")[0].text_content().lower():
+            return True
+
         return False
 
     def _shipping(self):
