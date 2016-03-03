@@ -72,7 +72,7 @@ class KohlsVariants(object):
                 variant_attribute_combination_list = list(itertools.product(*attribute_values_list))
 
                 for variant_sku in product_info_json["productItem"]["skuDetails"]:
-                    price = variant_sku["regularPrice"] if variant_sku["regularPrice"] else variant_sku["salePrice"]
+                    price = variant_sku["salePrice"] if variant_sku["salePrice"] else variant_sku["regularPrice"]
                     price = re.findall(r"\d*\.\d+|\d+", price.replace(",", ""))
                     price = float(price[0])
                     property = {}

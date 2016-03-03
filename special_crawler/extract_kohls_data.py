@@ -481,11 +481,11 @@ class KohlsScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        if self.product_info_json["productItem"]["pricing"].get("regularPrice", None):
-            return self.product_info_json["productItem"]["pricing"]["regularPrice"]
-
         if self.product_info_json["productItem"]["pricing"].get("salePrice", None):
             return self.product_info_json["productItem"]["pricing"]["salePrice"]
+
+        if self.product_info_json["productItem"]["pricing"].get("regularPrice", None):
+            return self.product_info_json["productItem"]["pricing"]["regularPrice"]
 
         return "$" + self.tree_html.xpath("//meta[@property='og:product:price:amount']/@content")[0]
 
