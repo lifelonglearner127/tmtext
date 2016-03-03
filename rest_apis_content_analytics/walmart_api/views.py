@@ -318,7 +318,7 @@ class InvokeWalmartApiViewSet(viewsets.ViewSet):
 
     def create(self, request):
         try:
-            request_data = request.DATA
+            request_data = request.data
             request_files = request.FILES
             walmart_api_signature = self.generate_walmart_api_signature(request_data["request_url"],
                                                                         self.walmart_consumer_id,
@@ -696,7 +696,7 @@ class ItemsUpdateWithXmlTextByWalmartApiViewSet(viewsets.ViewSet):
 
     def create(self, request):
         try:
-            request_data = request.DATA
+            request_data = request.data
 
             validation_results = validate_walmart_product_xml_against_xsd(request_data["xml_content_to_upload"])
 
@@ -1426,7 +1426,7 @@ class DetectDuplicateContentFromCsvFilesByMechanizeViewset(viewsets.ViewSet):
         product_url_list = None
 
         try:
-            request_data = request.DATA
+            request_data = request.data
             request_files = request.FILES
             product_url_list = request_files["csv_file_to_check"].read().splitlines()
         except Exception, e:

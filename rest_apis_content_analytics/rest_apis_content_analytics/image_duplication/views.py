@@ -40,14 +40,14 @@ class CompareTwoImageViewSet(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.DATA)
+        serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
             try:
                 urls = serializer.data["urls"]
 
                 if not urls:
-                    urls = request.DATA["urls"].split(" ")
+                    urls = request.data["urls"].split(" ")
 
                 images_a  = []
                 images_b = []
@@ -115,14 +115,14 @@ class ClassifyImagesBySimilarity(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.DATA)
+        serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
             try:
                 urls = serializer.data["urls"]
 
                 if not urls:
-                    urls = request.DATA["urls"].split(" ")
+                    urls = request.data["urls"].split(" ")
 
                 images = []
 
@@ -191,7 +191,7 @@ class FindSimilarityInImageList(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.DATA)
+        serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
             try:
@@ -260,7 +260,7 @@ class CompareTwoImageLists(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.DATA)
+        serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
             try:

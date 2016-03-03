@@ -40,7 +40,7 @@ class ClassifyTextImagesByNutritionInfoViewSet(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.DATA)
+        serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
             try:
