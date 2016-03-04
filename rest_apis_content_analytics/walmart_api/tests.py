@@ -205,8 +205,9 @@ class RestAPIsTests(StaticLiveServerTestCase):
         """, self.selenium.page_source, 1)
 
     def test_compare_images(self):
-        # TODO: better coverage
         self._auth()
+
+        # 1
         self.selenium.get(self.live_server_url+'/comparetwoimages/')
         self.selenium.find_element_by_link_text('Raw data').click()
         self.selenium.execute_script("window.scrollBy(0,8000)", "")
@@ -224,6 +225,35 @@ class RestAPIsTests(StaticLiveServerTestCase):
 
 </span><span class="pun">{</span><span class="pln">
     </span><span class="str">"detail"</span><span class="pun">:</span><span class="pln"> </span><span class="str">"JSON parse error - No JSON object could be decoded"</span><span class="pln">
+</span><span class="pun">}</span></pre>
+            </div>
+        """, self.selenium.page_source, 1)
+
+        # 2
+        test_data = {
+            "urls": [
+                "http://i5.wal.co/dfw/dce07b8c-8883/k2-_c66baaae-8379-4337-b420-d10fe5b67308.v1.jpg",
+                "http://i5.wal.co/dfw/dce07b8c-8883/k2-_c66baaae-8379-4337-b420-d10fe5b67308.v1.jpg"
+            ]
+        }
+        self.selenium.get(self.live_server_url+'/comparetwoimages/')
+        self.selenium.find_element_by_link_text('Raw data').click()
+        self.selenium.find_element_by_id('id__content').send_keys(json.dumps(test_data, indent=4))
+        self.selenium.execute_script("window.scrollBy(0,8000)", "")
+        for button in self.selenium.find_elements_by_css_selector('form .form-actions button.btn-primary'):
+            try:
+                button.click()
+            except:
+                continue
+        self.assertInHTML("""
+<div class="response-info">
+              <pre class="prettyprint"><span class="meta nocode"><b>HTTP 200 OK</b>
+<b>Allow:</b> <span class="lit">GET, POST, HEAD, OPTIONS</span>
+<b>Content-Type:</b> <span class="lit">application/json</span>
+<b>Vary:</b> <span class="lit">Accept</span>
+
+</span><span class="pun">{</span><span class="pln">
+    </span><span class="str">"Are two images similar?"</span><span class="pun">:</span><span class="pln"> </span><span class="str">"Yes"</span><span class="pln">
 </span><span class="pun">}</span></pre>
             </div>
         """, self.selenium.page_source, 1)
