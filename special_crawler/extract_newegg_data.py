@@ -305,7 +305,7 @@ class NeweggScraper(Scraper):
 
     def _pdf_urls(self):
         pdf_urls = self.tree_html.xpath("//a[contains(@href, '.pdf')]/@href")
-        return pdf_urls if pdf_urls else None
+        return list(set(pdf_urls)) if pdf_urls else None
 
     def _pdf_count(self):
         if self._pdf_urls():
