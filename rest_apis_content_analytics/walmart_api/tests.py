@@ -30,6 +30,7 @@ class RestAPIsTests(StaticLiveServerTestCase):
     def setUpClass(cls):
         super(RestAPIsTests, cls).setUpClass()
         cls.selenium = webdriver.Chrome()
+        cls.selenium.set_window_size(1280, 1024)
         with open(settings.TEST_TWEAKS['item_upload_ajax_ignore'], 'w') as fh:
             fh.write('1')
 
@@ -163,3 +164,66 @@ class RestAPIsTests(StaticLiveServerTestCase):
         with open(settings.TEST_TWEAKS['item_upload_ajax_ignore'], 'w') as fh:
             fh.write('1')
         """
+
+    def test_compare_images_lists(self):
+        test_data = {
+            "urls1": [
+                 "http://i5.walmartimages.com/dfw/dce07b8c-2899/k2-_3d73fbf9-014b-48a8-be67-e7379814f7c1.v4.jpg",
+                 "http://i5.walmartimages.com/dfw/dce07b8c-58e1/k2-_318bc7df-78ee-47ba-b7dc-1b56114edbb6.v1.jpg",
+                 "http://i5.walmartimages.com/dfw/dce07b8c-b0c7/k2-_78ec4336-3b56-4a4d-98ac-8d448728aed9.v1.jpg",
+                 "http://i5.walmartimages.com/dfw/dce07b8c-da62/k2-_e540b841-5121-45f2-9202-41690eabd6a0.v1.jpg"],
+            "urls2": [
+                 "http://i5.walmartimages.com/dfw/dce07b8c-70a9/k2-_ca865772-2e81-4e32-a1e9-98d8c0bf3742.v1.jpg",
+                 "http://i5.walmartimages.com/dfw/dce07b8c-3614/k2-_d9c29d82-0790-4515-8d69-f6e25b64c156.v1.jpg",
+                 "http://i5.walmartimages.com/dfw/dce07b8c-b1ea/k2-_74ec32ac-829f-4afd-ba77-d0863e53ca2d.v1.jpg",
+                 "http://i5.walmartimages.com/dfw/dce07b8c-4803/k2-_19057378-6e9e-469c-8baf-4b36a950d43e.v1.jpg",
+                 "http://i5.walmartimages.com/dfw/dce07b8c-8986/k2-_26616eae-e118-4787-8a51-0a28a9783b5b.v1.jpg"
+            ]
+        }
+        self._auth()
+        self.selenium.get(self.live_server_url+'/comparetwoimagelists/')
+        self.selenium.find_element_by_link_text('Raw data').click()
+        self.selenium.find_element_by_id('id__content').send_keys(json.dumps(test_data, indent=4))
+        self.selenium.execute_script("window.scrollBy(0,8000)", "")
+        for button in self.selenium.find_elements_by_css_selector('form .form-actions button.btn-primary'):
+            try:
+                button.click()
+            except:
+                continue
+        self.assertInHTML("""
+<pre class="prettyprint"><span class="meta nocode"><b>HTTP 200 OK</b>
+<b>Allow:</b> <span class="lit">GET, POST, HEAD, OPTIONS</span>
+<b>Content-Type:</b> <span class="lit">application/json</span>
+<b>Vary:</b> <span class="lit">Accept</span>
+
+</span><span class="pun">{</span><span class="pln">
+    </span><span class="str">"</span><a href="http://i5.walmartimages.com/dfw/dce07b8c-58e1/k2-_318bc7df-78ee-47ba-b7dc-1b56114edbb6.v1.jpg" rel="nofollow"><span class="str">http://i5.walmartimages.com/dfw/dce07b8c-58e1/k2-_318bc7df-78ee-47ba-b7dc-1b56114edbb6.v1.jpg</span></a><span class="str">"</span><span class="pun">:</span><span class="pln"> </span><span class="kwd">null</span><span class="pun">,</span><span class="pln">
+    </span><span class="str">"</span><a href="http://i5.walmartimages.com/dfw/dce07b8c-b0c7/k2-_78ec4336-3b56-4a4d-98ac-8d448728aed9.v1.jpg" rel="nofollow"><span class="str">http://i5.walmartimages.com/dfw/dce07b8c-b0c7/k2-_78ec4336-3b56-4a4d-98ac-8d448728aed9.v1.jpg</span></a><span class="str">"</span><span class="pun">:</span><span class="pln"> </span><span class="kwd">null</span><span class="pun">,</span><span class="pln">
+    </span><span class="str">"</span><a href="http://i5.walmartimages.com/dfw/dce07b8c-2899/k2-_3d73fbf9-014b-48a8-be67-e7379814f7c1.v4.jpg" rel="nofollow"><span class="str">http://i5.walmartimages.com/dfw/dce07b8c-2899/k2-_3d73fbf9-014b-48a8-be67-e7379814f7c1.v4.jpg</span></a><span class="str">"</span><span class="pun">:</span><span class="pln"> </span><span class="kwd">null</span><span class="pun">,</span><span class="pln">
+    </span><span class="str">"</span><a href="http://i5.walmartimages.com/dfw/dce07b8c-da62/k2-_e540b841-5121-45f2-9202-41690eabd6a0.v1.jpg" rel="nofollow"><span class="str">http://i5.walmartimages.com/dfw/dce07b8c-da62/k2-_e540b841-5121-45f2-9202-41690eabd6a0.v1.jpg</span></a><span class="str">"</span><span class="pun">:</span><span class="pln"> </span><span class="kwd">null</span><span class="pln">
+</span><span class="pun">}</span></pre>
+        """, self.selenium.page_source, 1)
+
+    def test_compare_images(self):
+        # TODO: better coverage
+        self._auth()
+        self.selenium.get(self.live_server_url+'/comparetwoimages/')
+        self.selenium.find_element_by_link_text('Raw data').click()
+        self.selenium.execute_script("window.scrollBy(0,8000)", "")
+        for button in self.selenium.find_elements_by_css_selector('form .form-actions button.btn-primary'):
+            try:
+                button.click()
+            except:
+                continue
+        self.assertInHTML("""
+<div class="response-info">
+              <pre class="prettyprint"><span class="meta nocode"><b>HTTP 400 Bad Request</b>
+<b>Allow:</b> <span class="lit">GET, POST, HEAD, OPTIONS</span>
+<b>Content-Type:</b> <span class="lit">application/json</span>
+<b>Vary:</b> <span class="lit">Accept</span>
+
+</span><span class="pun">{</span><span class="pln">
+    </span><span class="str">"detail"</span><span class="pun">:</span><span class="pln"> </span><span class="str">"JSON parse error - No JSON object could be decoded"</span><span class="pln">
+</span><span class="pun">}</span></pre>
+            </div>
+        """, self.selenium.page_source, 1)
