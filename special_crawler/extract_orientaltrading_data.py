@@ -55,6 +55,9 @@ class OrientalTradingScraper(Scraper):
             if not itemtype:
                 raise Exception()
 
+            if self.tree_html.xpath("//form[@id='multibuy_frm']"):
+                raise Exception()
+
         except Exception:
             return True
 
