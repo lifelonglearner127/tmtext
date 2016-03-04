@@ -304,7 +304,7 @@ class NeweggScraper(Scraper):
         return 0
 
     def _pdf_urls(self):
-        pdf_urls = self.tree_html.xpath("//div[@id='moreResource_{0}']//a[contains(@href, '.pdf')]/@href".format(self.related_item_id))
+        pdf_urls = self.tree_html.xpath("//a[contains(@href, '.pdf')]/@href")
         return pdf_urls if pdf_urls else None
 
     def _pdf_count(self):
