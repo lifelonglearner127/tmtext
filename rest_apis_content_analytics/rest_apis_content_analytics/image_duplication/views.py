@@ -10,11 +10,21 @@ from PIL import Image
 import numpy as np
 from StringIO import StringIO
 from rest_framework import viewsets
+from rest_framework.parsers import JSONParser
 from rest_apis_content_analytics.image_duplication.serializers import ImageUrlSerializer, CompareTwoImageListsSerializer
 from rest_apis_content_analytics.image_duplication.compare_images import url_to_image, compare_two_images_a, compare_two_images_b, compare_two_images_c
 from rest_framework.response import Response
 import linecache
 import sys
+
+
+def parse_data(data):
+    # If this key exists, it means that a raw JSON was passed via the Browsable API
+    # TODO: it's a quick&dirty workaround, it should not work this way!
+    if '_content' in data:
+        stream = StringIO(data['_content'])
+        return JSONParser().parse(stream)
+    return data
 
 
 def PrintException():
@@ -40,7 +50,7 @@ class CompareTwoImageViewSet(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=parse_data(request.data))
 
         if serializer.is_valid():
             try:
@@ -115,7 +125,7 @@ class ClassifyImagesBySimilarity(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=parse_data(request.data))
 
         if serializer.is_valid():
             try:
@@ -191,7 +201,7 @@ class FindSimilarityInImageList(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=parse_data(request.data))
 
         if serializer.is_valid():
             try:
@@ -260,7 +270,7 @@ class CompareTwoImageLists(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=parse_data(request.data))
 
         if serializer.is_valid():
             try:
