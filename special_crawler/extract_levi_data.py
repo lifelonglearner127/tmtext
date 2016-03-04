@@ -85,7 +85,7 @@ class LeviScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.levi.com/US/en_US/.*/p/[a-zA-Z0-9\-]+$", self.product_page_url)
+        m = re.match(r"^http://www.levi.com/US/en_US/(.*/)?p/.*$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
