@@ -5,6 +5,7 @@ import re
 import sys
 import json
 import mechanize
+from requests.auth import HTTPProxyAuth
 import cookielib
 from lxml import html, etree
 import time
@@ -33,6 +34,11 @@ class LeviScraper(Scraper):
         self.rev_list = None
         self.is_review_checked = False
         self.lv = LeviVariants()
+        self.proxy_host = "proxy.crawlera.com"
+        self.proxy_port = "8010"
+        self.proxy_auth = HTTPProxyAuth("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
+        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+        self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
