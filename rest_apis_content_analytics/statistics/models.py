@@ -4,29 +4,32 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
-def process_check_feed_response(request, check_results_output):
-    if not request.user.is_authenticated():
+def process_check_feed_response(user, check_results_output, date, check_auth=True):
+    if check_auth and not user.is_authenticated():
         return
     multi_item = not(check_results_output.get('itemsReceived', 0) == 1)
     for item in check_results_output.get('itemDetails', {}).get('itemIngestionStatus', []):
         if not 'ingestionStatus' in item:
             print('No ingestionStatus found!')
             continue
-        if item['ingestionStatus'].lower() != 'success':
-            stat_xml_item(request.user, 'session', 'failed', multi_item,
+        if item['ingestionStatus'].lower() not in ('success', 'received'):
+            stat_xml_item(user, 'session', 'failed', multi_item,
+                          date=date,
                           error_text=str(item.get('ingestionErrors')),
                           upc=item.get('sku'),
                           feed_id=check_results_output.get('feedId'))
             print('Stat item created, status: FAILED')
         else:
-            stat_xml_item(request.user, 'session', 'successful', multi_item,
+            stat_xml_item(user, 'session', 'successful', multi_item,
+                          date=date,
                           upc=item.get('sku'),
                           feed_id=check_results_output.get('feedId'))
             print('Stat item created, status: SUCCESS')
 
 
-def stat_xml_item(user, auth, status, multi_item, error_text=None, upc=None, feed_id=None):
-    item = SubmitXMLItem.objects.create(user=user, auth=auth, status=status, multi_item=multi_item)
+def stat_xml_item(user, auth, status, multi_item, date, error_text=None, upc=None, feed_id=None):
+    item = SubmitXMLItem.objects.create(user=user, auth=auth, when=date, status=status,
+                                        multi_item=multi_item)
     if error_text:
         item.error_text = error_text
     if upc and feed_id:
@@ -124,7 +127,7 @@ class ErrorText(models.Model):
 
 
 class ItemMetadata(models.Model):
-    item = models.ForeignKey(SubmitXMLItem, unique=True)
+    item = models.ForeignKey(SubmitXMLItem, unique=True, related_name='item_metadata')
     upc = models.CharField(max_length=20, blank=True, null=True)
     feed_id = models.CharField(max_length=50, blank=True, null=True)
 
