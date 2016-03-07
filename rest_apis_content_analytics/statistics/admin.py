@@ -15,8 +15,9 @@ class ItemMetadataInline(admin.TabularInline):
 
 @admin.register(SubmitXMLItem)
 class SubmitXMLItemAdmin(admin.ModelAdmin):
-    list_display = ['user', 'auth', 'status', 'when', 'multi_item']
+    list_display = ['user', 'auth', 'status', 'when', 'multi_item', 'metadata']
     list_filter = ['user', 'auth', 'status', 'when', 'multi_item']
+    search_fields = ['user__username', 'item_metadata__upc', 'item_metadata__feed_id']
 
     inlines = [ItemMetadataInline, ErrorTextInline]
 

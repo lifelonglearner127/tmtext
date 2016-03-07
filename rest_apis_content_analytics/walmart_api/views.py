@@ -43,7 +43,7 @@ import unirest
 import time
 
 
-unirest.timeout(15)
+unirest.timeout(30)
 
 
 FREE_PROXY_IP_PORT_LIST = ["52.91.67.73",
@@ -241,6 +241,31 @@ class ErrorResponse(object):
         return Response(self.to_json())
 
 
+def get_walmart_api_invoke_log(request_or_user, base_file=__file__):
+    if hasattr(request_or_user, 'user'):
+        request_or_user = request_or_user.user
+    if not request_or_user.is_authenticated():
+        return
+    return (os.path.dirname(os.path.realpath(base_file))
+            + '/user-' + str(request_or_user.pk) + '__'
+            + 'walmart_api_invoke_log.txt')
+
+
+def parse_walmart_api_log(request_or_user, base_file=__file__):
+    log = get_walmart_api_invoke_log(request_or_user, base_file)
+    with open(log, 'r') as fh:
+        for line in fh:
+            line = line.strip()
+            if ',' not in line:
+                continue
+            date, upc, feed_id = line.split(',')
+            yield {
+                'datetime': datetime.datetime.strptime(date.strip(), "%Y-%m-%d %H:%M"),
+                'upc': upc.strip(),
+                'feed_id': feed_id
+            }
+
+
 def validate_walmart_product_xml_against_xsd(product_xml_string):
     current_path = os.path.dirname(os.path.realpath(__file__))
     xmlschema_doc = etree.parse(current_path + "/walmart_suppliers_product_xsd/SupplierProductFeed.xsd")
@@ -435,9 +460,9 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         return context
 
     def list(self, request):
-        if os.path.isfile(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt"):
+        if os.path.isfile(get_walmart_api_invoke_log(request)):
 
-            with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "r") as myfile:
+            with open(get_walmart_api_invoke_log(request), "r") as myfile:
                 log_history = myfile.read().splitlines()
         else:
             log_history = None
@@ -448,8 +473,8 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         return Response({'log': log_history})
 
     def retrieve(self, request, pk=None):
-        if os.path.isfile(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt"):
-            with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "r") as myfile:
+        if os.path.isfile(get_walmart_api_invoke_log(request)):
+            with open(get_walmart_api_invoke_log(request)) as myfile:
                 log_history = myfile.read().splitlines()
         else:
             log_history = None
@@ -629,16 +654,17 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                 feed_id = response.body["feedId"]
                 current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
-                with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "a") as myfile:
+                with open(get_walmart_api_invoke_log(request), "a") as myfile:
                     myfile.write(current_time + ", " + upc + ", " + feed_id + "\n")
 
-                with open(os.path.dirname(os.path.realpath(__file__)) + "/walmart_api_invoke_log.txt", "r") as myfile:
+                with open(get_walmart_api_invoke_log(request), "r") as myfile:
                     response.body["log"] = myfile.read().splitlines()
 
                 if isinstance(response.body['log'], list):
                     response.body['log'].reverse()
 
-                get_feed_status(request, feed_id)
+                # create SubmissionHistory and Stats right away
+                get_feed_status(request.user, feed_id, date=datetime.datetime.now())
 
             return response.body
         else:
@@ -835,7 +861,8 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
             self.walmart_consumer_id,
             self.walmart_private_key,
             "GET",
-            "signature.txt")
+            os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', "signature.txt"))
+        )
 
         response = unirest.get(request_url.format(feedId=request_feed_id),
             headers={
@@ -1705,16 +1732,15 @@ class FeedIDRedirectView(DjangoView):
         return render_to_response(template_name='redirect_to_feed_check.html', context=context)
 
 
-def get_feed_status(request, feed_id, process_check_feed=True):
+def get_feed_status(user, feed_id, date=None, process_check_feed=True, check_auth=True):
     if os.path.exists(settings.TEST_TWEAKS['item_upload_ajax_ignore']):
         # do not perform time-consuming operations - return dummy empty response
         return {}
-    if not request.user.is_authenticated():
+    if check_auth and not user.is_authenticated():
         return
     # try to get data from cache
-    feed_history = SubmissionHistory.objects.filter(user=request.user, feed_id=feed_id)
+    feed_history = SubmissionHistory.objects.filter(user=user, feed_id=feed_id)
     if feed_history:
-        #import pdb; pdb.set_trace()
         return {
             'statuses': feed_history[0].get_statuses(),
             'ok': feed_history[0].all_items_ok(),
@@ -1726,14 +1752,21 @@ def get_feed_status(request, feed_id, process_check_feed=True):
     check_results = feed_checker.process_one_set(
         'https://marketplace.walmartapis.com/v2/feeds/{feedId}?includeDetails=true',
         feed_id)
-    if process_check_feed:
-        process_check_feed_response(request, check_results)
-    for result_stat in check_results.get('itemDetails', {}).get('itemIngestionStatus', []):
+
+    if process_check_feed and date:
+        process_check_feed_response(user, check_results, date=date, check_auth=check_auth)
+
+    ingestion_statuses = check_results.get('itemDetails', {}).get('itemIngestionStatus', [])
+    for result_stat in ingestion_statuses:
         subm_stat = result_stat.get('ingestionStatus', None)
         if subm_stat and isinstance(subm_stat, (str, unicode)):
-            db_history = SubmissionHistory.objects.create(user=request.user, feed_id=feed_id)
+            db_history = SubmissionHistory.objects.create(user=user, feed_id=feed_id)
             db_history.set_statuses([subm_stat])
-    feed_history = SubmissionHistory.objects.filter(user=request.user, feed_id=feed_id)
+    if not ingestion_statuses:
+        if check_results.get('feedStatus', '').lower() == 'error':
+            db_history = SubmissionHistory.objects.create(user=user, feed_id=feed_id)
+            db_history.set_statuses(['error'])
+    feed_history = SubmissionHistory.objects.filter(user=user, feed_id=feed_id)
     if feed_history:
         return {
             'statuses': feed_history[0].get_statuses(),
@@ -1741,15 +1774,27 @@ def get_feed_status(request, feed_id, process_check_feed=True):
             'partial_success': feed_history[0].partial_success(),
             'in_progress': feed_history[0].in_progress()
         }
+    return {}
 
 
 class FeedStatusAjaxView(DjangoView):
     def get(self, request, *args, **kwargs):
         feed_id = kwargs['feed_id']
-        result = get_feed_status(request, feed_id)
-        if isinstance(result, dict):
-            return JsonResponse(result)
-        return JsonResponse({
-            'redirect': str(reverse_lazy(
-                'login')+'?next='+request.GET.get('next', ''))
-        })
+
+        if not request.user.is_authenticated():
+            return JsonResponse({
+                'redirect': str(reverse_lazy(
+                    'login')+'?next='+request.GET.get('next', ''))
+            })
+
+        feed_history = SubmissionHistory.objects.filter(user=request.user,
+                                                        feed_id=feed_id)
+        if feed_history:
+            return JsonResponse({
+                'statuses': feed_history[0].get_statuses(),
+                'ok': feed_history[0].all_items_ok(),
+                'partial_success': feed_history[0].partial_success(),
+                'in_progress': feed_history[0].in_progress()
+            })
+
+        return JsonResponse({})
