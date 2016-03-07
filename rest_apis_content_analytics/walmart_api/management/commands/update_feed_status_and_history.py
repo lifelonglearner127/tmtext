@@ -26,6 +26,7 @@ class Command(BaseCommand):
                     if not sub_history.all_items_ok():
                         _statuses = [s.lower() for s in sub_history.get_statuses()]
                         if 'received' in _statuses or 'inprogress' in _statuses:
+                            import pdb; pdb.set_trace()
                             print 'REFRESHING STATUS %s' % feed_id, _statuses
                             print 'Removing existing SubmissionHistory and Statistics for feed ID %s' % feed_id
                             SubmissionHistory.objects.filter(user=user, feed_id=feed_id).delete()

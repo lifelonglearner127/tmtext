@@ -8,6 +8,7 @@ def process_check_feed_response(user, check_results_output, date, check_auth=Tru
     if check_auth and not user.is_authenticated():
         return
     multi_item = not(check_results_output.get('itemsReceived', 0) == 1)
+    ingestion_statuses = check_results_output.get('itemDetails', {}).get('itemIngestionStatus', [])
     for item in check_results_output.get('itemDetails', {}).get('itemIngestionStatus', []):
         if not 'ingestionStatus' in item:
             print('No ingestionStatus found!')
@@ -25,6 +26,14 @@ def process_check_feed_response(user, check_results_output, date, check_auth=Tru
                           upc=item.get('sku'),
                           feed_id=check_results_output.get('feedId'))
             print('Stat item created, status: SUCCESS')
+    if not ingestion_statuses:
+        if check_results_output.get('feedStatus', '').lower() == 'error':
+            stat_xml_item(user, 'session', 'failed', multi_item,
+                          date=date,
+                          error_text=str(check_results_output.get('ingestionErrors')),
+                          upc=check_results_output.get('sku'),
+                          feed_id=check_results_output.get('feedId'))
+            print('Stat item created, status: FAILED')
 
 
 def stat_xml_item(user, auth, status, multi_item, date, error_text=None, upc=None, feed_id=None):

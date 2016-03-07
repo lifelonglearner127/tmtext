@@ -1752,13 +1752,20 @@ def get_feed_status(user, feed_id, date=None, process_check_feed=True, check_aut
     check_results = feed_checker.process_one_set(
         'https://marketplace.walmartapis.com/v2/feeds/{feedId}?includeDetails=true',
         feed_id)
+
     if process_check_feed and date:
         process_check_feed_response(user, check_results, date=date, check_auth=check_auth)
-    for result_stat in check_results.get('itemDetails', {}).get('itemIngestionStatus', []):
+
+    ingestion_statuses = check_results.get('itemDetails', {}).get('itemIngestionStatus', [])
+    for result_stat in ingestion_statuses:
         subm_stat = result_stat.get('ingestionStatus', None)
         if subm_stat and isinstance(subm_stat, (str, unicode)):
             db_history = SubmissionHistory.objects.create(user=user, feed_id=feed_id)
             db_history.set_statuses([subm_stat])
+    if not ingestion_statuses:
+        if check_results.get('feedStatus', '').lower() == 'error':
+            db_history = SubmissionHistory.objects.create(user=user, feed_id=feed_id)
+            db_history.set_statuses(['error'])
     feed_history = SubmissionHistory.objects.filter(user=user, feed_id=feed_id)
     if feed_history:
         return {
