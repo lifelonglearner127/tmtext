@@ -74,15 +74,6 @@ class Command(BaseCommand):
                             SubmissionHistory.objects.filter(user=user, feed_id=feed_id).delete()
                             SubmitXMLItem.objects.filter(user=user, item_metadata__feed_id=feed_id).delete()
                             continue
-                """
-                        new_status = get_feed_status(user, feed_id, date=date, check_auth=False)
-                        # check if stats item already exist
-                        metadata = SubmitXMLItem.objects.filter(
-                            user=user, auth='session', when=date, item_metadata__feed_id=feed_id,
-                            item_metadata__upc=upc)
-                        if new_status.get('ok', None):
-                            metadata.update(status='successful')
-                """
                 # process feed statuses for unprocessed items
                 print get_feed_status(user, feed_id, date=date,
                                       process_check_feed=True, check_auth=False)
