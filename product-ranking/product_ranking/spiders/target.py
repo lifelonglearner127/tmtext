@@ -25,7 +25,6 @@ from product_ranking.validators.target_validator import TargetValidatorSettings
 is_empty = lambda x, y=None: x[0] if x else y
 
 
-
 class TargetProductSpider(BaseValidator, BaseProductsSpider):
     name = 'target_products'
     allowed_domains = ["target.com", "recs.richrelevance.com",
@@ -241,11 +240,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             desc = desc[0]
             desc = desc.replace("\n", "")
             product['description'] = desc
-        cond_set(product, 'image_url', response.xpath(
-            "//img[@itemprop='image']/@src").extract())
-        image = product.get('image_url')
+
+        image = response.xpath(
+            "//img[@itemprop='image']/@src").extract()
         if image:
-            image = image.replace("_100x100.", ".")
+            image = image[0].replace("_100x100.", ".")
             product['image_url'] = image
 
     def _extract_recomm_urls(self, response):
