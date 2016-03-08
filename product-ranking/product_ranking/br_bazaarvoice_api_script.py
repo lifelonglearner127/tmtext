@@ -20,6 +20,64 @@ class BuyerReviewsBazaarApi(object):
             'rating_by_star': {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
         }
 
+    def parse_buyer_reviews_batch_json(self, response):
+        meta = response.meta.copy()
+        product = meta['product']
+
+        base_reviews_data = is_empty(
+            re.findall(
+                r'\(({.+})\)',
+                response.body_as_unicode()
+            )
+        )
+        if base_reviews_data:
+            try:
+                json_data = json.loads(base_reviews_data)
+
+                try:
+                    products = json_data['BatchedResults']['q0']['Results']['ProductsOrder']
+                    if products:
+                        indx_prod = products[0]
+                    else:
+                        indx_prod = 0
+                except (KeyError, IndexError, TypeError):
+                    indx_prod = 0
+
+                review_stat = json_data['BatchedResults']['q0']['Results'][indx_prod]['ReviewStatistics']
+
+                num_of_reviews = int(review_stat['TotalReviewCount'])
+                find_date = review_stat['LastSubmissionTime']
+                if find_date:
+                    last_buyer_review_date = datetime.strptime(find_date[:find_date.find('.')], '%Y-%m-%dT%H:%M:%S')
+                    product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d-%m-%Y')
+
+                if num_of_reviews:
+                    average_rating = review_stat['AverageOverallRating']
+                    rating_by_star = self.ZERO_REVIEWS_VALUE['rating_by_star']
+                    for rate in review_stat['RatingDistribution']:
+                        rating_by_star[str(rate['RatingValue'])] = rate['Count']
+
+                    buyer_reviews = {
+                        'num_of_reviews': num_of_reviews,
+                        'average_rating': round(average_rating, 1),
+                        'rating_by_star': rating_by_star
+                    }
+                else:
+                    buyer_reviews = self.ZERO_REVIEWS_VALUE
+
+            except (KeyError, IndexError) as exc:
+                self.called_class.log(
+                    'Unable to parse buyer reviews on {url}: {exc}'.format(
+                        url=product['url'],
+                        exc=exc
+                    ), ERROR
+                )
+                buyer_reviews = self.ZERO_REVIEWS_VALUE
+        else:
+            buyer_reviews = self.ZERO_REVIEWS_VALUE
+
+        return buyer_reviews
+
     def parse_buyer_reviews_per_page(self, response, body_data=None):
         """
         return dict for buyer_reviews
