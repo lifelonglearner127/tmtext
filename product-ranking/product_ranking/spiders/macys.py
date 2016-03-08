@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import urllib
 import string
 import urlparse
@@ -243,9 +245,12 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         cond_set(product, 'locale', locale)
         brand = response.css('#brandLogo img::attr(alt)').extract()
         if not brand:
-            brand = guess_brand_from_first_words(product['title'])
+            brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
             brand = [brand]
         cond_set(product, 'brand', brand)
+
+        if product.get('brand', '').lower() == 'levis':
+            product['brand'] = "Levi's"
 
         product_id = response.css('#productId::attr(value)').extract()
 
