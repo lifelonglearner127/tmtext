@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import urllib
 import string
 import urlparse
@@ -223,8 +225,11 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
             )
 
         title = response.css('#productTitle::text').extract()
+        if not title:
+            title = response.xpath('//*[contains(@class, "productTitle")]'
+                                   '[contains(@itemprop, "name")]/text()').extract()
         if title:
-            cond_replace(product, 'title', title)
+            cond_replace(product, 'title', [title[0].strip()])
         path = '//*[@id="memberProductDetails"]/node()[normalize-space()]'
         desc = response.xpath(path).extract()
         if not desc:
@@ -243,9 +248,12 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         cond_set(product, 'locale', locale)
         brand = response.css('#brandLogo img::attr(alt)').extract()
         if not brand:
-            brand = guess_brand_from_first_words(product['title'])
+            brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
             brand = [brand]
         cond_set(product, 'brand', brand)
+
+        if product.get('brand', '').lower() == 'levis':
+            product['brand'] = "Levi's"
 
         product_id = response.css('#productId::attr(value)').extract()
 
