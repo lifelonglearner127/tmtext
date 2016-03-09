@@ -75,3 +75,8 @@ class WalmartDetectDuplicateContentRequestSerializer(serializers.Serializer):
 
 class WalmartDetectDuplicateContentFromCsvFileRequestSerializer(serializers.Serializer):
     csv_file_to_check = serializers.FileField()
+
+
+class CheckItemStatusByProductIDSerializer(serializers.Serializer):
+    numbers = serializers.CharField(
+        max_length=2000, style={'base_template': 'textarea.html'})

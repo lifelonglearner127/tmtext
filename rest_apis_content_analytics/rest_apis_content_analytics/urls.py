@@ -9,7 +9,7 @@ from walmart_api.views import (InvokeWalmartApiViewSet, ItemsUpdateWithXmlFileBy
                                ValidateWalmartProductXmlTextViewSet, ValidateWalmartProductXmlFileViewSet,
                                FeedIDRedirectView, DetectDuplicateContentBySeleniumViewset, DetectDuplicateContentByMechanizeViewset,
                                DetectDuplicateContentFromCsvFilesByMechanizeViewset,
-                               FeedStatusAjaxView)
+                               FeedStatusAjaxView, CheckItemStatusByProductIDViewSet)
 from statistics.views import StatsView, GetStatsAjax
 from nutrition_info_images.views import ClassifyTextImagesByNutritionInfoViewSet
 
@@ -25,6 +25,9 @@ urlpatterns = format_suffix_patterns([
     url(r'^check_feed_status_by_walmart_api/$',
         CheckFeedStatusByWalmartApiViewSet.as_view({'get': 'list', 'post': 'create'}),
         name='check_feed_status_by_walmart_api'),
+    url(r'^check_item_status_by_product_id/$',
+        CheckItemStatusByProductIDViewSet.as_view({'get': 'list', 'post': 'create'}),
+        name='check_item_status_by_product_id'),
     url(r'^validate_walmart_product_xml_file/$',
         ValidateWalmartProductXmlFileViewSet.as_view({'get': 'list', 'post': 'create'}),
         name='validate_walmart_product_xml_file'),

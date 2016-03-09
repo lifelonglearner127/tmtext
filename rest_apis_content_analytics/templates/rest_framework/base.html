@@ -8,6 +8,7 @@
   {% url "items_update_with_xml_file_by_walmart_api" as items_update_with_xml_file_by_walmart_api_url %}
   {% url "validate_walmart_product_xml_file" as validate_walmart_product_xml_file_url %}
   {% url "check_feed_status_by_walmart_api" as check_feed_status_by_walmart_api_url %}
+  {% url "check_item_status_by_product_id" as check_item_status_by_product_id_url %}
 
   {% block head %}
 
@@ -75,7 +76,7 @@
       }
       document.addEventListener("DOMContentLoaded", function() {
           var response_block = $('.response-info .prettyprint');
-          {% if request.path == items_update_with_xml_file_by_walmart_api_url or request.path == check_feed_status_by_walmart_api_url or request.path == validate_walmart_product_xml_file_url %}
+          {% if request.path == items_update_with_xml_file_by_walmart_api_url or request.path == check_feed_status_by_walmart_api_url or request.path == validate_walmart_product_xml_file_url or request.path == check_item_status_by_product_id_url%}
               response_block[0].innerHTML = linkify(response_block[0].innerHTML);
 
               var submission_history_as_json = "{{ submission_history_as_json }}";
@@ -382,6 +383,46 @@
       </div><!-- /.content -->
     </div><!-- /.container -->
   </div><!-- ./wrapper -->
+
+  {% if request.path == check_item_status_by_product_id_url %}
+      <div id="content2">
+          <div class="well">
+            <div id="content2_table">
+            </div>
+          </div>
+          <script>
+              function insertAfter(newNode, referenceNode) {
+                  referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+              }
+              function drawCheckItemStatusTable(data) {
+                  var table = '<table class="table stats_table">';
+                  table += '<tr><th>Code</th><th>Feed ID</th><th>Date/Time Submitted</th><th>Status</th></tr>';
+                  for(var number in data) {
+                      var top_value = data[number];
+                      if (top_value == 'NOT FOUND') table += '<tr><td>' + number.toString() + '</td><td colspan="3">NOT FOUND</td></tr>';
+                      else {
+                          for(var subm_date in top_value) {
+                              var value = top_value[subm_date];
+
+                              table += '<tr>';
+                              table += '<td>' + number.toString() + '</td>';
+                              table += '<td>' + value.feed_id.toString() + '</td>';
+                              table += '<td>' + value.datetime.toString() + '</td>';
+                              table += '<td>' + value.status.toString() + '</td>';
+                              table += '</tr>';
+                          }
+                      }
+                      table += '<tr><td colspan="4" style="border: 0"></td></tr>';
+                  }
+                  return table;
+              }
+              var raw_content = {{ content|safe }};
+              //var parsed_content = JSON.parse(raw_content);
+              document.getElementById('content2_table').innerHTML = drawCheckItemStatusTable(raw_content);
+              insertAfter(document.getElementById('content2'), document.getElementsByClassName('response-info')[0]);
+          </script>
+      </div>
+  {% endif %}
 
   {% block script %}
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>

@@ -34,9 +34,11 @@ from rest_framework import viewsets
 from walmart_api.serializers import (WalmartApiFeedRequestSerializer, WalmartApiItemsWithXmlFileRequestSerializer,
                                      WalmartApiItemsWithXmlTextRequestSerializer, WalmartApiValidateXmlTextRequestSerializer,
                                      WalmartApiValidateXmlFileRequestSerializer, WalmartDetectDuplicateContentRequestSerializer,
-                                     WalmartDetectDuplicateContentFromCsvFileRequestSerializer)
+                                     WalmartDetectDuplicateContentFromCsvFileRequestSerializer,
+                                     CheckItemStatusByProductIDSerializer)
 from walmart_api.models import SubmissionHistory
-from statistics.models import process_check_feed_response
+from statistics.models import process_check_feed_response, ItemMetadata
+from rest_apis_content_analytics.image_duplication.views import parse_data
 from lxml import etree
 import xmltodict
 import unirest
@@ -1714,6 +1716,77 @@ class DetectDuplicateContentFromCsvFilesByMechanizeViewset(viewsets.ViewSet):
 
         return None
     '''
+
+    def update(self, request, pk=None):
+        pass
+
+    def partial_update(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+    def destroy(self, request, pk=None):
+        return Response({'data': 'OK'})
+
+
+class CheckItemStatusByProductIDViewSet(viewsets.ViewSet):
+    """
+    API endpoint for checking item's status by product identifier (SKU, GTIN, etc).
+    Separate numbers by comma or space.
+    Numbers should contain only digits.
+    Examples:
+    <br/>
+    <pre>
+    {
+      "numbers": "0012345678, 014568321 012958473 0943846733, 049583784532"
+    }
+    </pre>
+    """
+    serializer_class = CheckItemStatusByProductIDSerializer
+    #parser_classes = (FormParser)
+
+    def list(self, request):
+        return Response()
+
+    """
+    def retrieve(self, request, pk=None):
+        if os.path.isfile(get_walmart_api_invoke_log(request)):
+            with open(get_walmart_api_invoke_log(request)) as myfile:
+                log_history = myfile.read().splitlines()
+        else:
+            log_history = None
+
+        if isinstance(log_history, list):
+            log_history.reverse()
+
+        return Response({'log': log_history})
+    """
+
+    def create(self, request):
+        serializer = self.serializer_class(data=parse_data(request.data))
+
+        if serializer.is_valid():
+            try:
+                result = {}
+                numbers = serializer.data["numbers"]
+                numbers = re.split('[, \n]+', numbers)
+                numbers = [n.strip() for n in numbers if n.strip()]
+                for number in numbers:
+                    metadata = ItemMetadata.objects.filter(upc=number).order_by('-item__when')
+                    if not number in result:
+                        result[number] = {}
+                    for md in metadata:
+                        result[number][md.item.when.isoformat()] = {
+                            'datetime': md.item.when.isoformat(),
+                            'status': md.item.status,
+                            'product_id': md.upc,
+                            'feed_id': md.feed_id
+                        }
+                    if not result[number]:
+                        result[number] = 'NOT FOUND'
+                return Response(result)
+            except Exception as e:
+                print str(e)
+
+        return Response({'data': 'NO OK'})
 
     def update(self, request, pk=None):
         pass
