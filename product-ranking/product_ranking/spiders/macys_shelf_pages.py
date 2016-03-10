@@ -123,6 +123,10 @@ class MacysShelfPagesSpider(MacysProductsSpider):
             ).re(FLOATING_POINT_RGEX)
         if response.css('.priceSale::text'):
             price = response.css('.priceSale::text').re(FLOATING_POINT_RGEX)
+        if not price:
+            price = [p.strip() for p in
+                     response.xpath('//*[@id="priceInfo"]//text()').extract()
+                     if p.strip()]
         if price:
             product['price'] = Price(price=price[0],
                                      priceCurrency='USD')
