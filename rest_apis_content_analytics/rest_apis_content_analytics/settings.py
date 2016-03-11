@@ -116,7 +116,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
 
     'statistics.context_processors.stats_walmart_xml_items',
-    #'walmart_api.context_processors.get_submission_history_as_json',
+    'walmart_api.context_processors.get_submission_history_as_json',
 )
 
 
@@ -141,6 +141,10 @@ LOGGING = {
             'filename': os.path.join(BASE_DIR, 'django.errors'),
             'filters': []
         },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        },
     },
     'loggers': {
         # Again, default Django configuration to email unhandled exceptions
@@ -160,9 +164,26 @@ LOGGING = {
             'handlers': ['logfile'],
             'level': 'WARNING', # Or maybe INFO or DEBUG
             'propagate': False
-        },
+        }
     },
 }
+
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.path.join(BASE_DIR, '_fs_cache'),
+    }
+}
+
+SUBMISSION_HISTORY_CACHE_KEY = 'get_submission_history_as_json'
+
+
+if DEBUG and os.path.exists('/tmp/_django_log_sql'):
+    LOGGING['loggers']['django.db.backends'] = {
+        'level': 'DEBUG',
+        'handlers': ['console'],
+    }
 
 
 TEMPLATES = [

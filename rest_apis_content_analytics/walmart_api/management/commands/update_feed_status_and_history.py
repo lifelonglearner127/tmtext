@@ -5,10 +5,14 @@ import subprocess
 
 from django.core.management import BaseCommand
 from django.contrib.auth.models import User
+from django.conf import settings
+from django.core.cache import cache
 
 from walmart_api.models import *
 from walmart_api.views import (parse_walmart_api_log, get_walmart_api_invoke_log,
                                get_feed_status)
+from walmart_api.context_processors import get_submission_history_as_json
+from walmart_api.utils import get_cache_key_for_request_or_user
 from statistics.models import *
 
 
@@ -77,3 +81,8 @@ class Command(BaseCommand):
                 # process feed statuses for unprocessed items
                 print get_feed_status(user, feed_id, date=date,
                                       process_check_feed=True, check_auth=False)
+
+            # re-create cache for each user
+            cache_key = get_cache_key_for_request_or_user(user)
+            cache.delete(cache_key)
+            get_submission_history_as_json(user)  # this will generate cache

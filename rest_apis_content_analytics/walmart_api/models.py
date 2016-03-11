@@ -29,4 +29,4 @@ class SubmissionHistory(models.Model):
 
 class SubmissionStatus(models.Model):
     history = models.ForeignKey(SubmissionHistory)
-    status = models.CharField(max_length=20)
+    status = models.CharField(max_length=20, db_index=True)
