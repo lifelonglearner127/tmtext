@@ -116,7 +116,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
 
     'statistics.context_processors.stats_walmart_xml_items',
-    'walmart_api.context_processors.get_submission_history_as_json',
+    #'walmart_api.context_processors.get_submission_history_as_json',
 )
 
 
