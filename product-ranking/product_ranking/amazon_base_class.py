@@ -1417,12 +1417,16 @@ class AmazonBaseClass(BaseProductsSpider):
         for mbc_row in response.xpath('//*[@id="mbc"]//*[contains(@class, "mbc-offer-row")]'):
             _price = mbc_row.xpath('.//*[contains(@class, "a-color-price")]/text()').extract()
             _name = mbc_row.xpath('.//*[contains(@class, "mbcMerchantName")]/text()').extract()
-            if _price and _name:
+            if _price:
+                _price = float(self._strip_currency_from_price(
+                               self._fix_dots_commas(_price[0])))
+            else:
+                _price = None
+            if _name:
                 # handle values like 1.264,67
                 _marketplace.append({
                     'name': _name[0].replace('\n', '').strip(),
-                    'price': float(self._strip_currency_from_price(
-                        self._fix_dots_commas(_price[0]))),
+                    'price': _price,
                     'currency': _prod_price_currency
                 })
         product['marketplace'] = _marketplace
