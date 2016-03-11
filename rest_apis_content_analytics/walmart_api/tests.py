@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import os
 import time
 import sys
@@ -257,3 +259,69 @@ class RestAPIsTests(StaticLiveServerTestCase):
 </span><span class="pun">}</span></pre>
             </div>
         """, self.selenium.page_source, 1)
+
+    def test_check_item_status_by_product_id(self):
+        self._auth()
+        self.selenium.get(self.live_server_url+'/check_item_status_by_product_id/')
+        self.selenium.find_element_by_name('numbers').send_keys('123456, 56854\n5216 6545')
+        self.selenium.execute_script("window.scrollBy(0,8000)", "")
+        for button in self.selenium.find_elements_by_css_selector('form .form-actions button.btn-primary'):
+            try:
+                button.click()
+            except:
+                continue
+        self.assertInHTML("""
+<div class="response-info">
+              <pre class="prettyprint"><span class="meta nocode"><b>HTTP 200 OK</b>
+<b>Allow:</b> <span class="lit">GET, POST, HEAD, OPTIONS</span>
+<b>Content-Type:</b> <span class="lit">application/json</span>
+<b>Vary:</b> <span class="lit">Accept</span>
+
+</span><span class="pun">{</span><span class="pln">
+    </span><span class="str">"5216"</span><span class="pun">:</span><span class="pln"> </span><span class="str">"NOT FOUND"</span><span class="pun">,</span><span class="pln">
+    </span><span class="str">"6545"</span><span class="pun">:</span><span class="pln"> </span><span class="str">"NOT FOUND"</span><span class="pun">,</span><span class="pln">
+    </span><span class="str">"123456"</span><span class="pun">:</span><span class="pln"> </span><span class="str">"NOT FOUND"</span><span class="pun">,</span><span class="pln">
+    </span><span class="str">"56854"</span><span class="pun">:</span><span class="pln"> </span><span class="str">"NOT FOUND"</span><span class="pln">
+</span><span class="pun">}</span></pre>
+            </div>
+        """, self.selenium.page_source, 1)
+        self.assertInHTML(u"""
+<div id="content2">
+          <div class="well">
+            <div id="content2_table"><table class="table stats_table" id="item_status_table"><tbody><tr><th class="sortable" style="cursor: pointer;">Code<span class="table_up_arrow" style="display: none;"> ↑</span><span class="table_down_arrow" style="display: none;"> ↓</span></th><th class="sortable" style="cursor: pointer;">Feed ID<span class="table_up_arrow" style="display: none;"> ↑</span><span class="table_down_arrow" style="display: none;"> ↓</span></th><th class="sortable" style="cursor: pointer;">Date/Time Submitted<span class="table_up_arrow" style="display: none;"> ↑</span><span class="table_down_arrow" style="display: inline;"> ↓</span></th><th class="sortable" style="cursor: pointer;">Status<span class="table_up_arrow" style="display: none;"> ↑</span><span class="table_down_arrow" style="display: none;"> ↓</span></th></tr><tr><td>123456</td><td colspan="3">NOT FOUND</td></tr><tr><td>56854</td><td colspan="3">NOT FOUND</td></tr><tr><td>6545</td><td colspan="3">NOT FOUND</td></tr><tr><td>5216</td><td colspan="3">NOT FOUND</td></tr></tbody></table></div>
+          </div>
+          <script>
+              function insertAfter(newNode, referenceNode) {
+                  referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+              }
+              function drawCheckItemStatusTable(data) {
+                  var table = '<table class="table stats_table" id="item_status_table">';
+                  table += '<tr><th class="sortable">Code</th><th class="sortable">Feed ID</th>';
+                  table += '<th class="sortable">Date/Time Submitted</th><th class="sortable">Status</th></tr>';
+                  for(var number in data) {
+                      var top_value = data[number];
+                      if (top_value == 'NOT FOUND') table += '<tr><td>' + number.toString() + '</td><td colspan="3">NOT FOUND</td></tr>';
+                      else {
+                          for(var subm_date in top_value) {
+                              var value = top_value[subm_date];
+                              table += '<tr>';
+                              table += '<td>' + number.toString() + '</td>';
+                              table += '<td>' + value.feed_id.toString() + '</td>';
+                              table += '<td>' + value.datetime.toString() + '</td>';
+                              table += '<td>' + value.status.toString() + '</td>';
+                              table += '</tr>';
+                          }
+                      }
+                      //table += '<tr><td colspan="4" style="border: 0"></td></tr>';
+                  }
+                  return table;
+              }
+              var raw_content = {
+    "5216": "NOT FOUND",
+    "6545": "NOT FOUND",
+    "123456": "NOT FOUND",
+    "56854": "NOT FOUND"
+};
+          </script>
+      </div>
+      """, self.selenium.page_source, 1)

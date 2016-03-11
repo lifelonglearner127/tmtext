@@ -159,7 +159,8 @@
       <ul class="well top-links-block" style="margin-top:80px">
           <a href="{% url 'items_update_with_xml_file_by_walmart_api' %}" >Submit XML</a>&nbsp;&nbsp;&#8226;&nbsp;
           <a href="{% url 'validate_walmart_product_xml_file' %}">Validate XML</a>&nbsp;&nbsp;&#8226;&nbsp;
-          <a href="{% url 'check_feed_status_by_walmart_api' %}">Check Feed Status</a>
+          <a href="{% url 'check_feed_status_by_walmart_api' %}">Check Feed Status</a>&nbsp;&nbsp;&#8226;&nbsp;
+          <a href="{% url 'check_item_status_by_product_id' %}">Check GTIN Status</a>
       </ul>
 
       {% if request.path == items_update_with_xml_file_by_walmart_api_url %}
@@ -395,8 +396,9 @@
                   referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
               }
               function drawCheckItemStatusTable(data) {
-                  var table = '<table class="table stats_table">';
-                  table += '<tr><th>Code</th><th>Feed ID</th><th>Date/Time Submitted</th><th>Status</th></tr>';
+                  var table = '<table class="table stats_table" id="item_status_table">';
+                  table += '<tr><th class="sortable">Code</th><th class="sortable">Feed ID</th>';
+                  table += '<th class="sortable">Date/Time Submitted</th><th class="sortable">Status</th></tr>';
                   for(var number in data) {
                       var top_value = data[number];
                       if (top_value == 'NOT FOUND') table += '<tr><td>' + number.toString() + '</td><td colspan="3">NOT FOUND</td></tr>';
@@ -411,16 +413,68 @@
                               table += '</tr>';
                           }
                       }
-                      table += '<tr><td colspan="4" style="border: 0"></td></tr>';
+                      //table += '<tr><td colspan="4" style="border: 0"></td></tr>';
                   }
                   return table;
               }
               var raw_content = {{ content|safe }};
+          </script>
+      </div>
+      <script>
+          function apply_sort(table) {
+              $(table).find('th.sortable').click(function () {
+                  var table = $(this).parents('table').eq(0);
+                  var rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
+                  this.asc = !this.asc;
+                  if (!this.asc) {
+                      rows = rows.reverse()
+                  }
+                  for (var i = 0; i < rows.length; i++) {
+                      table.append(rows[i])
+                  }
+                  if(!this.asc) {
+                      $(table).find('th .table_up_arrow').hide();
+                      $(this).find('.table_down_arrow').show();
+                  } else {
+                      $(table).find('th .table_down_arrow').hide();
+                      $(this).find('.table_up_arrow').show();
+                  }
+              });
+          }
+
+          function init_sort(table, initial_sort_th) {
+              $(table).find('th.sortable').css('cursor', 'pointer');
+              $(table).find('th.sortable').each(function () {
+                  $(this).append('<span class="table_up_arrow"> ↑</span>');
+                  $(this).append('<span class="table_down_arrow"> ↓</span>');
+              });
+              apply_sort(table);
+              $(table).find('th')[initial_sort_th].click();
+              $(table).find('th')[initial_sort_th].click();
+          }
+          function comparer(index) {
+              return function(a, b) {
+                  var valA = getCellValue(a, index), valB = getCellValue(b, index);
+                  if($.isNumeric(valA) && $.isNumeric(valB)) return valA - valB;
+                  else if(Date.parse(valA) && Date.parse(valB)) {
+                      return Date.parse(valA) - Date.parse(valB);
+                  }
+                  else return valA < valB;
+               }
+          }
+          function getCellValue(row, index){ return $(row).children('td').eq(index).html() }
+      </script>
+      <script>
+          document.addEventListener("DOMContentLoaded", function(event) {
               //var parsed_content = JSON.parse(raw_content);
               document.getElementById('content2_table').innerHTML = drawCheckItemStatusTable(raw_content);
               insertAfter(document.getElementById('content2'), document.getElementsByClassName('response-info')[0]);
-          </script>
-      </div>
+              var cont2 = $('#content2');
+              cont2[0].innerHTML = linkify(cont2[0].innerHTML);
+
+              init_sort($('#item_status_table'), 2);
+          });
+      </script>
   {% endif %}
 
   {% block script %}
