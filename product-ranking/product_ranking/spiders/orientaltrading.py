@@ -10,6 +10,7 @@ from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value
+from spiders_shared_code.orientaltrading_variants import OrientaltradingVariants
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -76,6 +77,12 @@ class OrientaltradingProductsSpider(BaseProductsSpider):
         cond_set(product, 'description', description)
 
         product['related_products'] = self.parse_related_product(response)
+
+        otv = OrientaltradingVariants()
+        otv.setupSC(response)
+        _variants = otv._variants()
+        if _variants:
+            product['variants'] = _variants
 
         # reqs = self.parse_variants(response, reqs)
 
