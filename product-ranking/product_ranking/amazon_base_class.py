@@ -350,6 +350,10 @@ class AmazonBaseClass(BaseProductsSpider):
         upc = self._parse_upc(response)
         cond_set_value(product, 'upc', upc)
 
+        # No longer available
+        no_longer_avail = self._parse_no_longer_available(response)
+        cond_set_value(product, 'no_longer_available', no_longer_avail)
+
         # Prime & PrimePantry
         if not product.get('prime', None) and self._parse_prime_pantry(response):
             product['prime'] = self._parse_prime_pantry(response)
@@ -568,6 +572,11 @@ class AmazonBaseClass(BaseProductsSpider):
                 image = max(img_data.items(), key=lambda (_, size): size[0])[0]
 
         return image
+
+    def _parse_no_longer_available(self, response):
+        if response.xpath('//*[contains(@id, "availability")]'
+                          '//*[contains(text(), "unavailable")]'):
+            return True
 
     def _parse_brand(self, response, add_xpath=None):
         """
