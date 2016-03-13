@@ -31,7 +31,6 @@ def is_num(s):
         return False
 
 
-# TODO: reviews
 # TODO: related products
 # TODO: variants ?
 # class DockersProductsSpider(BaseValidator, BaseProductsSpider):
