@@ -4,11 +4,13 @@ from itertools import izip
 from datetime import datetime
 
 from scrapy.log import ERROR, INFO, WARNING
+import lxml.html
 
 from product_ranking.items import BuyerReviews
 
 
 is_empty = lambda x, y=None: x[0] if x else y
+
 
 class BuyerReviewsBazaarApi(object):
     def __init__(self, *args, **kwargs):
@@ -164,10 +166,9 @@ class BuyerReviewsBazaarApi(object):
 
         product['buyer_reviews'] = BuyerReviews(**self.parse_buyer_reviews_per_page(response))
 
+        yield product
         if reqs:
-            return self.called_class.send_next_request(reqs, response)
-
-        return product
+            yield self.called_class.send_next_request(reqs, response)
 
     @staticmethod
     def _scrape_alternative_rating_by_star(response):
@@ -247,7 +248,21 @@ class BuyerReviewsBazaarApi(object):
                     stars = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
                     for star in stars_data:
                         stars[star] += 1
-
+                    # check if stars values == br_count
+                    if hasattr(self, 'br_count'):
+                        result = {}
+                        if self.br_count != sum([k for k in stars.values()]):
+                            lxml_doc = lxml.html.fromstring(data.get('BVRRRatingSummarySourceID', ''))
+                            for stars_num in range(1, 6):
+                                stars_element = lxml_doc.xpath(
+                                    '//*[contains(@class, "BVRRHistogramBarRow")]'
+                                    '[contains(@class, "BVRRHistogramBarRow%s")]' % stars_num)
+                                if stars_element:
+                                    num_reviews = re.search(r'\((\d+)\)', stars_element[0].text_content())
+                                    if num_reviews:
+                                        num_reviews = num_reviews.group(1)
+                                        result[str(stars_num)] = int(num_reviews)
+                            return result
                 return stars
 
             except (KeyError, IndexError) as exc:
