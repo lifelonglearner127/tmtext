@@ -1328,6 +1328,8 @@ class AmazonBaseClass(BaseProductsSpider):
 
     def _parse_marketplace_from_top_block(self, response):
         """ Parses "top block" marketplace ("Sold by ...") """
+        # TODO: see below
+        assert False, 'TODO: scrape merchant ID from top block'
         top_block = response.xpath('//*[contains(@id, "sns-availability")]'
                                    '//*[contains(text(), "old by")]')
         if not top_block:
@@ -1426,17 +1428,32 @@ class AmazonBaseClass(BaseProductsSpider):
         for mbc_row in response.xpath('//*[@id="mbc"]//*[contains(@class, "mbc-offer-row")]'):
             _price = mbc_row.xpath('.//*[contains(@class, "a-color-price")]/text()').extract()
             _name = mbc_row.xpath('.//*[contains(@class, "mbcMerchantName")]/text()').extract()
-            if _price:
-                _price = float(self._strip_currency_from_price(
-                               self._fix_dots_commas(_price[0])))
-            else:
-                _price = None
+            _json_data = None
+            try:
+                _json_data = json.loads(mbc_row.xpath(
+                    './/*[contains(@class, "a-declarative")]'
+                    '[contains(@data-a-popover, "{")]/@data-a-popover').extract()[0])
+            except Exception as e:
+                self.log("Error while parsing json_data: %s at %s" % (
+                    str(e), response.url), ERROR)
+            merchant_id = None
+            if _json_data:
+                merchant_url = _json_data.get('url', '')
+                merchant_id = re.search(r'&me=([A-Za-z\d]{3,30})&', merchant_url)
+                if merchant_id:
+                    merchant_id = merchant_id.group(1)
+
+            _price = float(self._strip_currency_from_price(
+                           self._fix_dots_commas(_price[0]))) \
+                     if _price else None
             if _name:
                 # handle values like 1.264,67
                 _marketplace.append({
                     'name': _name[0].replace('\n', '').strip(),
                     'price': _price,
-                    'currency': _prod_price_currency
+                    'currency': _prod_price_currency,
+                    'seller_id': merchant_id
                 })
+
         product['marketplace'] = _marketplace
         return product
