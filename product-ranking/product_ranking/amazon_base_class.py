@@ -1328,8 +1328,6 @@ class AmazonBaseClass(BaseProductsSpider):
 
     def _parse_marketplace_from_top_block(self, response):
         """ Parses "top block" marketplace ("Sold by ...") """
-        # TODO: see below
-        assert False, 'TODO: scrape merchant ID from top block'
         top_block = response.xpath('//*[contains(@id, "sns-availability")]'
                                    '//*[contains(text(), "old by")]')
         if not top_block:
@@ -1337,6 +1335,11 @@ class AmazonBaseClass(BaseProductsSpider):
                                        '[contains(text(), "old by")]')
         if not top_block:
             return
+        seller_id = re.search(r'seller=([a-zA-Z0-9]+)">', top_block.extract()[0])
+        if not seller_id:
+            seller_id = re.search(r'seller=([a-zA-Z0-9]+)&>', top_block.extract()[0])
+        if seller_id:
+            seller_id = seller_id.group(1)
         sold_by_str = ''.join(top_block.xpath('.//text()').extract()).strip()
         sold_by_str = sold_by_str.replace('.com.', '.com').replace('\t', '')\
             .replace('\n', '').replace('Gift-wrap available', '').replace(' .', '').strip()
@@ -1381,6 +1384,7 @@ class AmazonBaseClass(BaseProductsSpider):
             'currency': _currency if _price else None,
             'price': _price_decimal if _price else None,
             'name': sold_by_whom,
+            'seller_id': seller_id if seller_id else None
         })
         product['marketplace'] = _marketplace
         return product
