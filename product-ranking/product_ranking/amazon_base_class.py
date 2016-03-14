@@ -7,11 +7,13 @@ from urllib import unquote
 import urllib2
 import json
 import string
+import random
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 import lxml.html
+import requests
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
@@ -70,6 +72,15 @@ class AmazonBaseClass(BaseProductsSpider):
                        'PrimeBasicFreeTrialUpsellEligible&deliveryOptions=' \
                        '%5Bsame-us%2Cnext%2Csecond%2Cstd-n-us%2Csss-us%5D' \
                        '&preorder=false&releaseDateDeliveryEligible=false'
+
+    MKTP_USER_AGENTS = [
+        'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/601.4.4 (KHTML, like Gecko) Version/9.0.3 Safari/601.4.4',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:44.0) Gecko/20100101 Firefox/44.0',
+        'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.109 Safari/537.36'
+    ]
 
     def __init__(self, captcha_retries='10', *args, **kwargs):
         super(AmazonBaseClass, self).__init__(
@@ -1422,6 +1433,35 @@ class AmazonBaseClass(BaseProductsSpider):
             price = AmazonBaseClass._replace_duplicated_seps(price)
         return price
 
+    def _get_marketplace_price_from_cart(self, response, marketplace_block):
+        data_modal = {}
+        try:
+            data_modal = json.loads(marketplace_block.xpath(
+                '//*[contains(@data-a-modal, "hlc")]/@data-a-modal'
+            ).extract()[0])
+        except Exception as e:
+            self.log('Error while parsing JSON modal data %s at %s' % (
+                str(e), response.url), ERROR)
+        get_price_url = data_modal.get('url', None)
+        if get_price_url.startswith('/') and not get_price_url.startswith('//'):
+            domain = urlparse.urlparse(response.url).netloc
+            get_price_url = urlparse.urljoin('http://'+domain, get_price_url)
+        if get_price_url:
+            self.log('Getting "cart" seller price at %s for %s' % (
+                response.url, get_price_url))
+            seller_price_cont = requests.get(
+                get_price_url,
+                headers={'User-Agent': random.choice(self.MKTP_USER_AGENTS)}
+            ).text
+            lxml_doc = lxml.html.fromstring(seller_price_cont)
+            seller_price = lxml_doc.xpath(
+                '//*[contains(@id, "priceblock_ourprice")]//text()')
+            if seller_price:
+                _price = ' '.join([p.strip() for p in seller_price])
+                _price = re.search(r' .{0,2}([\d\.,]+) ', _price)
+                if _price:
+                    return [_price.group(1)]
+
     def _parse_marketplace_from_static_right_block(self, response):
         # try to collect marketplaces from the main page first, before sending extra requests
         product = response.meta['product']
@@ -1450,28 +1490,7 @@ class AmazonBaseClass(BaseProductsSpider):
                     merchant_id = merchant_id.group(1)
 
             if not _price:  # maybe price for this seller available only "in cart"
-                data_modal = {}
-                try:
-                    data_modal = json.loads(mbc_row.xpath(
-                        '//*[contains(@data-a-modal, "hlc")]/@data-a-modal'
-                    ).extract()[0])
-                except Exception as e:
-                    self.log('Error while parsing JSON modal data %s at %s' % (
-                        str(e), response.url), ERROR)
-                get_price_url = data_modal.get('url', None)
-                if get_price_url.startswith('/') and not get_price_url.startswith('//'):
-                    domain = urlparse.urlparse(response.url).netloc
-                    get_price_url = urlparse.urljoin('http://'+domain, get_price_url)
-                if get_price_url:
-                    self.log('Getting "cart" seller price at %s for %s' % (
-                        response.url, get_price_url))
-                    import pdb; pdb.set_trace()
-                    seller_price_cont = urllib2.urlopen(get_price_url).read()
-                    lxml_doc = lxml.html.fromstring(seller_price_cont)
-                    seller_price = lxml_doc.xpath(
-                        '//*[contains(@id, "priceblock_ourprice")]//text()')
-                    if seller_price:
-                        _price = seller_price
+                _price = self._get_marketplace_price_from_cart(response, mbc_row)
 
             _price = float(self._strip_currency_from_price(
                            self._fix_dots_commas(_price[0]))) \
