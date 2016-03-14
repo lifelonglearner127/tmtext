@@ -4,12 +4,14 @@ from __future__ import print_function
 import re
 import urlparse
 from urllib import unquote
+import urllib2
 import json
 import string
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
+import lxml.html
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
@@ -1447,9 +1449,34 @@ class AmazonBaseClass(BaseProductsSpider):
                 if merchant_id:
                     merchant_id = merchant_id.group(1)
 
+            if not _price:  # maybe price for this seller available only "in cart"
+                data_modal = {}
+                try:
+                    data_modal = json.loads(mbc_row.xpath(
+                        '//*[contains(@data-a-modal, "hlc")]/@data-a-modal'
+                    ).extract()[0])
+                except Exception as e:
+                    self.log('Error while parsing JSON modal data %s at %s' % (
+                        str(e), response.url), ERROR)
+                get_price_url = data_modal.get('url', None)
+                if get_price_url.startswith('/') and not get_price_url.startswith('//'):
+                    domain = urlparse.urlparse(response.url).netloc
+                    get_price_url = urlparse.urljoin('http://'+domain, get_price_url)
+                if get_price_url:
+                    self.log('Getting "cart" seller price at %s for %s' % (
+                        response.url, get_price_url))
+                    import pdb; pdb.set_trace()
+                    seller_price_cont = urllib2.urlopen(get_price_url).read()
+                    lxml_doc = lxml.html.fromstring(seller_price_cont)
+                    seller_price = lxml_doc.xpath(
+                        '//*[contains(@id, "priceblock_ourprice")]//text()')
+                    if seller_price:
+                        _price = seller_price
+
             _price = float(self._strip_currency_from_price(
                            self._fix_dots_commas(_price[0]))) \
                      if _price else None
+
             if _name:
                 # handle values like 1.264,67
                 _marketplace.append({
