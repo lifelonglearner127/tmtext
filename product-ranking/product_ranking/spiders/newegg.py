@@ -123,7 +123,7 @@ class NeweggProductSpider(BaseProductsSpider):
 
         return product
 
-    def remove_dublicate(self, full_list):
+    def remove_duplicate(self, full_list):
         new_list = []
         for item in full_list:
             if not item in new_list:
@@ -131,60 +131,68 @@ class NeweggProductSpider(BaseProductsSpider):
         return new_list
 
     def parse_variant(self, response):
-
-        properties_data = {}
         variants = []
-        d = re.findall(r'var hdGroupItemModelString = (.+);', response.body_as_unicode())
-        var_data = json.loads(d[0])
-
-        var_info = {}
-        for v in var_data:
-            var_info[v['ParentItem']] = {'SellerItem': v['SellerItem']}
 
         vars = is_empty(response.xpath(
             '//script[contains(text(), "Biz.Product.GroupItemSwitcher")]').extract())
-
         try:
             properties_vars = re.findall(r'properties:(\[.*\]\}])', vars)
             availableMap = re.findall(r'availableMap:(\[.*\]\}])', vars)
-
             if properties_vars:
                 data = json.loads(properties_vars[0])
-                for prop in data:
-                    properties_data[prop['name']] = {'description': prop['description'], 'values': {}}
-                    for d in prop['data']:
-                        properties_data[prop['name']]['values'][d['value']] = d['description']
             else:
                 return
-
             price_js = json.loads(availableMap[0])
-
-            for p in price_js:
-                var_info[p['info']['item']]['price'] = p['info']['price']
-                var_info[p['info']['item']]['properties'] = {}
-                for m in p['map']:
-                    var_info[p['info']['item']]['properties'][properties_data[m['name']]['description']] = properties_data[m['name']]['values'][m['value']]
-
-            for item, v in var_info.items():
-                variant = {}
-                if v['price'] == 999999:
-                    variant['price'] = None
-                elif v['price'] > 0:
-                    variant['price'] = v['price']
-                    variant['in_stock'] = True
-                    variant['properties'] = v['properties']
-
-                if variant:
-                    variants.append(variant)
-
         except Exception as e:
             print e
 
-        return variants
+        all = list()
+        for group in data:
+            group_variants = list()
+            for prop in group['data']:
+                if prop['displayInfo']:
+                    group_variants.append([prop['description'], prop['value'], group['name'], group['description']])
+            if group_variants:
+                all.append(group_variants)
+        result = list(itertools.product(*all))
 
-    def get_price_in_card(self, response):
-        price_part = response.xpath('//li[contains(@id, "singleFinalPrice")]/strong/text()').extract()
-        price_penny = response.xpath('//li[contains(@class, "price-current")]/sup/text()').extract()
+        price_all = list()
+        for group in price_js:
+            group_variants = list()
+            for prop in group['map']:
+                group_variants.append(prop['value'])
+                group_variants.append(prop['name'])
+            group_variants.append(group['info']['price'])
+            price_all.append(group_variants)
+        for r in result:
+            id_result = []
+            properties = {}
+            variant = {}
+            for item in r:
+                id_result.append(item[1])
+                id_result.append(item[2])
+                properties[str(item[3])] = item[0]
+            for price_item in price_all:
+                rez = list(set(id_result) - set(price_item))
+                if not rez:
+                    price = price_item[-1]
+                    in_stock = True
+                    break
+                else:
+                    price = None
+                    in_stock = False
+
+            if price:
+                variant['price'] = price
+            else:
+                variant['price'] = None
+            if str(variant.get('price', '')) == '999999':
+                variant['price'] = None  # price available in cart only
+            variant['in_stock'] = in_stock
+            variant['properties'] = properties
+            variants.append(variant)
+
+        return variants
 
     def parse_marketplace_json(self, response):
         marketplaces = []
@@ -201,7 +209,7 @@ class NeweggProductSpider(BaseProductsSpider):
 
         sellers_noline = list(set(marketplace.xpath("//tr[contains(@class, featured)]/td/img/@alt").extract()))
         sellers_line = marketplace.xpath("//tr/td[@class='seller']/a[1]/@title").extract()
-        new_sellers_line = self.remove_dublicate(sellers_line)
+        new_sellers_line = self.remove_duplicate(sellers_line)
         sellers = sellers_noline + new_sellers_line
         price_int = marketplace.xpath(
             "//ul[contains(@class, 'price')]/li[@class='price-current ']/strong/text()").extract()
