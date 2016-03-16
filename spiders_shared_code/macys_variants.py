@@ -28,22 +28,50 @@ class MacysVariants(object):
 
         return None
 
+    def _get_prod_id(self):
+        product_id = self.tree_html.xpath('//*[contains(@id, "productId")]/@value')
+        if not product_id:
+            product_id = self.tree_html.xpath('//*[contains(@class,"productID")]'
+                                              '[contains(text(), "Web ID:")]/text()')
+            if product_id:
+                product_id = [''.join([c for c in product_id[0] if c.isdigit()])]
+        if product_id:
+            return product_id[0]
+
+    def _get_swatch_colors(self):
+        colors = self.tree_html.xpath('//img[@class="colorSwatch"]/@alt')
+        if not colors:
+            colors = self.tree_html.xpath('//*[contains(@class, "productColor")]/text()')
+        if not colors:
+            page_raw_text = lxml.html.tostring(self.tree_html)
+            pos1 = page_raw_text.find('"colorSwatchMap":')
+            pos2 = page_raw_text.find('},', pos1)
+            if pos2 > pos1 > 0:
+                colors_map = json.loads(page_raw_text[pos1+len('"colorSwatchMap":'):pos2].strip() + '}')
+                colors = colors_map.keys()
+        return colors
+
     def _variants(self):
         try:
-            colors = self.tree_html.xpath('//img[@class="colorSwatch"]/@alt')
-            if not colors:
-                colors = self.tree_html.xpath('//*[contains(@class, "productColor")]/text()')
+            colors = self._get_swatch_colors()
 
             sizes = self.tree_html.xpath('//li[@class=" size"]/@title')
             page_raw_text = lxml.html.tostring(self.tree_html)
-            product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0].strip()
-            variants_json = json.loads(re.search('MACYS\.pdp\.upcmap\["' + product_id + '"\] = (.+?);\nMACYS\.pdp', page_raw_text).group(1))
+            product_id = self._get_prod_id()
+            try:
+                variants_json = json.loads(re.search('MACYS\.pdp\.upcMap\["' + product_id + '"\] = (.+?);\nMACYS\.pdp', page_raw_text).group(1))
+            except (IndexError, AttributeError):
+                pos1 = page_raw_text.find('"upcMap": {\n"%s": ' % product_id)
+                pos2 = page_raw_text.find('}\n]\n},', pos1+1)
+                if pos1 > 0 and pos2 > 0:
+                    variants_json = json.loads(
+                        page_raw_text[pos1+len('"upcMap": {\n"%s": ' % product_id):pos2].strip()+'}]')
 
             product_info_json = self._extract_product_info_json()
 
             price_amount = None
 
-            if product_info_json:
+            if product_info_json:  # TODO: this one is None?
                 sale_price = product_info_json.get("productDetail", {}).get("salePrice", "")
                 regular_price = product_info_json.get("productDetail", {}).get("regularPrice", "")
 
