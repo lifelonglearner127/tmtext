@@ -252,8 +252,7 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         cond_set_value(product, 'description',
                        desc, ''.join)
         if not product.get('description', ''):
-            cond_set_value(
-                product, 'description',
+            product['description'] = (
                 ' '.join(response.css('#product-detail-control ::text').extract()))
 
         locale = response.css('#headerCountryFlag::attr(title)').extract()
