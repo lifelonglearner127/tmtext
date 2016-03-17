@@ -61,11 +61,14 @@ class MacysVariants(object):
             try:
                 variants_json = json.loads(re.search('MACYS\.pdp\.upcMap\["' + product_id + '"\] = (.+?);\nMACYS\.pdp', page_raw_text).group(1))
             except (IndexError, AttributeError):
-                pos1 = page_raw_text.find('"upcMap": {\n"%s": ' % product_id)
-                pos2 = page_raw_text.find('}\n]\n},', pos1+1)
-                if pos1 > 0 and pos2 > 0:
-                    variants_json = json.loads(
-                        page_raw_text[pos1+len('"upcMap": {\n"%s": ' % product_id):pos2].strip()+'}]')
+                try:
+                    variants_json = json.loads(re.search('MACYS\.pdp\.upcmap\["' + product_id + '"\] = (.+?);\nMACYS\.pdp', page_raw_text).group(1))
+                except (IndexError, AttributeError):
+                    pos1 = page_raw_text.find('"upcMap": {\n"%s": ' % product_id)
+                    pos2 = page_raw_text.find('}\n]\n},', pos1+1)
+                    if pos1 > 0 and pos2 > 0:
+                        variants_json = json.loads(
+                            page_raw_text[pos1+len('"upcMap": {\n"%s": ' % product_id):pos2].strip()+'}]')
 
             product_info_json = self._extract_product_info_json()
 
@@ -161,7 +164,27 @@ class MacysVariants(object):
                 color = x[0]
                 return color in colors
 
-            variation_combinations_values = list(itertools.ifilter(filter, itertools.product(*variation_values_list)))
+            if size_list or color_list or type_list:
+                variation_combinations_values = list(itertools.ifilter(filter, itertools.product(*variation_values_list)))
+            else:
+                # only small colors block available?
+                colors_imgs = self.tree_html.xpath(
+                    '//div[contains(@class, "colors")]'
+                    '//li/img[contains(@class, "colorSwatch")][contains(@id, "s")]')
+                already_collected_colors = []
+                result_variants = []
+                for img in colors_imgs:
+                    color = img.xpath('./@title')[0].strip()
+                    #img_url = img.xpath('./@style')[0].strip()  # TODO: try to find a way to scrape image samples?
+                    if color not in already_collected_colors:
+                        already_collected_colors.append(color)
+                        result_variants.append({
+                            'price': None, 'selected': False, 'in_stock': True,
+                            #'image_url': src,
+                            'properties': {'color': color}
+                        })
+                return result_variants if result_variants else None
+
             variation_combinations_values = map(list, variation_combinations_values)
             outofstock_variation_combinations_values = [variation_combination for variation_combination in variation_combinations_values if variation_combination not in instock_variation_combinations_values]
 
