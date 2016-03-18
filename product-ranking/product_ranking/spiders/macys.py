@@ -234,6 +234,12 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
                 response.xpath('//*[contains(@class, "mainImages")]'
                                '//*[contains(@class, "imageItem")]//img/@src').extract()
             )
+        if not product.get("image_url") or \
+                "data:image" in product.get("image_url"):
+            img_src = response.xpath('//*[contains(@class, "imageItem") '
+                                 'and contains(@class, "selected")]/img/@src').extract()
+            if img_src:
+                product['image_url'] = img_src[0]
 
         title = response.css('#productTitle::text').extract()
         if not title:
