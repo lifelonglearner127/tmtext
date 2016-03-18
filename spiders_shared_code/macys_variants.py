@@ -18,8 +18,11 @@ class MacysVariants(object):
 
     def _extract_product_info_json(self):
         try:
-            product_info_json = self.tree_html.xpath("//script[@id='pdpMainData' and @type='application/json']/text()")
-
+            product_info_json = self.tree_html.xpath(
+                "//script[@id='pdpMainData' and @type='application/json']/text()")
+            if not product_info_json:
+                product_info_json = self.tree_html.xpath(
+                    "//script[@id='productMainData' and @type='application/json']/text()")
             if product_info_json:
                 product_info_json = json.loads(product_info_json[0])
                 return product_info_json
@@ -51,8 +54,18 @@ class MacysVariants(object):
                 colors = colors_map.keys()
         return colors
 
+    @staticmethod
+    def _get_color_to_price_map(product_info_json):
+        result_map = {}
+        for price_key in product_info_json.get('colorwayPricingSwatches', {}).keys():
+            if not '$' in price_key:
+                continue
+            for color_key in product_info_json['colorwayPricingSwatches'][price_key]:
+                result_map[color_key] = price_key
+        return result_map
+
     def _variants(self):
-        try:
+        #try:
             colors = self._get_swatch_colors()
 
             sizes = self.tree_html.xpath('//li[@class=" size"]/@title')
@@ -71,6 +84,9 @@ class MacysVariants(object):
                             page_raw_text[pos1+len('"upcMap": {\n"%s": ' % product_id):pos2].strip()+'}]')
 
             product_info_json = self._extract_product_info_json()
+
+            # sometimes prices for different colors are different - create a color-->price map
+            color_to_price_map = self._get_color_to_price_map(product_info_json)
 
             price_amount = None
 
@@ -206,12 +222,18 @@ class MacysVariants(object):
 
                     stockstatus_for_variants_list.append(stockstatus_for_variants)
 
+            # update variants with pricing map
+            for sfvl in stockstatus_for_variants_list:
+                if sfvl.get('properties', {}).get('color') in color_to_price_map.keys():
+                    sfvl['price'] = float(color_to_price_map[
+                        sfvl.get('properties', {}).get('color')].replace('$', ''))
+
             if not stockstatus_for_variants_list:
                 return None
             else:
                 return stockstatus_for_variants_list
-        except:
-            return None
+        #except:
+        #    return None
 
     def _swatches(self):
         swatch_list = []
