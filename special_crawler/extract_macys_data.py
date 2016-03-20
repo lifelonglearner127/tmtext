@@ -63,7 +63,7 @@ class MacysScraper(Scraper):
         self.is_product_info_json_checked = True
 
         try:
-            product_info_json = self.tree_html.xpath("//script[@id='pdpMainData' and @type='application/json']/text()")
+            product_info_json = self.tree_html.xpath("//script[@id='productMainData' and @type='application/json']/text()")
 
             if product_info_json:
                 product_info_json = json.loads(product_info_json[0])
@@ -83,7 +83,7 @@ class MacysScraper(Scraper):
 
         #if len(self.tree_html.xpath("//div[@id='imageZoomer']//div[contains(@class,'main-view-holder')]/img")) < 1:
         #    return True
-        if len(self.tree_html.xpath("//h1[contains(@class,'productTitle')]")) < 1:
+        if len(self.tree_html.xpath("//*[contains(@class, 'productTitle')]")) < 1:
             return True
         if len(self.tree_html.xpath("//div[@id='viewCollectionItemsButton']")) > 0:
             self.ERROR_RESPONSE["failure_type"] = "Bundle"
@@ -106,27 +106,26 @@ class MacysScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = None
-
-        try:
-            product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
-        except:
-            product_id = self.tree_html.xpath("//input[@id='productId']/@value")[0]
-
+        product_id = self.tree_html.xpath('//*[contains(@class,"productID")]'
+                                          '[contains(text(), "Web ID:")]/text()')
+        if product_id:
+            product_id = ''.join([c for c in product_id[0] if c.isdigit()])
         return product_id
 
     def _site_id(self):
-        site_id = self.tree_html.xpath("//input[@id='productId']/@value")[0].strip()
+        # TODO: should this be the product ID?
+        #site_id = self.tree_html.xpath("//input[@id='productId']/@value")[0].strip()
+        site_id = None
         return site_id
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//h1[contains(@class,'productTitle')]//text()")[0].strip()
+        return self.tree_html.xpath("//*[contains(@class, 'productTitle')]//text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath("//h1[contains(@class,'productTitle')]//text()")[0].strip()
+        return self.tree_html.xpath("//*[contains(@class, 'productTitle')]//text()")[0].strip()
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -239,6 +238,7 @@ class MacysScraper(Scraper):
         return None
 
     def _image_urls(self):
+        '''
         image_url_primary = []
         image_url_tmp = re.findall(r"MACYS.pdp.primaryImages\[" + self._product_id() + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
         if len(image_url_tmp) > 0:
@@ -272,14 +272,32 @@ class MacysScraper(Scraper):
         image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
         if len(image_url) < 1:
             image_url = self.tree_html.xpath("//div[@class='productImageSection']//img/@src")
+        '''
+        
+        image_url = self.product_info_json['imageUrl']
 
-        if len(image_url) == 1:
-            try:
-                if self._no_image(image_url[0]):
-                    return None
-            except Exception, e:
-                print "WARNING: ", e.message
+        try:
+            if self._no_image(image_url):
+                return None
+        except Exception, e:
+            print "WARNING: ", e.message
+        
+        primary_image_url_frags = self.product_info_json['images']['colorwayPrimaryImages'].values()
+        
+        additional_image_url_frags = []
+        comma_separated_additional_image_url_frags = self.product_info_json['images']['colorwayAdditionalImages'].values()
+        
+        for c in comma_separated_additional_image_url_frags:
+            additional_image_url_frags += c.split(',')
+            
+        image_url_frags = primary_image_url_frags + additional_image_url_frags
 
+        image_urls = map(lambda f: "http://slimages.macysassets.com/is/image/MCY/products/%s" % f, image_url_frags)
+        
+        # Remove duplicates by converting to a set
+        return list(set([image_url] + image_urls))
+
+        '''
         image_url = image_url + image_url_primary + image_url_imageZoomer + image_url_additional
         image_url2 = []
         for r in image_url:
@@ -294,6 +312,7 @@ class MacysScraper(Scraper):
             return image_url2[1:]
 
         return image_url2
+        '''
 
     def _image_count(self):
         image_urls = self._image_urls()
@@ -428,19 +447,18 @@ class MacysScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        '''---deprecated---
-        price = self.tree_html.xpath("//meta[@itemprop='price']/@content")[0].strip()
-        ---deprecated---'''
+        return self.tree_html.xpath("//meta[@itemprop='price']/@content")[0].strip()
+        
+        '''
         if self.product_info_json:
-            sale_price = self.product_info_json.get("productDetail", {}).get("salePrice", "")
-            regular_price = self.product_info_json.get("productDetail", {}).get("regularPrice", "")
-
-            if sale_price:
-                return "$" + sale_price
-            elif regular_price:
-                return "$" + regular_price
-
-        return None
+             sale_price = self.product_info_json.get("productDetail", {}).get("salePrice", "")
+             regular_price = self.product_info_json.get("productDetail", {}).get("regularPrice", "")
+ 
+             if sale_price:
+                 return "$" + sale_price
+             elif regular_price:
+                 return "$" + regular_price
+        '''
 
     def _price_amount(self):
         price = self._price()
@@ -455,6 +473,8 @@ class MacysScraper(Scraper):
         price_currency = price.replace(price_amount, "")
         if price_currency == "$":
             return "USD"
+        if not price_currency:
+            return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0].strip()
         return price_currency
 
     def _in_stores(self):
@@ -507,7 +527,7 @@ class MacysScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        all = self.tree_html.xpath("//div[@id='breadCrumbsDiv']//a[@class='bcElement']//text()")
+        all = self.product_info_json['breadCrumbCategory'].split('-')
         out = [self._clean_text(r) for r in all]
         if len(out) < 1:
             return None
@@ -517,7 +537,8 @@ class MacysScraper(Scraper):
         return self._categories()[-1]
 
     def _brand(self):
-        return self.tree_html.xpath("//div[@id='brandLogo']//img/@alt")[0]
+        # TODO: Not robust
+        return self._product_name().split(' ')[0].replace(u'®', '')
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -594,5 +615,4 @@ class MacysScraper(Scraper):
         "min_review" : _min_review, \
         "reviews" : _reviews, \
     }
-
 
