@@ -248,6 +248,7 @@ class BuyerReviewsBazaarApi(object):
                     stars = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
                     for star in stars_data:
                         stars[star] += 1
+
                     # check if stars values == br_count
                     if hasattr(self, 'br_count'):
                         result = {}
