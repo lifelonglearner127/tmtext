@@ -291,7 +291,9 @@ class MacysScraper(Scraper):
         
         for c in comma_separated_additional_image_url_frags:
             additional_image_url_frags += c.split(',')
-            
+
+        additional_image_url_frags += self.product_info_json['images']['additionalImages']
+
         image_url_frags = primary_image_url_frags + additional_image_url_frags
 
         image_urls = map(lambda f: "http://slimages.macysassets.com/is/image/MCY/products/%s" % f, image_url_frags)
