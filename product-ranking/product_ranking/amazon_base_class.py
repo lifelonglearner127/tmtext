@@ -445,7 +445,9 @@ class AmazonBaseClass(BaseProductsSpider):
 
         _avail = response.css('#availability ::text').extract()
         _avail = ''.join(_avail)
-        if "nichtauflager" in _avail.lower().replace(' ', ''):
+        _avail_lower = _avail.lower().replace(' ', '')
+        # Check if any of the keywords for oos is in the _avail text
+        if any(map((lambda x: x in _avail_lower), ['nichtauflager','currentlyunavailable'])):
             product['is_out_of_stock'] = True
         else:
             product['is_out_of_stock'] = False
