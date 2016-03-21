@@ -17,6 +17,8 @@ import time
 import requests
 from extract_data import Scraper
 from spiders_shared_code.macys_variants import MacysVariants
+sys.path.append('../product-ranking')
+from product_ranking.guess_brand import guess_brand_from_first_words
 
 
 class MacysScraper(Scraper):
@@ -447,6 +449,8 @@ class MacysScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
+        if self._site_online_out_of_stock():
+            return "out of stock - no price given"
         return self.tree_html.xpath("//meta[@itemprop='price']/@content")[0].strip()
         
         '''
@@ -506,12 +510,16 @@ class MacysScraper(Scraper):
 
     def _site_online(self):
         # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
+        if self._site_online_out_of_stock():
+            return 0
         return 1
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
+        '''
         if self._site_online() == 0:
             return None
+        '''
         rows = self.tree_html.xpath("//ul[@class='similarItems']//li//text()")
         if "This product is currently unavailable" in rows:
             return 1
@@ -537,8 +545,7 @@ class MacysScraper(Scraper):
         return self._categories()[-1]
 
     def _brand(self):
-        # TODO: Not robust
-        return self._product_name().split(' ')[0].replace(u'®', '')
+        return guess_brand_from_first_words(self._product_name())
 
     ##########################################
     ################ HELPER FUNCTIONS
