@@ -232,6 +232,16 @@ class MacysScraper(Scraper):
     def _swatches(self):
         return self.mv._swatches()
 
+    def _no_longer_available(self):
+        try:
+            currently_unavailable = self.tree_html.xpath("//span[contains(text(),'This product is currently unavailable')]")
+            return bool(currently_unavailable)
+        except:
+            pass
+
+        return False
+
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -577,6 +587,8 @@ class MacysScraper(Scraper):
         "long_description" : _long_description, \
         "variants" : _variants, \
         "swatches" : _swatches, \
+        "no_longer_available": _no_longer_available, \
+
         # CONTAINER : PAGE_ATTRIBUTES
         "pdf_urls" : _pdf_urls, \
         "pdf_count" : _pdf_count, \
