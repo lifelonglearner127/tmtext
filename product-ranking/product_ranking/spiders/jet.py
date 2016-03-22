@@ -256,9 +256,26 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         JV = JetVariants()
         JV.setupSC(response)
         product["variants"] = JV._variants()
-
         csrf = self.get_csrf(response)
-        
+
+        # For each variant with SkuId we need to do a POST to get its price
+        for skuids in map((lambda x: x['skuId']),filter((lambda x: 'skuId' in x), product["variants"] or [])):
+            reqs.append(
+                Request(
+                    url=self.PRICE_URL+"?sku=%s" % skuids,
+                    method="POST",
+                    callback=self.parse_variant_prices,
+                    meta={"product": product},
+                    body=json.dumps({"sku": skuids}),
+                    headers={
+                        "content-type": "application/json",
+                        "x-csrf-token": csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    dont_filter=True,
+                )
+            )
+
         if response.meta.get("model") and csrf:
             reqs.append(
                 Request(
@@ -276,6 +293,35 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                 )
             )
 
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def parse_variant_prices(self, response):
+        sku = response.url.split('?sku=')[-1]
+        product = response.meta.get('product')
+        reqs = response.meta.get('reqs')
+        data = json.loads(response.body)
+
+        # Search for the variant with the given skuId on the list
+        for variant in filter((lambda x: 'skuId' in x),product['variants']):
+            if variant['skuId'] == sku:
+                break
+
+        # Got it's index
+        index = product['variants'].index(variant)
+
+        #Update price
+        variant['price'] = Price(
+                        priceCurrency="USD",
+                        price=data.get("referencePrice")
+                    )
+        # Replace it on the list 
+        product['variants'].pop(index)
+        product['variants'].insert(index, variant)
+        
+        # Continue with others requests
         if reqs:
             return self.send_next_request(reqs, response)
 

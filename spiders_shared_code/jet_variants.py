@@ -1,19 +1,13 @@
 import json
 import re
-import requests
 import lxml.html
 import itertools
 
-from scrapy.http.cookies import CookieJar
 
 is_empty = lambda x,y=None: x[0] if x else y
 
 
 class JetVariants(object):
-    PRICE_URL = "https://jet.com/api/product/price"
-
-    def get_csrf(self, response):
-        return is_empty(re.findall("__csrf\"\:\"([^\"]*)", response.body))
 
     def setupSC(self, response):
         """ Call it from SC spiders """
@@ -47,10 +41,6 @@ class JetVariants(object):
 
             final_variants = []
 
-            cookieJar = self.response.meta.setdefault('cookiejar', CookieJar())
-            cookieJar.extract_cookies(self.response, self.response.request)
-            cookies = ';'.join(["%s=%s" %(x.name, x.value) for x in cookieJar])
-
             # Calculate all variants given product propierties like size, color, etc...
             complete_list_of_propierties = []
             values = []
@@ -71,14 +61,6 @@ class JetVariants(object):
                 if variant_sku:
                     vr['skuId'] = variant_sku
                     vr['image_url'] = is_empty(self.response.xpath('//*[@rel="%s"]//@data-zoom-image' % variant_sku).extract())
-                    price_from_ajax = requests.post(self.PRICE_URL, 
-                                                data = json.dumps({'sku':variant_sku}),
-                                                headers = {
-                                                    "content-type": "application/json",
-                                                    "x-csrf-token": self.get_csrf(self.response),
-                                                    "Cookie": cookies,
-                                                    'X-Requested-With': 'XMLHttpRequest'})
-                    vr["price"]  = price_from_ajax.json().get('referencePrice',None)
                 
                 vr["properties"]  = {}
                 properties_as_pair_of_set = []
