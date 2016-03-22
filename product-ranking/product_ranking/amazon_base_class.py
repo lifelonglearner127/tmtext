@@ -590,8 +590,12 @@ class AmazonBaseClass(BaseProductsSpider):
 
     def _parse_no_longer_available(self, response):
         if response.xpath('//*[contains(@id, "availability")]'
-                          '//*[contains(text(), "unavailable")]'):
+                          '//*[contains(text(), "navailable")]'):  # Unavailable or unavailable
             return True
+        if response.xpath('//*[contains(@id, "outOfStock")]'
+                          '//*[contains(text(), "navailable")]'):  # Unavailable or unavailable
+            return True
+
 
     def _parse_brand(self, response, add_xpath=None):
         """
