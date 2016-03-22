@@ -284,9 +284,10 @@ class KohlsScraper(Scraper):
             for alt_image in self.product_info_json["productItem"]["media"]["alternateImages"]:
                 image_urls.append(alt_image["largeImage"])
 
-        color_swatch_images = self.tree_html.xpath("//div[@itemtype='http://schema.org/Product']/meta[@itemprop='image']/@content")
-        color_swatch_images = [url[:url.find("?")] + "?wid=1000&amp;hei=1000&amp;op_sharpen=1" if url.find("?") > 0 else url for url in color_swatch_images]
-        image_urls.extend(color_swatch_images)
+        if self.product_info_json["productItem"]["variants"].get('preSelectedColor',None):                
+            color_swatch_images = self.tree_html.xpath("//div[@itemtype='http://schema.org/Product']/meta[@itemprop='image']/@content")
+            color_swatch_images = [url[:url.find("?")] + "?wid=1000&amp;hei=1000&amp;op_sharpen=1" if url.find("?") > 0 else url for url in color_swatch_images]
+            image_urls.extend(color_swatch_images)
 
         if image_urls:
             image_urls = list(set(image_urls))

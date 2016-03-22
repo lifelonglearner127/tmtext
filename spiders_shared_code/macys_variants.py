@@ -32,14 +32,11 @@ class MacysVariants(object):
         return None
 
     def _get_prod_id(self):
-        product_id = self.tree_html.xpath('//*[contains(@id, "productId")]/@value')
-        if not product_id:
-            product_id = self.tree_html.xpath('//*[contains(@class,"productID")]'
-                                              '[contains(text(), "Web ID:")]/text()')
-            if product_id:
-                product_id = [''.join([c for c in product_id[0] if c.isdigit()])]
+        product_id = self.tree_html.xpath('//*[contains(@class,"productID")]'
+                                          '[contains(text(), "Web ID:")]/text()')
         if product_id:
-            return product_id[0]
+            product_id = ''.join([c for c in product_id[0] if c.isdigit()])
+        return product_id
 
     def _get_swatch_colors(self):
         colors = self.tree_html.xpath('//img[@class="colorSwatch"]/@alt')
@@ -238,48 +235,31 @@ class MacysVariants(object):
     def _swatches(self):
         swatch_list = []
 
-        product_id = None
+        product_info_json = self.tree_html.xpath("//script[@id='productMainData' and @type='application/json']/text()")
+        product_info_json = json.loads( product_info_json[0] )
 
-        try:
-            product_id = self.tree_html.xpath("//meta[@itemprop='productID']/@content")[0]
-        except:
-            product_id = self.tree_html.xpath("//input[@id='productId']/@value")[0]
+        color_list = {}
 
-        primary_image_list = re.findall(r"MACYS.pdp.primaryImages\[" + product_id + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
-        color_list = primary_image_list[0].split(",")
+        for color, url_frag in product_info_json['images']['colorwayPrimaryImages'].iteritems():
+            color_list[color] = ["http://slimages.macysassets.com/is/image/MCY/products/" + url_frag]
 
-        additional_image_list = re.findall(r"MACYS.pdp.additionalImages\[" + product_id + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
+        for color, url_frags in product_info_json['images']['colorwayAdditionalImages'].iteritems():
+            url_frags = url_frags.split(',')
+            color_list[color] += map(lambda f: "http://slimages.macysassets.com/is/image/MCY/products/" + f, url_frags)
 
-        try:
-            additional_image_list = json.loads("{" + additional_image_list[0] + "}")
-        except:
-            additional_image_list = {}
+        for color, url_list in color_list.iteritems():
+            swatch = {}
+            swatch["swatch_name"] = 'color'
+            swatch["color"] = color
+            swatch["hero"] = 1
+            swatch["hero_image"] = url_list
 
-        thumbnail_list = self.tree_html.xpath("//ul[@id='colorList{0}']/li".format(product_id))
-        thumbnail_image_list = {}
+            thumb_image = "http://slimages.macysassets.com/is/image/MCY/products/" + product_info_json['colorSwatchMap'][color]
 
-        for thumbnail in thumbnail_list:
-            thumbnail_image_list[thumbnail.xpath("./@title")[0]] = "http://slimages.macysassets.com/is/image/MCY/products/" + thumbnail.xpath("./@data-imgurl")[0]
+            swatch["thumb"] = 1
+            swatch["thumb_image"] = [ thumb_image ]
 
-        for swatch in color_list:
-            swatch_name = "color"
-            color = swatch.split(":")[0].replace('"', '')
-            image_path = swatch.split(":")[1].replace('"', '')
-
-            swatch_info = {}
-            swatch_info["swatch_name"] = swatch_name
-            swatch_info[swatch_name] = color
-            swatch_info["hero"] = 1
-            swatch_info["hero_image"] = ["http://slimages.macysassets.com/is/image/MCY/products/" + image_path]
-
-            if color in additional_image_list:
-                for image_path in additional_image_list[color].split(","):
-                    swatch_info["hero_image"].append("http://slimages.macysassets.com/is/image/MCY/products/" + image_path)
-
-            swatch_info["thumb"] = 1
-            swatch_info["thumb_image"] = [thumbnail_image_list[color]]
-
-            swatch_list.append(swatch_info)
+            swatch_list.append( swatch )
 
         if swatch_list:
             return swatch_list
