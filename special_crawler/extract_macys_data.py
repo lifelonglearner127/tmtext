@@ -108,11 +108,7 @@ class MacysScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = self.tree_html.xpath('//*[contains(@class,"productID")]'
-                                          '[contains(text(), "Web ID:")]/text()')
-        if product_id:
-            product_id = ''.join([c for c in product_id[0] if c.isdigit()])
-        return product_id
+        return self.mv._get_prod_id()
 
     def _site_id(self):
         # TODO: should this be the product ID?
