@@ -203,36 +203,6 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
             ).extract()
         )
 
-        sample = response.xpath('//script[contains(text(), "jet.__variants")]')\
-            .extract()
-
-        size_list = []
-        sku_list = []
-        variants_list = []
-
-        data_line = re.search(r'jet.__variants = (.*)', sample[0]).group(1)
-        size_list += re.findall(r'"Size":"(.*?)"', data_line)
-        sku_list += re.findall(r'"sku":"(.*?)"', data_line)
-
-        for index, i in enumerate(size_list):
-            test_list = {}
-            properties = {}
-
-            properties['size'] = i.split(",")[0]
-
-            try:
-                line = i.split(",")[1]
-            except IndexError:
-                continue
-            properties['count'] = re.search(r'(\d+)', line).group(0)
-
-            properties['sku'] = sku_list[index]
-            test_list['properties'] = properties
-
-            variants_list.append(test_list)
-
-        product['variants'] = variants_list
-
         response.meta['model'] = is_empty(
             response.xpath("//div[contains(@class, 'products')]"
                            "/div/@rel").extract()
@@ -288,6 +258,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         product["variants"] = JV._variants()
 
         csrf = self.get_csrf(response)
+        
         if response.meta.get("model") and csrf:
             reqs.append(
                 Request(
@@ -299,6 +270,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                     headers={
                         "content-type": "application/json",
                         "x-csrf-token": csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
                     },
                     dont_filter=True,
                 )
@@ -312,13 +284,12 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
     def parse_price_and_marketplace(self, response):
         product = response.meta.get("product")
         reqs = response.meta.get("reqs")
-
         data = json.loads(response.body)
 
         if str(data.get("twoDay")) == "True":
             product["deliver_in"] = "2 Days"
 
-        if data["unavailable"]:
+        if data.get("unavailable",None):
             cond_set_value(product, "is_out_of_stock", True)
         else:
             cond_set_value(product, "is_out_of_stock", False)
