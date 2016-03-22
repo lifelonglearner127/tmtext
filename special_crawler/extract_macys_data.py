@@ -240,42 +240,6 @@ class MacysScraper(Scraper):
         return None
 
     def _image_urls(self):
-        '''
-        image_url_primary = []
-        image_url_tmp = re.findall(r"MACYS.pdp.primaryImages\[" + self._product_id() + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
-        if len(image_url_tmp) > 0:
-            image_urls = image_url_tmp[0].split(",")
-            for r in image_urls:
-                img = r.split(":")
-                if len(img) >= 2:
-                    image_url_primary.append("http://slimages.macysassets.com/is/image/MCY/products/%s" % img[1].replace('"','').replace("'",""))
-
-        image_url_additional = []
-        image_url_tmp = re.findall(r"MACYS.pdp.additionalImages\[" + self._product_id() + "\] = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
-        if len(image_url_tmp) > 0:
-            image_urls = image_url_tmp[0].split('",')
-            for r in image_urls:
-                img = r.split(":")
-                if len(img) >= 2:
-                    imgs = img[1].replace('"','').replace("'","").split(",")
-                    for r in imgs:
-                        image_url_additional.append("http://slimages.macysassets.com/is/image/MCY/products/%s" % r)
-
-        image_url_imageZoomer = []
-        image_url_tmp = re.findall(r"MACYS.pdp.imageZoomer = {(.*?)}", " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
-        if len(image_url_tmp) > 0:
-            m = re.findall(r"imgList: '(.*?)'", image_url_tmp[0], re.DOTALL)
-            if len(m) > 0:
-                image_urls = m[0].split(',')
-                for r in image_urls:
-                    image_url_imageZoomer.append("http://slimages.macysassets.com/is/image/MCY/products/%s" % r)
-
-        image_url = self.tree_html.xpath("//div[@id='imageZoomer']//div[contains(@class,'main-view-holder')]/img/@src")
-        image_url = [self._clean_text(r) for r in image_url if len(self._clean_text(r)) > 0]
-        if len(image_url) < 1:
-            image_url = self.tree_html.xpath("//div[@class='productImageSection']//img/@src")
-        '''
-        
         image_url = self.product_info_json['imageUrl']
 
         try:
@@ -283,40 +247,26 @@ class MacysScraper(Scraper):
                 return None
         except Exception, e:
             print "WARNING: ", e.message
+
+        image_url_frags = [self.product_info_json['images']['imageSource']]
         
-        primary_image_url_frags = self.product_info_json['images']['colorwayPrimaryImages'].values()
+        image_url_frags += self.product_info_json['images']['additionalImages']
         
-        additional_image_url_frags = []
-        comma_separated_additional_image_url_frags = self.product_info_json['images']['colorwayAdditionalImages'].values()
+        image_url_frags += self.product_info_json['images']['colorwayPrimaryImages'].values()
         
-        for c in comma_separated_additional_image_url_frags:
-            additional_image_url_frags += c.split(',')
+        for c in self.product_info_json['images']['colorwayAdditionalImages'].values():
+            image_url_frags += c.split(',')
 
-        additional_image_url_frags += self.product_info_json['images']['additionalImages']
+        image_urls_tmp = map(lambda f: "http://slimages.macysassets.com/is/image/MCY/products/%s" % f, image_url_frags)
 
-        image_url_frags = primary_image_url_frags + additional_image_url_frags
+        image_urls = []
 
-        image_urls = map(lambda f: "http://slimages.macysassets.com/is/image/MCY/products/%s" % f, image_url_frags)
-        
-        # Remove duplicates by converting to a set
-        return list(set([image_url] + image_urls))
+        # Remove duplicates
+        for image_url in image_urls_tmp:
+            if not image_url in image_urls:
+                image_urls.append( image_url )
 
-        '''
-        image_url = image_url + image_url_primary + image_url_imageZoomer + image_url_additional
-        image_url2 = []
-        for r in image_url:
-            try:
-                image_url_tmp = r.split("?")[0]
-            except:
-                image_url_tmp = r
-            image_url2.append(image_url_tmp)
-        image_url2 = list(set(image_url2))
-
-        if self._site_id() == '1776509':
-            return image_url2[1:]
-
-        return image_url2
-        '''
+        return image_urls
 
     def _image_count(self):
         image_urls = self._image_urls()
