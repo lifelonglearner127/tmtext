@@ -10,6 +10,7 @@ from lxml import etree
 import time
 import requests
 from extract_data import Scraper
+from spiders_shared_code.bestbuy_variants import BestBuyVariants
 
 class BestBuyScraper(Scraper):
     
@@ -173,7 +174,11 @@ class BestBuyScraper(Scraper):
             return None
         return self._long_description_helper()
 
+    def _variants(self):
+            self.variants = BestBuyVariants()
+            self.variants.setupCH(self.tree_html, self.product_page_url)
 
+            return self.variants._variants()
 
 
     ##########################################
@@ -575,7 +580,8 @@ class BestBuyScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
-
+        "variants": _variants, \
+        
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
