@@ -1,5 +1,5 @@
 import lxml.html
-import requests
+# import requests
 import re
 from urlparse import urljoin
 from itertools import product
@@ -40,20 +40,8 @@ class BestBuyVariants(object):
                     except:
                         out_of_stock_variations.append({'properties':{variation_type_name:swatch_value}, 'in_stock': False})
 
-            api_prices_url = 'http://www.bestbuy.com/api/1.0/carousel/prices?skus=%s' % ','.join(in_stock_variations.keys()) 
-            prices_ajax = requests.get(api_prices_url, headers={'User-Agent':'*'})  
-            for price_ajax in prices_ajax.json():
-                vr = in_stock_variations[price_ajax['skuId']]
-                vr['price'] = price_ajax.get('currentPrice',None) or price_ajax.get('regularPrice',None)
-
             return in_stock_variations.values() + out_of_stock_variations
 
         except:
-            import traceback
-            traceback.print_exc()
             pass
 
-# properties
-# in_stock
-# selected
-# price
