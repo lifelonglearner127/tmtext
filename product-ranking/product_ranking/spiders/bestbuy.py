@@ -48,7 +48,7 @@ class BestBuyProductSpider(ProductsSpider):
                                          page=next_link)
 
     def _fetch_product_boxes(self, response):
-        return response.css('.list-content .list-item')
+        return response.css('.list-items .list-item')
 
     def _link_from_box(self, box):
         return box.css('::attr(data-url)').extract()[0]
