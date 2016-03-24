@@ -915,7 +915,9 @@ class WalmartScraper(Scraper):
                 return None
 
             long_description_start = False
+            warnings_desription = False
             ingredients_description = False
+            directions_description = False
             long_description_start_index = -2
 
             for description_element in description_elements:
@@ -950,23 +952,40 @@ class WalmartScraper(Scraper):
 
                         long_description_start_index = min(long_description_start_index_candiate_list)
 
+                if "<strong>Warnings:" in lxml.html.tostring(description_element) or "<b>Warnings:" in \
+                        lxml.html.tostring(description_element):
+                    warnings_description = True
+                else:
+                    warnings_description = False
+
                 if "<strong>Ingredients:" in lxml.html.tostring(description_element) or "<b>Ingredients:" in \
                         lxml.html.tostring(description_element):
                     ingredients_description = True
                 else:
                     ingredients_description = False
 
+                if "<strong>Directions:" in lxml.html.tostring(description_element) or "<b>Directions:" in \
+                        lxml.html.tostring(description_element):
+                    directions_description = True
+                else:
+                    directions_description = False
+
                 if long_description_start:
                     sub_description = lxml.html.tostring(description_element)
 
-                    if not ingredients_description:
+                    if not (warnings_description or ingredients_description or directions_description):
                         if long_description_start_index > 0:
                             full_description += sub_description[long_description_start_index:]
                             long_description_start_index = -1
                         else:
                             full_description += sub_description
                     else:
-                        description_start_index = sub_description.find('<section class="product-about js-ingredients health-about">')
+                        if warnings_description:
+                            description_start_index = sub_description.find('<section class="product-about js-warnings health-about">')
+                        elif ingredients_description:
+                            description_start_index = sub_description.find('<section class="product-about js-ingredients health-about">')
+                        elif directions_description:
+                            description_start_index = sub_description.find('<section class="product-about js-directions health-about">')
                         description_end_index = sub_description.find("</section>", description_start_index) + 10
                         full_description += (sub_description[:description_start_index] + sub_description[description_end_index:])
 
