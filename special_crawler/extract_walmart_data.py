@@ -2589,6 +2589,11 @@ class WalmartScraper(Scraper):
         if "We can't find the product you are looking for, but we have similar items for you to consider." in text_contents:
             self.failure_type = "404 Error"
 
+        # TODO: Temporary fix
+        # If there is no product name, return failure
+        if not self._product_name_from_tree():
+            self.failure_type = "No product name"
+
         return self.failure_type
 
     def _version(self):
