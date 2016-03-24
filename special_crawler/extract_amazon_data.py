@@ -367,6 +367,13 @@ class AmazonScraper(Scraper):
         if res != "" : return res
         return None
 
+    def _get_variant_images(self):
+        result = []
+        for img in self.tree_html.xpath('//*[contains(@id, "altImages")]'
+                                        '//img[contains(@src, "/")]/@src'):
+            result.append(re.sub(r'\._[A-Z\d,_]{1,50}_\.jpg', '.jpg', img))
+        return result
+
     def _variants(self):
         if self.is_variants_checked:
             return self.variants
@@ -374,6 +381,12 @@ class AmazonScraper(Scraper):
         self.is_variants_checked = True
 
         self.variants = self.av._variants()
+
+        if self.variants:
+            # find default ("selected") variant and insert its images
+            for variant in self.variants:
+                if variant.get('selected', None):
+                    variant['associated_images'] = self._get_variant_images()
 
         return self.variants
 
