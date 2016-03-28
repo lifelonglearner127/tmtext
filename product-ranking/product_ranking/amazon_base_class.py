@@ -415,9 +415,15 @@ class AmazonBaseClass(BaseProductsSpider):
         _prod = self._parse_marketplace_from_top_block(response)
         if _prod:
             product = _prod
-        _prod = self._parse_marketplace_from_static_right_block(response)
+
+
+        _prod, req = self._parse_marketplace_from_static_right_block(response)
         if _prod:
             product = _prod
+        
+        # There are more sellers to extract    
+        if req:
+            reqs.append(req)
 
         # TODO: fix the block below - it removes previously scraped marketplaces
         #marketplace_req = self._parse_marketplace(response)
@@ -1137,6 +1143,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 self.get_buyer_reviews_from_2nd_page
             )
         product = response.meta["product"]
+        reqs = response.meta.get('reqs',[])
         buyer_reviews = {}
         product["buyer_reviews"] = {}
         buyer_reviews["num_of_reviews"] = is_empty(response.xpath(
@@ -1173,6 +1180,8 @@ class AmazonBaseClass(BaseProductsSpider):
                 meta=meta,
                 dont_filter=True
             )
+        elif reqs:
+            return self.send_next_request(reqs, response)
 
         return product
 
@@ -1237,6 +1246,7 @@ class AmazonBaseClass(BaseProductsSpider):
             )
 
     def _get_rating_by_star_by_individual_request(self, response):
+        reqs = response.meta.get('reqs',[])
         product = response.meta['product']
         mkt_place_link = response.meta.get("mkt_place_link")
         current_star = response.meta['_current_star']
@@ -1273,7 +1283,9 @@ class AmazonBaseClass(BaseProductsSpider):
             # ok we collected all marks for all stars - can return the product
             product['buyer_reviews'] = BuyerReviews(**product['buyer_reviews'])
             if mkt_place_link:
-                return self.mkt_request(mkt_place_link, {"product": product})
+                return self.mkt_request(mkt_place_link, {"product": product})                
+            elif reqs:
+                return self.send_next_request(reqs, response)
             return product
 
     def send_next_request(self, reqs, response):
@@ -1354,11 +1366,13 @@ class AmazonBaseClass(BaseProductsSpider):
                                        '[contains(text(), "old by")]')
         if not top_block:
             return
+
         seller_id = re.search(r'seller=([a-zA-Z0-9]+)">', top_block.extract()[0])
         if not seller_id:
-            seller_id = re.search(r'seller=([a-zA-Z0-9]+)&>', top_block.extract()[0])
+            seller_id = re.search(r'seller=([a-zA-Z0-9]+)&', top_block.extract()[0])
         if seller_id:
             seller_id = seller_id.group(1)
+
         sold_by_str = ''.join(top_block.xpath('.//text()').extract()).strip()
         sold_by_str = sold_by_str.replace('.com.', '.com').replace('\t', '')\
             .replace('\n', '').replace('Gift-wrap available', '').replace(' .', '').strip()
@@ -1468,9 +1482,60 @@ class AmazonBaseClass(BaseProductsSpider):
                 if _price:
                     return [_price.group(1)]
 
+    def _parse_marketplace_from_static_right_block_more(self, response):
+        product = response.meta['product']
+        reqs = response.meta.get('reqs')
+        
+        _prod_price = product.get('price', [])
+        _prod_price_currency = None
+        if _prod_price:
+            _prod_price_currency = _prod_price.priceCurrency
+
+        _marketplace = product.get('marketplace', [])
+        for seller_row in response.xpath('//*[@id="olpOfferList"]//div[contains(@class,"olpOffer")]'):
+            _name = seller_row.xpath('div[4]//h3//a/text()|div[4]//@alt').extract()
+            _price = seller_row.xpath('div[1]//*[contains(@class,"olpOfferPrice")]/text()').extract()
+            _price = float(self._strip_currency_from_price(
+                           self._fix_dots_commas(_price[0].strip()))) if _price else None
+
+            _seller_id = seller_row.xpath('div[4]//h3//a/@href').re('seller=(.*)\&?') or seller_row.xpath('div[4]//h3//a/@href').re('shops/(.*?)/')
+            if _seller_id:
+                _seller_id = _seller_id[0]
+
+            if _name:
+                _marketplace.append({
+                            'name': _name[0].replace('\n', '').strip(),
+                            'price': _price,
+                            'currency': _prod_price_currency,
+                            'seller_id': _seller_id
+                        })
+        next_page = response.xpath('//*[@class="a-pagination"]/li[@class="a-last"]/a/@href').extract()
+        meta = response.meta
+        if next_page:
+            return Request(
+                url=urlparse.urljoin(response.url, next_page[0]),
+                callback=self._parse_marketplace_from_static_right_block_more,
+                meta=response.meta,
+                dont_filter=True
+            )
+
+        elif reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
     def _parse_marketplace_from_static_right_block(self, response):
         # try to collect marketplaces from the main page first, before sending extra requests
         product = response.meta['product']
+
+        others_sellers = response.xpath('//*[@id="mbc"]//a[contains(@href, "offer-listing")]/@href').extract()
+        if others_sellers:
+            return product, Request(url= urlparse.urljoin(response.url, others_sellers[0]),
+                                    callback=self._parse_marketplace_from_static_right_block_more,
+                                    meta=response.meta,
+                                    dont_filter=True,
+                            )
+
         _prod_price = product.get('price', [])
         _prod_price_currency = None
         if _prod_price:
@@ -1512,4 +1577,4 @@ class AmazonBaseClass(BaseProductsSpider):
                 })
 
         product['marketplace'] = _marketplace
-        return product
+        return product, None
