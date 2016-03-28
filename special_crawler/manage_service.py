@@ -4,10 +4,6 @@ import re
 
 app = Flask(__name__)
 
-"""Path on disk for target repository
-"""
-REPO_PATH = "/home/ana/code/tmtext"
-
 @app.route('/switch_branch', methods=['GET', 'POST'])
 def switch_branch():
 	# show branches
@@ -42,9 +38,6 @@ Return:
 """
 def get_branches():
 	# list branches
-	
-	# TODO: handle failed chdir
-	os.chdir(REPO_PATH)
 
 	branches_s = subprocess.check_output(['git', 'branch'])
 	branches = branches_s.split('\n')
