@@ -1357,6 +1357,40 @@ class AmazonBaseClass(BaseProductsSpider):
             return next_req
         return product
 
+    def _marketplace_seller_name_parse(self, name):
+        if not name:
+            return name
+
+        if ' by ' in name:  # most likely it's ' and Fulfilled by' remains
+            name = name.split('and Fulfilled', 1)[0].strip()
+            name = name.split('and fulfilled', 1)[0].strip()
+            name = name.split('Dispatched from', 1)[0].strip()
+            name = name.split('Gift-wrap', 1)[0].strip()
+        if ' by ' in name:
+            self.log('Multiple "by" occurrences found at %s' % response.url, ERROR)
+        if 'Inc. ' in name:
+            name = name.split(', Inc.', 1)[0] + ', Inc.'
+        if 'Guarantee Delivery' in name:
+            name = name.split('Guarantee Delivery', 1)[0].strip()
+        if 'Deals in' in name:
+            name = name.split('Deals in', 1)[0].strip()
+        if 'Choose' in name:
+            name = name.split('Choose', 1)[0].strip()
+        if 'tax' in name:
+            name = name.split('tax', 1)[0].strip()
+        if 'in easy-to-open' in name:
+            name = name.split('in easy-to-open', 1)[0].strip()
+        if 'easy-to-open' in name:
+            name = name.split('easy-to-open', 1)[0].strip()
+        if '(' in name:
+            name = name.split('(', 1)[0].strip()
+        if 'exclusively for Prime members' in name:
+            name = name.split('exclusively for Prime members',1)[0].strip()
+        if name.endswith('.'):
+            name = name[0:-1]
+        return name
+
+
     def _parse_marketplace_from_top_block(self, response):
         """ Parses "top block" marketplace ("Sold by ...") """
         top_block = response.xpath('//*[contains(@id, "sns-availability")]'
@@ -1377,31 +1411,7 @@ class AmazonBaseClass(BaseProductsSpider):
         sold_by_str = sold_by_str.replace('.com.', '.com').replace('\t', '')\
             .replace('\n', '').replace('Gift-wrap available', '').replace(' .', '').strip()
         sold_by_whom = sold_by_str.split('by', 1)[1].strip()
-        if ' by ' in sold_by_whom:  # most likely it's ' and Fulfilled by' remains
-            sold_by_whom = sold_by_whom.split('and Fulfilled', 1)[0].strip()
-            sold_by_whom = sold_by_whom.split('and fulfilled', 1)[0].strip()
-            sold_by_whom = sold_by_whom.split('Dispatched from', 1)[0].strip()
-            sold_by_whom = sold_by_whom.split('Gift-wrap', 1)[0].strip()
-        if ' by ' in sold_by_whom:
-            self.log('Multiple "by" occurrences found at %s' % response.url, ERROR)
-        if 'Inc. ' in sold_by_whom:
-            sold_by_whom = sold_by_whom.split(', Inc.', 1)[0] + ', Inc.'
-        if 'Guarantee Delivery' in sold_by_whom:
-            sold_by_whom = sold_by_whom.split('Guarantee Delivery', 1)[0].strip()
-        if 'Deals in' in sold_by_whom:
-            sold_by_whom = sold_by_whom.split('Deals in', 1)[0].strip()
-        if 'Choose' in sold_by_whom:
-            sold_by_whom = sold_by_whom.split('Choose', 1)[0].strip()
-        if 'tax' in sold_by_whom:
-            sold_by_whom = sold_by_whom.split('tax', 1)[0].strip()
-        if 'in easy-to-open' in sold_by_whom:
-            sold_by_whom = sold_by_whom.split('in easy-to-open', 1)[0].strip()
-        if 'easy-to-open' in sold_by_whom:
-            sold_by_whom = sold_by_whom.split('easy-to-open', 1)[0].strip()
-        if '(' in sold_by_whom:
-            sold_by_whom = sold_by_whom.split('(', 1)[0].strip()
-        if sold_by_whom.endswith('.'):
-            sold_by_whom = sold_by_whom[0:-1]
+        sold_by_whom = self._marketplace_seller_name_parse(sold_by_whom)
         if not sold_by_whom:
             self.log('Invalid "sold by whom" at %s' % response.url, ERROR)
             return
@@ -1499,12 +1509,12 @@ class AmazonBaseClass(BaseProductsSpider):
                            self._fix_dots_commas(_price[0].strip()))) if _price else None
 
             _seller_id = seller_row.xpath('div[4]//h3//a/@href').re('seller=(.*)\&?') or seller_row.xpath('div[4]//h3//a/@href').re('shops/(.*?)/')
-            if _seller_id:
-                _seller_id = _seller_id[0]
+            _seller_id = _seller_id[0] if _seller_id else None
 
             if _name:
+                _name = self._marketplace_seller_name_parse(_name[0])
                 _marketplace.append({
-                            'name': _name[0].replace('\n', '').strip(),
+                            'name': _name.replace('\n', '').strip(),
                             'price': _price,
                             'currency': _prod_price_currency,
                             'seller_id': _seller_id
@@ -1545,6 +1555,7 @@ class AmazonBaseClass(BaseProductsSpider):
         for mbc_row in response.xpath('//*[@id="mbc"]//*[contains(@class, "mbc-offer-row")]'):
             _price = mbc_row.xpath('.//*[contains(@class, "a-color-price")]/text()').extract()
             _name = mbc_row.xpath('.//*[contains(@class, "mbcMerchantName")]/text()').extract()
+            
             _json_data = None
             try:
                 _json_data = json.loads(mbc_row.xpath(
@@ -1568,9 +1579,10 @@ class AmazonBaseClass(BaseProductsSpider):
                      if _price else None
 
             if _name:
+                _name = self._marketplace_seller_name_parse(_name)
                 # handle values like 1.264,67
                 _marketplace.append({
-                    'name': _name[0].replace('\n', '').strip(),
+                    'name': _name.replace('\n', '').strip(),
                     'price': _price,
                     'currency': _prod_price_currency,
                     'seller_id': merchant_id
