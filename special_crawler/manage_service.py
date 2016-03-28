@@ -2,25 +2,6 @@ from flask import Flask, jsonify, request, render_template
 import os, subprocess
 import re
 
-app = Flask(__name__)
-
-@app.route('/switch_branch', methods=['GET', 'POST'])
-def switch_branch():
-	# show branches
-	branches = get_branches()
-
-	# if method is POST switch branch before rendering list of available branches
-	if request.method == 'POST':
-		# get value of target branch from submitted value from form
-		checkout_branch(request.form['Branches'], branches['branches'])
-
-		#TODO: also restart crawler service!
-
-	# TODO: more optimal - don't do this twice? but that would mean keeping some state
-	branches = get_branches()
-	return render_template('show_branches.html', branches = branches['branches'], current_branch = branches['current_branch'])
-	
-
 """Switch to given branch in target repo
 """
 def checkout_branch(branchname, all_branches):
@@ -60,7 +41,3 @@ def clean_branchname(branchname):
 	branchname = re.sub("^\*", "", branchname)
 	branchname = branchname.strip()
 	return branchname
-
-if __name__ == '__main__':
-
-    app.run('0.0.0.0', port=8080)
