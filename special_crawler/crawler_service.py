@@ -81,7 +81,6 @@ from extract_forever21_data import Forever21Scraper
 from extract_officedepot_data import OfficeDepotScraper
 from extract_orientaltrading_data import OrientalTradingScraper
 from extract_walmartmx_data import WalmartMXScraper
-from manage_service import *
 
 from urllib2 import HTTPError
 import datetime
@@ -343,22 +342,6 @@ def validate_data_params(arguments, ALL_DATA_TYPES):
             raise InvalidUsage("Invalid usage: Request arguments must be of the form '?url=<url>?site=<site>?data=<data_1>&data=<data_2>&data=<data_2>...,\n \
                 with the <data_i> values among the following keywords: \n" + str(data_permitted_values))
 
-# Switch branch for testing
-@app.route('/switch_branch', methods=['GET', 'POST'])
-def switch_branch():
-	# show branches
-	branches = get_branches()
-
-	# if method is POST switch branch before rendering list of available branches
-	if request.method == 'POST':
-		# get value of target branch from submitted value from form
-		checkout_branch(request.form['Branches'], branches['branches'])
-
-		#TODO: also restart crawler service!
-
-	# TODO: more optimal - don't do this twice? but that would mean keeping some state
-	branches = get_branches()
-	return render_template('show_branches.html', branches = branches['branches'], current_branch = branches['current_branch'])
 
 # general resource for getting data.
 # needs "url" and "site" parameters. optional parameter: "data"

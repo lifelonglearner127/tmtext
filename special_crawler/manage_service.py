@@ -1,6 +1,43 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, Response
+from functools import wraps
 import os, subprocess
 import re
+
+app = Flask(__name__)
+
+def check_auth(username, password):
+    return username == 'tester' and password == '/fO+oI7LfsA='
+
+def authenticate():
+    return Response(
+    'Please enter credentials', 401,
+    {'WWW-Authenticate': 'Basic realm="Login Required"'})
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return authenticate()
+        return f(*args, **kwargs)
+    return decorated
+
+@app.route('/switch_branch', methods=['GET', 'POST'])
+@requires_auth
+def switch_branch():
+	# show branches
+	branches = get_branches()
+
+	# if method is POST switch branch before rendering list of available branches
+	if request.method == 'POST':
+		# get value of target branch from submitted value from form
+		checkout_branch(request.form['Branches'], branches['branches'])
+
+		#TODO: also restart crawler service!
+
+	# TODO: more optimal - don't do this twice? but that would mean keeping some state
+	branches = get_branches()
+	return render_template('show_branches.html', branches = branches['branches'], current_branch = branches['current_branch'])
 
 """Switch to given branch in target repo
 """
@@ -41,3 +78,7 @@ def clean_branchname(branchname):
 	branchname = re.sub("^\*", "", branchname)
 	branchname = branchname.strip()
 	return branchname
+
+if __name__ == '__main__':
+
+    app.run('0.0.0.0', port=8080)
