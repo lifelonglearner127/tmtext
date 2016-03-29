@@ -80,6 +80,7 @@ from extract_nike_data import NikeScraper
 from extract_forever21_data import Forever21Scraper
 from extract_officedepot_data import OfficeDepotScraper
 from extract_orientaltrading_data import OrientalTradingScraper
+from extract_walmartmx_data import WalmartMXScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -171,7 +172,8 @@ SUPPORTED_SITES = {
                     "nike": NikeScraper,
                     "forever21": Forever21Scraper,
                     "officedepot": OfficeDepotScraper,
-                    "orientaltrading": OrientalTradingScraper
+                    "orientaltrading": OrientalTradingScraper,
+                    "walmartmx": WalmartMXScraper,
                     }
 
 # add logger
@@ -251,6 +253,8 @@ def extract_domain(url):
         return 'groceries'
     if 'walmart.ca' in url:
         return 'walmartca'
+    if 'walmart.com.mx' in url:
+        return 'walmartmx'
     if 'next.co.uk' in url:
         return 'nextcouk'
     if 'delivery.walmart' in url:
