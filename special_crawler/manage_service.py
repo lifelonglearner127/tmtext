@@ -25,7 +25,6 @@ def requires_auth(f):
 @app.route('/switch_branch', methods=['GET', 'POST'])
 @requires_auth
 def switch_branch():
-	# show branches
 	branches = get_branches()
 
 	# if method is POST switch branch before rendering list of available branches
@@ -33,7 +32,19 @@ def switch_branch():
 		# get value of target branch from submitted value from form
 		checkout_branch(request.form['Branches'], branches['branches'])
 
-		#TODO: also restart crawler service!
+        # pull
+        subprocess.call(['git', 'pull'])
+
+        # find uwsgi processes
+        ps = subprocess.Popen(('ps', 'xau'), stdout = subprocess.PIPE)
+        uwsgi_processes_s = subprocess.check_output(('grep', 'uwsgi'), stdin = ps.stdout)
+        uwsgi_processes = uwsgi_processes_s.split('\n')
+
+        # restart crawler service
+        for p in uwsgi_processes:
+            if '  Ss  ' in p:
+                pid = re.search( '  (\d+)  ', p ).group(1)
+                subprocess.call(['sudo', 'kill', '-SIGHUP', pid])
 
 	# TODO: more optimal - don't do this twice? but that would mean keeping some state
 	branches = get_branches()
@@ -55,8 +66,6 @@ Return:
 	dictionary containing list of branches and current branch
 """
 def get_branches():
-	# list branches
-
 	branches_s = subprocess.check_output(['git', 'branch'])
 	branches = branches_s.split('\n')
 
