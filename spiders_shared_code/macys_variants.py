@@ -49,6 +49,7 @@ class MacysVariants(object):
                 images_by_color[color] = url_list
 
             colorwayAdditionalImages = product_info_json['images'].get('colorwayAdditionalImages', {})
+
             for color in colorwayAdditionalImages:
                 url_list = images_by_color.get(color,[]) + colorwayAdditionalImages[color].split(',')
                 images_by_color[color] = url_list
@@ -58,8 +59,8 @@ class MacysVariants(object):
                 for color in colorwayPricingSwatches[price]:
                     colors_information[color] = {}
                     colors_information[color]['price'] = float(price.replace("$",""))                
-                    if images_by_color:
-                        colors_information[color]['img_urls'] = [self.IMAGE_BASE_URL+url for url in images_by_color[color]]
+                    if images_by_color and images_by_color.get(color,None):
+                        colors_information[color]['img_urls'] = [self.IMAGE_BASE_URL+url for url in images_by_color.get(color)]
         
         # Single Color Product
         else:
