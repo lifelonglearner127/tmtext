@@ -153,11 +153,18 @@ class SamsclubProductsSpider(BaseProductsSpider):
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='plImageHolder']/img/@src").extract())
 
+
+        old_price = ''.join(response.xpath('//li[@class="wasPrice"]//span[@class="striked strikedPrice"]/text()').re('[\d\.\,]+')).strip().replace(',','')
         if not product.get("price"):
             price = response.xpath("//li/span[@itemprop='price']/text()").extract()
-            if price:
-                product["price"] = Price(price=price[0],
-                                     priceCurrency='USD')
+
+            if old_price:
+                cond_set_value(product,'price', Price(price=old_price, priceCurrency='USD'))
+                cond_set_value(product,'price_with_discount', Price(price=price[0], priceCurrency='USD'))
+
+            elif price:
+                cond_set_value(product,'price', Price(price=price[0], priceCurrency='USD'))
+
 
         price = response.xpath(
             "//div[@class='moneyBoxBtn']/a"
@@ -188,8 +195,7 @@ class SamsclubProductsSpider(BaseProductsSpider):
                     "//span[contains(@class,'onlinePrice')]"
                     "/text()").re(FLOATING_POINT_RGEX)
         if price:
-            product['price'] = Price(price=price[0],
-                                     priceCurrency='USD')
+            cond_set_value(product, 'price',Price(price=price[0], priceCurrency='USD'))
 
         cond_set(
             product,
@@ -212,27 +218,29 @@ class SamsclubProductsSpider(BaseProductsSpider):
         # Clean and filter categories names from breadcrumb
         categories = list(filter((lambda x: x.lower() not in categorie_filters), 
                         map((lambda x: x.strip()),response.xpath('//*[@id="breadcrumb"]//a/text()').extract())))
-
         category = categories[-1] if categories else None
-        
-        cond_set_value(prod, 'categories', categories)
-        cond_set_value(prod, 'category', category)
+        cond_set_value(product, 'categories', categories)
+        cond_set_value(product, 'category', category)
 
+        #Subscribe and save
+        subscribe_and_save = response.xpath('//*[@id="pdpSubCheckBox"]')
+        cond_set_value(product, 'subscribe_and_save', 1 if subscribe_and_save else 0)
 
-        # shipping = ''.join(response.xpath('//p[contains(text(),"Shipping & Handling:")]').re('[\d\.\,]+')).strip().replace(',','')
-        
-        # if shipping and shipping != "0.00":
-        #     cond_set_value(prod, 'shipping_cost', Price(priceCurrency=self.DEFAULT_CURRENCY,
-        #                                             price=shipping))
+        # Shpping        
+        shipping_included = response.xpath('//*[@class="freeDelvryTxt"]')
+        cond_set_value(product, 'shipping_included', 1 if shipping_included else 0)
+        if not shipping_included:
+            # http://www.samsclub.com/sams/shop/product/moneybox/shippingDeliveryInfo.jsp?zipCode=33611&productId=prod14160143&skuId=sku14674144
+            pass
 
-        # shipping_included = ''.join(response.xpath('//p[contains(text(),"Shipping & Handling Included")]').extract()).strip().replace(',','')
-        # cond_set_value(prod, 'shipping_included', 1 if shipping_included else 0)
-        
-        # available_store = re.search('Item may be available in your local warehouse', response.body_as_unicode())
-        # cond_set_value(prod, 'available_store', 1 if available_store else 0)
+        # Available in Store
+        # http://www.samsclub.com/sams/shoppingtools/clubSelector/displayClubs.jsp?productId=prod14160144&skuId=sku14674145&radius=50&address=33611
+        # available_store = response.xpath('//*[@id="addtocartsingleajaxclub" and contains(text(),"Pick up in Club")]')
+        # cond_set_value(product, 'available_store', 1 if available_store else 0)
 
-        # not_available_store = re.search('Not available for purchase on Costco.com', response.body_as_unicode())
-        # cond_set_value(prod, 'available_online', 0 if not_available_store else 1)
+        # Available Online
+        available_online = response.xpath('//*[@id="addtocartsingleajaxonline" and contains(text(),"Ship this item")]')
+        cond_set_value(product, 'available_online', 1 if available_online else 0)
 
 
 
