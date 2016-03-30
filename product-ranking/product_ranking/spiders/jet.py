@@ -203,10 +203,8 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
             ).extract()
         )
 
-        response.meta['model'] = is_empty(
-            response.xpath("//div[contains(@class, 'products')]"
-                           "/div/@rel").extract()
-        )
+        models = response.xpath("//div[contains(@class, 'products')]/div/@rel").extract()
+        response.meta['model'] = response.url.split('/')[-1] if len(models) > 1 else is_empty(models)
 
         brand = is_empty(response.xpath("//div[contains(@class, 'content')]"
                                         "/div[contains(@class, 'brand')]/text()").extract())
@@ -256,6 +254,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         JV = JetVariants()
         JV.setupSC(response)
         product["variants"] = JV._variants()
+
         csrf = self.get_csrf(response)
 
         # For each variant with SkuId we need to do a POST to get its price
@@ -305,7 +304,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         data = json.loads(response.body)
 
         # Search for the variant with the given skuId on the list
-        for variant in filter((lambda x: 'skuId' in x),product['variants']):
+        for variant in filter((lambda x: 'skuId' in x), product['variants']):
             if variant['skuId'] == sku:
                 break
 
@@ -313,10 +312,8 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         index = product['variants'].index(variant)
 
         #Update price
-        variant['price'] = Price(
-                        priceCurrency="USD",
-                        price=data.get("referencePrice")
-                    )
+        variant['price'] = data.get("referencePrice")
+
         # Replace it on the list 
         product['variants'].pop(index)
         product['variants'].insert(index, variant)
