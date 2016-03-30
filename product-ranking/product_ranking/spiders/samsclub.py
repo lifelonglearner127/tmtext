@@ -34,8 +34,9 @@ class SamsclubProductsSpider(BaseProductsSpider):
         "/displayClubs.jsp?_DARGS=/sams/search/wizard/common"
         "/displayClubs.jsp.selectId")
 
-    def __init__(self, clubno='4704', *args, **kwargs):
+    def __init__(self, clubno='4704', zip_code='94117', *args, **kwargs):
         self.clubno = clubno
+        self.zip_code = zip_code
         # if sort_mode not in self.SORT_MODES:
         #     self.log('"%s" not in SORT_MODES')
         #     sort_mode = 'default'
@@ -58,6 +59,7 @@ class SamsclubProductsSpider(BaseProductsSpider):
             prod['url'] = self.product_url
             yield Request(self.product_url,
                           self._parse_single_product,
+                          cookies={'myPreferredClub': self.clubno},
                           meta={'product': prod})
 
 
@@ -229,21 +231,37 @@ class SamsclubProductsSpider(BaseProductsSpider):
         # Shpping        
         shipping_included = response.xpath('//*[@class="freeDelvryTxt"]')
         cond_set_value(product, 'shipping_included', 1 if shipping_included else 0)
-        if not shipping_included:
-            # http://www.samsclub.com/sams/shop/product/moneybox/shippingDeliveryInfo.jsp?zipCode=33611&productId=prod14160143&skuId=sku14674144
-            pass
 
         # Available in Store
-        # http://www.samsclub.com/sams/shoppingtools/clubSelector/displayClubs.jsp?productId=prod14160144&skuId=sku14674145&radius=50&address=33611
-        # available_store = response.xpath('//*[@id="addtocartsingleajaxclub" and contains(text(),"Pick up in Club")]')
-        # cond_set_value(product, 'available_store', 1 if available_store else 0)
+        available_store = response.xpath('//*[@id="addtocartsingleajaxclub" and contains(text(),"Pick up in Club")]')
+        cond_set_value(product, 'available_store', 1 if available_store else 0)
 
         # Available Online
         available_online = response.xpath('//*[@id="addtocartsingleajaxonline" and contains(text(),"Ship this item")]')
         cond_set_value(product, 'available_online', 1 if available_online else 0)
 
 
+        if not shipping_included:
+            productId = ''.join(response.xpath('//*[@id="mbxProductId"]/@value').extract())
+            pSkuId = ''.join(response.xpath('//*[@id="mbxSkuId"]/@value').extract())
+            shipping_prices_url = "http://www.samsclub.com/sams/shop/product/moneybox/shippingDeliveryInfo.jsp?zipCode=%s&productId=%s&skuId=%s" % (self.zip_code, productId, pSkuId)
+            return Request(shipping_prices_url,
+                            meta={'product': product},
+                            callback=self._parse_shipping_cost) 
 
+        return product
+
+    def _parse_shipping_cost(self, response):
+        print response.url
+        product = response.meta['product']
+        product['shipping'] = []
+        shipping_names = response.xpath('//tr/td[1]/span/text()').extract()
+        shipping_prices = response.xpath('//tr/td[2]/text()').re('[\d\.\,]+')
+
+        for shipping in zip(shipping_names,shipping_prices):
+            product['shipping'].append({'name': shipping[0], 'cost':shipping[1]})
+
+        print product['shipping']
         return product
 
     def _scrape_total_matches(self, response):
