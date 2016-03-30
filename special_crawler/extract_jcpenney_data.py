@@ -205,9 +205,9 @@ class JcpenneyScraper(Scraper):
             if not swatch["hero_image"]:
                 continue
 
-            image_urls.extend(swatch["hero_image"])
-
-        image_urls = list(set(image_urls))
+            for img in swatch["hero_image"]:
+                if not img in image_urls:
+                    image_urls.append(img)
 
         if image_urls:
             return image_urls
