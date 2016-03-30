@@ -50,11 +50,8 @@ class JetVariants(object):
                     values_of_this_type.append((value_name, y))
                 values.append(values_of_this_type)
 
-            if len(values) == 1:
-                complete_list_of_propierties.append(set(values[0]))
-            else:
-                for element in itertools.product(*values):
-                    complete_list_of_propierties.append(set(element))
+            for element in itertools.product(*values):
+                complete_list_of_propierties.append(set(element))
 
 
             # variants['Maps'] only have the information for the variants in_stock
