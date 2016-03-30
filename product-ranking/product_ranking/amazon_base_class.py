@@ -92,6 +92,11 @@ class AmazonBaseClass(BaseProductsSpider):
         self.mtp_class = Amazon_marketplace(self)
         self.captcha_retries = int(captcha_retries)
         self._cbw = CaptchaBreakerWrapper()
+        self.ignore_variant_data = kwargs.get('ignore_variant_data', None)
+        if self.ignore_variant_data in ('1', True, 'true', 'True'):
+            self.ignore_variant_data = True
+        else:
+            self.ignore_variant_data = False
 
     def _is_empty(self, x, y=None):
         return x[0] if x else y
@@ -387,8 +392,9 @@ class AmazonBaseClass(BaseProductsSpider):
                     )
 
         # Parse variants
-        variants = self._parse_variants(response)
-        product['variants'] = variants
+        if not self.ignore_variant_data:
+            variants = self._parse_variants(response)
+            product['variants'] = variants
 
         # Parse buyer reviews
         buyer_reviews = self._parse_buyer_reviews(response)
