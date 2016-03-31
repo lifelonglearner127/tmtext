@@ -1,10 +1,11 @@
 import json
 import collections
 import ast
-import lxml.html
 import itertools
 import re
-from lxml import html
+import copy
+
+import lxml.html
 
 
 class AmazonVariants(object):
@@ -55,7 +56,7 @@ class AmazonVariants(object):
 
     def _variants(self):
         try:
-            site_name = self._find_between(html.tostring(self.tree_html), "ue_sn='", "',")
+            site_name = self._find_between(lxml.html.tostring(self.tree_html), "ue_sn='", "',")
             filtering_attribute_list = ["item_package_quantity", "customer_package_type", "special_size_type", "configuration"]
             original_product_canonical_link = None
 
@@ -176,6 +177,24 @@ class AmazonVariants(object):
 
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
 
+            # filter variants (exclude variants with duplicated properties)
+            vars2remove = []
+            for variant in stockstatus_for_variants_list:
+                props = variant.get('properties', None)
+                if props:
+                    for variant2 in stockstatus_for_variants_list:
+                        props2 = variant2.get('properties', None)
+                        if props == props2:
+                            if variant != variant2:
+                                if variant.get('url', None):
+                                    if variant2 not in vars2remove:
+                                        vars2remove.append(variant2)
+                                else:
+                                    if variant not in vars2remove:
+                                        vars2remove.append(variant)
+
+            stockstatus_for_variants_list = [v for v in stockstatus_for_variants_list
+                                             if v not in vars2remove]
             if not stockstatus_for_variants_list:
                 return None
             else:
