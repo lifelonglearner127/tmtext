@@ -1,4 +1,4 @@
-# TODO: check "product_per_page" fields, may be wrong
+# -*- coding: utf-8 -*-
 
 import re
 import json
@@ -163,7 +163,7 @@ class MacysShelfPagesSpider(MacysProductsSpider):
         cond_set(product, 'locale', locale)
         brand = response.css('#brandLogo img::attr(alt)').extract()
         if not brand:
-            brand = guess_brand_from_first_words(product['title'])
+            brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
             brand = [brand]
         cond_set(product, 'brand', brand)
 
