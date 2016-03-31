@@ -28,7 +28,7 @@ class WalmartMXScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^https?://www\.walmart\.com\.mx/[\w\d/-]+-\d+", self.product_page_url)
+        m = re.match(r"^https?://www\.walmart\.com\.mx/[\w\d/-]+[-_][\w\d]+/?(\?.*)?$", self.product_page_url)
         return bool(m)
 
     def not_a_product(self):
@@ -94,7 +94,9 @@ class WalmartMXScraper(Scraper):
         return len(features) if features else 0
 
     def _description(self):
-        return ' '.join(self.tree_html.xpath('//*[@itemprop="description"]/text()'))
+        description = self.tree_html.xpath('//*[@itemprop="description"]/text()') or \
+                        self.tree_html.xpath('//*[@id="productoDescripcionTexto"]//text()')
+        return ' '.join(map(lambda x: x.strip(), description))
 
     def _long_description(self):
         return self._description()
@@ -128,7 +130,9 @@ class WalmartMXScraper(Scraper):
     def _image_urls(self):
         # There is 1 to 3 images on this website.
         # It always will include 3 images URL on the page but sometimes URL 2 and 3 will not work and are hidden.
-        # I can't decipher how does the website decide if images 2 and 3 are valid or not without downloading.
+        # To see if the image is valid we will have to load it with, causing a penalty in execution time.
+        image_list = map((lambda x: urljoin(self.product_page_url,x)),self.tree_html.xpath('//*[@itemprop="image"]/@src')) or \
+                        self.tree_html.xpath('//*[contains(@id,"imgDetalle")]/@src')
         return map((lambda x: urljoin(self.product_page_url,x)),self.tree_html.xpath('//*[@itemprop="image"]/@src'))
 
     def _image_count(self):
