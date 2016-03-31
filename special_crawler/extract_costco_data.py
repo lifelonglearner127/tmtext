@@ -119,8 +119,9 @@ class CostcoScraper(Scraper):
         return self._long_description()
 
     def _long_description(self):
-        if self.tree_html.xpath("//div[@id='product-tab1']"):
-            return lxml.html.tostring(self.tree_html.xpath("//div[@id='product-tab1']")[0])
+
+        if filter(None, map((lambda x: x.strip()),self.tree_html.xpath("//div[@id='product-tab1']/*[not(self::div)]//text()"))):
+            return map((lambda x: lxml.html.tostring(x)),self.tree_html.xpath("//div[@id='product-tab1']/*[not(self::div)]")[:-1])
 
         html = self._wc_content()
         m = re.findall(r'wc-rich-content-description\\">(.*?)<\\/div', html, re.DOTALL)
