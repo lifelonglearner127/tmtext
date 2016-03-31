@@ -111,11 +111,14 @@ class CostcoProductsSpider(BaseProductsSpider):
 
         des = response.xpath('//div[@id="product-tab1"]//text()').extract()
         des = ' '.join(i.strip() for i in des)
-        if des.strip() == '[ProductDetailsESpot_Tab1]':
-            des = response.xpath('//div[@id="product-tab1"]/..//text()').extract()
+        if '[ProductDetailsESpot_Tab1]' in des.strip():
+            des = response.xpath("//div[@id='product-tab1']/*[position()>1]//text()").extract()
             des = ' '.join(i.strip() for i in des)
             if des.strip():
                 prod['description'] = des.strip()
+
+        elif des:
+            prod['description'] = des.strip()
 
         img_url = response.xpath('//img[@itemprop="image"]/@src').extract()
         cond_set(prod, 'image_url', img_url)
