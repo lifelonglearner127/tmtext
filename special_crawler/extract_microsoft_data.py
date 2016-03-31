@@ -159,11 +159,10 @@ class MicrosoftScraper(Scraper):
                 if not url.startswith("http://"):
                     url_list[index] = "http:" + url
 
-            url_list = list(set(url_list))
             image_urls = []
 
             for url in url_list:
-                if "360_Overlay.png" not in url and "/Spin/" not in url:
+                if "360_Overlay.png" not in url and "/Spin/" not in url and not url in image_urls:
                     image_urls.append(url)
 
             if image_urls:
