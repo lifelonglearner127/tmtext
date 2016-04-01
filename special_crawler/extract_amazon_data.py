@@ -534,12 +534,13 @@ class AmazonScraper(Scraper):
             offset_index_2 = image_file_name.rfind(".")
 
             if offset_index_1 == offset_index_2:
-                origin_image_urls.append(url)
+                if not url in origin_image_urls:
+                    origin_image_urls.append(url)
             else:
                 image_file_name = image_file_name[:offset_index_1] + image_file_name[offset_index_2:]
-                origin_image_urls.append(url[:url.rfind("/")] + "/" + image_file_name)
-
-        origin_image_urls = list(set(origin_image_urls))
+                url = url[:url.rfind("/")] + "/" + image_file_name
+                if not url in origin_image_urls:
+                    origin_image_urls.append(url)
 
         if not origin_image_urls:
             return None
