@@ -81,9 +81,9 @@ class UltaScraper(Scraper):
 
     def _description(self):
 
-        description_elements = self.tree_html.xpath('//div[@id="product-first-catalog"]/div[@class="product-catalog-content"]')
+        description_elements = self.tree_html.xpath('//div[@id="product-first-catalog"]/div[contains(@class,"product-catalog-content")]')
 
-        text_elements = self.tree_html.xpath('//div[@id="product-first-catalog"]/div[@class="product-catalog-content"]/text()')
+        text_elements = self.tree_html.xpath('//div[@id="product-first-catalog"]/div[contains(@class,"product-catalog-content")]/text()')
 
         short_description = "" . join(text_elements)
 
@@ -108,27 +108,28 @@ class UltaScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        description_elements = self.tree_html.xpath('//div[@class="product-catalog"]')
+        description_elements = self.tree_html.xpath('//div[contains(@class,"product-catalog")]')
 
         for description_element in description_elements:
-            if description_element.xpath("div[@class='product-catalog-head']/text()") and \
-                            "How to Use" in description_element.xpath("div[@class='product-catalog-head']/text()")[0]:
-                return lxml.html.tostring(description_element.xpath("div[@class='product-catalog-content']")[0]).\
-                    replace('<div class="product-catalog-content" style="display: none;">', "").replace("</div>", "")
+            if description_element.xpath("div[contains(@class,'product-catalog-head')]") and \
+                            "How to Use" in description_element.xpath("div[contains(@class,'product-catalog-head')]")[0].text_content():
+                return re.sub('<div class="product-catalog-content.*>', '', \
+                    lxml.html.tostring(description_element.xpath("div[contains(@class,'product-catalog-content')]")[0])).\
+                    replace('</div>', '').strip()
 
         return None
 
     def _ingredients(self):
-        product_catalog_list = self.tree_html.xpath('//div[@class="product-catalog"]')
+        product_catalog_list = self.tree_html.xpath('//div[contains(@class,"product-catalog")]')
 
         for product_catalog in product_catalog_list:
-            head_text = product_catalog.xpath("div[@class='product-catalog-head']/text()")
+            pch = product_catalog.xpath("div[contains(@class,'product-catalog-head')]")
 
-            if head_text:
-                head_text = head_text[0].strip()
+            if pch:
+                head_text = pch[0].text_content()
 
                 if "Ingredients" in head_text:
-                    ingredients = product_catalog.xpath("div[@class='product-catalog-content']/text()")[0].strip()
+                    ingredients = product_catalog.xpath("div[contains(@class,'product-catalog-content')]")[0].text_content().strip()
 
                     return ingredients.split(', ')
 
