@@ -39,7 +39,7 @@ class BuyerReviewsBazaarApi(object):
                     last_buyer_review_date = product_reviews.get('LastSubmissionTime').split('.')[0]
                     product[u'last_buyer_review_date'] = datetime.strptime(last_buyer_review_date, "%Y-%m-%dT%H:%M:%S").strftime('%d-%m-%Y')
 
-                return {'num_of_reviews': product_reviews.get('RecommendedCount',0),
+                return {'num_of_reviews': product_reviews.get('TotalReviewCount',0),
                         'average_rating': round(product_reviews.get('AverageOverallRating',0),1),
                         'rating_by_star': rating_by_stars
                 }
