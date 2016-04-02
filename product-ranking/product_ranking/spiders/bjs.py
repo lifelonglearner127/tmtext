@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 import string
 import urllib
@@ -5,6 +6,7 @@ import urlparse
 
 from contrib.product_spider import ProductsSpider
 
+from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import Price, SiteProductItem
 from product_ranking.spiders import FLOATING_POINT_RGEX, cond_set, \
     cond_set_value
@@ -188,6 +190,11 @@ class BJSProductsSpider(BaseValidator, ProductsSpider):
         else:
             cond_set_value(product, 'is_out_of_stock', False)
 
+        # Guessing brand
+        brand = guess_brand_from_first_words(
+            product['title'].replace(u'®', ''))
+        cond_set_value(product, 'brand', brand)
+
         # is_out_of_stock
         oos = response.xpath('//*[@id="stockinfo"]//text()').re('Out Of Stock')
         product['is_out_of_stock'] = True if oos else False
@@ -208,16 +215,16 @@ class BJSProductsSpider(BaseValidator, ProductsSpider):
         }
 
         # To Do: Discover the values of P1 and P2 for each product
-        # if num_of_reviews:
-        #     part_number = response.xpath(
-        #         '//*[@id="partNumber"]/@value').extract()[0]
-        #     p1, p2 = "", ""
-        #     review_url = "http://www.bjs.com/pwr/content/" \
-        #         "%s/%s/%s-en_US-meta.js" % (p1, p2, part_number)
+        if num_of_reviews:
+            part_number = response.xpath(
+                '//*[@id="partNumber"]/@value').extract()[0]
+            review_url_part = self.get_review_url_part(part_number)
+            review_url = "http://www.bjs.com/pwr/content/" \
+                "%s/%s-en_US-meta.js" % (review_url_part, part_number)
 
-        #     reqs.append(Request(review_url,
-        #                         self._parse_reviews,
-        #                         meta={'product': product, 'reqs': reqs}))
+            reqs.append(Request(review_url,
+                                self._parse_reviews,
+                                meta={'product': product, 'reqs': reqs}))
 
         last_buyer_review_date = response.xpath(
             '(//*[@class="pr-review-author-date pr-rounded"]'
@@ -243,7 +250,7 @@ class BJSProductsSpider(BaseValidator, ProductsSpider):
 
     def _parse_reviews(self, response):
         product = response.meta['product']
-        reqs = response.meta['reqs']
+        reqs = response.meta.get('reqs', [])
         rating_by_star = product['buyer_reviews']['rating_by_star']
         for vote in re.findall('rating:(\d),', response.body):
             rating_by_star[vote] = rating_by_star[vote] + 1
@@ -252,3 +259,34 @@ class BJSProductsSpider(BaseValidator, ProductsSpider):
             return self.send_next_request(reqs, response)
 
         return product
+
+    @staticmethod
+    def get_review_url_part(product_model):
+        """This method was created as copy of javascript function g(c4) from
+        full.js. It will generate numerical part of url for reviews.
+        example: 06/54 for url
+        http://www.bjs.com/pwr/content/06/54/P_159308793-en_US-meta.js
+
+        I use the same variables names as in js, but feel free to change them
+        """
+        c4 = product_model
+        c3 = 0
+        for letter in c4:
+            c7 = ord(letter)
+            c7 = c7 * abs(255 - c7)
+            c3 += c7
+
+        c3 = c3 % 1023
+        c3 = str(c3)
+
+        cz = 4
+        c6 = list(c3)
+
+        c2 = 0
+        while c2 < (cz - len(c3)):
+            c2 += 1
+            c6.insert(0, "0")
+
+        c3 = ''.join(c6)
+        c3 = c3[0: 2] + '/' + c3[2: 4]
+        return c3
