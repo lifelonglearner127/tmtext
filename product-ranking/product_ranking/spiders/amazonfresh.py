@@ -3,15 +3,38 @@ from __future__ import division, absolute_import, unicode_literals
 import urllib
 import urlparse
 import re
+import random
+import copy
 
 from scrapy.http import Request
+from scrapy.conf import settings
 from scrapy import FormRequest
 from scrapy.log import ERROR
+from scrapy.dupefilter import BaseDupeFilter
+from scrapy.utils.request import request_fingerprint
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults, cond_set_value
+
+
+class CustomDupeFilter(BaseDupeFilter):
+    """ Custom dupefilter - counts attempts """
+
+    urls = {}
+
+    def __init__(self, max_attempts=50, *args, **kwargs):
+        self.max_attempts = max_attempts
+        super(CustomDupeFilter, self).__init__(*args, **kwargs)
+
+    def request_seen(self, request):
+        if not request.url in self.urls:
+            self.urls[request.url] = 0
+        self.urls[request.url] += 1
+        if self.urls[request.url] > self.max_attempts:
+            self.log('Too many dupe attempts for url %s' % request.url, ERROR)
+            return True
 
 
 class AmazonFreshProductsSpider(BaseProductsSpider):
@@ -49,7 +72,15 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
         'price_hl': 'price_high_to_low',
     }
 
+    zip_codes_to_recrawl = {
+        'Seattle': 98101,
+        'San Francisco': 94107,
+        'New York': 10128,
+        'Santa Monica': 90404
+    }
+
     def __init__(self, zip_code='94117', order='relevance', *args, **kwargs):
+        settings.overrides['DUPEFILTER_CLASS'] = 'product_ranking.spiders.amazonfresh.CustomDupeFilter'
         search_sort = self.search_sort.get(order, 'relevance')
         self.zip_code = zip_code
         super(AmazonFreshProductsSpider, self).__init__(
@@ -64,20 +95,30 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
     def login_handler(self, response):
         data = {'refer': '',
                 'zip': self.zip_code}
-        return FormRequest(self.ZIP_URL,
-                           formdata=data,
-                           callback=self.after_login,)
+        return FormRequest(self.ZIP_URL, formdata=data, callback=self.after_login)
 
     def after_login(self, response):
         return super(AmazonFreshProductsSpider, self).start_requests()
 
+    def _scrape_title(self, response):
+        return response.xpath('//div[@class="buying"]/h1/text()').extract()
+
     def parse_product(self, response):
         prod = response.meta['product']
 
+        # check if we have a previously scraped product, and we got a 'normal' title this time
+        _title = self._scrape_title(response)
+        if _title and isinstance(_title, (list, tuple)):
+            _title = _title[0]
+            if 'Not Available in Your Area' not in _title:
+                if getattr(self, 'original_na_product', None):
+                    prod = self.original_na_product
+                    prod['title'] = _title
+                    return prod
+
         query_string = urlparse.parse_qs(urlparse.urlsplit(response.url).query)
-        cond_set(prod, 'model', query_string['asin'])
-        title = response.xpath('//div[@class="buying"]/h1/text()').extract()
-        cond_set(prod, 'title', title)
+        cond_set(prod, 'model', query_string.get('asin', ''))
+
         brand = response.xpath('//div[@class="byline"]/a/text()').extract()
         cond_set(prod, 'brand', brand)
         price = response.xpath(
@@ -137,6 +178,17 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
                 br = BuyerReviews(num_of_reviews, avg, {})
                 prod['buyer_reviews'] = br
         cond_set_value(prod, 'buyer_reviews', ZERO_REVIEWS_VALUE)
+
+        title = self._scrape_title(response)
+        cond_set(prod, 'title', title)
+        if 'Not Available in Your Area' in prod.get('title', ''):
+            new_zip_code = str(random.choice(self.zip_codes_to_recrawl.values()))
+            self.log('Product not available for ZIP %s - retrying with %s' % (
+                self.zip_code, new_zip_code))
+            self.zip_code = new_zip_code
+            if not getattr(self, 'original_na_product', None):
+                self.original_na_product = copy.deepcopy(prod)
+            return Request(self.WELCOME_URL, callback=self.login_handler)
 
         return prod
 
