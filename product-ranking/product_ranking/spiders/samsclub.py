@@ -62,7 +62,6 @@ class SamsclubProductsSpider(BaseProductsSpider):
                           cookies={'myPreferredClub': self.clubno},
                           meta={'product': prod})
 
-
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
@@ -141,8 +140,7 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 product,
                 'brand',
                 response.xpath(
-                    '//*[@itemprop="brand"]//span/text()'
-            ).extract())
+                    '//*[@itemprop="brand"]//span/text()').extract())
 
         cond_set(
             product,
@@ -155,7 +153,6 @@ class SamsclubProductsSpider(BaseProductsSpider):
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='plImageHolder']/img/@src").extract())
 
-
         old_price = ''.join(response.xpath('//li[@class="wasPrice"]//span[@class="striked strikedPrice"]/text()').re('[\d\.\,]+')).strip().replace(',','')
         if not product.get("price"):
             price = response.xpath("//li/span[@itemprop='price']/text()").extract()
@@ -166,7 +163,6 @@ class SamsclubProductsSpider(BaseProductsSpider):
 
             elif price:
                 cond_set_value(product,'price', Price(price=price[0], priceCurrency='USD'))
-
 
         price = response.xpath(
             "//div[@class='moneyBoxBtn']/a"
@@ -214,7 +210,6 @@ class SamsclubProductsSpider(BaseProductsSpider):
 
         product['locale'] = "en-US"
 
-
         # Categories
         categorie_filters = [u'sam\u2019s club']
         # Clean and filter categories names from breadcrumb
@@ -224,30 +219,41 @@ class SamsclubProductsSpider(BaseProductsSpider):
         cond_set_value(product, 'categories', categories)
         cond_set_value(product, 'category', category)
 
-        #Subscribe and save
-        subscribe_and_save = response.xpath('//*[@id="pdpSubCheckBox"]')
-        cond_set_value(product, 'subscribe_and_save', 1 if subscribe_and_save else 0)
+        # Subscribe and save
+        subscribe_and_save = response.xpath('//*[@class="subscriptionDiv" and \
+                not(@style="display: none;")]/input[@id="pdpSubCheckBox"]')
+        cond_set_value(product,
+                       'subscribe_and_save',
+                       1 if subscribe_and_save else 0)
 
-        # Shpping        
+        # Shpping
         shipping_included = response.xpath('//*[@class="freeDelvryTxt"]')
-        cond_set_value(product, 'shipping_included', 1 if shipping_included else 0)
+        cond_set_value(product,
+                       'shipping_included',
+                       1 if shipping_included else 0)
 
         # Available in Store
-        available_store = response.xpath('//*[@id="addtocartsingleajaxclub" and contains(text(),"Pick up in Club")]')
-        cond_set_value(product, 'available_store', 1 if available_store else 0)
+        available_store = response.xpath('//*[@id="addtocartsingleajaxclub" \
+                and contains(text(),"Pick up in Club")]')
+        cond_set_value(product,
+                       'available_store',
+                       1 if available_store else 0)
 
         # Available Online
-        available_online = response.xpath('//*[@id="addtocartsingleajaxonline" and contains(text(),"Ship this item")]')
-        cond_set_value(product, 'available_online', 1 if available_online else 0)
-
+        available_online = response.xpath('//*[(@id="addtocartsingleajaxonline" \
+                or @id="variantMoneyBoxButtonInitialLoadOnline") \
+                and contains(text(),"Ship this item")]')
+        cond_set_value(product,
+                       'available_online',
+                       1 if available_online else 0)
 
         if not shipping_included:
             productId = ''.join(response.xpath('//*[@id="mbxProductId"]/@value').extract())
             pSkuId = ''.join(response.xpath('//*[@id="mbxSkuId"]/@value').extract())
             shipping_prices_url = "http://www.samsclub.com/sams/shop/product/moneybox/shippingDeliveryInfo.jsp?zipCode=%s&productId=%s&skuId=%s" % (self.zip_code, productId, pSkuId)
-            return Request(shipping_prices_url,
-                            meta={'product': product},
-                            callback=self._parse_shipping_cost) 
+            return Request(shipping_prices_url, 
+                           meta={'product': product}, 
+                           callback=self._parse_shipping_cost)
 
         return product
 
@@ -258,8 +264,8 @@ class SamsclubProductsSpider(BaseProductsSpider):
         shipping_names = response.xpath('//tr/td[1]/span/text()').extract()
         shipping_prices = response.xpath('//tr/td[2]/text()').re('[\d\.\,]+')
 
-        for shipping in zip(shipping_names,shipping_prices):
-            product['shipping'].append({'name': shipping[0], 'cost':shipping[1]})
+        for shipping in zip(shipping_names, shipping_prices):
+            product['shipping'].append({'name': shipping[0], 'cost': shipping[1]})
 
         print product['shipping']
         return product
