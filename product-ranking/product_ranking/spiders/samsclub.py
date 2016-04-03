@@ -6,6 +6,7 @@ from future_builtins import *
 import re
 import string
 import urllib
+import urlparse
 
 from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider
@@ -153,16 +154,21 @@ class SamsclubProductsSpider(BaseProductsSpider):
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='plImageHolder']/img/@src").extract())
 
-        old_price = ''.join(response.xpath('//li[@class="wasPrice"]//span[@class="striked strikedPrice"]/text()').re('[\d\.\,]+')).strip().replace(',','')
+        old_price = ''.join(response.xpath(
+            '//li[@class="wasPrice"]//span[@class="striked strikedPrice"]/text()').re('[\d\.\,]+')).strip().replace(',','')
+
         if not product.get("price"):
             price = response.xpath("//li/span[@itemprop='price']/text()").extract()
 
             if old_price:
-                cond_set_value(product,'price', Price(price=old_price, priceCurrency='USD'))
-                cond_set_value(product,'price_with_discount', Price(price=price[0], priceCurrency='USD'))
+                cond_set_value(product, 'price', Price(price=old_price,
+                                                       priceCurrency='USD'))
+                cond_set_value(product, 'price_with_discount', Price(price=price[0],
+                                                                     priceCurrency='USD'))
 
             elif price:
-                cond_set_value(product,'price', Price(price=price[0], priceCurrency='USD'))
+                cond_set_value(product, 'price', Price(price=price[0],
+                                                       priceCurrency='USD'))
 
         price = response.xpath(
             "//div[@class='moneyBoxBtn']/a"
@@ -184,7 +190,7 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 else:
                     m = re.search(FLOATING_POINT_RGEX, price)
                     if m:
-                        price = [m.group(0)]
+                        price = [m.group(0).strip('.')]
                     else:
                         price = None
 
@@ -192,8 +198,9 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 price = response.xpath(
                     "//span[contains(@class,'onlinePrice')]"
                     "/text()").re(FLOATING_POINT_RGEX)
+
         if price:
-            cond_set_value(product, 'price',Price(price=price[0], priceCurrency='USD'))
+            cond_set_value(product, 'price', Price(price=price[0], priceCurrency='USD'))
 
         cond_set(
             product,
@@ -258,7 +265,6 @@ class SamsclubProductsSpider(BaseProductsSpider):
         return product
 
     def _parse_shipping_cost(self, response):
-        print response.url
         product = response.meta['product']
         product['shipping'] = []
         shipping_names = response.xpath('//tr/td[1]/span/text()').extract()
@@ -267,7 +273,6 @@ class SamsclubProductsSpider(BaseProductsSpider):
         for shipping in zip(shipping_names, shipping_prices):
             product['shipping'].append({'name': shipping[0], 'cost': shipping[1]})
 
-        print product['shipping']
         return product
 
     def _scrape_total_matches(self, response):
@@ -302,12 +307,53 @@ class SamsclubProductsSpider(BaseProductsSpider):
         for link in links:
             yield link, SiteProductItem()
 
-    def _scrape_next_results_page_link(self, response):
+    def _get_next_products_page(self, response, prods_found):
+        link_page_attempt = response.meta.get('link_page_attempt', 1)
+
+        result = None
+        if prods_found is not None:
+            # This was a real product listing page.
+            remaining = response.meta['remaining']
+            remaining -= prods_found
+            if remaining > 0:
+                next_page = self._scrape_next_results_page_link(response, remaining)
+                if next_page is None:
+                    pass
+                elif isinstance(next_page, Request):
+                    next_page.meta['remaining'] = remaining
+                    result = next_page
+                else:
+                    url = urlparse.urljoin(response.url, next_page)
+                    new_meta = dict(response.meta)
+                    new_meta['remaining'] = remaining
+                    result = Request(url, self.parse, meta=new_meta, priority=1)
+        elif link_page_attempt > self.MAX_RETRIES:
+            self.log(
+                "Giving up on results page after %d attempts: %s" % (
+                    link_page_attempt, response.request.url),
+                ERROR
+            )
+        else:
+            self.log(
+                "Will retry to get results page (attempt %d): %s" % (
+                    link_page_attempt, response.request.url),
+                WARNING
+            )
+
+            # Found no product links. Probably a transient error, lets retry.
+            new_meta = response.meta.copy()
+            new_meta['link_page_attempt'] = link_page_attempt + 1
+            result = response.request.replace(
+                meta=new_meta, cookies={}, dont_filter=True)
+
+        return result
+
+    def _scrape_next_results_page_link(self, response, remaining):
         # If the total number of matches cannot be scrapped it will not be set.
         num_items = min(response.meta.get('total_matches', 0), self.quantity)
         if num_items:
             return SamsclubProductsSpider._NEXT_PAGE_URL.format(
                 search_term=response.meta['search_term'],
-                offset=response.meta['products_per_page'] + 1,
-                prods_per_page=num_items)
+                offset=num_items - remaining,
+                prods_per_page=min(200, num_items))
         return None
