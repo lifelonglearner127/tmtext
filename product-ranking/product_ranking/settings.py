@@ -73,7 +73,6 @@ MEMUSAGE_LIMIT_MB = 2048
 MEMUSAGE_ENABLED = True
 
 
-#LOG_LEVEL = 'INFO'
 
 # redefine log foramtter. DropItem exception provided with ERROR level
 #LOG_FORMATTER = 'product_ranking.pipelines.PipelineFormatter'
@@ -165,7 +164,6 @@ if not os.path.exists(http_proxy_path):
 
 
 def _check_if_proxies_available(http_proxy_path, timeout=10):
-    return False
     if not os.path.exists(http_proxy_path):
         return False
 
