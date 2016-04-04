@@ -46,8 +46,9 @@ class CVSScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.cvs.com/shop/.*-skuid-[0-9]+$", self.product_page_url)
-        return not not m
+        #m = re.match(r"^http://www.cvs.com/shop/.*-skuid-[0-9]+$", self.product_page_url)
+        #return not not m
+        return True
 
     def not_a_product(self):
         """Checks if current page is not a valid product page
@@ -57,6 +58,7 @@ class CVSScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
+        return False
         try:
             if not self.tree_html.xpath('//span[@itemtype="http://schema.org/Product"]'):
                 raise Exception()
