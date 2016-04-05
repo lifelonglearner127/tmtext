@@ -56,7 +56,7 @@ def parse_url_parallel(spider, url, output_fh, callback):
             log_content = fh_log.read()
         os.remove(_output_file)
         os.remove(_log_file)
-        return callback('LOG| %s' % log_content, output_fh)
+        return callback('ERROR|%s|LOG|%s' % (url, log_content.replace('\n', '\t')), output_fh)
     line = json.loads(lines[0])
     line['given_url'] = url
     output_content = json.dumps(line)
