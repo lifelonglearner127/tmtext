@@ -6,6 +6,8 @@ import urlparse
 
 from contrib.product_spider import ProductsSpider
 
+from lxml import etree
+
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import Price, SiteProductItem
 from product_ranking.spiders import FLOATING_POINT_RGEX, cond_set, \
@@ -14,6 +16,8 @@ from product_ranking.validation import BaseValidator
 
 from scrapy import Request
 from scrapy.contrib.linkextractors import LinkExtractor
+
+from StringIO import StringIO
 
 
 class BJSProductsSpider(BaseValidator, ProductsSpider):
@@ -99,6 +103,15 @@ class BJSProductsSpider(BaseValidator, ProductsSpider):
         prod_links = self._scrape_product_links(response)
         return len(prod_links)
 
+    def _clean_empty_tags(self, html_tree):
+        childs = html_tree.xpath("*")
+        if not len(childs) and html_tree.text and not html_tree.text.strip():
+            html_tree.getparent().remove(html_tree)
+        if html_tree.text:
+            html_tree.text = html_tree.text.strip()
+        for child in childs:
+            self._clean_empty_tags(child)
+
     def parse_product(self, response):
         product = response.meta.get('product', SiteProductItem())
         reqs = []
@@ -136,10 +149,18 @@ class BJSProductsSpider(BaseValidator, ProductsSpider):
                     product['price_with_discount'] = price_obj
                 else:
                     product['price'] = price_obj
-        # Description
-        cond_set(product,
-                 'description',
-                 response.xpath('//div[@id="tab-1"]').extract())
+
+        description = response.xpath('//div[@id="tab-1"]').extract()
+        if description:
+            parser = etree.HTMLParser()
+            tree = etree.parse(StringIO(description[0]), parser)
+            if tree:
+                self._clean_empty_tags(tree.xpath('*')[0])
+                if tree.xpath('//body/*'):
+                    description_clened = etree.tostring(
+                        tree.xpath('//body/*')[0])
+                    # Description
+                    cond_set_value(product, 'description', description_clened)
 
         # Image
         image_list = response.xpath('//img[@id="productImage"]/@src').extract()
