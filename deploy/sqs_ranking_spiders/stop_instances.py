@@ -142,7 +142,8 @@ def stop_if_required(inst_ip, inst_id):
     tmp_file = '/tmp/tmp_file'
     # purge previous entry
     open(tmp_file, 'w').close()
-    ssh_key = '/home/ubuntu/.ssh/ubuntu_id_rsa'
+    # ssh_key = '/home/ubuntu/.ssh/ubuntu_id_rsa'
+    ssh_key = '/home/ubuntu/.ssh/tmtext_rsa'
     cmd = 'scp -o "StrictHostKeyChecking no" -i %s '\
           'ubuntu@%s:/tmp/remote_instance_starter2.log %s'
     run_cmd = cmd % (ssh_key, inst_ip, tmp_file)

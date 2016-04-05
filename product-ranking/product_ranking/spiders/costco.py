@@ -22,27 +22,7 @@ class CostcoProductsSpider(BaseProductsSpider):
 
     DEFAULT_CURRENCY = u'USD'
 
-    REVIEW_URL = 'http://api.bazaarvoice.com/data/batch.json?passkey=bai25xto36hkl5erybga10t99&apiversion=5.5' \
-                 '&displaycode=2070-en_us&resource.q0=products&filter.q0=id%3Aeq%3A{product_id}&stats.q0=reviews' \
-                 '&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_CA%2Cen_US' \
-                 '&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_CA%2Cen_US&resource.q1=reviews' \
-                 '&filter.q1=isratingsonly%3Aeq%3Afalse&filter.q1=productid%3Aeq%3A{product_id}' \
-                 '&filter.q1=contentlocale%3Aeq%3Aen_CA%2Cen_US&sort.q1=submissiontime%3Adesc&stats.q1=reviews' \
-                 '&filteredstats.q1=reviews&include.q1=authors%2Cproducts%2Ccomments' \
-                 '&filter_reviews.q1=contentlocale%3Aeq%3Aen_CA%2Cen_US' \
-                 '&filter_reviewcomments.q1=contentlocale%3Aeq%3Aen_CA%2Cen_US' \
-                 '&filter_comments.q1=contentlocale%3Aeq%3Aen_CA%2Cen_US&limit.q1=8&offset.q1=0' \
-                 '&limit_comments.q1=3&resource.q2=reviews&filter.q2=productid%3Aeq%3A{product_id}' \
-                 '&filter.q2=contentlocale%3Aeq%3Aen_CA%2Cen_US&limit.q2=1&resource.q3=reviews' \
-                 '&filter.q3=productid%3Aeq%3A{product_id}&filter.q3=isratingsonly%3Aeq%3Afalse' \
-                 '&filter.q3=rating%3Agt%3A3&filter.q3=totalpositivefeedbackcount%3Agte%3A3' \
-                 '&filter.q3=contentlocale%3Aeq%3Aen_CA%2Cen_US&sort.q3=totalpositivefeedbackcount%3Adesc' \
-                 '&include.q3=authors%2Creviews%2Cproducts&filter_reviews.q3=contentlocale%3Aeq%3Aen_CA%2Cen_US' \
-                 '&limit.q3=1&resource.q4=reviews&filter.q4=productid%3Aeq%3A{product_id}' \
-                 '&filter.q4=isratingsonly%3Aeq%3Afalse&filter.q4=rating%3Alte%3A3' \
-                 '&filter.q4=totalpositivefeedbackcount%3Agte%3A3&filter.q4=contentlocale%3Aeq%3Aen_CA%2Cen_US' \
-                 '&sort.q4=totalpositivefeedbackcount%3Adesc&include.q4=authors%2Creviews%2Cproducts' \
-                 '&filter_reviews.q4=contentlocale%3Aeq%3Aen_CA%2Cen_US&limit.q4=1&callback=BV._internal.dataHandler0'
+    REVIEW_URL = 'http://api.bazaarvoice.com/data/products.json?passkey=bai25xto36hkl5erybga10t99&apiversion=5.5&filter=id:{product_id}&stats=reviews'
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
@@ -86,32 +66,79 @@ class CostcoProductsSpider(BaseProductsSpider):
             prod['brand'] = brand
 
 
-        price_value = response.xpath(
-            '//input[contains(@name,"price")]/@value').re('[\d.]+')
+        merchandising_price = response.xpath('//*[@class="top_review_panel"]/*[@class="merchandisingText"]/text()').re('\$([\d\.\,]+) OFF')
+        price_value = ''.join(response.xpath('//input[contains(@name,"price")]/@value').re('[\d.]+')).strip()
 
-        if price_value:
-            price_value = u''.join(price_value)
-            if price_value != '0.00':
-                price = Price(
-                    priceCurrency=self.DEFAULT_CURRENCY,
-                    price=u''.join(price_value)
-                )
+        if merchandising_price:
+            diff_price = str(float(price_value) - float(merchandising_price[0].replace(',','')))
+            cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                    price=price_value))
 
-                cond_set_value(prod, 'price', price)
+            cond_set_value(prod, 'price_with_discount', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                                    price=diff_price))
+        else:
+            price_without_discount = ''.join(response.xpath('//*[@class="online-price"]/span[@class="currency"]/text()').re('[\d\.\,]+')).strip().replace(',','')
+            if price_value and price_value != '0.00':
+                if price_without_discount:
+                    cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                        price=price_without_discount))
+                    cond_set_value(prod, 'price_with_discount', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                                        price=price_value))
+                else:
+                    cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                        price=price_value))
+
 
         des = response.xpath('//div[@id="product-tab1"]//text()').extract()
         des = ' '.join(i.strip() for i in des)
-        if des.strip() == '[ProductDetailsESpot_Tab1]':
-            des = response.xpath('//div[@id="product-tab1"]/..//text()').extract()
+        if '[ProductDetailsESpot_Tab1]' in des.strip():
+            des = response.xpath("//div[@id='product-tab1']/*[position()>1]//text()").extract()
             des = ' '.join(i.strip() for i in des)
             if des.strip():
                 prod['description'] = des.strip()
+
+        elif des:
+            prod['description'] = des.strip()
 
         img_url = response.xpath('//img[@itemprop="image"]/@src').extract()
         cond_set(prod, 'image_url', img_url)
 
         cond_set_value(prod, 'locale', 'en-US')
         prod['url'] = response.url
+
+        # Categories
+        categorie_filters = ['home']
+        # Clean and filter categories names from breadcrumb
+        categories = list(filter((lambda x: x.lower() not in categorie_filters), 
+                        map((lambda x: x.strip()),response.xpath('//*[@itemprop="breadcrumb"]//a/text()').extract())))
+
+        category = categories[-1] if categories else None
+        
+        cond_set_value(prod, 'categories', categories)
+        cond_set_value(prod, 'category', category)
+
+        # Minimum Order Quantity
+        try:
+            minium_order_quantity = re.search('Minimum Order Quantity: (\d+)', response.body_as_unicode()).group(1)
+            cond_set_value(prod, 'minimum_order_quantity', minium_order_quantity)
+        except:
+            pass
+
+        shipping = ''.join(response.xpath('//p[contains(text(),"Shipping & Handling:")]').re('[\d\.\,]+')).strip().replace(',','')
+        
+        if shipping and shipping != "0.00":
+            cond_set_value(prod, 'shipping_cost', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                    price=shipping))
+
+        shipping_included = ''.join(response.xpath('//p[contains(text(),"Shipping & Handling Included")]').extract()).strip().replace(',','')
+        cond_set_value(prod, 'shipping_included', 1 if shipping_included else 0)
+        
+        available_store = re.search('Item may be available in your local warehouse', response.body_as_unicode())
+        cond_set_value(prod, 'available_store', 1 if available_store else 0)
+
+        not_available_store = re.search('Not available for purchase on Costco.com', response.body_as_unicode())
+        cond_set_value(prod, 'available_online', 0 if not_available_store else 1)
+
 
         count_review = response.xpath('//meta[contains(@itemprop, "reviewCount")]/@content').extract()
         product_id = re.findall(r'var bvProductId = \'(.+)\';', response.body_as_unicode())
@@ -130,12 +157,11 @@ class CostcoProductsSpider(BaseProductsSpider):
         return prod
 
     def parse_buyer_reviews(self, response):
-
         meta = response.meta.copy()
         product = response.meta['product']
         reqs = meta.get('reqs', [])
 
-        product['buyer_reviews'] = self.br.parse_buyer_reviews_batch_json(response)
+        product['buyer_reviews'] = self.br.parse_buyer_reviews_products_json(response)
 
         if reqs:
             return self.send_next_request(reqs, response)
