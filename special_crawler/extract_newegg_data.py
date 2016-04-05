@@ -282,18 +282,14 @@ class NeweggScraper(Scraper):
         return len(image_urls) if image_urls else 0
 
     def _video_urls(self):
-        if self.webcollage_contents:
-            #a[ends-with(@href, '.jpg')]
-            urls = self.webcollage_contents.xpath("//meta[contains(@content, '.mp4')]/@content")
-            video_urls = []
+        content = self.load_page_from_url_with_number_of_retries('http://media.flixcar.com/delivery/js/inpage/147/us/mpn/K1K49UT')
+        distributor_id = re.search( "distributor: '(\d+)'", content ).group(1)
+        product_id = re.search( "product: '(\d+)'", content ).group(1)
 
-            for url in urls:
-                if url.endswith('.mp4\\"'):
-                    video_urls.append(url.replace("\\", "")[1:-1])
+        response = self.load_page_from_url_with_number_of_retries('http://media.flixcar.com/delivery/inpage/show/%s/us/%s/json?c=jsonpcar%sus%s&complimentary=0&type=.html' % (distributor_id, product_id, distributor_id, product_id))
 
-            return list(set(video_urls)) if video_urls else None
-
-        return None
+        video_urls = re.findall( '(media.flixcar.com.[^"]*.mp4)', response )
+        return map( lambda x: x.replace('\\', ''), video_urls )
 
     def _video_count(self):
         videos = self._video_urls()
