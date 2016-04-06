@@ -40,7 +40,13 @@ class CostcoProductsSpider(BaseProductsSpider):
         reqs = []
         meta['reqs'] = reqs
 
-        if response.xpath('//h1[text()="Product Not Found"]'):
+        # not longer available
+        no_longer_available = response.xpath(
+            '//*[@class="server-error" and contains(text(),'
+            '"out of stock and cannot be added to your cart at this time")]')
+        cond_set_value(prod, 'no_longer_available', 1 if no_longer_available else 0)
+
+        if not no_longer_available and response.xpath('//h1[text()="Product Not Found"]'):
             prod['not_found'] = True
             return prod
 
@@ -53,6 +59,9 @@ class CostcoProductsSpider(BaseProductsSpider):
 
         title = response.xpath('//h1[@itemprop="name"]/text()').extract()
         cond_set(prod, 'title', title)
+
+        # Title key must be present even if it is blank
+        cond_set_value(prod, 'title', "")
 
         tab2 = ''.join(
             response.xpath('//div[@id="product-tab2"]//text()').extract()
@@ -68,17 +77,27 @@ class CostcoProductsSpider(BaseProductsSpider):
 
         merchandising_price = response.xpath('//*[@class="top_review_panel"]/*[@class="merchandisingText"]/text()').re('\$([\d\.\,]+) OFF')
         price_value = ''.join(response.xpath('//input[contains(@name,"price")]/@value').re('[\d.]+')).strip()
+        configured_price_html = response.xpath(
+            '//span[contains(text(),"Configured Price")]')
 
-        if merchandising_price:
-            diff_price = str(float(price_value) - float(merchandising_price[0].replace(',','')))
+        if configured_price_html:
+            configured_price = configured_price_html.xpath(
+                'following-sibling::span[@class="currency"]'
+                '/text()').re('[\d\.\,]+')
+            if configured_price:
+                cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                    price=configured_price[0]))
+
+        elif merchandising_price:
+            diff_price = str(float(price_value) + float(merchandising_price[0].replace(',','')))
             cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
-                                                    price=price_value))
+                                                    price=diff_price))
 
             cond_set_value(prod, 'price_with_discount', Price(priceCurrency=self.DEFAULT_CURRENCY,
-                                                                    price=diff_price))
+                                                                    price=price_value))
         else:
             price_without_discount = ''.join(response.xpath('//*[@class="online-price"]/span[@class="currency"]/text()').re('[\d\.\,]+')).strip().replace(',','')
-            if price_value and price_value != '0.00':
+            if price_value:
                 if price_without_discount:
                     cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
                                                         price=price_without_discount))
@@ -139,9 +158,9 @@ class CostcoProductsSpider(BaseProductsSpider):
         not_available_store = re.search('Not available for purchase on Costco.com', response.body_as_unicode())
         cond_set_value(prod, 'available_online', 0 if not_available_store else 1)
 
-
         count_review = response.xpath('//meta[contains(@itemprop, "reviewCount")]/@content').extract()
         product_id = re.findall(r'var bvProductId = \'(.+)\';', response.body_as_unicode())
+        
         if product_id and count_review:
             reqs.append(
                 Request(

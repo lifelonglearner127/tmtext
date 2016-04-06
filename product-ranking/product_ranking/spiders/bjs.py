@@ -121,6 +121,9 @@ class BJSProductsSpider(BaseValidator, ProductsSpider):
                      '//h1[@id="itemNameID"]/text()').extract(),
                  string.strip)
 
+        # Title key must be present even if it is blank
+        cond_set_value(product, 'title', '')
+
         # Price handling
         # this field may exist and contain full price if product have discount
         full_price = response.xpath(
@@ -252,6 +255,12 @@ class BJSProductsSpider(BaseValidator, ProductsSpider):
             '/text())[1]').extract()
         if last_buyer_review_date:
             product['last_buyer_review_date'] = last_buyer_review_date[0]
+
+        # not longer available
+        no_longer_available = response.xpath(
+            '//*[@class="ProdInact_ErrTxt" and'
+            ' contains(text(),"item is no longer available")]')
+        product['no_longer_available'] = 1 if no_longer_available else 0
 
         if reqs:
             return self.send_next_request(reqs, response)

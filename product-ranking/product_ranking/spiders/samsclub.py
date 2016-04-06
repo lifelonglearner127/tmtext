@@ -151,6 +151,10 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 "/text()"
             ).extract())
 
+        # Title key must be present even if it is blank
+        cond_set_value(product, 'title', "")
+        cond_set_value(product, 'no_longer_available', 1 if not response.body else 0)
+
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='plImageHolder']/img/@src").extract())
 
