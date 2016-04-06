@@ -81,6 +81,8 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         self.mtp_class = Amazon_marketplace(self)
         self._cbw = CaptchaBreakerWrapper()
 
+        super(AmazonShelfPagesSpider, self).__init__(*args, **kwargs)
+
     @staticmethod
     def valid_url(url):
         if not re.findall("http(s){0,1}\:\/\/", url):
