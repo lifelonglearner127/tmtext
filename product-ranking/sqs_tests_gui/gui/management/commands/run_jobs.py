@@ -20,7 +20,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         jobs = Job.objects.filter(status='created').order_by(
-            'created').distinct()[0:50]
+            'created').distinct()[0:100]
         for job in jobs:
             msg = {
                 'task_id': int(job.task_id),

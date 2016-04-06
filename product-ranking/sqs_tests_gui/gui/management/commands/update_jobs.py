@@ -166,7 +166,7 @@ class Command(BaseCommand):
         # get random jobs
         jobs = Job.objects.filter(
             Q(status='pushed into sqs') | Q(status='in progress')
-        ).order_by('?').distinct()[0:50]
+        ).order_by('?').distinct()[0:100]
 
         # get output & progress queue names
         output_queues = get_output_queues_for_jobs(jobs)
