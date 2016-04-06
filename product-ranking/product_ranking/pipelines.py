@@ -123,7 +123,7 @@ class AddSearchTermInTitleFields(object):
 
     @staticmethod
     def process_item(item, spider):
-        if not item.has_key("is_single_result"):
+        if not "is_single_result" in item:
             AddSearchTermInTitleFields.add_search_term_in_title_fields(
                 item, item.get('search_term', ''))
 

@@ -22,27 +22,7 @@ class CostcoProductsSpider(BaseProductsSpider):
 
     DEFAULT_CURRENCY = u'USD'
 
-    REVIEW_URL = 'http://api.bazaarvoice.com/data/batch.json?passkey=bai25xto36hkl5erybga10t99&apiversion=5.5' \
-                 '&displaycode=2070-en_us&resource.q0=products&filter.q0=id%3Aeq%3A{product_id}&stats.q0=reviews' \
-                 '&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_CA%2Cen_US' \
-                 '&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_CA%2Cen_US&resource.q1=reviews' \
-                 '&filter.q1=isratingsonly%3Aeq%3Afalse&filter.q1=productid%3Aeq%3A{product_id}' \
-                 '&filter.q1=contentlocale%3Aeq%3Aen_CA%2Cen_US&sort.q1=submissiontime%3Adesc&stats.q1=reviews' \
-                 '&filteredstats.q1=reviews&include.q1=authors%2Cproducts%2Ccomments' \
-                 '&filter_reviews.q1=contentlocale%3Aeq%3Aen_CA%2Cen_US' \
-                 '&filter_reviewcomments.q1=contentlocale%3Aeq%3Aen_CA%2Cen_US' \
-                 '&filter_comments.q1=contentlocale%3Aeq%3Aen_CA%2Cen_US&limit.q1=8&offset.q1=0' \
-                 '&limit_comments.q1=3&resource.q2=reviews&filter.q2=productid%3Aeq%3A{product_id}' \
-                 '&filter.q2=contentlocale%3Aeq%3Aen_CA%2Cen_US&limit.q2=1&resource.q3=reviews' \
-                 '&filter.q3=productid%3Aeq%3A{product_id}&filter.q3=isratingsonly%3Aeq%3Afalse' \
-                 '&filter.q3=rating%3Agt%3A3&filter.q3=totalpositivefeedbackcount%3Agte%3A3' \
-                 '&filter.q3=contentlocale%3Aeq%3Aen_CA%2Cen_US&sort.q3=totalpositivefeedbackcount%3Adesc' \
-                 '&include.q3=authors%2Creviews%2Cproducts&filter_reviews.q3=contentlocale%3Aeq%3Aen_CA%2Cen_US' \
-                 '&limit.q3=1&resource.q4=reviews&filter.q4=productid%3Aeq%3A{product_id}' \
-                 '&filter.q4=isratingsonly%3Aeq%3Afalse&filter.q4=rating%3Alte%3A3' \
-                 '&filter.q4=totalpositivefeedbackcount%3Agte%3A3&filter.q4=contentlocale%3Aeq%3Aen_CA%2Cen_US' \
-                 '&sort.q4=totalpositivefeedbackcount%3Adesc&include.q4=authors%2Creviews%2Cproducts' \
-                 '&filter_reviews.q4=contentlocale%3Aeq%3Aen_CA%2Cen_US&limit.q4=1&callback=BV._internal.dataHandler0'
+    REVIEW_URL = 'http://api.bazaarvoice.com/data/products.json?passkey=bai25xto36hkl5erybga10t99&apiversion=5.5&filter=id:{product_id}&stats=reviews'
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
@@ -177,12 +157,11 @@ class CostcoProductsSpider(BaseProductsSpider):
         return prod
 
     def parse_buyer_reviews(self, response):
-
         meta = response.meta.copy()
         product = response.meta['product']
         reqs = meta.get('reqs', [])
 
-        product['buyer_reviews'] = self.br.parse_buyer_reviews_batch_json(response)
+        product['buyer_reviews'] = self.br.parse_buyer_reviews_products_json(response)
 
         if reqs:
             return self.send_next_request(reqs, response)
