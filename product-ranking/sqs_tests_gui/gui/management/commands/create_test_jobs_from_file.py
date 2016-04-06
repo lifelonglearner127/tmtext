@@ -41,7 +41,7 @@ class Command(BaseCommand):
                 spider=options['spider'],
                 product_url=line,
                 quantity=99,
-                task_id=options['spider'] + random.randrange(100000, 900000),
+                task_id=options['spider'] + str(random.randrange(100000, 900000)),
                 mode='no cache',
                 branch_name=options['branch']
             )
