@@ -4,14 +4,11 @@ Merges downloaded output CSV files in one, for jobs filtered by given template
 
 import os
 import sys
-import datetime
-import json
-import zipfile
+import csv
+import copy
 
 from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Q
-from django.utils.timezone import now
-from dateutil.parser import parse as parse_date
+from django.conf import settings
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 #sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
@@ -50,5 +47,19 @@ class Command(BaseCommand):
                     not in ('y', 'yes'):
                 print("Will not overwrite - exit...")
 
+        all_jobs_content = []
         for job in jobs:
-            import pdb; pdb.set_trace()
+            job_output_fname = os.path.exists(settings.MEDIA_ROOT + get_data_filename(job))
+            with open(job_output_fname, 'r') as fh:
+                reader = csv.reader(fh) # delimiter=',', quotechar='"')
+                for i, row in enumerate(reader):
+                    if i == 0:
+                        headers = row
+                    else:
+                        for col_i, field_value in enumerate(row):
+                            row_dict = copy.copy({})
+                            row_dict[headers[col_i]] = field_value
+                            row_dict['given_url'] = job.product_url
+                            all_jobs_content.append(row_dict)
+
+        import pdb; pdb.set_trace()
