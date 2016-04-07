@@ -47,6 +47,7 @@ class Command(BaseCommand):
                     not in ('y', 'yes'):
                 print("Will not overwrite - exit...")
 
+        # collect all rows from all files of these jobs
         all_jobs_content = []
         for job_i, job in enumerate(jobs):
             if job_i % 500 == 0:
@@ -63,7 +64,24 @@ class Command(BaseCommand):
                         for col_i, field_value in enumerate(row):
                             row_dict[headers[col_i]] = field_value
                         row_dict['given_url'] = job.product_url
+                        if '_statistics' in row_dict:
+                            del row_dict['_statistics']
                         file_dicts.append(row_dict)
                 all_jobs_content.append(file_dicts)
 
-        import pdb; pdb.set_trace()
+        # now find out all possible field names
+        field_names = []
+        for file_content in all_jobs_content:
+            for row in file_content:
+                for key in row.keys():
+                    if key not in field_names:
+                        field_names.append(key)
+
+        with open(output_fname, 'wb') as csvfile:
+            writer = csv.writer(csvfile, delimiter=',',
+                                quotechar='"', quoting=csv.QUOTE_ALL)
+            writer.writerow(field_names)
+            for file_content in all_jobs_content:
+                for row in file_content:
+                    row2write = [row.get(_k, '') for _k in field_names]
+                    writer.writerow(row2write)
