@@ -128,11 +128,11 @@ class CostcoProductsSpider(BaseProductsSpider):
         # Categories
         categorie_filters = ['home']
         # Clean and filter categories names from breadcrumb
-        categories = list(filter((lambda x: x.lower() not in categorie_filters), 
-                        map((lambda x: x.strip()),response.xpath('//*[@itemprop="breadcrumb"]//a/text()').extract())))
+        categories = list(filter((lambda x: x.lower() not in categorie_filters),
+                        map((lambda x: x.strip()), response.xpath('//*[@itemprop="breadcrumb"]//a/text()').extract())))
 
         category = categories[-1] if categories else None
-        
+
         cond_set_value(prod, 'categories', categories)
         cond_set_value(prod, 'category', category)
 
@@ -144,14 +144,19 @@ class CostcoProductsSpider(BaseProductsSpider):
             pass
 
         shipping = ''.join(response.xpath('//p[contains(text(),"Shipping & Handling:")]').re('[\d\.\,]+')).strip().replace(',','')
-        
-        if shipping and shipping != "0.00":
-            cond_set_value(prod, 'shipping_cost', Price(priceCurrency=self.DEFAULT_CURRENCY,
-                                                    price=shipping))
 
-        shipping_included = ''.join(response.xpath('//p[contains(text(),"Shipping & Handling Included")]').extract()).strip().replace(',','')
-        cond_set_value(prod, 'shipping_included', 1 if shipping_included else 0)
-        
+        if shipping:
+            cond_set_value(prod, 'shipping_cost', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                        price=shipping))
+
+        shipping_included = ''.join(response.xpath('//p[contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")'
+            ',"shipping & handling included")]').extract()).strip().replace(',','') or \
+            response.xpath('//*[@class="merchandisingText" and '
+                           'contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", '
+                           '"abcdefghijklmnopqrstuvwxyz"), "free shipping")]')
+
+        cond_set_value(prod, 'shipping_included', 1 if shipping_included or shipping == "0.00" else 0)
+
         available_store = re.search('Item may be available in your local warehouse', response.body_as_unicode())
         cond_set_value(prod, 'available_store', 1 if available_store else 0)
 
@@ -160,7 +165,7 @@ class CostcoProductsSpider(BaseProductsSpider):
 
         count_review = response.xpath('//meta[contains(@itemprop, "reviewCount")]/@content').extract()
         product_id = re.findall(r'var bvProductId = \'(.+)\';', response.body_as_unicode())
-        
+
         if product_id and count_review:
             reqs.append(
                 Request(

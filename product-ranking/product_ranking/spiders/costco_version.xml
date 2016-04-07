@@ -40,8 +40,8 @@
     <field name="price_with_discount" version="1.0"></field>
     <field name="categories" version="1.0"></field>
     <field name="minimum_order_quantity" version="1.0"></field>
-    <field name="shipping_included" version="1.0"></field>
-    <field name="shipping_cost" version="1.0"></field>
+    <field name="shipping_included" version="1.1"></field>
+    <field name="shipping_cost" version="1.1"></field>
     <field name="available_store" version="1.0"></field>
     <field name="available_online" version="1.0"></field>
     <field name="no_longer_available" version="1"></field>

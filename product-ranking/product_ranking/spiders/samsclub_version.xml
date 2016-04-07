@@ -14,7 +14,7 @@
     <field name="image_url" version="1.1"></field>
     <field name="description" version="1.1"></field>
     <field name="brand" version="1.1"></field>
-    <field name="price" version="1.4"></field>
+    <field name="price" version="1.5"></field>
     <field name="price_details_in_cart" version="1.0"></field>
     <field name="marketplace" version="1.1"></field>
     <field name="locale" version="1.1"></field>
@@ -41,7 +41,7 @@
     <field name="date_of_last_question" version="1.1"></field>
     <field name="recent_questions" version="1.1"></field>
     <field name="special_pricing" version="1.1"></field>
-    <field name="no_longer_available" version="1"></field>
+    <field name="no_longer_available" version="1.1"></field>
 
 </fields>
 
