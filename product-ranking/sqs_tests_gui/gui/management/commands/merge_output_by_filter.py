@@ -37,7 +37,7 @@ class Command(BaseCommand):
 
         # get random jobs
         jobs = Job.objects.filter(
-            status='finished', name=jobs_template)
+            status='finished', name__icontains=jobs_template)
 
         confirm = raw_input("Found %i jobs, continue? Y/N: " % jobs.count())
         if confirm.lower() not in ('y', 'yes'):
