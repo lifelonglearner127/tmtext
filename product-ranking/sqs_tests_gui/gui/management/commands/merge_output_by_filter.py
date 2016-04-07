@@ -51,7 +51,8 @@ class Command(BaseCommand):
         for job_i, job in enumerate(jobs):
             if job_i % 500 == 0:
                 print('  processed %i jobs so far' % job_i)
-            job_output_fname = os.path.exists(settings.MEDIA_ROOT + get_data_filename(job))
+            job_output_fname = os.path.join(settings.MEDIA_ROOT,
+                                            get_data_filename(job))
             with open(job_output_fname, 'r') as fh:
                 reader = csv.reader(fh) # delimiter=',', quotechar='"')
                 for i, row in enumerate(reader):
