@@ -53,15 +53,17 @@ class Command(BaseCommand):
                 print('  processed %i jobs so far' % job_i)
             job_output_fname = settings.MEDIA_ROOT + get_data_filename(job)
             with open(job_output_fname, 'r') as fh:
-                reader = csv.reader(fh) # delimiter=',', quotechar='"')
+                reader = csv.reader(fh)  # delimiter=',', quotechar='"')
+                file_dicts = copy.copy([])
                 for i, row in enumerate(reader):
                     if i == 0:
                         headers = row
                     else:
+                        row_dict = copy.copy({})
                         for col_i, field_value in enumerate(row):
-                            row_dict = copy.copy({})
                             row_dict[headers[col_i]] = field_value
-                            row_dict['given_url'] = job.product_url
-                            all_jobs_content.append(row_dict)
+                        row_dict['given_url'] = job.product_url
+                        file_dicts.append(row_dict)
+                all_jobs_content.append(file_dicts)
 
         import pdb; pdb.set_trace()
