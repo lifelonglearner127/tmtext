@@ -9,6 +9,7 @@ from lxml import html, etree
 import time
 import requests
 from extract_data import Scraper
+from lxml.etree import tostring
 
 
 class NeweggScraper(Scraper):
@@ -282,22 +283,51 @@ class NeweggScraper(Scraper):
         return len(image_urls) if image_urls else 0
 
     def _video_urls(self):
-        content = self.load_page_from_url_with_number_of_retries('http://media.flixcar.com/delivery/js/inpage/147/us/mpn/K1K49UT')
-        distributor_id = re.search( "distributor: '(\d+)'", content ).group(1)
-        product_id = re.search( "product: '(\d+)'", content ).group(1)
+        video_urls = []
 
-        response = self.load_page_from_url_with_number_of_retries('http://media.flixcar.com/delivery/inpage/show/%s/us/%s/json?c=jsonpcar%sus%s&complimentary=0&type=.html' % (distributor_id, product_id, distributor_id, product_id))
+        liveclicker_info = self.load_page_from_url_with_number_of_retries('http://sv.liveclicker.net/service/api?method=liveclicker.widget.getList&account_id=2437&&extra_options=%7B%22include_description%22%3A%22true%22%2C%22include_extra_images%22%3A%22true%22%2C%22return_dimensions%22%3A%226%22%7D&dim1=' + self._product_id() + '&order=recent&status=online&format=json&var=liveclicker.api_res[0]')
 
-        video_urls = re.findall( '(media.flixcar.com.[^"]*.mp4)', response )
-        return map( lambda x: x.replace('\\', ''), video_urls )
+        widget_id_results = re.search('widget_id" : "(\d+)', liveclicker_info)
+
+        if widget_id_results:
+            widget_id = widget_id_results.group(1)
+
+            response = self.load_page_from_url_with_number_of_retries('http://sv.liveclicker.net/service/getEmbed?client_id=2437&widget_id=%s&width=320&height=180&bufferTime=0&container=LiveclickerVideoDiv&player_custom_id=1783&div_id=LiveclickerVideoDiv' % widget_id)
+
+            video_urls += re.findall('http://ecdn.liveclicker.net[^"]+.mp4', response)
+
+        flixcar = re.search('"(http://media.flixcar.com/delivery/js/inpage/[^"]+)"', tostring(self.tree_html))
+
+        if flixcar:
+            content = self.load_page_from_url_with_number_of_retries( flixcar.group(1))
+            distributor_id = re.search( "distributor: '(\d+)'", content ).group(1)
+            product_ids = re.findall( "product: '(\d+)'", content )
+
+            for id in product_ids:
+                response = self.load_page_from_url_with_number_of_retries('http://media.flixcar.com/delivery/inpage/show/%s/us/%s/json?c=jsonpcar%sus%s&complimentary=0&type=.html' % (distributor_id, id, distributor_id, id))
+
+                video_urls += re.findall('media.flixcar.com.[^"]+.mp4', response)
+
+        video_urls_uniq = []
+
+        for video in video_urls:
+            if not video in video_urls_uniq:
+                video_urls_uniq.append( video )
+
+        if video_urls_uniq:
+            return map( lambda x: x.replace('\\', ''), video_urls_uniq )
+
+        return None
 
     def _video_count(self):
         videos = self._video_urls()
 
-        if videos:
-            return len(videos)
+        num_embed_videos = len( self.tree_html.xpath('//div[contains(@class,"video")]'))
 
-        return 0
+        if videos:
+            return len(videos) + num_embed_videos
+
+        return num_embed_videos
 
     def _pdf_urls(self):
         pdf_urls = self.tree_html.xpath("//div[@id='moreResource_{0}']//a[contains(@href, '.pdf')]/@href".format(self.related_item_id))
