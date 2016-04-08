@@ -9,6 +9,7 @@ from lxml import html, etree
 import time
 import requests
 from extract_data import Scraper
+from lxml.etree import tostring
 
 
 class NeweggScraper(Scraper):
@@ -134,11 +135,28 @@ class NeweggScraper(Scraper):
             print "Issue(Newegg): product availableMap json loading"
 
         try:
-            self.webcollage_contents = self.load_page_from_url_with_number_of_retries(self.WEBCOLLAGE_BASE_URL.format(self._product_id()))
-            self.webcollage_contents = html.fromstring(self._find_between(self.webcollage_contents, 'html: "', '"\n'))
+            self.flixcars = []
+
+            flixcar = re.search('"(http://media.flixcar.com/delivery/js/inpage/[^"]+)"', tostring(self.tree_html))
+
+            if flixcar:
+                content = self.load_page_from_url_with_number_of_retries( flixcar.group(1))
+                distributor_id = re.search( "distributor: '(\d+)'", content ).group(1)
+                product_ids = re.findall( "product: '(\d+)'", content )
+
+                for id in product_ids:
+                    response = self.load_page_from_url_with_number_of_retries('http://media.flixcar.com/delivery/inpage/show/%s/us/%s/json?c=jsonpcar%sus%s&complimentary=0&type=.html' % (distributor_id, id, distributor_id, id))
+
+                    self.flixcars.append(response)
         except:
-            self.webcollage_contents = None
-            print "Issue(Newegg): webcollage contents loading"
+            self.flixcars = None
+            print "Issue(Newegg): flixcars loading"
+
+        try:
+            self.liveclicker = self.load_page_from_url_with_number_of_retries('http://sv.liveclicker.net/service/api?method=liveclicker.widget.getList&account_id=2437&&extra_options=%7B%22include_description%22%3A%22true%22%2C%22include_extra_images%22%3A%22true%22%2C%22return_dimensions%22%3A%226%22%7D&dim1=' + self._product_id() + '&order=recent&status=online&format=json&var=liveclicker.api_res[0]')
+        except:
+            self.liveclicker = None
+            print "Issue(Newegg): liveclicker loading"
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -282,30 +300,51 @@ class NeweggScraper(Scraper):
         return len(image_urls) if image_urls else 0
 
     def _video_urls(self):
-        if self.webcollage_contents:
-            #a[ends-with(@href, '.jpg')]
-            urls = self.webcollage_contents.xpath("//meta[contains(@content, '.mp4')]/@content")
-            video_urls = []
+        video_urls = []
 
-            for url in urls:
-                if url.endswith('.mp4\\"'):
-                    video_urls.append(url.replace("\\", "")[1:-1])
+        widget_id_results = re.search('widget_id" : "(\d+)', self.liveclicker)
 
-            return list(set(video_urls)) if video_urls else None
+        if widget_id_results:
+            widget_id = widget_id_results.group(1)
+
+            response = self.load_page_from_url_with_number_of_retries('http://sv.liveclicker.net/service/getEmbed?client_id=2437&widget_id=%s&width=320&height=180&bufferTime=0&container=LiveclickerVideoDiv&player_custom_id=1783&div_id=LiveclickerVideoDiv' % widget_id)
+
+            for url in re.findall('http://ecdn.liveclicker.net[^"]+.mp4', response):
+                if not url in video_urls:
+                    video_urls.append(url)
+
+        for flixcar in self.flixcars:
+            for url in re.findall('media.flixcar.com.[^"]+.mp4', flixcar):
+                if not url in video_urls:
+                    video_urls.append(url)
+
+        if video_urls:
+            return map( lambda x: x.replace('\\', ''), video_urls)
 
         return None
 
     def _video_count(self):
         videos = self._video_urls()
 
-        if videos:
-            return len(videos)
+        num_embed_videos = len( self.tree_html.xpath('//div[contains(@class,"video")]'))
 
-        return 0
+        if videos:
+            return len(videos) + num_embed_videos
+
+        return num_embed_videos
 
     def _pdf_urls(self):
-        pdf_urls = self.tree_html.xpath("//div[@id='moreResource_{0}']//a[contains(@href, '.pdf')]/@href".format(self.related_item_id))
-        return pdf_urls if pdf_urls else None
+        pdf_urls = []
+
+        for flixcar in self.flixcars:
+            for url in re.findall('media.flixcar.com[^"]+.pdf', flixcar):
+                if not url in pdf_urls:
+                    pdf_urls.append(url)
+
+        if pdf_urls:
+            return map( lambda x: x.replace('\\', ''), pdf_urls)
+
+        return None
 
     def _pdf_count(self):
         if self._pdf_urls():
