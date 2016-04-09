@@ -126,17 +126,25 @@ class WalmartMXScraper(Scraper):
 
     def _mobile_image_same(self):
         pass
-        
+
     def _image_urls(self):
         # There is 1 to 3 images on this website.
         # It always will include 3 images URL on the page but sometimes URL 2 and 3 will not work and are hidden.
         # To see if the image is valid we will have to load it with, causing a penalty in execution time.
+        results = []
         images = self.tree_html.xpath('//*[@itemprop="image"]/@src |'
+                                      '//*[@class="imgChange"]/@src |'
                                       '//*[contains(@id,"imgDetalle")]/@src')
 
-        image_list = map((lambda x: urljoin(self.product_page_url, x)), images)
+        images = list(set(map((lambda x: urljoin(self.product_page_url, x)),
+                              images)))
 
-        return map((lambda x: urljoin(self.product_page_url, x)), image_list)
+        for image_url in images:
+            http_head_response = requests.head(image_url)
+            if http_head_response.status_code == 200:
+                results.append(image_url)
+
+        return results
 
     def _image_count(self):
         images = self._image_urls()
