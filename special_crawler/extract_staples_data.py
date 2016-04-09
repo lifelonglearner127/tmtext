@@ -176,7 +176,8 @@ class StaplesScraper(Scraper):
     def _description(self):
         description_block = self.tree_html.xpath("//ul[@class='stp--bulleted-list' and @ng-hide='listDesc']")
 
-        if description_block:
+        # If the description exists and has some content
+        if description_block and description_block[0].text_content().strip():
             desc_html = html.tostring(description_block[0]).replace(" class=\"stp--bulleted-list\" ng-hide=\"listDesc\"", "")
 
             return self._clean_text(self._exclude_javascript_from_description(desc_html))
@@ -363,7 +364,7 @@ class StaplesScraper(Scraper):
         average_review = re.search( 'yotpo-star-digits&amp;quot;&amp;gt; ([\d\.]+)', yotpo_review)
 
         if average_review:
-            return average_review.group(1)
+            return float( average_review.group(1))
 
         return None
 
