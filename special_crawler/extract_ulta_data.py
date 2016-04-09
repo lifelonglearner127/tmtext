@@ -4,6 +4,7 @@ import re
 import lxml
 import lxml.html
 import requests
+import json
 
 from itertools import groupby
 
@@ -103,6 +104,52 @@ class UltaScraper(Scraper):
         else:
             return short_description
 
+    def _variants(self):
+        current_sku = re.search("currentSkuId = '(\d+)'", html.tostring(self.tree_html)).group(1)
+
+        variants = []
+
+        variant_data = re.findall('productSkus\[\d+\] =\s+({[^}]+});', html.tostring(self.tree_html))
+
+        for d in variant_data:
+            variant_json = json.loads(d)
+
+            if current_sku == variant_json['id']:
+                continue
+
+            price_html = html.fromstring( self.load_page_from_url_with_number_of_retries('http://www.ulta.com/common/inc/productDetail_price.jsp?skuId=%s&productId=%s&fromPDP=true' % (variant_json['id'], self._product_id())))
+
+            variants.append( {
+                'variant' : variant_json.get('displayName'),
+                'item_no' : variant_json['id'],
+                'price' : float( price_html.xpath('//p')[0].text[1:]), # remove leading $ and convert to float
+                'image_url' : variant_json['imgUrl'].split('?')[0],
+                'selected' : False,
+            } )
+
+        if variants:
+            return variants
+
+        return None
+
+    '''
+    def _swatches(self):
+        swatches = []
+
+        swatch_els = self.tree_html.xpath('//a[contains(@class,"product-swatch")]/img')
+
+        for e in swatch_els:
+            swatches.append( {
+                'name' : e.get('alt'),
+                'img' : e.get('data-blzsrc').split('?')[0],
+            } )
+
+        if swatches:
+            return swatches
+
+        return None
+    '''
+
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
@@ -150,7 +197,10 @@ class UltaScraper(Scraper):
     def _image_urls(self):
         main_image_url = self.tree_html.xpath('//meta[@property="og:image"]/@content')[0]
         thumb_image_urls = [main_image_url]
-        thumb_image_urls.extend(self.tree_html.xpath('//div[@class="product-detail-thumbnail-image"]//img/@alt'))
+
+        for url in self.tree_html.xpath('//div[@class="product-detail-thumbnail-image"]//img/@data-blzsrc'):
+            if not url.split('?')[0] in thumb_image_urls:
+                thumb_image_urls.append(url.split('?')[0])
 
         for idx, item in enumerate(thumb_image_urls):
             if "http:" in item:
@@ -167,8 +217,11 @@ class UltaScraper(Scraper):
         return len(self._image_urls())
 
     def _video_urls(self):
-        video_urls = self.tree_html.xpath('//iframe/@src')
-        video_urls = [url for url in video_urls if "www.youtube.com" in url]
+        video_urls = []
+
+        for url in self.tree_html.xpath('//iframe/@src'):
+            if "www.youtube.com" in url and not url in video_urls:
+                video_urls.append(url)
 
         for idx, item in enumerate(video_urls):
             if "http:" in item:
@@ -394,6 +447,7 @@ class UltaScraper(Scraper):
         "long_description" : _long_description, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredients_count,
+        "variants": _variants,
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
