@@ -83,6 +83,16 @@ class WalmartRedirectedItemFieldReplace(object):
         return item
 
 
+class SetRankingField(object):
+    """ Explicitly set "ranking" field value (needed for
+        Amazon Shelf spider, temporary solution """
+    def process_item(self, item, spider):
+        if hasattr(spider, 'ranking_override'):
+            ranking_override = getattr(spider, 'ranking_override')
+            item['ranking'] = ranking_override
+        return item
+
+
 class SetMarketplaceSellerType(object):
     def process_item(self, item, spider):
         spider_main_domain = spider.allowed_domains[0]

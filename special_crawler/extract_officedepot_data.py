@@ -132,6 +132,9 @@ class OfficeDepotScraper(Scraper):
             if description_item.tag == "ul":
                 break
 
+            if description_item.tag != "p":
+                continue
+
             short_description = short_description + html.tostring(description_item)
 
         short_description = self._clean_text(short_description.strip())
@@ -191,6 +194,20 @@ class OfficeDepotScraper(Scraper):
         return 0
 
     def _video_urls(self):
+        video_urls = []
+
+        resource_base = re.search('data-resources-base="([^"]+)"', html.tostring(self.tree_html))
+        if resource_base:
+            resource_base = resource_base.group(1)[:-1] # remove trailing '/'
+
+        wc_json = json.loads( self.tree_html.xpath('//div[contains(@class,"wc-json-data")]')[0].text_content())
+
+        for video in wc_json['videos']:
+            video_urls.append(resource_base + video['src']['src'])
+
+        if video_urls:
+            return video_urls
+
         return None
 
     def _video_count(self):
@@ -202,6 +219,17 @@ class OfficeDepotScraper(Scraper):
         return 0
 
     def _pdf_urls(self):
+        urls = []
+
+        pops = map( lambda x: x.get('href'), self.tree_html.xpath('//ul[@class="sku_icons"]/li/a'))
+        for pop in pops:
+            category = re.search( '/([^/]+)\.do', pop ).group(1).lower()
+            id = re.search( '\?id=(\d+)', pop ).group(1)
+            urls.append('http://www.officedepot.com/pdf/%s/%s.pdf' % (category, id))
+
+        if urls:
+            return urls
+
         return None
 
     def _pdf_count(self):

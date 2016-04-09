@@ -141,9 +141,9 @@ class MacysShelfPagesSpider(MacysProductsSpider):
         title = response.css('#productTitle::text').extract()
         if not title:
             title = response.xpath('//*[contains(@class, "productTitle")]'
-                                   '[contains(@itemprop, "name")]//text()').extract()
+                                   '[contains(@itemprop, "name")]/text()').extract()
         if title:
-            cond_replace(product, 'title', title)
+            cond_replace(product, 'title', [''.join(title).strip()])
 
         path = '//*[@id="memberProductDetails"]/node()[normalize-space()]'
         desc = response.xpath(path).extract()
