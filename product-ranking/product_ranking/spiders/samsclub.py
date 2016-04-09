@@ -151,11 +151,22 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 "/text()"
             ).extract())
 
+        # Title key must be present even if it is blank
+        cond_set_value(product, 'title', "")
+        sold_out = response.xpath('//*[@itemprop="availability" and @href="http://schema.org/SoldOut"]')
+        cond_set_value(product, 'no_longer_available', 1 if (not response.body or sold_out) else 0)
+
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='plImageHolder']/img/@src").extract())
 
         old_price = ''.join(response.xpath(
-            '//li[@class="wasPrice"]//span[@class="striked strikedPrice"]/text()').re('[\d\.\,]+')).strip().replace(',','')
+            '//li[@class="wasPrice"]//span[@class="striked strikedPrice"]'
+            '/text()').re('[\d\.\,]+')) or \
+            ''.join(response.xpath(
+                '//*[@class="ltGray" and contains(text(),"Everyday Price")]/'
+                'following-sibling::span[@class="striked '
+                'strikedPrice"]/text()').re('[\d\.\,]+'))
+        old_price = old_price.strip().replace(',', '')
 
         if not product.get("price"):
             price = response.xpath("//li/span[@itemprop='price']/text()").extract()
@@ -176,22 +187,69 @@ class SamsclubProductsSpider(BaseProductsSpider):
             "/text()").re(FLOATING_POINT_RGEX)
 
         if not price and not product.get("price"):
+            oos_pr = '.'.join(response.xpath(
+                '//*[contains(@class,"pricingInfo oos")]'
+                '/ul[@class="lgFont"]//span/text()').re('\d+'))
+
+            if oos_pr:
+                price = [float(oss_pr)]
+
             pr = response.xpath(
                 "//div[contains(@class,'pricingInfo')]//li"
                 "/span/text()").extract()
-            if pr:
+            if pr and not price:
                 price = "".join(pr[:-1]) + "." + pr[-1]
+                member_price, discounted_price = None, None
                 if 'too low to show' in price.lower():
                     # price is visible only after you add the product in cart
                     product['price_details_in_cart'] = True
                     price = re.search("'item_price':'([\d\.]+)',",
                                       response.body_as_unicode()).group(1)
                     price = [float(price)]
+                elif 'was' in price.lower():
+                    discounted_price = '.'.join(response.xpath(
+                        '//div[contains(@class,"pricingInfo")]'
+                        '//li[@class="nowOnly"]/following-sibling::li[1]'
+                        '/span/text()').re('[\d]+')).replace(',', '').strip()
+
+                    member_price = '.'.join(response.xpath(
+                        '//*[contains(@class,"pricingInfo")]'
+                        '//*[@class="dkGray"]/*[@itemprop="price"]'
+                        '/text()').re('[\d\.\,]+')).replace(',', '').strip()
+
+                elif 'tech savings' in price.lower():
+                    discounted_price = '.'.join(response.xpath(
+                        '//*[contains(@class,"pricingInfo")]'
+                        '/*[@class="lgFont"]'
+                        '//text()').re('[\d\.\,]+')).replace(',', '').strip()
+
+                    member_price = '.'.join(response.xpath(
+                        '//*[contains(@class,"pricingInfo")]'
+                        '//*[@class="dkGray"]/*[@itemprop="price"]'
+                        '/text()').re('[\d\.\,]+')).replace(',', '').strip()
+
                 else:
                     m = re.search(FLOATING_POINT_RGEX, price)
                     if m:
                         price = [m.group(0).strip('.')]
                     else:
+                        price = None
+
+                if member_price and discounted_price:
+                        cond_set_value(product,
+                                       'price',
+                                       Price(price=member_price,
+                                             priceCurrency='USD'))
+                        cond_set_value(product,
+                                       'price_with_discount',
+                                       Price(price=discounted_price,
+                                             priceCurrency='USD'))
+                        price = None
+                elif discounted_price:
+                        cond_set_value(product,
+                                       'price',
+                                       Price(price=discounted_price,
+                                             priceCurrency='USD'))
                         price = None
 
             if not price:
@@ -220,8 +278,10 @@ class SamsclubProductsSpider(BaseProductsSpider):
         # Categories
         categorie_filters = [u'sam\u2019s club']
         # Clean and filter categories names from breadcrumb
-        categories = list(filter((lambda x: x.lower() not in categorie_filters), 
-                        map((lambda x: x.strip()),response.xpath('//*[@id="breadcrumb"]//a/text()').extract())))
+        categories = list(filter((lambda x: x.lower() not in categorie_filters),
+                          map((lambda x: x.strip()),
+                              response.xpath(
+                              '//*[@id="breadcrumb"]//a/text()').extract())))
         category = categories[-1] if categories else None
         cond_set_value(product, 'categories', categories)
         cond_set_value(product, 'category', category)
@@ -239,22 +299,26 @@ class SamsclubProductsSpider(BaseProductsSpider):
                        'shipping_included',
                        1 if shipping_included else 0)
 
+        oos_in_both = response.xpath(
+            '//*[@class="biggraybtn" and'
+            ' text()="Out of stock online and in club"]')
+
         # Available in Store
         available_store = response.xpath('//*[@id="addtocartsingleajaxclub" \
                 and contains(text(),"Pick up in Club")]')
+
         cond_set_value(product,
                        'available_store',
-                       1 if available_store else 0)
+                       1 if available_store and not oos_in_both else 0)
 
         # Available Online
         available_online = response.xpath('//*[(@id="addtocartsingleajaxonline" \
-                or @id="variantMoneyBoxButtonInitialLoadOnline") \
-                and contains(text(),"Ship this item")]')
+                or @id="variantMoneyBoxButtonInitialLoadOnline")]')
         cond_set_value(product,
                        'available_online',
-                       1 if available_online else 0)
+                       1 if available_online and not oos_in_both else 0)
 
-        if not shipping_included:
+        if not shipping_included and not product.get('no_longer_available'):
             productId = ''.join(response.xpath('//*[@id="mbxProductId"]/@value').extract())
             pSkuId = ''.join(response.xpath('//*[@id="mbxSkuId"]/@value').extract())
             shipping_prices_url = "http://www.samsclub.com/sams/shop/product/moneybox/shippingDeliveryInfo.jsp?zipCode=%s&productId=%s&skuId=%s" % (self.zip_code, productId, pSkuId)

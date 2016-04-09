@@ -34,5 +34,6 @@
     <field name="shipping_included" version="1.0"></field>
     <field name="available_store" version="1.0"></field>
     <field name="available_online" version="1.0"></field>
+    <field name="no_longer_available" version="1"></field>
 
 </fields>
