@@ -188,11 +188,14 @@ class BJSProductsSpider(BaseValidator, ProductsSpider):
         cond_set(product, 'model', models_list, string.strip)
 
         # Category
-        category_path = response.xpath(
-            '//li[@id="pagepath"]/a/text()').extract()
+        category_path = filter(None, map((lambda x: x.strip()),
+            response.xpath('//li[@id="pagepath"]//a/text()').extract()))
+
         if category_path:
-            category = category_path[-1].strip()
+            category = category_path[-1]
             cond_set_value(product, 'category', category)
+
+        cond_set_value(product, 'categories', category_path)
 
         # Available Online: 1 or 0 (1 = yes, 0 = no)
         online_not_avail = response.xpath('//div[@id="onlineItemNotAvail"]')
