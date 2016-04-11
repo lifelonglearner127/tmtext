@@ -36,7 +36,7 @@ class MicrosoftScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www\.microsoftstore\.com/store/msusa/en_US/pdp/(.*/)?productID\.[0-9]+?$", self.product_page_url)
+        m = re.match(r"^http://www\.microsoftstore\.com/store/msusa/en_US/pdp/(.*/)?productID\.[0-9]+(\?icid=.*)?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -100,7 +100,7 @@ class MicrosoftScraper(Scraper):
         return None
 
     def _upc(self):
-        upc_list = self._find_between(html.tostring(self.tree_html), ",upc :", "\r").strip()
+        upc_list = re.search( 'upc : (\[[^\]]*\])', html.tostring(self.tree_html)).group(1)
         upc_list = ast.literal_eval(upc_list)
         return upc_list[0]
 
@@ -156,13 +156,13 @@ class MicrosoftScraper(Scraper):
 
         if url_list:
             for index, url in enumerate(url_list):
-                if not url.startswith("http://"):
-                    url_list[index] = "http:" + url
+                if not url.startswith("https://"):
+                    url_list[index] = "https:" + url
 
             image_urls = []
 
             for url in url_list:
-                if "360_Overlay.png" not in url and "/Spin/" not in url and not url in image_urls:
+                if "360_Overlay.png" not in url and "/Spin/" not in url and not re.search( '-VID\d+-|-Video-\d+-', url) and not url in image_urls:
                     image_urls.append(url)
 
             if image_urls:
@@ -177,7 +177,21 @@ class MicrosoftScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        return None
+        video_urls = []
+
+        video_sources = self.tree_html.xpath('//div[contains(@class,"video-container")]/@data-video-sources')
+        for source in video_sources:
+            for video in source.split(';'):
+                if '.mp4' in video and not video in video_urls:
+                    video_urls.append(video)
+
+        # Add youtube videos
+        for video in self.tree_html.xpath('//div[contains(@class,"youtube-container")]/@data-src'):
+            if not video.split('?')[0] in video_urls:
+                video_urls.append(video.split('?')[0])
+
+        if video_urls:
+            return video_urls
 
     def _video_count(self):
         videos = self._video_urls()
@@ -210,8 +224,6 @@ class MicrosoftScraper(Scraper):
     def _keywords(self):
         return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
 
-    def _no_image(self):
-        return None
     
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -226,7 +238,7 @@ class MicrosoftScraper(Scraper):
 
     def _review_count(self):
         try:
-            review_count = int(self.tree_html.xpath("//div[@id='bvseo-aggregateRatingSection']//span[@class='bvseo-reviewCount' and @itemprop='reviewCount']/text()")[0])
+            review_count = int(self.tree_html.xpath("//div[@id='bvseo-aggregateRatingSection']//span[@class='bvseo-reviewCount' and @itemprop='reviewCount']/text()")[0].replace(',',''))
 
             if review_count > 0:
                 return review_count
@@ -313,9 +325,6 @@ class MicrosoftScraper(Scraper):
         return None
 
 
-
-
-
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
@@ -361,7 +370,6 @@ class MicrosoftScraper(Scraper):
         "image_urls" : _image_urls, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
-        "no_image" : _no_image, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
@@ -391,8 +399,6 @@ class MicrosoftScraper(Scraper):
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
-
-
 
         "loaded_in_seconds" : None, \
         }
