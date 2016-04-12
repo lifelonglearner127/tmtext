@@ -143,7 +143,10 @@ class CostcoProductsSpider(BaseProductsSpider):
         except:
             pass
 
+        #import pdb; pdb.set_trace();
         shipping = ''.join(response.xpath('//p[contains(text(),"Shipping & Handling:")]').re('[\d\.\,]+')).strip().replace(',','')
+        if not shipping:
+            shipping = ''.join(response.xpath('//p[contains(text(),"Shipping and Handling:")]').re('[\d\.\,]+')).strip().replace(',','')
 
         if shipping:
             cond_set_value(prod, 'shipping_cost', Price(priceCurrency=self.DEFAULT_CURRENCY,
@@ -153,7 +156,9 @@ class CostcoProductsSpider(BaseProductsSpider):
             ',"shipping & handling included")]').extract()).strip().replace(',','') or \
             response.xpath('//*[@class="merchandisingText" and '
                            'contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", '
-                           '"abcdefghijklmnopqrstuvwxyz"), "free shipping")]')
+                           '"abcdefghijklmnopqrstuvwxyz"), "free shipping")]') or \
+            ''.join(response.xpath('//p[contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")'
+                                   ',"shipping and handling included")]').extract()).strip().replace(',','')
 
         cond_set_value(prod, 'shipping_included', 1 if shipping_included or shipping == "0.00" else 0)
 
