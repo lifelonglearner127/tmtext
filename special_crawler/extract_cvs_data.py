@@ -33,6 +33,7 @@ class CVSScraper(Scraper):
         self.offer = None
         self.full_description = None
         self.reviews = None
+        self.images = None
         self.is_review_checked = False
         self.is_webcollage_checked = False
         self.webcollage_content = None
@@ -204,10 +205,27 @@ class CVSScraper(Scraper):
     def _image_urls(self):
         self._load_offer()
 
+        if self.images:
+            return self.images
+
         image_urls = []
 
+        num_images = 6
+        first_offer = True
+
         for offer in self.product['offers']:
-            image_urls.append( offer['itemOffered']['image'] )
+            if not offer['itemOffered']['image'] in image_urls:
+                image_urls.append( offer['itemOffered']['image'] )
+
+                for i in range(2, num_images):
+                    image_url = offer['itemOffered']['image'][:-4] + '_' + str(i) + '.jpg'
+                    if requests.get( image_url):
+                        image_urls.append(image_url)
+                    elif first_offer:
+                        num_images = i
+                        first_offer = False
+
+        self.images = image_urls
 
         if image_urls:
             return image_urls
@@ -219,16 +237,40 @@ class CVSScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        return None
+        self._webcollage()
+
+        video_urls = []
+
+        for wcobj in re.findall(r'wcobj=\\"([^"]+)\\"', self.webcollage_content):
+            if re.search('.flv$', wcobj.replace('\\', '')):
+                video_urls.append( wcobj.replace('\\', ''))
+
+        if video_urls:
+            return video_urls
 
     def _video_count(self):
-        return 0
+        video_urls = self._video_urls()
+
+        if video_urls:
+            return len( video_urls)
 
     def _pdf_urls(self):
-        return None
+        self._webcollage()
+
+        pdf_urls = []
+
+        for wcobj in re.findall(r'wcobj=\\"([^"]+)\\"', self.webcollage_content):
+            if re.search('.pdf$', wcobj.replace('\\', '')):
+                pdf_urls.append( wcobj.replace('\\', ''))
+
+        if pdf_urls:
+            return pdf_urls
 
     def _pdf_count(self):
-        return 0
+        pdf_urls = self._pdf_urls()
+
+        if pdf_urls:
+            return len( pdf_urls)
 
     def _webcollage(self):
         """Uses video and pdf information
@@ -239,7 +281,7 @@ class CVSScraper(Scraper):
         """
         if not self.is_webcollage_checked:
             self.is_webcollage_checked = True
-            self.webcollage_content = urllib.urlopen(self.BASE_URL_WEBCOLLAGE.format(self._product_id())).read()
+            self.webcollage_content = self.load_page_from_url_with_number_of_retries('http://content.webcollage.net/cvs/power-page?ird=true&channel-product-id=' + self._product_id())
 
         if "_wccontent" in self.webcollage_content:
             self.wc_emc = 1
@@ -291,25 +333,27 @@ class CVSScraper(Scraper):
 
     def _average_review(self):
         self._load_reviews()
-        return round( self.reviews['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['AverageOverallRating'], 2)
+        return self.reviews['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['AverageOverallRating']
 
     def _review_count(self):
         self._load_reviews()
         return self.reviews['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['TotalReviewCount']
 
     def _max_review(self):
-        self._load_reviews()
+        if not self._reviews():
+            return None
+
         for review in self._reviews():
             if not review[1] == 0:
                 return review[0]
-        return None
 
     def _min_review(self):
-        self._load_reviews()
-        for review in self._reviews()[::-1]:
+        if not self._reviews():
+            return None
+
+        for review in self._reviews()[::-1]: # reverses list
             if not review[1] == 0:
                 return review[0]
-        return None
 
     def _reviews(self):
         self._load_reviews()
@@ -322,6 +366,11 @@ class CVSScraper(Scraper):
             reviews.append([rating['RatingValue'], rating['Count']])
 
         if reviews:
+            # Insert 0 for nonexistant ratings
+            for i in range(0,5):
+                if len(reviews) <= i or not reviews[i][0] == i + 1:
+                    reviews.insert(i, [i+1, 0])
+
             return reviews[::-1] # reverses list
 
     ##########################################
