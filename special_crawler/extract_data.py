@@ -446,7 +446,6 @@ class Scraper():
             # set user agent to avoid blocking
             agent = ''
             if self.bot_type == "google":
-                print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
                 agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
             else:
                 agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
@@ -481,17 +480,23 @@ class Scraper():
                     self.page_raw_text = contents
                     self.tree_html = html.fromstring(contents)
                 except UnicodeError, e:
-                    # if string was not utf8, don't deocde it
-                    print "Warning creating html tree from page content: ", e.message
+                    # If not utf8, try latin-1
+                    try:
+                        contents = self._clean_null(contents).decode("latin-1")
+                        self.page_raw_text = contents
+                        self.tree_html = html.fromstring(contents)
 
-                    # replace NULL characters
-                    contents = self._clean_null(contents)
-                    self.page_raw_text = contents
-                    self.tree_html = html.fromstring(contents)
+                    except UnicodeError, e:
+                        # if string was neither utf8 or latin-1, don't decode
+                        print "Warning creating html tree from page content: ", e.message
+
+                        # replace NULL characters
+                        contents = self._clean_null(contents)
+                        self.page_raw_text = contents
+                        self.tree_html = html.fromstring(contents)
 
                 # if we got it we can exit the loop and stop retrying
                 return
-
 
                 # try getting it again, without catching exception.
                 # if it had worked by now, it would have returned.

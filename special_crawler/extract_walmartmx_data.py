@@ -94,12 +94,16 @@ class WalmartMXScraper(Scraper):
         return len(features) if features else 0
 
     def _description(self):
-        description = self.tree_html.xpath('//*[@itemprop="description"]/text()') or \
-                        self.tree_html.xpath('//*[@id="productoDescripcionTexto"]//text()')
+        description = self.tree_html.xpath(
+            '//*[@itemprop="description"]/text()') or self.tree_html.xpath(
+                '//*[@id="productoDescripcionTexto"]//text()')
         return ' '.join(map(lambda x: x.strip(), description))
 
     def _long_description(self):
-        return self._description()
+        long_description = self.tree_html.xpath(
+            '//*[@itemprop="description"]//text()')
+        return ' '.join(map(lambda x: x.strip(), long_description)) or \
+            self._description()
 
     def _ingredients(self):
         ingredients = self.tree_html.xpath('//*[@id="lblIngredientes"]/text()')[0]
