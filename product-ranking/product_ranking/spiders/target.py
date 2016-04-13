@@ -181,10 +181,17 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             brand = guess_brand_from_first_words(prod['title'])
             if brand:
                 prod['brand'] = brand
-            elif 'brand' in prod:
-                prod['brand'] = 'No brand'
+
             else:
-                prod['brand'] = 'No brand for single result'
+                # Check last part of the title
+                brand = guess_brand_from_first_words(
+                    prod['title'].split('-')[-1])
+                if brand:
+                    prod['brand'] = brand
+                elif 'brand' in prod:
+                    prod['brand'] = 'No brand'
+                else:
+                    prod['brand'] = 'No brand for single result'
 
         payload = self._extract_rr_parms(response)
 
