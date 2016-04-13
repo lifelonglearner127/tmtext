@@ -21,26 +21,27 @@ class JetVariants(object):
     def _variants(self):
         try:
             variants = is_empty(re.findall(
-            	"jet\.\_\_variants\s+\=\s+(.*);",
-            	self.tree_html.body.text_content()
+                "jet\.\_\_variants\s+\=\s+(.*);",
+                self.tree_html.body.text_content()
             ))
 
             variants = json.loads(variants)
 
             analytics = is_empty(re.findall(
-            	"jet\.core\.analytics\.raw\s+\=\s+(.*)",
-            	self.tree_html.body.text_content().replace("jet.init();", "")
+                "jet\.core\.analytics\.raw\s+\=\s+(.*);",
+                self.tree_html.body.text_content().replace("jet.init();", "")
             ))
 
             try:
-            	analytics = json.loads(analytics)
+                analytics = json.loads(analytics)
+
             except (TypeError, ValueError):
-            	analytics = {}
+                analytics = {}
             default = analytics.get("variants", {}).get("values") or None
 
             final_variants = []
 
-            # Calculate all variants given product propierties like size, color, etc...
+            # Calculate all variants given product propierties like size, color
             complete_list_of_propierties = []
             values = []
             for x in variants.get("values"):
@@ -53,21 +54,28 @@ class JetVariants(object):
             for element in itertools.product(*values):
                 complete_list_of_propierties.append(set(element))
 
+            # Product without variants
+            if complete_list_of_propierties == [set([])]:
+                return None
 
-            # variants['Maps'] only have the information for the variants in_stock
+            variants_dict = {}
+            # variants['Maps'] only have the info about the variants in_stock
             for variant in variants.get("map"):
                 vr = {}
-                variant_sku = variant.get("sku",None)
-                vr["selected"] = True if variant_sku and variant_sku in self.response.url else False
+                variant_sku = variant.get("sku", None)
+                is_selected = variant_sku and variant_sku in self.response.url
+                vr["selected"] = True if is_selected else False
 
                 if variant_sku:
                     vr['skuId'] = variant_sku
-                    vr['image_url'] = is_empty(self.response.xpath('//*[@rel="%s"]//@data-zoom-image' % variant_sku).extract())
-                
-                vr["properties"]  = {}
+                    vr['image_url'] = is_empty(self.response.xpath(
+                        '//*[@rel="%s"]//@data-zoom-image' % variant_sku
+                    ).extract())
+
+                vr["properties"] = {}
                 properties_as_pair_of_set = []
                 for k, v in variant["variants"].items():
-                    properties_as_pair_of_set.append((k,v))
+                    properties_as_pair_of_set.append((k, v))
                     vr["in_stock"] = True
                     if default == {k: v}:
                         vr["selected"] = True
@@ -75,23 +83,37 @@ class JetVariants(object):
                     vr["properties"][k.lower()] = v
                 # Remove this set of propierties from the list of propierties
 
+                variants_by_property = variants_dict.get(
+                    str(set(properties_as_pair_of_set)), [])
+                variants_by_property.append(vr)
+                variants_dict[
+                    str(set(properties_as_pair_of_set))] = variants_by_property
+
                 try:
-                    complete_list_of_propierties.remove(set(properties_as_pair_of_set))
+                    complete_list_of_propierties.remove(
+                        set(properties_as_pair_of_set))
                 except:
                     pass
 
-                final_variants.append(vr)
+            # There is a bug on the webpage, if 2 products has the same variant
+            # Only the one pre-selected is displayed
+            for _property in variants_dict.keys():
+                variants_by_property = variants_dict[_property]
+                if len(variants_by_property) > 1:
+                    variants_by_property = filter((lambda x: x['selected']),
+                                                  variants_by_property)
+                final_variants.append(variants_by_property[0])
 
-            # The propierties left in complete_list_of_propierties are not in stock and also not in variants['Maps']
+            # The propierties left in complete_list_of_propierties are not in
+            # stock and also not in variants['Maps']
             for elem in complete_list_of_propierties:
                 vr = {}
                 vr["in_stock"] = False
                 vr["selected"] = False
-                vr["properties"]  = {}
+                vr["properties"] = {}
                 for propierty in list(elem):
                     vr["properties"][propierty[0].lower()] = propierty[1]
                 final_variants.append(vr)
-
 
             return final_variants or None
 
