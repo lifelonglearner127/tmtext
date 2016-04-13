@@ -202,6 +202,10 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                 "//div[contains(@class, 'title')]/text()"
             ).extract()
         )
+        if not product.get('title', '').strip():
+            cond_set(
+                product, "title", response.css("h1.title ::text").extract()
+            )
 
         models = response.xpath("//div[contains(@class, 'products')]/div/@rel").extract()
         response.meta['model'] = response.url.split('/')[-1] if len(models) > 1 else is_empty(models)
