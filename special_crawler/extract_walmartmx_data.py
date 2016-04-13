@@ -220,12 +220,14 @@ class WalmartMXScraper(Scraper):
     ##########################################
     def _price(self):
         try:
-            return self.tree_html.xpath("//*[@itemprop='price']/text()")[0]
+            return self.tree_html.xpath("//*[@itemprop='price']/text()|"
+                                        "//*[@itemprop='price']/@content")[0]
         except:
             return None
 
     def _price_amount(self):
-        return float(self.tree_html.xpath("//*[@itemprop='price']/text()")[0][1:])
+        return float(self.tree_html.xpath("//*[@itemprop='price']/text()|"
+                                    "//*[@itemprop='price']/@content")[0][1:])
 
     def _price_currency(self):
         return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
