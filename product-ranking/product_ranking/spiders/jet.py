@@ -202,6 +202,10 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                 "//div[contains(@class, 'title')]/text()"
             ).extract()
         )
+        if not product.get('title', '').strip():
+            cond_set(
+                product, "title", response.css("h1.title ::text").extract()
+            )
 
         sample = response.xpath('//script[contains(text(), "jet.__variants")]')\
             .extract()
