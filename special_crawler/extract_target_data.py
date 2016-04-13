@@ -201,7 +201,14 @@ class TargetScraper(Scraper):
         return self._clean_text(html.tostring(long_desc_block))
 
     def _mta(self):
-        return self._description()
+        content = html.tostring(self.tree_html.xpath('//div[@class="content"]')[0])
+        content = re.sub('[\n\t]', '', content)
+        content = re.sub('<![^>]+>', '', content)
+        content = re.sub(' (class|itemprop)="[^"]+"', '', content)
+        content = re.sub('\s+', ' ', content)
+        content = re.sub('> <', '><', content)
+
+        return content
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
