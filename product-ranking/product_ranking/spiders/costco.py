@@ -143,17 +143,23 @@ class CostcoProductsSpider(BaseProductsSpider):
         except:
             pass
 
-        shipping = ''.join(response.xpath('//p[contains(text(),"Shipping & Handling:")]').re('[\d\.\,]+')).strip().replace(',','')
+        shipping = ''.join(response.xpath(
+            '//*[contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ",'
+            ' "abcdefghijklmnopqrstuvwxyz"), "shipping & handling:")]'
+        ).re('[\d\.\,]+')).strip().replace(',', '')
 
         if shipping:
             cond_set_value(prod, 'shipping_cost', Price(priceCurrency=self.DEFAULT_CURRENCY,
                                                         price=shipping))
 
-        shipping_included = ''.join(response.xpath('//p[contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")'
-            ',"shipping & handling included")]').extract()).strip().replace(',','') or \
-            response.xpath('//*[@class="merchandisingText" and '
-                           'contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", '
-                           '"abcdefghijklmnopqrstuvwxyz"), "free shipping")]')
+        shipping_included = ''.join(response.xpath(
+            '//*[contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ",'
+            ' "abcdefghijklmnopqrstuvwxyz"),"shipping & handling included")]'
+        ).extract()).strip().replace(',', '') or \
+            response.xpath(
+                '//*[@class="merchandisingText" and '
+                'contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", '
+                '"abcdefghijklmnopqrstuvwxyz"), "free shipping")]')
 
         cond_set_value(prod, 'shipping_included', 1 if shipping_included or shipping == "0.00" else 0)
 
