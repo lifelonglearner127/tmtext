@@ -137,6 +137,44 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             ),
             *args, **kwargs)
 
+    def start_requests(self):
+        """Generate Requests from the SEARCH_URL and the search terms."""
+        for st in self.searchterms:
+            yield Request(
+                self.url_formatter.format(
+                    self.SEARCH_URL,
+                    search_term=urllib.quote_plus(st.encode('utf-8')),
+                ),
+                meta={'search_term': st, 'remaining': self.quantity},
+            )
+
+        if self.product_url:
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            prod['url'] = self.product_url
+            prod['search_term'] = ''
+            yield Request(
+                self.product_url,
+                self._parse_single_product,
+                meta={'product': prod},
+                cookies={
+                    'deliveryCatchment': 2000,
+                    'marketCatchment': 2001,
+                    'walmart.shippingPostalCode': 'V5M2G7',
+                    'ENV': 'origin-edc-torbit-www',
+                    'userSegment': '10-percent'
+                })
+
+        if self.products_url:
+            urls = self.products_url.split('||||')
+            for url in urls:
+                prod = SiteProductItem()
+                prod['url'] = url
+                prod['search_term'] = ''
+                yield Request(url,
+                              self._parse_single_product,
+                              meta={'product': prod})
+
     def parse_product(self, response):
         """
         Main parsing product method
@@ -144,6 +182,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         reqs = []
         product = response.meta['product']
+
+        #self._populate_from_html(response, product)
+        #self._populate_from_js(response, product)
 
         # Product ID
         id = re.findall('\/(\d+)', response.url)
@@ -590,7 +631,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         number_of_variants = product_data.get('numberOfVariants', 0)
         data_variants = product_data['variantDataRaw']
         skus = []
-
         if number_of_variants:
             try:
                 variants = {}
