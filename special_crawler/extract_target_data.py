@@ -106,6 +106,9 @@ class TargetScraper(Scraper):
         product_id = str(self.tree_html.xpath("//input[@id='omniPartNumber']/@value")[0])
         return product_id
 
+    def _tsin(self):
+        return self._product_id()
+
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
@@ -196,6 +199,16 @@ class TargetScraper(Scraper):
         long_desc_block = self.tree_html.xpath("//ul[starts-with(@class,'normal-list reduced-spacing-list')]")[0]
 
         return self._clean_text(html.tostring(long_desc_block))
+
+    def _mta(self):
+        content = html.tostring(self.tree_html.xpath('//div[@class="content"]')[0])
+        content = re.sub('[\n\t]', '', content)
+        content = re.sub('<![^>]+>', '', content)
+        content = re.sub(' (class|itemprop)="[^"]+"', '', content)
+        content = re.sub('\s+', ' ', content)
+        content = re.sub('> <', '><', content)
+
+        return content
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -583,6 +596,7 @@ class TargetScraper(Scraper):
         "url" : _url, \
         "product_id" : _product_id, \
         "upc" : _upc, \
+        "tsin" : _tsin, \
 
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
@@ -595,6 +609,8 @@ class TargetScraper(Scraper):
         "long_description" : _long_description, \
         "variants": _variants, \
         "swatches": _swatches, \
+        "mta": _mta, \
+
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \
