@@ -28,7 +28,7 @@
     <field name="category" version="1.1"></field>
     <field name="subscribe_and_save" version="1.1"></field>
     <field name="available_online" version="1.2"></field>
-    <field name="available_store" version="1.1"></field>
+    <field name="available_store" version="1.2"></field>
     <field name="shipping_included" version="1"></field>
     <field name="search_term_in_title_partial" version="1.1"></field>
     <field name="search_term_in_title_exactly" version="1.1"></field>

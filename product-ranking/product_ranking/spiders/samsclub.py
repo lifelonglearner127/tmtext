@@ -304,8 +304,10 @@ class SamsclubProductsSpider(BaseProductsSpider):
             ' text()="Out of stock online and in club"]')
 
         # Available in Store
-        available_store = response.xpath('//*[@id="addtocartsingleajaxclub" \
-                and contains(text(),"Pick up in Club")]')
+        available_store = response.xpath(
+            '//*[(@id="addtocartsingleajaxclub" or'
+            '@id="variantMoneyBoxButtonInitialLoadClub")'
+            'and contains(text(),"Pick up in Club")]')
 
         cond_set_value(product,
                        'available_store',
