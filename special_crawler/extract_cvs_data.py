@@ -48,9 +48,8 @@ class CVSScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        #m = re.match(r"^http://www.cvs.com/shop/(.+/)*.+-prodid-\d+\?skuId=\d+$", self.product_page_url)
-        #return not not m
-        return True
+        m = re.match(r"^http://www.cvs.com/shop/(.+/)*.+-prodid-\d+\?skuId=\d+$", self.product_page_url)
+        return not not m
 
     def not_a_product(self):
         """Checks if current page is not a valid product page
@@ -61,14 +60,13 @@ class CVSScraper(Scraper):
             False otherwise
         """
 
-        self.product_json = json.loads( self.load_page_from_url_with_number_of_retries('https://www.cvs.com/retail/frontstore/productDetails?apiKey=c9c4a7d0-0a3c-4e88-ae30-ab24d2064e43&apiSecret=4bcd4484-c9f5-4479-a5ac-9e8e2c8ad4b0&appName=CVS_WEB&channelName=WEB&code=' + self._product_id() + '&codeType=sku&deviceToken=2695&deviceType=DESKTOP&lineOfBusiness=RETAIL&operationName=getSkuDetails&serviceCORS=True&serviceName=productDetails&version=1.0'))
+        try:
+            self.product = json.loads( self.tree_html.xpath('//script[@type="application/ld+json"]')[1].text_content(), strict=False)
 
-        self.breadcrumb_list = json.loads( self.tree_html.xpath('//script[@type="application/ld+json"]')[0].text_content(), strict=False)
-
-        self.product = json.loads( self.tree_html.xpath('//script[@type="application/ld+json"]')[1].text_content(), strict=False)
-
-        if self.product['@type'] == 'Product':
-            return False
+            if self.product['@type'] == 'Product':
+                return False
+        except:
+            pass
 
         return True
 
@@ -99,6 +97,14 @@ class CVSScraper(Scraper):
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
+    def _load_product_json(self):
+        if not self.product_json:
+            self.product_json = json.loads( self.load_page_from_url_with_number_of_retries('https://www.cvs.com/retail/frontstore/productDetails?apiKey=c9c4a7d0-0a3c-4e88-ae30-ab24d2064e43&apiSecret=4bcd4484-c9f5-4479-a5ac-9e8e2c8ad4b0&appName=CVS_WEB&channelName=WEB&code=' + self._product_id() + '&codeType=sku&deviceToken=2695&deviceType=DESKTOP&lineOfBusiness=RETAIL&operationName=getSkuDetails&serviceCORS=True&serviceName=productDetails&version=1.0'))
+
+    def _load_breadcrumb_list(self):
+        if not self.breadcrumb_list:
+            self.breadcrumb_list = json.loads( self.tree_html.xpath('//script[@type="application/ld+json"]')[0].text_content(), strict=False)
+
     def _load_description(self):
         if not self.full_description:
             # The first 'offer' has the full description
@@ -131,7 +137,6 @@ class CVSScraper(Scraper):
     def _features(self):
         self._load_description()
 
-        # Features are anything between <ul></ul>
         ul = re.search('<ul>.*</ul>', self.full_description, re.I)
         if ul:
             return self._clean_text( ul.group(0))
@@ -144,7 +149,7 @@ class CVSScraper(Scraper):
         return None
 
     def _description(self):
-        self._load_offer()
+        self._load_description()
         return self._clean_text( self.full_description.split('Overview:')[0])
 
     def _long_description(self):
@@ -203,8 +208,6 @@ class CVSScraper(Scraper):
         return None
 
     def _image_urls(self):
-        self._load_offer()
-
         if self.images:
             return self.images
 
@@ -327,51 +330,57 @@ class CVSScraper(Scraper):
     ##########################################
     def _load_reviews(self):
         if not self.reviews:
-            reviews = self.load_page_from_url_with_number_of_retries('http://api.bazaarvoice.com/data/batch.json?passkey=ll0p381luv8c3ler72m8irrwo&apiversion=5.5&displaycode=3006-en_us&resource.q0=products&filter.q0=id%3Aeq%3A' + self._product_id() + '&stats.q0=questions%2Creviews&filteredstats.q0=questions%2Creviews&filter_questions.q0=contentlocale%3Aeq%3Aen_US&filter_answers.q0=contentlocale%3Aeq%3Aen_US&filter_reviews.q0=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US&resource.q1=reviews&filter.q1=isratingsonly%3Aeq%3Afalse&filter.q1=productid%3Aeq%3A' + self._product_id() + '&filter.q1=contentlocale%3Aeq%3Aen_US&sort.q1=relevancy%3Aa1&stats.q1=reviews&filteredstats.q1=reviews&include.q1=authors%2Cproducts%2Ccomments&filter_reviews.q1=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q1=contentlocale%3Aeq%3Aen_US&filter_comments.q1=contentlocale%3Aeq%3Aen_US&limit.q1=8&offset.q1=0&limit_comments.q1=3&resource.q2=reviews&filter.q2=productid%3Aeq%3A' + self._product_id() + '&filter.q2=contentlocale%3Aeq%3Aen_US&limit.q2=1&resource.q3=reviews&filter.q3=productid%3Aeq%3A' + self._product_id() + '&filter.q3=isratingsonly%3Aeq%3Afalse&filter.q3=rating%3Agt%3A3&filter.q3=totalpositivefeedbackcount%3Agte%3A3&filter.q3=contentlocale%3Aeq%3Aen_US&sort.q3=totalpositivefeedbackcount%3Adesc&include.q3=authors%2Creviews%2Cproducts&filter_reviews.q3=contentlocale%3Aeq%3Aen_US&limit.q3=1&resource.q4=reviews&filter.q4=productid%3Aeq%3A' + self._product_id() + '&filter.q4=isratingsonly%3Aeq%3Afalse&filter.q4=rating%3Alte%3A3&filter.q4=totalpositivefeedbackcount%3Agte%3A3&filter.q4=contentlocale%3Aeq%3Aen_US&sort.q4=totalpositivefeedbackcount%3Adesc&include.q4=authors%2Creviews%2Cproducts&filter_reviews.q4=contentlocale%3Aeq%3Aen_US&limit.q4=1&callback=bv_1111_26782')
+            reviews = self.load_page_from_url_with_number_of_retries('http://api.bazaarvoice.com/data/batch.json?passkey=ll0p381luv8c3ler72m8irrwo&apiversion=5.5&displaycode=3006-en_us&resource.q0=products&filter.q0=id%3Aeq%3A' + self._product_id() + '&stats.q0=questions%2Creviews')
 
-            self.reviews = json.loads( re.match('bv[_\d]+\(({.*})', reviews).group(1))
+            try:
+                self.reviews = json.loads(reviews)['BatchedResults']['q0']['Results'][0]['ReviewStatistics']
+            except:
+                pass
 
     def _average_review(self):
         self._load_reviews()
-        return self.reviews['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['AverageOverallRating']
+
+        if self.reviews:
+            return self.reviews['AverageOverallRating']
 
     def _review_count(self):
         self._load_reviews()
-        return self.reviews['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['TotalReviewCount']
+
+        if self.reviews:
+            return self.reviews['TotalReviewCount']
+        else:
+            return 0
 
     def _max_review(self):
-        if not self._reviews():
-            return None
-
-        for review in self._reviews():
-            if not review[1] == 0:
-                return review[0]
+        if self._reviews():
+            for review in self._reviews():
+                if not review[1] == 0:
+                    return review[0]
 
     def _min_review(self):
-        if not self._reviews():
-            return None
-
-        for review in self._reviews()[::-1]: # reverses list
-            if not review[1] == 0:
-                return review[0]
+        if self._reviews():
+            for review in self._reviews()[::-1]: # reverses list
+                if not review[1] == 0:
+                    return review[0]
 
     def _reviews(self):
         self._load_reviews()
 
-        reviews = []
+        if self.reviews:
+            reviews = []
 
-        ratings_distribution = self.reviews['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['RatingDistribution']
+            ratings_distribution = self.reviews['RatingDistribution']
 
-        for rating in ratings_distribution:
-            reviews.append([rating['RatingValue'], rating['Count']])
+            for rating in ratings_distribution:
+                reviews.append( [rating['RatingValue'], rating['Count']])
 
-        if reviews:
-            # Insert 0 for nonexistant ratings
-            for i in range(0,5):
-                if len(reviews) <= i or not reviews[i][0] == i + 1:
-                    reviews.insert(i, [i+1, 0])
+            if reviews:
+                # Insert 0 for nonexistant ratings
+                for i in range(0,5):
+                    if len(reviews) <= i or not reviews[i][0] == i + 1:
+                        reviews.insert(i, [i+1, 0])
 
-            return reviews[::-1] # reverses list
+                return reviews[::-1] # reverses list
 
     ##########################################
     ############### CONTAINER : SELLERS
@@ -393,6 +402,7 @@ class CVSScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
+        self._load_offer()
         if self.offer['availability'] != 'http://schema.org/InStock':
             return 1
 
@@ -417,6 +427,7 @@ class CVSScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
+        self._load_breadcrumb_list()
         breadcrumbs = map( lambda x: self._clean_text( x['item']['name']), self.breadcrumb_list['itemListElement'])
         # First two are 'home' and 'shop'
         return breadcrumbs[2:]
