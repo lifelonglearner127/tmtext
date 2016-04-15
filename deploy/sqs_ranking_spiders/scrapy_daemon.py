@@ -630,17 +630,7 @@ class ScrapyTask(object):
             # items dropped - most likely because of "subitems" mode,
             # so calculate the number of really scraped items
             if random.randint(0, 30) == 0:  # do not overload server's filesystem
-                output_path = self.get_output_path() + '.jl'
-                if os.path.exists(output_path):
-                    cont = None
-                    try:
-                        fh = open(output_path, 'r')
-                        cont = fh.readlines()
-                    except Exception as ex:
-                        logger.error('Could not read output file [%s]: %s' % (output_path, str(ex)))
-                    if cont is not None:
-                        if isinstance(cont, (list, tuple)):
-                            self.items_scraped = len(cont)
+                self._update_items_scraped()
             return
         elif data['name'] == 'spider_error':
             self.spider_errors += 1
@@ -792,6 +782,19 @@ class ScrapyTask(object):
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
 
+    def _update_items_scraped(self):
+        output_path = self.get_output_path() + '.jl'
+        if os.path.exists(output_path):
+            cont = None
+            try:
+                with open(output_path, 'r') as fh:
+                    cont = fh.readlines()
+            except Exception as ex:
+                logger.error('Could not read output file [%s]: %s' % (output_path, str(ex)))
+            if cont is not None:
+                if isinstance(cont, (list, tuple)):
+                    self.items_scraped = len(cont)
+
     def _success_finish(self):
         """
         used to indicate, that scrapy process finished
@@ -799,6 +802,8 @@ class ScrapyTask(object):
         """
         # run this task after scrapy process successfully finished
         # cache result, if there is at least one scraped item
+        time.sleep(2)  # let the data to be dumped into the output file?
+        self._update_items_scraped()
         if self.items_scraped:
             self.save_cached_result()
         else:
