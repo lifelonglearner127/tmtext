@@ -274,6 +274,10 @@ class StaplesProductsSpider(BaseProductsSpider):
     def get_price(self, response):
         product = response.meta['product']
         jsonresponse = json.loads(response.body_as_unicode())
+        if u'currentlyOutOfStock' in jsonresponse['cartAction']:
+            product['is_out_of_stock'] = True
+        else:
+            product['is_out_of_stock'] = False
         try:
             product['price'] = Price(price=jsonresponse['pricing']['finalPrice'],
                                      priceCurrency=product['price'].priceCurrency)

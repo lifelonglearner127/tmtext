@@ -67,6 +67,7 @@ class Scraper():
             "product_id",
             "site_id",
             "walmart_no",
+            "tsin",
             "date",
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
@@ -108,6 +109,7 @@ class Scraper():
             "related_products_urls",
             "bundle",
             "bundle_components",
+            "mta",
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
@@ -214,7 +216,7 @@ class Scraper():
                         "features", "feature_count", "model_meta", "description", "seller_ranking", "long_description", "shelf_description", "apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
-                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to"],
+                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "mta"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
@@ -446,7 +448,6 @@ class Scraper():
             # set user agent to avoid blocking
             agent = ''
             if self.bot_type == "google":
-                print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
                 agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
             else:
                 agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
@@ -481,17 +482,23 @@ class Scraper():
                     self.page_raw_text = contents
                     self.tree_html = html.fromstring(contents)
                 except UnicodeError, e:
-                    # if string was not utf8, don't deocde it
-                    print "Warning creating html tree from page content: ", e.message
+                    # If not utf8, try latin-1
+                    try:
+                        contents = self._clean_null(contents).decode("latin-1")
+                        self.page_raw_text = contents
+                        self.tree_html = html.fromstring(contents)
 
-                    # replace NULL characters
-                    contents = self._clean_null(contents)
-                    self.page_raw_text = contents
-                    self.tree_html = html.fromstring(contents)
+                    except UnicodeError, e:
+                        # if string was neither utf8 or latin-1, don't decode
+                        print "Warning creating html tree from page content: ", e.message
+
+                        # replace NULL characters
+                        contents = self._clean_null(contents)
+                        self.page_raw_text = contents
+                        self.tree_html = html.fromstring(contents)
 
                 # if we got it we can exit the loop and stop retrying
                 return
-
 
                 # try getting it again, without catching exception.
                 # if it had worked by now, it would have returned.

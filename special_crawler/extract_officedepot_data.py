@@ -61,9 +61,7 @@ class OfficeDepotScraper(Scraper):
     ##########################################
 
     def _canonical_link(self):
-        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
-
-        return canonical_link
+        return self.tree_html.xpath('//link[@rel="canonical"]/@href')[0]
 
     def _url(self):
         return self.product_page_url
@@ -72,17 +70,13 @@ class OfficeDepotScraper(Scraper):
         return None
 
     def _product_id(self):
-        return re.findall('http://www.officedepot.com/a/products/(\d+)/', self.product_page_url, re.DOTALL)[0]
+        return re.search('http://www.officedepot.com/a/products/(\d+)/', self.product_page_url).group(1)
 
     def _site_id(self):
         return None
 
     def _status(self):
         return "success"
-
-
-
-
 
 
     ##########################################
@@ -200,10 +194,13 @@ class OfficeDepotScraper(Scraper):
         if resource_base:
             resource_base = resource_base.group(1)[:-1] # remove trailing '/'
 
-        wc_json = json.loads( self.tree_html.xpath('//div[contains(@class,"wc-json-data")]')[0].text_content())
+        wc_json = self.tree_html.xpath('//div[contains(@class,"wc-json-data")]/text()')
 
-        for video in wc_json['videos']:
-            video_urls.append(resource_base + video['src']['src'])
+        if wc_json:
+            wc_json = json.loads(wc_json[0])
+
+            for video in wc_json['videos']:
+                video_urls.append( resource_base + video['src']['src'])
 
         if video_urls:
             return video_urls
@@ -213,10 +210,13 @@ class OfficeDepotScraper(Scraper):
     def _video_count(self):
         videos = self._video_urls()
 
-        if videos:
-            return len(videos)
+        embedded_videos = self.tree_html.xpath('//span[@class="LimelightEmbeddedPlayer"]')
 
-        return 0
+        if videos:
+            return len(videos) + len(embedded_videos)
+
+        else:
+            return len(embedded_videos)
 
     def _pdf_urls(self):
         urls = []
@@ -395,8 +395,6 @@ class OfficeDepotScraper(Scraper):
 
 
 
-
-
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
@@ -423,7 +421,6 @@ class OfficeDepotScraper(Scraper):
        	text = re.sub("&nbsp;", " ", text).strip()
 
         return re.sub(r'\s+', ' ', text)
-
 
 
 
