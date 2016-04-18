@@ -145,6 +145,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                     self.SEARCH_URL,
                     search_term=urllib.quote_plus(st.encode('utf-8')),
                 ),
+                callback=self.set_cookie,
                 meta={'search_term': st, 'remaining': self.quantity},
             )
 
@@ -174,6 +175,15 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                 yield Request(url,
                               self._parse_single_product,
                               meta={'product': prod})
+    
+    def set_cookie(self, response):
+        """This function create same Request for setting right Cookie."""
+        return Request(
+                response.request.url,
+                    callback = self.parse,
+                    meta=response.meta,
+                    dont_filter = True,
+            )
 
     def parse_product(self, response):
         """
