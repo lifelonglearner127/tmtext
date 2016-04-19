@@ -19,7 +19,8 @@ class MicrosoftScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.microsoftstore.com/store/msusa/en_US/pdp/<product-title>/productID.<product-id>"
-    REVIEW_URL = "http://api.bazaarvoice.com/data/batch.json?passkey=291coa9o5ghbv573x7ercim80&apiversion=5.5&displaycode=5681-en_us&resource.q0=products&filter.q0=id%3Aeq%3A{0}&stats.q0=questions%2Creviews&filteredstats.q0=questions%2Creviews&filter_questions.q0=contentlocale%3Aeq%3Aen_US&filter_answers.q0=contentlocale%3Aeq%3Aen_US&filter_reviews.q0=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US&resource.q1=questions&filter.q1=productid%3Aeq%3A{0}&filter.q1=contentlocale%3Aeq%3Aen_US&sort.q1=lastapprovedanswersubmissiontime%3Adesc&stats.q1=questions&filteredstats.q1=questions&include.q1=authors%2Cproducts%2Canswers&filter_questions.q1=contentlocale%3Aeq%3Aen_US&filter_answers.q1=contentlocale%3Aeq%3Aen_US&sort_answers.q1=submissiontime%3Adesc&limit.q1=10&offset.q1=0&limit_answers.q1=10&resource.q2=reviews&filter.q2=isratingsonly%3Aeq%3Afalse&filter.q2=productid%3Aeq%3A{0}&filter.q2=contentlocale%3Aeq%3Aen_US&sort.q2=helpfulness%3Adesc%2Ctotalpositivefeedbackcount%3Adesc&stats.q2=reviews&filteredstats.q2=reviews&include.q2=authors%2Cproducts%2Ccomments&filter_reviews.q2=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q2=contentlocale%3Aeq%3Aen_US&filter_comments.q2=contentlocale%3Aeq%3Aen_US&limit.q2=8&offset.q2=0&limit_comments.q2=3&callback=BV._internal.dataHandler0"
+
+    REVIEW_URL = 'http://api.bazaarvoice.com/data/batch.json?passkey=291coa9o5ghbv573x7ercim80&apiversion=5.5&displaycode=5681-en_us&resource.q0=products&filter.q0=id%3Aeq%3A{0}&stats.q0=questions%2Creviews&filteredstats.q0=questions%2Creviews'
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -144,6 +145,27 @@ class MicrosoftScraper(Scraper):
 
         return None
 
+    def _variants(self):
+        variants = []
+
+        for li in self.tree_html.xpath('//ul[contains(@class,"option-list")]/li'):
+            v = { 'variant' : self._clean_text(li.xpath('a/span/text()')[0]) }
+
+            if li.get('class') == 'active':
+                v['selected'] = True
+            else:
+                v['selected'] = False
+
+            variants.append(v)
+
+        i = 0
+        for price in self.tree_html.xpath('//p[@itemprop="price"]'):
+            variants[i]['price'] = self._clean_text(price.text_content())
+            i += 1
+
+        if variants:
+            return variants
+
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -162,7 +184,7 @@ class MicrosoftScraper(Scraper):
             image_urls = []
 
             for url in url_list:
-                if "360_Overlay.png" not in url and "/Spin/" not in url and not re.search( '-VID\d+-|-Video-\d+-', url) and not url in image_urls:
+                if "360_Overlay.png" not in url and "/Spin/" not in url and not re.search( '(VID|Video-)\d+', url) and not url in image_urls:
                     image_urls.append(url)
 
             if image_urls:
@@ -277,10 +299,13 @@ class MicrosoftScraper(Scraper):
         if self._review_count() > 0:
             review_list = []
             review_json = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(self._product_id()))
-            review_json = json.loads(review_json[26:-1])
+            review_json = json.loads(review_json)
+
+            for i in range(5):
+                review_list.append([5-i, 0])
 
             for review in review_json["BatchedResults"]["q0"]["Results"][0]["FilteredReviewStatistics"]["RatingDistribution"]:
-                review_list.append([int(review["RatingValue"]), int(review["Count"])])
+                review_list[5 - int(review["RatingValue"])] = [int(review["RatingValue"]), int(review["Count"])]
 
             if review_list:
                 return review_list
@@ -364,6 +389,7 @@ class MicrosoftScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
+        "variants" : _variants, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
@@ -383,6 +409,7 @@ class MicrosoftScraper(Scraper):
         "max_review" : _max_review, \
         "min_review" : _min_review, \
         "reviews" : _reviews, \
+
         # CONTAINER : SELLERS
         "price" : _price, \
         "price_amount" : _price_amount, \
