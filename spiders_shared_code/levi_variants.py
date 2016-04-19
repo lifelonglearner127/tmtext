@@ -80,6 +80,7 @@ class LeviVariants(object):
                         if buy_stack_json["sku"][variant_combination]["colorid"] not in buy_stack_json["colorid"]:
                             continue
 
+                        variant_item["colorid"] = buy_stack_json["sku"][variant_combination]["colorid"]
                         properties["color"] = buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]["colorid"]]["finish"]["title"]
                         variant_item["url"] = product_url[:product_url.rfind("/") + 1] + buy_stack_json["sku"][variant_combination]["colorid"]
                         value_list.append(properties["color"])
@@ -146,6 +147,7 @@ class LeviVariants(object):
                 variant_item["price"] = None
 
                 if "color" in properties:
+                    variant_item["colorid"] = buy_stack_json["colorid"][color_name_id_map[properties["color"]]]["colorid"]
                     for price in buy_stack_json["colorid"][color_name_id_map[properties["color"]]]["price"]:
                         if price["il8n"] == "now":
                             variant_item["price"] = float(re.findall("\d*\.\d+|\d+", price["amount"].replace(",", ""))[0])
