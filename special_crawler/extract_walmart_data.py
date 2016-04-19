@@ -958,6 +958,12 @@ class WalmartScraper(Scraper):
                 else:
                     warnings_description = False
 
+                if "<strong>Indications:" in lxml.html.tostring(description_element) or "<b>Indications:" in \
+                        lxml.html.tostring(description_element):
+                    indications_description = True
+                else:
+                    indications_description = False
+
                 if "<strong>Ingredients:" in lxml.html.tostring(description_element) or "<b>Ingredients:" in \
                         lxml.html.tostring(description_element):
                     ingredients_description = True
@@ -973,7 +979,7 @@ class WalmartScraper(Scraper):
                 if long_description_start:
                     sub_description = lxml.html.tostring(description_element)
 
-                    if not (warnings_description or ingredients_description or directions_description):
+                    if not (warnings_description or indications_description or ingredients_description or directions_description):
                         if long_description_start_index > 0:
                             full_description += sub_description[long_description_start_index:]
                             long_description_start_index = -1
@@ -982,6 +988,8 @@ class WalmartScraper(Scraper):
                     else:
                         if warnings_description:
                             description_start_index = sub_description.find('<section class="product-about js-warnings health-about">')
+                        elif indications_description:
+                            description_start_index = sub_description.find('<section class="product-about js-indications health-about">')
                         elif ingredients_description:
                             description_start_index = sub_description.find('<section class="product-about js-ingredients health-about">')
                         elif directions_description:
