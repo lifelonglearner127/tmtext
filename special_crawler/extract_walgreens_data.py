@@ -149,14 +149,18 @@ class WalgreensScraper(Scraper):
     def _ingredients(self):
         if not self.ingredients:
             if self.tree_html.xpath('//section[@id="collapseFive"]'):
-                ingredients = self._clean_text( self.tree_html.xpath('//section[@id="collapseFive"]/section/text()')[2]).split(',')
+                ingredients = self.tree_html.xpath('//section[@id="collapseFive"]/section')[0].text_content().split("\n")
 
                 self.ingredients = []
 
                 for ingredient in ingredients:
-                    self.ingredients.append( self._clean_text(ingredient))
+                    ingredient = self._clean_text( ingredient.replace(',', ''))
 
-        return self.ingredients
+                    if ingredient and not 'Ingredients' in ingredient:
+                        self.ingredients.append( ingredient)
+
+        if self.ingredients:
+            return self.ingredients
 
     def _ingredient_count(self):
         self._ingredients()
@@ -170,14 +174,19 @@ class WalgreensScraper(Scraper):
         variants = []
 
         if self.inventory.get('relatedProducts'):
-            for product in self.inventory['relatedProducts']['color']:
-                variants.append({
-                    'in_stock' : product['isavlbl'] == 'yes',
-                    'properties' : {
-                        'color' : product['value']
-                        },
-                    'sku' : product['key'][3:], # remove 'sku'
-                })
+            for property in self.inventory['relatedProducts'].keys():
+                for product in self.inventory['relatedProducts'][property]:
+                    variant = {
+                        'in_stock' : product['isavlbl'] == 'yes',
+                        'properties' : {
+                            property : product['value']
+                            },
+                        }
+
+                    if product.get('key'):
+                        variant['sku'] = product['key'][3:], # remove 'sku'
+
+                    variants.append(variant)
 
         if variants:
             return variants
@@ -192,7 +201,7 @@ class WalgreensScraper(Scraper):
                 swatch = {
                     'color' : product['value'],
                     'hero' : 0,
-                    'hero_image' : [],
+                    'hero_image' : None,
                     'swatch_name' : 'color',
                 }
 
@@ -227,8 +236,10 @@ class WalgreensScraper(Scraper):
             image_urls = self.tree_html.xpath('//img/@src')
 
             for image in image_urls:
-                if re.search('/*450.jpg', image) and not image[2:] in images:
-                    images.append( image[2:]) # remove initial '//'
+                if re.search('/([\d_]+).jpg', image):
+                    image = re.sub('(\d+).jpg', '450.jpg', image)
+                    if not image[2:] in images:
+                        images.append( image[2:]) # remove initial '//'
 
             if images:
                 self.images = images
@@ -340,7 +351,8 @@ class WalgreensScraper(Scraper):
         self._load_reviews()
 
         if self.reviews:
-            return round( self.reviews['AverageOverallRating'], 1)
+            if self.reviews['AverageOverallRating']:
+                return round( self.reviews['AverageOverallRating'], 1)
 
     def _review_count(self):
         self._load_reviews()
