@@ -32,6 +32,8 @@ try:
 except ImportError:
     import requests
 
+is_empty = lambda x, y="": x[0] if x else y
+
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', '..'))
 
@@ -55,16 +57,24 @@ def _get_domain(url):
     return urlparse.urlparse(url).netloc.replace('www.', '')
 
 
+class JCPennyCheckoutItem(scrapy.Item):
+    name = scrapy.Field()
+    id = scrapy.Field()
+    price = scrapy.Field()
+
+
 class JCpenneySpider(scrapy.Spider):
     name = 'jcpenney_checkout_products'
-    # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
+    allowed_domains = ['jcpenney.com']  # do not remove comment - used in find_spiders()
     available_drivers = ['chromium', 'firefox']
 
     handle_httpstatus_list = [403, 404, 502, 500]
 
     SHOPPING_CART_URL = 'http://www.jcpenney.com/jsp/cart/viewShoppingBag.jsp'
+    CHECKOUT_PAGE_URL = "https://www.jcpenney.com/dotcom/" \
+                        "jsp/checkout/secure/checkout.jsp"
 
-    def __init__(self, product_urls, timeout=600, *args, **kwargs):
+    def __init__(self, product_urls, *args, **kwargs):
         self.user_agent = kwargs.get(
             'user_agent',
             ("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0) Gecko/20100101 Firefox/32.0")
@@ -75,74 +85,113 @@ class JCpenneySpider(scrapy.Spider):
         self.driver = kwargs.get('driver', None)  # if None, then a random UA will be used
         self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
-        self.timeout = timeout
         self.disable_site_settings = kwargs.get('disable_site_settings', None)
-        
-        self.driver = self.init_driver(name="firefox")
+
+        self.driver = self.init_driver()
         self.wait = WebDriverWait(self.driver, 25)
-        socket.setdefaulttimeout(int(self.timeout))
-        
+
         settings.overrides['ITEM_PIPELINES'] = {}
         super(JCpenneySpider, self).__init__(*args, **kwargs)
 
     def start_requests(self):
+        yield scrapy.Request('https://www.jcpenney.com')
+
+    def parse(self, request):
         for product_url in self.product_urls.split('|'):
             # Open product URL
             self._parse_product(product_url)
 
+        for item in self._parse_cart():
+            yield item
 
-        self._parse_shopping_cart()
-        return None
+        self._parse_checkout_page()
+        
+
+    def _click_attribute(self, selected_attribute_xpath, others_attributes_xpath):
+        selected_attribute = self.driver.find_elements(
+            By.XPATH, selected_attribute_xpath)
+        available_attributes = self.driver.find_elements(
+            By.XPATH, others_attributes_xpath)
+
+        # If not size is set and there are available sizes
+        if not selected_attribute and available_attributes:
+            available_attributes[0].click()
 
     def _parse_product(self, product_url):
+        socket.setdefaulttimeout(30)
         self.driver.get(product_url)
+
+        # Mark search attribute
+        size_attribute_xpath = '//*[@class="sku_alt_options ' \
+            'sku_alt_designs"]//li[@class="sku_select"]'
+        size_attributes_xpath = '//*[@class="sku_alt_options ' \
+            'sku_alt_designs"]//li[not(@class="sku_not_available")]/a'
+        self._click_attribute(size_attribute_xpath, size_attributes_xpath)
+
+        # Mark search attribute
+        size_attribute_xpath = '//div[@id="skuOptions_size"]//' \
+            'li[@class="sku_select"]'
+        size_attributes_xpath = '//*[@id="skuOptions_size"]//' \
+            'li[not(@class="sku_not_available")]/a'
+        self._click_attribute(size_attribute_xpath, size_attributes_xpath)
+
+        # Mark color attribute
+        color_attribute_xpath = '//li[@class="swatch_selected"]'
+        color_attributes_xpath = '//*[@class="small_swatches"]//a'
+        self._click_attribute(color_attribute_xpath, color_attributes_xpath)
+
         # Click add button
+        time.sleep(4)
         self._click_on_element_with_id('addtobagbopus')
-        time.sleep(6)
-        
-    def _parse_shopping_cart(self):
+        time.sleep(4)
+
+    def _parse_cart(self):
+        socket.setdefaulttimeout(30)
         self.driver.get(self.SHOPPING_CART_URL)
-        # print "element"
-        # element = self.wait.until(EC.visibility_of_element_located((By.ID, 'shoppingBagPageId')))
-        # print "disponible"
-        # from scrapy import Selector
-        elements = driver.find_elements(By.ID, 'shoppingBagPageId')
-        if elements:
-            selector = Selector(text=elements[0].get_attribute('outerHTML'))
-            print selector.xpath('//*[@class="brand_name flt_lft bp-brand-name"]/a/text()')
-        else:
-            "Not elements founds"
+        element = self.wait.until(
+            EC.visibility_of_element_located((
+                By.ID, 'shoppingBagContentID')))
 
-    def _solve_captha_in_selenium(self, driver, max_tries=15):
-        for i in xrange(max_tries):
-            if self._has_captcha(driver.page_source):
-                self.log('Found captcha in selenium response at %s' % driver.current_url)
-                driver.save_screenshot('/tmp/_captcha_pre.png')
-                captcha_text = self._solve_captcha(driver.page_source)
-                self.log('Recognized captcha text is %s' % captcha_text)
-                driver.execute_script("document.getElementById('captchacharacters').value='%s'" % captcha_text)
-                time.sleep(2)
-                driver.save_screenshot('/tmp/_captcha_text.png')
-                driver.execute_script("document.getElementsByTagName('button')[0].click()")
-                time.sleep(2)
-                driver.save_screenshot('/tmp/_captcha_after.png')
+        if element:
+            selector = scrapy.Selector(text=element.get_attribute('outerHTML'))
+            for product in selector.xpath('//fieldset'):
+                name = is_empty(product.xpath(
+                    '*//*[contains(@class,"brand_name")]/a/text()').extract())
+                id = is_empty(product.xpath(
+                    '*//*[contains(@class,"item_number")]/text()').re('#(.*)'))
+                price = is_empty(product.xpath(
+                    '*//*[contains(@class,"flt_wdt total")]//'
+                    'span[@class="flt_rgt"]/text()').re('\$(.*)'))
+                quantity = is_empty(product.xpath(
+                    '*//select[@name="quantity"]//option'
+                    '[@selected="true"]/text()').extract())
 
-    def _click_on_elements_with_class(self, driver, cls):
-        script = """
-            var elements = document.getElementsByClassName('%s');
-            for (var i=0; i<elements.length; i++) {
-                elements[i].click();
-            }
-        """ % cls
-        try:
-            driver.execute_script(script)
-        except Exception as e:
-            self.log('Error on clicking (JS) element with class %s: %s' % (cls, str(e)))
-        try:
-            for element in driver.find_elements_by_class_name(cls):
-                element.click()
-        except Exception as e:
-            self.log('Error on clicking element with class %s: %s' % (cls, str(e)))
+                if name and id and price and quantity:
+                    quantity = int(quantity)
+                    price = float(price) / quantity
+                    item = JCPennyCheckoutItem()
+                    item['name'] = name
+                    item['id'] = id
+                    item['price'] = price
+                    yield item
+
+                else:
+                    self.log('Missing field in product from shopping cart')
+
+    def _parse_checkout_page(self):
+        socket.setdefaulttimeout(30)
+        self._click_on_element_with_id('Checkout')
+        time.sleep(5)
+        element = self.wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, '//input[@class="blue-Button'
+                           ' btn_continue_as_guest"]')))
+        element.click()
+        element = self.wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, '//input[@class="row order_total"]')))
+
+        time.sleep(5)
 
     def _click_on_element_with_id(self, _id):
         try:
@@ -150,23 +199,6 @@ class JCpenneySpider(scrapy.Spider):
             element.click()
         except Exception as e:
             self.log('Error on clicking element with ID %s: %s' % (_id, str(e)))
-
-    def _click_on_element_with_xpath(self, driver, xpath):
-        try:
-            for element in driver.find_elements_by_xpath(xpath):
-                element.click()
-        except Exception as e:
-            self.log('Error on clicking elements with XPath %s: %s' % (xpath, str(e)))
-
-    def _remove_element_with_xpath(self, driver, xpath):
-        try:
-            for element in driver.find_elements_by_xpath(xpath):
-                driver.execute_script("""
-                    var element = arguments[0];
-                    element.parentNode.removeChild(element);
-                    """, element)
-        except Exception as e:
-            self.log('Error on removing elements with XPath %s: %s' % (xpath, str(e)))
 
     def _choose_another_driver(self):
         for d in self.available_drivers:
@@ -229,96 +261,6 @@ class JCpenneySpider(scrapy.Spider):
         if ip:
             ip = ip.group(1)
             return ip
-
-    def parse(self, response):
-        socket.setdefaulttimeout(int(self.timeout))
-
-        # temporary file for the output image
-        t_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
-        t_file.close()
-        print('Created temporary image file: %s' % t_file.name)
-        self.log('Created temporary image file: %s' % t_file.name)
-
-        display = Display(visible=0, size=(self.width, self.height))
-        display.start()
-
-        # we will use requesocks for checking response code
-        r_session = requests.session()
-        r_session.timeout = self.timeout
-        #if self.proxy:
-        #    r_session.proxies = {'http': self.proxy_type+'://'+self.proxy,
-        #                         'https': self.proxy_type+'://'+self.proxy}
-        if self.user_agent:
-            r_session.headers = {'User-Agent': self.user_agent}
-
-        # check if the page returns code != 200
-        if self.code_200_required and str(self.code_200_required).lower() not in ('0', 'false', 'off'):
-            page_code = r_session.get(self.product_url, verify=False).status_code
-            if page_code != 200:
-                self.log('Page returned code %s at %s' % (page_code, self.product_url), ERROR)
-                yield ScreenshotItem()  # return empty item
-                display.stop()
-                return
-
-        driver = self.init_driver()
-        item = ScreenshotItem()
-
-        if self.proxy:
-            ip_via_proxy = URL2ScreenshotSpider._get_proxy_ip(driver)
-            item['via_proxy'] = ip_via_proxy
-            print 'IP via proxy:', ip_via_proxy
-            self.log('IP via proxy: %s' % ip_via_proxy)
-
-        try:
-            self.prepare_driver(driver)
-            self.make_screenshot(driver, t_file.name)
-        except Exception as e:
-            self.log('Exception while getting response using selenium! %s' % str(e))
-            # lets try with another driver
-            another_driver_name = self._choose_another_driver()
-            try:
-                driver.quit()  # clean RAM
-            except Exception as e:
-                pass
-            driver = self.init_driver(name=another_driver_name)
-            self.prepare_driver(driver)
-            self.make_screenshot(driver, t_file.name)
-            try:
-                driver.quit()
-            except:
-                pass
-
-        # crop the image if needed
-        if self.crop_width and self.crop_height:
-            self.crop_width = int(self.crop_width)
-            self.crop_height = int(self.crop_height)
-            from PIL import Image
-            # size is width/height
-            img = Image.open(t_file.name)
-            box = (self.crop_left,
-                   self.crop_top,
-                   self.crop_left+self.crop_width,
-                   self.crop_top+self.crop_height)
-            area = img.crop(box)
-            area.save(t_file.name, 'png')
-            if self.image_copy:  # save a copy of the file if needed
-                area.save(self.image_copy, 'png')
-
-        with open(t_file.name, 'rb') as fh:
-            img_content = fh.read()
-
-        if self.remove_img is True:
-            os.unlink(t_file.name)  # remove old output file
-
-        # yield the item
-        item['url'] = response.url
-        item['image'] = base64.b64encode(img_content)
-        item['site_settings'] = getattr(self, '_site_settings_activated_for', None)
-
-        display.stop()
-
-        if img_content:
-            yield item
 
     def _has_captcha(self, response_or_text):
         if not isinstance(response_or_text, (str, unicode)):
