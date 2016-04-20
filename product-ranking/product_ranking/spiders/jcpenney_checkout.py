@@ -57,10 +57,20 @@ def _get_domain(url):
     return urlparse.urlparse(url).netloc.replace('www.', '')
 
 
-class JCPennyCheckoutItem(scrapy.Item):
+class JCPennyCheckoutProductItem(scrapy.Item):
     name = scrapy.Field()
     id = scrapy.Field()
     price = scrapy.Field()
+
+
+class JCPennyCheckoutPricesItem(scrapy.Item):
+    order_subtotal = scrapy.Field()
+    order_total = scrapy.Field()
+
+
+class JCPennyCheckoutDiscountItem(scrapy.Item):
+    discount_name = scrapy.Field()
+    discount_qty = scrapy.Field()
 
 
 class JCpenneySpider(scrapy.Spider):
@@ -74,13 +84,13 @@ class JCpenneySpider(scrapy.Spider):
     CHECKOUT_PAGE_URL = "https://www.jcpenney.com/dotcom/" \
                         "jsp/checkout/secure/checkout.jsp"
 
-    def __init__(self, product_urls, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         self.user_agent = kwargs.get(
             'user_agent',
             ("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0) Gecko/20100101 Firefox/32.0")
         )
 
-        self.product_urls = product_urls
+        self.product_urls = kwargs.get('product_urls', None)
         self.close_popups = kwargs.get('close_popups', kwargs.get('close_popup', None))
         self.driver = kwargs.get('driver', None)  # if None, then a random UA will be used
         self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
@@ -94,7 +104,7 @@ class JCpenneySpider(scrapy.Spider):
         super(JCpenneySpider, self).__init__(*args, **kwargs)
 
     def start_requests(self):
-        yield scrapy.Request('https://www.jcpenney.com')
+        yield scrapy.Request('http://www.jcpenney.com/')
 
     def parse(self, request):
         for product_url in self.product_urls.split('|'):
@@ -104,56 +114,126 @@ class JCpenneySpider(scrapy.Spider):
         for item in self._parse_cart():
             yield item
 
-        self._parse_checkout_page()
-        
+    def _find_by_xpath(self, xpath, element=None):
+        """
+        Find elements by xpath,
+        if element is defined, search from that element node
+        """
+        if element:
+            target = element
+        else:
+            target = self.driver
 
-    def _click_attribute(self, selected_attribute_xpath, others_attributes_xpath):
-        selected_attribute = self.driver.find_elements(
+        return target.find_elements(By.XPATH, xpath)
+
+    def _click_attribute(self, selected_attribute_xpath, others_attributes_xpath, element=None):
+        """
+        Check if the attribute given by selected_attribute_xpath is checkout
+        if checkeck don't do it anything,
+        else find the first available attribute and click on it
+        """
+        if element:
+            target = element
+        else:
+            target = self.driver
+
+        selected_attribute = target.find_elements(
             By.XPATH, selected_attribute_xpath)
-        available_attributes = self.driver.find_elements(
+        available_attributes = target.find_elements(
             By.XPATH, others_attributes_xpath)
 
         # If not size is set and there are available sizes
         if not selected_attribute and available_attributes:
             available_attributes[0].click()
+            time.sleep(4)
+
+    def select_size(self, element=None):
+        """
+        Select the size for the product if is not already selected
+        """
+        size_attribute_xpath = '*//div[@id="skuOptions_size"]//' \
+            'li[@class="sku_select"]'
+        size_attributes_xpath = '*//*[@id="skuOptions_size"]//' \
+            'li[not(@class="sku_not_available" or @class="sku_illegal")]/a'
+        self._click_attribute(size_attribute_xpath,
+                              size_attributes_xpath,
+                              element)
+
+    def select_color(self, element=None):
+        """
+        Select the color for the product if is not already selected
+        """
+        color_attribute_xpath = '*//li[@class="swatch_selected"]'
+        color_attributes_xpath = '*//*[@class="small_swatches"]//a'
+        self._click_attribute(color_attribute_xpath,
+                              color_attributes_xpath,
+                              element)
+
+    def select_width(self, element=None):
+        """
+        Select the width for the product if is not already selected
+        """
+        width_attribute_xpath = '*//div[@id="skuOptions_width"]//' \
+            'li[@class="sku_select"]'
+        width_attributes_xpath = '*//*[@id="skuOptions_width"]//' \
+            'li[not(@class="sku_not_available" or @class="sku_illegal")]/a'
+        self._click_attribute(width_attribute_xpath,
+                              width_attributes_xpath,
+                              element)
+
+    def select_others(self, element=None):
+        """
+        Select others attributes for the product
+        if there aren't already selected
+        """
+        group_attributes = self._find_by_xpath(
+            '*//ul[contains(@class,"sku_alt_options")]', element) or []
+
+        for attribute in group_attributes:
+            default_attr_xpath = 'li[@class="sku_select"]'
+            avail_attr_xpath = 'li[not(@class="sku_not_available" '\
+                'or @class="sku_illegal")]/a'
+            self._click_attribute(default_attr_xpath,
+                                  avail_attr_xpath,
+                                  attribute)
 
     def _parse_product(self, product_url):
         socket.setdefaulttimeout(30)
         self.driver.get(product_url)
 
-        # Mark search attribute
-        size_attribute_xpath = '//*[@class="sku_alt_options ' \
-            'sku_alt_designs"]//li[@class="sku_select"]'
-        size_attributes_xpath = '//*[@class="sku_alt_options ' \
-            'sku_alt_designs"]//li[not(@class="sku_not_available")]/a'
-        self._click_attribute(size_attribute_xpath, size_attributes_xpath)
+        products = self._find_by_xpath(
+            '//*[@id="regularPP"]|//*[contains(@class,"product_row")]')
 
-        # Mark search attribute
-        size_attribute_xpath = '//div[@id="skuOptions_size"]//' \
-            'li[@class="sku_select"]'
-        size_attributes_xpath = '//*[@id="skuOptions_size"]//' \
-            'li[not(@class="sku_not_available")]/a'
-        self._click_attribute(size_attribute_xpath, size_attributes_xpath)
+        # Make it iterable for convenience
+        is_iterable = isinstance(products, (list, tuple))
+        products = products if is_iterable else list(products)
 
-        # Mark color attribute
-        color_attribute_xpath = '//li[@class="swatch_selected"]'
-        color_attributes_xpath = '//*[@class="small_swatches"]//a'
-        self._click_attribute(color_attribute_xpath, color_attributes_xpath)
+        for product in products:
+            self.select_size(product)
+            self.select_color(product)
+            self.select_width(product)
+            self.select_others(product)
+
+        addtobagbopus = self._find_by_xpath('//*[@id="addtobagbopus"]')
+        addtobag = self._find_by_xpath('//*[@id="addtobag"]')
+        if addtobagbopus:
+            self._click_on_element_with_id('addtobagbopus')
+
+        elif addtobag:
+            self._click_on_element_with_id('addtobag')
 
         # Click add button
-        time.sleep(4)
-        self._click_on_element_with_id('addtobagbopus')
         time.sleep(4)
 
     def _parse_cart(self):
         socket.setdefaulttimeout(30)
         self.driver.get(self.SHOPPING_CART_URL)
-        element = self.wait.until(
+        product_list = self.wait.until(
             EC.visibility_of_element_located((
                 By.ID, 'shoppingBagContentID')))
 
-        if element:
-            selector = scrapy.Selector(text=element.get_attribute('outerHTML'))
+        if product_list:
+            selector = scrapy.Selector(text=product_list.get_attribute('outerHTML'))
             for product in selector.xpath('//fieldset'):
                 name = is_empty(product.xpath(
                     '*//*[contains(@class,"brand_name")]/a/text()').extract())
@@ -169,7 +249,7 @@ class JCpenneySpider(scrapy.Spider):
                 if name and id and price and quantity:
                     quantity = int(quantity)
                     price = float(price) / quantity
-                    item = JCPennyCheckoutItem()
+                    item = JCPennyCheckoutProductItem()
                     item['name'] = name
                     item['id'] = id
                     item['price'] = price
@@ -178,19 +258,40 @@ class JCpenneySpider(scrapy.Spider):
                 else:
                     self.log('Missing field in product from shopping cart')
 
-    def _parse_checkout_page(self):
+            order_subtotal_element = self.wait.until(
+                EC.visibility_of_element_located((
+                    By.XPATH, '//*[@class="flt_rgt order_subtotal_amnt"]')))
+
+            if order_subtotal_element:
+                item = JCPennyCheckoutPricesItem()
+                order_subtotal = order_subtotal_element.text
+                item['order_subtotal'] = is_empty(re.findall('\$([\d\.]+)',
+                                                             order_subtotal))
+
+                for item in self._parse_checkout_page(item):
+                    yield item
+
+    def _parse_checkout_page(self, item):
         socket.setdefaulttimeout(30)
         self._click_on_element_with_id('Checkout')
         time.sleep(5)
-        element = self.wait.until(
+        continue_as_guest_button = self.wait.until(
             EC.element_to_be_clickable(
                 (By.XPATH, '//input[@class="blue-Button'
                            ' btn_continue_as_guest"]')))
-        element.click()
-        element = self.wait.until(
-            EC.element_to_be_clickable(
-                (By.XPATH, '//input[@class="row order_total"]')))
+        continue_as_guest_button.click()
 
+        order_total_element = self.wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, '//div[@class="row order_total"]'
+                           '/span[@class="flt_rgt"]')))
+
+        if order_total_element:
+            order_total = order_total_element.text
+            item['order_total'] = is_empty(re.findall('\$([\d\.]+)',
+                                                      order_total))
+
+        yield item
         time.sleep(5)
 
     def _click_on_element_with_id(self, _id):
