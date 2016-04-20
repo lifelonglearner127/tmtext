@@ -8,6 +8,7 @@ import urlparse
 
 from scrapy.http import Request
 
+from scrapy.log import ERROR
 from product_ranking.items import Price
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
@@ -27,7 +28,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
 
     START_URL = "http://jet.com"
 
-    PRICE_URL = "https://jet.com/api/product/price"
+    PRICE_URL = "https://jet.com/api/productAndPrice"
 
     SYM_USD = '$'
     SYM_GBP = '£'
@@ -217,7 +218,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         if brand:
             brand = brand.replace("by ", "")
             product["brand"] = brand
-        
+
         image_url = is_empty(response.xpath(
             "//div[contains(@class,'images')]/div/@style"
         ).extract())
@@ -331,44 +332,46 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
     def parse_price_and_marketplace(self, response):
         product = response.meta.get("product")
         reqs = response.meta.get("reqs")
-        data = json.loads(response.body)
+        try:
+            data = json.loads(response.body)
 
-        if str(data.get("twoDay")) == "True":
-            product["deliver_in"] = "2 Days"
+            if str(data.get("twoDay")) == "True":
+                product["deliver_in"] = "2 Days"
 
-        if data.get("unavailable",None):
-            cond_set_value(product, "is_out_of_stock", True)
-        else:
-            cond_set_value(product, "is_out_of_stock", False)
+            if data.get("unavailable", None):
+                cond_set_value(product, "is_out_of_stock", True)
+            else:
+                cond_set_value(product, "is_out_of_stock", False)
 
-        if not product.get("price"):
-            for price in data.get("quantities", []):
-                if price.get("quantity") == 1:
-                    product["price"] = Price(
-                        priceCurrency="USD",
-                        price=price.get("price")
-                    )
+            if not product.get("price"):
+                for price in data.get("quantities", []):
+                    if price.get("quantity") == 1:
+                        product["price"] = Price(
+                            priceCurrency="USD",
+                            price=price.get("price")
+                        )
 
-        marketplace = []
-        if data.get("comparisons"):
-            for markp in data.get("comparisons", []):
-                marketplace.append({
-                    "name": markp.get("source"),
-                    "price": Price(
-                        priceCurrency="USD",
-                        price=markp.get("price")
-                    )
-                })
-            if marketplace:
-                marketplace.append({
-                    "name": self.DEFAULT_MARKETPLACE,
-                    "price": product["price"]
-                })
-                product["marketplace"] = marketplace
+            marketplace = []
+            if data.get("comparisons"):
+                for markp in data.get("comparisons", []):
+                    marketplace.append({
+                        "name": markp.get("source"),
+                        "price": Price(
+                            priceCurrency="USD",
+                            price=markp.get("price")
+                        )
+                    })
+                if marketplace:
+                    marketplace.append({
+                        "name": self.DEFAULT_MARKETPLACE,
+                        "price": product["price"]
+                    })
+                    product["marketplace"] = marketplace
 
-        if data.get('unavailable', None):
-            product['not_found'] = True
-
+            if data.get('unavailable', None):
+                product['not_found'] = True
+        except Exception as e:
+            self.log(str(e), ERROR)
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -393,7 +396,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
 
         if "24 of 10,000+ results" in response.body_as_unicode():
             total_matches = self.tm
-        
+
         return int(total_matches)
 
     def _scrape_product_links(self, response):
