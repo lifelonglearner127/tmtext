@@ -3,6 +3,7 @@
 import re
 import HTMLParser
 import json
+import copy
 
 from lxml import html, etree
 from extract_data import Scraper
@@ -174,19 +175,35 @@ class WalgreensScraper(Scraper):
         variants = []
 
         if self.inventory.get('relatedProducts'):
+            i = 0
             for property in self.inventory['relatedProducts'].keys():
+                j = 0
                 for product in self.inventory['relatedProducts'][property]:
-                    variant = {
-                        'in_stock' : product['isavlbl'] == 'yes',
-                        'properties' : {
-                            property : product['value']
-                            },
-                        }
+                    if i == 0:
+                        variant = {
+                            'in_stock' : product['isavlbl'] == 'yes',
+                            'properties' : {
+                                property : product['value']
+                                },
+                            }
 
-                    if product.get('key'):
-                        variant['sku'] = product['key'][3:], # remove 'sku'
+                        if product.get('key'):
+                            variant['sku'] = product['key'][3:], # remove 'sku'
 
-                    variants.append(variant)
+                        variants.append(variant)
+                    else:
+                        if j == 0:
+                            for variant in variants:
+                                variant['properties'][property] = product['value']
+                        else:
+                            for variant in copy.deepcopy(variants):
+                                variant2 = copy.deepcopy(variant)
+                                variant2['properties'][property] = product['value']
+                                if product['isavlbl'] == 'no':
+                                    variant2['in_stock'] == 'no'
+                                variants.append(variant2)
+                    j += 1
+                i += 1
 
         if variants:
             return variants
