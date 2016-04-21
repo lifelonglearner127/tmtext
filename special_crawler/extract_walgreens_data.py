@@ -250,7 +250,7 @@ class WalgreensScraper(Scraper):
         if not self.images:
             images = []
 
-            image_urls = self.tree_html.xpath('//img/@src')
+            image_urls = self.tree_html.xpath('(figure[contains(@class,"wag-vpd-product-images")]|//ul[@id="proImgThumbnail"])//img/@src')
 
             for image in image_urls:
                 if re.search('/([\d_]+).jpg', image):
