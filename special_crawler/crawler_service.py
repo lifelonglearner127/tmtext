@@ -82,6 +82,7 @@ from extract_forever21_data import Forever21Scraper
 from extract_officedepot_data import OfficeDepotScraper
 from extract_orientaltrading_data import OrientalTradingScraper
 from extract_walmartmx_data import WalmartMXScraper
+from extract_riteaid_data import RiteAidScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -176,6 +177,7 @@ SUPPORTED_SITES = {
                     "officedepot": OfficeDepotScraper,
                     "orientaltrading": OrientalTradingScraper,
                     "walmartmx": WalmartMXScraper,
+                    "riteaid": RiteAidScraper,
                     }
 
 # add logger
