@@ -206,11 +206,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             product.update({"locale": 'en_CA'})
             return product
 
-        if response.xpath('//span[@class="infoText"]/' \
-                          'text()').re('This product is not available'):
-            self.log('The product is not available', ERROR)
-            return product
-
         self._populate_from_js(response, product)
 
         # Send request to get if limited online status
