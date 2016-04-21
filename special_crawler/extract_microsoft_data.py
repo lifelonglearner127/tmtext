@@ -10,6 +10,7 @@ import time
 import yaml
 import requests
 from extract_data import Scraper
+from compare_images import compare_images
 
 
 class MicrosoftScraper(Scraper):
@@ -147,8 +148,7 @@ class MicrosoftScraper(Scraper):
 
     def _variants(self):
         variants = []
-
-        for li in self.tree_html.xpath('//ul[contains(@class,"option-list")]/li'):
+        for li in self.tree_html.xpath('//div[contains(@class,"variation-container")]/ul[contains(@class,"option-list")]/li'):
             v = { 'variant' : self._clean_text(li.xpath('a/span/text()')[0]) }
 
             if li.get('class') == 'active':
@@ -184,7 +184,11 @@ class MicrosoftScraper(Scraper):
             image_urls = []
 
             for url in url_list:
-                if "360_Overlay.png" not in url and "/Spin/" not in url and not re.search( '(VID|Video-)\d+', url) and not url in image_urls:
+                if "360_Overlay.png" not in url \
+                    and "/Spin/" not in url \
+                    and not re.search( '(VID|Video-)\d+', url) \
+                    and url not in image_urls:
+
                     image_urls.append(url)
 
             if image_urls:
