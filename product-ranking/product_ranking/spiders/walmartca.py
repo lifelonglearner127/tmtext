@@ -214,23 +214,25 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         self._populate_from_js(response, product)
 
         # Send request to get if limited online status
-        skus = [{"skuid": sku} for sku in response.meta['skus']]
-        request_data = [{
-            "productid": product_id,
-            "skus": [skus]
-        }]
+        try:
+            skus = [{"skuid": sku} for sku in response.meta['skus']]
+            request_data = [{
+                "productid": product_id,
+                "skus": [skus]
+            }]
         
-        request_data = json.dumps(request_data).replace(' ', '')
+            request_data = json.dumps(request_data).replace(' ', '')
 
-        reqs.append(FormRequest(
-            url="http://www.walmart.ca/ws/online/products",
-            formdata={"products": request_data},
-            callback=self._parse_online_status,
-            headers={
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        ))
-        
+            reqs.append(FormRequest(
+                url="http://www.walmart.ca/ws/online/products",
+                formdata={"products": request_data},
+                callback=self._parse_online_status,
+                headers={
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            ))
+        except KeyError:
+            pass
 
         self._populate_from_html(response, product)
 
