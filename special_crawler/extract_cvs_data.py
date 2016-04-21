@@ -341,7 +341,7 @@ class CVSScraper(Scraper):
         self._load_reviews()
 
         if self.reviews:
-            return self.reviews['AverageOverallRating']
+            return round(self.reviews['AverageOverallRating'], 1)
 
     def _review_count(self):
         self._load_reviews()
