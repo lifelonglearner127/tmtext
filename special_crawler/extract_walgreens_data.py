@@ -425,10 +425,11 @@ class WalgreensScraper(Scraper):
     def _price(self):
         self._load_price_info_and_inventory()
 
+        # Account for price format 2/$p2 or 1/$p1 (use p1)
         if self.price_info.get('salePrice'):
-            return self.price_info['salePrice']
+            return self.price_info['salePrice'].split('or')[-1].split('/')[-1]
         elif self.price_info.get('regularPrice'):
-            return self.price_info['regularPrice']
+            return self.price_info['regularPrice'].split('or')[-1].split('/')[-1]
 
     def _price_amount(self):
         if self._price():
