@@ -635,6 +635,19 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             buyer_reviews['rating_by_star'][int(_star)] = int(_reviews)
         return BuyerReviews(**buyer_reviews)
 
+    def _parse_marketplace_price_in_cart(self, response, offer_id):
+        """ Parses the price of marketplace, if it's displayed only "in cart" """
+        product_data = re.search('"product/data",\n(.*)', response.body, re.MULTILINE).group(1)
+        if product_data:
+            try:
+                product_data = json.loads(product_data)
+            except Exception as e:
+                self.log('Error while parsing product_data: %s' % str(e))
+        for json_seller in product_data.get('analyticsData', {}).get('productSellersMap', []):
+            offer_id_json = json_seller.get('offerId', None)
+            if offer_id_json and offer_id_json == offer_id:
+                return json_seller.get('price', None)
+
     def _parse_marketplaces_from_page_html(self, response, product):
         marketplaces = []
         for seller in response.xpath(
@@ -648,6 +661,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 price = is_empty(seller.xpath(
                     ".//strong[contains(@class, 'price')]/text()"
                 ).re(FLOATING_POINT_RGEX))
+            if not price:
+                # "in cart" price?
+                offer_id = seller.xpath('.//a[contains(@href, "offerId")]/@href').extract()
+                if offer_id:
+                    offer_id = re.search('offerId=([A-Za-z0-9]+)', offer_id[0])
+                    if offer_id:
+                        price = self._parse_marketplace_price_in_cart(response, offer_id.group(1))
 
             name = is_empty(seller.xpath(
                 "div/div/div[contains(@class, 'name')]/a/text() |"
