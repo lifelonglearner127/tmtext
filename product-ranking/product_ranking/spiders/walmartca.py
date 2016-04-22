@@ -228,6 +228,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             ))
         except KeyError:
             pass
+        if response.xpath('//span[@class="infoText"]/' \
+                          'text()').re('This product is not available'):
+            product['no_longer_available'] = True
 
         self._populate_from_html(response, product)
 
@@ -481,6 +484,18 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         # Set product url
         cond_set_value(product, 'url', response.url)
+        try:
+            if product['no_longer_available']:
+                image = response.xpath('//img[@itemprop="image"]/@src')
+                image = is_empty(image.extract())
+                image = image.replace('//','http://').replace('Large','Enlarge')
+                product['image_url'] = image
+
+                brand = response.xpath('//span[@itemprop="brand"]/text()')
+                brand = is_empty(brand.extract())
+                product['brand'] = brand
+        except KeyError:
+            pass
 
         # Get title from html
         title = is_empty(
@@ -635,7 +650,12 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         # Set if special price
         try:
             special_price = product_data['baseProdInfo']['price_store_was_price']
-            cond_set_value(product, 'special_pricing', True)
+            online_status = product_data['baseProdInfo']['online_status'][0]
+            
+            if online_status != u'90':
+                cond_set_value(product, 'special_pricing', True)
+            else:
+                cond_set_value(product, 'special_pricing', False)
         except (ValueError, KeyError):
             cond_set_value(product, 'special_pricing', False)
 
@@ -663,14 +683,16 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                         price = price.replace(',', '')
                         price = format(float(price), '.2f')
                     variant['price'] = price
-
+                    
                     color = is_empty(var.get('variantKey_en_Colour', []))
                     size = is_empty(var.get('variantKey_en_Size', []))
-                                       
+                    waist_size = is_empty(var.get('variantKey_en_Waist_size_-_inches'),[])                   
                     if size:
                         properties['size'] = size
                     if color:
                         properties['color'] = color
+                    if waist_size:
+                        properties['waist_size'] = waist_size
                     variant['properties'] = properties
                     
                     variants[sku_id] = variant
