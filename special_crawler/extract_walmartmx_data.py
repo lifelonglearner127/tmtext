@@ -23,6 +23,8 @@ class WalmartMXScraper(Scraper):
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
+        self.product_detail_json = None
+
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
@@ -45,6 +47,8 @@ class WalmartMXScraper(Scraper):
         except Exception:
             return True
 
+        self.product_detail_json = json.loads( re.match('[^{]*({.*})', self.load_page_from_url_with_number_of_retries('https://www.walmart.com.mx/WebControls/hlGetProductDetail.ashx?upc=' + self._product_id())).group(1))['c']['facets']['_' + self._product_id()]
+
         return False
 
     ##########################################
@@ -54,8 +58,7 @@ class WalmartMXScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        product_id =  self.tree_html.xpath("//*[@itemprop='mpn']/text()")
-        return product_id[0] if product_id else None
+        return re.match('.*_(\d+)$', self._url()).group(1)
 
     def _sku(self):
         return None
@@ -68,48 +71,43 @@ class WalmartMXScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//*[@id="lblTitle"]/text()')[0].strip()
+        return self.product_detail_json['n']
 
     def _product_title(self):
-        return self.tree_html.xpath('//*[@id="lblTitle"]/text()')[0].strip()
+        return self._product_name()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//*[@id="lblTitle"]/text()')[0].strip()
+        return self._product_name()
 
     def _upc(self):
         return self._product_id()
 
     def _model(self):
-        model = self.tree_html.xpath("//*[@itemprop='model']/@content")
-        return model[0] if model else None
+        for data in self.product_detail_json['data']:
+            if data['n'] == 'Modelo':
+                return data['v']
 
     def _features(self):
-        keys = self.tree_html.xpath('//*[@id="lblCarac"]/div/div[1]/text()')
-        values = self.tree_html.xpath('//*[@id="lblCarac"]/div/div[2]/text()')
-        features_paired = zip(keys,values)
-        return [ "%s: %s" % (x[0], x[1]) for x in  features_paired] if features_paired else None
+        features = []
+
+        for data in self.product_detail_json['data']:
+            features.append(data['n'] + ': ' + data['v'])
+
+        if features:
+            return features
 
     def _feature_count(self):
         features = self._features()
         return len(features) if features else 0
 
     def _description(self):
-        description = self.tree_html.xpath(
-            '//*[@itemprop="description"]/text()') or self.tree_html.xpath(
-                '//*[@id="productoDescripcionTexto"]//text()')
-        return ' '.join(map(lambda x: x.strip(), description))
+        return self.product_detail_json['d']
 
     def _long_description(self):
-        long_description = self.tree_html.xpath(
-            '//*[@itemprop="description"]//text()')
-        return ' '.join(map(lambda x: x.strip(), long_description)) or \
-            self._description()
+        return None
 
     def _ingredients(self):
-        ingredients = self.tree_html.xpath('//*[@id="lblIngredientes"]/text()')[0]
-        if u'Información no disponible' in ingredients:
-            return None
-        return map((lambda x: x.group(1).strip().capitalize()),re.finditer(r"(.*?\s*(\[.*?\]\s*)?(\(.*?\)\s*)?)(,|\.| y )", ingredients))
+        return None
 
     def _ingredients_count(self):
         ingredients = self._ingredients()
@@ -122,7 +120,7 @@ class WalmartMXScraper(Scraper):
         return None
 
     def _no_longer_available(self):
-        return False if self.tree_html.xpath('//link[@itemprop="availability" and @href="http://schema.org/InStock"]') else True
+        return not self.product_detail_json['av'] == '1'
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -135,20 +133,14 @@ class WalmartMXScraper(Scraper):
         # There is 1 to 3 images on this website.
         # It always will include 3 images URL on the page but sometimes URL 2 and 3 will not work and are hidden.
         # To see if the image is valid we will have to load it with, causing a penalty in execution time.
-        results = []
-        images = self.tree_html.xpath('//*[@itemprop="image"]/@src |'
-                                      '//*[@class="imgChange"]/@src |'
-                                      '//*[contains(@id,"imgDetalle")]/@src')
+        image_urls = ['https://www.walmart.com.mx/images/products/img_large/' + self._product_id() + 'l.jpg']
 
-        images = list(set(map((lambda x: urljoin(self.product_page_url, x)),
-                              images)))
+        for i in range(2,4):
+            image_url = 'https://www.walmart.com.mx/images/products/img_large/' + self._product_id() + '-' + str(i) + 'l.jpg'
+            if requests.get(image_url).headers['content-type'] == 'image/jpeg':
+                image_urls.append(image_url)
 
-        for image_url in images:
-            http_head_response = requests.head(image_url)
-            if http_head_response.status_code == 200:
-                results.append(image_url)
-
-        return results
+        return image_urls
 
     def _image_count(self):
         images = self._image_urls()
@@ -196,7 +188,7 @@ class WalmartMXScraper(Scraper):
         return htags_dict
 
     def _keywords(self):
-        keywords = self.tree_html.xpath('//meta[@name="keywords"]/@content')
+        keywords = self.tree_html.xpath('//meta[@name="Keywords"]/@content')
         return keywords[0].strip() if keywords else None
 
     ##########################################
@@ -205,7 +197,6 @@ class WalmartMXScraper(Scraper):
 
     def _average_review(self):
         return None
-
 
     def _review_count(self):
         return 0
@@ -223,18 +214,13 @@ class WalmartMXScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        try:
-            return self.tree_html.xpath("//*[@itemprop='price']/text()|"
-                                        "//*[@itemprop='price']/@content")[0]
-        except:
-            return None
+        return '$' + self.product_detail_json['p']
 
     def _price_amount(self):
-        return float(self.tree_html.xpath("//*[@itemprop='price']/text()|"
-                                    "//*[@itemprop='price']/@content")[0][1:])
+        return float(self.product_detail_json['p'])
 
     def _price_currency(self):
-        return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
+        return 'MXN'
 
     def _site_online(self):
         return 1
@@ -262,14 +248,13 @@ class WalmartMXScraper(Scraper):
     ##########################################    
 
     def _categories(self):
-        return self.tree_html.xpath("//*[@id='breadcrumb']//a/text()")
+        return self._url().split('/')[3:-1]
 
     def _category_name(self):
         return self._categories()[-1]
 
     def _brand(self):
-        manufacturer = self.tree_html.xpath("//*[@itemprop='manufacturer']/@content")
-        return manufacturer[0] if manufacturer else None
+        return None
 
     ##########################################
     ################ HELPER FUNCTIONS
