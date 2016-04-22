@@ -58,7 +58,7 @@ class WalmartMXScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        return re.match('.*_(\d+)$', self._url()).group(1)
+        return re.match('.*_(\w+)$', self._url()).group(1)
 
     def _sku(self):
         return None
