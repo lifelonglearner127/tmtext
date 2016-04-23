@@ -69,6 +69,39 @@ class ATTProductsSpider(BaseProductsSpider):
                    "DeviceDetailsActor/getDeviceProductDetails?" \
                    "includeAssociatedProducts=true&includePrices=true&skuId={sku}"
 
+    BUYER_REVIEWS_URL = "https://api.bazaarvoice.com/data/batch.json?passkey={pass_key}" \
+                        "&apiversion=5.5&displaycode=4773-en_us&resource.q0=products" \
+                        "&filter.q0=id%3Aeq%3A{sku}&stats.q0=questions%2Creviews" \
+                        "&filteredstats.q0=questions%2Creviews&filter_questions.q0" \
+                        "=contentlocale%3Aeq%3Aen_US&filter_answers.q0=contentlocale%3Aeq%3Aen_US" \
+                        "&filter_reviews.q0=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q0" \
+                        "=contentlocale%3Aeq%3Aen_US&resource.q1=questions&filter.q1" \
+                        "=productid%3Aeq%3A{sku}&filter.q1=contentlocale%3Aeq%3Aen_US" \
+                        "&sort.q1=lastapprovedanswersubmissiontime%3Adesc&stats.q1" \
+                        "=questions&filteredstats.q1=questions&include.q1=authors%2Cproducts%2Canswers" \
+                        "&filter_questions.q1=contentlocale%3Aeq%3Aen_US&filter_answers.q1" \
+                        "=contentlocale%3Aeq%3Aen_US&sort_answers.q1=submissiontime%3Adesc&limit.q1" \
+                        "=10&offset.q1=0&limit_answers.q1=10&resource.q2=reviews&filter.q2" \
+                        "=isratingsonly%3Aeq%3Afalse&filter.q2=productid%3Aeq%3A{sku}&filter.q2" \
+                        "=contentlocale%3Aeq%3Aen_US&sort.q2=relevancy%3Aa1&stats.q2" \
+                        "=reviews&filteredstats.q2=reviews&include.q2=authors%2Cproducts%2Ccomments" \
+                        "&filter_reviews.q2=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q2" \
+                        "=contentlocale%3Aeq%3Aen_US&filter_comments.q2=contentlocale%3Aeq%3Aen_US" \
+                        "&limit.q2=8&offset.q2=0&limit_comments.q2=3&resource.q3=reviews" \
+                        "&filter.q3=productid%3Aeq%3A{sku}&filter.q3=contentlocale%3Aeq%3Aen_US&limit.q3=1" \
+                        "&resource.q4=reviews&filter.q4=productid%3Aeq%3A{sku}&filter.q4" \
+                        "=isratingsonly%3Aeq%3Afalse&filter.q4=rating%3Agt%3A3&filter.q4" \
+                        "=totalpositivefeedbackcount%3Agte%3A3&filter.q4=contentlocale%3Aeq%3Aen_US&sort.q4" \
+                        "=totalpositivefeedbackcount%3Adesc&include.q4=authors%2Creviews%2Cproducts" \
+                        "&filter_reviews.q4=contentlocale%3Aeq%3Aen_US&limit.q4=1&resource.q5" \
+                        "=reviews&filter.q5=productid%3Aeq%3A{sku}&filter.q5=isratingsonly%3Aeq%3Afalse" \
+                        "&filter.q5=rating%3Alte%3A3&filter.q5=totalpositivefeedbackcount%3Agte%3A3" \
+                        "&filter.q5=contentlocale%3Aeq%3Aen_US&sort.q5=totalpositivefeedbackcount%3Adesc" \
+                        "&include.q5=authors%2Creviews%2Cproducts&filter_reviews.q5=contentlocale%3Aeq%3Aen_US" \
+                        "&limit.q5=1&callback=BV._internal.dataHandler0"
+
+    BUYER_REVIEWS_PASS = '9v8vw9jrx3krjtkp26homrdl8'
+
     current_page = 0
 
     def __init__(self, *args, **kwargs):
@@ -98,6 +131,8 @@ class ATTProductsSpider(BaseProductsSpider):
         sku = response.xpath('//meta[contains(@name, "sku")]/@CONTENT').extract()
         if not sku:
             sku = response.xpath('//meta[contains(@name, "sku")]/@content').extract()
+        if not sku:
+            sku = response.xpath('//div[contains(@id, "prodIdCartItem")]/@data-sku').extract()
         if sku:
             return sku[0]
 
@@ -113,6 +148,27 @@ class ATTProductsSpider(BaseProductsSpider):
     def _parse_ajax_variants(response):
         # TODO:
         pass
+
+    def _on_buyer_reviews_response(self, response):
+        prod = response.meta['product']
+        brs = json.loads(response.body.split('(', 1)[1][0:-1])
+        try:
+            average_rating = brs['BatchedResults']['q2']['Includes']['Products'].items()[0][1][
+                'FilteredReviewStatistics']['AverageOverallRating']
+        except (IndexError, KeyError):
+            prod['buyer_reviews'] = ZERO_REVIEWS_VALUE
+            yield prod
+            return
+        rating_by_star = brs['BatchedResults']['q2']['Includes']['Products'].items()[0][1][
+            'FilteredReviewStatistics']['RatingDistribution']
+        total_reviews = brs['BatchedResults']['q2']['Includes']['Products'].items()[0][1][
+            'FilteredReviewStatistics']['TotalReviewCount']
+        prod['buyer_reviews'] = BuyerReviews(
+            num_of_reviews=total_reviews,
+            average_rating=float(average_rating),
+            rating_by_star={v['RatingValue']: v['Count'] for v in rating_by_star}
+        )
+        yield prod
 
     def _parse_ajax_product_data(self, response):
         prod = response.meta['product']
@@ -131,7 +187,6 @@ class ATTProductsSpider(BaseProductsSpider):
         prod['is_in_store_only'] = not sel_v.get('retailAvailable', True)
         prod['title'] = sel_v['displayName']
         prod['sku'] = response.meta['selected_sku']
-
         yield prod
 
     def parse_product(self, response):
@@ -149,11 +204,17 @@ class ATTProductsSpider(BaseProductsSpider):
         new_meta['selected_sku'] = self._get_sku(response)
         if '{{' in product['title']:
             # we got a bloody AngularJS-driven page, parse it
-            return Request(
+            yield Request(
                 self.VARIANTS_URL.format(sku=self._get_sku(response)),
                 callback=self._parse_ajax_product_data,
                 meta=new_meta)
-        return product
+        yield Request(
+            self.BUYER_REVIEWS_URL.format(pass_key=self.BUYER_REVIEWS_PASS,
+                                          sku=self._get_sku(response)),
+            callback=self._on_buyer_reviews_response,
+            meta=new_meta
+        )
+        yield product
 
     def _scrape_next_results_page_link(self, response):
         self.current_page += 1
