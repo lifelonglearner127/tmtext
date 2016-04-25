@@ -25,6 +25,7 @@ from scrapy.utils.request import request_fingerprint
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
     RelatedProduct
+from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.spiders import cond_set_value
@@ -107,7 +108,7 @@ class ATTProductsSpider(BaseProductsSpider):
     current_page = 0
 
     def __init__(self, *args, **kwargs):
-        settings.overrides["DUPEFILTER_CLASS"] = 'product_ranking.spiders.att.CustomHashtagFilter'
+        #settings.overrides["DUPEFILTER_CLASS"] = 'product_ranking.spiders.att.CustomHashtagFilter'
         super(ATTProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
 
@@ -115,6 +116,7 @@ class ATTProductsSpider(BaseProductsSpider):
         serp_links = response.xpath(
             '//ul[contains(@class, "resultList")]//'
             'a[contains(@class, "resultLink")]/@href').extract()
+        serp_links = list(set(serp_links))  # make unique list
         #new_meta = response.meta
         #new_meta['product'] = SiteProductItem()
         for link in serp_links:
@@ -262,19 +264,52 @@ class ATTProductsSpider(BaseProductsSpider):
     def _on_related_product_response(self, response):
         rpl_type = response.meta['_rel_type']
         prod = response.meta['product']
-        import pdb; pdb.set_trace()
-
+        try:
+            resp_json = json.loads(response.body)
+        except:
+            resp_json = None
+        related_list = []
+        if resp_json:  # json response
+            for related in resp_json:
+                try:
+                    prod_url = related['productUrl']
+                except KeyError:
+                    continue
+                if prod_url.startswith('//'):
+                    prod_url = 'http:' + prod_url
+                related_list.append(RelatedProduct(related['name'], prod_url))
+        else:
+            for rel_prod in response.xpath('//td//div[contains(@class, "_result_title")]/a'):
+                related_list.append(RelatedProduct(rel_prod.xpath('./text()').extract()[0],
+                                                   rel_prod.xpath('./@href').extract()[0]))
+        if not 'related_products' in prod:
+            prod['related_products'] = {}
+        if rpl_type == 'bought':
+            prod['related_products']['buyers_also_bought'] = related_list
+        else:
+            prod['related_products']['related_products'] = related_list
+        yield prod
 
     def parse_product(self, response):
         product = response.meta['product']
         product['_subitem'] = True
         product['title'] = self._parse_title(response)
+        if product['title']:
+            product['brand'] = guess_brand_from_first_words(product['title'])
         cond_set(
             product, 'description',
-            response.xpath('//meta[contains(@property,"og:description")]/@content').extract())
+            response.xpath('//meta[contains(@name,"og:description")]/@content').extract())
+        if not product.get('description', None):
+            cond_set(
+                product, 'description',
+                response.xpath('//meta[contains(@property,"og:description")]/@content').extract())
         cond_set(
             product, 'image_url',
-            response.xpath('//meta[contains(@property,"og:image")]/@content').extract())
+            response.xpath('//meta[contains(@name,"og:image")]/@content').extract())
+        _price = response.xpath('//div[contains(@id,"prodIdCartItem")]/@data-nocommitmentprice').extract()
+        if _price:
+            product['price'] = Price(price=_price[0], priceCurrency='USD')
+        product['sku'] = self._get_sku(response)
         new_meta = response.meta
         new_meta['product'] = product
         new_meta['selected_sku'] = self._get_sku(response)
