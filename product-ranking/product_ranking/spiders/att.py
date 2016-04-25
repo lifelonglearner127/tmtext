@@ -12,7 +12,9 @@ import re
 from urllib import urlencode
 import urlparse
 import datetime
+import itertools
 import os
+import copy
 import time
 
 from scrapy import Request
@@ -65,9 +67,9 @@ class ATTProductsSpider(BaseProductsSpider):
                  "&sort=score%20desc&fqlist=&colPath=--sep--Shop--sep--All--sep--" \
                  "&gspg=0&dt=" + str(time.time())
 
-    VARIANTS_URL = "https://www.att.com/services/shopwireless/model/att/ecom/api/" \
-                   "DeviceDetailsActor/getDeviceProductDetails?" \
-                   "includeAssociatedProducts=true&includePrices=true&skuId={sku}"
+    VARIANTS_ANGULAR_URL = "https://www.att.com/services/shopwireless/model/att/ecom/api/" \
+                           "DeviceDetailsActor/getDeviceProductDetails?" \
+                           "includeAssociatedProducts=true&includePrices=true&skuId={sku}"
 
     BUYER_REVIEWS_URL = "https://api.bazaarvoice.com/data/batch.json?passkey={pass_key}" \
                         "&apiversion=5.5&displaycode=4773-en_us&resource.q0=products" \
@@ -145,9 +147,23 @@ class ATTProductsSpider(BaseProductsSpider):
             return title[0].strip()
 
     @staticmethod
-    def _parse_ajax_variants(response):
-        # TODO:
-        pass
+    def _parse_ajax_variants(response, variants):
+        prod = response.meta['product']
+        result_variants = []
+        for v in variants.values():
+            variant = copy.copy({})
+            variant['in_stock'] = not v.get('outOfStock', None)
+            variant['price'] = v.get('priceList', [{}])[0].get('listPrice', None)
+            variant['sku'] = v.get('skuId', None)
+            variant['selected'] = v.get('selectedSku', False)
+            props = copy.copy({})
+            if v.get('color', None):
+                props['color'] = v['color']
+            if v.get('size', None):
+                props['size'] = v['size']
+            variant['properties'] = props
+            result_variants.append(variant)
+        return result_variants
 
     def _on_buyer_reviews_response(self, response):
         prod = response.meta['product']
@@ -175,7 +191,7 @@ class ATTProductsSpider(BaseProductsSpider):
         v = json.loads(response.body)
         prod['brand'] = v['result']['methodReturnValue'].get('manufacturer', '')
         prod['variants'] = self._parse_ajax_variants(
-            v['result']['methodReturnValue'].get('skuItems', {}))
+            response, v['result']['methodReturnValue'].get('skuItems', {}))
         # get data of selected (default) variant
         sel_v = v['result']['methodReturnValue'].get('skuItems', {}).get(
             response.meta['selected_sku'])
@@ -188,6 +204,66 @@ class ATTProductsSpider(BaseProductsSpider):
         prod['title'] = sel_v['displayName']
         prod['sku'] = response.meta['selected_sku']
         yield prod
+
+    def _on_variants_response_url2(self, response):
+        variants = []
+        prod = response.meta['product']
+        variants_block = response.css('#pbDeviceVariants')
+        if variants_block:
+            colors = variants_block.css('#variantColor #colorInput a')
+            sizes = variants_block.css('#variantSize #sizeInput a')
+            if colors:
+                colors = [c.xpath('./@title').extract()[0] for c in colors]
+                colors = [{'color': c} for c in colors]
+            if sizes:
+                sizes = [s.xpath('./text()').extract()[0].strip() for s in sizes]
+                sizes = [{'size': s} for s in sizes]
+            if colors and sizes:
+                variants_combinations = list(itertools.product(sizes, colors))
+            elif colors:
+                variants_combinations = colors
+            else:
+                variants_combinations = sizes
+            for variant_combo in variants_combinations:
+                new_variant = copy.copy({})
+                new_variant['properties'] = variant_combo
+                variants.append(new_variant)
+            prod['variants'] = variants
+        if u'available online - web only' in response.body_as_unicode().lower():
+            prod['available_store'] = 0
+        yield prod
+
+    def _scrape_related_products_links(self, response, product):
+        # v1 links
+        rex_url = re.search(r'rexURL.*?"(.+)?";', response.body_as_unicode())
+        if rex_url:
+            rex_url = rex_url.group(1)
+            if rex_url.startswith('/'):
+                rex_url = 'http://att.com' + rex_url
+            yield rex_url, 'viewed'
+        # v2 links
+        viewed_url = re.search(
+            r'jQuery.ajax\(\{.*?url: "(.+)"\+deviceSkuId, .{5,200}ViewXViewedY',
+            response.body_as_unicode())
+        if viewed_url:
+            viewed_url = viewed_url.group(1)
+            if viewed_url.startswith('/'):
+                viewed_url = 'http://att.com' + viewed_url
+            yield viewed_url+self._get_sku(response), 'viewed'
+        bought_url = re.search(
+            r'jQuery.ajax\(\{.*?url: "(.+)"\+deviceSkuId, .{5,200}ViewXBoughtY',
+            response.body_as_unicode())
+        if bought_url:
+            bought_url = bought_url.group(1)
+            if bought_url.startswith('/'):
+                bought_url = 'http://att.com' + bought_url
+            yield bought_url+self._get_sku(response), 'bought'
+
+    def _on_related_product_response(self, response):
+        rpl_type = response.meta['_rel_type']
+        prod = response.meta['product']
+        import pdb; pdb.set_trace()
+
 
     def parse_product(self, response):
         product = response.meta['product']
@@ -205,7 +281,7 @@ class ATTProductsSpider(BaseProductsSpider):
         if '{{' in product['title']:
             # we got a bloody AngularJS-driven page, parse it
             yield Request(
-                self.VARIANTS_URL.format(sku=self._get_sku(response)),
+                self.VARIANTS_ANGULAR_URL.format(sku=self._get_sku(response)),
                 callback=self._parse_ajax_product_data,
                 meta=new_meta)
         yield Request(
@@ -214,6 +290,16 @@ class ATTProductsSpider(BaseProductsSpider):
             callback=self._on_buyer_reviews_response,
             meta=new_meta
         )
+        # construct variants url #2
+        variants_url2 = response.url.split('#', 1)[0].replace('.html', '.pricearea.xhr.html', 1)
+        variants_url2 += '?locale=en_US&skuId={sku}&pageType=accessoryDetails&_={time}'.format(
+            sku=self._get_sku(response), time=str(time.time()))
+        yield Request(
+            variants_url2, callback=self._on_variants_response_url2, meta=new_meta)
+        for rpl, rel_type in self._scrape_related_products_links(response, product):
+            new_meta['_rel_type'] = rel_type
+            yield Request(
+                rpl, callback=self._on_related_product_response, meta=new_meta)
         yield product
 
     def _scrape_next_results_page_link(self, response):
