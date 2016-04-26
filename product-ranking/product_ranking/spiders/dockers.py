@@ -20,7 +20,8 @@ from scrapy import Selector
 from spiders_shared_code.dockers_variants import DockersVariants
 from product_ranking.validators.dockers_validator import DockersValidatorSettings
 
-is_empty =lambda x,y=None: x[0] if x else y
+is_empty = lambda x,y=None: x[0] if x else y
+
 
 def is_num(s):
     try:
@@ -320,8 +321,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_title(self, response):
         title = response.xpath(
-            '//h1[contains(@class, "title")]/text()').extract()
-
+            '//meta[contains(@property,"og:title")]/@content').extract()
         return title
 
     def parse_data(self, response):
@@ -381,18 +381,15 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             for v in self.js_data['sku'].values():
                 upc = v['upc']
             upc = upc[-12:]
-
             if len(upc) < 12:
                 count = 12-len(upc)
                 upc = '0'*count+upc
-
             return upc
 
     def parse_sku(self, response):
         if self.js_data:
             for v in self.js_data['sku'].values():
                 skuid = v['skuid']
-
             return skuid
 
     def parse_price(self, response):
