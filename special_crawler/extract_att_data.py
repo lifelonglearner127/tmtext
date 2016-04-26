@@ -151,20 +151,6 @@ class ATTScraper(Scraper):
         self._load_product_json()
         return self.product_json['UPCs'][0]
 
-    def _features(self):
-        features = []
-
-        if self._get_product_xml():
-            for feature in self.product_xml.xpath('//feature/bubble'):
-                features.append(feature.xpath('title_en/text()')[0])
-
-        if features:
-            return ', '.join(features)
-
-    def _feature_count(self):
-        if self._features():
-            return len(self._features().split(','))
-
     def _model_meta(self):
         return None
 
@@ -490,8 +476,6 @@ class ATTScraper(Scraper):
         "title_seo" : _title_seo, \
         "model" : _model, \
         "upc" : _upc,\
-        "features" : _features, \
-        "feature_count" : _feature_count, \
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
