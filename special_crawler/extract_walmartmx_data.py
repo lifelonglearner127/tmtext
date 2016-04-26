@@ -30,7 +30,7 @@ class WalmartMXScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^https?://www\.walmart\.com\.mx/[\w\d/-]+[-_][\w\d]+/?(\?.*)?$", self.product_page_url)
+        m = re.match(r"^https?://www\.walmart\.com\.mx/[\w\d/-]+[-_][\w\d]+/?(\?.*)?$", self.product_page_url, re.U)
         return bool(m)
 
     def not_a_product(self):
