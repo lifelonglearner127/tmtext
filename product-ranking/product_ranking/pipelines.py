@@ -83,6 +83,16 @@ class WalmartRedirectedItemFieldReplace(object):
         return item
 
 
+class SetRankingField(object):
+    """ Explicitly set "ranking" field value (needed for
+        Amazon Shelf spider, temporary solution """
+    def process_item(self, item, spider):
+        if hasattr(spider, 'ranking_override'):
+            ranking_override = getattr(spider, 'ranking_override')
+            item['ranking'] = ranking_override
+        return item
+
+
 class SetMarketplaceSellerType(object):
     def process_item(self, item, spider):
         spider_main_domain = spider.allowed_domains[0]
@@ -123,7 +133,7 @@ class AddSearchTermInTitleFields(object):
 
     @staticmethod
     def process_item(item, spider):
-        if not item.has_key("is_single_result"):
+        if not "is_single_result" in item:
             AddSearchTermInTitleFields.add_search_term_in_title_fields(
                 item, item.get('search_term', ''))
 
@@ -266,7 +276,9 @@ class MergeSubItems(object):
         dispatcher.connect(self.spider_opened, signals.spider_opened)
         dispatcher.connect(self.spider_closed, signals.spider_closed)
         # use extra 'create_csv_output' option for debugging
-        self.create_csv_output = u'create_csv_output' in u''.join([a.decode('utf8') for a in sys.argv])
+        args_ = u''.join([a.decode('utf8') for a in sys.argv])
+        self.create_csv_output = (u'create_csv_output' in args_
+                                  or u'save_csv_output' in args_)
 
     @staticmethod
     def _get_output_filename(spider):

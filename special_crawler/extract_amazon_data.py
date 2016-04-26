@@ -149,11 +149,6 @@ class AmazonScraper(Scraper):
     def _status(self):
         return 'success'
 
-    def _exclude_javascript_from_description(self, description):
-        description = re.subn(r'<(script).*?</\1>(?s)', '', description)[0]
-        description = re.subn(r'<(style).*?</\1>(?s)', '', description)[0]
-        return description
-
     ##########################################
     ################ CONTAINER : PRODUCT_INFO
     ##########################################
@@ -372,6 +367,13 @@ class AmazonScraper(Scraper):
         if res != "" : return res
         return None
 
+    def _get_variant_images(self):
+        result = []
+        for img in self.tree_html.xpath('//*[contains(@id, "altImages")]'
+                                        '//img[contains(@src, "/")]/@src'):
+            result.append(re.sub(r'\._[A-Z\d,_]{1,50}_\.jpg', '.jpg', img))
+        return result
+
     def _variants(self):
         if self.is_variants_checked:
             return self.variants
@@ -379,6 +381,12 @@ class AmazonScraper(Scraper):
         self.is_variants_checked = True
 
         self.variants = self.av._variants()
+
+        if self.variants:
+            # find default ("selected") variant and insert its images
+            for variant in self.variants:
+                if variant.get('selected', None):
+                    variant['associated_images'] = self._get_variant_images()
 
         return self.variants
 
@@ -526,12 +534,13 @@ class AmazonScraper(Scraper):
             offset_index_2 = image_file_name.rfind(".")
 
             if offset_index_1 == offset_index_2:
-                origin_image_urls.append(url)
+                if not url in origin_image_urls:
+                    origin_image_urls.append(url)
             else:
                 image_file_name = image_file_name[:offset_index_1] + image_file_name[offset_index_2:]
-                origin_image_urls.append(url[:url.rfind("/")] + "/" + image_file_name)
-
-        origin_image_urls = list(set(origin_image_urls))
+                url = url[:url.rfind("/")] + "/" + image_file_name
+                if not url in origin_image_urls:
+                    origin_image_urls.append(url)
 
         if not origin_image_urls:
             return None

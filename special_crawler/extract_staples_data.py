@@ -25,19 +25,82 @@ class StaplesScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www\.staples\.com/([a-zA-Z0-9\-/]+)/product_([a-zA-Z0-9]+)"
 
-    reviews_tree = None
-    max_score = None
-    min_score = None
-    review_count = None
-    average_review = None
-    reviews = None
-    image_urls = None
-    image_count = None
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        # whether product has any webcollage media
+        self.review_json = None
+        self.price_json = None
+
+        self.reviews_tree = None
+        self.max_score = None
+        self.min_score = None
+        self.review_count = 0
+        self.average_review = None
+        self.reviews = None
+        self.feature_count = None
+        self.features = None
+        self.video_urls = None
+        self.video_count = None
+        self.pdf_urls = None
+        self.pdf_count = None
+        self.is_review_checked = False
+        self.product_info_json = None
+        self.is_product_info_json_checked = False
+        self.variant_info_jsons = None
+        self.is_variant_info_jsons_checked = False
 
     def check_url_format(self):
         # for ex: http://www.staples.com/Epson-WorkForce-Pro-WF-4630-Color-Inkjet-All-in-One-Printer/product_242602?cmArea=home_box1
         m = re.match(r"^http://www\.staples\.com/([a-zA-Z0-9\-/]+)/product_([a-zA-Z0-9]+)", self.product_page_url)
         return not not m
+
+    def _extract_product_info_json(self):
+        if self.is_product_info_json_checked:
+            return self.product_info_json
+
+        self.is_product_info_json_checked = True
+
+        try:
+            selected_sku = self._find_between(html.tostring(self.tree_html), 'var selectedSKU = "', '";')
+            product_info_json = self._find_between(html.tostring(self.tree_html), 'products["{0}"] ='.format(selected_sku), ';products["StaplesUSCAS/en-US/1/')
+
+            if not product_info_json:
+                product_info_json = self._find_between(html.tostring(self.tree_html), 'products["{0}"] ='.format(selected_sku), ";\n")
+
+            product_info_json = json.loads(product_info_json)
+        except:
+            product_info_json = None
+
+        self.product_info_json = product_info_json
+
+    def _extract_variant_info_jsons(self):
+        if self.is_variant_info_jsons_checked:
+            return self.variant_info_jsons
+
+        self.is_variant_info_jsons_checked = True
+
+        variant_info_jsons = []
+
+        try:
+            parent_sku = self._find_between(html.tostring(self.tree_html), 'parentSKU = "', '";')
+
+            skus = re.findall('products\["([^"]+)"\]', html.tostring(self.tree_html))
+
+            for sku in skus:
+                if sku == parent_sku:
+                    continue
+
+                variant_info_json = self._find_between(html.tostring(self.tree_html), 'products["{0}"] ='.format(sku), ';products["StaplesUSCAS/en-US/1/')
+
+                if not variant_info_json:
+                    variant_info_json = self._find_between(html.tostring(self.tree_html), 'products["{0}"] ='.format(sku), ";\n")
+
+                variant_info_jsons.append( json.loads(variant_info_json))
+        except:
+            variant_info_jsons = None
+
+        self.variant_info_jsons = variant_info_jsons
 
     def not_a_product(self):
         """Checks if current page is not a valid product page
@@ -47,10 +110,13 @@ class StaplesScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        rows = self.tree_html.xpath("//img[@id='largeProductImage']")
-        if len(rows) > 0:
-            return False
-        return True
+        if not self.tree_html.xpath("//meta[@property='og:type' and @content='product']"):
+            return True
+
+        self._extract_product_info_json()
+        self._extract_variant_info_jsons()
+
+        return False
 
     ##########################################
     ############### CONTAINER : NONE
@@ -60,90 +126,108 @@ class StaplesScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        return None
+        return re.search('_(\w+)$', self.product_page_url).group(1)
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//div[contains(@class,'productDetails')]/h1/text()")[0].strip()
+        return self.tree_html.xpath("//h1[@ng-bind-html]/text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath("//div[contains(@class,'productDetails')]/h1/text()")[0].strip()
+        return self.tree_html.xpath("//h1[@ng-bind-html]/text()")[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath("//title//text()")[0].strip()
+        return self.tree_html.xpath("//h1[@ng-bind-html]/text()")[0].strip()
     
     def _model(self):
-        txt = self.tree_html.xpath("//p[@class='itemModel']//text()")[0].strip()
-        model = re.findall(r"Model\: ([A-Za-z0-9]+)", txt)[0].strip()
-        return model
+        return self.product_info_json["metadata"]["mfpartnumber"]
 
     def _upc(self):
-        txt = self.tree_html.xpath("//p[@class='itemModel']//text()")[0].strip()
-        upc = re.findall(r"Item\: ([A-Za-z0-9]+)", txt)[0].strip()
-        return upc
+        return self.product_info_json["metadata"]["upc_code"]
 
     def _features(self):
-        rows = self.tree_html.xpath("//table[@id='tableSpecifications']//tr")
-        line_txts = []
+        features = []
+        rows = self.tree_html.xpath("//div[@id='specificationsContent']//table[@class='stp--cell prod-specifications']//tr")
+
         for row in rows:
-            txt = row.xpath(".//td//text()")
-            txt = ": ".join(txt)
-            if len(txt.strip()) > 0:
-                line_txts.append(txt)
-        return line_txts
+            feature_info = row.xpath(".//td//text()")
+            if feature_info == ['[~spec.attribname~]', '[~spec.attrvalue~]']:
+                continue
+            feature_text = ": ".join(feature_info)
+            features.append(feature_text)
+
+        if features:
+            return features
+
+        return None
 
     def _feature_count(self):
-        return len(self._features())
+        features = self._features()
+
+        if features:
+            return len(features)
+
+        return 0
 
     def _model_meta(self):
         return None
 
     def _description(self):
-        description = self._description_helper()
-        if description is None or len(description) < 1:
-            return self._long_description_helper()
-        return description
+        description_block = self.tree_html.xpath("//ul[@class='stp--bulleted-list' and @ng-hide='listDesc']")
 
-    def _description_helper(self):
-        line_txts = self.tree_html.xpath("//div[contains(@class,'productDetails')]//div[@class='copyBullets']//text()")
-        line_txts = [self._clean_text(r) for r in line_txts if len(self._clean_text(r)) > 1 and self._clean_text(r) != 'See more details']
-        description = "\n".join(line_txts)
-        if len(description) < 1:
-            return None
-        return description
+        # If the description exists and has some content
+        if description_block and description_block[0].text_content().strip():
+            desc_html = html.tostring(description_block[0]).replace(" class=\"stp--bulleted-list\" ng-hide=\"listDesc\"", "")
+
+            return self._clean_text(self._exclude_javascript_from_description(desc_html))
+
+        return None
 
     def _long_description(self):
-        description = self._description_helper()
-        if description is None or len(description) < 1:
-            return None
-        return self._long_description_helper()
+        paragraph = ""
+        headliner = ""
+        bullet_list = ""
+        expanded_descr = ""
 
-    def _long_description_helper(self):
-        line_txts = self.tree_html.xpath("//div[@id='subdesc_content']//text()")
-        line_txts = [self._clean_text(r) for r in line_txts if len(self._clean_text(r)) > 1 and self._clean_text(r) != 'PRODUCT DETAILS' and self._clean_text(r) != 'Compare with similar items' and self._clean_text(r) != u'Would you like to give' and self._clean_text(r) != u'on product content, images, or tell us about a lower price?' and self._clean_text(r) != 'feedback']
-        description = "\n".join(line_txts)
-        return description
-        # line_txts = []
-        # try:
-        #     line_txts += self.tree_html.xpath("//div[@id='subdesc_content']//h2//text()")
-        # except IndexError:
-        #     pass
-        #
-        # try:
-        #     line_txts += self.tree_html.xpath("//div[@id='subdesc_content']//p[@class='skuShortDescription']//text()")
-        # except IndexError:
-        #     pass
-        #
-        # try:
-        #     rows = self.tree_html.xpath("//div[@id='subdesc_content']//ul//text()")
-        #     rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 1]
-        #     line_txts += rows
-        # except IndexError:
-        #     pass
-        # description = "\n".join(line_txts)
-        # return description
+        description_info_list = self.product_info_json["description"]["details"]
+
+        for description_info in description_info_list:
+            if description_info["description_type"]["name"] == 'Paragraph':
+                for t in description_info["text"]:
+                    paragraph += (t["value"] + "\n")
+
+            if description_info["description_type"]["name"] == 'Bullets':
+                for t in description_info["text"]:
+                    bullet_list += (t["value"] + "\n")
+
+            if description_info["description_type"]["name"] == 'Headliner':
+                for t in description_info["text"]:
+                    headliner += (t["value"] + "\n")
+
+            if description_info["description_type"]["name"] == 'Expanded Descr':
+                for t in description_info["text"]:
+                    expanded_descr += (t["value"] + "\n")
+
+        long_description = headliner + paragraph + bullet_list + expanded_descr
+
+        if long_description:
+            return long_description
+
+        return None
+
+    def _variants(self):
+        vrs = []
+
+        for variant in self.variant_info_jsons:
+            vr = {}
+            vr['name'] = variant['metadata']['name']
+            vrs.append(vr)
+
+        if vrs:
+            return vrs
+
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -153,31 +237,32 @@ class StaplesScraper(Scraper):
         return None
 
     def _image_urls(self):
-        if self.image_count is not None:
-            return self.image_urls
-        self.image_count = 0
-        image_url = self.tree_html.xpath("//div[@class='imageCarousel']//li//img/@src")
-        if len(image_url) < 1:
-            return None
-        if len(image_url) == 1:
-            try:
-                if self._no_image(image_url[0]):
-                    return None
-            except Exception, e:
-                print "WARNING: ", e.message
-        self.image_urls = image_url
-        self.image_count = len(self.image_urls)
-        return image_url
+        if self.product_info_json["description"]["media"]["images"].get("enlarged"):
+            image_urls = self.product_info_json["description"]["media"]["images"]["enlarged"]
+            image_urls = [image_url["path"] + "_sc7" for image_url in image_urls]
+        else:
+            image_urls = self.product_info_json["description"]["media"]["images"]["standard"]
+            image_urls = [image_url["path"].split('?')[0] for image_url in image_urls]
+
+        if image_urls:
+            return image_urls
+
+        return None
 
     def _image_count(self):
-        if self.image_count is None:
-            self._image_urls()
-        return self.image_count
+        images = self._image_urls()
+
+        if images:
+            return len(images)
+
+        return 0
 
     def _video_urls(self):
         return None
+
     def _video_count(self):
         urls = self._video_urls()
+
         if urls:
             return len(urls)
         return 0
@@ -185,24 +270,31 @@ class StaplesScraper(Scraper):
     def _pdf_urls(self):
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
         pdf_hrefs = []
+
         for pdf in pdfs:
             pdf_url_txts = [self._clean_text(r) for r in pdf.xpath(".//text()") if len(self._clean_text(r)) > 0]
             if len(pdf_url_txts) > 0:
                 pdf_hrefs.append(pdf.attrib['href'])
+
         if len(pdf_hrefs) < 1:
             return None
+
         return pdf_hrefs
 
     def _pdf_count(self):
         urls = self._pdf_urls()
-        if urls is not None:
+
+        if urls:
             return len(urls)
+
         return 0
 
     def _webcollage(self):
         atags = self.tree_html.xpath("//a[contains(@href, 'webcollage.net/')]")
+
         if len(atags) > 0:
             return 1
+
         return 0
 
     # extract htags (h1, h2) from its product product page tree
@@ -222,33 +314,63 @@ class StaplesScraper(Scraper):
     ##########################################
     #populate the reviews_tree variable for use by other functions
     def _load_reviews(self):
-        if not self.max_score or not self.min_score:
-            rows = self.tree_html.xpath("//p[@class='pr-histogram-count']//text()")
-            self.reviews = []
-            idx = 5
-            rv_scores = []
-            for row in rows:
-                try:
-                    cnt = int(re.findall(r"[0-9]+", row)[0].strip())
-                except IndexError:
-                    cnt = 0
-                if cnt > 0:
-                    self.reviews.append([idx, cnt])
-                    rv_scores.append(idx)
-                idx -= 1
-                if idx < 1:
-                    break
-            self.max_score = max(rv_scores)
-            self.min_score = min(rv_scores)
+        if self.is_review_checked:
+            return self.reviews
+
+        self.is_review_checked = True
+
+        if self.product_info_json["review"]["count"] == 0:
+            return None
+
+        app_key = "LEb2xjVQAMYaTVrGjJ9vDjkj0wRSmKlIf7sdKxqy"
+        widget_version = "2015-08-19_11-39-31"
+        pid = self.product_info_json["metadata"]["partnumber"]
+        load_form_encoded_string = 'methods=' + urllib.quote('[{"method":"main_widget","params":{"pid":"%s"}}]' % (pid)) + '&app_key=' + app_key + '&is_mobile=false&widget_version=%s' % (widget_version)
+
+        review_page_html = requests.post('http://staticw2.yotpo.com/batch', data=load_form_encoded_string).text
+        review_page_html = json.loads(review_page_html)[0]["result"]
+        review_page_html = html.fromstring(review_page_html)
+
+        review_info_by_rating = review_page_html.xpath("//span[contains(@class, 'yotpo-sum-reviews text-xs font-color-primary')]")
+        reviews = []
+        max_score = min_score = None
+        review_count = 0
+
+        for review in review_info_by_rating:
+            if not max_score and int(review.xpath("./text()")[0][1:-1]) > 0:
+                max_score = int(review.xpath("./@data-score-distribution")[0])
+                min_score = int(review.xpath("./@data-score-distribution")[0])
+
+            if min_score and int(review.xpath("./text()")[0][1:-1]) > 0 and min_score > int(review.xpath("./@data-score-distribution")[0]):
+                min_score = int(review.xpath("./@data-score-distribution")[0])
+
+            reviews.append([int(review.xpath("./@data-score-distribution")[0]), int(review.xpath("./text()")[0][1:-1])])
+            review_count += int(review.xpath("./text()")[0][1:-1])
+
+        if reviews:
+            self.reviews = reviews
+            self.review_count = review_count
+            self.max_score = max_score
+            self.min_score = min_score
+            #self.average_review = float(self.product_info_json["review"]["rating"])
+
+            return self.reviews
+
+        return None
 
     def _average_review(self):
-        avg_review = self.tree_html.xpath("//span[contains(@class,'average')]//text()")[0].strip()
-        avg_review = round(float(avg_review), 2)
-        return avg_review
+        yotpo_review = self.load_page_from_url_with_number_of_retries('http://www.staples.com/asgard-node/v1/nad/staplesus/yotporeview/' + self._product_id())
+
+        average_review = re.search( 'yotpo-star-digits&amp;quot;&amp;gt; ([\d\.]+)', yotpo_review)
+
+        if average_review:
+            return float( average_review.group(1))
+
+        return None
 
     def _review_count(self):
-        review_cnt = self.tree_html.xpath("//span[@class='count']//text()")[0].strip()
-        return int(review_cnt)
+        self._load_reviews()
+        return self.review_count
 
     def _max_review(self):
         self._load_reviews()
@@ -266,54 +388,21 @@ class StaplesScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        try:
-            price = self.tree_html.xpath("//dd[@class='finalPrice']//text()")[0].strip()
-            return price
-        except IndexError:
-            pass
-        try:
-            price = self.tree_html.xpath("//span[@class='finalPrice']//text()")[0].strip()
-            price = price.replace("*", "")
-        except IndexError:
-            pass
-
+        price = self.tree_html.xpath("//span[@itemprop='price' and @class='SEOFinalPrice']/text()")[0].strip()
         return price
 
     def _price_amount(self):
-        price = self._price()
-        price = price.replace(",", "")
-        price_amount = re.findall(r"[\d\.]+", price)[0]
-        return float(price_amount)
+        return float(self._price()[1:])
 
     def _price_currency(self):
-        price = self._price()
-        price = price.replace(",", "")
-        price_amount = re.findall(r"[\d\.]+", price)[0]
-        price_currency = price.replace(price_amount, "")
-        if price_currency == "$":
-            return "USD"
-        return price_currency
+        return "USD"
 
     def _in_stores(self):
         '''in_stores - the item can be ordered online for pickup in a physical store
         or it can not be ordered online at all and can only be purchased in a local store,
         irrespective of availability - binary
         '''
-        rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
-        if "Visit your local Club for pricing & availability" in rows:
-            return 1
-        rows = self.tree_html.xpath("//p[@id='availableInStore']//text()")
-        for row in rows:
-            if "Available In-Store Only" in row:
-                return 1
-        rows = self.tree_html.xpath("//div[@class='checkmarks']//ul/li")
-        for row in rows:
-            txt = " ".join(row.xpath(".//text()"))
-            if "FREE Shipping to store" in txt:
-                return 1
-            if "Check inventory in other stores" in txt:
-                return 1
-        return 0
+        return 1
 
     def _marketplace(self):
         '''marketplace: the product is sold by a third party and the site is just establishing the connection
@@ -342,65 +431,53 @@ class StaplesScraper(Scraper):
 
     def _site_online(self):
         # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
-        rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
-        if "Unavailable online" in rows:
-            return 0
-        rows = self.tree_html.xpath("//p[@id='availableInStore']//text()")
-        for row in rows:
-            if "Available In-Store Only" in row:
-                return 0
         return 1
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 0:
             return None
-        rows = self.tree_html.xpath("//div[contains(@class,'biggraybtn')]//text()")
-        if "Out of stock online" in rows:
+
+        sku = re.search('selectedSKU = "([^"]+)"', html.tostring(self.tree_html)).group(1)
+
+        pricing = self.load_page_from_url_with_number_of_retries('http://www.staples.com/asgard-node/v1/nad/staplesus/price/%s?offer_flag=true&warranty_flag=true&coming_soon=0&price_in_cart=0&productDocKey=%s' % (self._product_id(), sku))
+
+        if json.loads(pricing)['cartAction'] == 'currentlyOutOfStock':
             return 1
-        rows = self.tree_html.xpath("//p[contains(@class,'stockMessage')]//text()")
-        rows = [r for r in rows if "Currently Out of Stock" in r]
-        if len(rows):
-            return 1
+
         return 0
 
     def _in_stores_out_of_stock(self):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
-        return None
+        if self._in_stores() == 0:
+            return None
+
+        return self.product_info_json["metadata"]["outofstock_flag"]
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        all = self.tree_html.xpath("//div[contains(@class, 'breadcrumbs')]//a//text()")
-        out = [self._clean_text(r) for r in all]
-        if len(out) < 1:
-            return None
-        return out
+        categories = self.tree_html.xpath("//li[@typeof='v:Breadcrumb']/a/text()")[1:]
+        categories = [category.strip() for category in categories]
+
+        if categories:
+            return categories
+
+        return None
 
     def _category_name(self):
         return self._categories()[-1]
 
     def _brand(self):
-        brand = None
-        trs = self.tree_html.xpath("//table[@class='data-table']//tr")
-        for tr in trs:
-            try:
-                head_txt = tr.xpath("//th//text()")[0].strip()
-                if head_txt == "Brand":
-                    brand = tr.xpath("//td//text()")[0].strip()
-            except IndexError:
-                pass
-        return brand
+        return None
 
     ##########################################
     ################ HELPER FUNCTIONS
     ##########################################
     # clean text inside html tags - remove html entities, trim spaces
-    def _clean_text(self, text):
-        return re.sub("&nbsp;", " ", text).strip()
 
     ##########################################
     ################ RETURN TYPES
@@ -421,6 +498,7 @@ class StaplesScraper(Scraper):
         "description" : _description, \
         "model" : _model, \
         "long_description" : _long_description, \
+        "variants" : _variants, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
@@ -467,4 +545,3 @@ class StaplesScraper(Scraper):
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
     }
-

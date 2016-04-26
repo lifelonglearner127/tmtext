@@ -7,10 +7,8 @@ import itertools
 import urllib
 import math
 from scrapy.selector import Selector
-
 from scrapy.http import FormRequest, Request
 from scrapy.log import ERROR, INFO, WARNING
-
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
@@ -22,9 +20,13 @@ is_empty = lambda x, y=None: x[0] if x else y
 
 
 class NeweggProductSpider(BaseProductsSpider):
-
     name = 'newegg_products'
     allowed_domains = ["www.newegg.com"]
+
+    TOTAL_MATCHES = None
+    CURRENT_NAO = 0
+    PAGINATE_BY = 30
+    TOTAL_PAGE = 0
 
     SEARCH_URL = "http://www.newegg.com/Product/ProductList.aspx" \
                  "?Submit=ENE&DEPA=0&Order=BESTMATCH" \
@@ -43,11 +45,15 @@ class NeweggProductSpider(BaseProductsSpider):
                        '&parentItem={seller_id}' \
                        '&action=Biz.Product.ItemRelationInfoManager.JsonpCallBack'
 
+    PRICE_IN_CARD_URL = 'http://www.newegg.com/Product/MappingPrice2012.aspx?Item={SellerItem}'
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
-        self.index = 0
-
+        self.index = 1
+        self.error_pagin = 0
+        self.pages_pagin = []
+        self.count_pagin_page = 0
+        self.count_pagin_links = 0
         super(NeweggProductSpider, self).__init__(*args, **kwargs)
 
     def parse_product(self, response):
@@ -58,7 +64,8 @@ class NeweggProductSpider(BaseProductsSpider):
         product_id = is_empty(response.xpath('//script[contains(text(), "product_id")]').re(r"product_id:\['(.*)']"))
         meta['product_id'] = product_id
 
-        seller_list_id = response.xpath('//table[@class="gridSellerList"]/tbody/script[2]/text()').re(r'SellerList\["(\d+\-?\d+\-?\d+)"]')
+        seller_list_id = response.xpath('//table[@class="gridSellerList"]/tbody/script[2]/text()').re(
+            r'SellerList\["(\d+\-?\d+\-?\d+)"]')
         if seller_list_id:
             meta['seller_id'] = seller_list_id[-1]
 
@@ -77,7 +84,7 @@ class NeweggProductSpider(BaseProductsSpider):
         model = self.parse_model(response)
         cond_set_value(product, 'model', model)
 
-       # Parse price
+        # Parse price
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
@@ -116,7 +123,7 @@ class NeweggProductSpider(BaseProductsSpider):
 
         return product
 
-    def remove_dublicate(self, full_list):
+    def remove_duplicate(self, full_list):
         new_list = []
         for item in full_list:
             if not item in new_list:
@@ -179,6 +186,8 @@ class NeweggProductSpider(BaseProductsSpider):
                 variant['price'] = price
             else:
                 variant['price'] = None
+            if str(variant.get('price', '')) == '999999':
+                variant['price'] = None  # price available in cart only
             variant['in_stock'] = in_stock
             variant['properties'] = properties
             variants.append(variant)
@@ -200,13 +209,15 @@ class NeweggProductSpider(BaseProductsSpider):
 
         sellers_noline = list(set(marketplace.xpath("//tr[contains(@class, featured)]/td/img/@alt").extract()))
         sellers_line = marketplace.xpath("//tr/td[@class='seller']/a[1]/@title").extract()
-        new_sellers_line = self.remove_dublicate(sellers_line)
+        new_sellers_line = self.remove_duplicate(sellers_line)
         sellers = sellers_noline + new_sellers_line
-        price_int = marketplace.xpath("//ul[contains(@class, 'price')]/li[@class='price-current ']/strong/text()").extract()
-        price_sup = marketplace.xpath("//ul[contains(@class, 'price')]/li[@class='price-current ']/sup/text()").extract()
+        price_int = marketplace.xpath(
+            "//ul[contains(@class, 'price')]/li[@class='price-current ']/strong/text()").extract()
+        price_sup = marketplace.xpath(
+            "//ul[contains(@class, 'price')]/li[@class='price-current ']/sup/text()").extract()
         for i, item in enumerate(sellers):
             try:
-                price = price_int[i]+price_sup[i]
+                price = price_int[i] + price_sup[i]
             except:
                 price = 0.0
             if price:
@@ -242,48 +253,51 @@ class NeweggProductSpider(BaseProductsSpider):
             'customers_also_bought': [],
             'recommended': []
         }
-        data = response.body_as_unicode().replace('\\','')
+        data = response.body_as_unicode().replace('\\', '')
         if data:
             sel = Selector(text=data)
 
-        # Customers Also Bought
-        customers_products = sel.xpath('//div[contains(@class, "descSideSell")]')
-        for item in customers_products:
-            title = is_empty(item.xpath('a/text()').extract())
-            url = is_empty(item.xpath('a/@href').extract())
-            if title and url:
-                prod = RelatedProduct(url=url, title=title)
-                related_products['customers_also_bought'].append(prod)
+            # Customers Also Bought
+            customers_products = sel.xpath('//div[contains(@class, "descSideSell")]')
+            for item in customers_products:
+                title = is_empty(item.xpath('a/text()').extract())
+                url = is_empty(item.xpath('a/@href').extract())
+                if title and url:
+                    prod = RelatedProduct(url=url, title=title)
+                    related_products['customers_also_bought'].append(prod)
 
-        customers_products = sel.xpath('//div[contains(@class,"imgSideSell")]/img')
-        for item in customers_products:
-            title = is_empty(item.xpath('@title').extract())
-            url = is_empty(item.xpath('@src').extract())
-            if title and url:
-                prod = RelatedProduct(url=url, title=title)
-                related_products['customers_also_bought'].append(prod)
+            customers_products = sel.xpath('//div[contains(@class,"imgSideSell")]/img')
+            for item in customers_products:
+                title = is_empty(item.xpath('@title').extract())
+                url = is_empty(item.xpath('@src').extract())
+                if title and url:
+                    prod = RelatedProduct(url=url, title=title)
+                    related_products['customers_also_bought'].append(prod)
 
-        # Recommended
-        recommended_products = sel.xpath('//div[contains(@class, "wrap_description")]')
-        for item in recommended_products:
-            title = is_empty(item.xpath('a/span/text()').extract())
-            url = is_empty(item.xpath('a/@href').extract())
-            if title and url:
-                prod = RelatedProduct(url=url, title=title)
-                related_products['recommended'].append(prod)
+            # Recommended
+            recommended_products = sel.xpath('//div[contains(@class, "wrap_description")]')
+            for item in recommended_products:
+                title = is_empty(item.xpath('a/span/text()').extract())
+                url = is_empty(item.xpath('a/@href').extract())
+                if title and url:
+                    prod = RelatedProduct(url=url, title=title)
+                    related_products['recommended'].append(prod)
 
-        if related_products:
-            product['related_products'] = related_products
+            if related_products:
+                product['related_products'] = related_products
 
         return product
 
     def parse_price(self, response):
-        price = is_empty(response.xpath('//script[contains(text(), "product_instock")]/text()').re(r"product_sale_price:\['(\d+\.?\d+)']"))
+        price = is_empty(response.xpath('//script[contains(text(), "product_instock")]/text()').re(
+            r"product_sale_price:\['(\d+\.?\d+)']"))
 
-        currency = is_empty(response.xpath('//script[contains(text(), "product_instock")]/text()').re(r"site_currency:'(\w+)'"))
+        currency = is_empty(
+            response.xpath('//script[contains(text(), "product_instock")]/text()').re(r"site_currency:'(\w+)'"))
 
         if not price:
-            price = is_empty(response.xpath('//script[contains(text(), "product_instock")]/text()').re(r"product_unit_price:\['(\d+\.?\d+)']"))
+            price = is_empty(response.xpath('//script[contains(text(), "product_instock")]/text()').re(
+                r"product_unit_price:\['(\d+\.?\d+)']"))
         if price and currency:
             price = Price(price=price, priceCurrency=currency)
         else:
@@ -303,12 +317,12 @@ class NeweggProductSpider(BaseProductsSpider):
             for item in res:
                 rating_by_star[item[0]] = item[1]
         if rating_by_star:
-            s = n =0
+            s = n = 0
             for k, v in rating_by_star.iteritems():
                 s += int(k) * int(v)
                 n += int(v)
             if n > 0:
-                average_rating = round(s/float(n),2)
+                average_rating = round(s / float(n), 2)
         try:
             buyer_reviws = {'num_of_reviews': int(num_of_review),
                             'average_rating': float(average_rating),
@@ -319,7 +333,8 @@ class NeweggProductSpider(BaseProductsSpider):
         return buyer_reviws
 
     def parse_stock_status(self, response):
-        stock_status = response.xpath('//script[contains(text(), "product_instock")]/text()').re(r"product_instock:\['(\d+)']")
+        stock_status = response.xpath('//script[contains(text(), "product_instock")]/text()').re(
+            r"product_instock:\['(\d+)']")
 
         if stock_status[0] == '1':
             in_stock = True
@@ -327,7 +342,6 @@ class NeweggProductSpider(BaseProductsSpider):
             in_stock = False
 
         return in_stock
-
 
     def parse_description(self, response):
         description = response.xpath('//div[@class="grpBullet"]').extract()
@@ -364,12 +378,10 @@ class NeweggProductSpider(BaseProductsSpider):
 
         return None
 
-
     def send_next_request(self, reqs, response):
         """
         Helps to handle several requests
         """
-
         req = reqs.pop(0)
         new_meta = response.meta.copy()
         if reqs:
@@ -387,9 +399,11 @@ class NeweggProductSpider(BaseProductsSpider):
             response.xpath(
                 '//div[@class="recordCount"]/span[@id="RecordCount_1"]/text()').extract())
         if total_matches:
-            return int(total_matches)
-        else:
-            return 0
+            if total_matches.isdigit():
+                if not self.TOTAL_MATCHES:
+                    self.TOTAL_MATCHES = int(total_matches)
+                    self.TOTAL_PAGE = int(math.ceil(self.TOTAL_MATCHES / self.PAGINATE_BY)) + 1
+        return int(total_matches)
 
     def _scrape_results_per_page(self, response):
         """
@@ -401,9 +415,9 @@ class NeweggProductSpider(BaseProductsSpider):
         ).extract()
         if links:
             per_page = int(len(links))
-
-        if per_page:
-            return per_page
+            if per_page:
+                return per_page
+        return 0
 
     def _scrape_product_links(self, response):
         """
@@ -421,12 +435,8 @@ class NeweggProductSpider(BaseProductsSpider):
             self.log("Found no product links in {url}".format(url=response.url), INFO)
 
     def _scrape_next_results_page_link(self, response):
-        total = self._scrape_total_matches(response)
-        size = self._scrape_results_per_page(response)
-        pages = int(math.ceil(total/size))
         self.index += 1
-
-        if self.index != int(pages) + 1:
+        if self.index <= self.TOTAL_PAGE:
             return self.PAGINATE_URL.format(
                 search_term=response.meta['search_term'],
                 index=self.index,

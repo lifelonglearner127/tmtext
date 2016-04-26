@@ -60,6 +60,7 @@ from extract_deliverywalmart_data import DeliveryWalmartScraper
 from extract_flipkart_data import FlipkartScraper
 from extract_pepperfry_data import PepperfryScraper
 from extract_cvs_data import CVSScraper
+from extract_walgreens_data import WalgreensScraper
 from extract_hairshop24_data import HairShop24Scraper
 from extract_hagelshop_data import HagelShopScraper
 from extract_levi_data import LeviScraper
@@ -79,6 +80,9 @@ from extract_microsoft_data import MicrosoftScraper
 from extract_nike_data import NikeScraper
 from extract_forever21_data import Forever21Scraper
 from extract_officedepot_data import OfficeDepotScraper
+from extract_orientaltrading_data import OrientalTradingScraper
+from extract_walmartmx_data import WalmartMXScraper
+from extract_riteaid_data import RiteAidScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -151,6 +155,7 @@ SUPPORTED_SITES = {
                     "flipkart": FlipkartScraper,
                     "pepperfry": PepperfryScraper,
                     "cvs": CVSScraper,
+                    "walgreens": WalgreensScraper,
                     "hairshop24": HairShop24Scraper,
                     "hagelshop": HagelShopScraper,
                     "levi": LeviScraper,
@@ -170,6 +175,9 @@ SUPPORTED_SITES = {
                     "nike": NikeScraper,
                     "forever21": Forever21Scraper,
                     "officedepot": OfficeDepotScraper,
+                    "orientaltrading": OrientalTradingScraper,
+                    "walmartmx": WalmartMXScraper,
+                    "riteaid": RiteAidScraper,
                     }
 
 # add logger
@@ -249,6 +257,8 @@ def extract_domain(url):
         return 'groceries'
     if 'walmart.ca' in url:
         return 'walmartca'
+    if 'walmart.com.mx' in url:
+        return 'walmartmx'
     if 'next.co.uk' in url:
         return 'nextcouk'
     if 'delivery.walmart' in url:

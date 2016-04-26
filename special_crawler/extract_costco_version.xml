@@ -12,17 +12,18 @@
     <field name="feature_count" version="1.1"></field>
     <field name="model_meta" version="1.1"></field>
     <field name="description" version="1.1"></field>
-    <field name="long_description" version="1.1"></field>
+    <field name="long_description" version="1.2"></field>
     <field name="image_count" version="2.1"></field>
-    <field name="image_urls" version="2.1"></field>
-    <field name="video_count" version="2.1"></field>
-    <field name="video_urls" version="2.1"></field>
+    <field name="image_urls" version="2.2"></field>
+    <field name="video_count" version="2.2"></field>
+    <field name="video_urls" version="2.2"></field>
     <field name="pdf_count" version="2.1"></field>
     <field name="pdf_urls" version="2.1"></field>
-    <field name="wc_emc" version="1.1"></field>
-    <field name="wc_360" version="1.1"></field>
-    <field name="wc_pdf" version="1.1"></field>
-    <field name="wc_video" version="1.1"></field>
+    <field name="wc_360" version="1.2"></field>
+    <field name="wc_emc" version="1.2"></field>
+    <field name="wc_pdf" version="1.2"></field>
+    <field name="wc_video" version="1.2"></field>
+    <field name="wc_prodtour" version="1.2"></field>
     <field name="webcollage" version="1.1"></field>
     <field name="htags" version="1.1"></field>
     <field name="sellpoints" version="1.1"></field>
@@ -43,7 +44,7 @@
     <field name="marketplace_out_of_stock" version="1.1"></field>
     <field name="site_online" version="1.1"></field>
     <field name="site_online_out_of_stock" version="2.1"></field>
-    <field name="categories" version="1.1"></field>
+    <field name="categories" version="1.2"></field>
     <field name="category_name" version="1.1"></field>
     <field name="brand" version="1.1"></field>
     <field name="mobile_image_same" version="1.1"></field>

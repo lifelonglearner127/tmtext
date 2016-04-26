@@ -34,7 +34,7 @@ class NikeProductSpider(BaseProductsSpider):
     REVIEW_URL = "http://nike.ugc.bazaarvoice.com/9191-en_us/{product_model}" \
                  "/reviews.djs?format=embeddedhtml"
 
-    handle_httpstatus_list = [404, 403, 429]
+    #handle_httpstatus_list = [404, 403, 429]
 
     use_proxies = False  # we'll be using Crawlera instead
 
@@ -99,7 +99,6 @@ class NikeProductSpider(BaseProductsSpider):
         profile.set_preference('intl.accept_languages', 'en-US')
         profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
         profile.set_preference('permissions.default.image', 2)
-        profile.set_preference('permissions.default.stylesheet', 2)
         if self.proxy:
             profile.set_preference("network.http.phishy-userpass-length", 255)
             if 'socks' in self.proxy_type:
@@ -162,10 +161,10 @@ class NikeProductSpider(BaseProductsSpider):
         driver.set_page_load_timeout(30)
 
     @staticmethod
-    def last_three_digits_the_same(lst):
-        if len(lst) < 4:
+    def last_five_digits_the_same(lst):
+        if len(lst) < 6:
             return
-        return lst[-1] == lst[-2] == lst[-3]
+        return lst[-1] == lst[-2] == lst[-3] == lst[-4] == lst[-5]
 
     def _reliable_get(self, driver, url, max_attempts=40, check_element='title'):
         """ Acts like driver.get() but with failsafety """
@@ -204,20 +203,29 @@ class NikeProductSpider(BaseProductsSpider):
             new_meta = response.meta.copy()
             # get all products we need (scroll down)
             collected_products_len = []
+            num_exceptions = 0
             while 1:
                 try:
                     driver.execute_script("scrollTo(0,50000)")
-                    time.sleep(8)
+                    time.sleep(10)
                     product_links = self._get_product_links_from_serp(driver)
                     collected_products_len.append(len(product_links))
+                    print 'Collected %i product links' % len(product_links)
+                    self.log('Collected %i product links' % len(product_links))
                     if len(product_links) > self.quantity:
                         break
-                    if self.last_three_digits_the_same(collected_products_len):
-                        break  # last three iterations collected equal num of products
-                    print 'Collected %i product links' % len(product_links)
+                    if self.last_five_digits_the_same(collected_products_len):
+                        break  # last five iterations collected equal num of products
                 except Exception as e:
                     print str(e)
-                    break
+                    self.log('Exception while scrolling page: %s' % str(e), WARNING)
+                    num_exceptions += 1
+                    if num_exceptions > 10:
+                        self.log('Maximum number of exceptions reached', ERROR)
+                        driver.quit()
+                        display.stop()
+                        return
+
             for i in xrange(10):
                 time.sleep(3)
                 try:
@@ -237,8 +245,8 @@ class NikeProductSpider(BaseProductsSpider):
             for i, product_link in enumerate(product_links):
                 new_meta['_ranking'] = i+1
                 yield Request(product_link, meta=new_meta, callback=self.parse_product,
-                              headers=self._get_antiban_headers(),
-                              cookies=selenium_cookies)
+                              headers=self._get_antiban_headers())
+                              #cookies=selenium_cookies)
 
     def parse_product(self, response):
         meta = response.meta.copy()
@@ -249,6 +257,7 @@ class NikeProductSpider(BaseProductsSpider):
         _ranking = response.meta.get('_ranking', None)
         product['ranking'] = _ranking
         product['url'] = response.url
+        product['search_term'] = response.meta.get('search_term', None)
 
         # product data in json
         js_data = self.parse_data(response)
@@ -263,6 +272,9 @@ class NikeProductSpider(BaseProductsSpider):
         title = self.parse_title(response, js_data)
         cond_set_value(product, 'title', title)
 
+        if not product.get('title', None):
+            return
+
         # Parse locate
         locale = 'en_US'
         cond_set_value(product, 'locale', locale)
@@ -270,10 +282,6 @@ class NikeProductSpider(BaseProductsSpider):
         # Parse model
         product_model = self.parse_product_model(response)
         cond_set_value(product, 'model', product_model)
-
-        # Parse title
-        title = self.parse_title(response, js_data)
-        cond_set_value(product, 'title', title)
 
         # Parse image
         image = self.parse_image(response, js_data)
@@ -361,18 +369,19 @@ class NikeProductSpider(BaseProductsSpider):
                 currency = js_data['crossSellConfiguration']['currency']
             except KeyError:
                 currency = "USD"
-
             try:
                 price = js_data['rawPrice']
                 self.product_price = price
             except KeyError:
                 price = 0.00
-
             if price and currency:
                 price = Price(price=price, priceCurrency=currency)
         else:
+            price_og = re.search('<meta property="og:price:amount" content="([\d\.]+)" />',
+                                 response.body_as_unicode())
+            if price_og:
+                return Price(price=float(price_og.group(1)), priceCurrency="USD")
             price = Price(price=0.00, priceCurrency="USD")
-
         return price
 
     def _scrape_total_matches(self, response):

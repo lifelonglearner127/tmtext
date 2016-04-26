@@ -1,10 +1,5 @@
 import lxml.html
-from itertools import product
 import json
-import re
-from lxml import html, etree
-import itertools
-import yaml
 
 
 class NikeVariants(object):
@@ -26,14 +21,12 @@ class NikeVariants(object):
             return ""
 
     def _variants(self):
-        product_json = None
-
         try:
-            product_json_text = self.tree_html.xpath("//script[@id='product-data']/text()")[0]
+            product_json_text = self.tree_html.xpath(
+                "//script[@id='product-data']/text()")[0]
             product_json = json.loads(product_json_text)
-        except:
+        except Exception as _:
             product_json = None
-
 
         variant_list = []
 
@@ -42,10 +35,14 @@ class NikeVariants(object):
                 variant_item = {}
                 properties = {"color": swatch["colorDescription"]}
                 variant_item["properties"] = properties
-                variant_item["price"] = float(self.tree_html.xpath("//meta[@property='og:price:amount']/@content")[0])
-                variant_item["in_stock"] = True if swatch["status"] == "IN_STOCK" else False
+                variant_item["price"] = float(self.tree_html.xpath(
+                    "//meta[@property='og:price:amount']/@content")[0])
+                variant_item["in_stock"] = True \
+                    if swatch["status"] == "IN_STOCK" else False
                 variant_item["url"] = swatch["url"]
-                variant_item["selected"] = True if "pid-" + str(product_json["productId"]) in swatch["url"] else False
+                variant_item["selected"] = True \
+                    if "pid-" + str(product_json["productId"]) \
+                    in swatch["url"] else False
                 variant_list.append(variant_item)
 
         if variant_list:

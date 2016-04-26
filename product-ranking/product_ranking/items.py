@@ -115,17 +115,21 @@ def scrapy_marketplace_serializer(value):
     result = []
 
     for rec in value:
+        #import pdb; pdb.set_trace()
         if isinstance(rec, Price):
             converted = {u'price': float(rec.price),
                          u'currency': unicode(rec.priceCurrency),
                          u'name': None}
         elif isinstance(rec, dict):
-            converted = {
-                u'price': get(rec, 'price', 'price', float),
-                u'currency': get(rec, 'price', 'priceCurrency', unicode),
-                u'name': conv_or_none(rec.get('name'), unicode),
-                u'seller_type': rec.get('seller_type', None)
-            }
+            if rec.get('price', None) and rec.get('currency', None):
+                converted = rec
+            else:
+                converted = {
+                    u'price': get(rec, 'price', 'price', float),
+                    u'currency': get(rec, 'price', 'priceCurrency', unicode),
+                    u'name': conv_or_none(rec.get('name'), unicode),
+                    u'seller_type': rec.get('seller_type', None)
+                }
         else:
             converted = {u'price': None, u'currency': None,
                          u'name': unicode(rec)}
@@ -168,7 +172,9 @@ class SiteProductItem(Item):
     description = Field()  # String with HTML tags.
     brand = Field()  # String.
     price = Field(serializer=scrapy_price_serializer)  # see Price obj
+    price_with_discount = Field(serializer=scrapy_price_serializer)
     marketplace = Field(serializer=scrapy_marketplace_serializer)  # see marketplace obj
+
     locale = Field()  # String.
     # Dict of RelatedProducts. The key is the relation name.
     related_products = Field()
@@ -217,6 +223,8 @@ class SiteProductItem(Item):
     variants = Field()
 
     shipping = Field()  # now for Walmart only; may change in the future
+    shipping_included = Field()
+    shipping_cost = Field(serializer=scrapy_price_serializer)
 
     img_count = Field()   # now for Walmart only; may change in the future
     video_count = Field()   # now for Walmart only; may change in the future
@@ -248,6 +256,13 @@ class SiteProductItem(Item):
 
     seller_ranking = Field()  # for Walmart
     _subitem = Field()
+
+    minimum_order_quantity = Field() # Costco.com
+
+
+    available_online = Field()
+    available_store = Field()
+    subscribe_and_save = Field() # Samclub.com
 
 
 class DiscountCoupon(Item):

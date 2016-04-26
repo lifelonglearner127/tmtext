@@ -15,7 +15,7 @@
     <field name="description" version="1.1"></field>
     <field name="brand" version="1.1"></field>
     <field name="price" version="1.4"></field>
-    <field name="marketplace" version="1.1"></field>
+    <field name="marketplace" version="1.2"></field>
     <field name="locale" version="1.1"></field>
     <field name="related_products" version="1.1"></field>
     <field name="sponsored_links" version="1.2"></field>
@@ -25,7 +25,7 @@
     <field name="bestseller_rank" version="1.2"></field>
     <field name="department" version="1.2"></field>
     <field name="categories" version="1.2"></field>
-    <field name="categories_full_info" version="1.0"></field>
+    <field name="categories_full_info" version="1.1"></field>
     <field name="search_term_in_title_partial" version="1.1"></field>
     <field name="search_term_in_title_exactly" version="1.1"></field>
     <field name="search_term_in_title_interleaved" version="1.1"></field>
