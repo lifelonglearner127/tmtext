@@ -307,8 +307,10 @@ class ATTProductsSpider(BaseProductsSpider):
             product, 'image_url',
             response.xpath('//meta[contains(@name,"og:image")]/@content').extract())
         _price = response.xpath('//div[contains(@id,"prodIdCartItem")]/@data-nocommitmentprice').extract()
+        if not _price:
+            _price = response.xpath('//*[contains(@class, "listItemPriceRt")]/text()').extract()
         if _price:
-            product['price'] = Price(price=_price[0], priceCurrency='USD')
+            product['price'] = Price(price=_price[0].replace('$', ''), priceCurrency='USD')
         product['sku'] = self._get_sku(response)
         new_meta = response.meta
         new_meta['product'] = product
