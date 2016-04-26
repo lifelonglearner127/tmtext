@@ -39,8 +39,10 @@ class ATTScraper(Scraper):
         self.product_xml = None
         self.product_xml_checked = False
 
+        self.product_details = None
+        self.product_details_checked = False
+
         self.product_json = None
-        self.product_json_checked = False
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -92,23 +94,45 @@ class ATTScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _load_product_json(self):
-        if not self.product_json_checked:
-            self.product_json_checked = True
-            self.product_json = json.loads( self.load_page_from_url_with_number_of_retries( 'https://api.bazaarvoice.com/data/batch.json?passkey=9v8vw9jrx3krjtkp26homrdl8&apiversion=5.5&displaycode=4773-en_us&resource.q0=products&filter.q0=id%3Aeq%3Asku' + self._product_id() + '&stats.q0=questions%2Creviews'))['BatchedResults']['q0']['Results'][0]
+        if not self.product_json:
+            product_json = json.loads( self.load_page_from_url_with_number_of_retries('https://api.bazaarvoice.com/data/batch.json?passkey=9v8vw9jrx3krjtkp26homrdl8&apiversion=5.5&displaycode=4773-en_us&resource.q0=products&filter.q0=id%3Aeq%3Asku' + self._product_id() + '&stats.q0=questions%2Creviews'))
 
-    def _load_pricearea_html(self):
+            self.product_json = product_json['BatchedResults']['q0']['Results'][0]
+
+    def _get_pricearea_html(self):
         if not self.pricearea_html_checked:
             self.pricearea_html_checked = True
+
             url = re.match('(.*).html.*', self.product_page_url).group(1) + '.pricearea.xhr.html?locale=en_US&skuId=sku' + self._product_id() + '&pageType=accessoryDetails&_=1461605909259'
 
             self.pricearea_html = html.fromstring( self.load_page_from_url_with_number_of_retries(url))
 
-    def _load_product_xml(self):
+        return self.pricearea_html
+
+    def _get_product_xml(self):
         if not self.product_xml_checked:
             self.product_xml_checked = True
+
             response = requests.get('https://www.att.com/shop/360s/xml/' + self._product_id() + '.xml')
+
             if response.status_code == 200:
                 self.product_xml = etree.XML(response.content.replace(' encoding="UTF-8"', ''))
+
+        return self.product_xml
+
+    def _get_product_details(self):
+        if not self.product_details_checked:
+            self.product_details_checked = True
+
+            try:
+                product_details = json.loads( self.load_page_from_url_with_number_of_retries('https://www.att.com/services/shopwireless/model/att/ecom/api/DeviceDetailsActor/getDeviceProductDetails?includeAssociatedProducts=true&includePrices=true&skuId=sku' + self._product_id()))
+
+                self.product_details = product_details['result']['methodReturnValue']
+
+            except:
+                pass
+
+        return self.product_details
 
     def _product_name(self):
         self._load_product_json()
@@ -124,13 +148,22 @@ class ATTScraper(Scraper):
         return None
 
     def _upc(self):
-        return None
+        self._load_product_json()
+        return self.product_json['UPCs'][0]
 
     def _features(self):
-        return None
+        features = []
+
+        if self._get_product_xml():
+            for feature in self.product_xml.xpath('//feature/bubble'):
+                features.append(feature.xpath('title_en/text()')[0])
+
+        if features:
+            return ', '.join(features)
 
     def _feature_count(self):
-        return None
+        if self._features():
+            return len(self._features().split(','))
 
     def _model_meta(self):
         return None
@@ -142,12 +175,6 @@ class ATTScraper(Scraper):
     def _long_description(self):
         return None
 
-    def _ingredients(self):
-        return None
-
-    def _ingredient_count(self):
-        return None
-
     def _variants(self):
         if self.variants_checked:
             return self.variants
@@ -156,39 +183,25 @@ class ATTScraper(Scraper):
 
         variants = []
 
-        try:
-            variants_json = self.load_page_from_url_with_number_of_retries('https://www.att.com/services/shopwireless/model/att/ecom/api/DeviceDetailsActor/getDeviceProductDetails?includeAssociatedProducts=true&includePrices=true&skuId=sku' + self._product_id())
+        if self._get_product_details():
 
-            variants_json = json.loads(variants_json)['result']['methodReturnValue']
+            if len( self.product_details['skuItems']) > 1:
 
-            for skuId in variants_json['skuItems']:
-                variant_json = variants_json['skuItems'][skuId]
+                for skuId in self.product_details['skuItems']:
 
-                low_price = None
+                    variant_json = self.product_details['skuItems'][skuId]
 
-                for price_json in variant_json['priceList']:
-                    if price_json['salePrice']:
-                        price = price_json['salePrice']
-                    else:
-                        price = price_json['listPrice']
+                    variant = {
+                        'color' : variant_json['color'],
+                        'selected' : variant_json['selectedSku'],
+                        'price' : self._get_price( variant_json['priceList']),
+                        'outOfStock' : variant_json['outOfStock']
+                    }
 
-                    if not low_price or price < low_price:
-                        low_price = price
+                    variants.append(variant)
 
-                variant = {
-                    'color' : variant_json['color'],
-                    'name' : variant_json['displayName'],
-                    'selected' : variant_json['selectedSku'],
-                    'price' : '$' + str(low_price),
-                    'outOfStock' : variant_json['outOfStock']
-                }
-
-                variants.append(variant)
-
-        except:
-            self._load_pricearea_html()
-
-            for variant_html in self.pricearea_html.xpath('//span[@id="colorInput"]/a'):
+        else:
+            for variant_html in self._get_pricearea_html().xpath('//span[@id="colorInput"]/a'):
 
                 price = self._clean_text( self.pricearea_html.xpath('//div[@id="dueToday"]/div[contains(@class,"price")]/text()')[0])
 
@@ -218,9 +231,7 @@ class ATTScraper(Scraper):
         #images = self.tree_html.xpath('//meta[@property="og:image"]/@content')
         images = self.tree_html.xpath('//img[@itemprop="image"]/@src')
 
-        self._load_product_xml()
-
-        if self.product_xml:
+        if self._get_product_xml():
             for image in self.product_xml.xpath('//image_info'):
                 images.append('https://www.att.com' + image.get('path') + image.get('suffix'))
 
@@ -241,9 +252,7 @@ class ATTScraper(Scraper):
 
         videos = []
 
-        self._load_product_xml()
-
-        if self.product_xml:
+        if self._get_product_xml():
             for gvpURL in self.product_xml.xpath('//movie/@gvpURL'):
 
                 response = self.load_page_from_url_with_number_of_retries( 'https://www.att.com/global-search/GenericLayer.jsp?q=id:' + gvpURL + '&core=videoservice&handler=select')
@@ -327,7 +336,7 @@ class ATTScraper(Scraper):
     def _average_review(self):
         self._load_product_json()
 
-        return round( self.product_json['ReviewStatistics']['AverageOverallRating'], 2)
+        return round( self.product_json['ReviewStatistics']['AverageOverallRating'], 1)
 
     def _review_count(self):
         self._load_product_json()
@@ -372,14 +381,10 @@ class ATTScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        if self._variants():
-            for variant in self._variants():
-                if variant['selected']:
-                    return variant['price']
+        if self._get_product_details():
+            return self._get_price( self._get_selected_variant()['priceList'])
 
-        self._load_pricearea_html()
-
-        return self._clean_text( self.pricearea_html.xpath('//div[@id="dueToday"]/div[contains(@class,"price")]/text()')[0])
+        return self._clean_text( self._get_pricearea_html().xpath('//div[@id="dueToday"]/div[contains(@class,"price")]/text()')[0])
 
     def _price_amount(self):
         return self._price()[1:]
@@ -394,18 +399,13 @@ class ATTScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
-        if self._variants():
-            for variant in self._variants():
-                if variant['selected']:
-                    if variant['outOfStock']:
-                        return 1
-                    return 0
+        if self._get_product_details():
+            if self._get_selected_variant()['outOfStock']:
+                return 1
+            return 0
 
-        self._load_pricearea_html()
-
-        if self.pricearea_html.xpath('//div[@class="myStoreAddress"]')[0].text_content() == 'Available online - WEB ONLY':
+        if self._get_pricearea_html().xpath('//div[@class="myStoreAddress"]')[0].text_content() == 'Available online - WEB ONLY':
             return 1
-
         return 0
 
     def _in_stores_out_of_stock(self):
@@ -447,6 +447,28 @@ class ATTScraper(Scraper):
         text = re.sub('[\r\n]', '', text)
         return text.strip()
 
+    def _get_price(self, price_list):
+        low_price = None
+
+        for price_json in price_list:
+            if price_json['leaseTotalMonths'] == 0:
+                if price_json['salePrice']:
+                    price = price_json['salePrice']
+                else:
+                    price = price_json['dueToday']
+
+            if not low_price or price < low_price:
+                low_price = price
+
+        return '$' + str(low_price)
+
+    def _get_selected_variant(self):
+        if self._get_product_details():
+            for skuId in self.product_details['skuItems']:
+                variant_json = self.product_details['skuItems'][skuId]
+                if variant_json['selectedSku']:
+                    return variant_json
+
     ##########################################
     ################ RETURN TYPES
     ##########################################
@@ -473,8 +495,6 @@ class ATTScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
-        "ingredients" : _ingredients, \
-        "ingredient_count" : _ingredient_count, \
         "variants" : _variants, \
 
         # CONTAINER : PAGE_ATTRIBUTES

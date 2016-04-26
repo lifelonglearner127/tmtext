@@ -13,8 +13,6 @@
     <field name="model_meta" version="1.1"></field>
     <field name="description" version="1.1"></field>
     <field name="long_description" version="1.1"></field>
-    <field name="ingredients" version="1.1"></field>
-    <field name="ingredient_count" version="1.1"></field>
     <field name="variants" version="1.1"></field>
     <field name="image_count" version="1.1"></field>
     <field name="image_urls" version="1.1"></field>
