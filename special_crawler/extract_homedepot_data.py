@@ -66,7 +66,7 @@ class HomeDepotScraper(Scraper):
             return
 
         try:
-            product_json_text = self._find_between(html.tostring(self.tree_html), "THD.PIP.products.primary = new THD.PIP.Product(", ");\n")
+            product_json_text = re.search('product: ({.*}),\s*channel:', html.tostring(self.tree_html), re.DOTALL).group(1)
             self.product_json = json.loads(product_json_text)
         except:
             self.product_json = None
@@ -92,11 +92,6 @@ class HomeDepotScraper(Scraper):
     def _status(self):
         return "success"
 
-
-
-
-
-
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
@@ -115,11 +110,9 @@ class HomeDepotScraper(Scraper):
         return self.product_json["info"]["modelNumber"]
 
     def _upc(self):
-        print '\n\n\n\n\n'
         scripts = self.tree_html.xpath('//script//text()')
         for script in scripts:
             var = re.findall(r'CI_ItemUPC=(.*?);', script)
-            print var
             if len(var) > 0:
                 var = var[0]
                 break
@@ -183,8 +176,6 @@ class HomeDepotScraper(Scraper):
             return long_description
 
         return None
-
-
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -263,9 +254,6 @@ class HomeDepotScraper(Scraper):
 
     def _keywords(self):
         return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
-
-    def _no_image(self):
-        return None
     
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -397,10 +385,6 @@ class HomeDepotScraper(Scraper):
     def _marketplace_lowest_price(self):
         return None
 
-
-
-
-
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
@@ -424,14 +408,12 @@ class HomeDepotScraper(Scraper):
         return self.product_json["info"]["brandName"]
 
 
-
     ##########################################
     ################ HELPER FUNCTIONS
     ##########################################
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
-
 
 
     ##########################################
@@ -466,7 +448,6 @@ class HomeDepotScraper(Scraper):
         "image_urls" : _image_urls, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
-        "no_image" : _no_image, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
