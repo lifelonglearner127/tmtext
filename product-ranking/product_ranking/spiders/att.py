@@ -155,7 +155,10 @@ class ATTProductsSpider(BaseProductsSpider):
         for v in variants.values():
             variant = copy.copy({})
             variant['in_stock'] = not v.get('outOfStock', None)
-            variant['price'] = v.get('priceList', [{}])[0].get('listPrice', None)
+            # get the lowest price
+            price_list_options = v.get('priceList', [])
+            price_list_options = sorted(price_list_options, key=lambda val: val.get('sortOrder', 0))
+            variant['price'] = price_list_options[0].get('listPrice', None)
             variant['sku'] = v.get('skuId', None)
             variant['selected'] = v.get('selectedSku', False)
             props = copy.copy({})
@@ -170,17 +173,21 @@ class ATTProductsSpider(BaseProductsSpider):
     def _on_buyer_reviews_response(self, response):
         prod = response.meta['product']
         brs = json.loads(response.body.split('(', 1)[1][0:-1])
+        # find appropriate sku
         try:
-            average_rating = brs['BatchedResults']['q2']['Includes']['Products'].items()[0][1][
-                'FilteredReviewStatistics']['AverageOverallRating']
+            brs_sku = brs['BatchedResults']['q2']['Includes']['Products'][prod['sku']]
         except (IndexError, KeyError):
             prod['buyer_reviews'] = ZERO_REVIEWS_VALUE
             yield prod
             return
-        rating_by_star = brs['BatchedResults']['q2']['Includes']['Products'].items()[0][1][
-            'FilteredReviewStatistics']['RatingDistribution']
-        total_reviews = brs['BatchedResults']['q2']['Includes']['Products'].items()[0][1][
-            'FilteredReviewStatistics']['TotalReviewCount']
+        try:
+            average_rating = brs_sku['FilteredReviewStatistics']['AverageOverallRating']
+        except (IndexError, KeyError):
+            prod['buyer_reviews'] = ZERO_REVIEWS_VALUE
+            yield prod
+            return
+        rating_by_star = brs_sku['FilteredReviewStatistics']['RatingDistribution']
+        total_reviews = brs_sku['FilteredReviewStatistics']['TotalReviewCount']
         prod['buyer_reviews'] = BuyerReviews(
             num_of_reviews=total_reviews,
             average_rating=float(average_rating),
@@ -191,6 +198,17 @@ class ATTProductsSpider(BaseProductsSpider):
     def _parse_ajax_product_data(self, response):
         prod = response.meta['product']
         v = json.loads(response.body)
+        try:
+            is_oos = v['result']['serviceErrors'][0]['errorCode'] == 'SHOPERR_GENERAL_0001'
+        except (IndexError, KeyError):
+            is_oos = False
+        if is_oos:
+            if '{{' in prod.get('title'):
+                prod['title'] = response.meta['title_no_sku']
+                prod['is_out_of_stock'] = True
+                prod['sku'] = response.meta['selected_sku']
+                yield prod
+                return
         prod['brand'] = v['result']['methodReturnValue'].get('manufacturer', '')
         prod['variants'] = self._parse_ajax_variants(
             response, v['result']['methodReturnValue'].get('skuItems', {}))
@@ -199,8 +217,11 @@ class ATTProductsSpider(BaseProductsSpider):
             response.meta['selected_sku'])
         prod['is_out_of_stock'] = sel_v['outOfStock']
         prod['model'] = sel_v.get('model', '')
-        _price = sel_v.get('priceList', [{}])[0].get('listPrice', None)
-        if _price:
+        # get the lowest price
+        price_list_options = sel_v.get('priceList', [])
+        price_list_options = sorted(price_list_options, key=lambda val: val.get('sortOrder', 0))
+        _price = price_list_options[0].get('listPrice', None)
+        if _price or _price == 0:
             prod['price'] = Price(price=_price, priceCurrency='USD')
         prod['is_in_store_only'] = not sel_v.get('retailAvailable', True)
         prod['title'] = sel_v['displayName']
@@ -317,6 +338,10 @@ class ATTProductsSpider(BaseProductsSpider):
         new_meta['selected_sku'] = self._get_sku(response)
         if '{{' in product['title']:
             # we got a bloody AngularJS-driven page, parse it
+            for title_no_sku in response.xpath(
+                    '//h1[contains(@ng-if,"(!selectedSku.preOwned")]/text()').extract():
+                if not '{{' in title_no_sku:
+                    new_meta['title_no_sku'] = title_no_sku
             yield Request(
                 self.VARIANTS_ANGULAR_URL.format(sku=self._get_sku(response)),
                 callback=self._parse_ajax_product_data,
