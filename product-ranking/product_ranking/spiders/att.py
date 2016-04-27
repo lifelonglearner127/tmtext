@@ -113,12 +113,16 @@ class ATTProductsSpider(BaseProductsSpider):
             site_name=self.allowed_domains[0], *args, **kwargs)
 
     def _scrape_product_links(self, response):
-        serp_links = response.xpath(
-            '//ul[contains(@class, "resultList")]//'
-            'a[contains(@class, "resultLink")]/@href').extract()
-        serp_links = list(set(serp_links))  # make unique list
-        #new_meta = response.meta
-        #new_meta['product'] = SiteProductItem()
+        serp_links = []
+        serp_imgs = response.xpath(
+            '//ul[contains(@class, "resultList")]//img[contains(@class, "icon")]')
+        for img in serp_imgs:
+            if not 'icon_doc.png' in str(is_empty(img.xpath('./@src').extract())):
+                serp_link = is_empty(
+                    img.xpath('../../a[contains(@class, "resultLink")]/@href').extract())
+                if serp_link:
+                    if not serp_link in serp_links:
+                        serp_links.append(serp_link)
         for link in serp_links:
             #yield Request(link, meta=response.meta, dont_filter=True,
             #              callback=self.parse_product), SiteProductItem()
@@ -157,7 +161,7 @@ class ATTProductsSpider(BaseProductsSpider):
             variant['in_stock'] = not v.get('outOfStock', None)
             # get the lowest price
             price_list_options = v.get('priceList', [])
-            price_list_options = sorted(price_list_options, key=lambda val: val.get('sortOrder', 0))
+            price_list_options = sorted(price_list_options, key=lambda val: val.get('listPrice', 0))
             variant['price'] = price_list_options[0].get('listPrice', None)
             variant['sku'] = v.get('skuId', None)
             variant['selected'] = v.get('selectedSku', False)
@@ -250,7 +254,7 @@ class ATTProductsSpider(BaseProductsSpider):
         prod['model'] = sel_v.get('model', '')
         # get the lowest price
         price_list_options = sel_v.get('priceList', [])
-        price_list_options = sorted(price_list_options, key=lambda val: val.get('sortOrder', 0))
+        price_list_options = sorted(price_list_options, key=lambda val: val.get('listPrice', 0))
         _price = price_list_options[0].get('listPrice', None)
         if _price or _price == 0:
             prod['price'] = Price(price=_price, priceCurrency='USD')
@@ -364,6 +368,8 @@ class ATTProductsSpider(BaseProductsSpider):
         if _price:
             product['price'] = Price(price=_price[0].replace('$', ''), priceCurrency='USD')
         product['sku'] = self._get_sku(response)
+        if not product['sku']:
+            return
         new_meta = response.meta
         new_meta['product'] = product
         new_meta['selected_sku'] = self._get_sku(response)
@@ -372,6 +378,8 @@ class ATTProductsSpider(BaseProductsSpider):
                                     response.body_as_unicode())
         if num_of_reviews_:
             new_meta['num_of_reviews_'] = int(num_of_reviews_.group(1))
+        if not product.get('title', None):
+            return
         if '{{' in product['title']:
             # we got a bloody AngularJS-driven page, parse it
             for title_no_sku in response.xpath(
