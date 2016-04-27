@@ -170,12 +170,29 @@ class ATTProductsSpider(BaseProductsSpider):
             result_variants.append(variant)
         return result_variants
 
+    def _get_brs_type_for_this_product(self, brs_sku, response):
+        """ Returns the BRs used in this product
+            (can be "FilteredReviewStatistics" and "ReviewStatistics")
+        :param response:
+        :return:
+        """
+        brs_types = ['FilteredReviewStatistics', 'ReviewStatistics']
+        prod = response.meta['product']
+        num_of_reviews_ = response.meta.get('num_of_reviews_', None)
+        if not num_of_reviews_:
+            return brs_types[0]  # fall back to this type
+        total_reviews_filt = brs_sku[brs_types[0]]['TotalReviewCount']
+        total_reviews_unfilt = brs_sku[brs_types[1]]['TotalReviewCount']
+        # find the number which is closer to the on-page scraped one
+        if abs(num_of_reviews_ - total_reviews_filt) \
+                < (num_of_reviews_ - total_reviews_unfilt):
+            return brs_types[0]
+        else:
+            return brs_types[1]
+
     def _on_buyer_reviews_response(self, response):
         prod = response.meta['product']
         brs = json.loads(response.body.split('(', 1)[1][0:-1])
-        # find appropriate sku
-        REVIEW_STAT_KEY = 'FilteredReviewStatistics'
-        #import pdb; pdb.set_trace()
         try:
             brs_sku = brs['BatchedResults']['q2']['Includes']['Products'][prod['sku']]
         except (IndexError, KeyError):
@@ -184,13 +201,14 @@ class ATTProductsSpider(BaseProductsSpider):
                 brs_sku = brs['BatchedResults']['q0']['Results'][0]
                 if brs_sku_id != prod['sku']:
                     raise IndexError  # invalid SKU - assume we have no buyer reviews
-                REVIEW_STAT_KEY = 'ReviewStatistics'
             except (IndexError, KeyError):
                 prod['buyer_reviews'] = ZERO_REVIEWS_VALUE
                 yield prod
                 return
+        # get appropriate BRs type (used in this product)
+        review_stat_key = self._get_brs_type_for_this_product(brs_sku, response)
         try:
-            average_rating = brs_sku[REVIEW_STAT_KEY]['AverageOverallRating']
+            average_rating = brs_sku[review_stat_key]['AverageOverallRating']
         except (IndexError, KeyError):
             prod['buyer_reviews'] = ZERO_REVIEWS_VALUE
             yield prod
@@ -199,8 +217,8 @@ class ATTProductsSpider(BaseProductsSpider):
             prod['buyer_reviews'] = ZERO_REVIEWS_VALUE
             yield prod
             return
-        rating_by_star = brs_sku[REVIEW_STAT_KEY]['RatingDistribution']
-        total_reviews = brs_sku[REVIEW_STAT_KEY]['TotalReviewCount']
+        rating_by_star = brs_sku[review_stat_key]['RatingDistribution']
+        total_reviews = brs_sku[review_stat_key]['TotalReviewCount']
         prod['buyer_reviews'] = BuyerReviews(
             num_of_reviews=total_reviews,
             average_rating=float(average_rating),
@@ -349,6 +367,11 @@ class ATTProductsSpider(BaseProductsSpider):
         new_meta = response.meta
         new_meta['product'] = product
         new_meta['selected_sku'] = self._get_sku(response)
+        # response.xpath does not work here for some reasons
+        num_of_reviews_ = re.search('<meta itemprop="reviewCount" content="(\d+)"',
+                                    response.body_as_unicode())
+        if num_of_reviews_:
+            new_meta['num_of_reviews_'] = int(num_of_reviews_.group(1))
         if '{{' in product['title']:
             # we got a bloody AngularJS-driven page, parse it
             for title_no_sku in response.xpath(
