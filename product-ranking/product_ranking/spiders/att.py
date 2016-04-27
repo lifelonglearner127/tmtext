@@ -174,6 +174,7 @@ class ATTProductsSpider(BaseProductsSpider):
         prod = response.meta['product']
         brs = json.loads(response.body.split('(', 1)[1][0:-1])
         # find appropriate sku
+        REVIEW_STAT_KEY = 'FilteredReviewStatistics'
         #import pdb; pdb.set_trace()
         try:
             brs_sku = brs['BatchedResults']['q2']['Includes']['Products'][prod['sku']]
@@ -183,12 +184,13 @@ class ATTProductsSpider(BaseProductsSpider):
                 brs_sku = brs['BatchedResults']['q0']['Results'][0]
                 if brs_sku_id != prod['sku']:
                     raise IndexError  # invalid SKU - assume we have no buyer reviews
+                REVIEW_STAT_KEY = 'ReviewStatistics'
             except (IndexError, KeyError):
                 prod['buyer_reviews'] = ZERO_REVIEWS_VALUE
                 yield prod
                 return
         try:
-            average_rating = brs_sku['FilteredReviewStatistics']['AverageOverallRating']
+            average_rating = brs_sku[REVIEW_STAT_KEY]['AverageOverallRating']
         except (IndexError, KeyError):
             prod['buyer_reviews'] = ZERO_REVIEWS_VALUE
             yield prod
@@ -197,8 +199,8 @@ class ATTProductsSpider(BaseProductsSpider):
             prod['buyer_reviews'] = ZERO_REVIEWS_VALUE
             yield prod
             return
-        rating_by_star = brs_sku['FilteredReviewStatistics']['RatingDistribution']
-        total_reviews = brs_sku['FilteredReviewStatistics']['TotalReviewCount']
+        rating_by_star = brs_sku[REVIEW_STAT_KEY]['RatingDistribution']
+        total_reviews = brs_sku[REVIEW_STAT_KEY]['TotalReviewCount']
         prod['buyer_reviews'] = BuyerReviews(
             num_of_reviews=total_reviews,
             average_rating=float(average_rating),
