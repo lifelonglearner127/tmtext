@@ -84,6 +84,7 @@ from extract_orientaltrading_data import OrientalTradingScraper
 from extract_walmartmx_data import WalmartMXScraper
 from extract_riteaid_data import RiteAidScraper
 from extract_att_data import ATTScraper
+from extract_verizonwireless_data import VerizonWirelessScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -180,6 +181,7 @@ SUPPORTED_SITES = {
                     "walmartmx": WalmartMXScraper,
                     "riteaid": RiteAidScraper,
                     "att": ATTScraper,
+                    "verizonwireless": VerizonWirelessScraper,
                     }
 
 # add logger
