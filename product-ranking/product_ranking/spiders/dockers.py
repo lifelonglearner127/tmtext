@@ -320,8 +320,10 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_title(self, response):
         title = response.xpath(
-            '//h1[contains(@class, "title")]/text()').extract()
-
+            '//meta[contains(@property,"og:title")]/@content').extract()
+        if not title:
+            title = response.xpath(
+                '//meta[contains(@name,"og:title")]/@content').extract()
         return title
 
     def parse_data(self, response):
