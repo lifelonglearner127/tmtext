@@ -356,7 +356,7 @@ class RiteAidScraper(Scraper):
         categories = []
 
         for category in self.tree_html.xpath('//meta[@itemprop="category"]/@content')[0].split(' > '):
-            if not category in categories:
+            if category and category not in categories:
                 categories.append(category)
 
         return categories
