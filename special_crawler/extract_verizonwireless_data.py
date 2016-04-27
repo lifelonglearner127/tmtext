@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
-import json
 import HTMLParser
+import itertools
+import json
 import re
 import requests
 
@@ -32,6 +33,9 @@ class VerizonWirelessScraper(Scraper):
         self.images = None
         self.videos = None
         self.json_data = None
+        self.review_json = None
+        self.review_list = None
+        self.REVIEW_URL = "http://api.bazaarvoice.com/data/batch.json?passkey=e8bg3vobqj42squnih3a60fui&apiversion=5.5&displaycode=6543-en_us&resource.q0=products&filter.q0=id%3Aeq%3A{0}&stats.q0=questions%2Creviews&filteredstats.q0=questions%2Creviews"
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -109,7 +113,14 @@ class VerizonWirelessScraper(Scraper):
         return None
 
     def _features(self):
-        return self.tree_html.xpath('//*[@class="features"]//ul/li/text()')
+        features = self.tree_html.xpath(
+            '//h2[@class="margin36 onlyTopMargin"]/text()')
+        features += self.tree_html.xpath(
+            '//*[@class="features"]//ul/li/text()')
+
+        features = filter(None, map((lambda x: x.strip()), features))
+
+        return features if features else None
 
     def _feature_count(self):
         features = self._features()
@@ -130,7 +141,7 @@ class VerizonWirelessScraper(Scraper):
         description = self.tree_html.xpath(
             '//*[@itemprop="description" and '
             '@class="is-hidden"]//text()')
-        
+
         return ''.join(filter(None, map((lambda x: x.strip()),description))).strip() if description else None
 
 
@@ -141,67 +152,79 @@ class VerizonWirelessScraper(Scraper):
     def _mobile_image_same(self):
         return None
 
+    def _load_json_data(self):
+        image_urls = self.tree_html.xpath(
+            '//*[@property="og:image"]/@content')[0].split('?')[0]
+        image_urls += "-mms?req=set,json,UTF-8&labelkey=label"
+        response = requests.get(image_urls)
+        json_text = re.findall('s7jsonResponse\((.*),"', response.text)
+        self.json_data = json.loads(json_text[0])
+
     def _image_urls(self):
         try:
             if not self.images:
                 if not self.json_data:
-                    image_urls = self.tree_html.xpath('//*[@property="og:image"]/@content')[0].split('?')[0]
-                    image_urls += "-mms?req=set,json,UTF-8&labelkey=label"
-                    response = requests.get(image_urls)
-                    json_text = re.findall('Response\((.*),"', response.text)
-                    self.json_data = json.loads(json_text[0])
+                    self._load_json_data()
 
-                print json.dumps(self.json_data)
-                data = self.json_data.get('set',{})
-                if data.get('type', None)=='media_set':
+                data = self.json_data.get('set', {})
+                self.images = []
+                images = []
+                if data.get('type', None) == 'media_set':
                     try:
-                        data = filter((lambda x: x.get('type')=='img_set'), 
-                                    self.json_data['set']['item'])[0]
+                        images += list(itertools.chain.from_iterable([x.get(
+                            'set', {}).get('item') for x in data[
+                                'item'] if x.get('type') == 'img_set']))
+                        images += [x for x in data['item'] if x.get('dx')]
+
                     except:
                         data = self.json_data['set']['item']
 
-                if data.get('set',{}).get('type', None)=='img_set':
-                    images = data.get('set',{}).get('item', [])
-                
-                self.images = []
+                if data.get('set', {}).get('type', None) == 'img_set':
+                    images += data.get('set', {}).get('item', [])
+
                 for img in images:
-                    self.images.append("https://ss7.vzw.com/is/image/"+ img['i']['n'])
+                    self.images.append(
+                        "https://ss7.vzw.com/is/image/" + img['i']['n'])
 
         except:
-            self.images = [self.tree_html.xpath('//*[@property="og:image"]/@content')[0].split('?')[0]]
+            self.images = [self.tree_html.xpath(
+                '//*[@property="og:image"]/@content')[0].split('?')[0]]
 
-        return self.images
+        return self.images if self.images else [self.tree_html.xpath(
+            '//*[@property="og:image"]/@content')[0].split('?')[0]]
 
     def _image_count(self):
         if not self.images:
             self.images = self._image_urls()
 
-        return len(self.images) if self.images else 0
+        return len(self.images) if self.images else None
 
     def _video_urls(self):
         if not self.videos:
             if not self.json_data:
-                image_urls = self.tree_html.xpath('//*[@property="og:image"]/@content')[0].split('?')[0]
-                image_urls += "-mms?req=set,json,UTF-8&labelkey=label"
-                response = requests.get(image_urls)
-                json_text = re.findall('s7jsonResponse\((.*),"', response.text)
-                self.json_data = json.loads(json_text[0])
+                self._load_json_data()
 
-            data = self.json_data.get('set',{})
-            if data.get('type', None)=='media_set':
-                data = filter((lambda x: x['type']=='video_set'), self.json_data['set']['item'])
-            
+            data = self.json_data.get('set', {})
+            videos = []
+
+            if data.get('type', None) == 'media_set':
+                try:
+                    videos += [x.get('set', {}).get(
+                        'item', [])[-1] for x in data['item'] if x.get(
+                        'type') == 'video_set']
+                except:
+                    pass
+
             self.videos = []
-            for videos in data:
-                self.videos.append("https://ss7.vzw.com/is/content/VerizonWireless"+ img['i']['n'])
+            for video in videos:
+                self.videos.append(
+                    "https://ss7.vzw.com/is/content/" + video['i']['n'])
 
-                
         return self.videos
-
 
     def _video_count(self):
         videos = self._video_urls()
-        return len(videos) if videos else 0 
+        return len(videos) if videos else 0
 
     def _pdf_urls(self):
         return None
@@ -222,7 +245,15 @@ class VerizonWirelessScraper(Scraper):
         return 0
 
     def _wc_360(self):
-        self._webcollage()
+        if not self.json_data:
+            self._load_json_data()
+
+        try:
+            data = self.json_data.get('set', {})
+            self.wc_360 = 1 if len(filter((lambda x: x.get('type') == 'spin'),
+                                   data.get('item'))) else 0
+        except:
+            self.wc_360 = 0
 
         return self.wc_360
 
@@ -262,38 +293,100 @@ class VerizonWirelessScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
     def _average_review(self):
-        ratings = re.search('ratings":"(.*?)"', html.tostring(self.tree_html))
-        return ratings.group(1) if ratings else None
+        average_review = self.review_json["BatchedResults"]["q0"][
+            "Results"][0]["FilteredReviewStatistics"]["AverageOverallRating"]
+        return round(float(average_review), 1) if average_review else None
 
     def _review_count(self):
-        reviews = re.search('reviews":"(.*?)"', html.tostring(self.tree_html))
-        return reviews.group(1) if reviews else None
+        if not self.review_json:
+            self._load_review_json()
+
+        review_count = self.review_json["BatchedResults"]["q0"]["Results"][0][
+            "FilteredReviewStatistics"]["TotalReviewCount"]
+        return review_count
 
     def _max_review(self):
+        if not self.review_json:
+            self._load_review_json()
+
+        if not self.review_list:
+            self._reviews()
+
+        not_zero_reviews = filter((lambda x: x[1]), self.review_list)
+        max_review = max(not_zero_reviews, key=(lambda x: x[0]))
+
+        return int(max_review[0])
+
         return None
 
     def _min_review(self):
+        if not self.review_json:
+            self._load_review_json()
+
+        if not self.review_list:
+            self._reviews()
+
+        not_zero_reviews = filter((lambda x: x[1]), self.review_list)
+        min_review = min(not_zero_reviews, key=(lambda x: x[0]))
+
+        return int(min_review[0])
+
         return None
 
     def _reviews(self):
-        return None
+        if not self.review_json:
+            self._load_review_json()
+
+        if not self.review_list:
+            review_list = []
+            for i in range(5):
+                review_list.append([5 - i, 0])
+
+            for review in self.review_json["BatchedResults"]["q0"]["Results"][0]["FilteredReviewStatistics"]["RatingDistribution"]:
+                review_list[5 - int(review["RatingValue"])] = [int(review["RatingValue"]), int(review["Count"])]
+
+            if review_list:
+                self.review_list = review_list
+
+        return self.review_list
+
+    def _load_review_json(self):
+        content = html.tostring(self.tree_html)
+        device_prod_id_search = re.search('deviceProdId=(.*?)&', content)
+
+        if device_prod_id_search:
+            id = device_prod_id_search.group(1)
+
+        else:
+            id = self.tree_html.xpath('//input[@id="isProductId"]/@value')[0]
+
+        self.review_json = self.load_page_from_url_with_number_of_retries(
+            self.REVIEW_URL.format(id))
+        self.review_json = json.loads(self.review_json)
+
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
+    def _in_stock(self):
+        in_stock = self.tree_html.xpath(
+            '//*[@itemprop="availability" and @href="//schema.org/InStock"]')
+        return int(bool(in_stock))
+
     def _price(self):
-        price = re.search('price":"(.*?)"', html.tostring(self.tree_html))
+        price = re.search(
+            'price"\s*:\s*"\$?(.*?)"', html.tostring(self.tree_html))
         return price.group(1) if price else None
 
     def _price_amount(self):
         return float(self._price())
 
     def _price_currency(self):
-        currency =  self.tree_html.xpath('//*[@itemprop="priceCurrency"]/@content')
+        currency = self.tree_html.xpath('//*[@itemprop="priceCurrency"]/@content')
         return currency[0] if currency else None
 
     def _in_stores(self):
-        return 0
+        return None
 
     def _site_online(self):
         return 1
@@ -303,7 +396,7 @@ class VerizonWirelessScraper(Scraper):
         return 1 if availability != 'http://schema.org/InStock' else 0
 
     def _in_stores_out_of_stock(self):
-        return 0
+        return None
 
     def _marketplace(self):
         return 0
@@ -396,6 +489,7 @@ class VerizonWirelessScraper(Scraper):
         "reviews" : _reviews, \
 
         # CONTAINER : SELLERS
+        "in_stock": _in_stock, \
         "price" : _price, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
