@@ -129,7 +129,7 @@ class ServiceScraperTest(unittest.TestCase):
                 raise Exception("Invalid product")
             '''
 
-            self.cur.execute("select * from console_urlsample where website='%s' and url='%s' and not_a_product=0" % (website, sample_url))
+            self.cur.execute("select * from console_urlsample where website='%s' and url='%s'" % (website, sample_url))
             row = self.cur.fetchall()
 
             if row:
@@ -148,6 +148,7 @@ class ServiceScraperTest(unittest.TestCase):
                     diff = get_diff(test_json, sample_json)
                 except Exception, msg:
                     print "******************Timed out at {0}******************".format(sample_url)
+                    print msg
 
                 sql = ("insert into console_reportresult(sample_url, website, "
                        "report_result, changes_in_structure, changes_in_type, changes_in_value, report_date, "
