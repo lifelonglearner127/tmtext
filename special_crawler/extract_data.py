@@ -453,6 +453,9 @@ class Scraper():
                 agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
             request.add_header('User-Agent', agent)
 
+            if 'www.lowes.com' in self.product_page_url:
+                request.add_header('Cookie',  'selectedStore1=Lowe\'s Of San Francisco## CA|3095|2|94124|no|Y|491 Bayshore Blvd|San Francisco|Mon-Sat 6 Am - 10 Pm## Sun 7 Am - 9 Pm|(415) 486-8611|(415) 486-8612|WG')
+
             for i in range(self.MAX_RETRIES):
                 try:
                     contents = urllib2.urlopen(request, timeout=20).read()
