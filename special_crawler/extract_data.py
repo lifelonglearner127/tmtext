@@ -79,6 +79,7 @@ class Scraper():
             "title_seo", # SEO title, string
             "model", # model of product, string
             "upc", # upc of product, string
+            "asin", # Amazon asin
             "features", # features of product, string
             "feature_count", # number of features of product, int
             "model_meta", # model from meta, string
@@ -212,7 +213,7 @@ class Scraper():
     #       maybe put it as an instance variable
     # TODO: add one for root? to make sure nothing new appears in root either?
     DICT_STRUCTURE = {
-        "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
+        "product_info": ["product_name", "product_title", "title_seo", "model", "upc", "asin", \
                         "features", "feature_count", "model_meta", "description", "seller_ranking", "long_description", "shelf_description", "apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",

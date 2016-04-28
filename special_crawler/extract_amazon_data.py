@@ -188,6 +188,9 @@ class AmazonScraper(Scraper):
 
         return None
 
+    def _upc(self):
+        return re.search('UPC:</b> (\d+)', html.tostring(self.tree_html)).group(1)
+
     # Amazon's version of UPC
     def _asin(self):
         return self.tree_html.xpath("//input[@name='ASIN']/@value")[0]
@@ -1253,7 +1256,8 @@ class AmazonScraper(Scraper):
         "product_title" : _product_title, \
         "title_seo" : _title_seo, \
         "model" : _model, \
-        "upc" : _asin,\
+        "upc" : _upc, \
+        "asin" : _asin,\
         "features" : _features, \
         "feature_count" : _feature_count, \
         "model_meta" : _model_meta, \
