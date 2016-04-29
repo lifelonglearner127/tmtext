@@ -8,7 +8,7 @@ import requests
 
 from lxml import html, etree
 from extract_data import Scraper
-
+from spiders_shared_code.verizonwireless_variants import VerizonWirelessVariants
 
 class VerizonWirelessScraper(Scraper):
 
@@ -36,6 +36,7 @@ class VerizonWirelessScraper(Scraper):
         self.review_json = None
         self.review_list = None
         self.REVIEW_URL = "http://api.bazaarvoice.com/data/batch.json?passkey=e8bg3vobqj42squnih3a60fui&apiversion=5.5&displaycode=6543-en_us&resource.q0=products&filter.q0=id%3Aeq%3A{0}&stats.q0=questions%2Creviews&filteredstats.q0=questions%2Creviews"
+        self.av = VerizonWirelessVariants()
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -209,9 +210,8 @@ class VerizonWirelessScraper(Scraper):
 
             if data.get('type', None) == 'media_set':
                 try:
-                    videos += [x.get('set', {}).get(
-                        'item', [])[-1] for x in data['item'] if x.get(
-                        'type') == 'video_set']
+                    videos += [x.get('set', {}).get('item', [])[-1] for x in data['item'] if x.get('type')=='video_set']
+                    videos += [x for x in data['item'] if x.get('type') == 'video']
                 except:
                     pass
 
@@ -286,8 +286,12 @@ class VerizonWirelessScraper(Scraper):
         return htags_dict
 
     def _keywords(self):
-        return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0]
+        keywords = self.tree_html.xpath('//meta[@name="keywords"]/@content')
+        return keywords[0] if keywords else None
 
+    def _variants(self):
+        self.av.setupCH(self.tree_html)
+        return self.av._variants()
 
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -414,9 +418,13 @@ class VerizonWirelessScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
+        devices = ['/tablets/', '/smartphones/', '/basic-phones/']
+        url = self.product_page_url
         categories = self.tree_html.xpath(
-                '//*[@itemtype="https://data-vocabulary.org/Breadcrumb"]'
-                '//span[@itemprop="title"]/text()')
+            '//*[@itemtype="https://data-vocabulary.org/Breadcrumb"]'
+            '//span[@itemprop="title"]/text()')
+        if categories and any([x in url for x in devices]):
+            categories.insert(1, 'Devices')
         return categories
 
     def _category_name(self):
@@ -443,74 +451,72 @@ class VerizonWirelessScraper(Scraper):
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
 
-    DATA_TYPES = { \
+    DATA_TYPES = {
         # CONTAINER : NONE
-        "url" : _url, \
-        "event" : _event, \
-        "product_id" : _product_id, \
-        "site_id" : _site_id, \
-        "status" : _status, \
+        "url": _url,
+        "event": _event,
+        "product_id": _product_id,
+        "site_id": _site_id,
+        "status": _status,
 
         # CONTAINER : PRODUCT_INFO
-        "product_name" : _product_name, \
-        "product_title" : _product_title, \
-        "title_seo" : _title_seo, \
-        "model" : _model, \
-        "upc" : _upc,\
-        "manufacturer": _manufacturer, \
-        "features" : _features, \
-        "feature_count" : _feature_count, \
-        "model_meta" : _model_meta, \
-        "description" : _description, \
-        "long_description" : _long_description, \
+        "product_name": _product_name,
+        "product_title": _product_title,
+        "title_seo": _title_seo,
+        "model": _model,
+        "upc": _upc,\
+        "manufacturer": _manufacturer,
+        "features": _features,
+        "feature_count": _feature_count,
+        "model_meta": _model_meta,
+        "description": _description,
+        "long_description": _long_description,
+        "variants": _variants,
 
         # CONTAINER : PAGE_ATTRIBUTES
-        "image_count" : _image_count,\
-        "image_urls" : _image_urls, \
-        "video_count" : _video_count, \
-        "video_urls" : _video_urls, \
-        "pdf_count" : _pdf_count, \
-        "pdf_urls" : _pdf_urls, \
-        "wc_360": _wc_360, \
-        "wc_emc": _wc_emc, \
-        "wc_video": _wc_video, \
-        "wc_pdf": _wc_pdf, \
-        "wc_prodtour": _wc_prodtour, \
-        "webcollage" : _webcollage, \
-        "htags" : _htags, \
-        "keywords" : _keywords, \
+        "image_count": _image_count,
+        "image_urls": _image_urls,
+        "video_count": _video_count,
+        "video_urls": _video_urls,
+        "pdf_count": _pdf_count,
+        "pdf_urls": _pdf_urls,
+        "wc_360": _wc_360,
+        "wc_emc": _wc_emc,
+        "wc_video": _wc_video,
+        "wc_pdf": _wc_pdf,
+        "wc_prodtour": _wc_prodtour,
+        "webcollage": _webcollage,
+        "htags": _htags,
+        "keywords": _keywords,
         "canonical_link": _canonical_link,
 
         # CONTAINER : REVIEWS
-        "review_count" : _review_count, \
-        "average_review" : _average_review, \
-        "max_review" : _max_review, \
-        "min_review" : _min_review, \
-        "reviews" : _reviews, \
+        "review_count": _review_count,
+        "average_review": _average_review,
+        "max_review": _max_review,
+        "min_review": _min_review,
+        "reviews": _reviews,
 
         # CONTAINER : SELLERS
-        "in_stock": _in_stock, \
-        "price" : _price, \
-        "price_amount" : _price_amount, \
-        "price_currency" : _price_currency, \
-        "in_stores" : _in_stores, \
-        "site_online": _site_online, \
-        "site_online_out_of_stock": _site_online_out_of_stock, \
-        "in_stores_out_of_stock": _in_stores_out_of_stock, \
-        "marketplace" : _marketplace, \
-        "marketplace_sellers" : _marketplace_sellers, \
-        "marketplace_lowest_price" : _marketplace_lowest_price, \
+        "in_stock": _in_stock,
+        "price": _price,
+        "price_amount": _price_amount,
+        "price_currency": _price_currency,
+        "in_stores": _in_stores,
+        "site_online": _site_online,
+        "site_online_out_of_stock": _site_online_out_of_stock,
+        "in_stores_out_of_stock": _in_stores_out_of_stock,
+        "marketplace": _marketplace,
+        "marketplace_sellers": _marketplace_sellers,
+        "marketplace_lowest_price": _marketplace_lowest_price,
 
         # CONTAINER : CLASSIFICATION
-        "categories" : _categories, \
-        "category_name" : _category_name, \
-        "brand" : _brand, \
+        "categories": _categories,
+        "category_name": _category_name,
+        "brand": _brand,
 
-        "loaded_in_seconds" : None, \
-        }
+        "loaded_in_seconds": None}
 
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
-    DATA_TYPES_SPECIAL = { \
-        "mobile_image_same" : _mobile_image_same, \
-    }
+    DATA_TYPES_SPECIAL = {"mobile_image_same": _mobile_image_same}
