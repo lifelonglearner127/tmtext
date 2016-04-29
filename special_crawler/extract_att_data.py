@@ -116,7 +116,7 @@ class ATTScraper(Scraper):
             response = requests.get('https://www.att.com/shop/360s/xml/' + self._product_id() + '.xml')
 
             if response.status_code == 200:
-                self.product_xml = etree.XML(response.content.replace(' encoding="UTF-8"', ''))
+                self.product_xml = etree.XML(response.content.replace(' encoding="UTF-8"', '').replace('&', '&amp;'))
 
         return self.product_xml
 
