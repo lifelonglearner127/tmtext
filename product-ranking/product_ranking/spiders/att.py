@@ -258,7 +258,8 @@ class ATTProductsSpider(BaseProductsSpider):
         _price = price_list_options[0].get('listPrice', None)
         if _price or _price == 0:
             prod['price'] = Price(price=_price, priceCurrency='USD')
-        prod['is_in_store_only'] = not sel_v.get('retailAvailable', True)
+        if sel_v.get('retailAvailable', None) is False:
+            prod['available_store'] = 0
         prod['title'] = sel_v['displayName']
         prod['sku'] = response.meta['selected_sku']
         yield prod
