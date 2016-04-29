@@ -16,21 +16,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+from product_ranking.items import CheckoutProductItem, CheckoutPricesItem, \
+    CheckoutDiscountItem
 
 import scrapy
 from scrapy.conf import settings
 from scrapy.http import Request, FormRequest
 from scrapy.log import INFO, WARNING, ERROR, DEBUG
 import lxml.html
-try:
-    from pyvirtualdisplay import Display
-except ImportError:
-    print('pyvirtualdisplay not installed')
-
-try:
-    import requesocks as requests
-except ImportError:
-    import requests
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -55,22 +48,6 @@ def _get_random_proxy():
 
 def _get_domain(url):
     return urlparse.urlparse(url).netloc.replace('www.', '')
-
-
-class JCPennyCheckoutProductItem(scrapy.Item):
-    name = scrapy.Field()
-    id = scrapy.Field()
-    price = scrapy.Field()
-
-
-class JCPennyCheckoutPricesItem(scrapy.Item):
-    order_subtotal = scrapy.Field()
-    order_total = scrapy.Field()
-
-
-class JCPennyCheckoutDiscountItem(scrapy.Item):
-    discount_name = scrapy.Field()
-    discount_qty = scrapy.Field()
 
 
 class JCpenneySpider(scrapy.Spider):
@@ -249,7 +226,7 @@ class JCpenneySpider(scrapy.Spider):
                 if name and id and price and quantity:
                     quantity = int(quantity)
                     price = float(price) / quantity
-                    item = JCPennyCheckoutProductItem()
+                    item = CheckoutProductItem()
                     item['name'] = name
                     item['id'] = id
                     item['price'] = price
@@ -263,7 +240,7 @@ class JCpenneySpider(scrapy.Spider):
                     By.XPATH, '//*[@class="flt_rgt order_subtotal_amnt"]')))
 
             if order_subtotal_element:
-                item = JCPennyCheckoutPricesItem()
+                item = CheckoutPricesItem()
                 order_subtotal = order_subtotal_element.text
                 item['order_subtotal'] = is_empty(re.findall('\$([\d\.]+)',
                                                              order_subtotal))
@@ -320,8 +297,8 @@ class JCpenneySpider(scrapy.Spider):
             executable_path = '/usr/local/bin/chromedriver'
         # initialize webdriver, open the page and make a screenshot
         driver = webdriver.Chrome(desired_capabilities=chrome_flags,
-                                      chrome_options=chrome_options,
-                                      executable_path=executable_path)
+                                  chrome_options=chrome_options,
+                                  executable_path=executable_path)
         return driver
 
     def _init_firefox(self):
