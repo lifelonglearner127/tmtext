@@ -4,34 +4,19 @@ import re
 
 from urlparse import urljoin
 
-from scrapy import Request
-
-from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.items import SiteProductItem, BuyerReviews, Price
 from product_ranking.spiders import cond_set_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
-
+from spiders_shared_code.verizonwireless_variants import VerizonWirelessVariants
 
 class VerizonwirelessProductsSpider(ProductsSpider):
     handle_httpstatus_list = [404]
     name = 'verizonwireless_products'
 
-    custom_settings = {'RETRY_HTTP_CODES':[500, 502, 503, 504, 400, 403, 408]}
-
-    allowed_domains = ['verizonwireless.com','bazaarvoice.com']
+    allowed_domains = ['verizonwireless.com']
 
     SEARCH_URL = "http://www.verizonwireless.com/search/" \
                  "vzwSearch?Ntt={search_term}&nav=Global&gTab="
-
-    REVIEW_URL = 'http://api.bazaarvoice.com/data/products.json?' \
-                 'passkey=e8bg3vobqj42squnih3a60fui&apiversion=' \
-                 '5.5&filter=id:{product_id}&stats=reviews'
-
-    def __init__(self, *args, **kwargs):
-        self.br = BuyerReviewsBazaarApi(called_class=self)
-
-        super(VerizonwirelessProductsSpider, self).__init__(
-            site_name=self.allowed_domains[0], *args, **kwargs)
 
     def _total_matches_from_html(self, response):
         total = response.xpath(
@@ -92,6 +77,11 @@ class VerizonwirelessProductsSpider(ProductsSpider):
         sku = re.findall('selectedSkuId":"(.*?)"', response.body)
         return sku[0] if sku else None
 
+    def _parse_variants(self, response):
+        self.av = VerizonWirelessVariants()
+        self.av.setupSC(response)
+        return self.av._variants()
+
     def _parse_is_out_of_stock(self, response):
         status = response.xpath(
             '//*[@itemprop="availability" '
@@ -106,50 +96,36 @@ class VerizonwirelessProductsSpider(ProductsSpider):
         return ''.join(description).strip() if description else None
 
     def _parse_buyer_reviews(self, response):
-        meta = response.meta.copy()
-        product = response.meta['product']
-        reqs = meta.get('reqs', [])
+        value_list = response.xpath(
+            '//*[@id="pdp-review-link"]/span/text()').extract()
+        if len(value_list) is 3:
+            num_reviews = value_list[2]
+            average_rating = value_list[0]
+            rating_by_star = None
 
-        product['buyer_reviews'] = self.br.parse_buyer_reviews_products_json(response)
+            return BuyerReviews(num_of_reviews=num_reviews,
+                                average_rating=average_rating,
+                                rating_by_star=rating_by_star or None)
+        return None
 
-        if reqs:
-            return self.send_next_request(reqs, response)
-        else:
-            return product
+    def _parse_last_buyer_date(self, response):
+        return None
 
     def _parse_price_json(self, data):
         return data.get('mboxInfo', {}).get(
             'priceBreakDownFullRetailPrice', None)
 
-    def _parse_sku_price_json(self, data):
-        return data.get('priceBreakDown', {}).get(
-            'fullRetailPriceListId', {}).get('RETAIL PRICE', None) or \
-            data.get('price', {}).get('retailPrice')
+    def _parse_reviews_json(self, product_data):
+        num_reviews = product_data.get(
+            'numberOfReviews', None)
+        average_rating = product_data.get(
+            'productRating', None)
 
-    def _parse_variants_json(self, sku_list):
-        if not sku_list:
-            return None
-        variants = []
-        for sku in sku_list:
-            vr = {}
-            vr['skuID'] = sku.get('id')
-            properties = {}
-            color = sku.get('colorName')
-            if color:
-                properties['color'] = color
-            capacity = sku.get('capacity')
-            if capacity:
-                properties['capacity'] = capacity
+        rating_by_star = None
 
-            if properties:
-                vr['properties'] = properties
-
-            price = self._parse_sku_price_json(sku)
-            if price and float(price) != 0.00:
-                vr['price'] = price
-            variants.append(vr)
-
-        return variants
+        return BuyerReviews(num_of_reviews=num_reviews,
+                            average_rating=average_rating,
+                            rating_by_star=rating_by_star or None)
 
     def parse_404(self, response):
         return self.parse_product(response)
@@ -172,10 +148,8 @@ class VerizonwirelessProductsSpider(ProductsSpider):
             price = self._parse_price_json(pdp_json)
             cond_set_value(product, 'price', price)
 
-            sku_list = product_data.get('skus', [])
-
-            variants = self._parse_variants_json(sku_list)
-            cond_set_value(product, 'variants', variants)
+            reviews = self._parse_reviews_json(product_data)
+            cond_set_value(product, 'buyer_reviews', reviews)
 
         # Parse title
         title = self._parse_title(response)
@@ -205,42 +179,27 @@ class VerizonwirelessProductsSpider(ProductsSpider):
         sku = self._parse_sku(response)
         cond_set_value(product, 'sku', sku)
 
+        # Parse variants
+        variants = self._parse_variants(response)
+        cond_set_value(product, 'variants', variants)
+
         # Parse stock status
         out_of_stock = self._parse_is_out_of_stock(response)
         cond_set_value(product, 'is_out_of_stock', out_of_stock)
 
-        try:
-            device_prod_id_search = re.search('deviceProdId=(.*?)&', response.body)
-            if device_prod_id_search:
-                product_id = device_prod_id_search.group(1)
+        # Parse buyer reviews
+        buyer_reviews = self._parse_buyer_reviews(response)
+        cond_set_value(product, 'buyer_reviews', buyer_reviews)
 
-            else:
-                product_id = response.xpath('//input[@id="isProductId"]/@value').extract()[0]
+        # Parse last buyer review date
+        last_buyer_date = self._parse_last_buyer_date(response)
+        cond_set_value(product, 'last_buyer_review_date', last_buyer_date)
 
-            reqs.append(
-                Request(
-                    url=self.REVIEW_URL.format(product_id=product_id),
-                    dont_filter=True,
-                    callback=self._parse_buyer_reviews,
-                    meta=meta
-                ))
-        except:
-            pass
-
-
+        # Parse Variants
+        variants = self._parse_variants(response)
+        cond_set_value(product, 'variants', variants)
+        
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
-
-    def send_next_request(self, reqs, response):
-        """
-        Helps to handle several requests
-        """
-        req = reqs.pop(0)
-        new_meta = response.meta.copy()
-        if reqs:
-            new_meta["reqs"] = reqs
-
-        return req.replace(meta=new_meta)
-
