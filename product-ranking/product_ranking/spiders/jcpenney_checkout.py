@@ -84,7 +84,7 @@ class JCpenneySpider(scrapy.Spider):
         yield scrapy.Request('http://www.jcpenney.com/')
 
     def parse(self, request):
-        for product_url in self.product_urls.split('|'):
+        for product_url in self.product_urls.split('||||'):
             # Open product URL
             self._parse_product(product_url)
 
