@@ -284,3 +284,16 @@ class DiscountCoupon(Item):
     end_date = Field()  # (10/31/2015)
     discount = Field()  # (Discount value or Percentage (20% OFF)
     conditions = Field()  # (Applies to select items priced $50 or more...)
+
+class CheckoutProductItem(Item):
+    name = Field()
+    id = Field()
+    price = Field()
+
+class CheckoutPricesItem(Item):
+    order_subtotal = Field()
+    order_total = Field()
+
+class CheckoutDiscountItem(Item):
+    discount_name = Field()
+    discount_qty = Field()
