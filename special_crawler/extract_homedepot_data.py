@@ -4,6 +4,7 @@ import urllib
 import re
 import sys
 import json
+import copy
 
 from lxml import html, etree
 import time
@@ -177,6 +178,70 @@ class HomeDepotScraper(Scraper):
 
         return None
 
+    def _swatches(self):
+        swatches = []
+
+        for img in self.tree_html.xpath('//div[contains(@class, "sku_variant")]/ul/li/a/img'):
+            swatch = {
+                'color' : img.get('title'),
+                'hero' : 1,
+                'hero_image' : img.get('src')
+            }
+            swatches.append(swatch)
+
+        if swatches:
+            return swatches
+
+    def _variants(self):
+        variants = []
+
+        first_sku_variant = True
+
+        for sku_variant in self.tree_html.xpath('//div[contains(@class, "sku_variant")]'):
+            variants = []
+
+            for option in sku_variant.xpath('ul/li'):
+                if 'product_sku_Overlay_ColorSwatch' in sku_variant.get('class'):
+                    v = {
+                        'selected' : False,
+                        'properties' : {
+                            'color' : option.xpath('a/img/@title')[0]
+                        }
+                    }
+
+                    if option.get('class') and 'selected' in option.get('class'):
+                        v['selected'] = True
+
+                else:
+                    custom_label = sku_variant.xpath('a[@class="customLabel"]/text()')[0]
+                    selected_value = sku_variant.xpath('a[@class="customLabel"]/span[contains(@class,"select")]/text()')[0]
+
+                    value = option.xpath('a/text()')[0]
+
+                    v = {
+                        'selected' : selected_value == value,
+                        'properties' : {
+                            custom_label : value
+                        }
+                    }
+
+                if not first_sku_variant:
+                    for variant in original_variants:
+                        variant_copy = copy.deepcopy(variant)
+                        variant_copy['properties'].update(v['properties'])
+                        if not v['selected']:
+                            variant_copy['selected'] = False
+                        variants.append(variant_copy)
+
+                else:
+                    variants.append(v)
+
+            original_variants = copy.deepcopy(variants)
+            first_sku_variant = False
+
+        if variants:
+            return variants
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -345,6 +410,9 @@ class HomeDepotScraper(Scraper):
     def _price_currency(self):
         return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
 
+    def _temp_price_cut(self):
+        return self.product_json["itemExtension"]["localStoreSku"]["pricing"]["itemOnSale"]
+
     def _in_stores(self):
         self._extract_product_json()
 
@@ -391,7 +459,7 @@ class HomeDepotScraper(Scraper):
     def _categories(self):
         scripts = self.tree_html.xpath('//script//text()')
         for script in scripts:
-            jsonvar = re.findall(r'BREADCRUMB_JSON = (.*?);', script)
+            jsonvar = re.findall(r'BREADCRUMB_JSON = (.*?});', script)
             if len(jsonvar) > 0:
                 jsonvar = jsonvar[0]
                 break
@@ -442,6 +510,8 @@ class HomeDepotScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
+        "swatches" : _swatches, \
+        "variants" : _variants, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
@@ -461,10 +531,12 @@ class HomeDepotScraper(Scraper):
         "max_review" : _max_review, \
         "min_review" : _min_review, \
         "reviews" : _reviews, \
+
         # CONTAINER : SELLERS
         "price" : _price, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
+        "temp_price_cut" : _temp_price_cut, \
         "in_stores" : _in_stores, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
@@ -477,8 +549,6 @@ class HomeDepotScraper(Scraper):
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
-
-
 
         "loaded_in_seconds" : None, \
         }
