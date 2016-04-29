@@ -21,6 +21,8 @@ from product_ranking.spiders import cond_set_value, populate_from_open_graph
 from spiders_shared_code.target_variants import TargetVariants
 from product_ranking.validation import BaseValidator
 from product_ranking.validators.target_validator import TargetValidatorSettings
+from product_ranking.guess_brand import guess_brand_from_first_words
+
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -174,11 +176,23 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         #cond_set_value(prod, 'url', old_url)
 
         self._populate_from_html(response, prod)
-        # fiME: brand=None
-        if 'brand' in prod and len(prod['brand']) == 0:
-            prod['brand'] = 'No brand'
-        if 'brand' not in prod:
-            prod['brand'] = 'No brand for single result'    
+
+        if not prod.get('brand', None):
+            brand = guess_brand_from_first_words(prod['title'])
+            if brand:
+                prod['brand'] = brand
+
+            else:
+                # Check last part of the title
+                brand = guess_brand_from_first_words(
+                    prod['title'].split('-')[-1])
+                if brand:
+                    prod['brand'] = brand
+                elif 'brand' in prod:
+                    prod['brand'] = 'No brand'
+                else:
+                    prod['brand'] = 'No brand for single result'
+
         payload = self._extract_rr_parms(response)
 
         collection_items = response.xpath('//div[@id="CollectionItems"]//h3/a')
@@ -451,7 +465,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 self.log("no product link in %s" % ci.extract(), DEBUG)
                 continue
             brand = ci.xpath(
-                "a[contains(@class,'productBrand')]/text()").extract()
+                "*//a[contains(@class,'productBrand')]/text()").extract()
             if brand:
                 brand = brand[0]
             else:
