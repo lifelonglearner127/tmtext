@@ -19,6 +19,7 @@ from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from scrapy import Selector
 from spiders_shared_code.dockers_variants import DockersVariants
 from product_ranking.validators.dockers_validator import DockersValidatorSettings
+from product_ranking.statistics import report_statistics
 
 is_empty =lambda x,y=None: x[0] if x else y
 
@@ -116,10 +117,11 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
         return result
 
     @staticmethod
-    def last_three_digits_the_same(lst):
-        if len(lst) < 4:
+    def last_six_digits_the_same(lst):
+        print lst
+        if len(lst) < 7:
             return
-        return lst[-1] == lst[-2] == lst[-3]
+        return len(set(lst[-6:-1])) == 1  # if all elements are the same, set's length will be 1
 
     def parse(self, response):
         proxy = response.request.meta.get('proxy', None)
@@ -147,15 +149,16 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             while True:
                 try:
                     driver.execute_script("scrollTo(0,50000)")
-                    time.sleep(6)
+                    time.sleep(10)
                     product_links = self._get_product_links_from_serp(driver)
                     collected_products_len.append(len(product_links))
-                    if self.last_three_digits_the_same(collected_products_len):
-                        break  # last three iterations collected equal num of products
+                    if self.last_six_digits_the_same(collected_products_len):
+                        break  # last six iterations collected equal num of products
                     if len(product_links) > self.quantity:
                         break
                     print 'Collected %i product links' % len(product_links)
                     self.log('Collected %i product links' % len(product_links))
+                    self.log('Statistics: %s' % report_statistics())
                 except Exception as e:
                     print str(e)
                     self.log('Error while doing pagination %s' % str(e), WARNING)
