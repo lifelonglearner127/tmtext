@@ -289,11 +289,7 @@ class CheckoutProductItem(Item):
     name = Field()
     id = Field()
     price = Field()
-
-class CheckoutPricesItem(Item):
+    quantity = Field()
+    color = Field()
     order_subtotal = Field()
     order_total = Field()
-
-class CheckoutDiscountItem(Item):
-    discount_name = Field()
-    discount_qty = Field()

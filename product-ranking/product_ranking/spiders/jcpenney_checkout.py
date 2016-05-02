@@ -2,8 +2,7 @@
 # turns pages into screenshots
 #
 
-import base64
-import tempfile
+import json
 import os
 import sys
 import time
@@ -16,8 +15,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from product_ranking.items import CheckoutProductItem, CheckoutPricesItem, \
-    CheckoutDiscountItem
+from product_ranking.items import CheckoutProductItem
 
 import scrapy
 from scrapy.conf import settings
@@ -49,7 +47,6 @@ def _get_random_proxy():
 def _get_domain(url):
     return urlparse.urlparse(url).netloc.replace('www.', '')
 
-
 class JCpenneySpider(scrapy.Spider):
     name = 'jcpenney_checkout_products'
     allowed_domains = ['jcpenney.com']  # do not remove comment - used in find_spiders()
@@ -62,34 +59,80 @@ class JCpenneySpider(scrapy.Spider):
                         "jsp/checkout/secure/checkout.jsp"
 
     def __init__(self, *args, **kwargs):
+        settings.overrides['ITEM_PIPELINES'] = {}
+        super(JCpenneySpider, self).__init__(*args, **kwargs)
         self.user_agent = kwargs.get(
             'user_agent',
             ("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0) Gecko/20100101 Firefox/32.0")
         )
 
         self.product_urls = kwargs.get('product_urls', None)
+        self.product_data = kwargs.get('product_data', "[]")
+        self.product_data = json.loads(self.product_data)
         self.close_popups = kwargs.get('close_popups', kwargs.get('close_popup', None))
-        self.driver = kwargs.get('driver', None)  # if None, then a random UA will be used
+        self.driver_name = kwargs.get('driver', None)  # if None, then a random UA will be used
         self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
         self.disable_site_settings = kwargs.get('disable_site_settings', None)
+        self.quantity = kwargs.get('quantity', None)
+        if self.quantity:
+            self.quantity = [int(x) for x in self.quantity.split(',')]
+            self.quantity = sorted(self.quantity)
+        else:
+            self.quantity = [1]
 
-        self.driver = self.init_driver()
-        self.wait = WebDriverWait(self.driver, 25)
-
-        settings.overrides['ITEM_PIPELINES'] = {}
-        super(JCpenneySpider, self).__init__(*args, **kwargs)
 
     def start_requests(self):
         yield scrapy.Request('http://www.jcpenney.com/')
 
     def parse(self, request):
-        for product_url in self.product_urls.split('||||'):
+        is_iterable = isinstance(self.product_data, (list, tuple))
+        self.product_data = self.product_data if is_iterable else list(self.product_data)
+        for product in self.product_data:
             # Open product URL
-            self._parse_product(product_url)
+            for qty in self.quantity:
+                url = product.get('url')
+                # Fastest way to empty the cart
+                self.driver = self.init_driver()
+                self.wait = WebDriverWait(self.driver, 25)
+                socket.setdefaulttimeout(30)
+                self.driver.get(url)
 
-        for item in self._parse_cart():
-            yield item
+                if product.get('FetchAllColors'):
+                    # Parse all the products colors
+                    colors = self._get_colors_names()
+
+                else:
+                    # Only parse the selected color
+                    # if None, the first fetched will be selected
+                    colors = [product.get('color', None)]
+
+                for color in colors:
+                    try:
+                        self._parse_product(url, qty, color)
+
+                        for item in self._parse_cart():
+                            yield item
+                        # Fastest way to empty the cart
+                        # and clear resources
+                        self.driver.close()
+                        self.driver = self.init_driver()
+                        self.wait = WebDriverWait(self.driver, 25)
+                        socket.setdefaulttimeout(30)
+                        self.driver.get(url)
+                    except:
+                        self.log('Error while parsing color %s of %s' % (color, url))
+                self.driver.close()
+
+    def _get_colors_names(self):
+        """
+            Return the name of all the colors availables
+        """
+        swatches = self._find_by_xpath(
+            '//ul[@class="small_swatches"]'
+            '/li[not(@class="sku_not_available_select")]'
+            '//a[not(span[@class="no_color"])]/img')
+        return [x.get_attribute("name") for x in swatches]
 
     def _find_by_xpath(self, xpath, element=None):
         """
@@ -100,7 +143,6 @@ class JCpenneySpider(scrapy.Spider):
             target = element
         else:
             target = self.driver
-
         return target.find_elements(By.XPATH, xpath)
 
     def _click_attribute(self, selected_attribute_xpath, others_attributes_xpath, element=None):
@@ -136,12 +178,17 @@ class JCpenneySpider(scrapy.Spider):
                               size_attributes_xpath,
                               element)
 
-    def select_color(self, element=None):
+    def select_color(self, element=None, color=None):
         """
         Select the color for the product if is not already selected
         """
         color_attribute_xpath = '*//li[@class="swatch_selected"]'
         color_attributes_xpath = '*//*[@class="small_swatches"]//a'
+
+        if color:
+            color_attributes_xpath = '*//*[@class="small_swatches"]//a' \
+                                     '[img[@name="%s"]]' % color
+
         self._click_attribute(color_attribute_xpath,
                               color_attributes_xpath,
                               element)
@@ -174,10 +221,7 @@ class JCpenneySpider(scrapy.Spider):
                                   avail_attr_xpath,
                                   attribute)
 
-    def _parse_product(self, product_url):
-        socket.setdefaulttimeout(30)
-        self.driver.get(product_url)
-
+    def _parse_product(self, product_url, quantity, color=None):
         products = self._find_by_xpath(
             '//*[@id="regularPP"]|//*[contains(@class,"product_row")]')
 
@@ -186,20 +230,30 @@ class JCpenneySpider(scrapy.Spider):
         products = products if is_iterable else list(products)
 
         for product in products:
+            self.select_color(product, color)
             self.select_size(product)
-            self.select_color(product)
             self.select_width(product)
             self.select_others(product)
+            self._set_quantity(product, quantity)
 
-        addtobagbopus = self._find_by_xpath('//*[@id="addtobagbopus"]')
-        addtobag = self._find_by_xpath('//*[@id="addtobag"]')
-        if addtobagbopus:
-            self._click_on_element_with_id('addtobagbopus')
+            addtobagbopus = self._find_by_xpath('//*[@id="addtobagbopus"]')
+            addtobag = self._find_by_xpath('//*[@id="addtobag"]')
 
-        elif addtobag:
-            self._click_on_element_with_id('addtobag')
+            if addtobagbopus:
+                self._click_on_element_with_id('addtobagbopus')
 
-        # Click add button
+            elif addtobag:
+                self._click_on_element_with_id('addtobag')
+            time.sleep(4)
+
+    def _set_quantity(self, product, quantity):
+        quantity_option = self._find_by_xpath(
+            '*//*[@name="prod_quantity"]'
+            '/option[@value="%d"]' % quantity, product)
+
+        if quantity_option:
+            quantity_option[0].click()
+
         time.sleep(4)
 
     def _parse_cart(self):
@@ -210,7 +264,8 @@ class JCpenneySpider(scrapy.Spider):
                 By.ID, 'shoppingBagContentID')))
 
         if product_list:
-            selector = scrapy.Selector(text=product_list.get_attribute('outerHTML'))
+            selector = scrapy.Selector(text=product_list.get_attribute(
+                'outerHTML'))
             for product in selector.xpath('//fieldset'):
                 name = is_empty(product.xpath(
                     '*//*[contains(@class,"brand_name")]/a/text()').extract())
@@ -219,6 +274,11 @@ class JCpenneySpider(scrapy.Spider):
                 price = is_empty(product.xpath(
                     '*//*[contains(@class,"flt_wdt total")]//'
                     'span[@class="flt_rgt"]/text()').re('\$(.*)'))
+
+                color = is_empty(product.xpath(
+                    '*//span[@class="size" and contains(text(),"color:")]'
+                    '/strong/text()').extract())
+
                 quantity = is_empty(product.xpath(
                     '*//select[@name="quantity"]//option'
                     '[@selected="true"]/text()').extract())
@@ -230,28 +290,27 @@ class JCpenneySpider(scrapy.Spider):
                     item['name'] = name
                     item['id'] = id
                     item['price'] = price
-                    yield item
+                    item['quantity'] = quantity
+                    if color:
+                        item['color'] = color
 
+                    order_subtotal_element = self.wait.until(
+                        EC.visibility_of_element_located((
+                            By.XPATH, '//*[@class="flt_rgt'
+                                      ' order_subtotal_amnt"]')))
+                    if order_subtotal_element:
+                        order_subtotal = order_subtotal_element.text
+                        item['order_subtotal'] = is_empty(re.findall(
+                            '\$([\d\.]+)', order_subtotal))
+                        self._parse_checkout_page(item)
+
+                    yield item
                 else:
                     self.log('Missing field in product from shopping cart')
-
-            order_subtotal_element = self.wait.until(
-                EC.visibility_of_element_located((
-                    By.XPATH, '//*[@class="flt_rgt order_subtotal_amnt"]')))
-
-            if order_subtotal_element:
-                item = CheckoutPricesItem()
-                order_subtotal = order_subtotal_element.text
-                item['order_subtotal'] = is_empty(re.findall('\$([\d\.]+)',
-                                                             order_subtotal))
-
-                for item in self._parse_checkout_page(item):
-                    yield item
 
     def _parse_checkout_page(self, item):
         socket.setdefaulttimeout(30)
         self._click_on_element_with_id('Checkout')
-        time.sleep(5)
         continue_as_guest_button = self.wait.until(
             EC.element_to_be_clickable(
                 (By.XPATH, '//input[@class="blue-Button'
@@ -267,9 +326,6 @@ class JCpenneySpider(scrapy.Spider):
             order_total = order_total_element.text
             item['order_total'] = is_empty(re.findall('\$([\d\.]+)',
                                                       order_total))
-
-        yield item
-        time.sleep(5)
 
     def _click_on_element_with_id(self, _id):
         try:
@@ -321,12 +377,12 @@ class JCpenneySpider(scrapy.Spider):
         if name:
             self._driver = name
         else:
-            if not self.driver:
+            if not self.driver_name:
                 self._driver = 'chromium'
-            elif self.driver == 'random':
+            elif self.driver_name == 'random':
                 self._driver = random.choice(self.available_drivers)
             else:
-                self._driver = self.driver
+                self._driver = self.driver_name
         print('Using driver: ' + self._driver)
         self.log('Using driver: ' + self._driver)
         init_driver = getattr(self, '_init_'+self._driver)
