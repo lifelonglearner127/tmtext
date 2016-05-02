@@ -255,10 +255,10 @@ class SiteProductItem(Item):
                                      # only after you put the product in cart
 
     seller_ranking = Field()  # for Walmart
+
     _subitem = Field()
 
     minimum_order_quantity = Field() # Costco.com
-
 
     available_online = Field()
     available_store = Field()
