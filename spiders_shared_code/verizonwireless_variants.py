@@ -31,9 +31,13 @@ class VerizonWirelessVariants(object):
             if properties:
                 vr['properties'] = properties
 
-            price = self._parse_sku_price_json(sku)
-            if price and float(price.replace('$', '')) != 0.00:
-                vr['price'] = price
+            price = str(self._parse_sku_price_json(sku))
+
+            if price:
+                price = float(price.replace('$', ''))
+                if price != 0.00:
+                    vr['price'] = price
+
             variants.append(vr)
 
         return variants

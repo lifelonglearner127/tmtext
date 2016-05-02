@@ -28,4 +28,5 @@
     <field name="search_term_in_title_interleaved" version="1"></field>
     <field name="google_source_site" version="1"></field>
     <field name="is_mobile_agent" version="1"></field>
+    <field name="variants" version="1"></field>
 </fields>
