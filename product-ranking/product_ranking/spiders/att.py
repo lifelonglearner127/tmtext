@@ -363,6 +363,13 @@ class ATTProductsSpider(BaseProductsSpider):
         cond_set(
             product, 'image_url',
             response.xpath('//meta[contains(@name,"og:image")]/@content').extract())
+        cond_set(
+            product, 'image_url',
+            response.xpath('//meta[contains(@property,"og:image")]/@content').extract())
+        if not product.get('image_url', None):
+            cond_set(
+                product, 'image_url',
+                response.xpath('//img[contains(@id,"deviceHeroImage")]/@src').extract())
         _price = response.xpath('//div[contains(@id,"prodIdCartItem")]/@data-nocommitmentprice').extract()
         if not _price:
             _price = response.xpath('//*[contains(@class, "listItemPriceRt")]/text()').extract()
