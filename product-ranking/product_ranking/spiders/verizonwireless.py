@@ -95,13 +95,19 @@ class VerizonwirelessProductsSpider(ProductsSpider):
     def _parse_variants(self, response):
         self.av = VerizonWirelessVariants()
         self.av.setupSC(response)
-        return self.av._variants()
+        variants = self.av._variants()
 
-    def _parse_is_out_of_stock(self, response):
-        status = response.xpath(
-            '//*[@itemprop="availability" '
-            'and not(@href="http://schema.org/InStock")]')
-        return bool(status)
+        if variants and len(variants) == 1:
+            print "%s only 1 variant" % response.url
+        return variants
+
+    def _parse_is_out_of_stock(self, response, variants):
+        if variants:
+            stocked_variants = [x for x in variants if x.get('in_stock')]
+            return not bool(len(stocked_variants))
+
+        out_of_stock = response.xpath('//*[@id="pdp-outOfStock-cart"]')
+        return bool(out_of_stock)
 
     def _parse_description(self, response):
         description = response.xpath(
@@ -240,12 +246,8 @@ class VerizonwirelessProductsSpider(ProductsSpider):
         cond_set_value(product, 'variants', variants)
 
         # Parse stock status
-        out_of_stock = self._parse_is_out_of_stock(response)
+        out_of_stock = self._parse_is_out_of_stock(response, variants)
         cond_set_value(product, 'is_out_of_stock', out_of_stock)
-
-        # Parse Variants
-        variants = self._parse_variants(response)
-        cond_set_value(product, 'variants', variants)
 
         id = None
         device_prod_id_search = re.search('deviceProdId=(.*?)&', response.body)
