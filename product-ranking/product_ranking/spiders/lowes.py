@@ -109,12 +109,12 @@ class LowesProductsSpider(BaseProductsSpider):
 
     def _parse_price(self, response):
         price = response.xpath(
-            '//*[@class="price"]/text()').re('[\d\.]+')
+            '//*[@class="price"]/text()').re('[\d\.\,]+')
 
         if not price:
             return None
-
-        return Price(price=price[0], priceCurrency='USD')
+        price = price[0].replace(',', '')
+        return Price(price=price, priceCurrency='USD')
 
     def _parse_image_url(self, response):
         image_url = response.xpath(
