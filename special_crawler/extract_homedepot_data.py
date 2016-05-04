@@ -398,14 +398,15 @@ class HomeDepotScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        self._extract_product_json()
+        ajax_price = self.tree_html.xpath('//div[not(@class="bulk_wrapper")]/span[@id="ajaxPrice"]/text()')
 
-        return "$" + '{0:,}'.format(float(self.product_json["itemExtension"]["displayPrice"]))
+        if ajax_price:
+            return self._clean_text( ajax_price[0])
+
+        return self._clean_text( self.tree_html.xpath('//span[@id="ajaxPriceAlt"]/text()')[0])
 
     def _price_amount(self):
-        self._extract_product_json()
-
-        return float(self.product_json["itemExtension"]["displayPrice"])
+        return float( self._price()[1:].replace(',',''))
 
     def _price_currency(self):
         return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
@@ -481,7 +482,7 @@ class HomeDepotScraper(Scraper):
     ##########################################
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
-        return re.sub("&nbsp;", " ", text).strip()
+        return re.sub("[\n\t]", "", text).strip()
 
 
     ##########################################
