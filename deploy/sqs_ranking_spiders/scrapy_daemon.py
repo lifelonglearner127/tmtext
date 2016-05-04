@@ -113,7 +113,7 @@ CACHE_URL_GET = 'get_cache'  # url to retrieve task cache from
 CACHE_URL_SAVE = 'save_cache'  # to save cached result to
 CACHE_URL_STATS = 'complete_task'  # to have some stats about completed tasks
 CACHE_URL_FAIL = 'fail_task'  # to manage broken tasks
-CACHE_AUTH = 'Basic YWRtaW46Q29udGVudDEyMzQ1'  # auth header value
+CACHE_AUTH = ('admin', 'SD*/#n\%4a')
 CACHE_TIMEOUT = 15  # 15 seconds request timeout
 # key in task data to not retrieve cached result
 # if True, task will be executed even if there is result for it in cache
@@ -1135,7 +1135,7 @@ def get_task_result_from_cache(task, queue_name):
     data = dict(task=json.dumps(task), queue=queue_name)
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                             headers={'Authorization': CACHE_AUTH})
+                             auth=CACHE_AUTH)
     except Exception as ex:
         logger.warning(ex)
         return None
@@ -1162,7 +1162,7 @@ def save_task_result_to_cache(task, output_path):
     data = dict(task=json.dumps(task), message=message)
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                             headers={'Authorization': CACHE_AUTH})
+                             auth=CACHE_AUTH)
     except Exception as ex:  # timeout passed but no response received
         logger.warning(ex)
         return False
@@ -1186,7 +1186,7 @@ def log_failed_task(task):
     data = dict(task=json.dumps(task))
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                             headers={'Authorization': CACHE_AUTH})
+                             auth=CACHE_AUTH)
     except Exception as ex:
         logger.warning(ex)
         return False
@@ -1209,7 +1209,7 @@ def notify_cache(task, is_from_cache=False):
     data = dict(task=json.dumps(task), is_from_cache=json.dumps(is_from_cache))
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                             headers={'Authorization': CACHE_AUTH})
+                             auth=CACHE_AUTH)
         logger.info('Cache: updated task (%s), status %s.',
                     task.get('task_id'), resp.status_code)
     except Exception as ex:
