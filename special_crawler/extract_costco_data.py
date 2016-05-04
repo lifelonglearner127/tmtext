@@ -121,7 +121,7 @@ class CostcoScraper(Scraper):
     def _long_description(self):
 
         if filter(None, map((lambda x: x.strip()),self.tree_html.xpath("//div[@id='product-tab1']/*[not(self::div)]//text()"))):
-            return map((lambda x: lxml.html.tostring(x)),self.tree_html.xpath("//div[@id='product-tab1']/*[not(self::div)]")[:-1])
+            return self._clean_html(' '.join(map((lambda x: lxml.html.tostring(x)),self.tree_html.xpath("//div[@id='product-tab1']/*[not(self::div)]"))))
 
         long_description = ""
         html = self._wc_content()
@@ -436,7 +436,7 @@ class CostcoScraper(Scraper):
         self._load_reviews()
 
         if self.reviews:
-            return self.reviews['AverageOverallRating']
+            return round(self.reviews['AverageOverallRating'], 1)
 
     def _review_count(self):
         self._load_reviews()
@@ -596,6 +596,14 @@ class CostcoScraper(Scraper):
        	text = re.sub("&nbsp;", " ", text).strip()
         return  re.sub(r'\s+', ' ', text)
 
+    # Get rid of all html except for <ul>, <li> and <br> tags
+    def _clean_html(self, html):
+        html = html.replace('\\','')
+        html = re.sub('[\n\t\r]', '', html)
+        html = re.sub('<!--[^>]*-->', '', html)
+        html = re.sub('</?(?!(ul|li|br))\w+[^>]*>', '', html)
+        html = re.sub('\s+', ' ', html)
+        return re.sub('> <', '><', html).strip()
 
 
     ##########################################
