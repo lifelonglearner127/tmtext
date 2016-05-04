@@ -201,7 +201,10 @@ class TargetScraper(Scraper):
         return self._clean_text(html.tostring(long_desc_block))
 
     def _mta(self):
-        content = html.tostring(self.tree_html.xpath('//div[@class="content"]')[0])
+        content = ''
+        for element in self.tree_html.xpath('//div[@class="content"]/div[contains(@class,"section")]/*'):
+            if not element.tag == 'h3':
+                content += html.tostring(element)
         content = re.sub('[\n\t]', '', content)
         content = re.sub('<![^>]+>', '', content)
         content = re.sub(' (class|itemprop)="[^"]+"', '', content)
