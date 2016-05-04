@@ -283,12 +283,16 @@ class HomeDepotScraper(Scraper):
         return None
 
     def _video_count(self):
+        self._extract_product_json()
         videos = self._video_urls()
+
+        media_list = self.product_json["media"]["mediaList"]
+        video_count = len( filter(lambda m: 'videoId' in m, media_list))
 
         if videos:
             return len(videos)
 
-        return 0
+        return video_count
 
     def _pdf_urls(self):
         moreinfo = self.tree_html.xpath('//div[@id="moreinfo_wrapper"]')[0]
