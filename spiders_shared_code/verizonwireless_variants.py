@@ -18,25 +18,33 @@ class VerizonWirelessVariants(object):
             return None
         variants = []
         for sku in sku_list:
+            if not sku.get('validSku'):
+                continue
+
             vr = {}
             vr['skuID'] = sku.get('id')
             properties = {}
             color = sku.get('colorName')
+            vr['in_stock'] = sku.get('inventoryStatus') == 1000
             if color:
                 properties['color'] = color
             capacity = sku.get('capacity')
             if capacity:
                 properties['capacity'] = capacity
 
-            if properties:
-                vr['properties'] = properties
+            vr['properties'] = properties
 
-            price = self._parse_sku_price_json(sku)
-            if price and float(price.replace('$', '')) != 0.00:
-                vr['price'] = price
-            variants.append(vr)
+            price = str(self._parse_sku_price_json(sku))
 
-        return variants
+            if price:
+                price = float(price.replace('$', ''))
+                if price != 0.00:
+                    vr['price'] = price
+
+            if vr['properties']:
+                variants.append(vr)
+
+        return variants if variants else None
 
     def _parse_sku_price_json(self, data):
         return data.get('priceBreakDown', {}).get(
@@ -46,6 +54,7 @@ class VerizonWirelessVariants(object):
     def _variants(self):
         content = lxml.html.tostring(self.tree_html)
         pdp_data = re.findall('pdpJSON = ({.*})', content)
+
         if pdp_data:
             pdp_json = json.loads(pdp_data[0])
             product_data = pdp_json.get('devices', {}) or \
