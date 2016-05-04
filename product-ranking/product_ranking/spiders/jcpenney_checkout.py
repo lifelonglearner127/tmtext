@@ -105,7 +105,7 @@ class JCpenneySpider(scrapy.Spider):
                 else:
                     # Only parse the selected color
                     # if None, the first fetched will be selected
-                    colors = [product.get('color', None)]
+                    colors = product.get('color', None)
 
                 for color in colors:
                     try:
