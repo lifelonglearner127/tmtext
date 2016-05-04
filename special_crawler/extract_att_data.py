@@ -15,7 +15,7 @@ class ATTScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is https://www.att.com/.*.html"
+    INVALID_URL_MESSAGE = "Expected URL format is https://www.att.com/.*.html(?)(#sku=sku<skuid>)"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -49,7 +49,7 @@ class ATTScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match('^https://www.att.com/.*\.html$', self.product_page_url)
+        m = re.match('^https://www.att.com/.*\.html\??$', self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -116,7 +116,7 @@ class ATTScraper(Scraper):
             response = requests.get('https://www.att.com/shop/360s/xml/' + self._product_id() + '.xml')
 
             if response.status_code == 200:
-                self.product_xml = etree.XML(response.content.replace(' encoding="UTF-8"', ''))
+                self.product_xml = etree.XML(response.content.replace(' encoding="UTF-8"', '').replace('&', '&amp;'))
 
         return self.product_xml
 
@@ -180,7 +180,7 @@ class ATTScraper(Scraper):
                     variant = {
                         'color' : variant_json['color'],
                         'selected' : variant_json['selectedSku'],
-                        'price' : self._get_price( variant_json['priceList']),
+                        'price' : self._get_price( variant_json['priceList'])[0],
                         'outOfStock' : variant_json['outOfStock']
                     }
 
@@ -368,7 +368,7 @@ class ATTScraper(Scraper):
     ##########################################
     def _price(self):
         if self._get_product_details():
-            return self._get_price( self._get_selected_variant()['priceList'])
+            return self._get_price( self._get_selected_variant()['priceList'])[0]
 
         return self._clean_text( self._get_pricearea_html().xpath('//div[@id="dueToday"]/div[contains(@class,"price")]/text()')[0])
 
@@ -390,9 +390,9 @@ class ATTScraper(Scraper):
                 return 1
             return 0
 
-        if self._get_pricearea_html().xpath('//div[@class="myStoreAddress"]')[0].text_content() == 'Available online - WEB ONLY':
-            return 1
-        return 0
+        if self._get_pricearea_html().xpath('//div[@id="addToCartDiv"]'):
+            return 0
+        return 1
 
     def _in_stores_out_of_stock(self):
         return 0
@@ -408,6 +408,15 @@ class ATTScraper(Scraper):
 
     def _marketplace_lowest_price(self):
         return None
+
+    def _temp_price_cut(self):
+        if self._get_product_details():
+            return self._get_price( self._get_selected_variant()['priceList'])[1]
+
+        if self._get_pricearea_html().xpath('//div[contains(@class,"pricingregular")]//div[contains(@class,"price")]/text()')[0] != self._price():
+            return 1
+
+        return 0
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
@@ -435,18 +444,20 @@ class ATTScraper(Scraper):
 
     def _get_price(self, price_list):
         low_price = None
+        on_sale = 0
 
         for price_json in price_list:
             if price_json['leaseTotalMonths'] == 0:
                 if price_json['salePrice']:
                     price = price_json['salePrice']
+                    on_sale = 1
                 else:
                     price = price_json['dueToday']
 
             if not low_price or price < low_price:
                 low_price = price
 
-        return '$' + str(low_price)
+        return ('$' + str(low_price), on_sale)
 
     def _get_selected_variant(self):
         if self._get_product_details():
@@ -516,6 +527,7 @@ class ATTScraper(Scraper):
         "marketplace" : _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
+        "temp_price_cut" : _temp_price_cut, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \

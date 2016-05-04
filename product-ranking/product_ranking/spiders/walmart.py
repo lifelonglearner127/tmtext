@@ -667,7 +667,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 if offer_id:
                     offer_id = re.search('offerId=([A-Za-z0-9]+)', offer_id[0])
                     if offer_id:
-                        price = self._parse_marketplace_price_in_cart(response, offer_id.group(1))
+                        offer_id = offer_id.group(1)
+                else:
+                    offer_id = seller.xpath('.//*[@data-offer-id]/@data-offer-id').extract()
+                    if offer_id:
+                        offer_id = offer_id[0]
+                if offer_id:
+                    price = self._parse_marketplace_price_in_cart(response, offer_id)
 
             name = is_empty(seller.xpath(
                 "div/div/div[contains(@class, 'name')]/a/text() |"
@@ -685,6 +691,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 name = is_empty(seller.xpath(
                     './/div[contains(@class, "seller-name")]//a/text()'
                 ).extract()).strip()
+            if not name:
+                name = is_empty(seller.xpath(
+                    './/span[contains(@class,"copy-small")]/b/text()').extract())
             marketplaces.append({
                 'currency': 'USD',
                 "price": float(price) if price else 0.00,
