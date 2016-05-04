@@ -46,6 +46,8 @@ for row in reader:
                     price = price_searched.group(2)
                     priceCurrency = price_searched.group(1)
 
+
+
     given_url = row.get('given_url')
     model = row.get('model')
     categories = row.get('categories')
@@ -55,11 +57,11 @@ for row in reader:
     shipping = row.get('shipping')
     shipping_prices_dict = {}
     if shipping:
-        price = re.findall("u'cost': u'([\d\.]+?)'", shipping)
+        price_shipping = re.findall("u'cost': u'([\d\.]+?)'", shipping)
         name = re.findall("u'name': u'(.*?)'", shipping)
 
-        for (price, name) in zip(price, name):
-            shipping_prices_dict[name] = price
+        for (price_shipping, name) in zip(price_shipping, name):
+            shipping_prices_dict[name] = price_shipping
 
     delivery_price_standard = shipping_prices_dict.get('Standard', '')
     delivery_price_standard_currency = priceCurrency if delivery_price_standard else ''
