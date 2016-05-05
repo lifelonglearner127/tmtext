@@ -1496,7 +1496,7 @@ class AmazonBaseClass(BaseProductsSpider):
     def _parse_marketplace_from_static_right_block_more(self, response):
         product = response.meta['product']
         reqs = response.meta.get('reqs')
-        
+
         _prod_price = product.get('price', [])
         _prod_price_currency = None
         if _prod_price:
@@ -1520,6 +1520,11 @@ class AmazonBaseClass(BaseProductsSpider):
                             'currency': _prod_price_currency,
                             'seller_id': _seller_id
                         })
+        if _marketplace:
+            product['marketplace'] = _marketplace
+        else:
+            product['marketplace'] = []
+
         next_page = response.xpath('//*[@class="a-pagination"]/li[@class="a-last"]/a/@href').extract()
         meta = response.meta
         if next_page:
@@ -1540,6 +1545,10 @@ class AmazonBaseClass(BaseProductsSpider):
         product = response.meta['product']
 
         others_sellers = response.xpath('//*[@id="mbc"]//a[contains(@href, "offer-listing")]/@href').extract()
+        if not others_sellers:
+            others_sellers = response.xpath('//span[@id="availability"]/a/@href').extract()
+        if not others_sellers:
+            others_sellers = response.xpath('//div[@id="availability"]/span/a/@href').extract()
         if others_sellers:
             return product, Request(url= urlparse.urljoin(response.url, others_sellers[0]),
                                     callback=self._parse_marketplace_from_static_right_block_more,
