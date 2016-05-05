@@ -25,6 +25,8 @@ class LowesScraper(Scraper):
 
         self.webcollage_content = None
         self.webcollage_checked = False
+        self.wc_video = 0
+        
         self.reviews = None
         self.reviews_html = None
         self.is_review_checked = False
@@ -181,6 +183,8 @@ class LowesScraper(Scraper):
             for url_frag in re.findall('"([^"]*mp4.mp4full.mp4)"', self.webcollage_content):
                 video_urls.append('http://media.webcollage.net/rlfp/wc/live/module/moencreativespecialties' + url_frag)
 
+                self.wc_video = 1
+
         if video_urls:
             return video_urls
 
@@ -196,6 +200,11 @@ class LowesScraper(Scraper):
         if self.tree_html.xpath('//a[contains(@data-setid, "spinset")]'):
             return 1
         return 0
+
+    def _wc_video(self):
+        self._webcollage()
+
+        return self.wc_video
 
     def _pdf_urls(self):
         return None
@@ -380,6 +389,7 @@ class LowesScraper(Scraper):
         "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
         "wc_360": _wc_360, \
+        "wc_video": _wc_video, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "canonical_link": _canonical_link, \
