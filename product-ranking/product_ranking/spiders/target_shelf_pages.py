@@ -72,12 +72,16 @@ class TargetShelfPagesSpider(TargetProductSpider):
         return url
 
     def parse(self, response):
-        searched = re.search('^http://[\w]*\.target\.com/[\w\/-]+/-/N-(\w+?)Z(\w+)#?', response.url)
+        searched = re.search('^http://[\w]*\.target\.com/[\w\/-]+/-/N-(\w+?)Z(\w+)#?', response.url) or \
+            re.search('^http://[\w]*\.target\.com/[\w\/-]+/-/N-(\w+)#?', response.url)
         if not response.meta.get('json') and searched:
             new_meta = response.meta
             new_meta['json'] = True
             category = searched.group(1)
-            faceted = searched.group(2)
+            try:
+                faceted = searched.group(2)
+            except:
+                faceted = ""
             new_meta['category'] = category
             new_meta['faceted'] = faceted
             return Request(
@@ -90,8 +94,10 @@ class TargetShelfPagesSpider(TargetProductSpider):
         return list(super(TargetShelfPagesSpider, self).parse(response))
 
     def _scrape_product_links_json(self, response):
-        return []
         for item in self._get_json_data(response)['items']['Item']:
+            # Skip Promotions and Ads
+            if not item.get('title'):
+                continue
             url = item['productDetailPageURL']
             url = urlparse.urljoin('http://intl.target.com', url)
             product = SiteProductItem()
@@ -110,7 +116,7 @@ class TargetShelfPagesSpider(TargetProductSpider):
                 else:
                     amount = is_empty(re.findall(
                         '\d+\.{0,1}\d+', priceattr['amount']
-                    ))      
+                    ))
                     price = Price(priceCurrency=currency, price=amount)
                 cond_set_value(product, 'price', price)
             yield url, product
@@ -119,7 +125,7 @@ class TargetShelfPagesSpider(TargetProductSpider):
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1
-        return super(TargetShelfPagesSpider, 
+        return super(TargetShelfPagesSpider,
                     self)._scrape_next_results_page_link(response)
 
     def _scrape_next_results_page_link_json(self, response):
@@ -127,13 +133,13 @@ class TargetShelfPagesSpider(TargetProductSpider):
         current = int(args['currentPage'])
         total = int(args['totalPages'])
         per_page = int(args['resultsPerPage'])
+        print "current %s, total %s, per_page %s" % (current, total, per_page)
         if current <= total:
             sort_mode = self.SORTING or ''
-            category = response.meta['category']
             new_meta = response.meta.copy()
             url = self.url_formatter.format(self.JSON_SEARCH_URL,
                                             index=per_page * current,
                                             page=current + 1,
-                                            faceted=response.meta['faceted'],
-                                            category=response.meta['category'])
+                                            faceted=response.meta.get('faceted'),
+                                            category=response.meta.get('category'))
             return Request(url, meta=new_meta)
