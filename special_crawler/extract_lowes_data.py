@@ -19,15 +19,12 @@ class LowesScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.lowes.com/pd_.*__?productId=<product-id>(&pl=1)?"
-    REVIEW_URL = "http://homedepot.ugc.bazaarvoice.com/1999aa/{0}/reviews.djs?format=embeddedhtml"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
-        # whether product has any webcollage media
-        self.product_json = None
-        # whether product has any webcollage media
-        self.review_json = None
+        self.webcollage_content = None
+        self.webcollage_checked = False
         self.reviews = None
         self.reviews_html = None
         self.is_review_checked = False
@@ -176,11 +173,29 @@ class LowesScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        return None
+        self._webcollage()
+
+        video_urls = []
+
+        if self.webcollage_content:
+            for url_frag in re.findall('"([^"]*mp4.mp4full.mp4)"', self.webcollage_content):
+                video_urls.append('http://media.webcollage.net/rlfp/wc/live/module/moencreativespecialties' + url_frag)
+
+        if video_urls:
+            return video_urls
 
     def _video_count(self):
-        if self.tree_html.xpath('//iframe[@id="productVideoFrame"]'):
-            return len(self.tree_html.xpath('//iframe[@id="productVideoFrame"]'))
+        num_videos = len( self.tree_html.xpath('//a[contains(@data-setid, "video")]'))
+
+        if self._video_urls():
+            return len( self._video_urls()) + num_videos
+
+        return num_videos
+
+    def _wc_360(self):
+        if self.tree_html.xpath('//a[contains(@data-setid, "spinset")]'):
+            return 1
+        return 0
 
     def _pdf_urls(self):
         return None
@@ -189,7 +204,18 @@ class LowesScraper(Scraper):
         return 0
 
     def _webcollage(self):
-        return None
+        if not self.webcollage_checked:
+            self.webcollage_checked = True
+
+            webcollage_src = self.tree_html.xpath('//iframe[@id="productVideoFrame"]/@data-src')
+
+            if webcollage_src:
+                self.webcollage_content = self.load_page_from_url_with_number_of_retries( webcollage_src[0])
+
+        if self.webcollage_content:
+            return 1
+
+        return 0
 
     def _htags(self):
         htags_dict = {}
@@ -202,7 +228,7 @@ class LowesScraper(Scraper):
     def _keywords(self):
         return None
 
-    
+
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
@@ -353,9 +379,10 @@ class LowesScraper(Scraper):
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
+        "wc_360": _wc_360, \
         "htags" : _htags, \
         "keywords" : _keywords, \
-        "canonical_link": _canonical_link,
+        "canonical_link": _canonical_link, \
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \
