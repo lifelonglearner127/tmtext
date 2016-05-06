@@ -1759,30 +1759,14 @@ class WalmartScraper(Scraper):
                 return True
 
     def _free_pickup_today(self):
-        if self.tree_html.xpath("//div[contains(@class, 'pull-left offer-pickup-section')]") and "free pickup today" in self.tree_html.xpath("//div[contains(@class, 'pull-left offer-pickup-section')]")[0].text_content().lower():
-            self._extract_product_info_json()
+        self._extract_product_info_json()
 
-            if self.product_info_json:
-                free_pickup_today = []
+        if self.product_info_json:
+            if 'pickupToggleLabel' in self.product_info_json['buyingOptions']:
+                if self.product_info_json['buyingOptions']['pickupToggleLabel'] == 'FREE pickup today':
+                    return 1
 
-                for pickup_option in self.product_info_json["buyingOptions"]["pickupOptions"]:
-                    if pickup_option["available"] == True:
-                        pickup = {}
-                        pickup["Store Name"] = pickup_option["storeName"]
-                        pickup["City"] = pickup_option["city"]
-                        pickup["Distance"] = pickup_option["distance"]
-
-                        if "zipCode" in pickup_option:
-                            pickup["Zip Code"] = pickup_option["zipCode"]
-                        else:
-                            pickup["Zip Code"] = 94107
-
-                        pickup["Pick-up Today"] = True
-                        free_pickup_today.append(pickup)
-
-                return free_pickup_today
-
-        return None
+        return 0
 
     def _buying_option(self):
         self._extract_product_info_json()
