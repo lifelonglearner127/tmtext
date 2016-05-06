@@ -29,7 +29,9 @@ class VerizonwirelessProductsSpider(ProductsSpider):
     def __init__(self, *args, **kwargs):
         settings.overrides[
             'RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 408]
-
+        middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+        middlewares['product_ranking.custom_middlewares.VerizonMetaRefreshMiddleware'] = 700
+        settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
         super(VerizonwirelessProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
 
@@ -63,14 +65,19 @@ class VerizonwirelessProductsSpider(ProductsSpider):
         return title[0] if title else None
 
     def _parse_categories(self, response):
+        devices = ['/tablets/', '/smartphones/', '/basic-phones/']
         categories = response.xpath(
             '//*[@itemtype="https://data-vocabulary.org/Breadcrumb"]'
             '//span[@itemprop="title"]/text()').extract()
+        if categories and any([x in response.url for x in devices]):
+            categories.insert(1, 'Devices')
+
         return categories
 
     def _parse_category(self, response):
         categories = self._parse_categories(response)
         return categories[-1] if categories else None
+
 
     def _parse_price(self, response):
         price = ''.join(response.xpath(
