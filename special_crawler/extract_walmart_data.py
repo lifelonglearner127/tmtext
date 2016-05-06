@@ -3028,6 +3028,11 @@ class WalmartScraper(Scraper):
 
         return 2
 
+    def _btv(self):
+        if self.tree_html.xpath('//div[contains(@class,"btv-module")]'):
+            return 1
+        return 0
+
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         """Cleans a piece of text of html entities
@@ -3127,7 +3132,7 @@ class WalmartScraper(Scraper):
         "flixmedia": _flixmedia, \
         "webcollage": _product_has_webcollage, \
         "sellpoints": _product_has_sellpoints, \
-
+        "btv": _btv, \
         "image_count": _image_count, \
         "image_urls": _image_urls, \
         "image_dimensions": _image_dimensions, \
