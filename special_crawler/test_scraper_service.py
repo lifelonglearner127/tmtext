@@ -30,6 +30,9 @@ def get_diff(test_json, sample_json, diff = None, path = ''):
         }
 
     for k in sample_json:
+        if k in ['date', 'loaded_in_seconds']:
+            continue
+
         if path:
             new_path = path + '.' + k
         else:
@@ -46,24 +49,26 @@ def get_diff(test_json, sample_json, diff = None, path = ''):
 
                 elif test_json[k] != sample_json[k]:
                     if isinstance(test_json[k], list):
-                        current = []
+                        if sorted(test_json[k]) != sorted(sample_json[k]):
+                            current = []
 
-                        for v in test_json[k]:
-                            if not v in sample_json[k]:
-                                current.append(v)
+                            for v in test_json[k]:
+                                if not v in sample_json[k]:
+                                    current.append(v)
 
-                        sample = []
+                            sample = []
 
-                        for v in sample_json[k]:
-                            if not v in test_json[k]:
-                                sample.append(v)
+                            for v in sample_json[k]:
+                                if not v in test_json[k]:
+                                    sample.append(v)
 
-                        diff['result'] += DIFF_TEMPLATE % ('blue', new_path, current, sample)
-                        diff['changes_in_value'] += 1
+                            diff['result'] += DIFF_TEMPLATE % ('blue', new_path, current, sample)
+                            diff['changes_in_value'] += 1
 
                     else:
                         diff['result'] += DIFF_TEMPLATE % ('blue', new_path, test_json[k], sample_json[k])
                         diff['changes_in_value'] += 1
+
         else:
             diff['result'] += DIFF_TEMPLATE % ('black', new_path, None, sample_json[k])
             diff['changes_in_structure'] += 1
