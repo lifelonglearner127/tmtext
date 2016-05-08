@@ -170,7 +170,6 @@ class ServiceScraperTest(unittest.TestCase):
                              % (test_json_str, today.isoformat(), sample_url))
             self.con.commit()
         except Exception as e:
-            test_json_str = ''
             print "This url is not valid anymore.\n", e
             self.cur.execute("update console_urlsample set not_a_product=1, json=$$%s$$, qualified_date='%s' where url='%s'"
                              % (test_json_str, today.isoformat(), sample_url))
