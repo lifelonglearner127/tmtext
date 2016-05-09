@@ -129,10 +129,8 @@ class ServiceScraperTest(unittest.TestCase):
             test_json = json.loads(test_json)
             test_json_str = json.dumps(test_json, sort_keys=True, indent=4)
 
-            '''
             if "sellers" not in test_json.keys() or "failure_type" in test_json.keys():
                 raise Exception("Invalid product")
-            '''
 
             self.cur.execute("select * from console_urlsample where website='%s' and url='%s'" % (website, sample_url))
             row = self.cur.fetchall()
