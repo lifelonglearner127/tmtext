@@ -80,7 +80,7 @@ def get_diff(test_json, sample_json, diff = None, path = ''):
             new_path = k
 
         if not k in sample_json:
-            diff['result'] += DIFF_TEMPLATE % ('red', new_path, None, sample_json[k])
+            diff['result'] += DIFF_TEMPLATE % ('red', new_path, test_json[k], None)
             diff['changes_in_structure'] += 1
 
     return diff
