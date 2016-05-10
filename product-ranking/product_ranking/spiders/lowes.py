@@ -12,6 +12,9 @@ from scrapy.log import DEBUG, ERROR
 from scrapy import Selector
 from urlparse import urljoin
 
+from scrapy.conf import settings
+
+
 from product_ranking.items import SiteProductItem, BuyerReviews, \
     RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider
@@ -32,6 +35,7 @@ class LowesProductsSpider(BaseProductsSpider):
 
     def __init__(self, zip_code='94117', *args, **kwargs):
         self.zip_code = zip_code
+        settings.overrides['CRAWLERA_ENABLED'] = True
         formatter = None
         super(LowesProductsSpider, self).__init__(
             site_name=self.allowed_domains[0],
