@@ -445,6 +445,9 @@ class Scraper():
                 except Exception, e:
                     continue
         else:
+            costco_url = re.match('http://www.costco.com/(.*)', self.product_page_url)
+            if costco_url:
+                self.product_page_url = 'http://www.costco.com/' + urllib2.quote(costco_url.group(1).encode('utf8'))
             request = urllib2.Request(self.product_page_url)
             # set user agent to avoid blocking
             agent = ''

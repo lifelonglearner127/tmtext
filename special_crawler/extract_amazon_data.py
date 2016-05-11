@@ -80,10 +80,18 @@ class AmazonScraper(Scraper):
         # User-Agent (this is cheating, ok?)
         self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
 
-    def _extract_page_tree(self, captcha_data=None, retries=0):
+    def _extract_page_tree(self, captcha_data=None, retries=3):
         self._initialize_browser_settings()
-        self.browser.open(self.store_url)
-        contents = self.browser.open(self.product_page_url).read()
+
+        for i in range(retries):
+            try:
+                self.browser.open(self.store_url, timeout=None)
+                contents = self.browser.open(self.product_page_url, timeout=None).read()
+                break
+            except timeout:
+                self.is_timeout = True
+                self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                return
 
         try:
             # replace NULL characters
@@ -193,7 +201,7 @@ class AmazonScraper(Scraper):
 
     # Amazon's version of UPC
     def _asin(self):
-        return self.tree_html.xpath("//input[@name='ASIN']/@value")[0]
+        return re.search('ASIN=([\w\d]+)', html.tostring(self.tree_html)).group(1)
 
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='content pdClearfix'][1]//tbody//tr")
@@ -484,6 +492,15 @@ class AmazonScraper(Scraper):
     def _nutrition_fact_count(self):
         if self._nutrition_facts():
             return len(self._nutrition_facts())
+
+        return 0
+
+    def _no_longer_available(self):
+        availability = self.tree_html.xpath('//div[@id="availability"]')
+
+        if availability:
+            if 'Currently unavailable' in availability[0].text_content():
+                return 1
 
         return 0
 
@@ -1272,6 +1289,7 @@ class AmazonScraper(Scraper):
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \
         "nutrition_fact_count": _nutrition_fact_count, \
+        "no_longer_available": _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
