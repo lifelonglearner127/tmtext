@@ -201,10 +201,6 @@ class AmazonScraper(Scraper):
 
     # Amazon's version of UPC
     def _asin(self):
-        asin = self.tree_html.xpath("//input[@name='ASIN']/@value")
-        if asin:
-            return asin[0]
-
         return re.search('ASIN=([\w\d]+)', html.tostring(self.tree_html)).group(1)
 
     def _features(self):
