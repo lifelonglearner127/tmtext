@@ -85,8 +85,8 @@ class AmazonScraper(Scraper):
 
         for i in range(retries):
             try:
-                self.browser.open(self.store_url, timeout=None)
-                contents = self.browser.open(self.product_page_url, timeout=None).read()
+                self.browser.open(self.store_url, timeout=90)
+                contents = self.browser.open(self.product_page_url, timeout=90).read()
                 break
             except timeout:
                 self.is_timeout = True
