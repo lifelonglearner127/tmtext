@@ -3,6 +3,7 @@ from __future__ import division, absolute_import, unicode_literals
 import json
 import re
 import time
+import socket
 import urlparse
 import os
 import string
@@ -95,6 +96,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         display = Display(visible=False)
         driver = self._init_chromium()
         self._prepare_driver(driver)
+        socket.setdefaulttimeout(30)
         driver.get('http://' + self.allowed_domains[0])
         time.sleep(10)
         for cookie in driver.get_cookies():
