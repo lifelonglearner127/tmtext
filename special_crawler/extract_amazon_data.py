@@ -495,6 +495,15 @@ class AmazonScraper(Scraper):
 
         return 0
 
+    def _no_longer_available(self):
+        availability = self.tree_html.xpath('//div[@id="availability"]')
+
+        if availability:
+            if 'Currently unavailable' in availability[0].text_content():
+                return 1
+
+        return 0
+
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -1280,6 +1289,7 @@ class AmazonScraper(Scraper):
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \
         "nutrition_fact_count": _nutrition_fact_count, \
+        "no_longer_available": _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
