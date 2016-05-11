@@ -9,6 +9,7 @@ from lxml import html
 
 from extract_data import Scraper
 from spiders_shared_code.bestbuy_variants import BestBuyVariants
+from requests.auth import HTTPProxyAuth
 
 class BestBuyScraper(Scraper):
     
@@ -28,6 +29,15 @@ class BestBuyScraper(Scraper):
     wc_pdf = None
     wc_prodtour = None
     wc_360 = None
+
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
+        self.proxy_host = "proxy.crawlera.com"
+        self.proxy_port = "8010"
+        self.proxy_auth = HTTPProxyAuth("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
+        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+        self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
