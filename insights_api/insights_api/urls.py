@@ -17,14 +17,16 @@ from django.conf.urls import url, include
 from django.contrib import admin
 from rest_framework import routers
 
-from product_list.urls import ProductListViewSet, SitesViewSet, \
-    SearchTermsViewSet, DateViewSet, BrandsViewSet
+from product_list.views import ProductListViewSet, SitesViewSet, \
+    SearchTermsViewSet, DateViewSet, BrandsViewSet, \
+    SearchTermsGroupsViewSet
 
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
 router.register(r'product_lists', ProductListViewSet)
 router.register(r'search_terms', SearchTermsViewSet)
-router.register(r'sites', SitesViewSet)
+router.register(r'search_terms_groups', SearchTermsGroupsViewSet)
+router.register(r'sites', SitesViewSet, base_name='sites')
 router.register(r'brands', BrandsViewSet, base_name='brands')
 router.register(r'dates', DateViewSet, base_name='dates')
 
