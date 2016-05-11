@@ -31,6 +31,15 @@ class SearchTerms(models.Model):
         managed = False
         db_table = 'search_terms'
 
+class SearchTermsGroups(models.Model):
+    id = models.IntegerField(primary_key=True)
+    name = models.TextField()
+    created_at = models.DateTimeField(blank=True, null=True)
+    enabled = models.NullBooleanField()
+
+    class Meta:
+        managed = False
+        db_table = 'search_terms_groups'
 
 class Sites(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -50,6 +59,16 @@ class Sites(models.Model):
         db_table = 'sites'
 
 
+class GroupsSites(models.Model):
+    group_id = models.ForeignKey(SearchTerms, models.DO_NOTHING, db_column='group_id')
+    site_id = models.ForeignKey(Sites, models.DO_NOTHING, db_column='site_id')
+
+    class Meta:
+        managed = False
+        db_table = 'groups_sites'
+
+
+
 class ProductListResultsSummary(models.Model):
     id = models.IntegerField(primary_key=True)
     product_list = models.ForeignKey(ProductList, models.DO_NOTHING)
@@ -61,13 +80,6 @@ class ProductListResultsSummary(models.Model):
         db_table = 'product_list_results_summary'
 
 
-class GroupsSites(models.Model):
-    group_id = models.IntegerField()
-    site_id = models.IntegerField()
-
-    class Meta:
-        managed = False
-        db_table = 'groups_sites'
 
 
 class SearchTermsBrandsRelation(models.Model):

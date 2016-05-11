@@ -25,6 +25,13 @@ class SearchTermsSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'group_id')
 
 
+class SearchTermsGroupsSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.SearchTermsGroups
+        fields = ('id', 'name', 'created_at', 'enabled')
+
+
 class SitesSerializer(serializers.ModelSerializer):
 
     class Meta:
