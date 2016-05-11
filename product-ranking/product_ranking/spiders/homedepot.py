@@ -35,13 +35,12 @@ def is_num(s):
 
 class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
     name = 'homedepot_products'
-    allowed_domains = ["homedepot.com", "www.res-x.com", "origin.api-beta.homedepot.com"]
+    allowed_domains = ["homedepot.com", "origin.api-beta.homedepot.com"]
     start_urls = []
 
     settings = HomedepotValidatorSettings
 
     SEARCH_URL = "http://www.homedepot.com/s/{search_term}?NCNI-5"
-    SCRIPT_URL = "http://www.res-x.com/ws/r2/Resonance.aspx"
     DETAILS_URL = "http://www.homedepot.com/p/getSkuDetails?itemId=%s"
     REVIEWS_URL = "http://homedepot.ugc.bazaarvoice.com/1999m/%s/" \
         "reviews.djs?format=embeddedhtml"
