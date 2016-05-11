@@ -442,6 +442,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
     }
     </pre>
     """
+
     serializer_class = WalmartApiItemsWithXmlFileRequestSerializer
     parser_classes = (FormParser, MultiPartParser,)
 
@@ -456,6 +457,17 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
     walmart_version = "2nd"
     walmart_qos_correlation_id = "123456abcdef"
 
+    def _paginate_log_file_results(self, request, orig_list, paginate_by=20):
+        page = int(request.GET.get('page', 1))
+        paginated_list = orig_list[(page-1)*paginate_by: page*paginate_by]
+        paginate_left = paginate_right = True
+        if page <= 1:
+            paginate_left = False
+        if page*paginate_by >= len(orig_list):
+            paginate_right = False
+        return {'paginated_list': paginated_list, 'current_page': page,
+                'paginate_right': paginate_right, 'paginate_left': paginate_left}
+
     def get_renderer_context(self):
         context = super(ItemsUpdateWithXmlFileByWalmartApiViewSet, self).get_renderer_context()
         context['submission_history_as_json'] = 'submission_history_as_json666'
@@ -463,7 +475,6 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
 
     def list(self, request):
         if os.path.isfile(get_walmart_api_invoke_log(request)):
-
             with open(get_walmart_api_invoke_log(request), "r") as myfile:
                 log_history = myfile.read().splitlines()
         else:
@@ -472,19 +483,13 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         if isinstance(log_history, list):
             log_history.reverse()
 
-        return Response({'log': log_history})
+        pagination = self._paginate_log_file_results(request, log_history)
+        pagination['log'] = pagination.pop('paginated_list')
+
+        return Response(pagination)
 
     def retrieve(self, request, pk=None):
-        if os.path.isfile(get_walmart_api_invoke_log(request)):
-            with open(get_walmart_api_invoke_log(request)) as myfile:
-                log_history = myfile.read().splitlines()
-        else:
-            log_history = None
-
-        if isinstance(log_history, list):
-            log_history.reverse()
-
-        return Response({'log': log_history})
+        return self.list(request)
 
     def generate_walmart_api_signature(self, walmart_api_end_point, consumer_id, private_key, request_method, file_path):
         cmd = ('java -jar "' + os.path.dirname(os.path.realpath(__file__)) +
@@ -664,6 +669,12 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
 
                 if isinstance(response.body['log'], list):
                     response.body['log'].reverse()
+
+                    pagination = self._paginate_log_file_results(request, response.body['log'])
+                    pagination['log'] = pagination.pop('paginated_list')
+
+                    for key, value in pagination.items():
+                        response.body[key] = value
 
                 # create SubmissionHistory and Stats right away
                 get_feed_status(request.user, feed_id, date=datetime.datetime.now())

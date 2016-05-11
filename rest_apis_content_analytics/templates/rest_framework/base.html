@@ -498,6 +498,32 @@
       });
   </script>
 
+  {% if request.path == items_update_with_xml_file_by_walmart_api_url %}
+    <script>
+      function stripHTML(dirtyString) {
+          var container = document.createElement('div');
+          var text = document.createTextNode(dirtyString);
+          container.appendChild(text);
+          return container.innerHTML; // innerHTML will be a xss safe string
+      }
+
+      $('#post-object-form form').attr('action', '{{ items_update_with_xml_file_by_walmart_api_url }}'); // submit without pagination
+      var body_log = $('.response-info').html().replace(/<\/?[^>]+(>|$)/g, "");
+      var current_page = parseInt("{{ request.GET.page }}");
+      if (! current_page || current_page == NaN) current_page = 1;
+      $('.response-info').append('<p id="p_paginator" align="center">Page: </p>');
+      if(body_log.includes('"paginate_left": true')) {
+          $('#p_paginator').append('<a href="?page='+(current_page-1)+'">Previous</a>');
+      }
+      if(body_log.includes('"paginate_left": true') || body_log.includes('"paginate_right": true')) {
+          $('#p_paginator').append('&nbsp;<a style="text-decoration: underline" href="?page='+(current_page)+'">'+(current_page)+'</a>&nbsp;');
+      }
+      if(body_log.includes('"paginate_right": true')) {
+          $('#p_paginator').append('<a href="?page='+(current_page+1)+'">Next</a>');
+      }
+    </script>
+  {% endif %}
+
 </body>
 {% endblock %}
 </html>
