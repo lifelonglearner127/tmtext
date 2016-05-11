@@ -22,6 +22,7 @@ class CostcoScraper(Scraper):
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
+        self.reviews = None
         self.image_urls = None
         self.prod_help = None
         self.is_webcollage_checked = False
@@ -57,8 +58,7 @@ class CostcoScraper(Scraper):
         return None
 
     def _product_id(self):
-        pid = self.tree_html.xpath('//*[@itemprop="sku"]//text()')
-        return pid[0]
+        return self.product_page_url.split('.')[-2]
 
     def _site_id(self):
         site_id = self.product_page_url.split("product.")
@@ -121,15 +121,16 @@ class CostcoScraper(Scraper):
     def _long_description(self):
 
         if filter(None, map((lambda x: x.strip()),self.tree_html.xpath("//div[@id='product-tab1']/*[not(self::div)]//text()"))):
-            return map((lambda x: lxml.html.tostring(x)),self.tree_html.xpath("//div[@id='product-tab1']/*[not(self::div)]")[:-1])
+            return self._clean_html(' '.join(map((lambda x: lxml.html.tostring(x)),self.tree_html.xpath("//div[@id='product-tab1']/*[not(self::div)]"))))
 
-        html = self._wc_content()
-        m = re.findall(r'wc-rich-content-description\\">(.*?)<\\/div', html, re.DOTALL)
         long_description = ""
-        if len(m) > 0:
-            long_description =  " ".join(m)
-        if long_description != None and  long_description != "":
-            return  self._clean_text(long_description)
+        html = self._wc_content()
+        if html:
+            m = re.findall(r'wc-rich-content-description\\">(.*?)<\\/div', html, re.DOTALL)
+            if len(m) > 0:
+                long_description =  " ".join(m)
+            if long_description != None and  long_description != "":
+                return  self._clean_text(long_description)
         html = self._sp_content()
         m = re.findall(r'sp_acp_section_text_content">(.*?)</div', html, re.DOTALL)
         if len(m) > 0:
@@ -137,9 +138,11 @@ class CostcoScraper(Scraper):
         if long_description != None and  long_description != "":
             return  self._clean_text(long_description)
         long_description =  " ".join(self.tree_html.xpath('//div[@id="product-tab1"]//text()[normalize-space()]')).strip()
+        if long_description == '[ProductDetailsESpot_Tab1]':
+            long_description = None
         if long_description != None and  long_description != "":
             return  self._clean_text(long_description)
-        long_description =  " ".join(ld[0].xpath('//p[@itemprop="description"]//text()[normalize-space()]')).strip()
+        long_description =  " ".join(self.tree_html.xpath('//p[@itemprop="description"]//text()[normalize-space()]')).strip()
         if long_description != None and  long_description != "":
             return  self._clean_text(long_description)
         long_description =  " ".join(self.tree_html.xpath('//div[@class="TireLandDesc"]//text()[normalize-space()]')).strip()
@@ -250,6 +253,23 @@ class CostcoScraper(Scraper):
                 for video_item in wc_video_json["videos"]:
                     video_urls.append(wc_video_base_url + video_item["src"]["src"])
 
+        # liveclicker videos
+        dim5 = re.search('LCdim5 = "(\d+)"', html.tostring(self.tree_html))
+
+        if dim5:
+            dim5 = dim5.group(1)
+
+            liveclicker = self.load_page_from_url_with_number_of_retries('http://sv.liveclicker.net/service/api?method=liveclicker.widget.getList&account_id=69&dim5=' + dim5)
+
+            widgets = etree.XML( re.sub('encoding="[^"]+"', '', liveclicker))
+
+            for widget in widgets:
+                widget_id = widget.find('widget_id').text
+
+                liveclicker = self.load_page_from_url_with_number_of_retries('http://sv.liveclicker.net/service/getXML?widget_id=' + widget_id + '&player_id=2&autoplay=false&player_custom_id=1&share64=Y2xpZW50X2lkPTE3JmlmcmFtZT10cnVlJm9wdGlvbl9pZnJhbWVEaXY9dmlkZW9fMTMxMzMyNjIyMCZwbGF5ZXJfY3VzdG9tX2lkPTEmd2lkZ2V0X2lkPTEzMTMzMjYyMjA=&width=605&height=335&html5=true&format=jsonp')
+
+                video_urls.append( json.loads(liveclicker)['location'])
+
         if video_urls:
             self.video_urls = video_urls
             return video_urls
@@ -324,7 +344,7 @@ class CostcoScraper(Scraper):
     def _wc_360(self):
         html = self._wc_content()
 
-        if "wc-360" in html:
+        if html and "wc-360" in html:
             return 1
 
         return 0
@@ -332,7 +352,7 @@ class CostcoScraper(Scraper):
     def _wc_pdf(self):
         html = self._wc_content()
 
-        if ".pdf" in html:
+        if html and ".pdf" in html:
             return 1
 
         return 0
@@ -340,7 +360,7 @@ class CostcoScraper(Scraper):
     def _wc_video(self):
         html = self._wc_content()
 
-        if ".mp4" in html or ".flv" in html:
+        if html and (".mp4" in html or ".flv" in html):
             return 1
 
         return 0
@@ -348,7 +368,7 @@ class CostcoScraper(Scraper):
     def _wc_emc(self):
         html = self._wc_content()
 
-        if "wc-aplus" in html:
+        if html and "wc-aplus" in html:
             return 1
 
         return 0
@@ -406,27 +426,42 @@ class CostcoScraper(Scraper):
     ##########################################
     ################ CONTAINER : REVIEWS
     ##########################################
+    def _load_reviews(self):
+        if not self.reviews:
+            product_json = json.loads( self.load_page_from_url_with_number_of_retries('http://api.bazaarvoice.com/data/batch.json?passkey=bai25xto36hkl5erybga10t99&apiversion=5.5&displaycode=2070-en_us&resource.q0=products&filter.q0=id%3Aeq%3A' + self._product_id() + '&stats.q0=reviews'))
+
+            self.reviews = product_json['BatchedResults']['q0']['Results'][0]['ReviewStatistics']
 
     def _average_review(self):
-        avr = self.tree_html.xpath('//meta[@itemprop="ratingValue"]/@content')
-        if len(avr) > 0:
-            return round(self._tofloat(avr[0]), 1)
-        return None
+        self._load_reviews()
+
+        if self.reviews:
+            return round(self.reviews['AverageOverallRating'], 1)
 
     def _review_count(self):
-        avr = self.tree_html.xpath('//meta[@itemprop="reviewCount"]/@content')
-        if len(avr) > 0:
-            return self._toint(avr[0])
-        return None
+        self._load_reviews()
+
+        if self.reviews:
+            return self.reviews['TotalReviewCount']
 
     def _reviews(self):
-        res = []
-        for i in range(1,6):
-            rvm = self.tree_html.xpath('//span[@id="reviewNumber%s"]//text()' % i)
-            if len(rvm) > 0 and  self._toint(rvm[0]) > 0:
-                res.append([i, self._toint(rvm[0])])
-        if len(res) > 0: return res
-        return None
+        self._load_reviews()
+
+        if self.reviews['RatingDistribution']:
+            reviews = []
+
+            for i in range(1,6):
+                has_value = False
+
+                for review in self.reviews['RatingDistribution']:
+                    if review['RatingValue'] == i:
+                        reviews.append([i, review['Count']])
+                        has_value = True
+
+                if not has_value:
+                    reviews.append([i, 0])
+
+            return reviews[::-1]
 
     def _tofloat(self,s):
         try:
@@ -444,16 +479,20 @@ class CostcoScraper(Scraper):
             return 0
 
     def _max_review(self):
-        avr = self.tree_html.xpath('//meta[@itemprop="bestRating"]/@content')
-        if len(avr) > 0:
-            return self._toint(avr[0])
-        return None
+        reviews = self._reviews()
+
+        if reviews:
+            for review in reviews:
+                if review[1] != 0:
+                    return review[0]
 
     def _min_review(self):
-        rv = self._reviews()
-        if rv !=None and len(rv)>0:
-            return rv[0][0]
-        return None
+        reviews = self._reviews()
+
+        if reviews:
+            for review in reviews[::-1]:
+                if review[1] != 0:
+                    return review[0]
 
     ##########################################
     ################ CONTAINER : SELLERS
@@ -557,6 +596,14 @@ class CostcoScraper(Scraper):
        	text = re.sub("&nbsp;", " ", text).strip()
         return  re.sub(r'\s+', ' ', text)
 
+    # Get rid of all html except for <ul>, <li> and <br> tags
+    def _clean_html(self, html):
+        html = html.replace('\\','')
+        html = re.sub('[\n\t\r]', '', html)
+        html = re.sub('<!--[^>]*-->', '', html)
+        html = re.sub('</?(?!(ul|li|br))\w+[^>]*>', '', html)
+        html = re.sub('\s+', ' ', html)
+        return re.sub('> <', '><', html).strip()
 
 
     ##########################################
