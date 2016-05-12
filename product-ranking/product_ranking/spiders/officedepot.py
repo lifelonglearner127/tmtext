@@ -80,6 +80,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         self.selenium_cookies = {}
         self.user_agent = ('Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36'
                            ' (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36')
+        socket.setdefaulttimeout(60)
         self._get_selenium_cookies_for_main_page()
 
 
@@ -96,7 +97,6 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         display = Display(visible=False)
         driver = self._init_chromium()
         self._prepare_driver(driver)
-        socket.setdefaulttimeout(30)
         driver.get('http://' + self.allowed_domains[0])
         time.sleep(10)
         for cookie in driver.get_cookies():
