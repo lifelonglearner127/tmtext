@@ -131,7 +131,7 @@ class AmazonScraper(Scraper):
         self.av.setupCH(self.tree_html, self.product_page_url)
 
         if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
-            print 'CAPTCHA'
+            return True
         return False
 
 
