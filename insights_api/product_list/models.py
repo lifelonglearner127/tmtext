@@ -80,15 +80,27 @@ class ProductListResultsSummary(models.Model):
         db_table = 'product_list_results_summary'
 
 
-
-
 class SearchTermsBrandsRelation(models.Model):
-    search_term_id = models.ForeignKey(SearchTerms, models.DO_NOTHING)
+    id = models.IntegerField(primary_key=True)
+    search_term_id = models.ForeignKey(SearchTerms, models.DO_NOTHING, db_column='search_term_id')
     brand_id = models.IntegerField()
 
     class Meta:
         managed = False
         db_table = 'search_terms_brands_relation'
+
+class RankingSearchResultsItemsSummary(models.Model):
+    id = models.IntegerField(primary_key=True)
+    site_id = models.IntegerField()
+    total_results = models.IntegerField(blank=True, null=True)
+    brand_results = models.IntegerField(blank=True, null=True)
+    search_items_brands_relation_id = models.IntegerField()
+    date_of_upload = models.DateField(blank=True, null=True)
+    on_first_page = models.TextField()
+
+    class Meta:
+        managed = False
+        db_table = 'ranking_search_results_items_summary'
 
 
 class RankingSearchResultsItems(models.Model):
