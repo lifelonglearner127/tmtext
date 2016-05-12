@@ -81,25 +81,7 @@ class AmazonScraper(Scraper):
         # User-Agent (this is cheating, ok?)
         self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
 
-        # requests
-        self.req_session = requests.Session()
-        self.req_session.headers['User-agent'] = self.select_browser_agents_randomly()
-
-
     def _extract_page_tree(self, captcha_data=None, retries=3):
-        self._initialize_browser_settings()
-        for i in range(retries):
-            try:
-                self.req_session.get(self.store_url, timeout=20)
-                contents = self.req_session.get(self.product_page_url, timeout=20).text
-                break
-            except Exception as e:
-                self.is_timeout = True
-                self.ERROR_RESPONSE["failure_type"] = "Timeout: " + str(e)
-                self.ERROR_RESPONSE['error'] = 'Timeout'
-                return
-
-        """
         self._initialize_browser_settings()
 
         for i in range(retries):
@@ -113,7 +95,7 @@ class AmazonScraper(Scraper):
                 self.ERROR_RESPONSE["failure_type"] = "Timeout " + 'amazon data'
                 self.ERROR_RESPONSE['error'] = 'Timeout'
                 return
-        """
+
         try:
             # replace NULL characters
             contents = self._clean_null(contents).decode("utf8")
@@ -869,8 +851,7 @@ class AmazonScraper(Scraper):
 
             for retry_index in range(10):
                 try:
-                    #contents = self.browser.open(review_link).read()
-                    contents = self.req_session.get(review_link).text
+                    contents = self.browser.open(review_link).read()
 
                     if "Sorry, no reviews match your current selections." in contents:
                         review_list.append([index + 1, 0])
@@ -1051,8 +1032,7 @@ class AmazonScraper(Scraper):
         fl = 0
 
         while len(url) > 10:
-            #contents = self.browser.open(url).read()
-            contents = self.req_session.get(url).text
+            contents = self.browser.open(url).read()
             tree = html.fromstring(contents)
             sells = tree.xpath('//div[@class="a-row a-spacing-mini olpOffer"]')
 
@@ -1083,10 +1063,8 @@ class AmazonScraper(Scraper):
 
                             if seller_name == "":
                                 if seller_link[0].startswith("http://www.amazon."):
-                                    #seller_content = self.browser.open(seller_link[0]).read()
-                                    seller_content = self.req_session.get(seller_link[0]).text
+                                    seller_content = self.browser.open(seller_link[0]).read()
                                 else:
-                                    # TODO: other domain zones
                                     if self.scraper_version == "uk":
                                         seller_content = self.browser.open("http://www.amazon.co.uk" + seller_link[0]).read()
                                     elif self.scraper_version == "ca":
