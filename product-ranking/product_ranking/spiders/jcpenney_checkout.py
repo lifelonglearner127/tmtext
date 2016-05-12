@@ -59,6 +59,7 @@ class JCpenneySpider(scrapy.Spider):
                         "jsp/checkout/secure/checkout.jsp"
 
     def __init__(self, *args, **kwargs):
+        socket.setdefaulttimeout(60)
         settings.overrides['ITEM_PIPELINES'] = {}
         super(JCpenneySpider, self).__init__(*args, **kwargs)
         self.user_agent = kwargs.get(
@@ -81,7 +82,6 @@ class JCpenneySpider(scrapy.Spider):
         else:
             self.quantity = [1]
 
-
     def start_requests(self):
         yield scrapy.Request('http://www.jcpenney.com/')
 
@@ -95,7 +95,7 @@ class JCpenneySpider(scrapy.Spider):
                 # Fastest way to empty the cart
                 self.driver = self.init_driver()
                 self.wait = WebDriverWait(self.driver, 25)
-                socket.setdefaulttimeout(30)
+                socket.setdefaulttimeout(60)
                 self.driver.get(url)
 
                 if product.get('FetchAllColors'):
@@ -118,7 +118,7 @@ class JCpenneySpider(scrapy.Spider):
                         self.driver.close()
                         self.driver = self.init_driver()
                         self.wait = WebDriverWait(self.driver, 25)
-                        socket.setdefaulttimeout(30)
+                        socket.setdefaulttimeout(60)
                         self.driver.get(url)
                     except:
                         self.log('Error while parsing color %s of %s' % (color, url))
@@ -257,7 +257,7 @@ class JCpenneySpider(scrapy.Spider):
         time.sleep(4)
 
     def _parse_cart(self):
-        socket.setdefaulttimeout(30)
+        socket.setdefaulttimeout(60)
         self.driver.get(self.SHOPPING_CART_URL)
         product_list = self.wait.until(
             EC.visibility_of_element_located((
@@ -309,7 +309,7 @@ class JCpenneySpider(scrapy.Spider):
                     self.log('Missing field in product from shopping cart')
 
     def _parse_checkout_page(self, item):
-        socket.setdefaulttimeout(30)
+        socket.setdefaulttimeout(60)
         self._click_on_element_with_id('Checkout')
         continue_as_guest_button = self.wait.until(
             EC.element_to_be_clickable(
