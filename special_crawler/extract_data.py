@@ -472,7 +472,7 @@ class Scraper():
                     continue
                 except timeout:
                     self.is_timeout = True
-                    self.ERROR_RESPONSE["failure_type"] = "Timeout " + 'extract_data'
+                    self.ERROR_RESPONSE["failure_type"] = "Timeout"
                     return
                 except urllib2.HTTPError, err:
                     if err.code == 404:
