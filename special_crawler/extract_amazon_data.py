@@ -20,6 +20,7 @@ sys.path.append(os.path.abspath('../search'))
 import captcha_solver
 import compare_images
 from socket import timeout
+import socket
 import random
 from spiders_shared_code.amazon_variants import AmazonVariants
 import datetime
@@ -85,12 +86,14 @@ class AmazonScraper(Scraper):
 
         for i in range(retries):
             try:
+                socket.setdefaulttimeout(90)
                 self.browser.open(self.store_url, timeout=90)
                 contents = self.browser.open(self.product_page_url, timeout=90).read()
                 break
             except timeout:
                 self.is_timeout = True
                 self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                self.ERROR_RESPONSE['error'] = 'Timeout'
                 return
 
         try:
