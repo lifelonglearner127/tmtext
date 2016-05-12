@@ -92,7 +92,7 @@ class AmazonScraper(Scraper):
                 break
             except timeout:
                 self.is_timeout = True
-                self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                self.ERROR_RESPONSE["failure_type"] = "Timeout " + 'amazon data'
                 self.ERROR_RESPONSE['error'] = 'Timeout'
                 return
 
