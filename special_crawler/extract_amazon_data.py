@@ -119,10 +119,13 @@ class AmazonScraper(Scraper):
 
         self.av.setupCH(self.tree_html, self.product_page_url)
 
-        if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
+        if self.is_captcha_page():
             return True
         return False
 
+    def is_captcha_page(self):
+        if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
+            return True
 
     ##########################################
     ############### CONTAINER : NONE
