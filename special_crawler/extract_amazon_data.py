@@ -24,6 +24,7 @@ import random
 from spiders_shared_code.amazon_variants import AmazonVariants
 import datetime
 
+
 class AmazonScraper(Scraper):
 
     ##########################################
@@ -55,9 +56,24 @@ class AmazonScraper(Scraper):
         self.is_variants_checked = False
         self.variants = None
 
+        self.proxy_host = "proxy.crawlera.com"
+        self.proxy_port = "8010"
+        self.proxy_auth = ("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
+        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+        self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
+
+        self.proxies_enabled = False  # first, they are OFF to save allowed requests
+
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
     def _initialize_browser_settings(self):
+        # proxies
+        if self.proxies_enabled:
+            proxy_str = "%s:%s" % (
+                self.proxy_host, self.proxy_port)
+            self.browser.set_proxies({'http': proxy_str, 'https': proxy_str})
+            self.browser.add_proxy_password(*self.proxy_auth)
+
         # Cookie Jar
         cj = cookielib.LWPCookieJar()
         self.browser.set_cookiejar(cj)
@@ -73,25 +89,39 @@ class AmazonScraper(Scraper):
         self.browser.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
 
         # Want debugging messages?
-        #br.set_debug_http(True)
+        #self.browser.set_debug_http(True)
         #br.set_debug_redirects(True)
-        #br.set_debug_responses(True)
+        #self.browser.set_debug_responses(True)
 
         # User-Agent (this is cheating, ok?)
         self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
 
-    def _extract_page_tree(self, captcha_data=None, retries=3):
+    def _extract_page_tree(self, captcha_data=None, retries=10):
         self._initialize_browser_settings()
 
         for i in range(retries):
             try:
                 self.browser.open(self.store_url, timeout=90)
                 contents = self.browser.open(self.product_page_url, timeout=90).read()
+                if self.is_captcha_page(html.fromstring(contents)):
+                    print 'CAPTCHA PAGE! RETRYING...'
+                    self.proxies_enabled = True
+                    print 'Request is going thru crawlera...'
+                    self._initialize_browser_settings()
+                    continue
                 break
             except timeout:
                 self.is_timeout = True
                 self.ERROR_RESPONSE["failure_type"] = "Timeout"
                 return
+            except Exception as e:
+                if '503' in str(e) or '403' in str(e):
+                    # we got banned? Crawlera, please help us!
+                    print 'INVALID RESPONSE! RETRYING...'
+                    self.proxies_enabled = True
+                    print 'Request is going thru crawlera...'
+                    self._initialize_browser_settings()
+                    continue
 
         try:
             # replace NULL characters
@@ -131,8 +161,10 @@ class AmazonScraper(Scraper):
             return True
         return False
 
-    def is_captcha_page(self):
-        if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
+    def is_captcha_page(self, tree_html=None):
+        if tree_html is None:
+            tree_html = self.tree_html
+        if tree_html.xpath("//form[contains(@action,'Captcha')]"):
             return True
 
     ##########################################
