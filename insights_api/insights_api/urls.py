@@ -19,7 +19,8 @@ from rest_framework import routers
 
 from product_list.views import ProductListViewSet, SitesViewSet, \
     SearchTermsViewSet, DateViewSet, BrandsViewSet, \
-    SearchTermsGroupsViewSet
+    SearchTermsGroupsViewSet, PriceDataViewSet, RankingDataViewSet, \
+    OutOfStockDataViewSet, BuyBoxDataViewSet, ReviewDataViewSet
 
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
@@ -29,6 +30,13 @@ router.register(r'search_terms_groups', SearchTermsGroupsViewSet)
 router.register(r'sites', SitesViewSet, base_name='sites')
 router.register(r'brands', BrandsViewSet, base_name='brands')
 router.register(r'dates', DateViewSet, base_name='dates')
+router.register(r'prices_data', PriceDataViewSet, base_name='pricesdata')
+router.register(r'rankings_data', RankingDataViewSet, base_name='rakingsdata')
+router.register(
+    r'out_of_stocks_data', OutOfStockDataViewSet, base_name='oufofstocksdata')
+router.register(r'buy_boxes_data', BuyBoxDataViewSet, base_name='buyboxesdata')
+router.register(r'reviews_data', ReviewDataViewSet, base_name='reviews_data')
+
 
 urlpatterns = [
     url(r'^', include(router.urls)),

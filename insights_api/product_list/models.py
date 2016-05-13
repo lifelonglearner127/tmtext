@@ -68,7 +68,6 @@ class GroupsSites(models.Model):
         db_table = 'groups_sites'
 
 
-
 class ProductListResultsSummary(models.Model):
     id = models.IntegerField(primary_key=True)
     product_list = models.ForeignKey(ProductList, models.DO_NOTHING)
@@ -137,3 +136,50 @@ class Brands(models.Model):
     class Meta:
         managed = False
         db_table = 'brands'
+
+
+class PriceData(models.Model):
+    search_term = models.TextField(blank=True, null=True)
+    url = models.TextField(blank=True, null=True)
+    title = models.TextField(blank=True, null=True)
+    currency = models.CharField(max_length=10, blank=True, null=True)
+    price = models.DecimalField(max_digits=17, decimal_places=2, blank=True, null=True)
+
+
+class RankingData(models.Model):
+    search_term = models.TextField(blank=True, null=True)
+    site_id = models.IntegerField()
+    title = models.TextField(blank=True, null=True)
+    url = models.TextField(blank=True, null=True)
+    ranking = models.IntegerField()
+
+class OutOfStockData(models.Model):
+    search_term = models.TextField(blank=True, null=True)
+    site_id = models.IntegerField(blank=True)
+    title = models.TextField(blank=True, null=True)
+    url = models.TextField(blank=True, null=True)
+    is_out_of_stock = models.BooleanField()
+    no_longer_available = models.NullBooleanField()
+
+class BuyBoxData(models.Model):
+    search_term = models.TextField(blank=True, null=True)
+    site_id = models.IntegerField(blank=True)
+    title = models.TextField(blank=True, null=True)
+    marketplace = models.CharField(max_length=250)
+    url = models.TextField(blank=True, null=True)
+    is_out_of_stock = models.BooleanField()
+    no_longer_available = models.NullBooleanField()
+    first_party_owned = models.NullBooleanField()
+
+class ReviewData(models.Model):
+    search_term = models.TextField(blank=True, null=True)
+    site_id = models.IntegerField(blank=True)
+    url = models.TextField(blank=True, null=True)
+    title = models.TextField(blank=True, null=True)
+    total_count = models.IntegerField()
+    average_num = models.FloatField()
+    one_star = models.IntegerField()
+    two_star = models.IntegerField()
+    three_star = models.IntegerField()
+    four_star = models.IntegerField()
+    five_star = models.IntegerField()
