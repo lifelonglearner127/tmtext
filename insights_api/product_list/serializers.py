@@ -36,14 +36,50 @@ class SitesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Sites
-        fields = ('id', 'name', 'url', 'image_url', 'site_type', 'results_per_page',
-                  'zip_code', 'traffic_upload', 'crawler_name', 'location',
-                  'user_agent')
+        fields = ('id', 'name', 'url', 'image_url', 'site_type',
+                  'results_per_page', 'zip_code', 'traffic_upload',
+                  'crawler_name', 'location', 'user_agent')
 
 
 class BrandsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Brands
-        fields = ('id', 'name', 'created', 'company_id', 'brand_type', 'parent_id')
+        fields = ('id', 'name', 'created', 'company_id',
+                  'brand_type', 'parent_id')
         depth = 1
+
+class PriceDataSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.PriceData
+        fields = ('search_term', 'url', 'title', 'currency', 'price')
+
+class RankingDataSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.RankingData
+        fields = ('search_term', 'site_id', 'title', 'url', 'ranking')
+
+class OutOfStockDataSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.OutOfStockData
+        fields = ('search_term', 'site_id', 'title', 'url', 'is_out_of_stock',
+                  'no_longer_available')
+
+class BuyBoxDataSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.BuyBoxData
+        fields = ('search_term', 'site_id', 'title', 'marketplace', 'url',
+                  'is_out_of_stock', 'no_longer_available',
+                  'first_party_owned')
+
+class ReviewDataSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.ReviewData
+        fields = ('search_term', 'site_id', 'url', 'title', 'total_count',
+                  'average_num', 'one_star', 'two_star', 'three_star',
+                  'four_star', 'five_star')
