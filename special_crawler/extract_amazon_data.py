@@ -201,7 +201,8 @@ class AmazonScraper(Scraper):
 
     # Amazon's version of UPC
     def _asin(self):
-        return re.search('ASIN=([\w\d]+)', html.tostring(self.tree_html)).group(1)
+        asin_text = self.tree_html.xpath('//li/b[contains(text(),"ASIN")]/..')[0].text_content()
+        return re.search('ASIN: (.+)', asin_text).group(1)
 
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='content pdClearfix'][1]//tbody//tr")
