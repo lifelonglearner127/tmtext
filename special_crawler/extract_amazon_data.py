@@ -80,7 +80,7 @@ class AmazonScraper(Scraper):
         # User-Agent (this is cheating, ok?)
         self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
 
-    def _extract_page_tree(self, captcha_data=None, retries=0):
+    def _extract_page_tree(self, captcha_data=None, retries=3):
         self._initialize_browser_settings()
 
         for i in range(retries):
