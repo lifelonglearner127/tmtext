@@ -82,8 +82,16 @@ class AmazonScraper(Scraper):
 
     def _extract_page_tree(self, captcha_data=None, retries=0):
         self._initialize_browser_settings()
-        self.browser.open(self.store_url)
-        contents = self.browser.open(self.product_page_url).read()
+
+        for i in range(retries):
+            try:
+                self.browser.open(self.store_url, timeout=90)
+                contents = self.browser.open(self.product_page_url, timeout=90).read()
+                break
+            except timeout:
+                self.is_timeout = True
+                self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                return
 
         try:
             # replace NULL characters
