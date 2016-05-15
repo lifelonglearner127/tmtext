@@ -556,11 +556,6 @@ class Scraper():
 
         results_dict = {}
 
-        if hasattr(self, 'is_captcha_page'):
-            if self.is_captcha_page():
-                self.ERROR_RESPONSE['failure_type'] = 'captcha'
-                return self.ERROR_RESPONSE
-
         # if it's not a valid product page, abort
         if self.is_timeout or self.not_a_product():
             return self.ERROR_RESPONSE
