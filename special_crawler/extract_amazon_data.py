@@ -96,45 +96,59 @@ class AmazonScraper(Scraper):
         # User-Agent (this is cheating, ok?)
         self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
 
-    def _extract_page_tree(self, captcha_data=None, retries=10):
+    def _extract_page_tree(self, captcha_data=None, retries=0):
         self._initialize_browser_settings()
 
-        for i in range(retries):
+        for i in range(self.MAX_RETRIES):
+            self.timeout = False
+
             try:
-                self.browser.open(self.store_url, timeout=90)
-                contents = self.browser.open(self.product_page_url, timeout=90).read()
-                if self.is_captcha_page(html.fromstring(contents)):
-                    print 'CAPTCHA PAGE! RETRYING...'
-                    self.proxies_enabled = True
-                    print 'Request is going thru crawlera...'
-                    self._initialize_browser_settings()
-                    continue
-                break
+                if captcha_data:
+                    data = urllib.urlencode(captcha_data)
+                    contents = self.browser.open(self.product_page_url, data, timeout=10).read()
+                else:
+                    contents = self.browser.open(self.product_page_url, timeout=10).read()
             except timeout:
                 self.is_timeout = True
                 self.ERROR_RESPONSE["failure_type"] = "Timeout"
-                return
+                continue # continue to try again up to MAX_RETRIES
             except Exception as e:
-                if '503' in str(e) or '403' in str(e):
-                    # we got banned? Crawlera, please help us!
-                    print 'INVALID RESPONSE! RETRYING...'
-                    self.proxies_enabled = True
-                    print 'Request is going thru crawlera...'
-                    self._initialize_browser_settings()
-                    continue
+                print e
+                continue # continue to try again up to MAX_RETRIES
 
-        try:
-            # replace NULL characters
-            contents = self._clean_null(contents).decode("utf8")
-        except UnicodeError, e:
-            # if string was not utf8, don't deocde it
-            print "Warning creating html tree from page content: ", e.message
+            try:
+                # replace NULL characters
+                contents = self._clean_null(contents)
 
-            # replace NULL characters
-            contents = self._clean_null(contents)
+                self.tree_html = html.fromstring(contents.decode("utf8"))
+            except UnicodeError, e:
+                # if string was not utf8, don't deocde it
+                print "Warning creating html tree from page content: ", e.message
 
-        self.page_raw_text = contents
-        self.tree_html = html.fromstring(contents)
+                # replace NULL characters
+                contents = self._clean_null(contents)
+
+                self.tree_html = html.fromstring(contents)
+
+            # it's a captcha page
+            if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
+                if retries <= self.MAX_CAPTCHA_RETRIES:
+                    image = self.tree_html.xpath(".//img/@src")
+                    if image:
+                        captcha_text = self.CB.solve_captcha(image[0])
+
+                    # value to use if there was an exception
+                    if not captcha_text:
+                        captcha_text = ''
+
+                    retries += 1
+                    return self._extract_page_tree(captcha_data={'field-keywords' : captcha_text}, retries=retries)
+                else:
+                    self.is_timeout = True # set self.is_timeout so we will return an error response
+                    self.ERROR_RESPONSE["failure_type"] = "CAPTCHA"
+
+            # if we got it we can exit the loop and stop retrying
+            return
 
     def check_url_format(self):
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9%\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
@@ -157,15 +171,7 @@ class AmazonScraper(Scraper):
 
         self.av.setupCH(self.tree_html, self.product_page_url)
 
-        if self.is_captcha_page():
-            return True
         return False
-
-    def is_captcha_page(self, tree_html=None):
-        if tree_html is None:
-            tree_html = self.tree_html
-        if tree_html.xpath("//form[contains(@action,'Captcha')]"):
-            return True
 
     ##########################################
     ############### CONTAINER : NONE
