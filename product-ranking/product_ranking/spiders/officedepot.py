@@ -82,7 +82,6 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         socket.setdefaulttimeout(60)
         self._get_selenium_cookies_for_main_page()
 
-
         super(OfficedepotProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
 
@@ -94,6 +93,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
     def _get_selenium_cookies_for_main_page(self):
         from pyvirtualdisplay import Display
         display = Display(visible=False)
+        display.start()
         driver = self._init_firefox()
         self._prepare_driver(driver)
         driver.get('http://' + self.allowed_domains[0])
