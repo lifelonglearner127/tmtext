@@ -37,7 +37,7 @@ class AmazonScraper(Scraper):
     CB.CAPTCHAS_DIR = '/tmp/captchas'
     CB.SOLVED_CAPTCHAS_DIR = '/tmp/solved_captchas'
 
-    MAX_CAPTCHA_RETRIES = 10
+    MAX_CAPTCHA_RETRIES = 3
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -73,9 +73,9 @@ class AmazonScraper(Scraper):
         self.browser.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
 
         # Want debugging messages?
-        #br.set_debug_http(True)
-        #br.set_debug_redirects(True)
-        #br.set_debug_responses(True)
+        #self.browser.set_debug_http(True)
+        #self.browser.set_debug_redirects(True)
+        #self.browser.set_debug_responses(True)
 
         # User-Agent (this is cheating, ok?)
         self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
@@ -97,9 +97,16 @@ class AmazonScraper(Scraper):
                 self.ERROR_RESPONSE["failure_type"] = "Timeout"
                 continue # continue to try again up to MAX_RETRIES
             except mechanize.HTTPError as e:
-                self.is_timeout = True # set self.is_timeout so we will return an error response
-                self.ERROR_RESPONSE["failure_type"] = str(e)
-                return # do not try again
+                # If 404 or this was the last retry, return failure
+                if e.code == 404 or i == self.MAX_RETRIES - 1:
+                    self.is_timeout = True # set self.is_timeout so we will return an error response
+                    self.ERROR_RESPONSE["failure_type"] = str(e)
+                    return
+
+                # Otherwise, try again with proxies
+                self.proxies_enabled = True
+                self._initialize_browser_settings()
+                continue
 
             try:
                 # replace NULL characters
@@ -117,7 +124,7 @@ class AmazonScraper(Scraper):
 
             # it's a captcha page
             if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
-                if retries <= self.MAX_CAPTCHA_RETRIES:
+                if retries < self.MAX_CAPTCHA_RETRIES:
                     image = self.tree_html.xpath(".//img/@src")
                     if image:
                         captcha_text = self.CB.solve_captcha(image[0])
@@ -128,9 +135,17 @@ class AmazonScraper(Scraper):
 
                     retries += 1
                     return self._extract_page_tree(captcha_data={'field-keywords' : captcha_text}, retries=retries)
-                else:
-                    self.is_timeout = True # set self.is_timeout so we will return an error response
-                    self.ERROR_RESPONSE["failure_type"] = "CAPTCHA"
+
+                if retries == self.MAX_CAPTCHA_RETRIES:
+                    # If we have tried the maximum number of times, try once more with proxies
+                    self.proxies_enabled = True
+                    self._initialize_browser_settings()
+                    retries += 1
+                    continue
+
+                # If we still get a CAPTCHA, return failure
+                self.is_timeout = True # set self.is_timeout so we will return an error response
+                self.ERROR_RESPONSE["failure_type"] = "CAPTCHA"
 
             # if we got it we can exit the loop and stop retrying
             return
