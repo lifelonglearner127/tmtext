@@ -66,7 +66,6 @@ class OfficedepotProductsSpider(BaseProductsSpider):
     #                   "&ur=http%3A%2F%2Fwww.levi.com%2FUS%2Fen_US%" \
     #                   "2Fwomens-jeans%2Fp%2F095450043&plk=&"
 
-    use_proxies = True
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
@@ -95,7 +94,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
     def _get_selenium_cookies_for_main_page(self):
         from pyvirtualdisplay import Display
         display = Display(visible=False)
-        driver = self._init_chromium()
+        driver = self._init_firefox()
         self._prepare_driver(driver)
         driver.get('http://' + self.allowed_domains[0])
         time.sleep(10)
