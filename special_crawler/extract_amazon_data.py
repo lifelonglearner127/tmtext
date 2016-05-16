@@ -96,9 +96,10 @@ class AmazonScraper(Scraper):
                 self.is_timeout = True
                 self.ERROR_RESPONSE["failure_type"] = "Timeout"
                 continue # continue to try again up to MAX_RETRIES
-            except Exception as e:
-                print e
-                continue # continue to try again up to MAX_RETRIES
+            except mechanize.HTTPError as e:
+                self.is_timeout = True # set self.is_timeout so we will return an error response
+                self.ERROR_RESPONSE["failure_type"] = str(e)
+                return # do not try again
 
             try:
                 # replace NULL characters
