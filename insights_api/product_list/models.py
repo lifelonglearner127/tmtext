@@ -144,7 +144,9 @@ class PriceData(models.Model):
     title = models.TextField(blank=True, null=True)
     currency = models.CharField(max_length=10, blank=True, null=True)
     price = models.DecimalField(max_digits=17, decimal_places=2, blank=True, null=True)
-
+    
+    class Meta:
+        managed = False
 
 class RankingData(models.Model):
     search_term = models.TextField(blank=True, null=True)
@@ -153,6 +155,9 @@ class RankingData(models.Model):
     url = models.TextField(blank=True, null=True)
     ranking = models.IntegerField()
 
+    class Meta:
+        managed = False
+
 class OutOfStockData(models.Model):
     search_term = models.TextField(blank=True, null=True)
     site_id = models.IntegerField(blank=True)
@@ -160,6 +165,9 @@ class OutOfStockData(models.Model):
     url = models.TextField(blank=True, null=True)
     is_out_of_stock = models.BooleanField()
     no_longer_available = models.NullBooleanField()
+
+    class Meta:
+        managed = False
 
 class BuyBoxData(models.Model):
     search_term = models.TextField(blank=True, null=True)
@@ -170,6 +178,9 @@ class BuyBoxData(models.Model):
     is_out_of_stock = models.BooleanField()
     no_longer_available = models.NullBooleanField()
     first_party_owned = models.NullBooleanField()
+
+    class Meta:
+        managed = False
 
 class ReviewData(models.Model):
     search_term = models.TextField(blank=True, null=True)
@@ -183,3 +194,21 @@ class ReviewData(models.Model):
     three_star = models.IntegerField()
     four_star = models.IntegerField()
     five_star = models.IntegerField()
+
+    class Meta:
+        managed = False
+
+class Query(models.Model):
+    remote_address = models.CharField(max_length=32)
+    # server_hostname = models.CharField(max_length=120)
+    # request_headers = models.TextField(blank=True, null=True)
+    request_method = models.CharField(max_length=20)
+    request_path = models.CharField(max_length=400)
+    request_body = models.TextField(blank=True, null=True)
+    response_status = models.IntegerField()
+    # response_body = models.TextField(blank=True, null=True)
+    date = models.DateTimeField(auto_now_add=True)
+    run_time = models.FloatField()
+
+    class Meta:
+        db_table = 'api_insights_log'
