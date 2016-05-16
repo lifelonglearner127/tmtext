@@ -24,6 +24,7 @@ import random
 from spiders_shared_code.amazon_variants import AmazonVariants
 import datetime
 
+
 class AmazonScraper(Scraper):
 
     ##########################################
@@ -37,7 +38,7 @@ class AmazonScraper(Scraper):
     CB.CAPTCHAS_DIR = '/tmp/captchas'
     CB.SOLVED_CAPTCHAS_DIR = '/tmp/solved_captchas'
 
-    MAX_CAPTCHA_RETRIES = 10
+    MAX_CAPTCHA_RETRIES = 3
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -55,9 +56,24 @@ class AmazonScraper(Scraper):
         self.is_variants_checked = False
         self.variants = None
 
+        self.proxy_host = "proxy.crawlera.com"
+        self.proxy_port = "8010"
+        self.proxy_auth = ("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
+        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+        self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
+
+        self.proxies_enabled = False  # first, they are OFF to save allowed requests
+
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
     def _initialize_browser_settings(self):
+        # proxies
+        if self.proxies_enabled:
+            proxy_str = "%s:%s" % (
+                self.proxy_host, self.proxy_port)
+            self.browser.set_proxies({'http': proxy_str, 'https': proxy_str})
+            self.browser.add_proxy_password(*self.proxy_auth)
+
         # Cookie Jar
         cj = cookielib.LWPCookieJar()
         self.browser.set_cookiejar(cj)
@@ -73,38 +89,82 @@ class AmazonScraper(Scraper):
         self.browser.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
 
         # Want debugging messages?
-        #br.set_debug_http(True)
-        #br.set_debug_redirects(True)
-        #br.set_debug_responses(True)
+        #self.browser.set_debug_http(True)
+        #self.browser.set_debug_redirects(True)
+        #self.browser.set_debug_responses(True)
 
         # User-Agent (this is cheating, ok?)
         self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
 
-    def _extract_page_tree(self, captcha_data=None, retries=3):
+    def _extract_page_tree(self, captcha_data=None, retries=0):
         self._initialize_browser_settings()
 
-        for i in range(retries):
+        for i in range(self.MAX_RETRIES):
+            self.timeout = False
+
             try:
-                self.browser.open(self.store_url, timeout=20)
-                contents = self.browser.open(self.product_page_url, timeout=20).read()
-                break
+                if captcha_data:
+                    data = urllib.urlencode(captcha_data)
+                    contents = self.browser.open(self.product_page_url, data, timeout=10).read()
+                else:
+                    contents = self.browser.open(self.product_page_url, timeout=10).read()
             except timeout:
                 self.is_timeout = True
                 self.ERROR_RESPONSE["failure_type"] = "Timeout"
-                return
+                continue # continue to try again up to MAX_RETRIES
+            except mechanize.HTTPError as e:
+                # If 404 or this was the last retry, return failure
+                if e.code == 404 or i == self.MAX_RETRIES - 1:
+                    self.is_timeout = True # set self.is_timeout so we will return an error response
+                    self.ERROR_RESPONSE["failure_type"] = str(e)
+                    return
 
-        try:
-            # replace NULL characters
-            contents = self._clean_null(contents).decode("utf8")
-        except UnicodeError, e:
-            # if string was not utf8, don't deocde it
-            print "Warning creating html tree from page content: ", e.message
+                # Otherwise, try again with proxies
+                self.proxies_enabled = True
+                self._initialize_browser_settings()
+                continue
 
-            # replace NULL characters
-            contents = self._clean_null(contents)
+            try:
+                # replace NULL characters
+                contents = self._clean_null(contents)
 
-        self.page_raw_text = contents
-        self.tree_html = html.fromstring(contents)
+                self.tree_html = html.fromstring(contents.decode("utf8"))
+            except UnicodeError, e:
+                # if string was not utf8, don't deocde it
+                print "Warning creating html tree from page content: ", e.message
+
+                # replace NULL characters
+                contents = self._clean_null(contents)
+
+                self.tree_html = html.fromstring(contents)
+
+            # it's a captcha page
+            if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
+                if retries < self.MAX_CAPTCHA_RETRIES:
+                    image = self.tree_html.xpath(".//img/@src")
+                    if image:
+                        captcha_text = self.CB.solve_captcha(image[0])
+
+                    # value to use if there was an exception
+                    if not captcha_text:
+                        captcha_text = ''
+
+                    retries += 1
+                    return self._extract_page_tree(captcha_data={'field-keywords' : captcha_text}, retries=retries)
+
+                if retries == self.MAX_CAPTCHA_RETRIES:
+                    # If we have tried the maximum number of times, try once more with proxies
+                    self.proxies_enabled = True
+                    self._initialize_browser_settings()
+                    retries += 1
+                    continue
+
+                # If we still get a CAPTCHA, return failure
+                self.is_timeout = True # set self.is_timeout so we will return an error response
+                self.ERROR_RESPONSE["failure_type"] = "CAPTCHA"
+
+            # if we got it we can exit the loop and stop retrying
+            return
 
     def check_url_format(self):
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9%\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
@@ -127,10 +187,7 @@ class AmazonScraper(Scraper):
 
         self.av.setupCH(self.tree_html, self.product_page_url)
 
-        if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
-            return True
         return False
-
 
     ##########################################
     ############### CONTAINER : NONE
@@ -493,6 +550,15 @@ class AmazonScraper(Scraper):
     def _nutrition_fact_count(self):
         if self._nutrition_facts():
             return len(self._nutrition_facts())
+
+        return 0
+
+    def _no_longer_available(self):
+        availability = self.tree_html.xpath('//div[@id="availability"]')
+
+        if availability:
+            if 'Currently unavailable' in availability[0].text_content():
+                return 1
 
         return 0
 
@@ -1281,6 +1347,7 @@ class AmazonScraper(Scraper):
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \
         "nutrition_fact_count": _nutrition_fact_count, \
+        "no_longer_available": _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
