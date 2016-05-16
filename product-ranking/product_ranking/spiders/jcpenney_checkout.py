@@ -47,6 +47,7 @@ def _get_random_proxy():
 def _get_domain(url):
     return urlparse.urlparse(url).netloc.replace('www.', '')
 
+
 class JCpenneySpider(scrapy.Spider):
     name = 'jcpenney_checkout_products'
     allowed_domains = ['jcpenney.com']  # do not remove comment - used in find_spiders()
@@ -76,6 +77,11 @@ class JCpenneySpider(scrapy.Spider):
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
         self.disable_site_settings = kwargs.get('disable_site_settings', None)
         self.quantity = kwargs.get('quantity', None)
+
+        from pyvirtualdisplay import Display
+        display = Display(visible=False)
+        display.start()
+
         if self.quantity:
             self.quantity = [int(x) for x in self.quantity.split(',')]
             self.quantity = sorted(self.quantity)
