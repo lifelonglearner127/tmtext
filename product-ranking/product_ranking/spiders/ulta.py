@@ -126,6 +126,10 @@ class UltaProductSpider(BaseProductsSpider):
             ).extract(),
             conv=string.strip
         )
+        if not product.get('title', ''):
+            title = response.xpath('//h1[contains(@itemprop, "name")]//text()').extract()
+            if title:
+                product['title'] = title[0].strip()
 
         cond_set(
             product,
@@ -135,6 +139,11 @@ class UltaProductSpider(BaseProductsSpider):
             ).extract(),
             conv=string.strip
         )
+        if not product.get('brand', ""):
+            brand = response.xpath(
+                    '//h2[contains(@itemprop, "brand")]/a/text()').extract()
+            if brand:
+                product['brand'] = brand[0].strip()
 
         cond_set(
             product,
