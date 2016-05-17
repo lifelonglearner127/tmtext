@@ -6,6 +6,7 @@ from future_builtins import *
 import re
 import string
 import urllib
+import urlparse
 
 from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider
@@ -34,8 +35,9 @@ class SamsclubProductsSpider(BaseProductsSpider):
         "/displayClubs.jsp?_DARGS=/sams/search/wizard/common"
         "/displayClubs.jsp.selectId")
 
-    def __init__(self, clubno='4704', *args, **kwargs):
+    def __init__(self, clubno='4704', zip_code='94117', *args, **kwargs):
         self.clubno = clubno
+        self.zip_code = zip_code
         # if sort_mode not in self.SORT_MODES:
         #     self.log('"%s" not in SORT_MODES')
         #     sort_mode = 'default'
@@ -58,8 +60,8 @@ class SamsclubProductsSpider(BaseProductsSpider):
             prod['url'] = self.product_url
             yield Request(self.product_url,
                           self._parse_single_product,
+                          cookies={'myPreferredClub': self.clubno},
                           meta={'product': prod})
-
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -139,8 +141,7 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 product,
                 'brand',
                 response.xpath(
-                    '//*[@itemprop="brand"]//span/text()'
-            ).extract())
+                    '//*[@itemprop="brand"]//span/text()').extract())
 
         cond_set(
             product,
@@ -150,14 +151,35 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 "/text()"
             ).extract())
 
+        # Title key must be present even if it is blank
+        cond_set_value(product, 'title', "")
+        sold_out = response.xpath('//*[@itemprop="availability" and @href="http://schema.org/SoldOut"]')
+        cond_set_value(product, 'no_longer_available', 1 if (not response.body or sold_out) else 0)
+
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='plImageHolder']/img/@src").extract())
 
+        old_price = ''.join(response.xpath(
+            '//li[@class="wasPrice"]//span[@class="striked strikedPrice"]'
+            '/text()').re('[\d\.\,]+')) or \
+            ''.join(response.xpath(
+                '//*[@class="ltGray" and contains(text(),"Everyday Price")]/'
+                'following-sibling::span[@class="striked '
+                'strikedPrice"]/text()').re('[\d\.\,]+'))
+        old_price = old_price.strip().replace(',', '')
+
         if not product.get("price"):
             price = response.xpath("//li/span[@itemprop='price']/text()").extract()
-            if price:
-                product["price"] = Price(price=price[0],
-                                     priceCurrency='USD')
+
+            if old_price:
+                cond_set_value(product, 'price', Price(price=old_price,
+                                                       priceCurrency='USD'))
+                cond_set_value(product, 'price_with_discount', Price(price=price[0],
+                                                                     priceCurrency='USD'))
+
+            elif price:
+                cond_set_value(product, 'price', Price(price=price[0],
+                                                       priceCurrency='USD'))
 
         price = response.xpath(
             "//div[@class='moneyBoxBtn']/a"
@@ -165,31 +187,78 @@ class SamsclubProductsSpider(BaseProductsSpider):
             "/text()").re(FLOATING_POINT_RGEX)
 
         if not price and not product.get("price"):
+            oos_pr = '.'.join(response.xpath(
+                '//*[contains(@class,"pricingInfo oos")]'
+                '/ul[@class="lgFont"]//span/text()').re('\d+'))
+
+            if oos_pr:
+                price = [float(oss_pr)]
+
             pr = response.xpath(
                 "//div[contains(@class,'pricingInfo')]//li"
                 "/span/text()").extract()
-            if pr:
+            if pr and not price:
                 price = "".join(pr[:-1]) + "." + pr[-1]
+                member_price, discounted_price = None, None
                 if 'too low to show' in price.lower():
                     # price is visible only after you add the product in cart
                     product['price_details_in_cart'] = True
                     price = re.search("'item_price':'([\d\.]+)',",
                                       response.body_as_unicode()).group(1)
                     price = [float(price)]
+                elif 'was' in price.lower():
+                    discounted_price = '.'.join(response.xpath(
+                        '//div[contains(@class,"pricingInfo")]'
+                        '//li[@class="nowOnly"]/following-sibling::li[1]'
+                        '/span/text()').re('[\d]+')).replace(',', '').strip()
+
+                    member_price = '.'.join(response.xpath(
+                        '//*[contains(@class,"pricingInfo")]'
+                        '//*[@class="dkGray"]/*[@itemprop="price"]'
+                        '/text()').re('[\d\.\,]+')).replace(',', '').strip()
+
+                elif 'tech savings' in price.lower():
+                    discounted_price = '.'.join(response.xpath(
+                        '//*[contains(@class,"pricingInfo")]'
+                        '/*[@class="lgFont"]'
+                        '//text()').re('[\d\.\,]+')).replace(',', '').strip()
+
+                    member_price = '.'.join(response.xpath(
+                        '//*[contains(@class,"pricingInfo")]'
+                        '//*[@class="dkGray"]/*[@itemprop="price"]'
+                        '/text()').re('[\d\.\,]+')).replace(',', '').strip()
+
                 else:
                     m = re.search(FLOATING_POINT_RGEX, price)
                     if m:
-                        price = [m.group(0)]
+                        price = [m.group(0).strip('.')]
                     else:
+                        price = None
+
+                if member_price and discounted_price:
+                        cond_set_value(product,
+                                       'price',
+                                       Price(price=member_price,
+                                             priceCurrency='USD'))
+                        cond_set_value(product,
+                                       'price_with_discount',
+                                       Price(price=discounted_price,
+                                             priceCurrency='USD'))
+                        price = None
+                elif discounted_price:
+                        cond_set_value(product,
+                                       'price',
+                                       Price(price=discounted_price,
+                                             priceCurrency='USD'))
                         price = None
 
             if not price:
                 price = response.xpath(
                     "//span[contains(@class,'onlinePrice')]"
                     "/text()").re(FLOATING_POINT_RGEX)
+
         if price:
-            product['price'] = Price(price=price[0],
-                                     priceCurrency='USD')
+            cond_set_value(product, 'price', Price(price=price[0], priceCurrency='USD'))
 
         cond_set(
             product,
@@ -205,6 +274,75 @@ class SamsclubProductsSpider(BaseProductsSpider):
             product['model'] = ''
 
         product['locale'] = "en-US"
+
+        # Categories
+        categorie_filters = [u'sam\u2019s club']
+        # Clean and filter categories names from breadcrumb
+        categories = list(filter((lambda x: x.lower() not in categorie_filters),
+                          map((lambda x: x.strip()),
+                              response.xpath(
+                              '//*[@id="breadcrumb"]//a/text()').extract())))
+        category = categories[-1] if categories else None
+        cond_set_value(product, 'categories', categories)
+        cond_set_value(product, 'category', category)
+
+        # Subscribe and save
+        subscribe_and_save = response.xpath('//*[@class="subscriptionDiv" and \
+                not(@style="display: none;")]/input[@id="pdpSubCheckBox"]')
+        cond_set_value(product,
+                       'subscribe_and_save',
+                       1 if subscribe_and_save else 0)
+
+        # Shpping
+        shipping_included = response.xpath('//*[@class="freeDelvryTxt"]')
+        cond_set_value(product,
+                       'shipping_included',
+                       1 if shipping_included else 0)
+
+        oos_in_both = response.xpath(
+            '//*[@class="biggraybtn" and'
+            ' text()="Out of stock online and in club"]')
+
+        # Available in Store
+        available_store = response.xpath(
+            '//*[(@id="addtocartsingleajaxclub" or'
+            '@id="variantMoneyBoxButtonInitialLoadClub")'
+            'and contains(text(),"Pick up in Club")]') or \
+            response.xpath(
+                '//li[contains(@class,"pickupIcon")]'
+                '/following-sibling::li[contains'
+                '(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ",'
+                ' "abcdefghijklmnopqrstuvwxyz"),"ready as soon as")]')
+
+        cond_set_value(product,
+                       'available_store',
+                       1 if available_store and not oos_in_both else 0)
+
+        # Available Online
+        available_online = response.xpath('//*[(@id="addtocartsingleajaxonline" \
+                or @id="variantMoneyBoxButtonInitialLoadOnline")]')
+        cond_set_value(product,
+                       'available_online',
+                       1 if available_online and not oos_in_both else 0)
+
+        if not shipping_included and not product.get('no_longer_available'):
+            productId = ''.join(response.xpath('//*[@id="mbxProductId"]/@value').extract())
+            pSkuId = ''.join(response.xpath('//*[@id="mbxSkuId"]/@value').extract())
+            shipping_prices_url = "http://www.samsclub.com/sams/shop/product/moneybox/shippingDeliveryInfo.jsp?zipCode=%s&productId=%s&skuId=%s" % (self.zip_code, productId, pSkuId)
+            return Request(shipping_prices_url, 
+                           meta={'product': product}, 
+                           callback=self._parse_shipping_cost)
+
+        return product
+
+    def _parse_shipping_cost(self, response):
+        product = response.meta['product']
+        product['shipping'] = []
+        shipping_names = response.xpath('//tr/td[1]/span/text()').extract()
+        shipping_prices = response.xpath('//tr/td[2]/text()').re('[\d\.\,]+')
+
+        for shipping in zip(shipping_names, shipping_prices):
+            product['shipping'].append({'name': shipping[0], 'cost': shipping[1]})
 
         return product
 
@@ -240,12 +378,53 @@ class SamsclubProductsSpider(BaseProductsSpider):
         for link in links:
             yield link, SiteProductItem()
 
-    def _scrape_next_results_page_link(self, response):
+    def _get_next_products_page(self, response, prods_found):
+        link_page_attempt = response.meta.get('link_page_attempt', 1)
+
+        result = None
+        if prods_found is not None:
+            # This was a real product listing page.
+            remaining = response.meta['remaining']
+            remaining -= prods_found
+            if remaining > 0:
+                next_page = self._scrape_next_results_page_link(response, remaining)
+                if next_page is None:
+                    pass
+                elif isinstance(next_page, Request):
+                    next_page.meta['remaining'] = remaining
+                    result = next_page
+                else:
+                    url = urlparse.urljoin(response.url, next_page)
+                    new_meta = dict(response.meta)
+                    new_meta['remaining'] = remaining
+                    result = Request(url, self.parse, meta=new_meta, priority=1)
+        elif link_page_attempt > self.MAX_RETRIES:
+            self.log(
+                "Giving up on results page after %d attempts: %s" % (
+                    link_page_attempt, response.request.url),
+                ERROR
+            )
+        else:
+            self.log(
+                "Will retry to get results page (attempt %d): %s" % (
+                    link_page_attempt, response.request.url),
+                WARNING
+            )
+
+            # Found no product links. Probably a transient error, lets retry.
+            new_meta = response.meta.copy()
+            new_meta['link_page_attempt'] = link_page_attempt + 1
+            result = response.request.replace(
+                meta=new_meta, cookies={}, dont_filter=True)
+
+        return result
+
+    def _scrape_next_results_page_link(self, response, remaining):
         # If the total number of matches cannot be scrapped it will not be set.
         num_items = min(response.meta.get('total_matches', 0), self.quantity)
         if num_items:
             return SamsclubProductsSpider._NEXT_PAGE_URL.format(
                 search_term=response.meta['search_term'],
-                offset=response.meta['products_per_page'] + 1,
-                prods_per_page=num_items)
+                offset=num_items - remaining,
+                prods_per_page=min(200, num_items))
         return None

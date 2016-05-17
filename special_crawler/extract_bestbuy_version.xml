@@ -49,4 +49,5 @@
     <field name="wc_prodtour" version="1.1"></field>
     <field name="flixmedia" version="1.1"></field>
     <field name="sellpoints" version="1.1"></field>
+    <field name="variants" version="1"></field>
 </fields>

@@ -194,7 +194,7 @@ class FreshAmazonScraper(Scraper):
                 short_description = sub_description[:short_description_end_index] + short_description
 
             # if no short description, return the long description
-            if short_description.strip():
+            if short_description.strip() and html.fromstring("<html>" + short_description.strip() + "</html>").text_content().strip():
                 return short_description.strip()
 
         return None
@@ -259,8 +259,8 @@ class FreshAmazonScraper(Scraper):
                     else:
                         full_description += sub_description
 
-            if full_description:
-                return full_description
+            if full_description.strip() and html.fromstring("<html>" + full_description.strip() + "</html>").text_content().strip():
+                return full_description.strip()
 
         return None
 

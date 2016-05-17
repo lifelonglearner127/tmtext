@@ -4,11 +4,13 @@ from itertools import izip
 from datetime import datetime
 
 from scrapy.log import ERROR, INFO, WARNING
+import lxml.html
 
 from product_ranking.items import BuyerReviews
 
 
 is_empty = lambda x, y=None: x[0] if x else y
+
 
 class BuyerReviewsBazaarApi(object):
     def __init__(self, *args, **kwargs):
@@ -19,6 +21,33 @@ class BuyerReviewsBazaarApi(object):
             'average_rating': 0.0,
             'rating_by_star': {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
         }
+
+    def parse_buyer_reviews_products_json(self, response):
+        meta = response.meta.copy()
+        product = meta['product']
+        try:
+            json_data = json.loads(response.body_as_unicode())
+            product_reviews = json_data["Results"][0].get('ReviewStatistics',{})
+
+            if product_reviews:
+                rating_by_stars = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+
+                for rating_distribution in product_reviews.get('RatingDistribution',[]):
+                    rating_by_stars[str(rating_distribution['RatingValue'])] = rating_distribution['Count']
+
+                if product_reviews.get('LastSubmissionTime', False):
+                    last_buyer_review_date = product_reviews.get('LastSubmissionTime').split('.')[0]
+                    product[u'last_buyer_review_date'] = datetime.strptime(last_buyer_review_date, "%Y-%m-%dT%H:%M:%S").strftime('%d-%m-%Y')
+
+                return {'num_of_reviews': product_reviews.get('TotalReviewCount',0),
+                        'average_rating': round(product_reviews.get('AverageOverallRating',0),1),
+                        'rating_by_star': rating_by_stars
+                }
+
+        except:
+            pass
+
+        return self.ZERO_REVIEWS_VALUE
 
     def parse_buyer_reviews_per_page(self, response, body_data=None):
         """
@@ -106,10 +135,9 @@ class BuyerReviewsBazaarApi(object):
 
         product['buyer_reviews'] = BuyerReviews(**self.parse_buyer_reviews_per_page(response))
 
+        yield product
         if reqs:
-            return self.called_class.send_next_request(reqs, response)
-
-        return product
+            yield self.called_class.send_next_request(reqs, response)
 
     @staticmethod
     def _scrape_alternative_rating_by_star(response):
@@ -190,6 +218,21 @@ class BuyerReviewsBazaarApi(object):
                     for star in stars_data:
                         stars[star] += 1
 
+                    # check if stars values == br_count
+                    if hasattr(self, 'br_count'):
+                        result = {}
+                        if self.br_count != sum([k for k in stars.values()]):
+                            lxml_doc = lxml.html.fromstring(data.get('BVRRRatingSummarySourceID', ''))
+                            for stars_num in range(1, 6):
+                                stars_element = lxml_doc.xpath(
+                                    '//*[contains(@class, "BVRRHistogramBarRow")]'
+                                    '[contains(@class, "BVRRHistogramBarRow%s")]' % stars_num)
+                                if stars_element:
+                                    num_reviews = re.search(r'\((\d+)\)', stars_element[0].text_content())
+                                    if num_reviews:
+                                        num_reviews = num_reviews.group(1)
+                                        result[str(stars_num)] = int(num_reviews)
+                            return result
                 return stars
 
             except (KeyError, IndexError) as exc:

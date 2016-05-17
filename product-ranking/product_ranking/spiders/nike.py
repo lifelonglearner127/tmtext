@@ -272,6 +272,9 @@ class NikeProductSpider(BaseProductsSpider):
         title = self.parse_title(response, js_data)
         cond_set_value(product, 'title', title)
 
+        if not product.get('title', None):
+            return
+
         # Parse locate
         locale = 'en_US'
         cond_set_value(product, 'locale', locale)
@@ -279,10 +282,6 @@ class NikeProductSpider(BaseProductsSpider):
         # Parse model
         product_model = self.parse_product_model(response)
         cond_set_value(product, 'model', product_model)
-
-        # Parse title
-        title = self.parse_title(response, js_data)
-        cond_set_value(product, 'title', title)
 
         # Parse image
         image = self.parse_image(response, js_data)

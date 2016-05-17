@@ -21,6 +21,8 @@ class WalmartCategoryParser:
         result = []
         categories_list = self.tree_html.xpath(
             "//*[contains(@class, 'prod-breadcrumb')]//li[@class='breadcrumb']/.//a")
+        if not categories_list:
+            categories_list = self.tree_html.xpath("//li[@class='breadcrumb']/.//a")
         for a in categories_list:
             url = a.xpath('./@href')[0]
             if not url.startswith('http'):

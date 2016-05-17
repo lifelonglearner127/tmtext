@@ -2,7 +2,7 @@ import re
 import json
 
 import lxml.html
-import requests
+import itertools
 import json
 
 from lxml import html, etree
@@ -29,166 +29,90 @@ class KohlsVariants(object):
             return ""
 
     def swatches(self):
-        swatch_list = []
-
-        for swatch in self.tree_html.xpath("//div[@class='swatch-container-new']//a[starts-with(@class, 'swatch-')]"):
-            swatch_name = swatch.xpath("./@class")[0][7:]
-            id = swatch.xpath("./@id")[0]
-            swatch_info = {}
-            swatch_info["swatch_name"] = swatch_name
-            swatch_info[swatch_name] = id
-            swatch_info["hero"] = 1
-            swatch_info["thumb"] = 1
-            swatch_info["hero_image"] = [self._find_between(swatch.xpath("./@rel")[0], "", "?wid=")]
-            swatch_info["thumb_image"] = [self._find_between(swatch.xpath("./@style")[0], "background: url('", "')")]
-            swatch_list.append(swatch_info)
-
-        if swatch_list:
-            return swatch_list
-
         return None
 
     def _variants(self):
-        page_raw_text = html.tostring(self.tree_html)
-        # scrape JSON variants
-        variants_text = is_empty(re.findall(
-            "\"variants\"\s+\:\s+([^\]]*)", page_raw_text), ""
-        ).strip("\n").strip("\t")
-        variants_text = variants_text.strip().rstrip(",") + "]"
-
-        variants_count = is_empty(
-            re.findall(
-                r'availablevariantsCount_product\s*=\s*\'(\d+)\'',
-                page_raw_text
-            ), 0
-        )
-
         try:
-            variants_count = int(variants_count)
-        except ValueError:
-            variants_count = 0
+            product_info_json = self.tree_html.xpath("//script[contains(text(), 'var productJsonData = {')]/text()")[0].strip()
+            start_index = product_info_json.find("var productJsonData = ") + len("var productJsonData = ")
+            end_index = product_info_json.rfind(";")
+            product_info_json = product_info_json[start_index:end_index].strip()
+            product_info_json = json.loads(product_info_json)
+        except:
+            product_info_json = None
 
-        if variants_count == 0:
-            return None
+        if product_info_json and product_info_json["productItem"].get("variants", None):
+            variants_list = []
+            color_value_list = size_value_list = None
 
-        try:
-            variants_json = json.loads(variants_text)
-        except TypeError:
-            variants_json = []
+            if product_info_json["productItem"]["variants"].get("colorList", None):
+                color_value_list = product_info_json["productItem"]["variants"]["colorList"]
 
-        variants = []
+                if product_info_json["productItem"]["variants"].get("noInventoryColors", None):
+                    color_value_list = list(set(color_value_list) - set(product_info_json["productItem"]["variants"]["noInventoryColors"]))
 
-        active_c = is_empty(self.tree_html.xpath(
-            "//div[contains(@class, 'swatch active')]/@id"), "").split("_")
-        if active_c:
-            active_c = active_c[len(active_c)-1]
+            if product_info_json["productItem"]["variants"].get("sizeList", None):
+                size_value_list = product_info_json["productItem"]["variants"]["sizeList"]
 
-        for item in variants_json:
-            color = item.get("color", "").split("_")
-            if not ("". join(color)).strip():
-                color = ["not supported"]
-            selected = False
-            if color[len(color)-1].strip() == active_c.strip():
-                selected = True
-            size = item.get("size2", "").split("_")
-            if not ("". join(size)).strip():
-                size = ["not supported", "not supported"]
-            skuId = item.get("skuId")
-            upc = item.get("skuUpcCode")
-            price = item.get("SkuSalePrice") or item.get("SkuRegularPrice") or 0
-            if price:
-                try:
-                    price_amount = float(re.findall(r"[-+]?\d*\.\d+|\d+", price.replace("$", "").replace(",", ""))[0])
-                except:
-                    price_amount = None
-            inStock = item.get("inventoryStatus")
-            if inStock == 'true':
-                inStock = True
-            else:
-                inStock = False
+                if product_info_json["productItem"]["variants"].get("noInventorySizes", None):
+                    size_value_list = list(set(size_value_list) - set(product_info_json["productItem"]["variants"]["noInventorySizes"]))
 
-            try:
-                sizev = size[1]
-            except IndexError:
-                sizev = None
+            attribute_values_list = []
+            attribute_name_list = []
 
-            obj = {
-                "skuId": skuId,
-                "upc": upc,
-                "price": price_amount,
-                "in_stock": inStock,
-                "properties": {
-                    "color": color[len(color)-1],
-                    "size": sizev,
-                },
-                "selected": selected,
-            }
-            variants.append(obj)
+            if color_value_list:
+                attribute_values_list.append(color_value_list)
+                attribute_name_list.append("color")
 
-        color_value_list = []
-        size_value_list = []
-        instock_variant_combination_list = []
+            if size_value_list:
+                attribute_values_list.append(size_value_list)
+                attribute_name_list.append("size")
 
-        for variant in variants:
-            color_value_list.append(variant["properties"]["color"])
-            size_value_list.append(variant["properties"]["size"])
-            instock_variant_combination_list.append([variant["properties"]["color"], variant["properties"]["size"]])
+            if attribute_name_list:
+                variant_attribute_combination_list = list(itertools.product(*attribute_values_list))
 
-        color_value_list = list(set(color_value_list))
-        size_value_list = list(set(size_value_list))
+                for variant_sku in product_info_json["productItem"]["skuDetails"]:
+                    price = variant_sku["salePrice"] if variant_sku["salePrice"] else variant_sku["regularPrice"]
+                    price = re.findall(r"\d*\.\d+|\d+", price.replace(",", ""))
+                    price = float(price[0])
+                    property = {}
 
-        all_combinations = []
+                    if "color" in attribute_name_list:
+                        property["color"] = variant_sku["color"]
 
-        for color in color_value_list:
-            for size in size_value_list:
-                all_combinations.append([color, size])
+                    if "size" in attribute_name_list:
+                        property["size"] = variant_sku["size2"]
 
-                if [color, size] in instock_variant_combination_list:
-                    continue
+                    obj = {
+                        "skuId": variant_sku["skuId"],
+                        "upc": variant_sku["skuUpcCode"],
+                        "price": price,
+                        "in_stock": variant_sku["inventoryStatus"],
+                        "properties": property,
+                        "selected": False
+                    }
 
-                obj = {
-                    "skuId": None,
-                    "price": None,
-                    "in_stock": False,
-                    "properties": {
-                        "color": color,
-                        "size": size,
-                    },
-                    "selected": False,
-                }
+                    variants_list.append(obj)
 
-                variants.append(obj)
+                    if tuple(property.values()) in variant_attribute_combination_list:
+                        variant_attribute_combination_list.remove(tuple(property.values()))
 
-        for index, variant in enumerate(variants):
-            if [variant["properties"]["color"], variant["properties"]["size"]] in all_combinations:
-                all_combinations.remove([variant["properties"]["color"], variant["properties"]["size"]])
-                if variant["properties"]["color"] == "not supported":
-                    del variant["properties"]["color"]
-                if variant["properties"]["size"] == "not supported":
-                    del variant["properties"]["size"]
-            else:
-                variants[index]["properties"] = None
+                for variant in variant_attribute_combination_list:
+                    property = {}
 
-        temp = []
+                    for index, attribute_name in enumerate(attribute_name_list):
+                        property[attribute_name] = variant[index]
 
-        for variant in variants:
-            if variant["properties"]:
-                temp.append(variant)
+                    obj = {
+                        "skuId": None,
+                        "price": None,
+                        "in_stock": False,
+                        "properties": property,
+                        "selected": False,
+                    }
 
-        variants = temp
+                    variants_list.append(obj)
 
-        swatches = self.swatches()
-        for json_var in variants:
-            json_var["image_url"] = None
-            if swatches:
-                for swatch in swatches:
-                    if "Monogray" in json_var["properties"][swatch["swatch_name"]]:
-                        pass
-                    if swatch[swatch["swatch_name"]] == json_var["properties"][swatch["swatch_name"]]:
-                        json_var["image_url"] = swatch["hero_image"]
-                        break
-
-        if variants:
-            return variants
+                return variants_list if variants_list else None
 
         return None

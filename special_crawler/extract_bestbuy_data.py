@@ -2,14 +2,13 @@
 
 import urllib
 import re
-import sys
 import json
 import os.path
-from lxml import html
-from lxml import etree
-import time
 import requests
+from lxml import html
+
 from extract_data import Scraper
+from spiders_shared_code.bestbuy_variants import BestBuyVariants
 
 class BestBuyScraper(Scraper):
     
@@ -35,7 +34,7 @@ class BestBuyScraper(Scraper):
         Returns:
         True if valid, False otherwise
         """
-        m = re.match(r"^http://www\.bestbuy\.com/site/[a-zA-Z0-9%\-\%\_]+/[a-zA-Z0-9]+\.p\?id=[a-zA-Z0-9]+&skuId=[a-zA-Z0-9]+$", self.product_page_url)
+        m = re.match(r"^http://www\.bestbuy\.com/site/[a-zA-Z0-9%\-\%\_]+/[a-zA-Z0-9]+\.p\?id=[a-zA-Z0-9]+$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -173,6 +172,31 @@ class BestBuyScraper(Scraper):
             return None
         return self._long_description_helper()
 
+    def _variants(self):
+            self.variants = BestBuyVariants()
+            self.variants.setupCH(self.tree_html, self.product_page_url)
+            variants =  self.variants._variants()
+
+            # Search for variants with Sku
+            variants_with_skuId = {}
+            for variant in variants:
+                if 'skuId' in variant:
+                    variants_with_skuId[variant['skuId']] = variant
+
+            # Request prices for those skus
+            api_prices_url = 'http://www.bestbuy.com/api/1.0/carousel/prices?skus=%s' % ','.join(variants_with_skuId.keys()) 
+            prices_ajax = requests.get(api_prices_url, headers={'User-Agent':'*'})  
+            for price_ajax in prices_ajax.json():
+                
+                # Update price
+                vr = variants_with_skuId[price_ajax['skuId']]
+                index = variants.index(vr)
+                vr['price'] = price_ajax.get('currentPrice',None) or price_ajax.get('regularPrice',None)
+                # Replace
+                variants.pop(index)
+                variants.insert(index,vr)
+
+            return variants
 
 
 
@@ -575,7 +599,8 @@ class BestBuyScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
-
+        "variants": _variants, \
+        
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \

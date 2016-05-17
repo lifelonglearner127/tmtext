@@ -250,6 +250,17 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
         return description
 
+    @staticmethod
+    def _get_product_json_data(response):
+        start = response.body_as_unicode().find('var productJsonData =')
+        end = response.body_as_unicode().find('};', start)
+        if start < 0 or end < 0:
+            return
+        product_json_data = response.body_as_unicode()[
+                            start+len('var productJsonData ='):end]
+        product_json_data = json.loads(product_json_data.strip() + '}')
+        return product_json_data
+
     def _set_price(self, response, product):
         price = response.xpath(
             '//div[@class="multiple-price"]/div[2]/text()[normalize-space()] |'
@@ -265,6 +276,22 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         if price:
             product['price'] = Price(price=price[0], priceCurrency='USD')
         else:
+            price = response.xpath(
+                '//meta[contains(@property, "og:product:price:amount")]/@value').extract()
+            if price and price[0]:
+                product['price'] = Price(price=price[0], priceCurrency='USD')
+                return
+            price = None
+            json_data = self._get_product_json_data(response)
+            pricing_info = json_data.get('productItem', {}).get('pricing', {})
+            if pricing_info.get('salePrice', ''):
+                price = re.search('\$([\d\.]+)', pricing_info.get('salePrice', ''))
+            elif pricing_info.get('regularPrice', ''):
+                price = re.search('\$([\d\.]+)', pricing_info.get('regularPrice', ''))
+            if price:
+                price = price.group(1)
+                product['price'] = Price(price=price, priceCurrency='USD')
+                return
             product['price'] = Price(price='0.0', priceCurrency='USD')
 
     def _parse_related_products(self, response):

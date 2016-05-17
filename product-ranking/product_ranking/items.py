@@ -172,7 +172,9 @@ class SiteProductItem(Item):
     description = Field()  # String with HTML tags.
     brand = Field()  # String.
     price = Field(serializer=scrapy_price_serializer)  # see Price obj
+    price_with_discount = Field(serializer=scrapy_price_serializer)
     marketplace = Field(serializer=scrapy_marketplace_serializer)  # see marketplace obj
+
     locale = Field()  # String.
     # Dict of RelatedProducts. The key is the relation name.
     related_products = Field()
@@ -221,6 +223,8 @@ class SiteProductItem(Item):
     variants = Field()
 
     shipping = Field()  # now for Walmart only; may change in the future
+    shipping_included = Field()
+    shipping_cost = Field(serializer=scrapy_price_serializer)
 
     img_count = Field()   # now for Walmart only; may change in the future
     video_count = Field()   # now for Walmart only; may change in the future
@@ -251,7 +255,14 @@ class SiteProductItem(Item):
                                      # only after you put the product in cart
 
     seller_ranking = Field()  # for Walmart
+
     _subitem = Field()
+
+    minimum_order_quantity = Field() # Costco.com
+
+    available_online = Field()
+    available_store = Field()
+    subscribe_and_save = Field() # Samclub.com
 
 
 class DiscountCoupon(Item):
