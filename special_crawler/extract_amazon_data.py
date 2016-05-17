@@ -848,6 +848,11 @@ class AmazonScraper(Scraper):
 
         return None
 
+    def _best_seller_category(self):
+        sales_rank = self.tree_html.xpath('//li[@id="SalesRank"]')
+        if sales_rank:
+            return re.search('#[\d,]+ in (.+) \(', sales_rank[0].text_content()).group(1)
+
     ##########################################
     ################ CONTAINER : REVIEWS
     ##########################################
@@ -1368,6 +1373,7 @@ class AmazonScraper(Scraper):
         "meta_tags": _meta_tags,\
         "meta_tag_count": _meta_tag_count,\
         "canonical_link": _canonical_link,
+        "best_seller_category" : _best_seller_category, \
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \

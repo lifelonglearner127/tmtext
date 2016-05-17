@@ -141,6 +141,7 @@ class Scraper():
             "return_to", # return to for this product
             "comparison_chart", # whether page contains a comparison chart, 1/0
             "btv", # if page has a 'buy together value' offering, 1/0
+            "best_seller_category", # name of best seller category (Amazon)
 
             # reviews
             "review_count", # total number of reviews, int
@@ -222,7 +223,8 @@ class Scraper():
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
-                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv"], \
+                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv", \
+                            "best_seller_category"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "in_stock", \
