@@ -3,15 +3,15 @@ import re
 from django.db import connection
 from rest_framework import viewsets, filters
 
-from product_list.models import ProductList, Sites, SearchTerms,\
+from models import ProductList, Sites, SearchTerms,\
     Brands, SearchTermsGroups
 
-from product_list.serializers import ProductListSerializer, DatesSerializer,\
+from serializers import ProductListSerializer, DatesSerializer,\
     SearchTermsSerializer, SitesSerializer, BrandsSerializer,\
     SearchTermsGroupsSerializer, PriceDataSerializer, RankingDataSerializer, \
     OutOfStockDataSerializer, BuyBoxDataSerializer, ReviewDataSerializer
 
-from product_list.exceptions import ParamsCombinationError, FormatDaterror,\
+from exceptions import ParamsCombinationError, FormatDaterror,\
     ParamNotSupportedError, MissingParamError
 
 

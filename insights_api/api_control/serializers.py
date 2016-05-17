@@ -1,4 +1,4 @@
-import product_list.models as models
+import models
 from rest_framework import serializers
 
 
