@@ -115,6 +115,8 @@ class RankingSearchResultsItems(models.Model):
 class Date(models.Model):
     date = models.DateField(blank=True, null=True)
 
+    class Meta:
+        managed = False
 
 class BrandTypes(models.Model):
     id = models.IntegerField(primary_key=True)
@@ -197,18 +199,3 @@ class ReviewData(models.Model):
 
     class Meta:
         managed = False
-
-class Query(models.Model):
-    remote_address = models.CharField(max_length=32)
-    # server_hostname = models.CharField(max_length=120)
-    # request_headers = models.TextField(blank=True, null=True)
-    request_method = models.CharField(max_length=20)
-    request_path = models.CharField(max_length=400)
-    request_body = models.TextField(blank=True, null=True)
-    response_status = models.IntegerField()
-    # response_body = models.TextField(blank=True, null=True)
-    date = models.DateTimeField(auto_now_add=True)
-    run_time = models.FloatField()
-
-    class Meta:
-        db_table = 'api_insights_log'

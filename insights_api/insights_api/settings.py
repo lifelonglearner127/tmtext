@@ -38,7 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'product_list',
+    'rest_framework.authtoken',
+    'api_control',
+    'api_log',
+    'api_auth'
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -50,7 +53,7 @@ MIDDLEWARE_CLASSES = [
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'product_list.middlewares.LogQueryInformation',
+    'api_log.middlewares.LogQueryInformation',
 ]
 
 ROOT_URLCONF = 'insights_api.urls'
@@ -128,6 +131,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework.authentication.TokenAuthentication',),
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 25
-}
+    'PAGE_SIZE': 25}

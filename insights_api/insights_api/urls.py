@@ -17,7 +17,7 @@ from django.conf.urls import url, include
 from django.contrib import admin
 from rest_framework import routers
 
-from product_list.views import ProductListViewSet, SitesViewSet, \
+from api_control.views import ProductListViewSet, SitesViewSet, \
     SearchTermsViewSet, DateViewSet, BrandsViewSet, \
     SearchTermsGroupsViewSet, PriceDataViewSet, RankingDataViewSet, \
     OutOfStockDataViewSet, BuyBoxDataViewSet, ReviewDataViewSet
