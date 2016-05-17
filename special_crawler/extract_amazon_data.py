@@ -229,6 +229,9 @@ class AmazonScraper(Scraper):
         if len(pn)>0:
             return self._clean_text(pn[0])
         pn = self.tree_html.xpath('//div[@id="title_feature_div"]/h1//text()')
+        if len(pn)>0:
+            return self._clean_text(pn[0].strip())
+        pn = self.tree_html.xpath('//div[@id="item_name"]/text()')
         return self._clean_text(pn[0].strip())
 
     def _product_title(self):
