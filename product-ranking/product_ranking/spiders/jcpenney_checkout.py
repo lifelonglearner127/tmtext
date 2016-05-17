@@ -1,26 +1,24 @@
-#
-# turns pages into screenshots
-#
-
 import json
 import os
-import sys
-import time
-import socket
 import random
 import re
+import socket
+import sys
+import time
+import traceback
 import urlparse
 
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-
+from selenium.common.exceptions import WebDriverException
 from product_ranking.items import CheckoutProductItem
 
 import scrapy
 from scrapy.conf import settings
-from scrapy.http import Request, FormRequest
-from scrapy.log import INFO, WARNING, ERROR, DEBUG
+from scrapy.http import FormRequest
+from scrapy.log import INFO, WARNING, ERROR
 import lxml.html
 
 is_empty = lambda x, y="": x[0] if x else y
@@ -79,7 +77,7 @@ class JCpenneySpider(scrapy.Spider):
         self.quantity = kwargs.get('quantity', None)
 
         from pyvirtualdisplay import Display
-        display = Display(visible=False)
+        display = Display(visible=True)
         display.start()
 
         if self.quantity:
@@ -114,20 +112,31 @@ class JCpenneySpider(scrapy.Spider):
                     colors = product.get('color', None)
 
                 for color in colors:
-                    try:
-                        self._parse_product(url, qty, color)
+                    clickable_error = True
+                    while clickable_error:
+                        clickable_error = False 
+                        try:
+                            self._parse_product(url, qty, color)
 
-                        for item in self._parse_cart():
-                            yield item
-                        # Fastest way to empty the cart
-                        # and clear resources
-                        self.driver.close()
-                        self.driver = self.init_driver()
-                        self.wait = WebDriverWait(self.driver, 25)
-                        socket.setdefaulttimeout(60)
-                        self.driver.get(url)
-                    except:
-                        self.log('Error while parsing color %s of %s' % (color, url))
+                            for item in self._parse_cart():
+                                yield item
+                            # Fastest way to empty the cart
+                            # and clear resources
+                            self.driver.close()
+                            self.driver = self.init_driver()
+                            self.wait = WebDriverWait(self.driver, 25)
+                            socket.setdefaulttimeout(60)
+                            self.driver.get(url)
+
+                        except WebDriverException as e:
+                            if 'Element is not clickable at point' in str(e):
+                                print str(e)
+                                clickable_error = True
+
+                        except:
+                            print traceback.print_exc()
+                            self.log('Error while parsing color %s of %s' % (color, url))
+
                 self.driver.close()
 
     def _get_colors_names(self):
@@ -237,6 +246,7 @@ class JCpenneySpider(scrapy.Spider):
 
         for product in products:
             self.select_color(product, color)
+            self._find_by_xpath('//h1')[0].click()
             self.select_size(product)
             self.select_width(product)
             self.select_others(product)
