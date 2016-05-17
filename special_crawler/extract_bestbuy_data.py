@@ -33,18 +33,12 @@ class BestBuyScraper(Scraper):
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
-        self.proxy_host = "proxy.crawlera.com"
-        self.proxy_port = "8010"
-        self.proxy_auth = HTTPProxyAuth("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
-        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
-        self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
-
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
         True if valid, False otherwise
         """
-        m = re.match(r"^http://www\.bestbuy\.com/site/[a-zA-Z0-9%\-\%\_]+/[a-zA-Z0-9]+\.p\?id=[a-zA-Z0-9]+$", self.product_page_url)
+        m = re.match(r"^http://www\.bestbuy\.com/site/[a-zA-Z0-9%\-\%\_]+/[a-zA-Z0-9]+\.p\?id=[a-zA-Z0-9]+(&skuId=\d+)?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
