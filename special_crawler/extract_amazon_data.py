@@ -221,15 +221,15 @@ class AmazonScraper(Scraper):
     def _product_name(self):
         pn = self.tree_html.xpath('//h1[@id="title"]/span[@id="productTitle"]')
         if len(pn)>0:
-            return pn[0].text
+            return self._clean_text(pn[0].text)
         pn = self.tree_html.xpath('//h1[@class="parseasinTitle " or @class="parseasinTitle"]/span[@id="btAsinTitle"]//text()')
         if len(pn)>0:
-            return " ".join(pn).strip()
+            return self._clean_text(" ".join(pn).strip())
         pn = self.tree_html.xpath('//h1[@id="aiv-content-title"]//text()')
         if len(pn)>0:
             return self._clean_text(pn[0])
         pn = self.tree_html.xpath('//div[@id="title_feature_div"]/h1//text()')
-        return pn[0].strip()
+        return self._clean_text(pn[0].strip())
 
     def _product_title(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
