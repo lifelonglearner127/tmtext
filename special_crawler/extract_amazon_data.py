@@ -271,6 +271,15 @@ class AmazonScraper(Scraper):
             if 'productASIN' not in asin_text[0].text_content():
                 return re.search('ASIN\s*(\S+)', asin_text[0].text_content()).group(1)
 
+        asin = re.search(r'/dp/([0-9a-zA-Z]+)/', self._url())
+        if asin:
+            asin = asin.group(1)
+            return asin
+        asin = re.search(r'/dp/([0-9a-zA-Z]+)$', self._url())
+        if asin:
+            asin = asin.group(1)
+            return asin
+
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='content pdClearfix'][1]//tbody//tr")
         if len(rows)==0:
@@ -323,6 +332,31 @@ class AmazonScraper(Scraper):
             return short_description.replace("\n"," ")
 
         return self._long_description_helper()
+
+    def _bullet_feature_1(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
+        if bullets:
+            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[0].text_content())
+
+    def _bullet_feature_2(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
+        if bullets:
+            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[1].text_content())
+
+    def _bullet_feature_3(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
+        if bullets:
+            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[2].text_content())
+
+    def _bullet_feature_4(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
+        if bullets:
+            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[3].text_content())
+
+    def _bullet_feature_5(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
+        if bullets:
+            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[4].text_content())
 
     def _seller_ranking(self):
         seller_ranking = []
@@ -1358,6 +1392,11 @@ class AmazonScraper(Scraper):
         "nutrition_facts": _nutrition_facts, \
         "nutrition_fact_count": _nutrition_fact_count, \
         "no_longer_available": _no_longer_available, \
+        "bullet_feature_1": _bullet_feature_1, \
+        "bullet_feature_2": _bullet_feature_2, \
+        "bullet_feature_3": _bullet_feature_3, \
+        "bullet_feature_4": _bullet_feature_4, \
+        "bullet_feature_5": _bullet_feature_5, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
