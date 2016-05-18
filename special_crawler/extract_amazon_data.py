@@ -38,7 +38,7 @@ class AmazonScraper(Scraper):
     CB.CAPTCHAS_DIR = '/tmp/captchas'
     CB.SOLVED_CAPTCHAS_DIR = '/tmp/solved_captchas'
 
-    MAX_CAPTCHA_RETRIES = 10
+    MAX_CAPTCHA_RETRIES = 3
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -90,7 +90,7 @@ class AmazonScraper(Scraper):
 
         # Want debugging messages?
         #self.browser.set_debug_http(True)
-        #br.set_debug_redirects(True)
+        #self.browser.set_debug_redirects(True)
         #self.browser.set_debug_responses(True)
 
         # User-Agent (this is cheating, ok?)
@@ -113,9 +113,16 @@ class AmazonScraper(Scraper):
                 self.ERROR_RESPONSE["failure_type"] = "Timeout"
                 continue # continue to try again up to MAX_RETRIES
             except mechanize.HTTPError as e:
-                self.is_timeout = True # set self.is_timeout so we will return an error response
-                self.ERROR_RESPONSE["failure_type"] = str(e)
-                return # do not try again
+                # If 404 or this was the last retry, return failure
+                if e.code == 404 or i == self.MAX_RETRIES - 1:
+                    self.is_timeout = True # set self.is_timeout so we will return an error response
+                    self.ERROR_RESPONSE["failure_type"] = str(e)
+                    return
+
+                # Otherwise, try again with proxies
+                self.proxies_enabled = True
+                self._initialize_browser_settings()
+                continue
 
             try:
                 # replace NULL characters
@@ -133,7 +140,7 @@ class AmazonScraper(Scraper):
 
             # it's a captcha page
             if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
-                if retries <= self.MAX_CAPTCHA_RETRIES:
+                if retries < self.MAX_CAPTCHA_RETRIES:
                     image = self.tree_html.xpath(".//img/@src")
                     if image:
                         captcha_text = self.CB.solve_captcha(image[0])
@@ -144,9 +151,17 @@ class AmazonScraper(Scraper):
 
                     retries += 1
                     return self._extract_page_tree(captcha_data={'field-keywords' : captcha_text}, retries=retries)
-                else:
-                    self.is_timeout = True # set self.is_timeout so we will return an error response
-                    self.ERROR_RESPONSE["failure_type"] = "CAPTCHA"
+
+                if retries == self.MAX_CAPTCHA_RETRIES:
+                    # If we have tried the maximum number of times, try once more with proxies
+                    self.proxies_enabled = True
+                    self._initialize_browser_settings()
+                    retries += 1
+                    continue
+
+                # If we still get a CAPTCHA, return failure
+                self.is_timeout = True # set self.is_timeout so we will return an error response
+                self.ERROR_RESPONSE["failure_type"] = "CAPTCHA"
 
             # if we got it we can exit the loop and stop retrying
             return
@@ -206,15 +221,18 @@ class AmazonScraper(Scraper):
     def _product_name(self):
         pn = self.tree_html.xpath('//h1[@id="title"]/span[@id="productTitle"]')
         if len(pn)>0:
-            return pn[0].text
+            return self._clean_text(pn[0].text)
         pn = self.tree_html.xpath('//h1[@class="parseasinTitle " or @class="parseasinTitle"]/span[@id="btAsinTitle"]//text()')
         if len(pn)>0:
-            return " ".join(pn).strip()
+            return self._clean_text(" ".join(pn).strip())
         pn = self.tree_html.xpath('//h1[@id="aiv-content-title"]//text()')
         if len(pn)>0:
             return self._clean_text(pn[0])
         pn = self.tree_html.xpath('//div[@id="title_feature_div"]/h1//text()')
-        return pn[0].strip()
+        if len(pn)>0:
+            return self._clean_text(pn[0].strip())
+        pn = self.tree_html.xpath('//div[@id="item_name"]/text()')
+        return self._clean_text(pn[0].strip())
 
     def _product_title(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -243,7 +261,13 @@ class AmazonScraper(Scraper):
 
     # Amazon's version of UPC
     def _asin(self):
-        return re.search('ASIN=([\w\d]+)', html.tostring(self.tree_html)).group(1)
+        asin_text = self.tree_html.xpath('//*[contains(text(),"ASIN:")]/..')
+        if asin_text:
+            return re.search('ASIN:\s*(\S+)', asin_text[0].text_content()).group(1)
+
+        asin_text = self.tree_html.xpath('//tr/th[contains(text(),"ASIN")]/..')
+        if asin_text:
+            return re.search('ASIN\s*(\S+)', asin_text[0].text_content()).group(1)
 
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='content pdClearfix'][1]//tbody//tr")

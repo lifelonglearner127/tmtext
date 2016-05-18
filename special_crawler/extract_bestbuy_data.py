@@ -9,6 +9,7 @@ from lxml import html
 
 from extract_data import Scraper
 from spiders_shared_code.bestbuy_variants import BestBuyVariants
+from requests.auth import HTTPProxyAuth
 
 class BestBuyScraper(Scraper):
     
@@ -29,12 +30,15 @@ class BestBuyScraper(Scraper):
     wc_prodtour = None
     wc_360 = None
 
+    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+        Scraper.__init__(self, **kwargs)
+
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
         True if valid, False otherwise
         """
-        m = re.match(r"^http://www\.bestbuy\.com/site/[a-zA-Z0-9%\-\%\_]+/[a-zA-Z0-9]+\.p\?id=[a-zA-Z0-9]+$", self.product_page_url)
+        m = re.match(r"^http://www\.bestbuy\.com/site/[a-zA-Z0-9%\-\%\_]+/[a-zA-Z0-9]+\.p\?id=[a-zA-Z0-9]+(&skuId=\d+)?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):

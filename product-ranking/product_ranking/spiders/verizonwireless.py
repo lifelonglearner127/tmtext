@@ -31,13 +31,17 @@ class VerizonwirelessProductsSpider(ProductsSpider):
             'RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 408]
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.custom_middlewares.VerizonMetaRefreshMiddleware'] = 700
+        middlewares['product_ranking.custom_middlewares.VerizonRedirectMiddleware'] = 800
+
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+
         super(VerizonwirelessProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
 
     def _total_matches_from_html(self, response):
         total = response.xpath(
-            '//*[@id="total-results-source-div"]//strong/text()').re('\d+')
+            '//*[@id="total-results-source-div"]//strong/text()').re('\d+') or \
+            re.findall('totalNumRecs":(\d+)}', response.body)
 
         return int(total[0]) if total else 0
 
@@ -53,9 +57,13 @@ class VerizonwirelessProductsSpider(ProductsSpider):
             '//div[@itemtype="https://schema.org/Product" and '
             'not(contains(@class,"Device-SpecificInstructions") or '
             'contains(@class,"allother"))]'
-            '/a/@href').extract()
+            '/a/@href').extract() or \
+            set([x.split('#')[0] for x in re.findall(
+                'pdpUrl":\["(.*?)\"]', response.body)])
+
         for item_url in item_urls:
-            yield item_url, SiteProductItem()
+            yield urlparse.urljoin(
+                response.url, item_url), SiteProductItem()
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -77,7 +85,6 @@ class VerizonwirelessProductsSpider(ProductsSpider):
     def _parse_category(self, response):
         categories = self._parse_categories(response)
         return categories[-1] if categories else None
-
 
     def _parse_price(self, response):
         price = ''.join(response.xpath(
