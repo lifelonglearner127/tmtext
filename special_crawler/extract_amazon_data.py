@@ -263,11 +263,13 @@ class AmazonScraper(Scraper):
     def _asin(self):
         asin_text = self.tree_html.xpath('//*[contains(text(),"ASIN:")]/..')
         if asin_text:
-            return re.search('ASIN:\s*(\S+)', asin_text[0].text_content()).group(1)
+            if 'productASIN' not in asin_text[0].text_content():
+                return re.search('ASIN:\s*(\S+)', asin_text[0].text_content()).group(1)
 
         asin_text = self.tree_html.xpath('//tr/th[contains(text(),"ASIN")]/..')
         if asin_text:
-            return re.search('ASIN\s*(\S+)', asin_text[0].text_content()).group(1)
+            if 'productASIN' not in asin_text[0].text_content():
+                return re.search('ASIN\s*(\S+)', asin_text[0].text_content()).group(1)
 
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='content pdClearfix'][1]//tbody//tr")
