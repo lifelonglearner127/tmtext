@@ -269,6 +269,15 @@ class AmazonScraper(Scraper):
         if asin_text:
             return re.search('ASIN\s*(\S+)', asin_text[0].text_content()).group(1)
 
+        asin = re.search(r'/dp/([0-9a-zA-Z]+)/', self._url())
+        if asin:
+            asin = asin.group(1)
+            return asin
+        asin = re.search(r'/dp/([0-9a-zA-Z]+)$', self._url())
+        if asin:
+            asin = asin.group(1)
+            return asin
+
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='content pdClearfix'][1]//tbody//tr")
         if len(rows)==0:
