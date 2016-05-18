@@ -48,4 +48,3 @@ if __name__ == '__main__':
             print f
 #        if 'job_output' in f.name: 
 #            f.get_contents_to_filename(os.path.basename(f.name))
-
