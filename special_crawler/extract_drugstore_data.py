@@ -314,6 +314,8 @@ class DrugstoreScraper(Scraper):
                 if cnt > 0:
                     self.reviews.append([idx, cnt])
                     rv_scores.append(idx)
+                else:
+                    self.reviews.append([idx, cnt])
                 idx -= 1
                 if idx < 1:
                     break
