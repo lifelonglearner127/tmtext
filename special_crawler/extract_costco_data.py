@@ -602,6 +602,7 @@ class CostcoScraper(Scraper):
         html = re.sub('[\n\t\r]', '', html)
         html = re.sub('<!--[^>]*-->', '', html)
         html = re.sub('</?(?!(ul|li|br))\w+[^>]*>', '', html)
+        html = re.sub('&#160;', ' ', html)
         html = re.sub('\s+', ' ', html)
         return re.sub('> <', '><', html).strip()
 
