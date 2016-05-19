@@ -110,11 +110,13 @@ class JCpenneySpider(scrapy.Spider):
                     # Only parse the selected color
                     # if None, the first fetched will be selected
                     colors = product.get('color', None)
+                    if isinstance(colors, basestring) or not colors:
+                        colors = [colors]
 
                 for color in colors:
                     clickable_error = True
                     while clickable_error:
-                        clickable_error = False 
+                        clickable_error = False
                         try:
                             self._parse_product(url, qty, color)
 
