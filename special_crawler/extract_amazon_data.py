@@ -324,12 +324,12 @@ class AmazonScraper(Scraper):
 
     def _description(self):
         if self.tree_html.xpath("//*[contains(@id,'feature-bullets')]"):
-            return self._clean_text(html.tostring(self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")[0]))
+            return self._clean_text(self._exclude_javascript_from_description(html.tostring(self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")[0])))
 
         short_description = " " . join(self.tree_html.xpath("//div[@class='dv-simple-synopsis dv-extender']//text()")).strip()
 
         if short_description is not None and len(short_description)>0:
-            return short_description.replace("\n"," ")
+            return self._exclude_javascript_from_description(short_description.replace("\n"," "))
 
         return self._long_description_helper()
 
