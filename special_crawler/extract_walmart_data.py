@@ -747,7 +747,7 @@ class WalmartScraper(Scraper):
             if product_name_bold in lxml.html.tostring(description_elements) or \
                 product_name_strong in lxml.html.tostring(description_elements):
 
-                has_product_name = True;
+                has_product_name = True
 
             for description_element in description_elements:
                 sub_description = lxml.html.tostring(description_element)
@@ -755,9 +755,9 @@ class WalmartScraper(Scraper):
                 if product_name_bold in sub_description or \
                     product_name_strong in sub_description or \
                     (not has_product_name and \
-                        "<dl>" in sub_description or \
+                        ("<dl>" in sub_description or \
                         "<ul>" in sub_description or \
-                        "<li>" in sub_description) or \
+                        "<li>" in sub_description)) or \
                     '<section class="product-about js-ingredients health-about">' in sub_description:
 
                     innerText = ""
@@ -940,7 +940,7 @@ class WalmartScraper(Scraper):
             if product_name_bold in lxml.html.tostring(description_elements) or \
                 product_name_strong in lxml.html.tostring(description_elements):
 
-                has_product_name = True;
+                has_product_name = True
 
             for description_element in description_elements:
                 sub_description = lxml.html.tostring(description_element)
