@@ -118,12 +118,14 @@ class Command(BaseCommand):
             else:
                 print('    error: empty results for SQS Job %i' % job.pk)
                 continue
-            result_value = jsonparse(wd_job.response_path).find(job_results)
+            result_value = [
+                match.value
+                for match in jsonparse(wd_job.response_path).find(job_results)]
             if str(result_value) != str(wd_job.desired_value):
                 print('    error: values differ for WD Job %i' % job.pk)
                 wd_job.status = 'failed'
                 if not wd_test_run in list(wd_job.failed_test_runs.all()):
                     wd_job.failed_test_runs.add(wd_test_run)
-                wd_job.save
+                wd_job.save()
             else:
                 print('    ok: values are the same for WD Job %i' % job.pk)
