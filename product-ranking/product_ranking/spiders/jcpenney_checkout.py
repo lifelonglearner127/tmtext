@@ -90,9 +90,11 @@ class JCpenneySpider(scrapy.Spider):
         yield scrapy.Request('http://www.jcpenney.com/')
 
     def parse(self, request):
+	print "parse"
         is_iterable = isinstance(self.product_data, (list, tuple))
         self.product_data = self.product_data if is_iterable else list(self.product_data)
         for product in self.product_data:
+	    print product
             # Open product URL
             for qty in self.quantity:
                 url = product.get('url')
@@ -112,7 +114,7 @@ class JCpenneySpider(scrapy.Spider):
                     colors = product.get('color', None)
                     if isinstance(colors, basestring) or not colors:
                         colors = [colors]
-
+		print colors
                 for color in colors:
                     clickable_error = True
                     while clickable_error:
