@@ -76,12 +76,16 @@ class Command(BaseCommand):
                     product_url=url,
                     task_id=random.randint(999999, 99999999),
                     branch_name=active_job.branch if active_job.branch else '',
-                    search_term='', product_urls='', extra_cmd_args='')
+                    search_term='', product_urls='', extra_cmd_args='',
+                    mode='no cache')
                 screenshot_job = Job.objects.create(
                     name='WatchDog Job #%i' % active_job.pk,
                     spider='url2screenshot_products',
                     product_url=url,
-                    task_id=random.randint(999999, 99999999))
+                    task_id=random.randint(999999, 99999999),
+                    search_term='', product_urls='', extra_cmd_args='',
+                    branch_name='',
+                    mode='no cache')
                 wd_test_run = WatchDogJobTestRuns.objects.create(
                     wd_job=active_job,
                     spider_job=spider_job,
