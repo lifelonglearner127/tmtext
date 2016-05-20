@@ -75,7 +75,8 @@ class Command(BaseCommand):
                     spider=active_job.spider,
                     product_url=url,
                     task_id=random.randint(999999, 99999999),
-                    branch_name=active_job.branch)
+                    branch_name=active_job.branch if active_job.branch else '',
+                    search_term='', product_urls='', extra_cmd_args='')
                 screenshot_job = Job.objects.create(
                     name='WatchDog Job #%i' % active_job.pk,
                     spider='url2screenshot_products',
