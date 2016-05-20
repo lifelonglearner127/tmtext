@@ -44,7 +44,8 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
 
     'gui',
-    'fcgi'
+    'fcgi',
+    'watchdog'
 )
 
 MIDDLEWARE_CLASSES = (
