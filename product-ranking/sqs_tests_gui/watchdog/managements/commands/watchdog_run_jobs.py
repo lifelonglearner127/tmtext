@@ -12,7 +12,6 @@ from django.db.models import Q
 from django.utils.timezone import now
 import boto
 from dateutil.parser import parse as parse_date
-from jsonpath_rw import jsonpath, parse as jsonparse
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 #sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
@@ -64,7 +63,7 @@ class Command(BaseCommand):
             print 'an instance of the script is already running...'
             sys.exit()
 
-        from
+        from jsonpath_rw import jsonpath, parse as jsonparse
 
         # get all active jobs
         active_jobs = [j for j in WatchDogJob.objects.all() if j.is_active()]
