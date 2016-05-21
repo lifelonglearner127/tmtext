@@ -93,6 +93,7 @@ class JCpenneySpider(scrapy.Spider):
         is_iterable = isinstance(self.product_data, (list, tuple))
         self.product_data = self.product_data if is_iterable else list(self.product_data)
         for product in self.product_data:
+            self.log("Product: %r" % product)
             # Open product URL
             for qty in self.quantity:
                 url = product.get('url')
@@ -113,7 +114,9 @@ class JCpenneySpider(scrapy.Spider):
                     if isinstance(colors, basestring) or not colors:
                         colors = [colors]
 
+                self.log('Colors %r' % (colors))
                 for color in colors:
+                    self.log('Color: %s' % (color or 'None'))
                     clickable_error = True
                     while clickable_error:
                         clickable_error = False
@@ -134,6 +137,7 @@ class JCpenneySpider(scrapy.Spider):
                             if 'Element is not clickable at point' in str(e):
                                 print str(e)
                                 clickable_error = True
+                            "Exception: %s" % str(e)
 
                         except:
                             print traceback.print_exc()
