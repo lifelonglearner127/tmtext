@@ -220,7 +220,11 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
     def parse_title(self, response):
         title = response.xpath(
             '//h1[contains(@class, "title")]/text()').extract()
-
+        if not title:
+            title = response.xpath(
+                '//meta[contains(@property, "og:title")]/@content').extract()
+            if title:
+                title = [title[0].replace('&trade;', '').replace('\u2122', '')]
         return title
 
     def parse_data(self, response):
