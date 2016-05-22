@@ -2,7 +2,9 @@ import os
 import sys
 import datetime
 import json
+import re
 import zipfile
+import ast
 import subprocess
 import random
 import tempfile
@@ -18,11 +20,14 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 
 from settings import MEDIA_ROOT
 from watchdog.models import WatchDogJob, WatchDogJobTestRuns
-from gui.models import Job, get_data_filename
+from gui.models import Job, get_data_filename, get_log_filename
+from gui.management.commands.update_jobs import _unzip_local_file
 
 
 sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
+from test_sqs_flow import download_s3_file,\
+    AMAZON_BUCKET_NAME as AMAZON_BUCKET_NAME_OUTPUT_FILES
 
 
 def run(command, shell=None):
@@ -53,6 +58,25 @@ def num_of_running_instances(file_path):
         if file_path in line and not '/bin/sh' in line:
             processes += 1
     return processes
+
+
+def _get_s3_output_key_from_log(log_file):
+    """ Parses the log file and returns the appropriate S3 key for the output .JL file """
+    with open(log_file, 'r') as fh:
+        for line in fh:
+            overriden_settings = re.search(
+                "INFO: Overridden settings: (.*?)\n", line)
+            if overriden_settings:
+                overriden_settings = ast.literal_eval(overriden_settings.group(1).strip())
+                server_fname = overriden_settings['FEED_URI'].rsplit('/', 1)[1]
+                server_fname_date = datetime.datetime.strptime(
+                    server_fname.split('____')[0], '%d-%m-%Y')
+                return server_fname_date.strftime('%Y/%m/%d') + '/' + server_fname + '.zip'
+
+
+def _get_data_file_from_bucket(data_file):
+    server_fname = _get_s3_output_key_from_log()
+
 
 
 class Command(BaseCommand):
@@ -92,10 +116,10 @@ class Command(BaseCommand):
                     screenshot_job=screenshot_job)
                 print('    created test run %i' % wd_test_run.pk)
 
-        # check all finished jobs
+        # check all finished jobs with just created WatchDogJobTestRuns
         jobs = Job.objects.filter(status='finished', name__icontains="WatchDog Job")\
             .exclude(spider='url2screenshot_products')\
-            .filter(wd_test_run_jobs__status='finished').distinct()
+            .filter(wd_test_run_jobs__status='created').distinct()
         # get only active jobs
         _exclude_jobs = []
         for j in jobs:
@@ -115,14 +139,22 @@ class Command(BaseCommand):
 
             print('Checking results of SQS Job %i' % job.pk)
 
-            job_output_file = MEDIA_ROOT + get_data_filename(job)
-            with open(job_output_file, 'r') as fh:
+            job_log_file = MEDIA_ROOT + get_log_filename(job)
+            s3_key_output_file = _get_s3_output_key_from_log(job_log_file)
+            tmp_output_fname_zip = '/tmp/_tmp_output_fname.zip'
+            tmp_output_fname = '/tmp/_tmp_output_fname.jl'
+            download_s3_file(AMAZON_BUCKET_NAME_OUTPUT_FILES, s3_key_output_file,
+                             tmp_output_fname_zip)
+            _unzip_local_file(tmp_output_fname_zip, tmp_output_fname, '.jl')
+
+            with open(tmp_output_fname, 'r') as fh:
                 job_results = fh.read().strip()
             if job_results:
                 job_results = json.loads(job_results)
             else:
                 print('    error: empty results for SQS Job %i' % job.pk)
                 continue
+
             result_value = [
                 match.value
                 for match in jsonparse(wd_job.response_path).find(job_results)]
@@ -134,5 +166,7 @@ class Command(BaseCommand):
                         if not wd_test_run in list(wd_job.failed_test_runs.all()):
                             wd_job.failed_test_runs.add(wd_test_run)
                         wd_job.save()
+                        wd_test_run.status = 'failed'
+                        wd_test_run.save()
                         continue
             print('    ok: values are the same for WD Job %i' % job.pk)
