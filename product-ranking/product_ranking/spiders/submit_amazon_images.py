@@ -115,16 +115,31 @@ def upload_file(br, file):
         return False
 
 
+def on_close(br, display):
+    try:
+        br.quit()
+    except:
+        pass
+    try:
+        display.stop()
+    except:
+        pass
+
+
 def main():
     if not check_system():
         print('Not all required packages are installed')
         sys.exit()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-u', '--username', type=str, required = True, help="Enter your email")
-    parser.add_argument('-p', '--password', type=str, required = True, help = "Enter your password")
-    parser.add_argument('--zip_file', type=str, required = True, help="Only zip file name from FTP dir") #TODO Change?
-    parser.add_argument('--logging_file', type=str, required = True, help="filename for output logging")
+    parser.add_argument('-u', '--username', type=str, required=True,
+                        help="Enter your email")
+    parser.add_argument('-p', '--password', type=str, required=True,
+                        help="Enter your password")
+    parser.add_argument('--zip_file', type=str, required=True,
+                        help="ZIP file to upload")
+    parser.add_argument('--logging_file', type=str, required=True,
+                        help="filename for output logging")
 
     namespace = parser.parse_args()
     logging.basicConfig(filename=namespace.logging_file, level=logging.DEBUG)
@@ -132,18 +147,20 @@ def main():
     profile.set_preference("general.useragent.override", headers)
 
     #Set up headless version of Firefox
-    display = Display(visible=1, size=(1280, 1024))
+    display = Display(visible=1, size=(1027, 768))
     display.start()
 
     br = webdriver.Firefox(profile)
-    br.set_window_size(1280, 1024)
+    br.set_window_size(1024, 768)
 
     if not login(br, namespace.username, namespace.password):
         print("Could not log in! Exit...")
+        on_close(br, display)
         sys.exit(1)
 
     if not upload_file(br, namespace.zip_file):
         print("Could not upload the file! Exit...")
+        on_close(br, display)
         sys.exit(1)
 
 
