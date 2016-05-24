@@ -46,7 +46,7 @@ def upload_file_to_our_server(file):
             f_name += str(random.randint(1, 9))
             tmp_local_file = f_name + '.' + f_ext
     file.save(tmp_local_file)
-    return tmp_local_file
+    return os.path.abspath(tmp_local_file)
 
 
 def run_spider(username, password, local_file):
