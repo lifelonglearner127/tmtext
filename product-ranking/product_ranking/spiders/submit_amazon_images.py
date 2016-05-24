@@ -156,7 +156,7 @@ def main():
     profile.set_preference("general.useragent.override", headers)
 
     #Set up headless version of Firefox
-    display = Display(visible=1, size=(1027, 768))
+    display = Display(visible=0, size=(1027, 768))
     display.start()
 
     br = webdriver.Firefox(profile)
@@ -173,6 +173,7 @@ def main():
         sys.exit(1)
 
     on_close(br, display)
+
     logging_info('finished')
 
 
