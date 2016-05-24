@@ -57,7 +57,7 @@ def run_spider(username, password, local_file):
     spiders_dir = os.path.join(CWD, '..', 'product-ranking',
                                'product_ranking', 'spiders')
     cmd = ('python {spiders_dir}/submit_amazon_images.py --username={username}'
-           ' --password={password} --zip_file={zip_file} --log_file={log_file}')
+           ' --password={password} --zip_file={zip_file} --logging_file={log_file}')
     os.system(cmd.format(username=username, password=password, zip_file=local_file,
                          log_file=log_fname, spiders_dir=spiders_dir))
     return log_fname
