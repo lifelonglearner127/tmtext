@@ -78,11 +78,7 @@ def parse_log(log_fname):
     return is_success, msgs
 
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    if request.method == 'GET':
-        return render_template('upload.html')
-
+def upload_view():
     username = request.form.get('username', None)
     password = request.form.get('password', None)
     file = request.files.get('file', None)
@@ -109,21 +105,52 @@ def index():
                 log_fname = run_spider(username=username, password=password,
                                        local_file=local_file)
                 success, messages = parse_log(log_fname)
-                if not success:
-                    result_response = """
-                        <p>Status: <b>FAILED</b></p>
-                        <p>Log:</p>
-                        <p>{messages}</p>
-                    """.format(
-                        messages='<br/>'.join([m.get('msg') for m in messages]))
-                else:
-                    result_response = """
-                        <p>Status: <b>SUCCESS</b></p>
-                    """
-                return result_response
+                return success, messages
 
     return 'Invalid login or password'
 
 
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'GET':
+        return render_template('upload.html')
+    else:
+        _msgs = upload_view()
+        if isinstance(_msgs, (list, tuple)):
+            success, messages = _msgs
+        else:
+            return _msgs
+        if not success:
+            result_response = """
+                <p>Status: <b>FAILED</b></p>
+                <p>Log:</p>
+                <p>{messages}</p>
+            """.format(
+                messages='<br/>'.join([m.get('msg') for m in messages]))
+        else:
+            result_response = """
+                <p>Status: <b>SUCCESS</b></p>
+            """
+        return result_response
+
+
+@app.route('/api', methods=['GET', 'POST'])
+def api():
+    if request.method == 'GET':
+        return render_template('api.html')
+    else:
+        _msgs = upload_view()
+        if isinstance(_msgs, (list, tuple)):
+            success, messages = _msgs
+        else:
+            return json.dumps({'status': 'error', 'message': _msgs})
+        if not success:
+            return json.dumps({
+                'status': 'error',
+                'message': messages})
+        else:
+            return json.dumps({'status': 'success'})
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=9999)
