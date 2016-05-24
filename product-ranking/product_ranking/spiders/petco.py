@@ -130,9 +130,10 @@ class PetcoProductsSpider(ProductsSpider):
                 attributes[attribute].append(value)
 
         for prop in dict_product(attributes):
-            vr = {}
-            vr['properties'] = prop
-            variants.append(vr)
+            if prop:
+                vr = {}
+                vr['properties'] = prop
+                variants.append(vr)
         return variants if variants else None
 
     def _parse_is_out_of_stock(self, response):
