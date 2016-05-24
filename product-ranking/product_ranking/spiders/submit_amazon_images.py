@@ -5,6 +5,7 @@ import argparse
 import logging
 import tempfile
 import apt
+import json
 
 
 from selenium import webdriver
@@ -13,6 +14,7 @@ from pyvirtualdisplay import Display
 
 
 CWD = os.path.dirname(os.path.abspath(__file__))
+LOG_FILE = None
 
 
 #Configuration
@@ -24,15 +26,19 @@ headers = "Mozilla/5.0 (Windows NT 6.1; WOW64)" \
 def check_system():
     cache = apt.Cache()
     if not cache['tesseract-ocr'].is_installed:
-        print('Tesseract is not installed')
+        logging_info('Tesseract is not installed', level='ERROR')
         return False
     if not cache['wget'].is_installed:
-        print('Wget is not installed')
+        logging_info('Wget is not installed', level='ERROR')
         return False
     return True
 
 
-def logging_info(msg):
+def logging_info(msg, level='INFO'):
+    """ We're using JSON which is easier to parse """
+    global LOG_FILE
+    with open(LOG_FILE, 'a') as fh:
+        fh.write(json.dumps({'msg': msg, 'level': level})+'\n')
     print msg
 
 
@@ -111,7 +117,7 @@ def upload_file(br, file):
         logging_info('Images were uploaded successfully')
         return True
     else:
-        logging_info('Failed to upload images')
+        logging_info('Failed to upload images', level='ERROR')
         return False
 
 
@@ -127,8 +133,10 @@ def on_close(br, display):
 
 
 def main():
+    global LOG_FILE
+
     if not check_system():
-        print('Not all required packages are installed')
+        logging_info('Not all required packages are installed', level='ERROR')
         sys.exit()
 
     parser = argparse.ArgumentParser()
@@ -140,9 +148,10 @@ def main():
                         help="ZIP file to upload")
     parser.add_argument('--logging_file', type=str, required=True,
                         help="filename for output logging")
-
     namespace = parser.parse_args()
-    logging.basicConfig(filename=namespace.logging_file, level=logging.DEBUG)
+
+    LOG_FILE = namespace.logging_file
+
     profile = webdriver.FirefoxProfile()
     profile.set_preference("general.useragent.override", headers)
 
@@ -154,14 +163,17 @@ def main():
     br.set_window_size(1024, 768)
 
     if not login(br, namespace.username, namespace.password):
-        print("Could not log in! Exit...")
+        logging_info("Could not log in! Exit...", level='ERROR')
         on_close(br, display)
         sys.exit(1)
 
     if not upload_file(br, namespace.zip_file):
-        print("Could not upload the file! Exit...")
+        logging_info("Could not upload the file! Exit...", level='ERROR')
         on_close(br, display)
         sys.exit(1)
+
+    on_close(br, display)
+    logging_info('finished')
 
 
 if __name__ == '__main__':

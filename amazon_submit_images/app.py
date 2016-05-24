@@ -8,6 +8,7 @@ import sys
 import string
 import random
 import tempfile
+import json
 
 from flask import (Flask, request, flash, url_for, redirect, render_template,
                    session)
@@ -64,8 +65,17 @@ def run_spider(username, password, local_file):
 
 
 def parse_log(log_fname):
-    # TODO: error / success messages
-    return 'ok', 'successfully uploaded'
+    is_success = True
+    with open(log_fname, 'r') as fh:
+        msgs = [json.loads(m.strip()) for m in fh.readlines() if m.strip()]
+        if not msgs:
+            is_success = False
+        for msg in msgs:
+            if msg.get('level', None) == 'error':
+                is_success = False
+        if msgs and msgs[-1].get('msg', None) != 'finished':
+            is_success = False
+    return is_success, msgs
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -98,9 +108,19 @@ def index():
                 local_file = upload_file_to_our_server(file)
                 log_fname = run_spider(username=username, password=password,
                                        local_file=local_file)
-                status, messages = parse_log(log_fname)
-                return 'Status: {status}<br/>Messages: {messages}'.format(
-                    status=status, messages=messages)
+                success, messages = parse_log(log_fname)
+                if not success:
+                    result_response = """
+                        <p>Status: <b>FAILED</b></p>
+                        <p>Log:</p>
+                        <p>{messages}</p>
+                    """.format(
+                        messages='<br/>'.join([m.get('msg') for m in messages]))
+                else:
+                    result_response = """
+                        <p>Status: <b>SUCCESS</b></p>
+                    """
+                return result_response
 
     return 'Invalid login or password'
 
