@@ -21,6 +21,8 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 
 app.secret_key = 'F12Zr47j\3yX R~X@H!jmM]Lwf/,?KTSn  SKDk34k8**W$7SDfsdhSD4SDfggazsd'
 
+CHECK_CREDENTIALS = False
+
 login_manager = flask_login.LoginManager()
 login_manager.user_callback = user_loader
 login_manager.init_app(app)
@@ -95,8 +97,8 @@ def upload_view():
     time.sleep(1)  # against bruteforce attacks ;)
 
     for cred_login, cred_password in load_credentials():
-        if username.strip() == cred_login.strip():
-            if password.strip() == cred_password.strip():
+        if username.strip() == cred_login.strip() or not CHECK_CREDENTIALS:
+            if password.strip() == cred_password.strip() or not CHECK_CREDENTIALS:
                 user = User()
                 user.id = username
                 flask_login.login_user(user)

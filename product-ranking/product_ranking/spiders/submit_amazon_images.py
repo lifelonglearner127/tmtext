@@ -71,6 +71,8 @@ def solve_login_captcha(br, username, password):
                 captcha_input.clear()
                 captcha_input.send_keys(captcha_text + '\n')
                 time.sleep(5)
+                if u'Your email or password was incorrect' in br.page_source:
+                    return -1
                 if br.current_url == u'https://vendorcentral.amazon.com/st/vendor/members/dashboard':
                     time.sleep(5)
                     if not captcha_images(br):
@@ -92,8 +94,12 @@ def login(br, username, password):
     form = br.find_element_by_id("loginForm")
     form.submit()
     time.sleep(3)
+    if u'Your email or password was incorrect' in br.page_source:
+        return -1
     if captcha_images(br):
-        solve_login_captcha(br, username, password)  # reliably solve captcha
+        cap_result = solve_login_captcha(br, username, password)  # reliably solve captcha
+        if cap_result == -1:
+            return -1
     if br.current_url == u'https://vendorcentral.amazon.com/st/vendor/members/dashboard':
         logging_info('Passed login form')
         return True
@@ -162,7 +168,12 @@ def main():
     br = webdriver.Firefox(profile)
     br.set_window_size(1024, 768)
 
-    if not login(br, namespace.username, namespace.password):
+    login_result = login(br, namespace.username, namespace.password)
+    if login_result == -1:
+        logging_info("Invalid username or password! Exit...", level='ERROR')
+        on_close(br, display)
+        sys.exit(1)
+    if not login_result:
         logging_info("Could not log in! Exit...", level='ERROR')
         on_close(br, display)
         sys.exit(1)
