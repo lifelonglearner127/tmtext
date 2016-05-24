@@ -39,6 +39,6 @@ router.register(r'reviews_data', ReviewDataViewSet, base_name='reviews_data')
 
 
 urlpatterns = [
-    url(r'^', include(router.urls)),
-    url(r'^admin/', admin.site.urls),
+    url(r'^api/admin/', admin.site.urls),
+    url(r'^api/', include(router.urls)),
 ]
