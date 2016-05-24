@@ -749,6 +749,8 @@ class WalmartScraper(Scraper):
 
                 has_product_name = True
 
+            short_description = description_elements.text
+
             for description_element in description_elements:
                 sub_description = lxml.html.tostring(description_element)
 
@@ -758,7 +760,7 @@ class WalmartScraper(Scraper):
                         ("<dl>" in sub_description or \
                         "<ul>" in sub_description or \
                         "<li>" in sub_description)) or \
-                    '<section class="product-about js-ingredients health-about">' in sub_description:
+                    '<section class="product-about' in sub_description:
 
                     innerText = ""
 
@@ -794,8 +796,8 @@ class WalmartScraper(Scraper):
                             short_description_end_index = sub_description.find("<li>")
                             short_description_end_index_candiate_list.append(short_description_end_index)
 
-                    if '<section class="product-about js-ingredients health-about">' in sub_description:
-                        short_description_end_index = sub_description.find('<section class="product-about js-ingredients health-about">')
+                    if '<section class="product-about' in sub_description:
+                        short_description_end_index = sub_description.find('<section class="product-about')
                         short_description_end_index_candiate_list.append(short_description_end_index)
 
                     short_description_end_index = min(short_description_end_index_candiate_list)
