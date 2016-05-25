@@ -119,6 +119,11 @@ class WalGreensProductsSpider(BaseProductsSpider):
         upc = data.get('inventory', {}).get('upc')
         cond_set_value(prod, 'upc', upc)
 
+        # In Store Only
+        ship_message = data.get('inventory', {}).get('shipAvailableMessage')
+        is_in_store_only = (ship_message == "Not sold online")
+        cond_set_value(prod, 'is_in_store_only', is_in_store_only)
+
         # Parse Variants
         colors_variants = data.get('inventory', {}).get(
             'relatedProducts', {}).get('color', [])
@@ -161,7 +166,9 @@ class WalGreensProductsSpider(BaseProductsSpider):
         prod = response.meta['product']
         reqs = response.meta.get('reqs', [])
 
-        title = response.xpath('//*[@id="productName"]/text()').extract()
+        title = response.xpath('//*[@id="productName"]/text()'
+                               '|//*[@class="wag-prod-title"]/text()').extract()
+        title = [x.strip() for x in title if x.strip()]
         cond_set(prod, 'title', title)
 
         no_longer_available = bool(response.xpath(
@@ -201,7 +208,6 @@ class WalGreensProductsSpider(BaseProductsSpider):
         reqs.append(Request(review_url,
                             meta=response.meta,
                             callback=self._parse_review_api))
-
         reqs.append(Request(price_variants_url,
                             meta=response.meta,
                             callback=self._parse_price_and_variants))
@@ -292,14 +298,15 @@ class WalGreensProductsSpider(BaseProductsSpider):
             'ReviewStatistics']['TotalReviewCount']
         if total == 0:
             product['buyer_reviews'] = ZERO_REVIEWS_VALUE
-            return product
 
-        avg = round(data['BatchedResults']['q0']['Results'][0][
-                    'ReviewStatistics']['AverageOverallRating'], 1)
+        else:
+            avg = round(data['BatchedResults']['q0']['Results'][0][
+                        'ReviewStatistics']['AverageOverallRating'], 1)
 
-        product['buyer_reviews'] = BuyerReviews(num_of_reviews=total,
-                                                average_rating=avg,
-                                                rating_by_star=by_star)
+            product['buyer_reviews'] = BuyerReviews(num_of_reviews=total,
+                                                    average_rating=avg,
+                                                    rating_by_star=by_star)
         if reqs:
             return self.send_next_request(reqs, response)
+
         return product
