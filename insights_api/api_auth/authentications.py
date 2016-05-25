@@ -25,7 +25,7 @@ class AccessKeyAuthentication(BaseAuthentication):
             # Associate user with request
             request.session['user_id'] = user.id
             # Return a dummy django auth user for the auth framework
-            return (User.objects.get(pk=2), None)
+            return (User.objects.get(username='dummy'), None)
 
         except Users.DoesNotExist:
             raise AuthenticationFailed('The access key is not valid')
