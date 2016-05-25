@@ -116,6 +116,10 @@ class Scraper():
             "bullet_feature_3",
             "bullet_feature_4",
             "bullet_feature_5",
+            "usage",
+            "directions",
+            "warnings",
+            "indications",
 
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
@@ -224,8 +228,9 @@ class Scraper():
                         "features", "feature_count", "model_meta", "description", "seller_ranking", "long_description", "shelf_description", "apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
-                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "mta", \
-                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5"],
+                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "mta",
+                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5",
+                        "usage", "directions", "warnings", "indications"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
