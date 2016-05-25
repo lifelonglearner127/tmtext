@@ -732,21 +732,36 @@ class WalmartScraper(Scraper):
         short_description_end_index = -1
         sub_description = ""
 
+        product_name = self._product_name_from_tree().split(',')[0]
+        product_name_bold = '<b>' + product_name
+        product_name_strong = '<strong>' + product_name
+
         if description_elements:
             description_elements = description_elements[0]
 
             if description_elements.getparent().getparent().getparent().tag == "td":
                 return None
 
+            has_product_name = False
+
+            if product_name_bold in lxml.html.tostring(description_elements) or \
+                product_name_strong in lxml.html.tostring(description_elements):
+
+                has_product_name = True
+
+            short_description = self._clean_text (description_elements.text)
+
             for description_element in description_elements:
                 sub_description = lxml.html.tostring(description_element)
 
-                if "<b>" in sub_description or \
-                                "<ul>" in sub_description or \
-                                "<dl>" in sub_description or \
-                                "<li>" in sub_description or \
-                                "<strong>" in sub_description or \
-                                '<section class="product-about js-ingredients health-about">' in sub_description:
+                if product_name_bold in sub_description or \
+                    product_name_strong in sub_description or \
+                    (not has_product_name and \
+                        ("<dl>" in sub_description or \
+                        "<ul>" in sub_description or \
+                        "<li>" in sub_description)) or \
+                    '<section class="product-about' in sub_description:
+
                     innerText = ""
 
                     try:
@@ -760,37 +775,38 @@ class WalmartScraper(Scraper):
 
                     short_description_end_index_candiate_list = []
 
-                    if "<b>" in sub_description:
-                        short_description_end_index = sub_description.find("<b>")
+                    if product_name_bold in sub_description:
+                        short_description_end_index = sub_description.find(product_name_bold)
                         short_description_end_index_candiate_list.append(short_description_end_index)
 
-                    if "<ul>" in sub_description:
-                        short_description_end_index = sub_description.find("<ul>")
+                    if product_name_strong in sub_description:
+                        short_description_end_index = sub_description.find(product_name_strong)
                         short_description_end_index_candiate_list.append(short_description_end_index)
 
-                    if "<dl>" in sub_description:
-                        short_description_end_index = sub_description.find("<dl>")
-                        short_description_end_index_candiate_list.append(short_description_end_index)
+                    if not has_product_name:
+                        if "<dl>" in sub_description:
+                            short_description_end_index = sub_description.find("<dl>")
+                            short_description_end_index_candiate_list.append(short_description_end_index)
 
-                    if "<li>" in sub_description:
-                        short_description_end_index = sub_description.find("<li>")
-                        short_description_end_index_candiate_list.append(short_description_end_index)
+                        if "<ul>" in sub_description:
+                            short_description_end_index = sub_description.find("<ul>")
+                            short_description_end_index_candiate_list.append(short_description_end_index)
 
-                    if "<strong>" in sub_description:
-                        short_description_end_index = sub_description.find("<strong>")
-                        short_description_end_index_candiate_list.append(short_description_end_index)
+                        if "<li>" in sub_description:
+                            short_description_end_index = sub_description.find("<li>")
+                            short_description_end_index_candiate_list.append(short_description_end_index)
 
-                    if '<section class="product-about js-ingredients health-about">' in sub_description:
-                        short_description_end_index = sub_description.find('<section class="product-about js-ingredients health-about">')
+                    if '<section class="product-about' in sub_description:
+                        short_description_end_index = sub_description.find('<section class="product-about')
                         short_description_end_index_candiate_list.append(short_description_end_index)
 
                     short_description_end_index = min(short_description_end_index_candiate_list)
                     break
 
-                short_description += sub_description
+                short_description += self._clean_text (sub_description)
 
             if short_description_end_index > 0:
-                short_description = sub_description[:short_description_end_index] + short_description
+                short_description = short_description + sub_description[:short_description_end_index]
 
             # if no short description, return the long description
             if not short_description.strip():
@@ -915,87 +931,138 @@ class WalmartScraper(Scraper):
                 return None
 
             long_description_start = False
-            warnings_desription = False
-            ingredients_description = False
-            directions_description = False
             long_description_start_index = -2
 
-            for description_element in description_elements:
-                if (not long_description_start and "<b>" in lxml.html.tostring(description_element)) or \
-                        (not long_description_start and ("<ul>" in lxml.html.tostring(description_element) or "<dl>" in lxml.html.tostring(description_element) or "<li>" in lxml.html.tostring(description_element) or "<strong>" in lxml.html.tostring(description_element))):
-                    long_description_start = True
+            product_name = self._product_name_from_tree().split(',')[0]
+            product_name_bold = '<b>' + product_name
+            product_name_strong = '<strong>' + product_name
 
-                    sub_description = lxml.html.tostring(description_element)
+            has_product_name = False
+
+            if product_name_bold in lxml.html.tostring(description_elements) or \
+                product_name_strong in lxml.html.tostring(description_elements):
+
+                has_product_name = True
+
+            for description_element in description_elements:
+                sub_description = lxml.html.tostring(description_element)
+
+                if (not long_description_start and \
+                        (product_name_bold in sub_description or \
+                        product_name_strong in sub_description or \
+                        (not has_product_name and \
+                            ("<dl>" in sub_description or \
+                            "<ul>" in sub_description or \
+                            "<li>" in sub_description)))):
+
+                    long_description_start = True
 
                     if long_description_start_index == -2:
                         long_description_start_index_candiate_list = []
 
-                        if "<b>" in lxml.html.tostring(description_element):
-                            long_description_start_index = sub_description.find("<b>")
+                        if product_name_bold in sub_description:
+                            long_description_start_index = sub_description.find(product_name_bold)
                             long_description_start_index_candiate_list.append(long_description_start_index)
 
-                        if "<ul>" in lxml.html.tostring(description_element):
-                            long_description_start_index = sub_description.find("<ul>")
+                        if product_name_strong in sub_description:
+                            long_description_start_index = sub_description.find(product_name_strong)
                             long_description_start_index_candiate_list.append(long_description_start_index)
 
-                        if "<dl>" in lxml.html.tostring(description_element):
-                            long_description_start_index = sub_description.find("<dl>")
-                            long_description_start_index_candiate_list.append(long_description_start_index)
+                        if not has_product_name:
+                            if "<dl>" in sub_description:
+                                long_description_start_index = sub_description.find("<dl>")
+                                long_description_start_index_candiate_list.append(long_description_start_index)
 
-                        if "<li>" in lxml.html.tostring(description_element):
-                            long_description_start_index = sub_description.find("<li>")
-                            long_description_start_index_candiate_list.append(long_description_start_index)
+                            if "<ul>" in sub_description:
+                                long_description_start_index = sub_description.find("<ul>")
+                                long_description_start_index_candiate_list.append(long_description_start_index)
 
-                        if "<strong>" in lxml.html.tostring(description_element):
-                            long_description_start_index = sub_description.find("<strong>")
-                            long_description_start_index_candiate_list.append(long_description_start_index)
+                            if "<li>" in sub_description:
+                                long_description_start_index = sub_description.find("<li>")
+                                long_description_start_index_candiate_list.append(long_description_start_index)
 
                         long_description_start_index = min(long_description_start_index_candiate_list)
+                        sub_description = sub_description[long_description_start_index:]
 
-                if "<strong>Warnings:" in lxml.html.tostring(description_element) or "<b>Warnings:" in \
-                        lxml.html.tostring(description_element):
+                if "<strong>Warnings:" in sub_description or "<b>Warnings:" in sub_description:
+                    warnings_index = sub_description.find('<section class="product-about js-warnings health-about">')
+                    if warnings_index == -1:
+                        warnings_index = sub_description.find('<strong>Warnings:')
+                    if warnings_index == -1:
+                        warnings_index = sub_description.find('<b>Warnings:')
+
                     warnings_description = True
                 else:
                     warnings_description = False
 
-                if "<strong>Indications:" in lxml.html.tostring(description_element) or "<b>Indications:" in \
-                        lxml.html.tostring(description_element):
+                if "<strong>Indications:" in sub_description or "<b>Indications:" in sub_description:
+                    indications_index = sub_description.find('<section class="product-about js-indications health-about">')
+                    if indications_index == -1:
+                        indications_index = sub_description.find('<strong>Indications:')
+                    if indications_index == -1:
+                        indications_index = sub_description.find('<b>Indications:')
+
                     indications_description = True
                 else:
                     indications_description = False
 
-                if "<strong>Ingredients:" in lxml.html.tostring(description_element) or "<b>Ingredients:" in \
-                        lxml.html.tostring(description_element):
+                if "<strong>Ingredients:" in sub_description or "<b>Ingredients:" in sub_description:
+                    ingredients_index = sub_description.find('<section class="product-about js-ingredients health-about">')
+                    if ingredients_index == -1:
+                        ingredients_index = sub_description.find('<strong>Ingredients:')
+                    if ingredients_index == -1:
+                        ingredients_index = sub_description.find('<b>Ingredients:')
+
                     ingredients_description = True
                 else:
                     ingredients_description = False
 
-                if "<strong>Directions:" in lxml.html.tostring(description_element) or "<b>Directions:" in \
-                        lxml.html.tostring(description_element):
+                if "<strong>Directions:" in sub_description or "<b>Directions:" in sub_description:
+                    directions_index = sub_description.find('<section class="product-about js-directions health-about">')
+                    if directions_index == -1:
+                        directions_index = sub_description.find('<strong>Directions:')
+                    if directions_index == -1:
+                        directions_index = sub_description.find('<b>Directions:')
+
                     directions_description = True
                 else:
                     directions_description = False
 
                 if long_description_start:
-                    sub_description = lxml.html.tostring(description_element)
-
                     if not (warnings_description or indications_description or ingredients_description or directions_description):
+                        full_description += self._clean_text (sub_description)
+
                         if long_description_start_index > 0:
-                            full_description += sub_description[long_description_start_index:]
                             long_description_start_index = -1
-                        else:
-                            full_description += sub_description
+
                     else:
+                        description_start_index = -1
+                        last_index = -1
+
                         if warnings_description:
-                            description_start_index = sub_description.find('<section class="product-about js-warnings health-about">')
-                        elif indications_description:
-                            description_start_index = sub_description.find('<section class="product-about js-indications health-about">')
-                        elif ingredients_description:
-                            description_start_index = sub_description.find('<section class="product-about js-ingredients health-about">')
-                        elif directions_description:
-                            description_start_index = sub_description.find('<section class="product-about js-directions health-about">')
-                        description_end_index = sub_description.find("</section>", description_start_index) + 10
-                        full_description += (sub_description[:description_start_index] + sub_description[description_end_index:])
+                            description_start_index = warnings_index
+                            last_index = description_start_index
+
+                        if indications_description:
+                            if description_start_index == -1:
+                                description_start_index = indications_index
+
+                            last_index = indications_index
+
+                        if ingredients_description:
+                            if description_start_index == -1:
+                                description_start_index = ingredients_index
+
+                            last_index = ingredients_index
+
+                        if directions_description:
+                            if description_start_index == -1:
+                                description_start_index = directions_index
+
+                            last_index = directions_index
+
+                        description_end_index = sub_description.find("</section>", last_index) + 10
+                        full_description += self._clean_text (sub_description[:description_start_index] + sub_description[description_end_index:])
 
         if self.product_page_url[self.product_page_url.rfind("/") + 1:].isnumeric():
             url = "http://www.walmart-content.com/product/idml/emc/" + \
@@ -3031,7 +3098,7 @@ class WalmartScraper(Scraper):
             text stripped of html entities
         """
 
-        return re.sub("&nbsp;", " ", text).strip()
+        return re.sub("&nbsp;|&#160;", " ", text).strip()
 
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service

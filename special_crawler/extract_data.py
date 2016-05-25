@@ -67,7 +67,7 @@ class Scraper():
             "product_id",
             "site_id",
             "walmart_no",
-            "tsin",
+            "tcin",
             "date",
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.

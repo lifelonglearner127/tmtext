@@ -106,7 +106,7 @@ class TargetScraper(Scraper):
         product_id = str(self.tree_html.xpath("//input[@id='omniPartNumber']/@value")[0])
         return product_id
 
-    def _tsin(self):
+    def _tcin(self):
         return self._product_id()
 
     ##########################################
@@ -599,7 +599,7 @@ class TargetScraper(Scraper):
         "url" : _url, \
         "product_id" : _product_id, \
         "upc" : _upc, \
-        "tsin" : _tsin, \
+        "tcin" : _tcin, \
 
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
