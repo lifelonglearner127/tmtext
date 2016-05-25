@@ -8,7 +8,8 @@ from api_auth.models import Users
 class LogQueryInformation():
 
     def __init__(self):
-        ignore_paths_exp = [r'^/admin/.*', r'/static/.*', r'^/favicon.ico$']
+        ignore_paths_exp = [r'.*/admin/.*', r'.*/static/.*',
+                            r'.*/favicon.ico$']
         self.ignore_paths = [re.compile(x) for x in ignore_paths_exp]
 
     def is_filter_path(self, path):
@@ -21,6 +22,13 @@ class LogQueryInformation():
         path = request.get_full_path()
         user = None
         user_id = request.session.get('user_id', None)
+
+        start_time = request.session.get('time')
+        if start_time:
+            run_time = time.time() - start_time
+        else:
+            run_time = -1
+
         if user_id:
             del request.session['user_id']
             user = Users.objects.get(pk=user_id)
@@ -32,7 +40,7 @@ class LogQueryInformation():
                     'request_body': request.body,
                     'response_status': response.status_code,
                     'user': user,
-                    'run_time': time.time() - request.session['time']}
+                    'run_time': run_time}
             Query(**data).save()
 
         return response
