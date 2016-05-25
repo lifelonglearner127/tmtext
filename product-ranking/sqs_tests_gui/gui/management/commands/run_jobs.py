@@ -51,7 +51,12 @@ class Command(BaseCommand):
                 for _arg in job.extra_cmd_args.split('\n'):
                     if not _arg.strip():
                         continue  # skip empty lines
-                    extra_arg_name, extra_arg_value = _arg.split('=')
+                    if "='" in _arg:
+                        extra_arg_name, extra_arg_value = _arg.split("='")
+                    elif '="' in _arg:
+                        extra_arg_name, extra_arg_value = _arg.split('="')
+                    else:
+                        extra_arg_name, extra_arg_value = _arg.split('=')
                     extra_arg_name = extra_arg_name.strip()
                     extra_arg_value = extra_arg_value.strip()
                     if not 'cmd_args' in msg:
