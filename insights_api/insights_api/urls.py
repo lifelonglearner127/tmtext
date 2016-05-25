@@ -40,14 +40,14 @@ router.register(r'reviews_data', ReviewDataViewSet, base_name='reviews_data')
 
 
 urlpatterns = [
-    url(r'^api/admin/', admin.site.urls),
-    url(r'^api/', include(router.urls)),
+    url(r'^restapi/admin/', admin.site.urls),
+    url(r'^restapi/', include(router.urls)),
 ]
 
 # Auth needs a Django Auth Model User
 # Create a dummy one if not exists
 try:
-    User.objects.get(pk=2)
+    User.objects.get(username='dummy')
 
 except User.DoesNotExist:
     user = User()
