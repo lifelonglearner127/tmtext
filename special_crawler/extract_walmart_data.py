@@ -733,8 +733,8 @@ class WalmartScraper(Scraper):
         sub_description = ""
 
         product_name = self._product_name_from_tree().split(',')[0]
-        product_name_bold = '<b>' + product_name + ':' + '</b>'
-        product_name_strong = '<strong>' + product_name + ':' + '</strong>'
+        product_name_bold = '<b>' + product_name
+        product_name_strong = '<strong>' + product_name
 
         if description_elements:
             description_elements = description_elements[0]
@@ -749,6 +749,8 @@ class WalmartScraper(Scraper):
 
                 has_product_name = True
 
+            short_description = self._clean_text (description_elements.text)
+
             for description_element in description_elements:
                 sub_description = lxml.html.tostring(description_element)
 
@@ -758,7 +760,7 @@ class WalmartScraper(Scraper):
                         ("<dl>" in sub_description or \
                         "<ul>" in sub_description or \
                         "<li>" in sub_description)) or \
-                    '<section class="product-about js-ingredients health-about">' in sub_description:
+                    '<section class="product-about' in sub_description:
 
                     innerText = ""
 
@@ -794,14 +796,14 @@ class WalmartScraper(Scraper):
                             short_description_end_index = sub_description.find("<li>")
                             short_description_end_index_candiate_list.append(short_description_end_index)
 
-                    if '<section class="product-about js-ingredients health-about">' in sub_description:
-                        short_description_end_index = sub_description.find('<section class="product-about js-ingredients health-about">')
+                    if '<section class="product-about' in sub_description:
+                        short_description_end_index = sub_description.find('<section class="product-about')
                         short_description_end_index_candiate_list.append(short_description_end_index)
 
                     short_description_end_index = min(short_description_end_index_candiate_list)
                     break
 
-                short_description += sub_description
+                short_description += self._clean_text (sub_description)
 
             if short_description_end_index > 0:
                 short_description = short_description + sub_description[:short_description_end_index]
@@ -932,8 +934,8 @@ class WalmartScraper(Scraper):
             long_description_start_index = -2
 
             product_name = self._product_name_from_tree().split(',')[0]
-            product_name_bold = '<b>' + product_name + ':' + '</b>'
-            product_name_strong = '<strong>' + product_name + ':' + '</strong>'
+            product_name_bold = '<b>' + product_name
+            product_name_strong = '<strong>' + product_name
 
             has_product_name = False
 
@@ -1028,7 +1030,7 @@ class WalmartScraper(Scraper):
 
                 if long_description_start:
                     if not (warnings_description or indications_description or ingredients_description or directions_description):
-                        full_description += sub_description
+                        full_description += self._clean_text (sub_description)
 
                         if long_description_start_index > 0:
                             long_description_start_index = -1
@@ -1060,7 +1062,7 @@ class WalmartScraper(Scraper):
                             last_index = directions_index
 
                         description_end_index = sub_description.find("</section>", last_index) + 10
-                        full_description += (sub_description[:description_start_index] + sub_description[description_end_index:])
+                        full_description += self._clean_text (sub_description[:description_start_index] + sub_description[description_end_index:])
 
         if self.product_page_url[self.product_page_url.rfind("/") + 1:].isnumeric():
             url = "http://www.walmart-content.com/product/idml/emc/" + \
@@ -3096,7 +3098,7 @@ class WalmartScraper(Scraper):
             text stripped of html entities
         """
 
-        return re.sub("&nbsp;", " ", text).strip()
+        return re.sub("&nbsp;|&#160;", " ", text).strip()
 
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
