@@ -130,8 +130,13 @@ class PetcoScraper(Scraper):
     def _image_urls(self):
         image_urls = []
 
-        for item in self._items_json():
-            image_urls.append(item['ItemImage'])
+
+        if self._items_json():
+            for item in self._items_json():
+                if item['catentry_id'] == self._catentry_id():
+                    image_urls.append(item['ItemImage'])
+        else:
+            image_urls.append(self.tree_html.xpath('//meta[@property="og:image"]/@content'))
 
         if image_urls:
             return image_urls
@@ -256,7 +261,7 @@ class PetcoScraper(Scraper):
         return self.prod_jsons
 
     def _price(self):
-        if self._prod_jsons()[self._catentry_id()]['listPriced'] == 'true':
+        if self._prod_jsons()[self._catentry_id()]['offerPrice']:
             return self._prod_jsons()[self._catentry_id()]['offerPrice']
 
     def _price_amount(self):
@@ -269,7 +274,7 @@ class PetcoScraper(Scraper):
             return 'USD'
 
     def _temp_price_cut(self):
-        if self.tree_html.xpath('//div[@class="sale-overlay"]'):
+        if self._prod_jsons()[self._catentry_id()]['listPriced'] == 'true':
             return 1
         return 0
 
