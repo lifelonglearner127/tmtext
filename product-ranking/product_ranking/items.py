@@ -293,3 +293,4 @@ class CheckoutProductItem(Item):
     color = Field()
     order_subtotal = Field()
     order_total = Field()
+    url = Field()
