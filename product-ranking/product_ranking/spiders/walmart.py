@@ -743,6 +743,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             conv=''.join
         )
 
+        if product['description']:
+            upc = re.findall('UPC: (\d+)', product['description'])
+            cond_set(product, 'upc', upc)
+
         title = is_empty(response.xpath(
                 "//h1[contains(@class,'product-name')]/text() |"
                 "//h1[@class='productTitle']/text()"
