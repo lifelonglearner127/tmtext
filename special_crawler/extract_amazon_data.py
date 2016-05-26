@@ -737,6 +737,29 @@ class AmazonScraper(Scraper):
             return self._get_origin_image_urls_from_thumbnail_urls(allimg)
         return None
 
+    def _image_urls_high_res(self):
+        hi_res_images = []
+        html_source = html.tostring(self.tree_html)
+        img_data = re.search("'colorImages': (\{.*?\n)", html_source)
+        if img_data:
+            img_data = img_data.group(1).replace("'initial': ", '').strip()
+            if img_data.endswith(','):
+                img_data = img_data[0:-1].strip()
+            if img_data.startswith('{'):
+                img_data = img_data[1:].strip()
+            if img_data.endswith('}'):
+                img_data = img_data[0:-1]
+            try:
+                img_data = json.loads(img_data.strip())
+            except Exception, e:
+                print 'Can not load img_data', str(e)
+                return
+            for img in img_data:
+                hi_res = img.get('hiRes', None)
+                if hi_res:
+                    hi_res_images.append(hi_res)
+        return hi_res_images
+
     def _image_helper(self):
         res = []
         try:
@@ -1401,6 +1424,7 @@ class AmazonScraper(Scraper):
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
+        "image_urls_high_res" : _image_urls_high_res, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
 #        "no_image" : _no_image, \

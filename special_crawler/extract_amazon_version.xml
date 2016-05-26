@@ -18,6 +18,7 @@
     <field name="apluscontent_desc" version="1.1"></field>
     <field name="image_count" version="1.1"></field>
     <field name="image_urls" version="1.8"></field>
+    <field name="image_urls_high_res" version="1.8"></field>
     <field name="video_count" version="1.1"></field>
     <field name="video_urls" version="1.1"></field>
     <field name="pdf_count" version="1.1"></field>

@@ -121,6 +121,7 @@ class Scraper():
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
             "image_urls", # urls of product images, list of strings
+            "image_urls_high_res",  # urls of product images in high resolution (if any), list of strings
             "image_dimensions", # dimensions of product images
             "video_count", # nr of videos, int
             "video_urls", # urls of product videos, list of strings
@@ -226,7 +227,7 @@ class Scraper():
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
                         "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "mta", \
                         "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5"],
-        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "video_count", "video_urls", "wc_360", \
+        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_urls_high_res", "image_dimensions", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
                             "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv"], \
