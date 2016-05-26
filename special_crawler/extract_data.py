@@ -426,7 +426,6 @@ class Scraper():
 
         return nested_results_dict
 
-
     # method that returns xml tree of page, to extract the desired elemets from
     def _extract_page_tree(self):
         """Builds and sets as instance variable the xml tree of the product page
