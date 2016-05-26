@@ -175,11 +175,6 @@ class LeviVariants(object):
                 else:
                     variant_item["in_stock"] = False
 
-                if variant_item["properties"].get('waist') == '30':
-                    if variant_item["properties"].get('length') == '29':
-                        if variant_item["properties"].get('color').lower() == 'black':
-                            print variant_item
-
                 self._append_variant_or_replace_incomplete_one(variant_list, variant_item)
                 #variant_list.append(variant_item)
 
@@ -198,10 +193,6 @@ class LeviVariants(object):
                     for price in buy_stack_json["colorid"][color_name_id_map[properties["color"]]]["price"]:
                         if price["il8n"] == "now":
                             variant_item["price"] = float(re.findall("\d*\.\d+|\d+", price["amount"].replace(",", ""))[0])
-                            if variant_item["properties"].get('waist') == '30':
-                                if variant_item["properties"].get('length') == '29':
-                                    if variant_item["properties"].get('color').lower() == 'black':
-                                        print variant_item
                             break
 
                 variant_item["selected"] = False
@@ -209,11 +200,6 @@ class LeviVariants(object):
                 variant_item["stock"] = 0
                 variant_item["in_stock"] = False
                 variant_item["url"] = None
-
-                if variant_item["properties"].get('waist') == '30':
-                    if variant_item["properties"].get('length') == '29':
-                        if variant_item["properties"].get('color').lower() == 'black':
-                            print variant_item
 
                 self._append_variant_or_replace_incomplete_one(variant_list, variant_item)
                 #variant_list.append(variant_item)
