@@ -124,6 +124,7 @@ class JCpenneySpider(scrapy.Spider):
                             self._parse_product(url, qty, color)
 
                             for item in self._parse_cart():
+                                item['url'] = url
                                 yield item
                             # Fastest way to empty the cart
                             # and clear resources
@@ -135,9 +136,9 @@ class JCpenneySpider(scrapy.Spider):
 
                         except WebDriverException as e:
                             if 'Element is not clickable at point' in str(e):
-                                print str(e)
                                 clickable_error = True
-                            "Exception: %s" % str(e)
+
+                            print "Exception: %s" % str(e)
 
                         except:
                             print traceback.print_exc()
@@ -179,10 +180,11 @@ class JCpenneySpider(scrapy.Spider):
 
         selected_attribute = target.find_elements(
             By.XPATH, selected_attribute_xpath)
+
         available_attributes = target.find_elements(
             By.XPATH, others_attributes_xpath)
 
-        # If not size is set and there are available sizes
+        # If not attribute is set and there are available attributes
         if not selected_attribute and available_attributes:
             available_attributes[0].click()
             time.sleep(4)
