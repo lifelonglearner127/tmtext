@@ -9,6 +9,9 @@ import yaml
 
 class LeviVariants(object):
 
+    local_variants_map = {}  # used to filter unique results (by `properties`)
+
+
     def setupSC(self, response):
         """ Call it from SC spiders """
         self.tree_html = lxml.html.fromstring(response.body)
@@ -24,6 +27,44 @@ class LeviVariants(object):
             return s[start:end]
         except ValueError:
             return ""
+
+    def _is_unique_variant(self, variant):
+        if not 'properties' in variant:
+            return
+        if not variant['properties']:
+            return
+        return variant['properties'] in self.local_variants_map
+
+    def _find_variant_with_better_data(self, v1, v2):
+        if v1.get('url', None) and not v2.get('url', None):
+            return v1
+        else:
+            return v2
+
+    def _append_variant_or_replace_incomplete_one(self, variant_list, variant):
+        """ This will replace the old, existing variant in "variant_list" with "variant"
+            if the new "variant" has more data; or will append it if there's no existing variant
+            in "variant_list"
+            """
+        props = variant.get('properties', None)
+        if not props:
+            variant_list.append(variant)  # just append the variant if properties are not available
+            return
+        if str(props) not in self.local_variants_map:  # brand-new variant
+            self.local_variants_map[str(props)] = variant
+            variant_list.append(variant)
+            return
+        else:  # we have an existing variant
+            existing_variant = self.local_variants_map[str(props)]
+            if self._find_variant_with_better_data(variant, existing_variant) == existing_variant:
+                # the existing, already-added variant has more data - continue
+                return
+            else:
+                # need to replace the old, bad variant with the new one
+                self.local_variants_map[str(props)] = variant
+                for i, old_var in enumerate(variant_list):
+                    if str(old_var.get('properties', None)) == str(props):
+                        variant_list[i] = variant
 
     def _variants(self):
         buy_stack_json = None
@@ -134,7 +175,13 @@ class LeviVariants(object):
                 else:
                     variant_item["in_stock"] = False
 
-                variant_list.append(variant_item)
+                if variant_item["properties"].get('waist') == '30':
+                    if variant_item["properties"].get('length') == '29':
+                        if variant_item["properties"].get('color').lower() == 'black':
+                            print variant_item
+
+                self._append_variant_or_replace_incomplete_one(variant_list, variant_item)
+                #variant_list.append(variant_item)
 
             for out_of_stock_combination in out_of_stock_combination_list:
                 properties = {}
@@ -151,6 +198,10 @@ class LeviVariants(object):
                     for price in buy_stack_json["colorid"][color_name_id_map[properties["color"]]]["price"]:
                         if price["il8n"] == "now":
                             variant_item["price"] = float(re.findall("\d*\.\d+|\d+", price["amount"].replace(",", ""))[0])
+                            if variant_item["properties"].get('waist') == '30':
+                                if variant_item["properties"].get('length') == '29':
+                                    if variant_item["properties"].get('color').lower() == 'black':
+                                        print variant_item
                             break
 
                 variant_item["selected"] = False
@@ -159,7 +210,13 @@ class LeviVariants(object):
                 variant_item["in_stock"] = False
                 variant_item["url"] = None
 
-                variant_list.append(variant_item)
+                if variant_item["properties"].get('waist') == '30':
+                    if variant_item["properties"].get('length') == '29':
+                        if variant_item["properties"].get('color').lower() == 'black':
+                            print variant_item
+
+                self._append_variant_or_replace_incomplete_one(variant_list, variant_item)
+                #variant_list.append(variant_item)
 
             if variant_list:
                 return variant_list
