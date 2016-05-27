@@ -1,10 +1,11 @@
 from django.contrib import admin
 
 # Register your models here.
-from models import SubmissionStatus, SubmissionHistory
+from models import SubmissionStatus, SubmissionHistory, SubmissionXMLFile
 
 
 admin.site.register(SubmissionStatus)
+admin.site.register(SubmissionXMLFile)
 
 @admin.register(SubmissionHistory)
 class SubmissionHistoryAdmin(admin.ModelAdmin):

@@ -1,5 +1,7 @@
 from django.conf.urls import url, include
 from django.contrib import admin
+from django.conf import settings
+from django.conf.urls.static import static
 from rest_framework import routers
 from rest_framework.urlpatterns import format_suffix_patterns
 from image_duplication.views import CompareTwoImageViewSet, ClassifyImagesBySimilarity, FindSimilarityInImageList, CompareTwoImageLists
@@ -9,7 +11,8 @@ from walmart_api.views import (InvokeWalmartApiViewSet, ItemsUpdateWithXmlFileBy
                                ValidateWalmartProductXmlTextViewSet, ValidateWalmartProductXmlFileViewSet,
                                FeedIDRedirectView, DetectDuplicateContentBySeleniumViewset, DetectDuplicateContentByMechanizeViewset,
                                DetectDuplicateContentFromCsvFilesByMechanizeViewset,
-                               FeedStatusAjaxView, CheckItemStatusByProductIDViewSet)
+                               FeedStatusAjaxView, CheckItemStatusByProductIDViewSet,
+                               XMLFileRedirect)
 from statistics.views import StatsView, GetStatsAjax
 from nutrition_info_images.views import ClassifyTextImagesByNutritionInfoViewSet
 
@@ -35,6 +38,7 @@ urlpatterns = format_suffix_patterns([
 
 urlpatterns += [
     url(r'^feed-redirect/(?P<feed_id>[A-Za-z0-9\-]+)', FeedIDRedirectView.as_view(), name='feed_redirect'),
+    url(r'^xml-file-redirect/(?P<feed_id>[A-Za-z0-9\-]+)', XMLFileRedirect.as_view(), name='xml_file_redirect'),
     url(r'^feed-status-ajax/(?P<feed_id>[A-Za-z0-9\-]+)', FeedStatusAjaxView.as_view(), name='feed_status_ajax'),
     url(r'^stat-counter-ajax/', GetStatsAjax.as_view(), name='get_stats_ajax'),
     url(r'^stats/$', StatsView.as_view(), name='stats_view')
@@ -71,3 +75,7 @@ urlpatterns += [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^accounts/', include('accounts.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

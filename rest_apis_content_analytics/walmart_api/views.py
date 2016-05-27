@@ -4,6 +4,7 @@ import urllib
 import sys
 import json
 import requests
+import shutil
 from pprint import pprint
 from requests.auth import HTTPProxyAuth
 import datetime
@@ -14,6 +15,7 @@ import random
 import os.path
 import tempfile
 from collections import OrderedDict
+
 from django.views.generic import View as DjangoView
 from django.core.context_processors import csrf
 from django.contrib.auth.decorators import login_required
@@ -23,7 +25,7 @@ from django.core.urlresolvers import reverse_lazy
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.authentication import BasicAuthentication
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from rest_framework.parsers import MultiPartParser, FormParser
 from subprocess import Popen, PIPE, STDOUT
 from lxml import etree, html
@@ -36,7 +38,7 @@ from walmart_api.serializers import (WalmartApiFeedRequestSerializer, WalmartApi
                                      WalmartApiValidateXmlFileRequestSerializer, WalmartDetectDuplicateContentRequestSerializer,
                                      WalmartDetectDuplicateContentFromCsvFileRequestSerializer,
                                      CheckItemStatusByProductIDSerializer)
-from walmart_api.models import SubmissionHistory
+from walmart_api.models import SubmissionHistory, SubmissionXMLFile
 from statistics.models import process_check_feed_response, ItemMetadata
 from rest_apis_content_analytics.image_duplication.views import parse_data
 from lxml import etree
@@ -675,7 +677,7 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
             }
         )
 
-        if type(response.body) is dict:
+        if type(response.body) is dict:  # if we got valid Walmart response after we uploaded XML file...
             if "feedId" in response.body:
                 feed_id = response.body["feedId"]
                 current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -683,6 +685,10 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                 server_name = request.POST.get('server_name')
                 client_ip = get_client_ip(request)
 
+                # save uploaded XML file right away
+                self._save_uploaded_xml_file(feed_id, upload_file)
+
+                # save log
                 with open(get_walmart_api_invoke_log(request), "a") as myfile:
                     myfile.write(current_time + ", " + upc + ", " + server_name + ", "
                                  + client_ip + ", " + feed_id + "\n")
@@ -706,6 +712,17 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
             return response.body
         else:
             return xmltodict(response.body)
+
+    def _save_uploaded_xml_file(self, feed_id, upload_file):
+        if not os.path.exists(settings.MEDIA_ROOT):
+            os.makedirs(settings.MEDIA_ROOT)
+        local_new_fname = os.path.join(settings.MEDIA_ROOT,
+                                       feed_id + '_' + str(random.randint(9999, 999999)) + '.xml')
+        shutil.copyfile(upload_file.name, local_new_fname)
+        relative_local_new_fname = local_new_fname.replace(settings.MEDIA_ROOT, '')
+        if relative_local_new_fname.startswith('/'):
+            relative_local_new_fname = relative_local_new_fname[1:]
+        SubmissionXMLFile.objects.create(feed_id=feed_id, xml_file=relative_local_new_fname)
 
     def update(self, request, pk=None):
         pass
@@ -1918,3 +1935,22 @@ class FeedStatusAjaxView(DjangoView):
             })
 
         return JsonResponse({})
+
+
+class XMLFileRedirect(DjangoView):
+    def get(self, request, *args, **kwargs):
+        feed_id = kwargs['feed_id']
+
+        if not request.user.is_authenticated():
+            return JsonResponse({
+                'redirect': str(reverse_lazy(
+                    'login')+'?next='+request.GET.get('next', ''))
+            })
+
+        xml_file = SubmissionXMLFile.objects.filter(feed_id=feed_id)
+        if len(xml_file) > 2:
+            return HttpResponse('Error: Multiple XML files found for feed ID ' + feed_id)
+        elif len(xml_file) == 0:
+            return HttpResponse('Error: File not found for feed ID ' + feed_id)
+        else:
+            return HttpResponseRedirect(settings.MEDIA_URL + str(xml_file[0].xml_file))

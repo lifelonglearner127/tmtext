@@ -34,3 +34,10 @@ class SubmissionHistory(models.Model):
 class SubmissionStatus(models.Model):
     history = models.ForeignKey(SubmissionHistory)
     status = models.CharField(max_length=20, db_index=True)
+
+
+class SubmissionXMLFile(models.Model):
+    feed_id = models.CharField(max_length=50)
+    xml_file = models.FileField(
+        help_text="The actual XML file sent to Walmart")
+    created = models.DateTimeField(auto_now_add=True)
