@@ -593,19 +593,25 @@ class AmazonScraper(Scraper):
         return 0
 
     def _important_information_helper(self, name):
-        important_information = html.tostring( self.tree_html.xpath('//div[@id="importantInformation"]/div/div')[0])
+        important_information = self.tree_html.xpath('//div[@id="importantInformation"]/div/div')
 
-        name_index = important_information.find('<b>' + name + '</b>')
+        if important_information:
+            important_information = html.tostring( self.tree_html.xpath('//div[@id="importantInformation"]/div/div')[0])
 
-        if name_index == -1:
-            return None
+            name_index = important_information.find('<b>' + name)
 
-        start_index = important_information.find('</b>', name_index) + 4
+            if name_index == -1:
+                return None
 
-        # end at the next bold element
-        end_index = important_information.find('<b>', start_index + 1)
+            start_index = important_information.find('</b>', name_index) + 4
 
-        return important_information[start_index : end_index]
+            # end at the next bold element
+            end_index = important_information.find('<b>', start_index + 1)
+
+            return important_information[start_index : end_index]
+
+    def _amazon_ingredients(self):
+        return self._important_information_helper('Ingredients')
 
     def _usage(self):
         return self._important_information_helper('Usage')
@@ -614,7 +620,7 @@ class AmazonScraper(Scraper):
         return self._important_information_helper('Directions')
 
     def _warnings(self):
-        return self._important_information_helper('Safety Warning')
+        return self._important_information_helper('Safety')
 
     def _indications(self):
         return self._important_information_helper('Indications')
@@ -1414,6 +1420,7 @@ class AmazonScraper(Scraper):
         "directions": _directions, \
         "warnings": _warnings, \
         "indications": _indications, \
+        "amazon_ingredients" : _amazon_ingredients, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
