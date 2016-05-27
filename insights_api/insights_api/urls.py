@@ -15,7 +15,6 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
-from django.contrib.auth.models import User
 from rest_framework import routers
 
 from api_control.views import ProductListViewSet, SitesViewSet, \
@@ -43,13 +42,3 @@ urlpatterns = [
     url(r'^restapi/admin/', admin.site.urls),
     url(r'^restapi/', include(router.urls)),
 ]
-
-# Auth needs a Django Auth Model User
-# Create a dummy one if not exists
-try:
-    User.objects.get(username='dummy')
-
-except User.DoesNotExist:
-    user = User()
-    user.username = 'dummy'
-    user.save()
