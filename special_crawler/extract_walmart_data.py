@@ -760,6 +760,7 @@ class WalmartScraper(Scraper):
                         ("<dl>" in sub_description or \
                         "<ul>" in sub_description or \
                         "<li>" in sub_description)) or \
+                    '<h3>' in sub_description or \
                     '<section class="product-about' in sub_description:
 
                     innerText = ""
@@ -795,6 +796,10 @@ class WalmartScraper(Scraper):
                         if "<li>" in sub_description:
                             short_description_end_index = sub_description.find("<li>")
                             short_description_end_index_candiate_list.append(short_description_end_index)
+
+                    if '<h3>' in sub_description:
+                        short_description_end_index = sub_description.find('<h3>')
+                        short_description_end_index_candiate_list.append(short_description_end_index)
 
                     if '<section class="product-about' in sub_description:
                         short_description_end_index = sub_description.find('<section class="product-about')
@@ -946,6 +951,9 @@ class WalmartScraper(Scraper):
 
             for description_element in description_elements:
                 sub_description = lxml.html.tostring(description_element)
+
+                if re.match('<h3>', sub_description):
+                    break
 
                 if (not long_description_start and \
                         (product_name_bold in sub_description or \
