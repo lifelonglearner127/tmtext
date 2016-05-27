@@ -915,11 +915,7 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         )
         # load the appropriate SubmissionHistory DB record (if any)
         subm_hist = SubmissionHistory.objects.filter(feed_id=request_feed_id)
-        if len(subm_hist) > 1:
-            # if more than 1 DB records found
-            response.body['server_name'] = 'ERROR: FEED_ID is not unique'
-            response.body['client_ip'] = 'ERROR: FEED_ID is not unique'
-        elif (len(subm_hist) == 0) or (len(subm_hist) and not subm_hist[0].client_ip):
+        if (len(subm_hist) == 0) or (len(subm_hist) and not subm_hist[0].client_ip):
             # if there are no DB records, or client_ip is null (not ready yet)
             response.body['server_name'] = 'Not available yet, check later'
             response.body['client_ip'] = 'Not available yet, check later'
