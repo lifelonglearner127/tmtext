@@ -72,6 +72,15 @@ BROWSER_AGENT_STRING_LIST = {"Firefox": ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv
                              }
 
 
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+
 def choose_free_proxy_from_candidates():
     driver = webdriver.PhantomJS()
     driver.set_window_size(1440, 900)
@@ -260,12 +269,22 @@ def parse_walmart_api_log(request_or_user, base_file=__file__):
             line = line.strip()
             if ',' not in line:
                 continue
-            date, upc, feed_id = line.split(',')
-            yield {
-                'datetime': datetime.datetime.strptime(date.strip(), "%Y-%m-%d %H:%M"),
-                'upc': upc.strip(),
-                'feed_id': feed_id
-            }
+            if len(line.split(',')) == 3:
+                date, upc, feed_id = line.split(',')
+                yield {
+                    'datetime': datetime.datetime.strptime(date.strip(), "%Y-%m-%d %H:%M"),
+                    'upc': upc.strip(),
+                    'feed_id': feed_id
+                }
+            else:
+                date, upc, server_name, client_ip, feed_id = line.split(',')
+                yield {
+                    'datetime': datetime.datetime.strptime(date.strip(), "%Y-%m-%d %H:%M"),
+                    'upc': upc.strip(),
+                    'feed_id': feed_id,
+                    'server_name': server_name,
+                    'client_ip': client_ip
+                }
 
 
 def validate_walmart_product_xml_against_xsd(product_xml_string):
@@ -435,9 +454,9 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
     <br/>
     <pre>
     {
-      "request_url_1": "http://some_url_1", "request_method_1": "POST", "xml_file_to_upload_1": "/path_to_file_1",
-      "request_url_2": "http://some_url_2", "request_method_2": "POST", "xml_file_to_upload_2": "/path_to_file_2",
-      "request_url_3": "http://some_url_3", "request_method_2": "POST", "xml_file_to_upload_3": "/path_to_file_3",
+      "server_name": "server_name1", "request_url_1": "http://some_url_1", "request_method_1": "POST", "xml_file_to_upload_1": "/path_to_file_1",
+      "server_name": "server_name2", "request_url_2": "http://some_url_2", "request_method_2": "POST", "xml_file_to_upload_2": "/path_to_file_2",
+      "server_name": "server_name3", "request_url_3": "http://some_url_3", "request_method_2": "POST", "xml_file_to_upload_3": "/path_to_file_3",
       ...
     }
     </pre>
@@ -661,8 +680,12 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                 feed_id = response.body["feedId"]
                 current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 
+                server_name = request.POST.get('server_name')
+                client_ip = get_client_ip(request)
+
                 with open(get_walmart_api_invoke_log(request), "a") as myfile:
-                    myfile.write(current_time + ", " + upc + ", " + feed_id + "\n")
+                    myfile.write(current_time + ", " + upc + ", " + server_name + ", "
+                                 + client_ip + ", " + feed_id + "\n")
 
                 with open(get_walmart_api_invoke_log(request), "r") as myfile:
                     response.body["log"] = myfile.read().splitlines()
@@ -677,7 +700,8 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
                         response.body[key] = value
 
                 # create SubmissionHistory and Stats right away
-                get_feed_status(request.user, feed_id, date=datetime.datetime.now())
+                get_feed_status(request.user, feed_id, date=datetime.datetime.now(),
+                                server_name=server_name, client_ip=client_ip)
 
             return response.body
         else:
@@ -889,6 +913,19 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
                 "WM_SEC.TIMESTAMP": int(walmart_api_signature["timestamp"])
             }
         )
+        # load the appropriate SubmissionHistory DB record (if any)
+        subm_hist = SubmissionHistory.objects.filter(feed_id=request_feed_id)
+        if len(subm_hist) > 1:
+            # if more than 1 DB records found
+            response.body['server_name'] = 'ERROR: FEED_ID is not unique'
+            response.body['client_ip'] = 'ERROR: FEED_ID is not unique'
+        elif (len(subm_hist) == 0) or (len(subm_hist) and not subm_hist[0].client_ip):
+            # if there are no DB records, or client_ip is null (not ready yet)
+            response.body['server_name'] = 'Not available yet, check later'
+            response.body['client_ip'] = 'Not available yet, check later'
+        else:
+            response.body['server_name'] = subm_hist[0].server_name
+            response.body['client_ip'] = subm_hist[0].client_ip
         return response.body
 
     def update(self, request, pk=None):
@@ -1816,7 +1853,8 @@ class FeedIDRedirectView(DjangoView):
         return render_to_response(template_name='redirect_to_feed_check.html', context=context)
 
 
-def get_feed_status(user, feed_id, date=None, process_check_feed=True, check_auth=True):
+def get_feed_status(user, feed_id, date=None, process_check_feed=True, check_auth=True,
+                    server_name=None, client_ip=None):
     if os.path.exists(settings.TEST_TWEAKS['item_upload_ajax_ignore']):
         # do not perform time-consuming operations - return dummy empty response
         return {}
@@ -1844,11 +1882,13 @@ def get_feed_status(user, feed_id, date=None, process_check_feed=True, check_aut
     for result_stat in ingestion_statuses:
         subm_stat = result_stat.get('ingestionStatus', None)
         if subm_stat and isinstance(subm_stat, (str, unicode)):
-            db_history = SubmissionHistory.objects.create(user=user, feed_id=feed_id)
+            db_history = SubmissionHistory.objects.create(
+                user=user, feed_id=feed_id, server_name=server_name, client_ip=client_ip)
             db_history.set_statuses([subm_stat])
     if not ingestion_statuses:
         if check_results.get('feedStatus', '').lower() == 'error':
-            db_history = SubmissionHistory.objects.create(user=user, feed_id=feed_id)
+            db_history = SubmissionHistory.objects.create(
+                user=user, feed_id=feed_id, server_name=server_name, client_ip=client_ip)
             db_history.set_statuses(['error'])
     feed_history = SubmissionHistory.objects.filter(user=user, feed_id=feed_id)
     if feed_history:

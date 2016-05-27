@@ -61,10 +61,12 @@ class Command(BaseCommand):
         self.exit_if_multiple_instances_running()
 
         for user in User.objects.all():
-            for log_rec in parse_walmart_api_log(user):
+            for log_rec in parse_walmart_api_log(user):  # TODO: parse server name and IP
                 date = log_rec['datetime']
                 upc = log_rec['upc'].strip()
                 feed_id = log_rec['feed_id'].strip()
+                server_name = log_rec.get('server_name', None)
+                client_ip = log_rec.get('client_ip', None)
                 print 'Feed ID %s' % feed_id
 
                 # 1. Update old "incomplete" statuses - remove SubmissionHistory records and Statistics
@@ -80,7 +82,8 @@ class Command(BaseCommand):
                             continue
                 # process feed statuses for unprocessed items
                 print get_feed_status(user, feed_id, date=date,
-                                      process_check_feed=True, check_auth=False)
+                                      process_check_feed=True, check_auth=False,
+                                      server_name=server_name, client_ip=client_ip)
 
             # re-create cache for each user
             cache_key = get_cache_key_for_request_or_user(user)

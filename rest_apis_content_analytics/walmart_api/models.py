@@ -6,6 +6,8 @@ class SubmissionHistory(models.Model):
     """ Tracks the history of items uploaded to Walmart """
     user = models.ForeignKey(User, blank=True, null=True)
     feed_id = models.CharField(max_length=50)
+    server_name = models.CharField(max_length=100, blank=True, null=True)
+    client_ip = models.IPAddressField(blank=True, null=True)
 
     def get_statuses(self):
         return [s.status for s in SubmissionStatus.objects.filter(

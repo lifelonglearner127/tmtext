@@ -6,6 +6,7 @@ class StringListField(serializers.ListField):
 
 
 class WalmartApiItemsWithXmlFileRequestSerializer(serializers.Serializer):
+    server_name = serializers.CharField(initial="rest_api_web_interface")
     request_url = serializers.ChoiceField(
         choices=["https://marketplace.walmartapis.com/v2/feeds?feedType=item"])
     request_method = serializers.ChoiceField(
