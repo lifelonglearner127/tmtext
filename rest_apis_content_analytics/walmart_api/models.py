@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -40,4 +42,4 @@ class SubmissionXMLFile(models.Model):
     feed_id = models.CharField(max_length=50)
     xml_file = models.FileField(
         help_text="The actual XML file sent to Walmart")
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(default=datetime.datetime.utcnow)

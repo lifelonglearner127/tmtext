@@ -680,7 +680,8 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         if type(response.body) is dict:  # if we got valid Walmart response after we uploaded XML file...
             if "feedId" in response.body:
                 feed_id = response.body["feedId"]
-                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+                import pytz
+                current_time = datetime.datetime.utcnow().replace(tzinfo=pytz.utc).isoformat()  # always show TZ
 
                 server_name = request.POST.get('server_name')
                 client_ip = get_client_ip(request)
@@ -939,6 +940,10 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         else:
             response.body['server_name'] = subm_hist[0].server_name
             response.body['client_ip'] = subm_hist[0].client_ip
+        # add datetime of submission
+        xml_file = SubmissionXMLFile.objects.filter(feed_id=request_feed_id)
+        if xml_file:
+            response.body['submitted_at'] = xml_file[0].created.isoformat()
         return response.body
 
     def update(self, request, pk=None):
