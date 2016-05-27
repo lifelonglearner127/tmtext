@@ -48,7 +48,10 @@ class RestAPIsTests(StaticLiveServerTestCase):
         self.username = 'admin4'
         self.email = 'admin@admin.com'
         self.password = 'admin46'
-        self.user = User.objects.create_superuser(self.username, self.email, self.password)
+        if not User.objects.filter(username=self.username):
+            self.user = User.objects.create_superuser(self.username, self.email, self.password)
+        else:
+            self.user = User.objects.filter(username=self.username)[0]
 
     def tearDown(self):
         self.user.delete()
