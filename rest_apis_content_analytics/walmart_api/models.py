@@ -9,6 +9,8 @@ class SubmissionHistory(models.Model):
     server_name = models.CharField(max_length=100, blank=True, null=True)
     client_ip = models.IPAddressField(blank=True, null=True)
 
+    created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+
     def get_statuses(self):
         return [s.status for s in SubmissionStatus.objects.filter(
             history__feed_id=self.feed_id, history__user=self.user)]
