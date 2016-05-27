@@ -459,7 +459,7 @@ class AmazonBaseClass(BaseProductsSpider):
         if any(map((lambda x: x in _avail_lower), ['nichtauflager', 'currentlyunavailable'])):
             product['is_out_of_stock'] = True
 
-req  = self._parse_questions(response)
+        req  = self._parse_questions(response)
         if req:
             reqs.append(req)
 
