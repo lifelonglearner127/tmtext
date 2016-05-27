@@ -265,6 +265,14 @@ def get_walmart_api_invoke_log(request_or_user, base_file=__file__):
 
 
 def parse_walmart_api_log(request_or_user, base_file=__file__):
+    from dateutil.parser import parse as parse_date
+
+    def _parse_date(d):
+        try:
+            return datetime.datetime.strptime(date.strip(), "%Y-%m-%d %H:%M")
+        except ValueError:
+            return parse_date(date.strip())
+
     log = get_walmart_api_invoke_log(request_or_user, base_file)
     with open(log, 'r') as fh:
         for line in fh:
@@ -274,14 +282,14 @@ def parse_walmart_api_log(request_or_user, base_file=__file__):
             if len(line.split(',')) == 3:
                 date, upc, feed_id = line.split(',')
                 yield {
-                    'datetime': datetime.datetime.strptime(date.strip(), "%Y-%m-%d %H:%M"),
+                    'datetime': _parse_date(date.strip()),
                     'upc': upc.strip(),
                     'feed_id': feed_id
                 }
             else:
                 date, upc, server_name, client_ip, feed_id = line.split(',')
                 yield {
-                    'datetime': datetime.datetime.strptime(date.strip(), "%Y-%m-%d %H:%M"),
+                    'datetime': _parse_date(date.strip()),
                     'upc': upc.strip(),
                     'feed_id': feed_id,
                     'server_name': server_name,
