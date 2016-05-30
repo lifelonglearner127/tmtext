@@ -5,6 +5,7 @@ import re
 import time
 import socket
 import urlparse
+import urllib
 import os
 import string
 
@@ -223,7 +224,8 @@ class OfficedepotProductsSpider(BaseProductsSpider):
             '//h1[@itemprop="name"]/text()').re('(.*?),'))
 
         if sku and name:
-            reqs.append(Request(url=self.VARIANTS_URL.format(name=name.strip(),
+            name = urllib.quote_plus(name.strip().encode('utf-8'))
+            reqs.append(Request(url=self.VARIANTS_URL.format(name=name,
                                                              sku=sku),
                         callback=self._parse_variants,
                         meta=meta))
@@ -408,9 +410,12 @@ class OfficedepotProductsSpider(BaseProductsSpider):
                 return int(totals)
 
     def _scrape_product_links(self, response):
-        for link in response.xpath(
-                '//div[contains(@class, "descriptionFull")]/a[contains(@class, "med_txt")]/@href'
-        ).extract():
+        items = response.xpath(
+            '//div[contains(@class, "descriptionFull")]/'
+            'a[contains(@class, "med_txt")]/@href'
+        ).extract() or response.css('.desc_text a::attr("href")').extract()
+
+        for link in items:
             yield link, SiteProductItem()
 
     def _get_nao(self, url):
