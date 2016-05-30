@@ -752,6 +752,9 @@ class WalmartScraper(Scraper):
             short_description = self._clean_text (description_elements.text)
 
             for description_element in description_elements:
+                if not description_element.text_content().strip():
+                    continue
+
                 sub_description = lxml.html.tostring(description_element)
 
                 if product_name_bold in sub_description or \
@@ -950,6 +953,9 @@ class WalmartScraper(Scraper):
                 has_product_name = True
 
             for description_element in description_elements:
+                if not description_element.text_content().strip():
+                    continue
+                    
                 sub_description = lxml.html.tostring(description_element)
 
                 if re.match('<h3>', sub_description):
