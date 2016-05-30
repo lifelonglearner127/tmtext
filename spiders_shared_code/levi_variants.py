@@ -73,7 +73,7 @@ class LeviVariants(object):
     def _strip_ids_from_colors(variants):
         """ Removes the trailing ____XXXXXX code from properties """
         for variant in variants:
-            props = variant.get(variant, None)
+            props = variant.get('properties', None)
             if props:
                 color = props.get('color', None)
                 if color:
