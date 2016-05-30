@@ -102,7 +102,7 @@ class ChewyProductsSpider(ProductsSpider):
             vr = {}
             cond_set_value(vr, 'price', item[1])
             cond_set_value(vr, 'url', urlparse.urljoin(response.url, item[2]))
-            cond_set_value(vr, 'image_url', item[3])
+            cond_set_value(vr, 'image_urls', item[3])
             vr['selected'] = True if item[0] in response.url else False
 
             if vr:
