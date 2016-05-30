@@ -86,6 +86,7 @@ from extract_riteaid_data import RiteAidScraper
 from extract_att_data import ATTScraper
 from extract_verizonwireless_data import VerizonWirelessScraper
 from extract_lowes_data import LowesScraper
+from extract_wag_data import WagScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -184,6 +185,7 @@ SUPPORTED_SITES = {
                     "att": ATTScraper,
                     "verizonwireless": VerizonWirelessScraper,
                     "lowes": LowesScraper,
+                    "wag": WagScraper,
                     }
 
 # add logger
@@ -387,12 +389,10 @@ def get_data():
 
     # data
     validate_data_params(request_arguments, site_scraper.ALL_DATA_TYPES)
-
     # return all data if there are no "data" parameters
     if 'data' not in request_arguments:
         try:
             ret = site_scraper.product_info()
-
         except HTTPError as ex:
             raise GatewayError("Error communicating with site crawled.")
 

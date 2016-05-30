@@ -453,12 +453,15 @@ class Scraper():
                     continue
         else:
             costco_url = re.match('http://www.costco.com/(.*)', self.product_page_url)
+            wag_url = re.match('https?://www.wag.com/(.*)', self.product_page_url)
+
             if costco_url:
                 self.product_page_url = 'http://www.costco.com/' + urllib2.quote(costco_url.group(1).encode('utf8'))
+
             request = urllib2.Request(self.product_page_url)
             # set user agent to avoid blocking
             agent = ''
-            if self.bot_type == "google":
+            if self.bot_type == "google" or wag_url:
                 agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
             else:
                 agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
