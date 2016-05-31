@@ -2,6 +2,7 @@ import lxml.html
 from itertools import product
 import json
 import re
+import copy
 from lxml import html, etree
 import itertools
 import yaml
@@ -11,6 +12,8 @@ class LeviVariants(object):
 
     local_variants_map = {}  # used to filter unique results (by `properties`)
 
+    def __init__(self):
+        self.local_variants_map = copy.copy({})
 
     def setupSC(self, response):
         """ Call it from SC spiders """
@@ -204,6 +207,7 @@ class LeviVariants(object):
                 self._append_variant_or_replace_incomplete_one(variant_list, variant_item)
                 #variant_list.append(variant_item)
 
+            del self.local_variants_map
             if variant_list:
                 return variant_list
 
