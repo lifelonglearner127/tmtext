@@ -77,7 +77,7 @@ class JCpenneySpider(scrapy.Spider):
         self.quantity = kwargs.get('quantity', None)
 
         from pyvirtualdisplay import Display
-        display = Display(visible=False)
+        display = Display(visible=True)
         display.start()
 
         if self.quantity:
@@ -299,6 +299,9 @@ class JCpenneySpider(scrapy.Spider):
                     '*//*[contains(@class,"flt_wdt total")]//'
                     'span[@class="flt_rgt"]/text()').re('\$(.*)'))
 
+                price_on_page = is_empty(product.css(
+                    '.gallery_page_price  .priceValueSpacer::text').re('\$(.*)'))
+
                 color = is_empty(product.xpath(
                     '*//span[@class="size" and contains(text(),"color:")]'
                     '/strong/text()').extract())
@@ -314,14 +317,16 @@ class JCpenneySpider(scrapy.Spider):
                     item['name'] = name
                     item['id'] = id
                     item['price'] = price
+                    item['price_on_page'] = price_on_page
                     item['quantity'] = quantity
                     if color:
                         item['color'] = color
 
                     order_subtotal_element = self.wait.until(
                         EC.visibility_of_element_located((
-                            By.XPATH, '//*[@class="flt_rgt'
-                                      ' order_subtotal_amnt"]')))
+                            By.XPATH, '//*[@class="flt_wdt'
+                                      ' merch_subtotal"]/span/'
+                                      'span[@class="flt_rgt"]')))
                     if order_subtotal_element:
                         order_subtotal = order_subtotal_element.text
                         item['order_subtotal'] = is_empty(re.findall(

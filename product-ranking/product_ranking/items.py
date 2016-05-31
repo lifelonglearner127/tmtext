@@ -288,9 +288,10 @@ class DiscountCoupon(Item):
 class CheckoutProductItem(Item):
     name = Field()
     id = Field()
-    price = Field()
+    price = Field()             # In-cart Product Value
+    price_on_page = Field()     # On-Page Product Value
     quantity = Field()
     color = Field()
-    order_subtotal = Field()
-    order_total = Field()
+    order_subtotal = Field()    # Pre-tax & shipping Cart Value
+    order_total = Field()       # Post-tax & shipping Cart Value
     url = Field()
