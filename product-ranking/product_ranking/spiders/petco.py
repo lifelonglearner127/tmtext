@@ -10,9 +10,11 @@ from product_ranking.spiders import cond_set_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
+
 def dict_product(dicts):
     products = itertools.product(*dicts.itervalues())
     return (dict(itertools.izip(dicts, x)) for x in products)
+
 
 class PetcoProductsSpider(ProductsSpider):
     name = 'petco_products'
@@ -34,9 +36,12 @@ class PetcoProductsSpider(ProductsSpider):
                   "passkey=dpaqzblnfzrludzy2s7v27ehz&apiversion=5.5"
                   "&filter=id:{product_id}&stats=reviews")
 
+    PRICE_URL = "http://www.petco.com/shop/GetCatalogEntryDetailsByIDView"
+
     def __init__(self, *args, **kwargs):
         super(PetcoProductsSpider, self).__init__(*args, **kwargs)
         self.br = BuyerReviewsBazaarApi(called_class=self)
+        self.product_last_page = 0
 
     def parse_buyer_reviews(self, response):
         meta = response.meta.copy()
@@ -60,6 +65,10 @@ class PetcoProductsSpider(ProductsSpider):
         return 48
 
     def _scrape_next_results_page_link(self, response):
+        #End of pagination
+        if not self.product_last_page:
+            return None
+
         begin_index = int(re.search('beginIndex=(\d+)', response.url).group(1))
         num_poduct_page = self._scrape_results_per_page(response)
         st = response.meta['search_term']
@@ -74,6 +83,8 @@ class PetcoProductsSpider(ProductsSpider):
         item_urls = response.xpath(
             '//*[@class="product-display-grid"]'
             '//*[@class="product-name"]/a/@href').extract()
+
+        self.product_last_page = len(item_urls)
         for item_url in item_urls:
             yield item_url, SiteProductItem()
 
@@ -92,15 +103,6 @@ class PetcoProductsSpider(ProductsSpider):
         categories = self._parse_categories(response)
         return categories[-1] if categories else None
 
-    def _parse_price(self, response):
-        price = response.xpath(
-            '//div[contains(@id,"price_display")]'
-            '//span[@itemprop="price"]/text()').re('[\d\.\,]+')
-
-        if not price:
-            return None
-
-        return Price(price=price[0], priceCurrency='USD')
 
     def _parse_image_url(self, response):
         image_url = response.xpath(
@@ -164,7 +166,7 @@ class PetcoProductsSpider(ProductsSpider):
     def parse_product(self, response):
         reqs = []
         product = response.meta['product']
-        response.meta['product_response'] = response
+
         # Set locale
         product['locale'] = 'en_US'
 
@@ -183,10 +185,6 @@ class PetcoProductsSpider(ProductsSpider):
         # Parse description
         description = self._parse_description(response)
         cond_set_value(product, 'description', description)
-
-        # Parse price
-        price = self._parse_price(response)
-        cond_set_value(product, 'price', price)
 
         # Parse image url
         image_url = self._parse_image_url(response)
@@ -219,6 +217,44 @@ class PetcoProductsSpider(ProductsSpider):
                     callback=self.parse_buyer_reviews,
                     meta=response.meta
                 ))
+
+        price_id = response.xpath(
+            '//*[contains(@id,"entitledItem_")]/@id').re(
+            'entitledItem_(\d+)')
+        cat_id = response.xpath(
+            '//*[@name="firstAvailableSkuCatentryId_avl"]/@value').extract()
+
+        if price_id and cat_id:
+            text = ("storeId=10151&langId=-1&catalogId=10051&"
+                    "catalogEntryId={cat}&productId={prod_id}".format(cat=cat_id[0],
+                                                                      prod_id=price_id[0]))
+            reqs.append(
+                Request(self.PRICE_URL,
+                        body=text,
+                        headers={'Content-Type': 'application/x-www-form-urlencoded',
+                                 'X-Requested-With': 'XMLHttpRequest'},
+                        method='POST',
+                        meta=response.meta,
+                        callback=self._parse_price,
+                        dont_filter=True)
+            )
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def _parse_price(self, response):
+        reqs = response.meta.get('reqs', [])
+        product = response.meta['product']
+
+        raw_information = re.findall(
+            '\{.*\}', response.body, re.MULTILINE | re.DOTALL)[0]
+
+        product_data = eval(raw_information)
+
+        price = product_data["catalogEntry"]["offerPrice"]
+        product['price'] = Price(price=price, priceCurrency="USD")
 
         if reqs:
             return self.send_next_request(reqs, response)
