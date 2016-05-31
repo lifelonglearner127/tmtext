@@ -711,6 +711,11 @@ class AmazonScraper(Scraper):
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
+        image_url.extend(tree.xpath("//div[contains(@class,'verticalMocaThumbs')]/div[not(contains(@class,'verticalMocaThumb'))]/img/@src"))
+        image_url = filter(None, image_url)
+        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
+            return tree.xpath("//input[@id='mocaGlamorImageUrl']/@value") + image_url
+
         image_url.extend(tree.xpath("//div[contains(@id,'thumb-container')]//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls])
@@ -761,6 +766,9 @@ class AmazonScraper(Scraper):
                 #    continue
                 if hi_res:
                     hi_res_images.append(hi_res)
+        moca_images = self.tree_html.xpath("//div[contains(@class,'verticalMocaThumb')]/span/img/@src")
+        if moca_images:
+            hi_res_images.extend(self._get_origin_image_urls_from_thumbnail_urls(moca_images))
         return hi_res_images
 
     def _image_helper(self):
