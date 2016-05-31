@@ -756,8 +756,9 @@ class AmazonScraper(Scraper):
                 return
             for img in img_data:
                 hi_res = img.get('hiRes', None)
-                if str(img.get('variant', None)).lower() in ('left', 'right'):
-                    continue
+                # uncomment 2 lines below to exclude "invisible" images
+                #if str(img.get('variant', None)).lower() in ('left', 'right'):
+                #    continue
                 if hi_res:
                     hi_res_images.append(hi_res)
         return hi_res_images
