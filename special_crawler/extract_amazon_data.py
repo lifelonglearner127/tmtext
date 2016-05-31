@@ -766,6 +766,9 @@ class AmazonScraper(Scraper):
                 #    continue
                 if hi_res:
                     hi_res_images.append(hi_res)
+        moca_images = self.tree_html.xpath("//div[contains(@class,'verticalMocaThumb')]/span/img/@src")
+        if moca_images:
+            hi_res_images.extend(self._get_origin_image_urls_from_thumbnail_urls(moca_images))
         return hi_res_images
 
     def _image_helper(self):
