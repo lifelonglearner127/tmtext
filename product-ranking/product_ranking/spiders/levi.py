@@ -125,7 +125,6 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
-        # Parse variants
         try:
             variants = self._parse_variants(response)
         except KeyError:

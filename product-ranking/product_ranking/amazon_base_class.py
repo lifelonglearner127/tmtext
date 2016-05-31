@@ -459,6 +459,10 @@ class AmazonBaseClass(BaseProductsSpider):
         if any(map((lambda x: x in _avail_lower), ['nichtauflager', 'currentlyunavailable'])):
             product['is_out_of_stock'] = True
 
+        req  = self._parse_questions(response)
+        if req:
+            reqs.append(req)
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -476,6 +480,9 @@ class AmazonBaseClass(BaseProductsSpider):
         if isinstance(prod_id, (list, tuple)):
             prod_id = [s for s in prod_id if s][0]
         return prod_id
+
+    def _parse_questions(self, response):
+        None
 
     def _parse_category(self, response):
         cat = response.xpath(
@@ -645,7 +652,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 brand = [brand]
 
         if isinstance(brand, list):
-            brand = [br for br in brand if brand and 'search result' not in br.lower()]
+            brand = [br.strip() for br in brand if brand and 'search result' not in br.lower()]
 
         brand = brand or ['NO BRAND']
 
