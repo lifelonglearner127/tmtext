@@ -94,17 +94,26 @@ class WagScraper(Scraper):
         return None
 
     def _features(self):
-        features = self.tree_html.xpath('//*[@class="descriptTabContent"]/'
-                                        'dd[@style="display:block;"]'
-                                        '//li/text()')
+        _product_id = self._product_id()
+        tab = self.tree_html.xpath(
+            '//li[@productid="%s"]/a[em['
+            'text()="Description"]]/@id' % _product_id)[0]
 
+        tab_number = re.search('Tab(\d+)Header', tab).group(1)
+        features = self.tree_html.xpath(
+            '//*[@id="Tab%sDetailInfo"]//li/text()' % tab_number)
+
+        descriptContentBox = ''.join(self.tree_html.xpath(
+            '//*[@id="Tab%sDetailInfo"]//text()' % tab_number))
+
+        features += re.findall(u'\u2022 (.*)', descriptContentBox)
         return [x.strip() for x in features] if features else None
 
     def _feature_count(self):
         features = self._features()
         if features is None:
             return 0
-        return len(self._features())
+        return len(features)
 
     def _model_meta(self):
         return None
@@ -279,8 +288,6 @@ class WagScraper(Scraper):
 
             review_url = ("https://www.wag.com/amazon_reviews/%s"
                           "/mostrecent_default.html" % '/'.join(review_id))
-
-            print review_url
 
             r = requests.get(review_url)
             if r and r.status_code == 200:

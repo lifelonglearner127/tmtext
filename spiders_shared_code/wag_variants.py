@@ -23,33 +23,38 @@ class WagVariants(object):
 
     def _variants(self):
         variants = []
-        for item in self.tree_html.xpath('//*[@class="diaperItemTR"]'):
-            vr = {}
-            vr['in_stock'] = not bool(
-                item.xpath('./td[@class="outOfStockQty"]'))
-            price = item.xpath(
-                './/*[@class="autoShipNormal"]'
-                '/*[@class="normalPrice"]')[0]
-            price = re.findall('[\d\.]+', price)
+        try:
+            for item in self.tree_html.xpath('//*[@class="diaperItemTR"]'):
+                vr = {}
+                vr['in_stock'] = not bool(
+                    item.xpath('./td[@class="outOfStockQty"]'))
+                price = item.xpath(
+                    './/*[@class="autoShipNormal"]'
+                    '/*[@class="normalPrice"]/text()')[0]
 
-            if price:
-                vr['price'] = price[0]
-            images = ['http:' + x for x in item.xpath('.//img/@src').extract()]
-            if images:
-                vr['image_url'] = images[0]
-            sku = item.xpath('td/@sku').extract()
-            if sku:
-                vr['skuId'] = sku[0]
-            primary = item.xpath('@isprimarysku')[0]
-            selected = primary == 'Y'
-            vr['selected'] = selected
-            if sku:
-                url = re.sub('(sku=)(.+?)&', '\g<1>%s&' % sku[0], self.url)
-                vr['url'] = url
+                price = re.findall('[\d\.]+', price)
 
-            variants.append(vr)
+                if price:
+                    vr['price'] = price[0]
+                images = ['http:' + x for x in item.xpath('.//img/@src')]
+                if images:
+                    vr['image_url'] = images[0]
+                sku = item.xpath('td/@sku')
+                if sku:
+                    vr['skuId'] = sku[0]
+                primary = item.xpath('@isprimarysku')[0]
+                selected = primary == 'Y'
+                vr['selected'] = selected
+                if sku:
+                    url = re.sub('(sku=)(.+?)&', '\g<1>%s&' % sku[0], self.url)
+                    vr['url'] = url
 
-        return variants if variants and len(variants) > 1 else None
+                variants.append(vr)
+
+            return variants if variants and len(variants) > 1 else None
+        except:
+            import traceback
+            print traceback.print_exc()
 
     def _swatches(self):
         swatches = []
