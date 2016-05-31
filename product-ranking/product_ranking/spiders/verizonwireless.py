@@ -31,17 +31,13 @@ class VerizonwirelessProductsSpider(ProductsSpider):
             'RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 408]
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.custom_middlewares.VerizonMetaRefreshMiddleware'] = 700
-        middlewares['product_ranking.custom_middlewares.VerizonRedirectMiddleware'] = 800
-
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
-
         super(VerizonwirelessProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
 
     def _total_matches_from_html(self, response):
         total = response.xpath(
-            '//*[@id="total-results-source-div"]//strong/text()').re('\d+') or \
-            re.findall('totalNumRecs":(\d+)}', response.body)
+            '//*[@id="total-results-source-div"]//strong/text()').re('\d+')
 
         return int(total[0]) if total else 0
 
@@ -57,13 +53,9 @@ class VerizonwirelessProductsSpider(ProductsSpider):
             '//div[@itemtype="https://schema.org/Product" and '
             'not(contains(@class,"Device-SpecificInstructions") or '
             'contains(@class,"allother"))]'
-            '/a/@href').extract() or \
-            set([x.split('#')[0] for x in re.findall(
-                'pdpUrl":\["(.*?)\"]', response.body)])
-
+            '/a/@href').extract()
         for item_url in item_urls:
-            yield urlparse.urljoin(
-                response.url, item_url), SiteProductItem()
+            yield item_url, SiteProductItem()
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -100,16 +92,7 @@ class VerizonwirelessProductsSpider(ProductsSpider):
     def _parse_image_url(self, response):
         image_url = response.xpath(
             '//*[@property="og:image"]/@content').extract()
-        if image_url and image_url[0]:
-            return image_url[0].split('?')[0]
-
-        inits7_img = response.xpath(
-            '//*[@id="PDPContainer"]/script').re(
-            'initS7Viewer\(\'(.*)\'\)')
-        if inits7_img:
-            return "https://ss7.vzw.com/is/image/VerizonWireless/%s" % inits7_img[0]
-
-        return None
+        return image_url[0].split('?')[0] if image_url else None
 
     def _parse_sku(self, response):
         sku = re.findall('selectedSkuId":"(.*?)"', response.body)
@@ -129,9 +112,7 @@ class VerizonwirelessProductsSpider(ProductsSpider):
             stocked_variants = [x for x in variants if x.get('in_stock')]
             return not bool(len(stocked_variants))
 
-        out_of_stock = response.xpath(
-            '//*[@id="pdp-outOfStock-cart"]|'
-            '//*[@class="outOfStockBar" and contains(text(), "out of stock")]')
+        out_of_stock = response.xpath('//*[@id="pdp-outOfStock-cart"]')
         return bool(out_of_stock)
 
     def _parse_description(self, response):
@@ -236,9 +217,7 @@ class VerizonwirelessProductsSpider(ProductsSpider):
             pdp_json = json.loads(pdp_data[0])
 
             price = self._parse_price_json(pdp_json)
-            if price:
-                cond_set_value(product, 'price', Price(price=price,
-                                                       priceCurrency="USD"))
+            cond_set_value(product, 'price', price)
 
         # Parse title
         title = self._parse_title(response)
@@ -276,11 +255,6 @@ class VerizonwirelessProductsSpider(ProductsSpider):
         out_of_stock = self._parse_is_out_of_stock(response, variants)
         cond_set_value(product, 'is_out_of_stock', out_of_stock)
 
-        # Default Reviews Values
-        review_list = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
-        reviews = BuyerReviews(0, 0.0, review_list)
-        product['buyer_reviews'] = reviews
-
         id = None
         device_prod_id_search = re.search('deviceProdId=(.*?)&', response.body)
 
@@ -312,7 +286,7 @@ class VerizonwirelessProductsSpider(ProductsSpider):
         average = self._average_review(review_json)
         fdist = self._reviews(review_json)
         reviews = BuyerReviews(review_count, average, fdist)
-        product['buyer_reviews'] = reviews
+        cond_set_value(product, 'buyer_reviews', reviews)
 
         if reqs:
             return self.send_next_request(reqs, response)
