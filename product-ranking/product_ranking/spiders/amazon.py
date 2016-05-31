@@ -71,7 +71,8 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
 
     def _parse_questions(self, response):
         asin_id = response.xpath(
-            '//input[@id="ASIN"]/@value').extract()
+            '//input[@id="ASIN"]/@value').extract() or \
+            re.findall('"ASIN":"(.*?)"', response.body)
         if asin_id:
             return Request(self.QUESTIONS_URL
                                .format(asin_id=asin_id[0], page="1"),
@@ -121,6 +122,7 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                     question.xpath('.//*[@class="a-color-tertiary"]/text()')
                     .re('on (.*)'))
                 a['submissionDate'] = date
+                q['submissionDate'] = date
 
                 answer_summary = ''.join(
                     answer.xpath('span[1]/text()|'
