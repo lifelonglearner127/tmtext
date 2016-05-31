@@ -77,7 +77,7 @@ class JCpenneySpider(scrapy.Spider):
         self.quantity = kwargs.get('quantity', None)
 
         from pyvirtualdisplay import Display
-        display = Display(visible=True)
+        display = Display(visible=False)
         display.start()
 
         if self.quantity:
