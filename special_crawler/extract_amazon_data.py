@@ -24,6 +24,7 @@ import random
 from spiders_shared_code.amazon_variants import AmazonVariants
 import datetime
 
+
 class AmazonScraper(Scraper):
 
     ##########################################
@@ -37,7 +38,7 @@ class AmazonScraper(Scraper):
     CB.CAPTCHAS_DIR = '/tmp/captchas'
     CB.SOLVED_CAPTCHAS_DIR = '/tmp/solved_captchas'
 
-    MAX_CAPTCHA_RETRIES = 10
+    MAX_CAPTCHA_RETRIES = 3
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -55,9 +56,24 @@ class AmazonScraper(Scraper):
         self.is_variants_checked = False
         self.variants = None
 
+        self.proxy_host = "proxy.crawlera.com"
+        self.proxy_port = "8010"
+        self.proxy_auth = ("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
+        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+        self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
+
+        self.proxies_enabled = False  # first, they are OFF to save allowed requests
+
     # method that returns xml tree of page, to extract the desired elemets from
     # special implementation for amazon - handling captcha pages
     def _initialize_browser_settings(self):
+        # proxies
+        if self.proxies_enabled:
+            proxy_str = "%s:%s" % (
+                self.proxy_host, self.proxy_port)
+            self.browser.set_proxies({'http': proxy_str, 'https': proxy_str})
+            self.browser.add_proxy_password(*self.proxy_auth)
+
         # Cookie Jar
         cj = cookielib.LWPCookieJar()
         self.browser.set_cookiejar(cj)
@@ -73,30 +89,82 @@ class AmazonScraper(Scraper):
         self.browser.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
 
         # Want debugging messages?
-        #br.set_debug_http(True)
-        #br.set_debug_redirects(True)
-        #br.set_debug_responses(True)
+        #self.browser.set_debug_http(True)
+        #self.browser.set_debug_redirects(True)
+        #self.browser.set_debug_responses(True)
 
         # User-Agent (this is cheating, ok?)
         self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
 
     def _extract_page_tree(self, captcha_data=None, retries=0):
         self._initialize_browser_settings()
-        self.browser.open(self.store_url)
-        contents = self.browser.open(self.product_page_url).read()
 
-        try:
-            # replace NULL characters
-            contents = self._clean_null(contents).decode("utf8")
-        except UnicodeError, e:
-            # if string was not utf8, don't deocde it
-            print "Warning creating html tree from page content: ", e.message
+        for i in range(self.MAX_RETRIES):
+            self.timeout = False
 
-            # replace NULL characters
-            contents = self._clean_null(contents)
+            try:
+                if captcha_data:
+                    data = urllib.urlencode(captcha_data)
+                    contents = self.browser.open(self.product_page_url, data, timeout=10).read()
+                else:
+                    contents = self.browser.open(self.product_page_url, timeout=10).read()
+            except timeout:
+                self.is_timeout = True
+                self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                continue # continue to try again up to MAX_RETRIES
+            except mechanize.HTTPError as e:
+                # If 404 or this was the last retry, return failure
+                if e.code == 404 or i == self.MAX_RETRIES - 1:
+                    self.is_timeout = True # set self.is_timeout so we will return an error response
+                    self.ERROR_RESPONSE["failure_type"] = str(e)
+                    return
 
-        self.page_raw_text = contents
-        self.tree_html = html.fromstring(contents)
+                # Otherwise, try again with proxies
+                self.proxies_enabled = True
+                self._initialize_browser_settings()
+                continue
+
+            try:
+                # replace NULL characters
+                contents = self._clean_null(contents)
+
+                self.tree_html = html.fromstring(contents.decode("utf8"))
+            except UnicodeError, e:
+                # if string was not utf8, don't deocde it
+                print "Warning creating html tree from page content: ", e.message
+
+                # replace NULL characters
+                contents = self._clean_null(contents)
+
+                self.tree_html = html.fromstring(contents)
+
+            # it's a captcha page
+            if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
+                if retries < self.MAX_CAPTCHA_RETRIES:
+                    image = self.tree_html.xpath(".//img/@src")
+                    if image:
+                        captcha_text = self.CB.solve_captcha(image[0])
+
+                    # value to use if there was an exception
+                    if not captcha_text:
+                        captcha_text = ''
+
+                    retries += 1
+                    return self._extract_page_tree(captcha_data={'field-keywords' : captcha_text}, retries=retries)
+
+                if retries == self.MAX_CAPTCHA_RETRIES:
+                    # If we have tried the maximum number of times, try once more with proxies
+                    self.proxies_enabled = True
+                    self._initialize_browser_settings()
+                    retries += 1
+                    continue
+
+                # If we still get a CAPTCHA, return failure
+                self.is_timeout = True # set self.is_timeout so we will return an error response
+                self.ERROR_RESPONSE["failure_type"] = "CAPTCHA"
+
+            # if we got it we can exit the loop and stop retrying
+            return
 
     def check_url_format(self):
         m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9%\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
@@ -119,10 +187,7 @@ class AmazonScraper(Scraper):
 
         self.av.setupCH(self.tree_html, self.product_page_url)
 
-        if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
-            return True
         return False
-
 
     ##########################################
     ############### CONTAINER : NONE
@@ -156,15 +221,18 @@ class AmazonScraper(Scraper):
     def _product_name(self):
         pn = self.tree_html.xpath('//h1[@id="title"]/span[@id="productTitle"]')
         if len(pn)>0:
-            return pn[0].text
+            return self._clean_text(pn[0].text)
         pn = self.tree_html.xpath('//h1[@class="parseasinTitle " or @class="parseasinTitle"]/span[@id="btAsinTitle"]//text()')
         if len(pn)>0:
-            return " ".join(pn).strip()
+            return self._clean_text(" ".join(pn).strip())
         pn = self.tree_html.xpath('//h1[@id="aiv-content-title"]//text()')
         if len(pn)>0:
             return self._clean_text(pn[0])
         pn = self.tree_html.xpath('//div[@id="title_feature_div"]/h1//text()')
-        return pn[0].strip()
+        if len(pn)>0:
+            return self._clean_text(pn[0].strip())
+        pn = self.tree_html.xpath('//div[@id="item_name"]/text()')
+        return self._clean_text(pn[0].strip())
 
     def _product_title(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
@@ -193,7 +261,24 @@ class AmazonScraper(Scraper):
 
     # Amazon's version of UPC
     def _asin(self):
-        return self.tree_html.xpath("//input[@name='ASIN']/@value")[0]
+        asin_text = self.tree_html.xpath('//*[contains(text(),"ASIN:")]/..')
+        if asin_text:
+            if 'productASIN' not in asin_text[0].text_content():
+                return re.search('ASIN:\s*(\S+)', asin_text[0].text_content()).group(1)
+
+        asin_text = self.tree_html.xpath('//tr/th[contains(text(),"ASIN")]/..')
+        if asin_text:
+            if 'productASIN' not in asin_text[0].text_content():
+                return re.search('ASIN\s*(\S+)', asin_text[0].text_content()).group(1)
+
+        asin = re.search(r'/dp/([0-9a-zA-Z]+)/', self._url())
+        if asin:
+            asin = asin.group(1)
+            return asin
+        asin = re.search(r'/dp/([0-9a-zA-Z]+)$', self._url())
+        if asin:
+            asin = asin.group(1)
+            return asin
 
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='content pdClearfix'][1]//tbody//tr")
@@ -239,14 +324,39 @@ class AmazonScraper(Scraper):
 
     def _description(self):
         if self.tree_html.xpath("//*[contains(@id,'feature-bullets')]"):
-            return self._clean_text(html.tostring(self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")[0]))
+            return self._clean_text(self._exclude_javascript_from_description(html.tostring(self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")[0])))
 
         short_description = " " . join(self.tree_html.xpath("//div[@class='dv-simple-synopsis dv-extender']//text()")).strip()
 
         if short_description is not None and len(short_description)>0:
-            return short_description.replace("\n"," ")
+            return self._exclude_javascript_from_description(short_description.replace("\n"," "))
 
         return self._long_description_helper()
+
+    def _bullet_feature_1(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
+        if bullets:
+            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[0].text_content())
+
+    def _bullet_feature_2(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
+        if bullets:
+            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[1].text_content())
+
+    def _bullet_feature_3(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
+        if bullets:
+            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[2].text_content())
+
+    def _bullet_feature_4(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
+        if bullets:
+            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[3].text_content())
+
+    def _bullet_feature_5(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
+        if bullets:
+            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[4].text_content())
 
     def _seller_ranking(self):
         seller_ranking = []
@@ -487,6 +597,15 @@ class AmazonScraper(Scraper):
 
         return 0
 
+    def _no_longer_available(self):
+        availability = self.tree_html.xpath('//div[@id="availability"]')
+
+        if availability:
+            if 'Currently unavailable' in availability[0].text_content():
+                return 1
+
+        return 0
+
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -592,6 +711,11 @@ class AmazonScraper(Scraper):
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
+        image_url.extend(tree.xpath("//div[contains(@class,'verticalMocaThumbs')]/div[not(contains(@class,'verticalMocaThumb'))]/img/@src"))
+        image_url = filter(None, image_url)
+        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
+            return tree.xpath("//input[@id='mocaGlamorImageUrl']/@value") + image_url
+
         image_url.extend(tree.xpath("//div[contains(@id,'thumb-container')]//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls])
@@ -617,6 +741,35 @@ class AmazonScraper(Scraper):
 
             return self._get_origin_image_urls_from_thumbnail_urls(allimg)
         return None
+
+    def _image_urls_high_res(self):
+        hi_res_images = []
+        html_source = html.tostring(self.tree_html)
+        img_data = re.search("'colorImages': (\{.*?\n)", html_source)
+        if img_data:
+            img_data = img_data.group(1).replace("'initial': ", '').strip()
+            if img_data.endswith(','):
+                img_data = img_data[0:-1].strip()
+            if img_data.startswith('{'):
+                img_data = img_data[1:].strip()
+            if img_data.endswith('}'):
+                img_data = img_data[0:-1]
+            try:
+                img_data = json.loads(img_data.strip())
+            except Exception, e:
+                print 'Can not load img_data', str(e)
+                return
+            for img in img_data:
+                hi_res = img.get('hiRes', None)
+                # uncomment 2 lines below to exclude "invisible" images
+                #if str(img.get('variant', None)).lower() in ('left', 'right'):
+                #    continue
+                if hi_res:
+                    hi_res_images.append(hi_res)
+        moca_images = self.tree_html.xpath("//div[contains(@class,'verticalMocaThumb')]/span/img/@src")
+        if moca_images:
+            hi_res_images.extend(self._get_origin_image_urls_from_thumbnail_urls(moca_images))
+        return hi_res_images
 
     def _image_helper(self):
         res = []
@@ -1272,10 +1425,17 @@ class AmazonScraper(Scraper):
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \
         "nutrition_fact_count": _nutrition_fact_count, \
+        "no_longer_available": _no_longer_available, \
+        "bullet_feature_1": _bullet_feature_1, \
+        "bullet_feature_2": _bullet_feature_2, \
+        "bullet_feature_3": _bullet_feature_3, \
+        "bullet_feature_4": _bullet_feature_4, \
+        "bullet_feature_5": _bullet_feature_5, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
+        "image_urls_high_res" : _image_urls_high_res, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
 #        "no_image" : _no_image, \

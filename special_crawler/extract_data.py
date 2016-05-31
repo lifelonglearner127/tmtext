@@ -67,7 +67,7 @@ class Scraper():
             "product_id",
             "site_id",
             "walmart_no",
-            "tsin",
+            "tcin",
             "date",
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
@@ -111,10 +111,17 @@ class Scraper():
             "bundle",
             "bundle_components",
             "mta",
+            "bullet_feature_1",
+            "bullet_feature_2",
+            "bullet_feature_3",
+            "bullet_feature_4",
+            "bullet_feature_5",
+
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
             "image_urls", # urls of product images, list of strings
+            "image_urls_high_res",  # urls of product images in high resolution (if any), list of strings
             "image_dimensions", # dimensions of product images
             "video_count", # nr of videos, int
             "video_urls", # urls of product videos, list of strings
@@ -139,7 +146,8 @@ class Scraper():
             "thumbnail", # thumbnail of the main product image on the page - tbd
             "manufacturer", # manufacturer info for this product
             "return_to", # return to for this product
-
+            "comparison_chart", # whether page contains a comparison chart, 1/0
+            "btv", # if page has a 'buy together value' offering, 1/0
 
             # reviews
             "review_count", # total number of reviews, int
@@ -217,11 +225,12 @@ class Scraper():
                         "features", "feature_count", "model_meta", "description", "seller_ranking", "long_description", "shelf_description", "apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
-                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "mta"],
-        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "video_count", "video_urls", "wc_360", \
+                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "mta", \
+                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5"],
+        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_urls_high_res", "image_dimensions", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
-                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls"], \
+                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "in_stock", \
@@ -444,6 +453,9 @@ class Scraper():
                 except Exception, e:
                     continue
         else:
+            costco_url = re.match('http://www.costco.com/(.*)', self.product_page_url)
+            if costco_url:
+                self.product_page_url = 'http://www.costco.com/' + urllib2.quote(costco_url.group(1).encode('utf8'))
             request = urllib2.Request(self.product_page_url)
             # set user agent to avoid blocking
             agent = ''

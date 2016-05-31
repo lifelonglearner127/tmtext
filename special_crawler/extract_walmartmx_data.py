@@ -192,14 +192,14 @@ class WalmartMXScraper(Scraper):
 
             for image_url in images:
                 http_head_response = requests.head(image_url)
-                if http_head_response.status_code == 200:
+                if 'img_large' in image_url and http_head_response.status_code == 200:
                     results.append(image_url)
 
             return results
 
         image_urls = ['https://www.walmart.com.mx/images/products/img_large/' + self._product_id() + 'l.jpg']
 
-        for i in range(2,4):
+        for i in range(1,4):
             image_url = 'https://www.walmart.com.mx/images/products/img_large/' + self._product_id() + '-' + str(i) + 'l.jpg'
             if requests.get(image_url).headers['content-type'] == 'image/jpeg':
                 image_urls.append(image_url)

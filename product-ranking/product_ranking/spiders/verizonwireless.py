@@ -78,7 +78,6 @@ class VerizonwirelessProductsSpider(ProductsSpider):
         categories = self._parse_categories(response)
         return categories[-1] if categories else None
 
-
     def _parse_price(self, response):
         price = ''.join(response.xpath(
             '//*[@itemprop="price"]//span/text()').re('[\d\.]+'))

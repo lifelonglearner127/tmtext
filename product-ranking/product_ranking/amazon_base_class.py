@@ -1502,7 +1502,7 @@ class AmazonBaseClass(BaseProductsSpider):
     def _parse_marketplace_from_static_right_block_more(self, response):
         product = response.meta['product']
         reqs = response.meta.get('reqs')
-        
+
         _prod_price = product.get('price', [])
         _prod_price_currency = None
         if _prod_price:
