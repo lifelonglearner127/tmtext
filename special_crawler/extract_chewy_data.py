@@ -119,12 +119,11 @@ class ChewyScraper(Scraper):
         item_data = self._variant_data()
         variations_item_map = self._variations_item_map()
 
-        for li in self.tree_html.xpath('//div[@id="variation-Option"]/ul/li'):
-
+        for li in self.tree_html.xpath('//div[starts-with(@id,"variation-")]/ul/li'):
             item_id = variations_item_map['_' + li.get('dim-value-id')]
             option = li.xpath('span/text()')
 
-            property_name = self.tree_html.xpath('//div[@id="variation-Option"]/@dim-identifier')[0]
+            property_name = self.tree_html.xpath('//div[starts-with(@id,"variation-")]/@dim-identifier')[0]
 
             for item_no in item_data:
                 if item_no == item_id:
