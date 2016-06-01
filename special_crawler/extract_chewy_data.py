@@ -170,6 +170,7 @@ class ChewyScraper(Scraper):
 
         item_data = self._variant_data()
 
+        '''
         # add variant image urls
         for item_no in item_data:
             item = item_data[item_no]
@@ -192,6 +193,7 @@ class ChewyScraper(Scraper):
                 # otherwise, just add it
                 else:
                     image_urls.append(image[2:])
+        '''
 
         if image_urls:
             return image_urls
