@@ -2,7 +2,6 @@ import lxml.html
 from itertools import product
 import json
 import re
-import copy
 from lxml import html, etree
 import itertools
 import yaml
@@ -12,8 +11,6 @@ class LeviVariants(object):
 
     local_variants_map = {}  # used to filter unique results (by `properties`)
 
-    def __init__(self):
-        self.local_variants_map = copy.copy({})
 
     def setupSC(self, response):
         """ Call it from SC spiders """
@@ -30,6 +27,56 @@ class LeviVariants(object):
             return s[start:end]
         except ValueError:
             return ""
+
+    def _is_unique_variant(self, variant):
+        if not 'properties' in variant:
+            return
+        if not variant['properties']:
+            return
+        return variant['properties'] in self.local_variants_map
+
+    def _find_variant_with_better_data(self, v1, v2):
+        if v1.get('url', None) and not v2.get('url', None):
+            return v1
+        else:
+            return v2
+
+    def _append_variant_or_replace_incomplete_one(self, variant_list, variant):
+        """ This will replace the old, existing variant in "variant_list" with "variant"
+            if the new "variant" has more data; or will append it if there's no existing variant
+            in "variant_list"
+            """
+        props = variant.get('properties', None)
+        if not props:
+            variant_list.append(variant)  # just append the variant if properties are not available
+            return
+        if str(props) not in self.local_variants_map:  # brand-new variant
+            self.local_variants_map[str(props)] = variant
+            variant_list.append(variant)
+            return
+        else:  # we have an existing variant
+            existing_variant = self.local_variants_map[str(props)]
+            if self._find_variant_with_better_data(variant, existing_variant) == existing_variant:
+                # the existing, already-added variant has more data - continue
+                return
+            else:
+                # need to replace the old, bad variant with the new one
+                self.local_variants_map[str(props)] = variant
+                for i, old_var in enumerate(variant_list):
+                    if str(old_var.get('properties', None)) == str(props):
+                        variant_list[i] = variant
+
+    @staticmethod
+    def _strip_ids_from_colors(variants):
+        """ Removes the trailing ____XXXXXX code from properties """
+        for variant in variants:
+            props = variant.get('properties', None)
+            if props:
+                color = props.get('color', None)
+                if color:
+                    if '____' in color:
+                        color = color.split('____', 1)[0]
+                        props['color'] = color
 
     def _variants(self):
         buy_stack_json = None
@@ -49,8 +96,10 @@ class LeviVariants(object):
             color_name_id_map = {}
 
             for color_id in buy_stack_json["colorid"]:
-                color_list.append(buy_stack_json["colorid"][color_id]["finish"]["title"])
-                color_name_id_map[buy_stack_json["colorid"][color_id]["finish"]["title"]] = color_id
+                color_list.append(buy_stack_json["colorid"][color_id]["finish"]["title"]
+                                  + '____' + str(color_id))
+                color_name_id_map[buy_stack_json["colorid"][color_id]["finish"]["title"]
+                                  + '____' + str(color_id)] = color_id
 
             if color_list:
                 attribute_values_list.append(color_list)
@@ -87,7 +136,9 @@ class LeviVariants(object):
                             continue
 
                         variant_item["colorid"] = buy_stack_json["sku"][variant_combination]["colorid"]
-                        properties["color"] = buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]["colorid"]]["finish"]["title"]
+                        properties["color"] = buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]\
+                            ["colorid"]]["finish"]["title"] + '____'\
+                            + str(buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]["colorid"]]['colorid'])
                         variant_item["url"] = product_url[:product_url.rfind("/") + 1] + buy_stack_json["sku"][variant_combination]["colorid"]
                         value_list.append(properties["color"])
                         if "color" not in attribute_list: attribute_list.append("color")
@@ -140,7 +191,8 @@ class LeviVariants(object):
                 else:
                     variant_item["in_stock"] = False
 
-                variant_list.append(variant_item)
+                self._append_variant_or_replace_incomplete_one(variant_list, variant_item)
+                #variant_list.append(variant_item)
 
             for out_of_stock_combination in out_of_stock_combination_list:
                 properties = {}
@@ -165,10 +217,11 @@ class LeviVariants(object):
                 variant_item["in_stock"] = False
                 variant_item["url"] = None
 
-                variant_list.append(variant_item)
+                self._append_variant_or_replace_incomplete_one(variant_list, variant_item)
+                #variant_list.append(variant_item)
 
-            del self.local_variants_map
             if variant_list:
+                self._strip_ids_from_colors(variant_list)
                 return variant_list
 
         return None
