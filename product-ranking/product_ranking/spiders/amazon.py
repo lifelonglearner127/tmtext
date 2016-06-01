@@ -114,13 +114,13 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 a = {}
                 name = self._is_empty(
                     question.xpath('.//*[@class="a-color-tertiary"]/text()')
-                    .re('By (.*) on'))
+                    .re('By (.*) on '))
                 name = name.strip() if name else name
                 a['userNickname'] = name
 
                 date = self._is_empty(
                     question.xpath('.//*[@class="a-color-tertiary"]/text()')
-                    .re('on (.*)'))
+                    .re(' on (\w+ \d+, \d+)'))
                 a['submissionDate'] = date
                 q['submissionDate'] = date
 
