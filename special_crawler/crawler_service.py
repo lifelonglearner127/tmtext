@@ -187,7 +187,7 @@ SUPPORTED_SITES = {
                     "att": ATTScraper,
                     "verizonwireless": VerizonWirelessScraper,
                     "lowes": LowesScraper,
-                    "petco": PetcoScraper
+                    "petco": PetcoScraper,
                     "wag": WagScraper,
                     "chewy" : ChewyScraper,
                     }
