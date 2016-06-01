@@ -2,7 +2,6 @@ import lxml.html
 from itertools import product
 import json
 import re
-import copy
 from lxml import html, etree
 import itertools
 import yaml
@@ -12,8 +11,6 @@ class LeviVariants(object):
 
     local_variants_map = {}  # used to filter unique results (by `properties`)
 
-    def __init__(self):
-        self.local_variants_map = copy.copy({})
 
     def setupSC(self, response):
         """ Call it from SC spiders """
@@ -69,6 +66,18 @@ class LeviVariants(object):
                     if str(old_var.get('properties', None)) == str(props):
                         variant_list[i] = variant
 
+    @staticmethod
+    def _strip_ids_from_colors(variants):
+        """ Removes the trailing ____XXXXXX code from properties """
+        for variant in variants:
+            props = variant.get('properties', None)
+            if props:
+                color = props.get('color', None)
+                if color:
+                    if '____' in color:
+                        color = color.split('____', 1)[0]
+                        props['color'] = color
+
     def _variants(self):
         buy_stack_json = None
 
@@ -87,8 +96,10 @@ class LeviVariants(object):
             color_name_id_map = {}
 
             for color_id in buy_stack_json["colorid"]:
-                color_list.append(buy_stack_json["colorid"][color_id]["finish"]["title"])
-                color_name_id_map[buy_stack_json["colorid"][color_id]["finish"]["title"]] = color_id
+                color_list.append(buy_stack_json["colorid"][color_id]["finish"]["title"]
+                                  + '____' + str(color_id))
+                color_name_id_map[buy_stack_json["colorid"][color_id]["finish"]["title"]
+                                  + '____' + str(color_id)] = color_id
 
             if color_list:
                 attribute_values_list.append(color_list)
@@ -125,7 +136,9 @@ class LeviVariants(object):
                             continue
 
                         variant_item["colorid"] = buy_stack_json["sku"][variant_combination]["colorid"]
-                        properties["color"] = buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]["colorid"]]["finish"]["title"]
+                        properties["color"] = buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]\
+                            ["colorid"]]["finish"]["title"] + '____'\
+                            + str(buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]["colorid"]]['colorid'])
                         variant_item["url"] = product_url[:product_url.rfind("/") + 1] + buy_stack_json["sku"][variant_combination]["colorid"]
                         value_list.append(properties["color"])
                         if "color" not in attribute_list: attribute_list.append("color")
@@ -207,8 +220,8 @@ class LeviVariants(object):
                 self._append_variant_or_replace_incomplete_one(variant_list, variant_item)
                 #variant_list.append(variant_item)
 
-            del self.local_variants_map
             if variant_list:
+                self._strip_ids_from_colors(variant_list)
                 return variant_list
 
         return None

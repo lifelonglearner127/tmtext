@@ -87,6 +87,7 @@ from extract_att_data import ATTScraper
 from extract_verizonwireless_data import VerizonWirelessScraper
 from extract_lowes_data import LowesScraper
 from extract_petco_data import PetcoScraper
+from extract_wag_data import WagScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -186,6 +187,7 @@ SUPPORTED_SITES = {
                     "verizonwireless": VerizonWirelessScraper,
                     "lowes": LowesScraper,
                     "petco": PetcoScraper
+                    "wag": WagScraper,
                     }
 
 # add logger
