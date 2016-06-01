@@ -40,5 +40,5 @@
     <field name="price_subscribe_save" version="1.0"></field>
     <field name="price_original" version="1.0"></field>
     <field name="no_longer_available" version="1.2"></field>
-    <field name="recent_questions" version="1.1"></field>
+    <field name="recent_questions" version="1.2"></field>
 </fields>
