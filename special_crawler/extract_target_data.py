@@ -200,18 +200,38 @@ class TargetScraper(Scraper):
 
         return self._clean_text(html.tostring(long_desc_block))
 
-    def _mta(self):
-        content = ''
-        for element in self.tree_html.xpath('//div[@class="content"]/div[contains(@class,"section")]/*'):
-            if not element.tag == 'h3':
-                content += html.tostring(element)
-        content = re.sub('[\n\t]', '', content)
-        content = re.sub('<![^>]+>', '', content)
-        content = re.sub(' (class|itemprop)="[^"]+"', '', content)
-        content = re.sub('\s+', ' ', content)
-        content = re.sub('> <', '><', content)
+    def _details_mta_helper(self):
+        pass
 
-        return content
+    def _details(self):
+        '''
+        details = ''
+
+        for element in self.tree_html.xpath('//div[@class="content"]/div[contains(@class,"section")]/*'):
+            if element.tag == 'ul':
+                break
+
+            if not element.tag == 'h3':
+                details += html.tostring(details)
+
+        return self._clean_html(details)
+        '''
+
+    def _mta(self):
+        '''
+        mta = ''
+        start = False
+
+        for element in self.tree_html.xpath('//div[@class="content"]/div[contains(@class,"section")]/*'):
+            if element.tag == 'ul':
+                start = True
+
+            if start and not element.tag == 'h3':
+                mta += html.tostring(mta)
+
+        return self._clean_html(mta)
+        '''
+        pass
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -589,6 +609,15 @@ class TargetScraper(Scraper):
 #    def _clean_text(self, text):
 #        return re.sub("&nbsp;", " ", text).strip()
 
+    def _clean_html(self, content):
+        content = re.sub('[\n\t]', '', content)
+        content = re.sub('<![^>]+>', '', content)
+        content = re.sub(' (class|itemprop)="[^"]+"', '', content)
+        content = re.sub('\s+', ' ', content)
+        content = re.sub('> <', '><', content)
+
+        return content
+
     ##########################################
     ################ RETURN TYPES
     ##########################################
@@ -612,6 +641,7 @@ class TargetScraper(Scraper):
         "long_description" : _long_description, \
         "variants": _variants, \
         "swatches": _swatches, \
+        "details": _details, \
         "mta": _mta, \
 
         # CONTAINER : PAGE_ATTRIBUTES
