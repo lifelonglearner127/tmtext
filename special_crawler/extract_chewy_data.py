@@ -81,18 +81,11 @@ class ChewyScraper(Scraper):
 
         description_elements = self.tree_html.xpath('//div[@class="longDescription"]/*')
 
-        start = False
-
         for element in description_elements:
-            # start with the first strong element
-            if element.xpath('strong'):
-                start = True
+            if element.get('class') == 'see-all' or element.xpath('em'):
+                continue
 
-            if start:
-                if element.get('class') == 'see-all' or element.xpath('em'):
-                    continue
-
-                long_description += self._clean_text( html.tostring(element))
+            long_description += self._clean_text( html.tostring(element))
 
         if long_description and long_description != self._description():
             return long_description
