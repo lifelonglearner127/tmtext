@@ -669,6 +669,40 @@ class AmazonScraper(Scraper):
 
         return origin_image_urls
 
+    def _swatch_image_helper(self, image, swatch_images):
+        if image.get('hiRes') and image['hiRes'].strip():
+            image = image['hiRes']
+        elif image.get('large') and image['large'].strip():
+            image = image['large']
+
+        image_size = re.search('_SL(\d+)_', image)
+        if image_size:
+            image_size = int(image_size.group(1))
+
+        duplicate = False
+
+        for i in range(len(swatch_images)):
+            swatch_image = swatch_images[i]
+
+            swatch_image_size = re.search('_SL(\d+)_', swatch_image)
+            if swatch_image_size:
+                swatch_image_size = int(swatch_image_size.group(1))
+
+            if image.split('._')[0] in swatch_image:
+                duplicate = True
+
+                if image_size and swatch_image_size:
+                    if image_size > swatch_image_size:
+                        swatch_images[i] = image
+
+                elif image_size:
+                    swatch_images[i] = image
+
+        if not duplicate:
+            swatch_images.append(image)
+
+        return swatch_images
+
     def _image_urls(self, tree = None):
         allimg = self._image_helper()
         n = len(allimg)
@@ -685,12 +719,27 @@ class AmazonScraper(Scraper):
             if swatch_image_json:
                 for color in swatch_image_json:
                     for image in swatch_image_json[color]:
-                        if "large" in image and image["large"].strip():
-                            swatch_images.append(image["large"])
+                        swatch_images = self._swatch_image_helper(image, swatch_images)
+
+            else:
+                swatch_image_json = re.search("'colorImages': { 'initial': ([^\n]*)},\n", html.tostring(self.tree_html))
+                swatch_image_json = json.loads(swatch_image_json.group(1))
+
+                for image in swatch_image_json:
+                    swatch_images = self._swatch_image_helper(image, swatch_images)
+
         except:
-            swatch_image_json = None
+            pass
+
+        if swatch_images:
+            return swatch_images
+
+        moca_images = self.tree_html.xpath("//div[contains(@class,'verticalMocaThumb')]/span/img/@src")
+        if moca_images:
+            return self._get_origin_image_urls_from_thumbnail_urls(moca_images)
 
         image_url = swatch_images
+
         #The small images are to the left of the big image
         image_url.extend(tree.xpath("//span[@class='a-button-text']//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
@@ -710,11 +759,6 @@ class AmazonScraper(Scraper):
         image_url.extend(tree.xpath("//td[@id='prodImageCell']//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
-
-        image_url.extend(tree.xpath("//div[contains(@class,'verticalMocaThumbs')]/div[not(contains(@class,'verticalMocaThumb'))]/img/@src"))
-        image_url = filter(None, image_url)
-        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return tree.xpath("//input[@id='mocaGlamorImageUrl']/@value") + image_url
 
         image_url.extend(tree.xpath("//div[contains(@id,'thumb-container')]//img/@src"))
         if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
@@ -741,35 +785,6 @@ class AmazonScraper(Scraper):
 
             return self._get_origin_image_urls_from_thumbnail_urls(allimg)
         return None
-
-    def _image_urls_high_res(self):
-        hi_res_images = []
-        html_source = html.tostring(self.tree_html)
-        img_data = re.search("'colorImages': (\{.*?\n)", html_source)
-        if img_data:
-            img_data = img_data.group(1).replace("'initial': ", '').strip()
-            if img_data.endswith(','):
-                img_data = img_data[0:-1].strip()
-            if img_data.startswith('{'):
-                img_data = img_data[1:].strip()
-            if img_data.endswith('}'):
-                img_data = img_data[0:-1]
-            try:
-                img_data = json.loads(img_data.strip())
-            except Exception, e:
-                print 'Can not load img_data', str(e)
-                return
-            for img in img_data:
-                hi_res = img.get('hiRes', None)
-                # uncomment 2 lines below to exclude "invisible" images
-                #if str(img.get('variant', None)).lower() in ('left', 'right'):
-                #    continue
-                if hi_res:
-                    hi_res_images.append(hi_res)
-        moca_images = self.tree_html.xpath("//div[contains(@class,'verticalMocaThumb')]/span/img/@src")
-        if moca_images:
-            hi_res_images.extend(self._get_origin_image_urls_from_thumbnail_urls(moca_images))
-        return hi_res_images
 
     def _image_helper(self):
         res = []
@@ -1435,7 +1450,6 @@ class AmazonScraper(Scraper):
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
-        "image_urls_high_res" : _image_urls_high_res, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
 #        "no_image" : _no_image, \
