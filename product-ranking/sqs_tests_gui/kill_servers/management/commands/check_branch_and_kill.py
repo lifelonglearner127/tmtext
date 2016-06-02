@@ -3,6 +3,8 @@ import sys
 import shutil
 import hashlib
 import time
+import datetime
+import subprocess
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -17,6 +19,36 @@ from sqs_stats import AUTOSCALE_GROUPS, set_autoscale_group_capacity,\
 sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
 #from add_task_to_sqs import put_msg_to_sqs
+
+
+def run(command, shell=None):
+    """ Run the given command and return its output
+    """
+    out_stream = subprocess.PIPE
+    err_stream = subprocess.PIPE
+
+    if shell is not None:
+        p = subprocess.Popen(command, shell=True, stdout=out_stream,
+                             stderr=err_stream, executable=shell)
+    else:
+        p = subprocess.Popen(command, shell=True, stdout=out_stream,
+                             stderr=err_stream)
+    (stdout, stderr) = p.communicate()
+
+    return stdout, stderr
+
+
+def num_of_running_instances(file_path):
+    """ Check how many instances of the given file are running """
+    processes = 0
+    output = run('ps aux')
+    output = ' '.join(output)
+    for line in output.split('\n'):
+        line = line.strip()
+        line = line.decode('utf-8')
+        if file_path in line and not '/bin/sh' in line:
+            processes += 1
+    return processes
 
 
 class Command(BaseCommand):
@@ -62,6 +94,10 @@ class Command(BaseCommand):
             set_autoscale_group_capacity(group, max_instances, attributes=('max_size',))
 
     def handle(self, *args, **options):
+        if num_of_running_instances('check_branch_and_kill') > 1:
+            print 'another instance of the script is already running - exit'
+            sys.exit()
+
         branch = ProductionBranchUpdate.branch_to_track
         # get last commit id
         last_commit_hashsum = ProductionBranchUpdate.objects.all().order_by('-when_updated')
@@ -75,22 +111,32 @@ class Command(BaseCommand):
         self._cleanup()
 
         if repo_hashsum != last_commit_hashsum:
-            if ProductionBranchUpdate.objects.count():
-                print('Need to restart servers')
-                print('Setting autoscale groups to zero')
-                self._set_autoscale_capacities_to_zero()
-                while 1:
-                    time.sleep(10)
-                    sizes_sum = 0
-                    a_groups = get_number_of_instances_in_autoscale_groups()
-                    for g_name, g_size in a_groups.items():
-                        g_size = g_size['current_size']
-                        sizes_sum += g_size
-                    if sizes_sum == 0:
-                        print('Autoscale groups are empty now')
-                        break  # ok we have finally killed all the instances
-                self._set_autoscale_max_instances()
-                print('Restored autoscale groups sizes back')
-            ProductionBranchUpdate.objects.create(last_commit_hashsum=repo_hashsum)
+            # check if there are some unfinished kills already
+            if ServerKill.objects.filter(started__isnull=False, finished__isnull=True):
+                print("There's already some unfinished ServerKill DB records! - exit")
+                sys.exit()
+
+            branch_update = ProductionBranchUpdate.objects.create(last_commit_hashsum=repo_hashsum)
+
+            print('Need to restart servers')
+            print('Setting autoscale groups to zero')
+            server_kill = ServerKill.objects.create(branch_update=branch_update)
+            self._set_autoscale_capacities_to_zero()
+            while 1:
+                time.sleep(10)
+                sizes_sum = 0
+                a_groups = get_number_of_instances_in_autoscale_groups()
+                for g_name, g_size in a_groups.items():
+                    g_size = g_size['current_size']
+                    sizes_sum += g_size
+                if sizes_sum == 0:
+                    print('Autoscale groups are empty now')
+                    break  # ok we have finally killed all the instances
+            self._set_autoscale_max_instances()
+
+            server_kill.finished = datetime.datetime.utcnow()
+            server_kill.save()
+
+            print('Restored autoscale groups sizes back')
         else:
             print('No restart needed')

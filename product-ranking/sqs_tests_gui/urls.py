@@ -6,6 +6,7 @@ from gui.views import LogFileView, CSVDataFileView, AddJob, ProgressMessagesView
     ProgressFileView, SearchFilesView, GetS3FileView, SearchS3Cache, \
     RenderS3CachePage, ViewBase64Image
 from sqs_stats.views import SQSAutoscaleStats
+from kill_servers.views import KillRestoreServersView
 
 
 from django.conf import settings
@@ -34,6 +35,7 @@ urlpatterns = [
     url(r'^get-file/', GetS3FileView.as_view(), name='get-file'),
     url(r'^s3-cache/$', SearchS3Cache.as_view(), name='s3-cache'),
     url(r'^sqs-stats/$', SQSAutoscaleStats.as_view(), name='sqs-stats'),
+    url(r'^kill-restore-servers/$', KillRestoreServersView.as_view(), name='kill-restore-servers'),
     url(r'^render-s3-cache/$', RenderS3CachePage.as_view(), name='render-s3-cache'),
 
     url('^fcgi/$', include('fcgi.urls'))
