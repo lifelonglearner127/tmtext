@@ -91,7 +91,7 @@ class PetcoScraper(Scraper):
             item_json = self._prod_jsons()[item['catentry_id']]
 
             if not item['Attributes']:
-                break
+                continue
 
             item_attribute = item['Attributes'].keys()[0]
 
@@ -130,13 +130,11 @@ class PetcoScraper(Scraper):
     def _image_urls(self):
         image_urls = []
 
+        all_image_urls = self.tree_html.xpath('//input[starts-with(@id,"img_")]/@value')
 
-        if self._items_json():
-            for item in self._items_json():
-                if item['catentry_id'] == self._catentry_id():
-                    image_urls.append(item['ItemImage'])
-        else:
-            image_urls.append(self.tree_html.xpath('//meta[@property="og:image"]/@content'))
+        for url in all_image_urls:
+            if self._product_id() in url and not url in image_urls:
+                image_urls.append(url)
 
         if image_urls:
             return image_urls
@@ -171,6 +169,11 @@ class PetcoScraper(Scraper):
     ############### CONTAINER : REVIEWS
     ##########################################
     def _load_reviews(self):
+        # Check if reviews are on page
+        if not self.tree_html.xpath('//span[@id="comments_span"]'):
+            # if they are not, return nothing
+            return
+
         if not self.reviews_checked:
             self.reviews_checked = True
 
@@ -261,12 +264,18 @@ class PetcoScraper(Scraper):
         return self.prod_jsons
 
     def _price(self):
+        # If the item with the main catentry id has no attributes, then use displayed price
+        for item in self._items_json():
+            if item['catentry_id'] == self._catentry_id() and not item['Attributes']:
+                return self._clean_text(self.tree_html.xpath('//span[@itemprop="price"]/text()')[0])
+
         if self._prod_jsons()[self._catentry_id()]['offerPrice']:
             return self._prod_jsons()[self._catentry_id()]['offerPrice']
 
     def _price_amount(self):
         if self._price():
-            price_amount = self._price()[1:] # remove intial '$'
+            # split in case of price range and remove intial '$'
+            price_amount = self._price().split(' to ')[0][1:]
             return float(price_amount.replace(',', ''))
 
     def _price_currency(self):
