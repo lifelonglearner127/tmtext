@@ -270,6 +270,12 @@ class JCpenneySpider(scrapy.Spider):
                 self._click_on_element_with_id('addtobag')
             time.sleep(4)
 
+            skip_this_offer = self._find_by_xpath(
+                '//a[contains(@href,"javascript:skipThisOffer")]')
+            if skip_this_offer:
+                skip_this_offer[0].click()
+                time.sleep(4)
+
     def _set_quantity(self, product, quantity):
         quantity_option = self._find_by_xpath(
             '*//*[@name="prod_quantity"]'
