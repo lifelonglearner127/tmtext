@@ -134,6 +134,17 @@ class TargetScraper(Scraper):
         return re.search('A-(\d+)', self.product_page_url).group(1)
 
     def _tcin(self):
+        if self.version == 2:
+            if self._item_info().get('parentPartNumber'):
+                return self._item_info()['parentPartNumber']
+            else:
+                return self._product_id()
+
+        tcin = re.search('Online Item #:[^\d]*(\d+)', self.page_raw_text)
+
+        if tcin:
+            return tcin.group(1)
+
         return self._product_id()
 
     ##########################################
@@ -254,7 +265,7 @@ class TargetScraper(Scraper):
             }
 
             if item.get('inventoryStatus'):
-                v['in_stock'] = item['inventoryStatus'] == 'in stock'
+                v['in_stock'] = not ('out of stock' in item['inventoryStatus'])
 
             for attribute in item['VariationAttributes']:
                 v['properties'][ attribute['name'].lower() ] = attribute['value']
@@ -313,9 +324,9 @@ class TargetScraper(Scraper):
         return None
 
     def _image_urls(self):
-        if self.version == 2:
-            image_urls = []
+        image_urls = []
 
+        if self.version == 2:
             images = self._item_info()["Images"][0]
 
             image_urls.append( images["PrimaryImage"][0]["image"])
@@ -506,7 +517,7 @@ class TargetScraper(Scraper):
     def _load_reviews(self):
         try:
             if not self.max_score or not self.min_score:
-                url = 'http://api.bazaarvoice.com/data/batch.json?passkey=lqa59dzxi6cbspreupvfme30z&apiversion=5.4&resource.q0=products&filter.q0=id%3Aeq%3A' + self._product_id() + '&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US'
+                url = 'http://api.bazaarvoice.com/data/batch.json?passkey=lqa59dzxi6cbspreupvfme30z&apiversion=5.4&resource.q0=products&filter.q0=id%3Aeq%3A' + self._tcin() + '&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US'
 
                 contents = urllib.urlopen(url).read()
                 jsn = json.loads(contents)
@@ -635,7 +646,7 @@ class TargetScraper(Scraper):
 
     def _site_online(self):
         if self.version == 2:
-            if 'Online' in self._item_info()['purchasingChannel']:
+            if 'Online' in self._item_info()['purchasingChannel'] or self._item_info().get('SubscriptionDetails'):
                 return 1
 
             return 0
@@ -650,10 +661,10 @@ class TargetScraper(Scraper):
     def _site_online_out_of_stock(self):
         if self.version == 2:
             if self._site_online() == 1:
-                if self._item_info()['inventoryStatus'] == 'in stock':
-                    return 0
+                if self._item_info().get('inventoryStatus') and 'out of stock' in self._item_info()['inventoryStatus']:
+                    return 1
 
-                return 1
+                return 0
             else:
                 return None
 
@@ -677,8 +688,9 @@ class TargetScraper(Scraper):
         '''
         if self.version == 2:
             if self._in_stores() == 1:
-                if self._item_info()['inventoryStatus'] == 'in stock':
-                    return 0
+                for attribute in self._item_info()['ItemAttributes'][0]['Attribute']:
+                    if attribute['identifier'] == 'PickupInStore':
+                        return 0
 
                 return 1
             else:
