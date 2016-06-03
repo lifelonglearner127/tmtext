@@ -74,6 +74,7 @@ def main():
     _install_system_package('phantomjs')
     _install_system_package('python-setuptools')
     _install_system_package('python-distutils-extra')
+    _install_system_package('python-apt')
     os.system(
         "cd ~"
         " && wget http://chromedriver.storage.googleapis.com/2.9/chromedriver_linux64.zip"
