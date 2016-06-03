@@ -3,6 +3,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from nutrition_info_images.serializers import ImageUrlSerializer
 from classify_text_images import classifier_predict_one, load_classifier, predict_textimage_type
+from rest_apis_content_analytics.image_duplication.views import parse_data
 
 image_classifier = load_classifier()
 
@@ -40,7 +41,7 @@ class ClassifyTextImagesByNutritionInfoViewSet(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def create(self, request):
-        serializer = self.serializer_class(data=request.DATA)
+        serializer = self.serializer_class(data=parse_data(request.data))
 
         if serializer.is_valid():
             try:
