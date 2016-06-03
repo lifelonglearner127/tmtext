@@ -136,6 +136,12 @@ class PetcoScraper(Scraper):
             if self._product_id() in url and not url in image_urls:
                 image_urls.append(url)
 
+        if self._items_json():
+            for item in self._items_json():
+                if item['catentry_id'] == self._catentry_id():
+                    if not item['ItemImage'] in image_urls:
+                        image_urls.append(item['ItemImage'])
+
         if image_urls:
             return image_urls
 
