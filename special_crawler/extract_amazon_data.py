@@ -333,29 +333,29 @@ class AmazonScraper(Scraper):
         return self._long_description_helper()
 
     def _bullet_feature_1(self):
-        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
-        if bullets:
-            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[0].text_content())
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 0:
+            return self._clean_text(bullets[0].text_content())
 
     def _bullet_feature_2(self):
-        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
-        if bullets:
-            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[1].text_content())
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 1:
+            return self._clean_text(bullets[1].text_content())
 
     def _bullet_feature_3(self):
-        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
-        if bullets:
-            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[2].text_content())
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 2:
+            return self._clean_text(bullets[2].text_content())
 
     def _bullet_feature_4(self):
-        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
-        if bullets:
-            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[3].text_content())
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 3:
+            return self._clean_text(bullets[3].text_content())
 
     def _bullet_feature_5(self):
-        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
-        if bullets:
-            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[4].text_content())
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 4:
+            return self._clean_text(bullets[4].text_content())
 
     def _seller_ranking(self):
         seller_ranking = []
@@ -604,6 +604,39 @@ class AmazonScraper(Scraper):
                 return 1
 
         return 0
+
+    def _important_information_helper(self, name):
+        important_information = self.tree_html.xpath('//div[@id="importantInformation"]/div/div')
+
+        if important_information:
+            important_information = html.tostring( self.tree_html.xpath('//div[@id="importantInformation"]/div/div')[0])
+
+            name_index = important_information.find('<b>' + name)
+
+            if name_index == -1:
+                return None
+
+            start_index = important_information.find('</b>', name_index) + 4
+
+            # end at the next bold element
+            end_index = important_information.find('<b>', start_index + 1)
+
+            return important_information[start_index : end_index]
+
+    def _amazon_ingredients(self):
+        return self._important_information_helper('Ingredients')
+
+    def _usage(self):
+        return self._important_information_helper('Usage')
+
+    def _directions(self):
+        return self._important_information_helper('Directions')
+
+    def _warnings(self):
+        return self._important_information_helper('Safety')
+
+    def _indications(self):
+        return self._important_information_helper('Indications')
 
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
@@ -1445,6 +1478,11 @@ class AmazonScraper(Scraper):
         "bullet_feature_3": _bullet_feature_3, \
         "bullet_feature_4": _bullet_feature_4, \
         "bullet_feature_5": _bullet_feature_5, \
+        "usage": _usage, \
+        "directions": _directions, \
+        "warnings": _warnings, \
+        "indications": _indications, \
+        "amazon_ingredients" : _amazon_ingredients, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
@@ -1536,56 +1574,3 @@ def getUserAgent():
         elif option == False:
             token = ''
         return 'Mozilla/5.0 (compatible; MSIE ' + version + '; ' + os + '; ' + token + 'Trident/' + engine + ')'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    ##########################################
-    ################ OUTDATED CODE - probably ok to delete it
-    ##########################################
-
-    # def manufacturer_content_body(self):
-    #     full_description = " ".join(self.tree_html.xpath('//*[@class="productDescriptionWrapper"]//text()')).strip()
-    #     return full_description
-
-    # def _anchors_from_tree(self):
-    #     '''get all links found in the description text'''
-    #     description_node = self.tree_html.xpath('//*[@class="productDescriptionWrapper"]')[0]
-    #     links = description_node.xpath(".//a")
-    #     nr_links = len(links)
-    #     links_dicts = []
-    #     for link in links:
-    #         links_dicts.append({"href" : link.xpath("@href")[0], "text" : link.xpath("text()")[0]})
-    #     ret = {"quantity" : nr_links, "links" : links_dicts}
-    #     return ret
-
-    # def _meta_description(self):
-    #     return self.tree_html.xpath("//meta[@name='description']/@content")[0]
-
-    # def _meta_keywords(self):
-    #     return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
-
-    # def main(args):
-    #     # check if there is an argument
-    #     if len(args) <= 1:
-    #         sys.stderr.write("ERROR: No product URL provided.\nUsage:\n\tpython crawler_service.py <amazon_product_url>\n")
-    #         sys.exit(1)
-
-    #     product_page_url = args[1]
-
-    #     # check format of page url
-    #     if not check_url_format(product_page_url):
-    #         sys.stderr.write(INVALID_URL_MESSAGE)
-    #         sys.exit(1)
-
-    #     return json.dumps(product_info(sys.argv[1], ["name", "short_desc", "keywords", "price", "load_time", "anchors", "long_desc"]))
