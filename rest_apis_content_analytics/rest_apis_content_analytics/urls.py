@@ -13,20 +13,31 @@ from walmart_api.views import (InvokeWalmartApiViewSet, ItemsUpdateWithXmlFileBy
                                DetectDuplicateContentFromCsvFilesByMechanizeViewset,
                                FeedStatusAjaxView, CheckItemStatusByProductIDViewSet,
                                XMLFileRedirect)
+
+from mocked_walmart_api.views import (MockedCheckFeedStatusByWalmartApiViewSet,
+                                      MockedItemsUpdateWithXmlFileByWalmartApiViewSet)
+
 from statistics.views import StatsView, GetStatsAjax
 from nutrition_info_images.views import ClassifyTextImagesByNutritionInfoViewSet
 
+from settings import IS_PRODUCTION
+CheckFeedStatusView = (MockedCheckFeedStatusByWalmartApiViewSet
+                       if not IS_PRODUCTION
+                       else CheckItemStatusByProductIDViewSet)
+
+ItemsUpdateView = (MockedItemsUpdateWithXmlFileByWalmartApiViewSet
+                   if not IS_PRODUCTION
+                   else ItemsUpdateWithXmlFileByWalmartApiViewSet)
 
 admin.autodiscover()
 
-
-# API endpoints
+# # API endpoints
 urlpatterns = format_suffix_patterns([
     url(r'^items_update_with_xml_file_by_walmart_api/$',
-        ItemsUpdateWithXmlFileByWalmartApiViewSet.as_view({'get': 'list', 'post': 'create'}),
+        ItemsUpdateView.as_view({'get': 'list', 'post': 'create'}),
         name='items_update_with_xml_file_by_walmart_api'),
     url(r'^check_feed_status_by_walmart_api/$',
-        CheckFeedStatusByWalmartApiViewSet.as_view({'get': 'list', 'post': 'create'}),
+        CheckFeedStatusView.as_view({'get': 'list', 'post': 'create'}),
         name='check_feed_status_by_walmart_api'),
     url(r'^check_item_status_by_product_id/$',
         CheckItemStatusByProductIDViewSet.as_view({'get': 'list', 'post': 'create'}),
