@@ -320,29 +320,29 @@ class AmazonScraper(Scraper):
         return self._long_description_helper()
 
     def _bullet_feature_1(self):
-        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
-        if bullets:
-            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[0].text_content())
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 0:
+            return self._clean_text(bullets[0].text_content())
 
     def _bullet_feature_2(self):
-        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
-        if bullets:
-            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[1].text_content())
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 1:
+            return self._clean_text(bullets[1].text_content())
 
     def _bullet_feature_3(self):
-        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
-        if bullets:
-            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[2].text_content())
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 2:
+            return self._clean_text(bullets[2].text_content())
 
     def _bullet_feature_4(self):
-        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
-        if bullets:
-            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[3].text_content())
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 3:
+            return self._clean_text(bullets[3].text_content())
 
     def _bullet_feature_5(self):
-        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
-        if bullets:
-            return self._clean_text(bullets[0].xpath("ul/li[not(contains(@class,'hidden'))]")[4].text_content())
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 4:
+            return self._clean_text(bullets[4].text_content())
 
     def _seller_ranking(self):
         seller_ranking = []
