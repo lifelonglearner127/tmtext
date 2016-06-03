@@ -11,7 +11,8 @@ INSTALL_PACKAGES = [
     'Pillow', 'pytesseract', 'requests', 'tldextract', 'boto', 's3peat',
     'workerpool', 'sqlalchemy', 'psycopg2', 'hjson', 'pyyaml',
     'python-dateutil', 'psutil', 'service_identity', 'mmh3', 'flask',
-    'selenium', 'pyvirtualdisplay', 'scrapy_crawlera', 'grequests'
+    'selenium', 'pyvirtualdisplay', 'scrapy_crawlera', 'grequests',
+    'python-apt'
 ]
 
 

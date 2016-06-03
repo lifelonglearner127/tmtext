@@ -106,7 +106,7 @@ class WagScraper(Scraper):
         descriptContentBox = ''.join(self.tree_html.xpath(
             '//*[@id="Tab%sDetailInfo"]//text()' % tab_number))
 
-        features += re.findall(u'\u2022 (.*)', descriptContentBox)
+        features += list(set(re.findall(u'\u2022 (.*)', descriptContentBox)))
         return [x.strip() for x in features] if features else None
 
     def _feature_count(self):
@@ -282,12 +282,20 @@ class WagScraper(Scraper):
                 for (star, value) in zip(stars, map(int, values)):
                     rating_by_star[star] += value
 
-            review_id = self._product_id()
-            review_id = [x + y for (x, y) in
-                         zip(review_id[::2], review_id[1::2])]
+            review_id = re.findall('PowerReview.groupId = (\d+);',
+                                   html.tostring(self.tree_html))
 
-            review_url = ("https://www.wag.com/amazon_reviews/%s"
-                          "/mostrecent_default.html" % '/'.join(review_id))
+            print review_id
+            if review_id:
+                review_id = review_id[0].split('-')[-1]
+
+            else:
+                review_id = self._product_id()
+
+            review_url = ("https://www.wag.com/amazon_reviews/%s/%s/%s"
+                          "/mostrecent_default.html" % (review_id[0:2], review_id[2:4], review_id[4:]))
+
+            print review_url
 
             r = requests.get(review_url)
             if r and r.status_code == 200:
