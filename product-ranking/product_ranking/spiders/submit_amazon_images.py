@@ -4,7 +4,6 @@ import os
 import argparse
 import logging
 import tempfile
-import apt
 import json
 
 
@@ -24,6 +23,7 @@ headers = "Mozilla/5.0 (Windows NT 6.1; WOW64)" \
 
 
 def check_system():
+    import apt
     cache = apt.Cache()
     if not cache['tesseract-ocr'].is_installed:
         logging_info('Tesseract is not installed', level='ERROR')
