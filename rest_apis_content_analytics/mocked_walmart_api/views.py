@@ -11,14 +11,17 @@ import string
 from django.conf import settings
 from rest_framework.response import Response
 
-from models import MockedSubmissionHistory, MockedXMLStatus
+from models import MockedXMLStatus
 from statistics.models import process_check_feed_response
 
 from walmart_api.views import (CheckFeedStatusByWalmartApiViewSet,
                                ItemsUpdateWithXmlFileByWalmartApiViewSet,
                                validate_walmart_product_xml_against_xsd,
                                get_client_ip, get_walmart_api_invoke_log,
-                               FeedStatusAjaxView, SubmissionStatus)
+                               FeedStatusAjaxView)
+
+from walmart_api.models import (SubmissionHistory, SubmissionXMLFile,
+                                SubmissionStatus)
 
 def get_feed_status(user, feed_id, date=None, process_check_feed=True, check_auth=True,
                     server_name=None, client_ip=None):
@@ -30,8 +33,8 @@ def get_feed_status(user, feed_id, date=None, process_check_feed=True, check_aut
         return
 
     # try to get data from cache
-    feed_history = MockedSubmissionHistory.objects.filter(user=user,
-                                                          feed_id=feed_id)
+    feed_history = SubmissionHistory.objects.filter(user=user,
+                                                    feed_id=feed_id)
     if feed_history:
         return {
             'statuses': feed_history[0].get_statuses(),
@@ -50,23 +53,30 @@ def get_feed_status(user, feed_id, date=None, process_check_feed=True, check_aut
     ingestion_statuses = check_results.get(
         'itemDetails', {}).get('itemIngestionStatus', [])
 
+    print "Generating feed Status"
+
+    print "ingestion_statuses"
     for result_stat in ingestion_statuses:
+        print result_stat
         subm_stat = result_stat.get('ingestionStatus', None)
+        print subm_stat
         if subm_stat and isinstance(subm_stat, (str, unicode)):
-            db_history = MockedSubmissionHistory.objects.create(
+            db_history = SubmissionHistory.objects.create(
                 user=user, feed_id=feed_id,
                 server_name=server_name, client_ip=client_ip)
             db_history.set_statuses([subm_stat])
 
     if not ingestion_statuses:
+        print "Not ingestion_statuses"
         if check_results.get('feedStatus', '').lower() == 'error':
-            db_history = MockedSubmissionHistory.objects.create(
+            print "Error"
+            db_history = SubmissionHistory.objects.create(
                 user=user, feed_id=feed_id,
                 server_name=server_name, client_ip=client_ip)
             db_history.set_statuses(['error'])
 
-    feed_history = MockedSubmissionHistory.objects.filter(user=user,
-                                                          feed_id=feed_id)
+    feed_history = SubmissionHistory.objects.filter(user=user,
+                                                    feed_id=feed_id)
 
     if feed_history:
         return {
@@ -179,12 +189,8 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
         # TO DO: change it for real value
         num_items = len(items)
 
-        # Already Checked
-        status = ("PROCESSED", "INPROGRESS")
-        current_status = random.choice(status)
-
         values = {'feed_id': request_feed_id,
-                  'current_status': 0,
+                  'current_status': "INPROGRESS",
                   'in_progress': num_items,
                   'success': 0,
                   'errors': 0,
@@ -199,6 +205,8 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
             # This way the same xml file will display similar content
             random.seed(file_content)
 
+            print "seconds_since_submit: %d" % seconds_since_submit
+
             if seconds_since_submit < 30:
                 # Too Few time --> Still waiting
                 values['current_status'] = "INPROGRESS"
@@ -212,7 +220,7 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
                 # First Time Checking In progress, generate random values
                 values['current_status'] = "INPROGRESS"
                 if subm_hist.in_progress == num_items:
-                    process = random.randint(0, num_items)
+                    process = random.randint(0, num_items - 1)
                     success = random.randint(0, process)
                     errors = process - success
                     values['in_progress'] = subm_hist.in_progress = (num_items - process)
@@ -236,10 +244,10 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
                     values['success'] = subm_hist.success = random.randint(0, num_items)
                     values['errors'] = subm_hist.errors = num_items - subm_hist.success
                     values['data_error'] = subm_hist.data_error = random.randint(0, subm_hist.errors)
-                    values['timeout_error'] = subm_hist.errors - subm_hist.data_error
+                    values['timeout_error'] = subm_hist.timeout_error = subm_hist.errors - subm_hist.data_error
 
                 elif subm_hist.current_status == "INPROGRESS":
-                    values['success'] = subm_hist.success + subm_hist.in_progress
+                    values['success'] = subm_hist.success = subm_hist.success + subm_hist.in_progress
                     values['in_progress'] = subm_hist.in_progress = 0
                     values['errors'] = subm_hist.errors
                     values['data_error'] = subm_hist.data_error
@@ -258,16 +266,8 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
 
         # First time Checked
         else:
-            values['current_status'] = "INPROGRESS"
             values['in_progress'] = num_items
             MockedXMLStatus(**values).save()
-
-        del values['feed_id']
-        del values['errors']
-        del values['current_status']
-
-        response['itemDetails']['itemIngestionStatus'] = self.generate_items(
-            items, **values)
 
         response['itemsReceived'] = (values['success'] +
                                      values['data_error'] +
@@ -278,8 +278,23 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
                                                   values['timeout_error'])
         response['itemDetails']['itemsSucceeded'] = values['success']
         response['itemDetails']['ingestionErrors'] = {"ingestionError": None}
-        response['itemDetails']['feedStatus'] = current_status
+        response['itemDetails']['feedStatus'] = values['current_status']
         response['itemDetails']['feedId'] = "%s" % (request_feed_id)
+
+        del values['feed_id']
+        del values['errors']
+        del values['current_status']
+
+        response['itemDetails']['itemIngestionStatus'] = self.generate_items(
+            items, **values)
+
+        if subm_hist:
+            histories = SubmissionHistory.objects.filter(feed_id=request_feed_id)
+            for index, history in enumerate(histories):
+                SubmissionStatus.objects.get(history=history.id).delete()
+                new_status = response['itemDetails']['itemIngestionStatus'][index]['ingestionStatus']
+                history.set_statuses([new_status])
+
         return response
 
     def generate_items(self, items, in_progress, success, data_error, timeout_error):

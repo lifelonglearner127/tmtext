@@ -3,10 +3,6 @@ from __future__ import unicode_literals
 from django.db import models
 from walmart_api.models import SubmissionHistory
 
-class MockedSubmissionHistory(SubmissionHistory):
-    pass
-
-
 class MockedXMLStatus(models.Model):
     feed_id = models.CharField(max_length=50)
     current_status = models.CharField(max_length=50)
