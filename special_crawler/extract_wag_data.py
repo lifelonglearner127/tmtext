@@ -153,7 +153,7 @@ class WagScraper(Scraper):
         tab_number = re.search('Tab(\d+)Header', tab).group(1)
         ingredients = self.tree_html.xpath(
             '//*[@id="Tab%sDetailInfo"]//'
-            '*[@class="pIdDesContent"]/text()' % tab_number)[0]
+            '*[@class="pIdDesContent"]//text()' % tab_number)[0]
 
         r = re.compile(r'(?:[^,(]|\([^)]*\))+')
         ingredients = r.findall(ingredients)
