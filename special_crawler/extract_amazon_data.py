@@ -24,7 +24,6 @@ import random
 from spiders_shared_code.amazon_variants import AmazonVariants
 import datetime
 
-
 class AmazonScraper(Scraper):
 
     ##########################################
@@ -722,7 +721,7 @@ class AmazonScraper(Scraper):
                         swatch_images = self._swatch_image_helper(image, swatch_images)
 
             else:
-                swatch_image_json = re.search("'colorImages': { 'initial': ([^\n]*)},\n", html.tostring(self.tree_html))
+                swatch_image_json = re.search("'colorImages': { 'initial': ([^\n]*)},", html.tostring(self.tree_html))
                 swatch_image_json = json.loads(swatch_image_json.group(1))
 
                 for image in swatch_image_json:
