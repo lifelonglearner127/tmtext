@@ -26,15 +26,15 @@ from api_control.views import ProductListViewSet, SitesViewSet, \
 router = routers.DefaultRouter()
 router.register(r'product_lists', ProductListViewSet)
 router.register(r'search_terms', SearchTermsViewSet)
-router.register(r'search_terms_groups', SearchTermsGroupsViewSet)
+router.register(r'search_term_groups', SearchTermsGroupsViewSet)
 router.register(r'sites', SitesViewSet, base_name='sites')
 router.register(r'brands', BrandsViewSet, base_name='brands')
 router.register(r'dates', DateViewSet, base_name='dates')
-router.register(r'prices_data', PriceDataViewSet, base_name='pricesdata')
-router.register(r'rankings_data', RankingDataViewSet, base_name='rakingsdata')
+router.register(r'price_data', PriceDataViewSet, base_name='pricesdata')
+router.register(r'ranking_data', RankingDataViewSet, base_name='rakingsdata')
 router.register(
-    r'out_of_stocks_data', OutOfStockDataViewSet, base_name='oufofstocksdata')
-router.register(r'buy_boxes_data', BuyBoxDataViewSet, base_name='buyboxesdata')
+    r'out_of_stock_data', OutOfStockDataViewSet, base_name='oufofstocksdata')
+router.register(r'buy_box_data', BuyBoxDataViewSet, base_name='buyboxesdata')
 router.register(r'reviews_data', ReviewDataViewSet, base_name='reviews_data')
 
 
