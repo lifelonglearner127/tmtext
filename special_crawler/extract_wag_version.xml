@@ -5,7 +5,7 @@
     <field name="product_name" version="1.0"></field>
     <field name="product_title" version="1.0"></field>
     <field name="title_seo" version="1.0"></field>
-    <field name="features" version="1.1"></field>
+    <field name="features" version="1.2"></field>
     <field name="feature_count" version="1.0"></field>
     <field name="description" version="1.0"></field>
     <field name="model" version="1.0"></field>
@@ -44,7 +44,7 @@
     <field name="pdf_count" version="1.0"></field>
     <field name="video_urls" version="1.0"></field>
     <field name="video_count" version="1.0"></field>
-    <field name="variants" version="1.1"></field>
+    <field name="variants" version="1.2"></field>
     <field name="swatches" version="1.0"></field>
     <field name="tcin" version="1.0"></field>
 </fields>
