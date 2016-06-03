@@ -63,6 +63,9 @@ class ChewyScraper(Scraper):
 
         description_elements = self.tree_html.xpath('//div[@class="longDescription"]/*')
 
+        if not description_elements:
+            description_elements = self.tree_html.xpath('//section[@class="descriptions-left"]/*')
+
         for element in description_elements:
             # do not include 'Product Description'
             if element.tag == 'h4':
@@ -81,8 +84,11 @@ class ChewyScraper(Scraper):
 
         description_elements = self.tree_html.xpath('//div[@class="longDescription"]/*')
 
+        if not description_elements:
+            description_elements = self.tree_html.xpath('//section[@class="descriptions-left"]/*')
+
         for element in description_elements:
-            if element.get('class') == 'see-all' or element.xpath('em'):
+            if element.get('class') in ['see-all', 'view-all'] or element.xpath('em'):
                 continue
 
             long_description += self._clean_text( html.tostring(element))
@@ -156,13 +162,17 @@ class ChewyScraper(Scraper):
     def _image_urls(self):
         image_urls = []
 
-        for link in self.tree_html.xpath('//div[@id="media-selector"]/a/@href'):
+        for link in self.tree_html.xpath('//div[@id="media-selector"]//a/@href'):
             if not link == '#':
                 image_urls.append(link[2:]) # remove initial '//'
 
-        item_data = self._variant_data()
+        for link in self.tree_html.xpath('//div[@id="product-image"]//a/@href'):
+            if link[2:] and not link[2:] in image_urls:
+                image_urls.append(link[2:])
 
         '''
+        item_data = self._variant_data()
+
         # add variant image urls
         for item_no in item_data:
             item = item_data[item_no]
@@ -223,46 +233,56 @@ class ChewyScraper(Scraper):
     def _average_review(self):
         self._load_reviews()
 
-        average_review = self.reviews_tree.xpath('//span[@itemprop="ratingValue"]/text()')[0]
-        return float(average_review)
+        average_review = self.reviews_tree.xpath('//span[@itemprop="ratingValue"]/text()')
+        if average_review:
+            return float(average_review[0])
 
     def _review_count(self):
         self._load_reviews()
 
-        review_count = self.reviews_tree.xpath('//meta[@itemprop="reviewCount"]/@content')[0]
-        return int(review_count)
+        review_count = self.reviews_tree.xpath('//meta[@itemprop="reviewCount"]/@content')
+
+        if review_count:
+            return int(review_count[0])
+        return 0
 
     def _max_review(self):
         self._load_reviews()
 
-        for review in self._reviews():
-            if review[1] != 0:
-                return review[0]
+        if self._reviews():
+            for review in self._reviews():
+                if review[1] != 0:
+                    return review[0]
 
     def _min_review(self):
         self._load_reviews()
 
-        for review in reversed(self._reviews()):
-            if review[1] != 0:
-                return review[0]
+        if self._reviews():
+            for review in reversed(self._reviews()):
+                if review[1] != 0:
+                    return review[0]
 
     def _reviews(self):
         self._load_reviews()
 
         reviews = []
 
-        for i in range(5):
-            num_reviews = self.reviews_tree.xpath('//div[@class="BVRRHistogramContent"]/div/span[@class="BVRRHistAbsLabel"]/text()')[i]
+        try:
+            for i in range(5):
+                num_reviews = self.reviews_tree.xpath('//div[@class="BVRRHistogramContent"]/div/span[@class="BVRRHistAbsLabel"]/text()')[i]
 
-            reviews.append([5 - i, int(num_reviews)])
+                reviews.append([5 - i, int(num_reviews)])
 
-        return reviews
+            return reviews
+        except:
+            return None
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.tree_html.xpath('//span[@class="our-price"]/text()')[0].strip()
+        #return self.tree_html.xpath('//span[@class="our-price"]/text()')[0].strip()
+        return self.tree_html.xpath('//*[@class="price"]/span/text()')[0].strip()
 
     def _price_amount(self):
         price_amount = self.tree_html.xpath('//meta[@itemprop="price"]/@content')[0]
@@ -306,7 +326,7 @@ class ChewyScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        return self.tree_html.xpath('//div[@class="breadcrumbs"]/a/text()')
+        return self.tree_html.xpath('//*[contains(@class,"breadcrumbs")]//a/text()')
 
     def _category_name(self):
         return self._categories()[-1]
