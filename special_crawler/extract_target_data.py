@@ -200,38 +200,13 @@ class TargetScraper(Scraper):
 
         return self._clean_text(html.tostring(long_desc_block))
 
-    def _details_mta_helper(self):
-        pass
-
     def _details(self):
-        '''
-        details = ''
-
-        for element in self.tree_html.xpath('//div[@class="content"]/div[contains(@class,"section")]/*'):
-            if element.tag == 'ul':
-                break
-
-            if not element.tag == 'h3':
-                details += html.tostring(details)
-
-        return self._clean_html(details)
-        '''
+        details = self.tree_html.xpath('//div[@class="details-copy"]')[0]
+        return self._clean_html(html.tostring(details))
 
     def _mta(self):
-        '''
-        mta = ''
-        start = False
-
-        for element in self.tree_html.xpath('//div[@class="content"]/div[contains(@class,"section")]/*'):
-            if element.tag == 'ul':
-                start = True
-
-            if start and not element.tag == 'h3':
-                mta += html.tostring(mta)
-
-        return self._clean_html(mta)
-        '''
-        pass
+        mta = self.tree_html.xpath('//div[@class="details-copy"]/following-sibling::ul')[0]
+        return self._clean_html(html.tostring(mta))
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
