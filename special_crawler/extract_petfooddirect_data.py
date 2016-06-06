@@ -107,7 +107,7 @@ class PetFoodDirectScraper(Scraper):
 
             v = {
                 'properties' : properties,
-                'price' : variant['finalPrice'],
+                'price' : float(variant['finalPrice']),
                 'sku' : variant['productSku'],
                 #'in_stock' : item_json['inventory']['onlineInventory']['status'] == 'In-Stock',
                 'selected' : False,
@@ -185,13 +185,31 @@ class PetFoodDirectScraper(Scraper):
         return 0
 
     def _max_review(self):
-        return None
+        if self._reviews():
+            for review in self._reviews():
+                if review[1] != 0:
+                    return review[0]
 
     def _min_review(self):
-        return None
+        if self._reviews():
+            for review in reversed(self._reviews()):
+                if review[1] != 0:
+                    return review[0]
 
     def _reviews(self):
-        return None
+        if self.tree_html.xpath('//span[@class="no-reviews"]'):
+            return None
+
+        reviews = []
+
+        for i in reversed(range(1,6)):
+            count = self.tree_html.xpath('//li[contains(@class,"pr-histogram-' + str(i) + 'Stars")]/p[@class="pr-histogram-count"]/span/text()')[0]
+
+            count = int(re.match('\((\d+)\)', count).group(1))
+
+            reviews.append([i, count])
+
+        return reviews
 
     ##########################################
     ############### CONTAINER : SELLERS
