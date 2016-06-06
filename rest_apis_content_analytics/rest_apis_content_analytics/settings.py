@@ -40,7 +40,8 @@ INSTALLED_APPS = (
     'walmart_developer_accounts',
     'nutrition_info_images',
     'statistics',
-    'walmart_api'
+    'walmart_api',
+    'mocked_walmart_api',
 )
 
 REST_FRAMEWORK = {
@@ -204,3 +205,9 @@ TEMPLATES = [
 TEST_TWEAKS = {
     'item_upload_ajax_ignore': '/tmp/_walmart_api_do_not_test_ajax_on_item_upload'
 }
+
+
+IS_PRODUCTION = os.path.exists(
+    os.path.dirname(__file__) + "/is_walmart_api_production_server")
+
+print "Server production mode? %s" % IS_PRODUCTION

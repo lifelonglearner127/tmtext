@@ -13,20 +13,31 @@ from walmart_api.views import (InvokeWalmartApiViewSet, ItemsUpdateWithXmlFileBy
                                DetectDuplicateContentFromCsvFilesByMechanizeViewset,
                                FeedStatusAjaxView, CheckItemStatusByProductIDViewSet,
                                XMLFileRedirect)
+
+from mocked_walmart_api.views import (MockedCheckFeedStatusByWalmartApiViewSet,
+                                      MockedItemsUpdateWithXmlFileByWalmartApiViewSet)
+
 from statistics.views import StatsView, GetStatsAjax
 from nutrition_info_images.views import ClassifyTextImagesByNutritionInfoViewSet
 
+from settings import IS_PRODUCTION
+CheckFeedStatusView = (MockedCheckFeedStatusByWalmartApiViewSet
+                       if not IS_PRODUCTION
+                       else CheckItemStatusByProductIDViewSet)
+
+ItemsUpdateView = (MockedItemsUpdateWithXmlFileByWalmartApiViewSet
+                   if not IS_PRODUCTION
+                   else ItemsUpdateWithXmlFileByWalmartApiViewSet)
 
 admin.autodiscover()
 
-
-# API endpoints
+# # API endpoints
 urlpatterns = format_suffix_patterns([
     url(r'^items_update_with_xml_file_by_walmart_api/$',
-        ItemsUpdateWithXmlFileByWalmartApiViewSet.as_view({'get': 'list', 'post': 'create'}),
+        ItemsUpdateView.as_view({'get': 'list', 'post': 'create'}),
         name='items_update_with_xml_file_by_walmart_api'),
     url(r'^check_feed_status_by_walmart_api/$',
-        CheckFeedStatusByWalmartApiViewSet.as_view({'get': 'list', 'post': 'create'}),
+        CheckFeedStatusView.as_view({'get': 'list', 'post': 'create'}),
         name='check_feed_status_by_walmart_api'),
     url(r'^check_item_status_by_product_id/$',
         CheckItemStatusByProductIDViewSet.as_view({'get': 'list', 'post': 'create'}),
@@ -51,15 +62,18 @@ router.register(r'findsimilarityinimagelist', FindSimilarityInImageList, 'findsi
 router.register(r'comparetwoimagelists', CompareTwoImageLists, 'comparetwoimagelists')
 router.register(r'walmartaccounts', WalmartAccountViewSet, 'walmartaccounts')
 router.register(r'classifytextimagesbynutritioninfo', ClassifyTextImagesByNutritionInfoViewSet, 'classifytextimagesbynutritioninfo')
-router.register(r'invokewalmartapi', InvokeWalmartApiViewSet, 'invokewalmartapi')
+
+if IS_PRODUCTION:
+  router.register(r'invokewalmartapi', InvokeWalmartApiViewSet, 'invokewalmartapi')
 #router.register(r'items_update_with_xml_file_by_walmart_api',
 #                ItemsUpdateWithXmlFileByWalmartApiViewSet,
 #                'items_update_with_xml_file_by_walmart_api')
-router.register(r'items_update_with_xml_text_by_walmart_api', ItemsUpdateWithXmlTextByWalmartApiViewSet, 'items_update_with_xml_text_by_walmart_api')
+  router.register(r'items_update_with_xml_text_by_walmart_api', ItemsUpdateWithXmlTextByWalmartApiViewSet, 'items_update_with_xml_text_by_walmart_api')
 #router.register(r'check_feed_status_by_walmart_api',
 #                CheckFeedStatusByWalmartApiViewSet,
 #                'check_feed_status_by_walmart_api')
 router.register(r'validate_walmart_product_xml_text', ValidateWalmartProductXmlTextViewSet, 'validate_walmart_product_xml_text')
+
 router.register(r'detect_duplicate_content', DetectDuplicateContentByMechanizeViewset, 'detect_duplicate_content')
 router.register(r'detect_duplicate_content_by_mechanize', DetectDuplicateContentByMechanizeViewset, 'detect_duplicate_content_by_mechanize')
 router.register(r'detect_duplicate_content_from_csv_file_by_mechanize', DetectDuplicateContentFromCsvFilesByMechanizeViewset, 'detect_duplicate_content_from_csv_file_by_mechanize')
