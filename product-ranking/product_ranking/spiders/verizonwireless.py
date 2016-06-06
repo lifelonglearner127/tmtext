@@ -57,13 +57,22 @@ class VerizonwirelessProductsSpider(ProductsSpider):
             '//div[@itemtype="https://schema.org/Product" and '
             'not(contains(@class,"Device-SpecificInstructions") or '
             'contains(@class,"allother"))]'
-            '/a/@href').extract() or \
-            set([x.split('#')[0] for x in re.findall(
-                'pdpUrl":\["(.*?)\"]', response.body)])
+            '/a/@href').extract()
+
 
         for item_url in item_urls:
             yield urlparse.urljoin(
                 response.url, item_url), SiteProductItem()
+        
+        # Search Special Case
+        if not item_urls:
+            urls = set()
+            item_urls = [x.split('#')[0] for x in re.findall(
+                'pdpUrl":\["(.*?)\"]', response.body)]
+            for url in item_urls:
+                if url not in urls:
+                    urls.add(url)
+                    yield urlparse.urljoin(response.url, url), SiteProductItem()
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
