@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -51,14 +52,11 @@ class Command(BaseCommand):
                 for _arg in job.extra_cmd_args.split('\n'):
                     if not _arg.strip():
                         continue  # skip empty lines
-                    if "='" in _arg:
-                        extra_arg_name, extra_arg_value = _arg.split("='")
-                    elif '="' in _arg:
-                        extra_arg_name, extra_arg_value = _arg.split('="')
-                    else:
-                        extra_arg_name, extra_arg_value = _arg.split('=')
-                    extra_arg_name = extra_arg_name.strip()
-                    extra_arg_value = extra_arg_value.strip()
+		    search =  re.findall('^(.*?)=(.*)$', _arg.strip())
+                    if search:
+                        extra_arg_name, extra_arg_value = search[0]
+                        extra_arg_name = extra_arg_name.strip()
+                        extra_arg_value = extra_arg_value.strip()
                     if not 'cmd_args' in msg:
                         msg['cmd_args'] = {}
                     msg['cmd_args'][extra_arg_name] = extra_arg_value

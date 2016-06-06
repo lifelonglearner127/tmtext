@@ -80,6 +80,7 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
 
         if response.status == 404 and 'This product is no longer available' in response.body_as_unicode():
             product['not_found'] = True
+            product['no_longer_available'] = True
             return product
 
         reqs = []
@@ -125,7 +126,6 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
-        # Parse variants
         try:
             variants = self._parse_variants(response)
         except KeyError:

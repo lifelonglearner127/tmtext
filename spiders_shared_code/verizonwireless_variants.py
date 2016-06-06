@@ -18,7 +18,7 @@ class VerizonWirelessVariants(object):
             return None
         variants = []
         for sku in sku_list:
-            if not sku.get('validSku') and sku.get('validSku') != None:
+            if not sku.get('validSku'):
                 continue
 
             vr = {}
@@ -51,23 +51,6 @@ class VerizonWirelessVariants(object):
             'fullRetailPriceListId', {}).get('RETAIL PRICE', None) or \
             data.get('price', {}).get('retailPrice')
 
-    def _parse_variants_swatches(self, swatches):
-        variants = []
-        for swatch in swatches:
-            vr = {}
-            try:
-                onclick = swatch.xpath('.//a/@onclick')[0]
-                vr['skuID'] = re.search('sku\d+', onclick).group(0)
-            except:
-                pass
-
-            vr['properties'] = {'color': swatch.xpath('.//a/@title')[0]}
-            vr['selected'] = bool(swatch.xpath(
-                './/a[contains(@class,"active")]'))
-
-            variants.append(vr)
-        return variants
-
     def _variants(self):
         content = lxml.html.tostring(self.tree_html)
         pdp_data = re.findall('pdpJSON = ({.*})', content)
@@ -79,7 +62,3 @@ class VerizonWirelessVariants(object):
 
             sku_list = product_data.get('skus', [])
             return self._parse_variants_json(sku_list)
-
-        horizontal_list = self.tree_html.xpath('//*[@class="horizontalList colors"]/li')
-        if horizontal_list:
-            return self._parse_variants_swatches(horizontal_list)

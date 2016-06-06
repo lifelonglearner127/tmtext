@@ -117,6 +117,11 @@ class Scraper():
             "bullet_feature_3",
             "bullet_feature_4",
             "bullet_feature_5",
+            "usage",
+            "directions",
+            "warnings",
+            "indications",
+            "amazon_ingredients",
 
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
@@ -226,7 +231,8 @@ class Scraper():
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
                         "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "details", "mta", \
-                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5"],
+                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5",
+                        "usage", "directions", "warnings", "indications", "amazon_ingredients"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
@@ -454,12 +460,15 @@ class Scraper():
                     continue
         else:
             costco_url = re.match('http://www.costco.com/(.*)', self.product_page_url)
+            wag_url = re.match('https?://www.wag.com/(.*)', self.product_page_url)
+
             if costco_url:
                 self.product_page_url = 'http://www.costco.com/' + urllib2.quote(costco_url.group(1).encode('utf8'))
+
             request = urllib2.Request(self.product_page_url)
             # set user agent to avoid blocking
             agent = ''
-            if self.bot_type == "google":
+            if self.bot_type == "google" or wag_url:
                 agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
             else:
                 agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
