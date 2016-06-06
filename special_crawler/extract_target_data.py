@@ -72,12 +72,7 @@ class TargetScraper(Scraper):
 
         self.tv.setupCH(self.tree_html)
 
-        '''
         if len(self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")) < 1:
-            return True
-        '''
-
-        if self.tree_html.xpath('//title/text()')[0] == 'one moment please, loading...':
             self.version = 2
         else:
             self.version = 1
