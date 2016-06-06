@@ -299,10 +299,16 @@ class TargetScraper(Scraper):
         return self._clean_text(html.tostring(long_desc_block))
 
     def _details(self):
+        if self.version == 2:
+            return self._item_info()['shortDescription']
+
         details = self.tree_html.xpath('//div[@class="details-copy"]')[0]
         return self._clean_html(html.tostring(details))
 
     def _mta(self):
+        if self.version == 2:
+            return ''.join( self._item_info()['ItemDescription'][0]['features'])
+
         mta = self.tree_html.xpath('//div[@class="details-copy"]/following-sibling::ul')[0]
         return self._clean_html(html.tostring(mta))
 
