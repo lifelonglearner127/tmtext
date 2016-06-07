@@ -155,6 +155,20 @@ class MockedItemsUpdateWithXmlFileByWalmartApiViewSet(ItemsUpdateWithXmlFileByWa
         return response
 
 
+def generate_sucess_fails(p, process):
+    if p < 0.50:
+        success = process
+        errors = 0
+
+    elif p < 0.80:
+        success = random.randint(int(process / 2), process)
+        errors = process - success
+    else:
+        success = 0
+        errors = process
+
+    return success, errors
+
 class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSet):
 
     # Get
@@ -222,13 +236,8 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
                 if subm_hist.in_progress == num_items:
                     process = random.randint(0, num_items - 1)
 
-                    if random.random() < 0.80:
-                        success = process
-                        errors = 0
-
-                    else:
-                        success = random.randint(0, process)
-                        errors = process - success
+                    p = random.random()
+                    success, errors = generate_sucess_fails(p, process)
 
                     values['in_progress'] = subm_hist.in_progress = (num_items - process)
                     values['success'] = subm_hist.success = success
@@ -249,13 +258,8 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
                 if subm_hist.in_progress == num_items:
                     values['in_progress'] = subm_hist.in_progress = 0
 
-                    if random.random() < 0.80:
-                        success = num_items
-                        errors = 0
-
-                    else:
-                        success = random.randint(0, num_items)
-                        errors = num_items - success
+                    p = random.random()
+                    success, errors = generate_sucess_fails(p, num_items)
 
                     values['success'] = subm_hist.success = success
                     values['errors'] = subm_hist.errors = errors
