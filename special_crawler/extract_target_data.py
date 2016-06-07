@@ -72,12 +72,7 @@ class TargetScraper(Scraper):
 
         self.tv.setupCH(self.tree_html)
 
-        '''
         if len(self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")) < 1:
-            return True
-        '''
-
-        if self.tree_html.xpath('//title/text()')[0] == 'one moment please, loading...':
             self.version = 2
         else:
             self.version = 1
@@ -303,18 +298,19 @@ class TargetScraper(Scraper):
 
         return self._clean_text(html.tostring(long_desc_block))
 
-    def _mta(self):
-        content = ''
-        for element in self.tree_html.xpath('//div[@class="content"]/div[contains(@class,"section")]/*'):
-            if not element.tag == 'h3':
-                content += html.tostring(element)
-        content = re.sub('[\n\t]', '', content)
-        content = re.sub('<![^>]+>', '', content)
-        content = re.sub(' (class|itemprop)="[^"]+"', '', content)
-        content = re.sub('\s+', ' ', content)
-        content = re.sub('> <', '><', content)
+    def _details(self):
+        if self.version == 2:
+            return self._item_info()['shortDescription']
 
-        return content
+        details = self.tree_html.xpath('//div[@class="details-copy"]')[0]
+        return self._clean_html(html.tostring(details))
+
+    def _mta(self):
+        if self.version == 2:
+            return ''.join( self._item_info()['ItemDescription'][0]['features'])
+
+        mta = self.tree_html.xpath('//div[@class="details-copy"]/following-sibling::ul')[0]
+        return self._clean_html(html.tostring(mta))
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -763,6 +759,15 @@ class TargetScraper(Scraper):
 #    def _clean_text(self, text):
 #        return re.sub("&nbsp;", " ", text).strip()
 
+    def _clean_html(self, content):
+        content = re.sub('[\n\t]', '', content)
+        content = re.sub('<![^>]+>', '', content)
+        content = re.sub(' (class|itemprop)="[^"]+"', '', content)
+        content = re.sub('\s+', ' ', content)
+        content = re.sub('> <', '><', content)
+
+        return content
+
     ##########################################
     ################ RETURN TYPES
     ##########################################
@@ -786,6 +791,7 @@ class TargetScraper(Scraper):
         "long_description" : _long_description, \
         "variants": _variants, \
         "swatches": _swatches, \
+        "details": _details, \
         "mta": _mta, \
 
         # CONTAINER : PAGE_ATTRIBUTES

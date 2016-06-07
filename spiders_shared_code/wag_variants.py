@@ -30,7 +30,7 @@ class WagVariants(object):
                     item.xpath('./td[@class="outOfStockQty"]'))
                 price = item.xpath(
                     './/*[@class="autoShipNormal"]'
-                    '/*[@class="normalPrice"]/text()')[0]
+                    '/*[@class="normalPrice" or @class="salePrice"]/text()')[0]
 
                 price = re.findall('[\d\.]+', price)
 
