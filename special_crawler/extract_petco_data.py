@@ -130,11 +130,11 @@ class PetcoScraper(Scraper):
     def _image_urls(self):
         image_urls = []
 
-        all_image_urls = self.tree_html.xpath('//input[starts-with(@id,"img_")]/@value')
+        image_inputs = self.tree_html.xpath('//input[starts-with(@id,"img_")]')
 
-        for url in all_image_urls:
-            if self._product_id() in url and not url in image_urls:
-                image_urls.append(url)
+        for input in image_inputs:
+            if self._product_id() in input.get('id') and not input.get('value') in image_urls:
+                image_urls.append(input.get('value'))
 
         if self._items_json():
             for item in self._items_json():
