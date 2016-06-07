@@ -76,8 +76,10 @@ class JCpenneySpider(scrapy.Spider):
         self.disable_site_settings = kwargs.get('disable_site_settings', None)
         self.quantity = kwargs.get('quantity', None)
 
+        self.requested_color = None
+
         from pyvirtualdisplay import Display
-        display = Display(visible=False)
+        display = Display(visible=True)
         display.start()
 
         if self.quantity:
@@ -93,6 +95,7 @@ class JCpenneySpider(scrapy.Spider):
         is_iterable = isinstance(self.product_data, (list, tuple))
         self.product_data = self.product_data if is_iterable else list(self.product_data)
         for product in self.product_data:
+            self.requested_color = None
             self.log("Product: %r" % product)
             # Open product URL
             for qty in self.quantity:
@@ -102,6 +105,7 @@ class JCpenneySpider(scrapy.Spider):
                 self.wait = WebDriverWait(self.driver, 25)
                 socket.setdefaulttimeout(60)
                 self.driver.get(url)
+                self.requested_color = product.get('color', None)
 
                 if product.get('FetchAllColors'):
                     # Parse all the products colors
@@ -111,6 +115,7 @@ class JCpenneySpider(scrapy.Spider):
                     # Only parse the selected color
                     # if None, the first fetched will be selected
                     colors = product.get('color', None)
+
                     if isinstance(colors, basestring) or not colors:
                         colors = [colors]
 
@@ -126,6 +131,7 @@ class JCpenneySpider(scrapy.Spider):
                             for item in self._parse_cart():
                                 item['url'] = url
                                 yield item
+
                             # Fastest way to empty the cart
                             # and clear resources
                             self.driver.close()
@@ -153,7 +159,8 @@ class JCpenneySpider(scrapy.Spider):
         swatches = self._find_by_xpath(
             '//ul[@class="small_swatches"]'
             '/li[not(@class="sku_not_available_select")]'
-            '//a[not(span[@class="no_color"])]/img')
+            '//a[not(span[@class="no_color"]) and '
+            'not(span[@class="color_illegal"])]/img')
         return [x.get_attribute("name") for x in swatches]
 
     def _find_by_xpath(self, xpath, element=None):
@@ -208,7 +215,7 @@ class JCpenneySpider(scrapy.Spider):
         color_attribute_xpath = '*//li[@class="swatch_selected"]'
         color_attributes_xpath = '*//*[@class="small_swatches"]//a'
 
-        if color:
+        if color and color in self._get_colors_names():
             color_attributes_xpath = '*//*[@class="small_swatches"]//a' \
                                      '[img[@name="%s"]]' % color
 
@@ -325,8 +332,14 @@ class JCpenneySpider(scrapy.Spider):
                     item['price'] = price
                     item['price_on_page'] = price_on_page
                     item['quantity'] = quantity
+                    item['requested_color'] = self.requested_color
+
                     if color:
                         item['color'] = color
+
+                    item['requested_color_not_available'] = (
+                        color and self.requested_color
+                        and (self.requested_color != color))
 
                     order_subtotal_element = self.wait.until(
                         EC.visibility_of_element_located((

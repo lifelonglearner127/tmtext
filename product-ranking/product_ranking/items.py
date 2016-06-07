@@ -291,6 +291,8 @@ class CheckoutProductItem(Item):
     price = Field()             # In-cart Product Value
     price_on_page = Field()     # On-Page Product Value
     quantity = Field()
+    requested_color = Field()
+    requested_color_not_available = Field()
     color = Field()
     order_subtotal = Field()    # Pre-tax & shipping Cart Value
     order_total = Field()       # Post-tax & shipping Cart Value
