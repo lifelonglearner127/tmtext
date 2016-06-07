@@ -100,13 +100,14 @@ class WagScraper(Scraper):
             'text()="Description"]]/@id' % _product_id)[0]
 
         tab_number = re.search('Tab(\d+)Header', tab).group(1)
-        features = self.tree_html.xpath(
-            '//*[@id="Tab%sDetailInfo"]//li/text()' % tab_number)
+        features = list(set(self.tree_html.xpath(
+            '//*[@id="Tab%sDetailInfo"]//li/text()' % tab_number)))
 
         descriptContentBox = ''.join(self.tree_html.xpath(
             '//*[@id="Tab%sDetailInfo"]//text()' % tab_number))
 
-        features += list(set(re.findall(u'\u2022 (.*)', descriptContentBox)))
+        features += list(set(
+            re.findall(u'\u2022 (.*)', descriptContentBox)))
         return [x.strip() for x in features] if features else None
 
     def _feature_count(self):
@@ -126,9 +127,12 @@ class WagScraper(Scraper):
 
         tab_number = re.search('Tab(\d+)Header', tab).group(1)
 
-        rows = self.tree_html.xpath('//*[@id="Tab%sDetailInfo"]'
-                                    '//*[@class="pIdDesContent"]//'
-                                    'text()' % tab_number)
+        rows = (self.tree_html.xpath('//*[@id="Tab%sDetailInfo"]'
+                                     '//*[@class="pIdDesContent"]//'
+                                     'text()' % tab_number) or
+                list(set(self.tree_html.xpath('//*[@id="Tab%sDetailInfo"]'
+                                              '//p/text()' % tab_number))))
+
         rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
         description = "\n".join(rows)
 
@@ -146,23 +150,26 @@ class WagScraper(Scraper):
         return self._description()
 
     def _ingredients(self):
-        _product_id = self._product_id()
-        tab = self.tree_html.xpath(
-            '//li[@productid="%s"]/a[em['
-            'text()="Ingredients"]]/@id' % _product_id)[0]
-        tab_number = re.search('Tab(\d+)Header', tab).group(1)
-        ingredients = self.tree_html.xpath(
-            '//*[@id="Tab%sDetailInfo"]//'
-            '*[@class="pIdDesContent"]/text()' % tab_number)[0]
+        try:
+            _product_id = self._product_id()
+            tab = self.tree_html.xpath(
+                '//li[@productid="%s"]/a[em['
+                'text()="Ingredients"]]/@id' % _product_id)[0]
+            tab_number = re.search('Tab(\d+)Header', tab).group(1)
+            ingredients = self.tree_html.xpath(
+                '//*[@id="Tab%sDetailInfo"]//'
+                '*[@class="pIdDesContent"]//text()' % tab_number)[0]
 
-        r = re.compile(r'(?:[^,(]|\([^)]*\))+')
-        ingredients = r.findall(ingredients)
-        ingredients = [ingredient.strip() for ingredient in ingredients]
-        return ingredients if ingredients else None
+            r = re.compile(r'(?:[^,(]|\([^)]*\))+')
+            ingredients = r.findall(ingredients)
+            ingredients = [ingredient.strip() for ingredient in ingredients]
+            return ingredients if ingredients else []
+        except:
+            return []
 
     def _ingredient_count(self):
         ingredients = self._ingredients()
-        return len(self._ingredients()) if ingredients else None
+        return len(self._ingredients()) if ingredients else 0
 
     def _no_longer_available(self):
         no_longer_aval = self.tree_html.xpath(
@@ -285,17 +292,17 @@ class WagScraper(Scraper):
             review_id = re.findall('PowerReview.groupId = (\d+);',
                                    html.tostring(self.tree_html))
 
-            print review_id
             if review_id:
                 review_id = review_id[0].split('-')[-1]
 
             else:
                 review_id = self._product_id()
 
+            if len(review_id) < 6:
+                review_id = "0" + review_id
+
             review_url = ("https://www.wag.com/amazon_reviews/%s/%s/%s"
                           "/mostrecent_default.html" % (review_id[0:2], review_id[2:4], review_id[4:]))
-
-            print review_url
 
             r = requests.get(review_url)
             if r and r.status_code == 200:

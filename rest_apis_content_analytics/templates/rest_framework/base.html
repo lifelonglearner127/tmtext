@@ -1,6 +1,7 @@
 {% load staticfiles %}
 {% load rest_framework %}
 {% load i18n %}
+{% load utcnow %}
 
 <!DOCTYPE html>
 <html>
@@ -151,6 +152,7 @@
             {% endblock %}
           </span>
           <ul class="nav navbar-nav pull-right">
+            <li><a>Server time: {% utcnow 'H:i:s' %} (UTC)</a></li>
             {% block userlinks %}
               {% if user.is_authenticated %}
                 {% optional_logout request user %}
