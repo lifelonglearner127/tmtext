@@ -219,17 +219,28 @@ class PetFoodDirectScraper(Scraper):
         return json.loads(products_config)
 
     def _price(self):
-        return self.tree_html.xpath('//span[@class="price"]/text()')[0]
+        if self._variants():
+            low_price = None
+            high_price = None
+
+            for variant in self._variants():
+                if not low_price or variant['price'] < low_price:
+                    low_price = variant['price']
+                if not high_price or variant['price'] > high_price:
+                    high_price = variant['price']
+
+            return '$%.2f - $%.2f' % (low_price, high_price)
+
+        return self.tree_html.xpath('//span[@class="price"]/text()')[0].split(' - ')[0]
 
     def _price_amount(self):
-        price_amount = self.tree_html.xpath('//meta[@property="product:price:amount"]/@content')[0]
-        return float(price_amount)
+        return float(self._price().split(' - ')[0][1:])
 
     def _price_currency(self):
         return self.tree_html.xpath('//meta[@property="product:price:currency"]/@content')[0]
 
     def _temp_price_cut(self):
-        if self._products_json()['oldPrice'] != self._products_json()['basePrice']:
+        if self.tree_html.xpath('//span[@class="special"]'):
             return 1
         return 0
 
