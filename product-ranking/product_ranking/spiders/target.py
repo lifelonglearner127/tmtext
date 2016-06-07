@@ -9,6 +9,7 @@ import urllib
 import urllib2
 import urlparse
 
+import requests
 from scrapy import Selector
 from scrapy.http import FormRequest, Request
 from scrapy.log import DEBUG, INFO
@@ -61,6 +62,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                      "&displaycode=19988-en_us&resource.q0=products" \
                      "&filter.q0=id%3Aeq%3A{model}&stats.q0=reviews" \
                      "&filteredstats.q0=reviews"
+
+    REVIEW_API_URL_V2 = ('http://api.bazaarvoice.com/data/batch.json?passkey=lqa59dzxi6cbspreupvfme30z'
+                         '&apiversion=5.4&resource.q0=products&filter.q0=id%3Aeq%3A{tcin}'
+                         '&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_US'
+                         '&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US')
 
     JSON_SEARCH_URL = "http://tws.target.com/searchservice/item" \
                       "/search_results/v1/by_keyword" \
@@ -120,6 +126,58 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 meta=new_meta)
         return list(super(TargetProductSpider, self).parse(response))
 
+    def _request_reviews_v2(self, product, response):
+        response.meta['product'] = product
+        yield Request(
+            self.REVIEW_API_URL_V2.format(tcin=self._get_tcin(response)),
+            meta=response.meta,
+            callback=self._parse_reviews,
+            dont_filter=True
+        )
+
+    def HASDDAASDASD(self):
+        try:
+            url = 'sdfsdfsdfsdf'
+            contents = urllib.urlopen(url).read()
+            jsn = json.loads(contents)
+            review_info = jsn['BatchedResults']['q0']['Results'][0]['ReviewStatistics']
+            self.review_count = review_info['TotalReviewCount']
+            self.average_review = review_info['AverageOverallRating']
+            self.reviews = None
+
+            min_ratingval = None
+            max_ratingval = None
+
+            if self.review_count > 0:
+                self.reviews = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0]]
+
+                for review in review_info['RatingDistribution']:
+                    if min_ratingval == None or review['RatingValue'] < min_ratingval:
+                        if review['Count'] > 0:
+                            min_ratingval = review['RatingValue']
+                    if max_ratingval == None or review['RatingValue'] > max_ratingval:
+                        if review['Count'] > 0:
+                            max_ratingval = review['RatingValue']
+
+                    self.reviews[int(review['RatingValue']) - 1][1] = int(review['Count'])
+
+            self.min_score = min_ratingval
+            self.max_score = max_ratingval
+        except Exception as e:
+            print e
+            raise
+
+    def _get_tcin(self, response):
+        if not self._is_v1(response):
+            if self.item_info.get('parentPartNumber'):
+                return self.item_info['parentPartNumber']
+            else:
+                return self._product_id_v2(response)
+        tcin = re.search(u'Online Item #:[^\d]*(\d+)', response.body_as_unicode())
+        if tcin:
+            return tcin.group(1)
+        return self._product_id_v2(response)
+
     def parse_product(self, response):
         # for some products (with many colors for example) target.com
         # insert at <meta> another url than you see at browser.
@@ -177,6 +235,10 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
         self._populate_from_html(response, prod)
 
+        if not self._is_v1(response):
+            # scrape v2 reviews
+            return self._request_reviews_v2(prod, response)
+
         if not prod.get('brand', None):
             brand = guess_brand_from_first_words(prod['title'])
             if brand:
@@ -229,37 +291,84 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         else:
             return prod
 
+    @staticmethod
+    def _scrape_title_v1(response):
+        title = response.xpath(
+            "//h2[contains(@class,'product-name')]"
+            "/span[@itemprop='name']/text()"
+            "|//h2[contains(@class,'collection-name')]"
+            "/span[@itemprop='name']/text()"
+        ).extract()
+        if title:
+            return title[0].strip()
+
+    def _is_v1(self, response):
+        return bool(self._scrape_title_v1(response))
+
+    @staticmethod
+    def _product_id_v2(response):
+        # else get it from the url
+        return re.search('A-(\d+)', response.url).group(1)
+
+    def _item_info_v2(self, response):
+        response = requests.get(
+            'http://tws.target.com/productservice/services/item_service/v1/by_itemid?id='
+            + self._product_id_v2(response) + '&alt=json&callback=itemInfoCallback&_=1464382778193').content
+        item_info = re.match('itemInfoCallback\((.*)\)$', response, re.DOTALL).group(1)
+        item_info = json.loads(item_info)['CatalogEntryView'][0]
+        self.item_info = item_info
+        return item_info
+
     def _populate_from_html(self, response, product):
-        if 'title' in product and product['title'] == '':
-            del product['title']
-        cond_set(
-            product,
-            'title',
-            response.xpath(
+        if self._is_v1(response):
+            if 'title' in product and product['title'] == '':
+                del product['title']
+            product['title'] = response.xpath(
                 "//h2[contains(@class,'product-name')]"
                 "/span[@itemprop='name']/text()"
                 "|//h2[contains(@class,'collection-name')]"
                 "/span[@itemprop='name']/text()"
-            ).extract(),
-            conv=string.strip
-        )
+            ).extract()
 
-        desc = product.get('description')
-        if desc:
-            desc = desc.replace("\n", "")
-            product['description'] = desc
-        desc = response.css(
-            '#item-overview > div > div:nth-child(1)').extract()
-        if desc:
-            desc = desc[0]
-            desc = desc.replace("\n", "")
-            product['description'] = desc
+            desc = product.get('description')
+            if desc:
+                desc = desc.replace("\n", "")
+                product['description'] = desc
+            desc = response.css(
+                '#item-overview > div > div:nth-child(1)').extract()
+            if desc:
+                desc = desc[0]
+                desc = desc.replace("\n", "")
+                product['description'] = desc
 
-        image = response.xpath(
-            "//img[@itemprop='image']/@src").extract()
-        if image:
-            image = image[0].replace("_100x100.", ".")
-            product['image_url'] = image
+            image = response.xpath(
+                "//img[@itemprop='image']/@src").extract()
+            if image:
+                image = image[0].replace("_100x100.", ".")
+                product['image_url'] = image
+        else:
+            item_info = self._item_info_v2(response)
+            product['title'] = item_info['title']
+            product['upc'] = item_info.get('UPC', None)
+            #product['sku'] = ''  # TODO
+            product['image_url'] = item_info.get('Images', [{}])[0].get('PrimaryImage', [{}])[0].get('image')
+            product['description'] = item_info.get('shortDescription', None)
+            product['brand'] = guess_brand_from_first_words(product['title'])
+            offer = item_info.get('Offers', [{}])[0].get('OfferPrice', [{}])[0]
+            if offer:
+                product['price'] = Price(
+                    priceCurrency=offer['currencyCode'],
+                    price=offer['formattedPriceValue'].split(' -', 1)[0].replace('$', ''))
+            #product['related_products'] = None  # TODO
+            product['is_out_of_stock'] = not item_info.get('inventoryStatus', '') == 'in stock'
+            #product['variants'] = ''  # TODO - wait for Matt to update shared code with his variants implementation
+            # TODO: shipping and store availability? see "purchasingChannel: Sold Online + in Stores" in item_info
+            # TODO: in-cart price, like http://www.target.com/p/dickies-men-s-regular-straight-fit-6-pocket-jean/-/A-16533864?lnk=rec|pdpipadh2|top_rated|pdpipadh2|16533864|3
+
+
+
+
+
 
     def _extract_recomm_urls(self, response):
         script = response.xpath(
@@ -745,9 +854,12 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             main_url = canonical_url[0]
         else:
             main_url = product['url']
-        prod_id = re.search('\d+\Z', main_url)
-        if prod_id:
+        if self._is_v1(response):
+            prod_id = re.search('\d+\Z', main_url)
             prod_id = prod_id.group()
+        else:
+            prod_id = self._product_id_v2(response)
+        if prod_id:
             url = self.REVIEW_API_URL.format(apipass=self.REVIEW_API_PASS,
                                              model=prod_id)
             return Request(url, self._parse_reviews, meta=response.meta, dont_filter=True)
