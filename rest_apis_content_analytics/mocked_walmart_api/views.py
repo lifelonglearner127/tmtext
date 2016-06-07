@@ -202,7 +202,7 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
             seconds_since_submit = ((time_now.replace(tzinfo=None) -
                                      file.created.replace(tzinfo=None)).total_seconds())
 
-            # This way the same xml file will display similar content
+            # This way the same feed id file will display similar content
             random.seed(file_content)
 
             print "seconds_since_submit: %d" % seconds_since_submit
@@ -221,8 +221,15 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
                 values['current_status'] = "INPROGRESS"
                 if subm_hist.in_progress == num_items:
                     process = random.randint(0, num_items - 1)
-                    success = random.randint(0, process)
-                    errors = process - success
+
+                    if random.random() < 0.80:
+                        success = process
+                        errors = 0
+
+                    else:
+                        success = random.randint(0, process)
+                        errors = process - success
+
                     values['in_progress'] = subm_hist.in_progress = (num_items - process)
                     values['success'] = subm_hist.success = success
                     values['errors'] = subm_hist.errors = errors
@@ -241,8 +248,17 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
             else:
                 if subm_hist.in_progress == num_items:
                     values['in_progress'] = subm_hist.in_progress = 0
-                    values['success'] = subm_hist.success = random.randint(0, num_items)
-                    values['errors'] = subm_hist.errors = num_items - subm_hist.success
+
+                    if random.random() < 0.80:
+                        success = num_items
+                        errors = 0
+
+                    else:
+                        success = random.randint(0, num_items)
+                        errors = num_items - success
+
+                    values['success'] = subm_hist.success = success
+                    values['errors'] = subm_hist.errors = errors
                     values['data_error'] = subm_hist.data_error = random.randint(0, subm_hist.errors)
                     values['timeout_error'] = subm_hist.timeout_error = subm_hist.errors - subm_hist.data_error
 
@@ -261,6 +277,7 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
                     values['timeout_error'] = subm_hist.timeout_error
 
                 subm_hist.current_status = "PROCESSED"
+                values['current_status'] = "PROCESSED"
 
             subm_hist.save()
 
@@ -291,7 +308,13 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
         if subm_hist:
             histories = SubmissionHistory.objects.filter(feed_id=request_feed_id)
             for index, history in enumerate(histories):
-                SubmissionStatus.objects.get(history=history.id).delete()
+                try:
+                    submissions = SubmissionStatus.objects.filter(history=history.id)
+                    for submission in submissions:
+                        submission.delete()
+                except:
+                    import traceback
+                    print traceback.print_exc()
                 new_status = response['itemDetails']['itemIngestionStatus'][index]['ingestionStatus']
                 history.set_statuses([new_status])
 
@@ -339,3 +362,18 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
             r["ingestionErrors"] = {"ingestionError": None}
 
         return results
+
+
+class MockedFeedStatusAjaxView(FeedStatusAjaxView):
+    def get(self, request, *args, **kwargs):
+        feed_id = kwargs['feed_id']
+        # If last time it was IN Progress, try to update values
+        try:
+            subm_hist = MockedXMLStatus.objects.get(feed_id=feed_id)
+            if subm_hist.current_status == "INPROGRESS":
+                mockedCheckFeedStatus = MockedCheckFeedStatusByWalmartApiViewSet()
+                mockedCheckFeedStatus.process_one_set("", feed_id)
+        except:
+            pass
+
+        return super(MockedFeedStatusAjaxView, self).get(request, *args, **kwargs)
