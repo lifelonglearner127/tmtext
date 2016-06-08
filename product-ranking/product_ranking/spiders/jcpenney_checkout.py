@@ -79,7 +79,7 @@ class JCpenneySpider(scrapy.Spider):
         self.requested_color = None
 
         from pyvirtualdisplay import Display
-        display = Display(visible=True)
+        display = Display(visible=False)
         display.start()
 
         if self.quantity:
