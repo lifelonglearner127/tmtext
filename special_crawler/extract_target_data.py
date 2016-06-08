@@ -70,13 +70,14 @@ class TargetScraper(Scraper):
         and returns True if current page is one.
         '''
 
-        self.tv.setupCH(self.tree_html)
-
         if len(self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")) < 1:
             self.version = 2
+            self.tv.setupCH(self.tree_html, self._item_info())
+
         else:
             self.version = 1
             self._extract_product_json()
+            self.tv.setupCH(self.tree_html)
 
         return False
 
@@ -243,32 +244,7 @@ class TargetScraper(Scraper):
         return self.tv._stockstatus_for_variants()
 
     def _variants(self):
-        if self.version == 1:
-            return self.tv._variants()
-
-        variants = []
-
-        for item in self._item_info()['SKUs']:
-            price = item['Offers'][0]['OfferPrice'][0]['formattedPriceValue']
-
-            v = {
-                'in_stock' : False,
-                'price' : float( price[1:].replace(',','')), # convert price
-                'properties' : {},
-                'image_url' : item['Images'][0]['PrimaryImage'][0]['image'],
-                'selected' : None,
-            }
-
-            if item.get('inventoryStatus'):
-                v['in_stock'] = not ('out of stock' in item['inventoryStatus'])
-
-            for attribute in item['VariationAttributes']:
-                v['properties'][ attribute['name'].lower() ] = attribute['value']
-
-            variants.append(v)
-
-        if variants:
-            return variants
+        return self.tv._variants()
 
     def _swatches(self):
         if self.version == 1:
