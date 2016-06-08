@@ -38,7 +38,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     # TODO: support new currencies if you're going to scrape target.canada
     #  or any other target.* different from target.com!
-    SEARCH_URL = "http://www.target.com/s?searchTerm={search_term}"
+    SEARCH_URL = "http://tws.target.com/searchservice/item/search_" \
+                 "results/v2/by_keyword?search_term={search_term}&alt=json" \
+                 "&pageCount=24&response_group=Items" \
+                 "&zone=mobile&offset=0"
+
     SCRIPT_URL = "http://recs.richrelevance.com/rrserver/p13n_generated.js"
     CALL_RR = False
     CALL_RECOMM = True
@@ -112,6 +116,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     def parse(self, response):
         regexp = re.compile('^http://[\w]*\.target\.com/c/[^/]+/-/([^#]+)')
         category = regexp.search(response.url)
+
+        # New Search
+        if "results/v2/by_keyword" in response.url:
+            return list(super(TargetProductSpider, self).parse(response))
+
         if response.meta.get('search_start') and category:
             new_meta = response.meta
             new_meta['search_start'] = False
@@ -392,6 +401,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             # TODO: shipping and store availability? see "purchasingChannel: Sold Online + in Stores" in item_info; http://www.target.com/p/denizen-from-levi-s-women-s-curvy-bootcut-jeans-denim-blue/-/A-50234669
 
 
+
     def _extract_recomm_urls(self, response):
         script = response.xpath(
             "//script[contains(text(),'var recommendationConfig')]"
@@ -625,30 +635,44 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             bi_list.append((brand, link, isonline, price))
         return bi_list
 
-    def _scrape_product_links(self, response):
-        # TODO: remove test urls!
-        import random
-        urls = [
-            ('http://www.target.com/p/-/A-17103162', SiteProductItem()),
-            ('http://www.target.com/p/men-s-straight-fit-jeans-standard-and-grind/-/A-50383669?lnk=rec|pdpipadh2|top_rated|pdpipadh2|50383669|4', SiteProductItem()),
-            ('http://www.target.com/p/men-s-slim-fit-jeans-standard-and-grind/-/A-50383671?lnk=rec|pdpipadh2|top_rated|pdpipadh2|50383671|5', SiteProductItem()),
-            ('http://www.target.com/p/men-s-straight-fit-jeans-dark-super-destroyed-standard-and-grind/-/A-23975287?lnk=rec|pdpipadh2|top_rated|pdpipadh2|23975287|6', SiteProductItem()),
-            ('http://www.target.com/p/dickies-men-s-regular-straight-fit-denim-5-pocket-jean/-/A-14154786?lnk=rec|pdpipadh2|top_rated|pdpipadh2|14154786|9', SiteProductItem()),
-            ('http://www.target.com/p/toddler-boys-button-down-shirt-green-cherokee/-/A-50458678', SiteProductItem()),
-            ('http://www.target.com/p/french-toast-toddler-boys-oxford-shirt-white/-/A-17270342', SiteProductItem()),
-            ('http://www.target.com/p/toddler-boys-button-down-shirt-yellow-cherokee/-/A-50411456', SiteProductItem()),
-            ('http://www.target.com/p/toddler-boys-button-down-shirt-green-cherokee/-/A-50411449', SiteProductItem()),
-            ('http://www.target.com/p/toddler-boys-short-sleeve-button-down-shirt-orange-cherokee/-/A-50591567', SiteProductItem()),
-            ('http://www.target.com/p/women-s-jana-thong-sandals/-/A-31168759', SiteProductItem()),
-            ('http://www.target.com/p/women-s-lady-thong-sandals-white/-/A-26400992', SiteProductItem()),
-        ]
-        random.shuffle(urls)
-        return urls
+    def _is_search_v2(self, response):
+        return "search_results/v2/by_keyword" in response.url
 
+    def _scrape_product_links(self, response):
         if response.meta.get('json'):
             return list(self._scrape_product_links_json(response))
+
+        elif self._is_search_v2(response):
+            return list(self._scrape_product_links_json_2(response))
+
         else:
             return list(self._scrape_product_links_html(response))
+
+    def _scrape_product_links_json_2(self, response):
+        data = json.loads(response.body)
+        for item in data['searchResponse']['items']['Item']:
+            url = item['productDetailPageURL']
+            url = urlparse.urljoin('http://www.target.com', url)
+            product = SiteProductItem()
+            attrs = item.get('itemAttributes', {})
+            cond_set_value(product, 'title', attrs.get('title'))
+            cond_set_value(product, 'brand',
+                           attrs.get('productManufacturerBrand'))
+
+            p = item.get('priceSummary', {})
+            priceattr = p.get('offerPrice', p.get('listPrice'))
+            if priceattr:
+                currency = priceattr['currencyCode']
+                amount = priceattr['amount']
+                if amount == 'Too low to display' or 'see store for price':
+                    price = None
+                else:
+                    amount = is_empty(re.findall(
+                        '\d+\.{0,1}\d+', priceattr['amount']
+                    ))
+                    price = Price(priceCurrency=currency, price=amount)
+                cond_set_value(product, 'price', price)
+            yield url, product
 
     def _scrape_product_links_json(self, response):
         for item in self._get_json_data(response)['items']['Item']:
@@ -669,7 +693,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 else:
                     amount = is_empty(re.findall(
                         '\d+\.{0, 1}\d+', priceattr['amount']
-                    ))                   
+                    ))
                     price = Price(priceCurrency=currency, price=amount)
                 cond_set_value(product, 'price', price)
             yield url, product
@@ -743,6 +767,10 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     def _scrape_total_matches(self, response):
         if response.meta.get('json'):
             return self._scrape_total_matches_json(response)
+
+        elif self._is_search_v2(response):
+            return self._scrape_total_matches_json_2(response)
+
         else:
             return self._scrape_total_matches_html(response)
 
@@ -750,6 +778,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         args = {d['name']: d['value'] for d in
                 data['searchState']['Arguments']['Argument']}
         return args
+
+    def _scrape_total_matches_json_2(self, response):
+        data = json.loads(response.body)
+        args = self._json_get_args(data['searchResponse'])
+        return int(args.get('prodCount'))
 
     def _scrape_total_matches_json(self, response):
         data = self._get_json_data(response)
@@ -849,7 +882,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             requests.append(Request(
                 url,
                 callback=self.parse_product,
-                meta=new_meta,dont_filter=True))
+                meta=new_meta, dont_filter=True))
         return requests
 
     def _scrape_next_results_page_link(self, response):
@@ -857,8 +890,19 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             return
         if response.meta.get('json'):
             return self._scrape_next_results_page_link_json(response)
+        elif self._is_search_v2(response):
+            return self._scrape_next_results_page_link_json_2(response)
         else:
             return self._scrape_next_results_page_link_html(response)
+
+    def _scrape_next_results_page_link_json_2(self, response):
+        data = json.loads(response.body)
+        args = self._json_get_args(data['searchResponse'])
+        next_offset = (int(args['currentPage'])) * int(args['resultsPerPage'])
+        search_term = args['keyword']
+        url = self.SEARCH_URL.format(
+            search_term=search_term).replace('offset=0', 'offset=%d' % next_offset)
+        return Request(url, meta=response.meta)
 
     def _scrape_next_results_page_link_json(self, response):
         #raw_input(len(list(self._scrape_product_links_json(response))))
