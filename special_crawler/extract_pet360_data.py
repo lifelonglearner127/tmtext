@@ -47,18 +47,16 @@ class Pet360Scraper(Scraper):
         return self.tree_html.xpath('//title/text()')[0].strip()
 
     def _description(self):
-        #description = self.tree_html.xpath('//div[@class="short_description"]')[0]
-        #return self._clean_html(html.tostring(description))
-        return self._products_json()['shortDescription']
+        first_break = self._products_json()['shortDescription'].find('<br>')
+        return self._products_json()['shortDescription'][:first_break]
 
     def _long_description(self):
-        #long_description = self.tree_html.xpath('//div[@class="description"]')[0]
+        long_description = self._products_json()['shortDescription']
 
-        # overlap with short description
-        #long_description = self._description() + self._clean_html(html.tostring(long_description))
-        long_description = self._description() + self._products_json()['description']
-        if not long_description == self._description():
-            return long_description
+        if self._products_json().get('description'):
+            long_description += self._products_json()['description']
+
+        return long_description
 
     def _features(self):
         features = self.tree_html.xpath('//div[@class="description"]//ul/li/text()')
