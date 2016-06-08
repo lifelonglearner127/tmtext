@@ -239,6 +239,10 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             # scrape v2 reviews
             return self._request_reviews_v2(prod, response)
 
+        if 'title' in prod:
+            if isinstance(prod['title'], (list, tuple)):
+                prod['title'] = prod['title'][0].strip()
+
         if not prod.get('brand', None):
             brand = guess_brand_from_first_words(prod['title'])
             if brand:
@@ -306,9 +310,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         return bool(self._scrape_title_v1(response))
 
     @staticmethod
-    def _product_id_v2(response):
+    def _product_id_v2(response_or_url):
+        if not isinstance(response_or_url, (str, unicode)):
+            response_or_url = response_or_url.url
         # else get it from the url
-        return re.search('A-(\d+)', response.url).group(1)
+        return re.search('A-(\d+)', response_or_url).group(1)
 
     def _item_info_v2(self, response):
         response = requests.get(
@@ -318,6 +324,20 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         item_info = json.loads(item_info)['CatalogEntryView'][0]
         self.item_info = item_info
         return item_info
+
+    @staticmethod
+    def _get_price_v2(item_info):
+        """ Returns (price, in cart) """
+        in_cart = False
+        offer = item_info.get('Offers', [{}])[0].get('OfferPrice', [{}])[0]
+        if 'low to display' in offer['formattedPriceValue'].lower():
+            # in-cart pricing
+            offer = item_info.get('Offers', [{}])[0].get('OriginalPrice', [{}])[0]
+            in_cart = True
+        price = Price(
+                priceCurrency=offer['currencyCode'],
+                price=offer['formattedPriceValue'].split(' -', 1)[0].replace('$', ''))
+        return price, in_cart
 
     def _populate_from_html(self, response, product):
         if self._is_v1(response):
@@ -354,11 +374,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             product['image_url'] = item_info.get('Images', [{}])[0].get('PrimaryImage', [{}])[0].get('image')
             product['description'] = item_info.get('shortDescription', None)
             product['brand'] = guess_brand_from_first_words(product['title'])
-            offer = item_info.get('Offers', [{}])[0].get('OfferPrice', [{}])[0]
-            if offer:
-                product['price'] = Price(
-                    priceCurrency=offer['currencyCode'],
-                    price=offer['formattedPriceValue'].split(' -', 1)[0].replace('$', ''))
+            product['price'], product['price_details_in_cart'] = self._get_price_v2(item_info)
             #product['related_products'] = None  # TODO
             product['is_out_of_stock'] = not item_info.get('inventoryStatus', '') == 'in stock'
             #product['variants'] = ''  # TODO - wait for Matt to update shared code with his variants implementation
@@ -604,6 +620,25 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         return bi_list
 
     def _scrape_product_links(self, response):
+        # TODO: remove test urls!
+        import random
+        urls = [
+            ('http://www.target.com/p/-/A-17103162', SiteProductItem()),
+            ('http://www.target.com/p/men-s-straight-fit-jeans-standard-and-grind/-/A-50383669?lnk=rec|pdpipadh2|top_rated|pdpipadh2|50383669|4', SiteProductItem()),
+            ('http://www.target.com/p/men-s-slim-fit-jeans-standard-and-grind/-/A-50383671?lnk=rec|pdpipadh2|top_rated|pdpipadh2|50383671|5', SiteProductItem()),
+            ('http://www.target.com/p/men-s-straight-fit-jeans-dark-super-destroyed-standard-and-grind/-/A-23975287?lnk=rec|pdpipadh2|top_rated|pdpipadh2|23975287|6', SiteProductItem()),
+            ('http://www.target.com/p/dickies-men-s-regular-straight-fit-denim-5-pocket-jean/-/A-14154786?lnk=rec|pdpipadh2|top_rated|pdpipadh2|14154786|9', SiteProductItem()),
+            ('http://www.target.com/p/toddler-boys-button-down-shirt-green-cherokee/-/A-50458678', SiteProductItem()),
+            ('http://www.target.com/p/french-toast-toddler-boys-oxford-shirt-white/-/A-17270342', SiteProductItem()),
+            ('http://www.target.com/p/toddler-boys-button-down-shirt-yellow-cherokee/-/A-50411456', SiteProductItem()),
+            ('http://www.target.com/p/toddler-boys-button-down-shirt-green-cherokee/-/A-50411449', SiteProductItem()),
+            ('http://www.target.com/p/toddler-boys-short-sleeve-button-down-shirt-orange-cherokee/-/A-50591567', SiteProductItem()),
+            ('http://www.target.com/p/women-s-jana-thong-sandals/-/A-31168759', SiteProductItem()),
+            ('http://www.target.com/p/women-s-lady-thong-sandals-white/-/A-26400992', SiteProductItem()),
+        ]
+        random.shuffle(urls)
+        return urls
+
         if response.meta.get('json'):
             return list(self._scrape_product_links_json(response))
         else:
@@ -858,7 +893,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             prod_id = re.search('\d+\Z', main_url)
             prod_id = prod_id.group()
         else:
-            prod_id = self._product_id_v2(response)
+            prod_id = self._product_id_v2(product['url'])
         if prod_id:
             url = self.REVIEW_API_URL.format(apipass=self.REVIEW_API_PASS,
                                              model=prod_id)
@@ -881,6 +916,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             else:
                 fdist = ZERO_REVIEWS_VALUE[-1]
+                if total is None or average is None:
+                    product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+                    return product
                 reviews = BuyerReviews(int(total), int(average), fdist)
                 cond_set_value(product, 'buyer_reviews', reviews)
         if average and total:
