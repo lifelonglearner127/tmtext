@@ -6,15 +6,17 @@ import lxml.html
 
 class TargetVariants(object):
 
-    def setupSC(self, response, debug=False):
+    def setupSC(self, response, item_info=None, debug=False):
         """ Call it from SC spiders """
         self.response = response
         self.tree_html = lxml.html.fromstring(response.body)
+        self.item_info = item_info
         self.debug = debug
 
-    def setupCH(self, tree_html, debug=False):
+    def setupCH(self, tree_html, item_info=None, debug=False):
         """ Call it from CH spiders """
         self.tree_html = tree_html
+        self.item_info = item_info
         self.debug = debug
 
     def _scrape_possible_variant_urls(self):
@@ -118,6 +120,32 @@ class TargetVariants(object):
         return stockstatus_for_variation_combinations
 
     def _variants(self):
+        if self.item_info:
+            variants = []
+
+            for item in self.item_info['SKUs']:
+                price = item['Offers'][0]['OfferPrice'][0]['formattedPriceValue']
+
+                v = {
+                    'in_stock' : False,
+                    'price' : float( price[1:].replace(',','')), # convert price
+                    'properties' : {},
+                    'image_url' : item['Images'][0]['PrimaryImage'][0]['image'],
+                    'selected' : None,
+                }
+
+                if item.get('inventoryStatus'):
+                    v['in_stock'] = not ('out of stock' in item['inventoryStatus'])
+
+                for attribute in item['VariationAttributes']:
+                    v['properties'][ attribute['name'].lower() ] = attribute['value']
+
+                variants.append(v)
+
+            if variants:
+                return variants
+            return None
+
         try:
             variation_combinations_values = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
 
