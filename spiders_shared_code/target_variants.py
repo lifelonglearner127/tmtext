@@ -124,11 +124,17 @@ class TargetVariants(object):
             variants = []
 
             for item in self.item_info['SKUs']:
-                price = item['Offers'][0]['OfferPrice'][0]['formattedPriceValue']
+                try:
+                    price = item['Offers'][0]['OfferPrice'][0]['formattedPriceValue']
+                except ValueError as e:
+                    if 'low to display' in str(e):
+                        price = None  # in cart price?
 
                 v = {
                     'in_stock' : False,
-                    'price' : float( price[1:].replace(',','')), # convert price
+                    'price': float( price[1:].replace(',',''))\
+                        if price not in ('Too low to display', None)\
+                        else None, # convert price
                     'properties' : {},
                     'image_url' : item['Images'][0]['PrimaryImage'][0]['image'],
                     'selected' : None,
