@@ -200,7 +200,10 @@ class TargetScraper(Scraper):
 
     def _description(self):
         if self.version == 2:
-            return self._item_info()['shortDescription']
+            try:
+                return self._item_info()['shortDescription']
+            except:
+                return self._item_info()['ItemDescription'][0]['description']
 
         description = "".join(self.tree_html.xpath("//span[@itemprop='description']//text()")).strip()
         description_copy = "".join(self.tree_html.xpath("//div[@class='details-copy']//text()")).strip()
@@ -300,14 +303,18 @@ class TargetScraper(Scraper):
 
     def _details(self):
         if self.version == 2:
-            return self._item_info()['shortDescription']
+            try:
+                return self._item_info()['shortDescription']
+            except:
+                return self._item_info()['ItemDescription'][0]['description']
 
         details = self.tree_html.xpath('//div[@class="details-copy"]')[0]
         return self._clean_html(html.tostring(details))
 
     def _mta(self):
         if self.version == 2:
-            return ''.join( self._item_info()['ItemDescription'][0]['features'])
+            if self._item_info()['ItemDescription'][0]['features']:
+                return ''.join( self._item_info()['ItemDescription'][0]['features'])
 
         mta = self.tree_html.xpath('//div[@class="details-copy"]/following-sibling::ul')[0]
         return self._clean_html(html.tostring(mta))
