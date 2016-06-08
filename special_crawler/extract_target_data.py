@@ -175,14 +175,15 @@ class TargetScraper(Scraper):
     def _features(self):
         if self.version == 2:
             features = self._item_info()['ItemDescription'][0]['features']
-            # remove tags
-            return map( lambda f : re.sub( '<[^>]*>', '', f).strip(), features)
+            features = map(lambda f : re.sub('<[^>]*>', '', f).strip(), features)
+            if features:
+                return features
 
         rows = self.tree_html.xpath("//ul[@class='normal-list']//li")
         feature_list = []
 
         for row in rows:
-            feature_list.append(row.text_content().strip())
+            feature_list.append( self._clean_html( row.text_content()))
 
         if feature_list:
             return feature_list
@@ -313,7 +314,7 @@ class TargetScraper(Scraper):
 
     def _mta(self):
         if self.version == 2:
-            if self._item_info()['ItemDescription'][0]['features']:
+            if self._item_info()['ItemDescription'][0].get('features'):
                 return ''.join( self._item_info()['ItemDescription'][0]['features'])
 
         mta = self.tree_html.xpath('//div[@class="details-copy"]/following-sibling::ul')[0]
@@ -767,13 +768,13 @@ class TargetScraper(Scraper):
 #        return re.sub("&nbsp;", " ", text).strip()
 
     def _clean_html(self, content):
-        content = re.sub('[\n\t]', '', content)
+        content = re.sub('[\n\t]', ' ', content)
         content = re.sub('<![^>]+>', '', content)
         content = re.sub(' (class|itemprop)="[^"]+"', '', content)
         content = re.sub('\s+', ' ', content)
         content = re.sub('> <', '><', content)
 
-        return content
+        return content.strip()
 
     ##########################################
     ################ RETURN TYPES
