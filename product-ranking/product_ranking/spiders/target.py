@@ -307,7 +307,14 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             return title[0].strip()
 
     def _is_v1(self, response):
-        return bool(self._scrape_title_v1(response))
+        is_v1 = bool(self._scrape_title_v1(response))
+        if is_v1:
+            self.log('Scraping V1')
+            print('Scraping V1')
+        else:
+            self.log('Scraping V2')
+            print('Scraping V2')
+        return is_v1
 
     @staticmethod
     def _product_id_v2(response_or_url):
@@ -377,13 +384,12 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             product['price'], product['price_details_in_cart'] = self._get_price_v2(item_info)
             #product['related_products'] = None  # TODO
             product['is_out_of_stock'] = not item_info.get('inventoryStatus', '') == 'in stock'
-            #product['variants'] = ''  # TODO - wait for Matt to update shared code with his variants implementation
-            # TODO: shipping and store availability? see "purchasingChannel: Sold Online + in Stores" in item_info
-            # TODO: in-cart price, like http://www.target.com/p/dickies-men-s-regular-straight-fit-6-pocket-jean/-/A-16533864?lnk=rec|pdpipadh2|top_rated|pdpipadh2|16533864|3
 
+            tv = TargetVariants()
+            tv.setupSC(response=response, item_info=item_info)
+            product['variants'] = tv._variants()
 
-
-
+            # TODO: shipping and store availability? see "purchasingChannel: Sold Online + in Stores" in item_info; http://www.target.com/p/denizen-from-levi-s-women-s-curvy-bootcut-jeans-denim-blue/-/A-50234669
 
 
     def _extract_recomm_urls(self, response):
