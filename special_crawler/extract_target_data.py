@@ -103,16 +103,21 @@ class TargetScraper(Scraper):
 
         return self.product_json
 
+    def _item_info_helper(self, partNumber):
+            response = requests.get('http://tws.target.com/productservice/services/item_service/v1/by_itemid?id=' + partNumber + '&alt=json&callback=itemInfoCallback&_=1464382778193').content
+
+            item_info = re.match('itemInfoCallback\((.*)\)$', response, re.DOTALL).group(1)
+            return json.loads(item_info)['CatalogEntryView'][0]
+
     def _item_info(self):
         if not self.item_info_checked:
             self.item_info_checked = True
+            item_info = self._item_info_helper( self._product_id())
 
-            response = requests.get('http://tws.target.com/productservice/services/item_service/v1/by_itemid?id=' + self._product_id() + '&alt=json&callback=itemInfoCallback&_=1464382778193').content
+            if item_info.get('parentPartNumber') and item_info['parentPartNumber'] != self._product_id():
+                item_info = self._item_info_helper( item_info['parentPartNumber'])
 
-            item_info = re.match('itemInfoCallback\((.*)\)$', response, re.DOTALL).group(1)
-
-            self.item_info = json.loads(item_info)['CatalogEntryView'][0]
-
+            self.item_info = item_info
         return self.item_info
 
     ##########################################
