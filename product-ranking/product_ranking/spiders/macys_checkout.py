@@ -74,7 +74,7 @@ class MacysSpider(BaseCheckoutSpider):
 
         if add_to_bag:
             add_to_bag[0].click()
-            time.sleep(4)
+            time.sleep(8)
 
     def _do_others_actions(self):
         return
