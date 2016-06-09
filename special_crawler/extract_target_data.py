@@ -103,16 +103,21 @@ class TargetScraper(Scraper):
 
         return self.product_json
 
+    def _item_info_helper(self, partNumber):
+            response = requests.get('http://tws.target.com/productservice/services/item_service/v1/by_itemid?id=' + partNumber + '&alt=json&callback=itemInfoCallback&_=1464382778193').content
+
+            item_info = re.match('itemInfoCallback\((.*)\)$', response, re.DOTALL).group(1)
+            return json.loads(item_info)['CatalogEntryView'][0]
+
     def _item_info(self):
         if not self.item_info_checked:
             self.item_info_checked = True
+            item_info = self._item_info_helper( self._product_id())
 
-            response = requests.get('http://tws.target.com/productservice/services/item_service/v1/by_itemid?id=' + self._product_id() + '&alt=json&callback=itemInfoCallback&_=1464382778193').content
+            if item_info.get('parentPartNumber') and item_info['parentPartNumber'] != self._product_id():
+                item_info = self._item_info_helper( item_info['parentPartNumber'])
 
-            item_info = re.match('itemInfoCallback\((.*)\)$', response, re.DOTALL).group(1)
-
-            self.item_info = json.loads(item_info)['CatalogEntryView'][0]
-
+            self.item_info = item_info
         return self.item_info
 
     ##########################################
@@ -176,14 +181,15 @@ class TargetScraper(Scraper):
     def _features(self):
         if self.version == 2:
             features = self._item_info()['ItemDescription'][0]['features']
-            # remove tags
-            return map( lambda f : re.sub( '<[^>]*>', '', f).strip(), features)
+            features = map(lambda f : re.sub('<[^>]*>', '', f).strip(), features)
+            if features:
+                return features
 
         rows = self.tree_html.xpath("//ul[@class='normal-list']//li")
         feature_list = []
 
         for row in rows:
-            feature_list.append(row.text_content().strip())
+            feature_list.append( self._clean_html( row.text_content()))
 
         if feature_list:
             return feature_list
@@ -201,7 +207,10 @@ class TargetScraper(Scraper):
 
     def _description(self):
         if self.version == 2:
-            return self._item_info()['shortDescription']
+            try:
+                return self._item_info()['shortDescription']
+            except:
+                return self._item_info()['ItemDescription'][0]['description']
 
         description = "".join(self.tree_html.xpath("//span[@itemprop='description']//text()")).strip()
         description_copy = "".join(self.tree_html.xpath("//div[@class='details-copy']//text()")).strip()
@@ -276,14 +285,18 @@ class TargetScraper(Scraper):
 
     def _details(self):
         if self.version == 2:
-            return self._item_info()['shortDescription']
+            try:
+                return self._item_info()['shortDescription']
+            except:
+                return self._item_info()['ItemDescription'][0]['description']
 
         details = self.tree_html.xpath('//div[@class="details-copy"]')[0]
         return self._clean_html(html.tostring(details))
 
     def _mta(self):
         if self.version == 2:
-            return ''.join( self._item_info()['ItemDescription'][0]['features'])
+            if self._item_info()['ItemDescription'][0].get('features'):
+                return ''.join( self._item_info()['ItemDescription'][0]['features'])
 
         mta = self.tree_html.xpath('//div[@class="details-copy"]/following-sibling::ul')[0]
         return self._clean_html(html.tostring(mta))
@@ -736,13 +749,13 @@ class TargetScraper(Scraper):
 #        return re.sub("&nbsp;", " ", text).strip()
 
     def _clean_html(self, content):
-        content = re.sub('[\n\t]', '', content)
+        content = re.sub('[\n\t]', ' ', content)
         content = re.sub('<![^>]+>', '', content)
         content = re.sub(' (class|itemprop)="[^"]+"', '', content)
         content = re.sub('\s+', ' ', content)
         content = re.sub('> <', '><', content)
 
-        return content
+        return content.strip()
 
     ##########################################
     ################ RETURN TYPES
