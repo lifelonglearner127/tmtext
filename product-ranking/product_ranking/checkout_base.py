@@ -104,6 +104,7 @@ class BaseCheckoutSpider(scrapy.Spider):
                 socket.setdefaulttimeout(60)
                 self.driver.get(url)
 
+
                 if product.get('FetchAllColors'):
                     # Parse all the products colors
                     colors = self._get_colors_names()
@@ -126,6 +127,7 @@ class BaseCheckoutSpider(scrapy.Spider):
 
                     self.log('Color: %s' % (color or 'None'))
                     clickable_error = True
+                    self._pre_parse_products()
                     while clickable_error:
                         clickable_error = False
                         try:
@@ -328,6 +330,10 @@ class BaseCheckoutSpider(scrapy.Spider):
 
     @abstractmethod
     def _get_total(self):
+        return
+
+    @abstractmethod
+    def _pre_parse_products(self):
         return
 
     def _click_on_element_with_id(self, _id):
