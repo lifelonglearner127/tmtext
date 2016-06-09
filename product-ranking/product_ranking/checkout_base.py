@@ -99,11 +99,7 @@ class BaseCheckoutSpider(scrapy.Spider):
                 self.is_requested_color = False
                 url = product.get('url')
                 # Fastest way to empty the cart
-                self.driver = self.init_driver()
-                self.wait = WebDriverWait(self.driver, 25)
-                socket.setdefaulttimeout(60)
-                self.driver.get(url)
-
+                self._open_new_session(url)
                 if product.get('FetchAllColors'):
                     # Parse all the products colors
                     colors = self._get_colors_names()
@@ -138,24 +134,28 @@ class BaseCheckoutSpider(scrapy.Spider):
                             # Fastest way to empty the cart
                             # and clear resources
                             self.driver.close()
-                            self.driver = self.init_driver()
-                            self.wait = WebDriverWait(self.driver, 25)
-                            socket.setdefaulttimeout(60)
-                            self.driver.get(url)
+                            self._open_new_session(url)
 
                         except WebDriverException as e:
-                            if 'Element is not clickable at point' in str(e):
-                                clickable_error = True
-
+                            clickable_error = True
                             print traceback.print_exc()
                             print "Exception: %s" % str(e)
+                            self._open_new_session(url)
 
                         except:
                             print traceback.print_exc()
                             self.log('Error while parsing color %s of %s'
                                      % (color, url))
 
+                            self._open_new_session(url)
+
                 self.driver.close()
+
+    def _open_new_session(self, url):
+        self.driver = self.init_driver()
+        self.wait = WebDriverWait(self.driver, 25)
+        socket.setdefaulttimeout(60)
+        self.driver.get(url)
 
     def _parse_item(self, product):
         item = CheckoutProductItem()
