@@ -105,7 +105,7 @@ def login(br, username, password):
         return True
 
 
-def upload_file(br, file):
+def upload_image(br, file):
     br.find_element_by_link_text("Add images").click()
     time.sleep(3)
     upload = br.find_element_by_name('Content')
@@ -125,6 +125,25 @@ def upload_file(br, file):
     else:
         logging_info('Failed to upload images', level='ERROR')
         return False
+
+def download_report(br):
+    try:
+        br.find_element_by_partial_link_text("Reports").click()
+        time.sleep(2)
+        br.find_element_by_xpath('//span[@id="vxa-report-selector-wrapper"]').click()
+        br.find_element_by_partial_link_text("Product Details").click()
+        time.sleep(2)
+        br.find_element_by_xpath('//span[@id="vxa-ab-reporting-period"]').click()
+        br.find_element_by_link_text('Last reported day').click()
+        time.sleep(2)
+        br.find_element_by_xpath('//button[@id="a-autoid-26-announce"]').click()
+        br.find_element_by_partial_link_text("CSV").click()
+        logging_info('Report was downloaded successfully')
+        return True
+    except:
+        logging_info('Failed to downoad report', level='ERROR')
+        return False
+
 
 
 def on_close(br, display):
@@ -150,16 +169,23 @@ def main():
                         help="Enter your email")
     parser.add_argument('-p', '--password', type=str, required=True,
                         help="Enter your password")
-    parser.add_argument('--zip_file', type=str, required=True,
+    parser.add_argument('--zip_file', type=str, required=False,
                         help="ZIP file to upload")
+    parser.add_argument('--task', type=str, required=True,
+                        help="Task for spider")
     parser.add_argument('--logging_file', type=str, required=True,
                         help="filename for output logging")
     namespace = parser.parse_args()
+    task = namespace.task
 
     LOG_FILE = namespace.logging_file
 
     profile = webdriver.FirefoxProfile()
     profile.set_preference("general.useragent.override", headers)
+    profile.set_preference("browser.download.folderList",2)
+    profile.set_preference('browser.download.manager.showWhenStarting', False)
+    profile.set_preference('browser.download.dir', os.path.join(os.getcwd(),'_downloads')
+    profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'text/csv')
 
     #Set up headless version of Firefox
     display = Display(visible=0, size=(1027, 768))
@@ -178,10 +204,15 @@ def main():
         on_close(br, display)
         sys.exit(1)
 
-    if not upload_file(br, namespace.zip_file):
-        logging_info("Could not upload the file! Exit...", level='ERROR')
-        on_close(br, display)
-        sys.exit(1)
+    if task != 'report':
+        if not upload_image(br, namespace.zip_file):
+            logging_info("Could not upload the file! Exit...", level='ERROR')
+            on_close(br, display)
+            sys.exit(1)
+    elif not download_report(br):
+            logging_info("Could not download the file! Exit...", level='ERROR')
+            on_close(br, display)
+            sys.exit(1) 
 
     on_close(br, display)
 
