@@ -15,8 +15,6 @@ class MacysSpider(BaseCheckoutSpider):
     allowed_domains = ['macys.com']  # do not remove comment - used in find_spiders()
 
     SHOPPING_CART_URL = 'http://www1.macys.com/bag/index.ognc'
-    CHECKOUT_PAGE_URL = "https://www.jcpenney.com/dotcom/" \
-                        "jsp/checkout/secure/checkout.jsp"
 
     def start_requests(self):
         yield scrapy.Request('http://www1.macys.com/')
