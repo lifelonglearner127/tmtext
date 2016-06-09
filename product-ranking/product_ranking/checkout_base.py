@@ -73,6 +73,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.quantity = kwargs.get('quantity', None)
 
         self.requested_color = None
+        self.is_requested_color = False
 
         from pyvirtualdisplay import Display
         display = Display(visible=False)
@@ -91,17 +92,17 @@ class BaseCheckoutSpider(scrapy.Spider):
                              else list(self.product_data))
 
         for product in self.product_data:
-            self.requested_color = None
             self.log("Product: %r" % product)
             # Open product URL
             for qty in self.quantity:
+                self.requested_color = None
+                self.is_requested_color = False
                 url = product.get('url')
                 # Fastest way to empty the cart
                 self.driver = self.init_driver()
                 self.wait = WebDriverWait(self.driver, 25)
                 socket.setdefaulttimeout(60)
                 self.driver.get(url)
-                self.requested_color = product.get('color', None)
 
                 if product.get('FetchAllColors'):
                     # Parse all the products colors
@@ -112,11 +113,17 @@ class BaseCheckoutSpider(scrapy.Spider):
                     # if None, the first fetched will be selected
                     colors = product.get('color', None)
 
+                    if colors:
+                        self.is_requested_color = True
+
                     if isinstance(colors, basestring) or not colors:
                         colors = [colors]
 
                 self.log('Colors %r' % (colors))
                 for color in colors:
+                    if self.is_requested_color:
+                        self.requested_color = color
+
                     self.log('Color: %s' % (color or 'None'))
                     clickable_error = True
                     while clickable_error:
