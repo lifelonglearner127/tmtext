@@ -17,7 +17,7 @@
     <field name="keywords" version="1.1"></field>
     <field name="canonical_link" version="1.1"></field>
     <field name="mobile_image_same" version="1.1"></field>
-    <field name="video_urls" version="1.2"></field>
+    <field name="video_urls" version="1.3"></field>
     <field name="video_count" version="1.2"></field>
     <field name="price" version="1.3"></field>
     <field name="price_amount" version="1.1"></field>

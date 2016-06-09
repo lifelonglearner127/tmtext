@@ -490,10 +490,13 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         page = int(request.GET.get('page', 1))
         paginated_list = orig_list[(page-1)*paginate_by: page*paginate_by]
         paginate_left = paginate_right = True
+        
         if page <= 1:
             paginate_left = False
+        
         if page*paginate_by >= len(orig_list):
             paginate_right = False
+        
         return {'paginated_list': paginated_list, 'current_page': page,
                 'paginate_right': paginate_right, 'paginate_left': paginate_left}
 
@@ -503,11 +506,8 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         return context
 
     def list(self, request):
-        if os.path.isfile(get_walmart_api_invoke_log(request)):
-            with open(get_walmart_api_invoke_log(request), "r") as myfile:
-                log_history = myfile.read().splitlines()
-        else:
-            log_history = None
+        with open(get_walmart_api_invoke_log(request), "a+") as myfile:
+            log_history = myfile.read().splitlines()
 
         if isinstance(log_history, list):
             log_history.reverse()
