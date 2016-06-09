@@ -53,6 +53,9 @@ class BaseCheckoutSpider(scrapy.Spider):
     SHOPPING_CART_URL = ''
     CHECKOUT_PAGE_URL = ""
 
+    retries = 0
+    MAX_RETRIES = 3
+
     def __init__(self, *args, **kwargs):
         socket.setdefaulttimeout(60)
         settings.overrides['ITEM_PIPELINES'] = {}
@@ -122,7 +125,16 @@ class BaseCheckoutSpider(scrapy.Spider):
 
                     self.log('Color: %s' % (color or 'None'))
                     clickable_error = True
+                    self.retries = 0
                     while clickable_error:
+                        if self.retries >= self.MAX_RETRIES:
+                            self.log('Max retries number reach,'
+                                     ' skipping this product')
+                            break
+
+                        else:
+                            self.retries += 1
+
                         clickable_error = False
                         try:
                             self._parse_product_page(url, qty, color)
@@ -181,6 +193,11 @@ class BaseCheckoutSpider(scrapy.Spider):
             (self.requested_color != color))
         return item
 
+    def _parse_attributes(self, product, color, quantity):
+        self.select_color(product, color)
+        self.select_size(product)
+        self._set_quantity(product, quantity)
+
     def _parse_product_page(self, product_url, quantity, color=None):
         """ Process product and add it to the cart"""
         products = self._get_products()
@@ -190,12 +207,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         products = products if is_iterable else list(products)
 
         for product in products:
-            self.select_color(product, color)
-            self.select_size(product)
-            self.select_width(product)
-            self.select_others(product)
-            self._set_quantity(product, quantity)
-
+            self._parse_attributes(product, color, quantity)
             self._add_to_cart()
             self._do_others_actions()
 

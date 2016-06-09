@@ -42,7 +42,9 @@ class JCpenneySpider(BaseCheckoutSpider):
 
     def select_color(self, element=None, color=None):
         color_attribute_xpath = '*//li[@class="swatch_selected"]'
-        color_attributes_xpath = '*//*[@class="small_swatches"]//a'
+        color_attributes_xpath = ('*//*[@class="small_swatches"]'
+                                  '//a[not(span[@class="no_color"]) and '
+                                  'not(span[@class="color_illegal"])]')
 
         if color and color in self._get_colors_names():
             color_attributes_xpath = '*//*[@class="small_swatches"]//a' \
@@ -64,17 +66,25 @@ class JCpenneySpider(BaseCheckoutSpider):
                               width_attributes_xpath,
                               element)
 
-    def select_others(self, element=None):
-        group_attributes = self._find_by_xpath(
-            '*//ul[contains(@class,"sku_alt_options")]', element) or []
+    def select_waist(self, element=None):
+        default_attr_xpath = (
+            '*//*[@id="skuOptions_waist"]//li[@class="sku_select"]')
 
-        for attribute in group_attributes:
-            default_attr_xpath = 'li[@class="sku_select"]'
-            avail_attr_xpath = 'li[not(@class="sku_not_available" '\
-                'or @class="sku_illegal")]/a'
-            self._click_attribute(default_attr_xpath,
-                                  avail_attr_xpath,
-                                  attribute)
+        avail_attr_xpath = ('*//*[@id="skuOptions_waist"]//'
+                            'li[not(@class="sku_not_available" '
+                            'or @class="sku_illegal")]')
+
+        self._click_attribute(default_attr_xpath,
+                              avail_attr_xpath,
+                              element)
+        time.sleep(4)
+
+    def _parse_attributes(self, product, color, quantity):
+        self.select_color(product, color)
+        self.select_size(product)
+        self.select_width(product)
+        self.select_waist(product)
+        self._set_quantity(product, quantity)
 
     def _get_products(self):
         return self._find_by_xpath(
