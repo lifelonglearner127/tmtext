@@ -332,14 +332,22 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         # else get it from the url
         return re.search('A-(\d+)', response_or_url).group(1)
 
-    def _item_info_v2(self, response):
+    def _item_info_helper(self, partNumber):
         response = requests.get(
             'http://tws.target.com/productservice/services/item_service/v1/by_itemid?id='
-            + self._product_id_v2(response) + '&alt=json&callback=itemInfoCallback&_=1464382778193').content
+            + partNumber + '&alt=json&callback=itemInfoCallback&_=1464382778193').content
+
         item_info = re.match('itemInfoCallback\((.*)\)$', response, re.DOTALL).group(1)
-        item_info = json.loads(item_info)['CatalogEntryView'][0]
-        self.item_info = item_info
-        return item_info
+        return json.loads(item_info)['CatalogEntryView'][0]
+
+    def _item_info_v2(self, response):
+        self.item_info = self._item_info_helper(self._product_id_v2(response))
+
+        if (self.item_info.get('parentPartNumber') and self.item_info['parentPartNumber']
+                != self._product_id_v2(response)):
+            self.item_info = self._item_info_helper(self.item_info['parentPartNumber'])
+
+        return self.item_info
 
     @staticmethod
     def _get_price_v2(item_info):
@@ -399,7 +407,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             product['variants'] = tv._variants()
 
             # TODO: shipping and store availability? see "purchasingChannel: Sold Online + in Stores" in item_info; http://www.target.com/p/denizen-from-levi-s-women-s-curvy-bootcut-jeans-denim-blue/-/A-50234669
-
+            # http://www.target.com/p/black-decker-2-slice-bread-and-bagel-toaster/-/A-13193088
 
 
     def _extract_recomm_urls(self, response):
