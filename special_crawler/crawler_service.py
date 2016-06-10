@@ -90,6 +90,7 @@ from extract_petco_data import PetcoScraper
 from extract_wag_data import WagScraper
 from extract_chewy_data import ChewyScraper
 from extract_petfooddirect_data import PetFoodDirectScraper
+from extract_pet360_data import Pet360Scraper
 
 from urllib2 import HTTPError
 import datetime
@@ -192,6 +193,7 @@ SUPPORTED_SITES = {
                     "wag": WagScraper,
                     "chewy" : ChewyScraper,
                     "petfooddirect": PetFoodDirectScraper,
+                    "pet360" : Pet360Scraper,
                     }
 
 # add logger
