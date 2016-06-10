@@ -56,6 +56,7 @@ class JCpenneySpider(BaseCheckoutSpider):
 
         # Remove focus to avoid hiddend the above element
         self._find_by_xpath('//h1')[0].click()
+        time.sleep(4)
 
     def select_width(self, element=None):
         width_attribute_xpath = '*//div[@id="skuOptions_width"]//' \
@@ -65,6 +66,8 @@ class JCpenneySpider(BaseCheckoutSpider):
         self._click_attribute(width_attribute_xpath,
                               width_attributes_xpath,
                               element)
+        time.sleep(4)
+
 
     def select_waist(self, element=None):
         default_attr_xpath = (
@@ -79,11 +82,27 @@ class JCpenneySpider(BaseCheckoutSpider):
                               element)
         time.sleep(4)
 
+
+    def select_inseam(self, element=None):
+        default_attr_xpath = (
+            '*//*[@id="skuOptions_inseam"]//li[@class="sku_select"]')
+
+        avail_attr_xpath = ('*//*[@id="skuOptions_inseam"]//'
+                            'li[not(@class="sku_not_available" '
+                            'or @class="sku_illegal")]')
+
+        self._click_attribute(default_attr_xpath,
+                              avail_attr_xpath,
+                              element)
+        time.sleep(4)
+
+
     def _parse_attributes(self, product, color, quantity):
         self.select_color(product, color)
         self.select_size(product)
         self.select_width(product)
         self.select_waist(product)
+        self.select_inseam(product)
         self._set_quantity(product, quantity)
 
     def _get_products(self):
