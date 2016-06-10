@@ -162,11 +162,13 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
         if certona_payload:
             new_meta = response.meta.copy()
             new_meta['product'] = product
-            new_meta['handle_httpstatus_list'] = [404]
+            new_meta['handle_httpstatus_list'] = [404, 415]
             new_meta['internet_no'] = internet_no
+            headers = {'Proxy-Connection':'keep-alive', 'Content-Type':'application/json'}
             return Request(
                 self.RECOMMENDED_URL,
                 callback = self._parse_related_products,
+                headers = headers,
                 body = json.dumps(certona_payload),
                 method = "POST",
                 meta=new_meta,
@@ -234,12 +236,11 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
         return payload
 
     def _parse_related_products(self, response):
-
         product = response.meta['product']
         internet_no = response.meta.get('internet_no', None)
 
-        if response.status == 404:
-            # No further pages were found.
+        if response.status in response.meta['handle_httpstatus_list']:
+            # No further pages were found. Check the request payload.
             return product
 
         data=json.loads(response.body_as_unicode())
