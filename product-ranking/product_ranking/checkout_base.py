@@ -55,9 +55,11 @@ class BaseCheckoutSpider(scrapy.Spider):
 
     retries = 0
     MAX_RETRIES = 3
+    SOCKET_WAIT_TIME = 120
+    WEBDRIVER_WAIT_TIME = 40
 
     def __init__(self, *args, **kwargs):
-        socket.setdefaulttimeout(60)
+        socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
         settings.overrides['ITEM_PIPELINES'] = {}
         super(BaseCheckoutSpider, self).__init__(*args, **kwargs)
         self.user_agent = kwargs.get(
@@ -165,8 +167,8 @@ class BaseCheckoutSpider(scrapy.Spider):
 
     def _open_new_session(self, url):
         self.driver = self.init_driver()
-        self.wait = WebDriverWait(self.driver, 25)
-        socket.setdefaulttimeout(60)
+        self.wait = WebDriverWait(self.driver, self.WEBDRIVER_WAIT_TIME)
+        socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
         self.driver.get(url)
 
     def _parse_item(self, product):
@@ -212,7 +214,7 @@ class BaseCheckoutSpider(scrapy.Spider):
             self._do_others_actions()
 
     def _parse_cart_page(self):
-        socket.setdefaulttimeout(60)
+        socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
         self.driver.get(self.SHOPPING_CART_URL)
         product_list = self._get_product_list_cart()
         if product_list:
