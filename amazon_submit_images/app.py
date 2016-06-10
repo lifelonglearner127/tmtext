@@ -51,11 +51,13 @@ def upload_file_to_our_server(file):
     file.save(tmp_local_file)
     return os.path.abspath(tmp_local_file)
 
+
 def check_downloads_dir():
     """ Needed only for the first run """
     if not os.path.exists(os.path.join(CWD, '_downloads')):
         os.makedirs(os.path.join(CWD, '_downloads'))
     return True
+
 
 def run_spider_upload(username, password, local_file, task):
     log_fname = tempfile.NamedTemporaryFile(delete=False)
@@ -64,11 +66,14 @@ def run_spider_upload(username, password, local_file, task):
 
     spiders_dir = os.path.join(CWD, '..', 'product-ranking',
                                'product_ranking', 'spiders')
+    if not os.path.exists(spiders_dir):
+        spiders_dir = '.'
     cmd = ('python {spiders_dir}/submit_amazon_images.py --username={username}'
            ' --password={password} --zip_file={zip_file} --logging_file={log_file} --task={task}')
     os.system(cmd.format(username=username, password=password, zip_file=local_file,
                          log_file=log_fname, spiders_dir=spiders_dir, task = task))
     return log_fname
+
 
 def run_spider_download(username, password, task):
     log_fname = tempfile.NamedTemporaryFile(delete=False)
@@ -76,13 +81,18 @@ def run_spider_download(username, password, task):
     log_fname = log_fname.name
     spiders_dir = os.path.join(CWD, '..', 'product-ranking',
                                'product_ranking', 'spiders')
-    cmd = (' C:\Python27\python.exe {spiders_dir}/submit_amazon_images.py --username={username}'
+    if not os.path.exists(spiders_dir):
+        spiders_dir = '.'
+    cmd = ('python {spiders_dir}/submit_amazon_images.py --username={username}'
            ' --password={password} --logging_file={log_file} --task={task}')
     os.system(cmd.format(username=username, password=password, log_file=log_fname,
                          spiders_dir=spiders_dir, task = task))
     return log_fname
 
+
 def parse_log(log_fname):
+    if not os.path.exists(log_fname):
+        return False, 'log does not exist'
     is_success = True
     with open(log_fname, 'r') as fh:
         msgs = [json.loads(m.strip()) for m in fh.readlines() if m.strip()]
@@ -110,9 +120,8 @@ def upload_view():
             return 'Select a file to upload'
         if not file.filename.lower().endswith('.zip'):
             return 'Please upload a zip file (ending with .zip)'
-
+            
     time.sleep(1)  # against bruteforce attacks ;)
-
     for cred_login, cred_password in load_credentials():
         if username.strip() == cred_login.strip() or not CHECK_CREDENTIALS:
             if password.strip() == cred_password.strip() or not CHECK_CREDENTIALS:
@@ -130,7 +139,7 @@ def upload_view():
                         log_fname = run_spider_download(username=username, password=password,
                                                task = task)
                         success, messages = parse_log(log_fname)
-                        return success, messages
+                        return success, messages, task
 
     return 'Invalid login or password'
 
@@ -142,7 +151,7 @@ def index():
     else:
         _msgs = upload_view()
         if isinstance(_msgs, (list, tuple)):
-            success, messages = _msgs
+            success, messages, _task = _msgs
         else:
             return _msgs
         if not success:
@@ -164,11 +173,10 @@ def index():
         else:
             filepath = CWD+'/_downloads'
             filename = max([filepath +"/"+ f for f in os.listdir(filepath)], key=os.path.getctime)
+            print filename
             if filename:
                 return send_file(filename, mimetype='text/csv', as_attachment=True)
-
-
-
+                
 @app.route('/api', methods=['GET', 'POST'])
 def api():
     if request.method == 'GET':
@@ -176,7 +184,7 @@ def api():
     else:
         _msgs = upload_view()
         if isinstance(_msgs, (list, tuple)):
-            success, messages = _msgs
+            success, messages, _task = _msgs
         else:
             return json.dumps({'status': 'error', 'message': _msgs})
         task = request.form.get('task', None)
@@ -185,14 +193,13 @@ def api():
                 'status': 'error',
                 'message': messages})
         elif task != 'report': 
-            return json.dumps({'status': task})
+            return json.dumps({'status': 'success'})
         else:
             filepath = os.path.join(CWD,'_downloads')
             filename = max([filepath +"/"+ f for f in os.listdir(filepath)], key=os.path.getctime)
             if filename:
-                return json.dumps({'filename':filename})
-                #return send_file(filename, mimetype='text/csv', as_attachment=True)
+                return send_file(filename, mimetype='text/csv', as_attachment=True)
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=9999)
+    app.run(debug=True)

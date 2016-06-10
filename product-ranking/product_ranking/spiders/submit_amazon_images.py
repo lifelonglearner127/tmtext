@@ -126,6 +126,7 @@ def upload_image(br, file):
         logging_info('Failed to upload images', level='ERROR')
         return False
 
+
 def download_report(br):
     try:
         br.find_element_by_partial_link_text("Reports").click()
@@ -182,13 +183,13 @@ def main():
 
     profile = webdriver.FirefoxProfile()
     profile.set_preference("general.useragent.override", headers)
-    profile.set_preference("browser.download.folderList",2)
+    profile.set_preference("browser.download.folderList", 2)
     profile.set_preference('browser.download.manager.showWhenStarting', False)
-    profile.set_preference('browser.download.dir', os.path.join(os.getcwd(),'_downloads')
+    profile.set_preference('browser.download.dir', os.path.join(os.getcwd(), '_downloads'))
     profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'text/csv')
 
     #Set up headless version of Firefox
-    display = Display(visible=0, size=(1027, 768))
+    display = Display(visible=0, size=(1024, 768))
     display.start()
 
     br = webdriver.Firefox(profile)
