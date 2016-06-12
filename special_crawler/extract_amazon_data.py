@@ -923,6 +923,12 @@ class AmazonScraper(Scraper):
         for v in image_url:
             if v.find("player")>0 :
                 temp.append(v)
+
+        video_urls = re.findall('"url":"([^"]+.mp4)"', html.tostring(self.tree_html))
+        for video in video_urls:
+            if not video in temp:
+                temp.append(video)
+
         if len(temp)==0: return None
         return temp#",".join(temp)
 
