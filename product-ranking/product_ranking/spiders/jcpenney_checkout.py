@@ -96,6 +96,31 @@ class JCpenneySpider(BaseCheckoutSpider):
                               element)
         time.sleep(4)
 
+    def select_neck(self, element=None):
+        default_attr_xpath = (
+            '*//*[@id="skuOptions_neck size"]//li[@class="sku_select"]')
+
+        avail_attr_xpath = ('*//*[@id="skuOptions_neck size"]//'
+                            'li[not(@class="sku_not_available" '
+                            'or @class="sku_illegal")]')
+
+        self._click_attribute(default_attr_xpath,
+                              avail_attr_xpath,
+                              element)
+        time.sleep(4)
+
+    def select_sleeve(self, element=None):
+        default_attr_xpath = (
+            '*//*[@id="skuOptions_sleeve"]//li[@class="sku_select"]')
+
+        avail_attr_xpath = ('*//*[@id="skuOptions_sleeve"]//'
+                            'li[not(@class="sku_not_available" '
+                            'or @class="sku_illegal")]')
+
+        self._click_attribute(default_attr_xpath,
+                              avail_attr_xpath,
+                              element)
+        time.sleep(4)
 
     def _parse_attributes(self, product, color, quantity):
         self.select_color(product, color)
@@ -103,6 +128,8 @@ class JCpenneySpider(BaseCheckoutSpider):
         self.select_width(product)
         self.select_waist(product)
         self.select_inseam(product)
+        self.select_neck(product)
+        self.select_sleeve(product)
         self._set_quantity(product, quantity)
 
     def _get_products(self):
