@@ -54,6 +54,7 @@ class AmazonScraper(Scraper):
         self.marketplace_sellers = None
         self.is_variants_checked = False
         self.variants = None
+        self.no_image_available = 0
 
         self.proxy_host = "proxy.crawlera.com"
         self.proxy_port = "8010"
@@ -764,11 +765,11 @@ class AmazonScraper(Scraper):
             pass
 
         if swatch_images:
-            return swatch_images
+            return self._remove_no_image_available(swatch_images)
 
         moca_images = self.tree_html.xpath("//div[contains(@class,'verticalMocaThumb')]/span/img/@src")
         if moca_images:
-            return self._get_origin_image_urls_from_thumbnail_urls(moca_images)
+            return self._remove_no_image_available(self._get_origin_image_urls_from_thumbnail_urls(moca_images))
 
         image_url = swatch_images
 
@@ -888,6 +889,22 @@ class AmazonScraper(Scraper):
             return 0
         return len(iu)
 
+    def _remove_no_image_available(self, image_urls):
+        filtered_image_urls = []
+
+        for image in image_urls:
+            if 'no-img' in image:
+                self.no_image_available = 1
+            else:
+                filtered_image_urls.append(image)
+
+        if filtered_image_urls:
+            return filtered_image_urls
+
+    def _no_image_available(self):
+        self._image_urls()
+        return self.no_image_available
+
     # return 1 if the "no image" image is found
     def no_image(self,image_url):
         try:
@@ -923,6 +940,12 @@ class AmazonScraper(Scraper):
         for v in image_url:
             if v.find("player")>0 :
                 temp.append(v)
+
+        video_urls = re.findall('"url":"([^"]+.mp4)"', html.tostring(self.tree_html))
+        for video in video_urls:
+            if not video in temp:
+                temp.append(video)
+
         if len(temp)==0: return None
         return temp#",".join(temp)
 
@@ -1487,6 +1510,7 @@ class AmazonScraper(Scraper):
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
+        "no_image_available" : _no_image_available, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
 #        "no_image" : _no_image, \

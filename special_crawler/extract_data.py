@@ -128,6 +128,7 @@ class Scraper():
             "image_count", # number of product images, int
             "image_urls", # urls of product images, list of strings
             "image_dimensions", # dimensions of product images
+            "no_image_available", # binary (0/1), whether there is a 'no image available' image
             "video_count", # nr of videos, int
             "video_urls", # urls of product videos, list of strings
             "wc_360", # binary (0/1), whether 360 view exists or not
@@ -233,7 +234,7 @@ class Scraper():
                         "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "details", "mta", \
                         "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5",
                         "usage", "directions", "warnings", "indications", "amazon_ingredients"],
-        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "video_count", "video_urls", "wc_360", \
+        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
                             "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv"], \
