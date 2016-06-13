@@ -20,6 +20,8 @@ class MacysSpider(BaseCheckoutSpider):
         yield scrapy.Request('http://www1.macys.com/')
 
     def _get_colors_names(self):
+        # Sometimes the spider is not able to load the page in time
+        time.sleep(4)
         xpath = '//div[@class="colorsSection"]//li[@data-title]'
         swatches = self._find_by_xpath(xpath)
         return [x.get_attribute("data-title") for x in swatches]
@@ -57,13 +59,6 @@ class MacysSpider(BaseCheckoutSpider):
         self._click_attribute(color_attribute_xpath,
                               color_attributes_xpath,
                               element)
-
-
-    def select_width(self, element=None):
-        return
-
-    def select_others(self, element=None):
-        return
 
     def _get_products(self):
         return self._find_by_xpath('//*[@id="productSidebar"]')
