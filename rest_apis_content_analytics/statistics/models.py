@@ -9,30 +9,34 @@ def process_check_feed_response(user, check_results_output, date, check_auth=Tru
         return
     multi_item = not(check_results_output.get('itemsReceived', 0) == 1)
     ingestion_statuses = check_results_output.get('itemDetails', {}).get('itemIngestionStatus', [])
+    feed_id = check_results_output.get('itemDetails', {}).get('feedId')
+
     for item in check_results_output.get('itemDetails', {}).get('itemIngestionStatus', []):
         if not 'ingestionStatus' in item:
             print('No ingestionStatus found!')
             continue
+
         if item['ingestionStatus'].lower() not in ('success', 'received'):
             stat_xml_item(user, 'session', 'failed', multi_item,
                           date=date,
                           error_text=str(item.get('ingestionErrors')),
                           upc=item.get('sku'),
-                          feed_id=check_results_output.get('feedId'))
+                          feed_id=feed_id)
             print('Stat item created, status: FAILED')
         else:
             stat_xml_item(user, 'session', 'successful', multi_item,
                           date=date,
                           upc=item.get('sku'),
-                          feed_id=check_results_output.get('feedId'))
+                          feed_id=feed_id)
             print('Stat item created, status: SUCCESS')
+
     if not ingestion_statuses:
         if check_results_output.get('feedStatus', '').lower() == 'error':
             stat_xml_item(user, 'session', 'failed', multi_item,
                           date=date,
                           error_text=str(check_results_output.get('ingestionErrors')),
                           upc=check_results_output.get('sku'),
-                          feed_id=check_results_output.get('feedId'))
+                          feed_id=feed_id)
             print('Stat item created, status: FAILED')
 
 

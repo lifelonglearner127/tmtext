@@ -1,6 +1,7 @@
 {% load staticfiles %}
 {% load rest_framework %}
 {% load i18n %}
+{% load settings_values %}
 {% load utcnow %}
 
 <!DOCTYPE html>
@@ -161,6 +162,14 @@
               {% endif %}
             {% endblock %}
           </ul>
+
+          {% is_production as is_production %}
+          {% if not is_production %}
+          <ul class="nav navbar-nav navbar-right">
+            <li><a><span class="text-danger"><b>Test mode</b></span></a></li>
+          </ul>
+          {% endif %}
+
         </div>
       </div>
     {% endblock %}
