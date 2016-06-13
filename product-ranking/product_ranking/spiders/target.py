@@ -48,6 +48,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     CALL_RECOMM = True
     POPULATE_VARIANTS = False
     POPULATE_REVIEWS = True
+    POPULATE_QA = True
     SORTING = None
 
     SORT_MODES = {
@@ -60,6 +61,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     }
 
     REVIEW_API_PASS = "aqxzr0zot28ympbkxbxqacldq"
+    QA_API_PASS = "tr1a5rnjztlsup5cvro29iv8w"
 
     REVIEW_API_URL = "http://api.bazaarvoice.com/data/batch.json" \
                      "?passkey={apipass}&apiversion=5.5" \
@@ -71,6 +73,15 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                          '&apiversion=5.4&resource.q0=products&filter.q0=id%3Aeq%3A{tcin}'
                          '&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_US'
                          '&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US')
+
+    QUESTION_API_URL = "http://api.bazaarvoice.com/data/questions.json" \
+                 "?passkey={apipass}&Offset=0&apiversion=5.4" \
+                 "&Filter=Productid:{product_id}" \
+                 "&Sort=TotalAnswerCount:desc,HasStaffAnswers:desc"
+
+    ANSWER_API_URL = "http://api.bazaarvoice.com/data/answers.json" \
+                     "?passkey={apipass}&apiversion=5.4" \
+                     "&Filter=Questionid:{question_id}"
 
     JSON_SEARCH_URL = "http://tws.target.com/searchservice/item" \
                       "/search_results/v1/by_keyword" \
@@ -143,38 +154,6 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             callback=self._parse_reviews,
             dont_filter=True
         )
-
-    def HASDDAASDASD(self):
-        try:
-            url = 'sdfsdfsdfsdf'
-            contents = urllib.urlopen(url).read()
-            jsn = json.loads(contents)
-            review_info = jsn['BatchedResults']['q0']['Results'][0]['ReviewStatistics']
-            self.review_count = review_info['TotalReviewCount']
-            self.average_review = review_info['AverageOverallRating']
-            self.reviews = None
-
-            min_ratingval = None
-            max_ratingval = None
-
-            if self.review_count > 0:
-                self.reviews = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0]]
-
-                for review in review_info['RatingDistribution']:
-                    if min_ratingval == None or review['RatingValue'] < min_ratingval:
-                        if review['Count'] > 0:
-                            min_ratingval = review['RatingValue']
-                    if max_ratingval == None or review['RatingValue'] > max_ratingval:
-                        if review['Count'] > 0:
-                            max_ratingval = review['RatingValue']
-
-                    self.reviews[int(review['RatingValue']) - 1][1] = int(review['Count'])
-
-            self.min_score = min_ratingval
-            self.max_score = max_ratingval
-        except Exception as e:
-            print e
-            raise
 
     def _get_tcin(self, response):
         if not self._is_v1(response):
@@ -298,7 +277,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                     meta=new_meta)
             else:
                 self.log("No {rr} payload at %s" % response.url, DEBUG)
-
+        if self.POPULATE_QA:
+            return self._request_QA(response, prod)
         if self.POPULATE_REVIEWS:
             return self._request_reviews(response, prod, canonical_url)
         else:
@@ -546,6 +526,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 self._parse_recomm_json,
                 meta=new_meta)
 
+        if self.POPULATE_QA:
+            return self._request_QA(response, product)
+
         if self.POPULATE_REVIEWS:
             canonical_url = response.meta['canonical_url']
             return self._request_reviews(response, product, canonical_url)
@@ -597,6 +580,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
             product['related_products'] = {"recommended": ritems,
                                            "buyers_also_bought": obitems}
+        if self.POPULATE_QA:
+            return self._request_QA(response, product)
+
         if self.POPULATE_REVIEWS:
             canonical_url = response.meta['canonical_url']
             return self._request_reviews(response, product, canonical_url)
@@ -1005,3 +991,90 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
+
+    def _request_QA(self, response, product):
+        product_id = re.search('\d+\w', response.url)
+        if not product_id:
+            product_id = re.search('\d+\Z', product['url'])
+        if product_id:
+            product_id = product_id.group()
+            url = self.QUESTION_API_URL.format(apipass=self.QA_API_PASS,
+                                               product_id=product_id)
+            return Request(url, self._parse_questions, meta=response.meta, dont_filter=True)
+        else:
+            return product
+
+    def _parse_questions(self, response):
+        product = response.meta['product']
+        data = json.loads(response.body_as_unicode())
+        reqs = []
+        if data and data['Results']:
+            for question in data['Results']:
+                q={}
+                q['question_summary'] = question['QuestionSummary']
+                time = question['SubmissionTime']
+                date = is_empty(time.split('T'))
+                if date:
+                    q['submissionDate'] = date
+                q['userNickname'] = question['UserNickname']
+                q['totalAnswersCount'] = question['TotalAnswerCount']
+                q['questionId'] = question['Id']
+                if q['questionId']:
+                    url = self.ANSWER_API_URL.format(apipass=self.QA_API_PASS, 
+                                                     question_id=q['questionId'])
+                    meta = response.meta
+                    meta['q'] = q
+                    reqs.append(Request(url, self._parse_answer, meta = meta, dont_filter=True))
+            if reqs:
+                yield self.send_next_request(reqs, response)
+        else:
+            product['all_questions'] = []
+            if self.POPULATE_REVIEWS:
+                canonical_url = response.meta['canonical_url']
+                yield self._request_reviews(response, product, canonical_url)
+            else:
+                yield product
+
+    def _parse_answer(self, response):
+        product = response.meta['product']
+        reqs = response.meta.get('reqs',[])
+        all_questions = product.get('all_questions', [])
+        q = response.meta['q']
+        q['answers'] = []
+        data = json.loads(response.body_as_unicode())
+        if data['Results']:
+            for answer in data['Results']:
+                a={}
+                a['userNickname'] = answer['UserNickname']
+                a['answerSummary'] = answer['AnswerText'].replace('\xa0', '')
+                time = answer['SubmissionTime']
+                date = is_empty(time.split('T'))
+                if date:
+                    a['submissionDate'] = date
+                a['possitive_vote_count'] = answer['TotalPositiveFeedbackCount']
+                a['negative_vote_count'] = answer['TotalNegativeFeedbackCount']
+                q['answers'].append(a)
+        if q['answers'] or not data['Results']:
+            all_questions.append(q)
+            product['all_questions'] = all_questions
+            for req in reqs:
+                req.meta['product'] = product
+            if reqs:
+                return self.send_next_request(reqs, response)
+            elif self.POPULATE_REVIEWS:
+                canonical_url = response.meta['canonical_url']
+                return self._request_reviews(response, product, canonical_url)
+            else:
+                return product
+
+    def send_next_request(self, reqs, response):
+        """
+        Helps to handle several requests for parsing QA
+        """
+
+        req = reqs.pop(0)
+        new_meta = req.meta.copy()
+        if reqs:
+            new_meta["reqs"] = reqs
+
+        return req.replace(meta=new_meta)
