@@ -2,7 +2,7 @@ import json
 from pprint import pprint
 
 import lxml.html
-
+import requests
 
 class TargetVariants(object):
 
@@ -119,6 +119,53 @@ class TargetVariants(object):
 
         return stockstatus_for_variation_combinations
 
+    def _availability_info(self, item_info, product_id):
+
+        url = "https://api.target.com/available_to_promise_aggregator/v1?key=adaptive-pdp&request_type=availability"
+
+        payload = {
+                    "products": [
+                        {
+                          "request_line_id": 1,
+                          "product": {
+                            "product_id": str(product_id),
+                            "location_ids": "190",
+                            "multichannel_option": "none",
+                            "inventory_type": "stores",
+                            "requested_quantity": "1",
+                            "field_groups": "location_summary"
+                          }
+                        },
+                        {
+                          "request_line_id": 2,
+                          "product": {
+                            "product_id": str(product_id),
+                            "multichannel_option": "shipguest",
+                            "inventory_type": "stores",
+                            "requested_quantity": "1",
+                            "field_groups": "summary"
+                          }
+                        }
+                    ]
+                }
+        headers = {
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Accept-Encoding": "gzip, deflate, sdch, br",
+            "Accept-Language": "en-US,en;q=0.8,ja;q=0.6,vi;q=0.4,es;q=0.2,fr;q=0.2,zh-CN;q=0.2,zh;q=0.2,pt;q=0.2",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Content-Type": "application/json",
+            "Host": "api.target.com",
+            "Origin": "http://www.target.com",
+            "Pragma": "no-cache",
+            "Referer": item_info["dynamicKitURL"],
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36"
+            }
+
+        response = requests.post(url, json=payload, headers=headers)
+
+        return response.json()
+
     def _variants(self):
         if self.item_info:
             variants = []
@@ -142,8 +189,12 @@ class TargetVariants(object):
 
                 if item.get('inventoryStatus'):
                     v['in_stock'] = not ('out of stock' in item['inventoryStatus'])
+                    # double check when item is out of stock
+                    if not v['in_stock']:
+                        availability_info = self._availability_info(self.item_info, item['partNumber'])
+                        v['in_stock'] = any([item['products'][0]['availability_status'] == 'IN_STOCK' for item in availability_info['products']])
 
-                for attribute in item['VariationAttributes']:
+                for attribute in item.get('VariationAttributes', []):
                     v['properties'][ attribute['name'].lower() ] = attribute['value']
 
                 variants.append(v)
