@@ -36,6 +36,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     settings = TargetValidatorSettings
 
+    user_agent_override = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+
     # TODO: support new currencies if you're going to scrape target.canada
     #  or any other target.* different from target.com!
     SEARCH_URL = "http://tws.target.com/searchservice/item/search_" \
@@ -115,13 +117,15 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             **kwargs)
 
     def start_requests(self):
-        yield Request(url=self.start_urls[0], callback=self._start_search)
+        yield Request(url=self.start_urls[0], callback=self._start_search,
+                      headers={'User-Agent': self.user_agent_override})
 
     def _start_search(self, response):
         for request in super(TargetProductSpider, self).start_requests():
             #request.meta['dont_redirect'] = True
             request.meta['handle_httpstatus_list'] = [302]
             request.meta['search_start'] = True
+            request.headers['User-Agent'] = self.user_agent_override
             yield request
 
     def parse(self, response):
@@ -143,7 +147,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                                           category=category, index=90,
                                           sort_mode=self.SORTING or '',
                                           page=1),
-                meta=new_meta)
+                meta=new_meta,
+                headers={'User-Agent': self.user_agent_override})
         return list(super(TargetProductSpider, self).parse(response))
 
     def _request_reviews_v2(self, product, response):
@@ -152,7 +157,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             self.REVIEW_API_URL_V2.format(tcin=self._get_tcin(response)),
             meta=response.meta,
             callback=self._parse_reviews,
-            dont_filter=True
+            dont_filter=True,
+            headers={'User-Agent': self.user_agent_override}
         )
 
     def _get_tcin(self, response):
@@ -263,7 +269,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 return Request(
                     rurls[0],
                     self._parse_recomm_json,
-                    meta=new_meta)
+                    meta=new_meta,
+                    headers={'User-Agent': self.user_agent_override})
 
         if self.CALL_RR:
             if payload:
@@ -274,7 +281,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 return Request(
                     rr_url,
                     self._parse_rr_json,
-                    meta=new_meta)
+                    meta=new_meta,
+                    headers={'User-Agent': self.user_agent_override})
             else:
                 self.log("No {rr} payload at %s" % response.url, DEBUG)
         if self.POPULATE_QA:
@@ -315,7 +323,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     def _item_info_helper(self, partNumber):
         response = requests.get(
             'http://tws.target.com/productservice/services/item_service/v1/by_itemid?id='
-            + partNumber + '&alt=json&callback=itemInfoCallback&_=1464382778193').content
+            + partNumber + '&alt=json&callback=itemInfoCallback&_=1464382778193',
+            headers={'User-Agent': self.user_agent_override}).content
 
         item_info = re.match('itemInfoCallback\((.*)\)$', response, re.DOTALL).group(1)
         return json.loads(item_info)['CatalogEntryView'][0]
@@ -524,7 +533,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             return Request(
                 url,
                 self._parse_recomm_json,
-                meta=new_meta)
+                meta=new_meta,
+                headers={'User-Agent': self.user_agent_override})
 
         if self.POPULATE_QA:
             return self._request_QA(response, product)
@@ -829,7 +839,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 method='POST',
                 formdata=data,
                 callback=self._parse_link_post,
-                meta=new_meta)
+                meta=new_meta,
+                headers={'User-Agent': self.user_agent_override})
 
     def _parse_link_post(self, response):
         jsdata = json.loads(response.body)
@@ -876,7 +887,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             requests.append(Request(
                 url,
                 callback=self.parse_product,
-                meta=new_meta, dont_filter=True))
+                meta=new_meta, dont_filter=True,
+                headers={'User-Agent': self.user_agent_override}),)
         return requests
 
     def _scrape_next_results_page_link(self, response):
@@ -896,7 +908,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         search_term = args['keyword']
         url = self.SEARCH_URL.format(
             search_term=search_term).replace('offset=0', 'offset=%d' % next_offset)
-        return Request(url, meta=response.meta)
+        return Request(url, meta=response.meta, headers={'User-Agent': self.user_agent_override})
 
     def _scrape_next_results_page_link_json(self, response):
         #raw_input(len(list(self._scrape_product_links_json(response))))
@@ -913,7 +925,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                                             index=per_page * current,
                                             page=current + 1,
                                             category=response.meta['category'])
-            return Request(url, meta=new_meta)
+            return Request(url, meta=new_meta, headers={'User-Agent': self.user_agent_override})
 
     def _scrape_next_results_page_link_html(self, response):
         next_page = response.xpath(
@@ -941,7 +953,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         if prod_id:
             url = self.REVIEW_API_URL.format(apipass=self.REVIEW_API_PASS,
                                              model=prod_id)
-            return Request(url, self._parse_reviews, meta=response.meta, dont_filter=True)
+            return Request(url, self._parse_reviews, meta=response.meta, dont_filter=True,
+                           headers={'User-Agent': self.user_agent_override})
         else:
             return product
 
@@ -1000,7 +1013,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             product_id = product_id.group()
             url = self.QUESTION_API_URL.format(apipass=self.QA_API_PASS,
                                                product_id=product_id)
-            return Request(url, self._parse_questions, meta=response.meta, dont_filter=True)
+            return Request(url, self._parse_questions, meta=response.meta, dont_filter=True,
+                           headers={'User-Agent': self.user_agent_override})
         else:
             return product
 
@@ -1024,7 +1038,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                                                      question_id=q['questionId'])
                     meta = response.meta
                     meta['q'] = q
-                    reqs.append(Request(url, self._parse_answer, meta = meta, dont_filter=True))
+                    reqs.append(Request(url, self._parse_answer, meta = meta, dont_filter=True,
+                                        headers={'User-Agent': self.user_agent_override}))
             if reqs:
                 yield self.send_next_request(reqs, response)
         else:
