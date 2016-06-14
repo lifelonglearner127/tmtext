@@ -666,7 +666,10 @@ class Scraper():
             True if it's a "no image" image, False otherwise
         """
         print "***********test start*************"
-        first_hash = self._image_hash(image_url)
+        try:
+            first_hash = self._image_hash(image_url)
+        except IOException:
+            return False
         print first_hash
         print "***********test end*************"
 
