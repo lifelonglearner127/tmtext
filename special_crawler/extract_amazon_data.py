@@ -322,8 +322,14 @@ class AmazonScraper(Scraper):
         return None
 
     def _description(self):
-        if self.tree_html.xpath("//*[contains(@id,'feature-bullets')]"):
-            return self._clean_text(self._exclude_javascript_from_description(html.tostring(self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")[0])))
+        description = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
+        if description:
+            description = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")[0]
+            more_button = description.xpath('//div[@id="fbExpanderMoreButtonSection"]')
+            description = html.tostring(description)
+            if more_button:
+                description = re.sub(html.tostring(more_button[0]), '', description)
+            return self._clean_text(self._exclude_javascript_from_description(description))
 
         short_description = " " . join(self.tree_html.xpath("//div[@class='dv-simple-synopsis dv-extender']//text()")).strip()
 
