@@ -24,7 +24,7 @@ from nutrition_info_images.views import ClassifyTextImagesByNutritionInfoViewSet
 from settings import IS_PRODUCTION
 CheckFeedStatusView = (MockedCheckFeedStatusByWalmartApiViewSet
                        if not IS_PRODUCTION
-                       else CheckItemStatusByProductIDViewSet)
+                       else CheckFeedStatusByWalmartApiViewSet)
 
 ItemsUpdateView = (MockedItemsUpdateWithXmlFileByWalmartApiViewSet
                    if not IS_PRODUCTION
