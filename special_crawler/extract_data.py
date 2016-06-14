@@ -668,7 +668,7 @@ class Scraper():
         print "***********test start*************"
         try:
             first_hash = self._image_hash(image_url)
-        except IOException:
+        except IOError:
             return False
         print first_hash
         print "***********test end*************"
