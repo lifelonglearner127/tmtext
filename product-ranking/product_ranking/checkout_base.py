@@ -53,8 +53,13 @@ class BaseCheckoutSpider(scrapy.Spider):
     SHOPPING_CART_URL = ''
     CHECKOUT_PAGE_URL = ""
 
+    retries = 0
+    MAX_RETRIES = 3
+    SOCKET_WAIT_TIME = 120
+    WEBDRIVER_WAIT_TIME = 40
+
     def __init__(self, *args, **kwargs):
-        socket.setdefaulttimeout(60)
+        socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
         settings.overrides['ITEM_PIPELINES'] = {}
         super(BaseCheckoutSpider, self).__init__(*args, **kwargs)
         self.user_agent = kwargs.get(
@@ -99,12 +104,7 @@ class BaseCheckoutSpider(scrapy.Spider):
                 self.is_requested_color = False
                 url = product.get('url')
                 # Fastest way to empty the cart
-                self.driver = self.init_driver()
-                self.wait = WebDriverWait(self.driver, 25)
-                socket.setdefaulttimeout(60)
-                self.driver.get(url)
-
-
+                self._open_new_session(url)
                 if product.get('FetchAllColors'):
                     # Parse all the products colors
                     colors = self._get_colors_names()
@@ -127,8 +127,17 @@ class BaseCheckoutSpider(scrapy.Spider):
 
                     self.log('Color: %s' % (color or 'None'))
                     clickable_error = True
-                    self._pre_parse_products()
+                    self.retries = 0
                     while clickable_error:
+                    	self._pre_parse_products()
+                        if self.retries >= self.MAX_RETRIES:
+                            self.log('Max retries number reach,'
+                                     ' skipping this product')
+                            break
+
+                        else:
+                            self.retries += 1
+
                         clickable_error = False
                         try:
                             self._parse_product_page(url, qty, color)
@@ -140,24 +149,28 @@ class BaseCheckoutSpider(scrapy.Spider):
                             # Fastest way to empty the cart
                             # and clear resources
                             self.driver.close()
-                            self.driver = self.init_driver()
-                            self.wait = WebDriverWait(self.driver, 25)
-                            socket.setdefaulttimeout(60)
-                            self.driver.get(url)
+                            self._open_new_session(url)
 
                         except WebDriverException as e:
-                            if 'Element is not clickable at point' in str(e):
-                                clickable_error = True
-
+                            clickable_error = True
                             print traceback.print_exc()
                             print "Exception: %s" % str(e)
+                            self._open_new_session(url)
 
                         except:
                             print traceback.print_exc()
                             self.log('Error while parsing color %s of %s'
                                      % (color, url))
 
+                            self._open_new_session(url)
+
                 self.driver.close()
+
+    def _open_new_session(self, url):
+        self.driver = self.init_driver()
+        self.wait = WebDriverWait(self.driver, self.WEBDRIVER_WAIT_TIME)
+        socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
+        self.driver.get(url)
 
     def _parse_item(self, product):
         item = CheckoutProductItem()
@@ -183,6 +196,11 @@ class BaseCheckoutSpider(scrapy.Spider):
             (self.requested_color != color))
         return item
 
+    def _parse_attributes(self, product, color, quantity):
+        self.select_color(product, color)
+        self.select_size(product)
+        self._set_quantity(product, quantity)
+
     def _parse_product_page(self, product_url, quantity, color=None):
         """ Process product and add it to the cart"""
         products = self._get_products()
@@ -192,17 +210,12 @@ class BaseCheckoutSpider(scrapy.Spider):
         products = products if is_iterable else list(products)
 
         for product in products:
-            self.select_color(product, color)
-            self.select_size(product)
-            self.select_width(product)
-            self.select_others(product)
-            self._set_quantity(product, quantity)
-
+            self._parse_attributes(product, color, quantity)
             self._add_to_cart()
             self._do_others_actions()
 
     def _parse_cart_page(self):
-        socket.setdefaulttimeout(60)
+        socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
         self.driver.get(self.SHOPPING_CART_URL)
         product_list = self._get_product_list_cart()
         if product_list:
@@ -227,11 +240,11 @@ class BaseCheckoutSpider(scrapy.Spider):
         return target.find_elements(By.XPATH, xpath)
 
     def _click_attribute(self, selected_attribute_xpath, others_attributes_xpath, element=None):
-        """
-        Check if the attribute given by selected_attribute_xpath is checkout
-        if checkeck don't do it anything,
-        else find the first available attribute and click on it
-        """
+    """
+    Check if the attribute given by selected_attribute_xpath is checkout
+    if checkeck don't do it anything,
+    else find the first available attribute and click on it
+    """
         if element:
             target = element
         else:

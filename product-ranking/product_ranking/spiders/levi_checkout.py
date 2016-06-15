@@ -31,12 +31,9 @@ class LeviSpider(BaseCheckoutSpider):
         size_attribute_xpath = (
             '*//*[@id="pdp-buystack-size-values"]'
             '/li[contains(@class,"selected")]')
-        print size_attribute_xpath
         size_attributes_xpath = (
             '*//*[@id="pdp-buystack-size-values"]'
             '/li[not(contains(@class, "not-available"))]')
-        print size_attributes_xpath
-        print "select size"
         self._click_attribute(size_attribute_xpath,
                               size_attributes_xpath,
                               element)
@@ -47,7 +44,8 @@ class LeviSpider(BaseCheckoutSpider):
             color_attribute_xpath = (
                 '*//*[@class="color-swatches"]//'
                 'li[contains(@class,"color-swatch") '
-                'and img[@title="%s"]]' % color)
+                'and img[translate(@title, "ABCDEFGHIJKLMNOPQRSTUVWXYZ",'
+                ' "abcdefghijklmnopqrstuvwxyz")="%s"]]' % color.lower())
 
         # If color is set by default on the page
         else:
@@ -66,20 +64,43 @@ class LeviSpider(BaseCheckoutSpider):
                               color_attributes_xpath,
                               element)
 
+    def select_waist(self, element=None):
+        size_attribute_xpath = (
+            '*//*[@id="pdp-buystack-waist-values"]'
+            '/li[contains(@class,"selected")]')
+        size_attributes_xpath = (
+            '*//*[@id="pdp-buystack-waist-values"]'
+            '/li[not(contains(@class, "not-available"))]')
+        self._click_attribute(size_attribute_xpath,
+                              size_attributes_xpath,
+                              element)
+
+    def select_length(self, element=None):
+        size_attribute_xpath = (
+            '*//*[@id="pdp-buystack-length-values"]'
+            '/li[contains(@class,"selected")]')
+        size_attributes_xpath = (
+            '*//*[@id="pdp-buystack-length-values"]'
+            '/li[not(contains(@class, "not-available"))]')
+        self._click_attribute(size_attribute_xpath,
+                              size_attributes_xpath,
+                              element)
+
+    def _parse_attributes(self, product, color, quantity):
+        self.select_color(product, color)
+        self.select_size(product)
+        self.select_waist(product)
+        self.select_length(product)
+        self._set_quantity(product, quantity)
+
     def _pre_parse_products(self):
         """Close Modal Windows requesting Email"""
         promp_window = self._find_by_xpath(
             '//*[@class="email-lightbox"]//span[@class="close"]')
 
-        if promp_window:
+        if promp_window and promp_window[0].is_displayed():
             promp_window[0].click()
-            time.sleep(4)
-
-    def select_width(self, element=None):
-        return
-
-    def select_others(self, element=None):
-        return
+            time.sleep(2)
 
     def _get_products(self):
         return self._find_by_xpath(
@@ -93,9 +114,6 @@ class LeviSpider(BaseCheckoutSpider):
             add_to_bag[0].click()
             time.sleep(4)
 
-    def _do_others_actions(self):
-        return
-
     def _set_quantity(self, product, quantity):
         quantity_option = self._find_by_xpath(
             '*//*[@class="quantity"]'
@@ -108,19 +126,19 @@ class LeviSpider(BaseCheckoutSpider):
 
     def _get_product_list_cart(self):
         condition = EC.visibility_of_element_located(
-            (By.ID, 'time.sleep(4)'))
+            (By.ID, 'useritems-container'))
         return self.wait.until(condition)
 
     def _get_products_in_cart(self, product_list):
         html_text = product_list.get_attribute('outerHTML')
         selector = scrapy.Selector(text=html_text)
 
-        return selector.xpath('//*[contains(@id, "lineitem_")]')
+        return selector.xpath('//*[@class="product-tile"]')
 
     def _get_subtotal(self):
         order_subtotal_element = self.wait.until(
             EC.visibility_of_element_located((
-                By.ID, 'bagMerchandiseTotal')))
+                By.XPATH, '//*[@class="bottom-subtotal-right"]')))
         if order_subtotal_element:
             order_subtotal = order_subtotal_element.text
             return is_empty(re.findall('\$([\d\.]+)', order_subtotal))
@@ -128,7 +146,7 @@ class LeviSpider(BaseCheckoutSpider):
     def _get_total(self):
         order_total_element = self.wait.until(
             EC.element_to_be_clickable(
-                (By.ID, 'bagTotal')))
+                (By.XPATH, '//*[@class="bottom-estimated-total-right"]')))
 
         if order_total_element:
             order_total = order_total_element.text
@@ -136,24 +154,27 @@ class LeviSpider(BaseCheckoutSpider):
 
     def _get_item_name(self, item):
         return is_empty(item.xpath(
-            '*//*[@class="itemName"]/a/text()').extract())
+            '*//p[@class="name"]/text()').extract())
 
     def _get_item_id(self, item):
         return is_empty(item.xpath(
-                        '*//*[@class="valWebId"]/text()').extract())
+                        '*//*[@class="material_sku"]/span/text()').extract())
 
     def _get_item_price(self, item):
         return is_empty(item.xpath(
-                        '*//*[@class="itemTotal"]/text()').re('\$(.*)'))
+                        '*//*[@class="totalprice"]/text()').re('\$(.*)'))
 
     def _get_item_price_on_page(self, item):
-        return min(item.xpath('//*[@class="colPrice"]//text()').re('\$(.*)'))
+        return min(item.xpath(
+            '*//*[@class="prod-price-info"]//text()').re('\$(.*)'))
 
     def _get_item_color(self, item):
-        return is_empty(item.xpath(
-                        '*//*[@class="valColor"]/text()').extract())
+        return is_empty(map((lambda x: x.strip()), filter((
+            lambda x: x and 'color:' not in x.lower()),
+            item.xpath('*//*[contains(@class,"material_color")]/text()').re(
+                '\n\s*(.*)'))))
 
     def _get_item_quantity(self, item):
         return is_empty(item.xpath(
-                        '//*[@class="colQty"]//'
-                        'option[@selected]/text()').extract())
+                        '*//*[@class="quantity"]//'
+                        '*[@class="display"]/text()').extract())
