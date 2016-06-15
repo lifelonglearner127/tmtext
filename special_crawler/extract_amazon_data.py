@@ -749,15 +749,18 @@ class AmazonScraper(Scraper):
         if tree == None:
             tree = self.tree_html
 
-        swatch_images = []
-
         try:
+            swatch_images = []
+
+            selected_color = self.tree_html.xpath('//span[@class="selection"]/text()')[0]
+
             swatch_image_json = json.loads(self._find_between(html.tostring(self.tree_html), 'data["colorImages"] = ', ';\n'))
 
             if swatch_image_json:
                 for color in swatch_image_json:
-                    for image in swatch_image_json[color]:
-                        swatch_images = self._swatch_image_helper(image, swatch_images)
+                    if color == selected_color:
+                        for image in swatch_image_json[color]:
+                            swatch_images = self._swatch_image_helper(image, swatch_images)
 
             else:
                 swatch_image_json = re.search("'colorImages': { 'initial': ([^\n]*)},", html.tostring(self.tree_html))
@@ -766,17 +769,17 @@ class AmazonScraper(Scraper):
                 for image in swatch_image_json:
                     swatch_images = self._swatch_image_helper(image, swatch_images)
 
+            if swatch_images:
+                return self._remove_no_image_available(swatch_images)
+
         except:
             pass
-
-        if swatch_images:
-            return self._remove_no_image_available(swatch_images)
 
         moca_images = self.tree_html.xpath("//div[contains(@class,'verticalMocaThumb')]/span/img/@src")
         if moca_images:
             return self._remove_no_image_available(self._get_origin_image_urls_from_thumbnail_urls(moca_images))
 
-        image_url = swatch_images
+        image_url = []
 
         #The small images are to the left of the big image
         image_url.extend(tree.xpath("//span[@class='a-button-text']//img/@src"))
