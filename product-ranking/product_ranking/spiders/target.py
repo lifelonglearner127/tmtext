@@ -8,6 +8,8 @@ import string
 import urllib
 import urllib2
 import urlparse
+import copy
+import datetime
 
 import requests
 from scrapy import Selector
@@ -676,7 +678,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                     ))
                     price = Price(priceCurrency=currency, price=amount)
                 cond_set_value(product, 'price', price)
-            yield url, product
+            new_meta = copy.deepcopy(response.meta)
+            new_meta['product'] = product
+            yield (Request(url, callback=self.parse_product, meta=new_meta,
+                           headers={'User-Agent': self.user_agent_override}),
+                   product)
 
     def _scrape_product_links_json(self, response):
         for item in self._get_json_data(response)['items']['Item']:
@@ -700,7 +706,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                     ))
                     price = Price(priceCurrency=currency, price=amount)
                 cond_set_value(product, 'price', price)
-            yield url, product
+            new_meta = copy.deepcopy(response.meta)
+            new_meta['product'] = product
+            yield (Request(url, callback=self.parse_product, meta=new_meta,
+                           headers={'User-Agent': self.user_agent_override}),
+                   product)
 
     def _scrape_product_links_html(self, response):
         sterm = response.xpath(
@@ -1061,17 +1071,20 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             for answer in data['Results']:
                 a={}
                 a['userNickname'] = answer['UserNickname']
-                a['answerSummary'] = answer['AnswerText'].replace('\xa0', '')
+                a['answerSummary'] = a['answerText'] = answer['AnswerText'].replace('\xa0', '')
                 time = answer['SubmissionTime']
                 date = is_empty(time.split('T'))
                 if date:
                     a['submissionDate'] = date
-                a['possitive_vote_count'] = answer['TotalPositiveFeedbackCount']
-                a['negative_vote_count'] = answer['TotalNegativeFeedbackCount']
+                a['PositiveVoteCount'] = answer['TotalPositiveFeedbackCount']
+                a['NegativeVoteCount'] = answer['TotalNegativeFeedbackCount']
                 q['answers'].append(a)
         if q['answers'] or not data['Results']:
             all_questions.append(q)
             product['all_questions'] = all_questions
+            product['recent_questions'] = product['all_questions']
+            # get date_of_last_question
+            product['date_of_last_question'] = self._get_latest_questions_date(product['all_questions'])
             for req in reqs:
                 req.meta['product'] = product
             if reqs:
@@ -1081,6 +1094,26 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 return self._request_reviews(response, product, canonical_url)
             else:
                 return product
+
+    @staticmethod
+    def _get_latest_questions_date(all_questions):
+        dateconv = lambda date: datetime.datetime.strptime(date, '%Y-%m-%d').date()
+
+        last_date = None
+        for q in all_questions:
+            date = q.get('submissionDate', None)
+            if date is not None:
+                date = dateconv(date)
+                if date:
+                    if last_date is None:
+                        last_date = date
+                    elif date > last_date:
+                        last_date = date
+
+        if last_date is None:
+            return
+        else:
+            return last_date.strftime('%Y-%m-%d')
 
     def send_next_request(self, reqs, response):
         """
