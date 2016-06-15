@@ -752,17 +752,18 @@ class AmazonScraper(Scraper):
         try:
             swatch_images = []
 
-            selected_color = self.tree_html.xpath('//span[@class="selection"]/text()')[0]
-
             swatch_image_json = json.loads(self._find_between(html.tostring(self.tree_html), 'data["colorImages"] = ', ';\n'))
 
             if swatch_image_json:
+                selected_color = self.tree_html.xpath('//span[@class="selection"]/text()')[0]
+
                 for color in swatch_image_json:
                     if color == selected_color:
                         for image in swatch_image_json[color]:
                             swatch_images = self._swatch_image_helper(image, swatch_images)
 
             else:
+                # e.g. https://www.amazon.com/Clorox-Bleach-Stain-Remover-Colors/dp/B01CZKEGMA
                 swatch_image_json = re.search("'colorImages': { 'initial': ([^\n]*)},", html.tostring(self.tree_html))
                 swatch_image_json = json.loads(swatch_image_json.group(1))
 
