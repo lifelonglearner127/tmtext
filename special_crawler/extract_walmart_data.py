@@ -1149,11 +1149,11 @@ class WalmartScraper(Scraper):
         return self._exclude_javascript_from_description(long_description)
 
     def _shelf_description(self):
-        shelf_description_html = self.tree_html.xpath("//div[@class='product-short-description module']")
+        shelf_description_html = self.tree_html.xpath("//div[contains(@class,'product-short-description')]")
 
         if shelf_description_html:
             shelf_description_html = html.tostring(shelf_description_html[0])
-            shelf_description_html = shelf_description_html.replace('<div class="product-short-description module">', '')
+            shelf_description_html = re.sub('<div class="product-short-description[^>]*>', '', shelf_description_html)
             shelf_description_html = shelf_description_html[:shelf_description_html.rfind("</div>")]
 
             if shelf_description_html and shelf_description_html.strip():
@@ -2618,6 +2618,9 @@ class WalmartScraper(Scraper):
             try:
                 if self._version() == "Walmart v2":
                     if self.product_info_json["buyingOptions"]["displayArrivalDate"].lower() == "see dates in checkout":
+                        return 0
+
+                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False:
                         return 0
 
                     marketplace_options = self.product_info_json.get("buyingOptions", {}).get("marketplaceOptions")

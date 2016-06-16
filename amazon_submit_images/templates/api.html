@@ -13,6 +13,7 @@
             <li><b>username</b> - Amazon Vendor's username to log in</li>
             <li><b>password</b> - Amazon Vendor's password to log in</li>
             <li><b>file</b> - the ZIP file you want to submit</li>
+            <li><b>task</b> - for selecting task for spider (image, item, report)
         </ul>
     </p>
     <p><b>Important</b>. Make sure you're submitting the form with <i>enctype=multipart/form-data</i>.</p>
@@ -21,16 +22,25 @@
        The response would be <i>{"status": "success"}</i> if the file was uploaded successfully,
         or the error description otherwise.
     </p>
-
-    <h2>Example</h2>
+    <p>If 'report' task is selected server will return CSV file named ProductDetails.csv if success or error messages otherwise.</p> 
+    <h2>Example of Uploading images</h2>
     <p>This example is written in Python and uses an excellent `requests` library.</p>
 
     <pre style="background: #eee; padding: 10px;">
         print requests.post(
             'http://this_host/api',
-            data={'username': 'AMAZON_USERNAME', 'password': 'AMAZON_PASSWORD'},
+            data={'username': 'AMAZON_USERNAME', 'password': 'AMAZON_PASSWORD', 'task':'image'},
             files={'file': open('YOUR_ZIP_FILE_TO_UPLOAD.zip', 'rb')}
         ).text
+    </pre>
+    
+    <h2>Example of Downloading Report</h2>
+    <p>This example is written in Python and uses an excellent `requests` library.</p>
+
+    <pre style="background: #eee; padding: 10px;">
+        downloaded_file = requests.post(
+                         'http://this_host/api',
+                          data={'username': 'AMAZON_USERNAME', 'password': 'AMAZON_PASSWORD', 'task':'report'})
     </pre>
 </body>
 </html>

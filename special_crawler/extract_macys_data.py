@@ -246,6 +246,9 @@ class MacysScraper(Scraper):
         return None
 
     def _image_urls(self):
+        if not self.product_info_json:
+            return self.tree_html.xpath('//div[@class="productImageSection"]/img/@src')
+
         image_url = self.product_info_json['imageUrl']
 
         try:

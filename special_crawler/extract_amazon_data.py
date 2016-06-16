@@ -30,7 +30,7 @@ class AmazonScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.com/dp/<product-id> or http://www.amazon.co.uk/dp/<product-id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http(s)://www.amazon.com/dp/<product-id> or http(s)://www.amazon.co.uk/dp/<product-id>"
 
     CB = captcha_solver.CaptchaBreakerWrapper()
     # special dir path to store the captchas, so that the service has permissions to create it on the scraper instances
@@ -48,7 +48,6 @@ class AmazonScraper(Scraper):
         self.max_review = None
         self.min_review = None
         self.is_marketplace_sellers_checked = False
-        self.store_url = 'http://www.amazon.com/'
         self.browser = mechanize.Browser()
         self.marketplace_prices = None
         self.marketplace_sellers = None
@@ -167,10 +166,10 @@ class AmazonScraper(Scraper):
             return
 
     def check_url_format(self):
-        m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9%\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
-        n = re.match(r"^http://www.amazon.co.uk/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
-        o = re.match(r"^http://www.amazon.ca/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
-        l = re.match(r"^http://www.amazon.co.uk/.*$", self.product_page_url)
+        m = re.match(r"^https?://www.amazon.com/([a-zA-Z0-9%\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        n = re.match(r"^https?://www.amazon.co.uk/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        o = re.match(r"^https?://www.amazon.ca/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        l = re.match(r"^https?://www.amazon.co.uk/.*$", self.product_page_url)
         self.scraper_version = "com"
 
         if (not not n) or (not not l): self.scraper_version = "uk"
@@ -201,11 +200,11 @@ class AmazonScraper(Scraper):
 
     def _product_id(self):
         if self.scraper_version == "uk":
-            product_id = re.match("^http://www.amazon.co.uk/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+            product_id = re.match("^https?://www.amazon.co.uk/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         elif self.scraper_version == "ca":
-            product_id = re.match("^http://www.amazon.ca/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+            product_id = re.match("^https?://www.amazon.ca/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         else:
-            product_id = re.match("^http://www.amazon.com/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+            product_id = re.match("^https?://www.amazon.com/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
         return product_id
 
     def _site_id(self):
@@ -323,8 +322,14 @@ class AmazonScraper(Scraper):
         return None
 
     def _description(self):
-        if self.tree_html.xpath("//*[contains(@id,'feature-bullets')]"):
-            return self._clean_text(self._exclude_javascript_from_description(html.tostring(self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")[0])))
+        description = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
+        if description:
+            description = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")[0]
+            more_button = description.xpath('//div[@id="fbExpanderMoreButtonSection"]')
+            description = html.tostring(description)
+            if more_button:
+                description = re.sub(html.tostring(more_button[0]), '', description)
+            return self._clean_text(self._exclude_javascript_from_description(description))
 
         short_description = " " . join(self.tree_html.xpath("//div[@class='dv-simple-synopsis dv-extender']//text()")).strip()
 
@@ -744,34 +749,38 @@ class AmazonScraper(Scraper):
         if tree == None:
             tree = self.tree_html
 
-        swatch_images = []
-
         try:
+            swatch_images = []
+
             swatch_image_json = json.loads(self._find_between(html.tostring(self.tree_html), 'data["colorImages"] = ', ';\n'))
 
             if swatch_image_json:
+                selected_color = self.tree_html.xpath('//span[@class="selection"]/text()')[0]
+
                 for color in swatch_image_json:
-                    for image in swatch_image_json[color]:
-                        swatch_images = self._swatch_image_helper(image, swatch_images)
+                    if color == selected_color:
+                        for image in swatch_image_json[color]:
+                            swatch_images = self._swatch_image_helper(image, swatch_images)
 
             else:
+                # e.g. https://www.amazon.com/Clorox-Bleach-Stain-Remover-Colors/dp/B01CZKEGMA
                 swatch_image_json = re.search("'colorImages': { 'initial': ([^\n]*)},", html.tostring(self.tree_html))
                 swatch_image_json = json.loads(swatch_image_json.group(1))
 
                 for image in swatch_image_json:
                     swatch_images = self._swatch_image_helper(image, swatch_images)
 
+            if swatch_images:
+                return self._remove_no_image_available(swatch_images)
+
         except:
             pass
-
-        if swatch_images:
-            return self._remove_no_image_available(swatch_images)
 
         moca_images = self.tree_html.xpath("//div[contains(@class,'verticalMocaThumb')]/span/img/@src")
         if moca_images:
             return self._remove_no_image_available(self._get_origin_image_urls_from_thumbnail_urls(moca_images))
 
-        image_url = swatch_images
+        image_url = []
 
         #The small images are to the left of the big image
         image_url.extend(tree.xpath("//span[@class='a-button-text']//img/@src"))
