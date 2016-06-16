@@ -77,6 +77,12 @@ class Pet360Scraper(Scraper):
 
             ingredients.extend(ingredient_list)
 
+        for ingredient_list in self.tree_html.xpath('//div[@class="product-ingredients"]/p/text()'):
+            ingredient_list = map(self._clean_text, re.sub('^ -', '', ingredient_list).split(', '))
+            ingredient_list = filter(len, ingredient_list)
+
+            ingredients.extend(ingredient_list)
+
         if ingredients:
             return ingredients
 
