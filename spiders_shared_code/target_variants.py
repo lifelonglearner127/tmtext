@@ -7,20 +7,21 @@ import requests
 
 class TargetVariants(object):
 
-    def setupSC(self, response, item_info=None, debug=False):
+    def setupSC(self, response, zip_code='94117', item_info=None, debug=False):
         """ Call it from SC spiders """
         self.response = response
         self.tree_html = lxml.html.fromstring(response.body)
         self.item_info = item_info
+        self.zip_code = zip_code
         self.debug = debug
 
-    def setupCH(self, tree_html, item_info=None, debug=False):
+    def setupCH(self, tree_html, zip_code='94117', item_info=None, debug=False):
         """ Call it from CH spiders """
         self.tree_html = tree_html
         self.item_info = item_info
         self.debug = debug
 
-        self.zipcode = '07310'
+        self.zip_code = zip_code
         self.location_id = None
 
     def _scrape_possible_variant_urls(self):
@@ -164,7 +165,7 @@ class TargetVariants(object):
     def _extract_location_id(self, product_id):
         " extract location id to use it in stock status checking "
 
-        url = 'https://api.target.com/available_to_promise/v2/%s/search?nearby=%s&requested_quantity=1&inventory_type=stores&radius=100&multichannel_option=none&field_groups=location_summary&key=q0jGNkIyuqUTYIlzZKoCfK6ugaNGSP8h' % (product_id, self.zipcode)
+        url = 'https://api.target.com/available_to_promise/v2/%s/search?nearby=%s&requested_quantity=1&inventory_type=stores&radius=100&multichannel_option=none&field_groups=location_summary&key=q0jGNkIyuqUTYIlzZKoCfK6ugaNGSP8h' % (product_id, self.zip_code)
 
         headers = {
             'Accept': 'application/json, text/javascript, */*',
