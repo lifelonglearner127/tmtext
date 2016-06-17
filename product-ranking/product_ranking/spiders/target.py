@@ -91,12 +91,14 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     RELATED_URL = "{path}?productId={pid}&userId=-1002&min={min}&max={max}&context=placementId,{plid};categoryId,{cid}&callback=jsonCallback"
 
-    def __init__(self, sort_mode=None, *args, **kwargs):
+    def __init__(self, sort_mode=None, zip_code='94117', *args, **kwargs):
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
             else:
                 self.SORTING = self.SORT_MODES[sort_mode.lower()]
+
+        self.zip_code = zip_code
 
         super(TargetProductSpider, self).__init__(
             site_name=self.allowed_domains[0],
@@ -207,7 +209,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(prod, 'locale', 'en-US')
 
         tv = TargetVariants()
-        tv.setupSC(response)
+        tv.setupSC(response, zip_code=self.zip_code)
         prod['variants'] = tv._variants()
 
         price = is_empty(response.xpath(
