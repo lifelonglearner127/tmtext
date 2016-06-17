@@ -222,17 +222,17 @@ class PetcoProductsSpider(ProductsSpider):
             '//*[contains(@id,"entitledItem_")]/@id').re(
             'entitledItem_(\d+)')
 
-        cat_id = response.xpath(
-            '//*[@id="catEntryIdList"]/@value').extract()[0].split(',')[-1]
+        cat_id = response.xpath('//script/text()').re(
+            'productDisplayJS.displayAttributeInfo\("(\d+)","(\d+)"')
 
+        if not cat_id:
+            cat_id = response.xpath(
+                '//*[@name="firstAvailableSkuCatentryId_avl"]/@value').extract()
 
         if price_id and cat_id:
             text = ("storeId=10151&langId=-1&catalogId=10051&"
-                    "catalogEntryId={cat}&productId={prod_id}".format(cat=cat_id,
+                    "catalogEntryId={cat}&productId={prod_id}".format(cat=cat_id[0],
                                                                       prod_id=price_id[0]))
-            
-
-
             reqs.append(
                 Request(self.PRICE_URL,
                         body=text,
@@ -243,6 +243,11 @@ class PetcoProductsSpider(ProductsSpider):
                         callback=self._parse_price,
                         dont_filter=True)
             )
+
+        else:
+            prices = map(float, response.xpath(
+                '//*[@class="product-price"]//span/text()').re('\$([\d\.]+)'))
+            product['price'] = Price(price=min(prices), priceCurrency="USD")
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -257,7 +262,6 @@ class PetcoProductsSpider(ProductsSpider):
             '\{.*\}', response.body, re.MULTILINE | re.DOTALL)[0]
 
         product_data = eval(raw_information)
-
         price = product_data["catalogEntry"]["offerPrice"]
         product['price'] = Price(price=price, priceCurrency="USD")
 
