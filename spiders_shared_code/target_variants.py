@@ -1,3 +1,4 @@
+import re
 import json
 from pprint import pprint
 
@@ -18,6 +19,9 @@ class TargetVariants(object):
         self.tree_html = tree_html
         self.item_info = item_info
         self.debug = debug
+
+        self.zipcode = '07310'
+        self.location_id = None
 
     def _scrape_possible_variant_urls(self):
         """ Returns possible variants (URLs) as scraped from HTML blocks (see #3930) """
@@ -119,56 +123,102 @@ class TargetVariants(object):
 
         return stockstatus_for_variation_combinations
 
-    def _availability_info(self, item_info, product_id):
+    def _availability_info(self, variants):
 
-        url = "https://api.target.com/available_to_promise_aggregator/v1?key=adaptive-pdp&request_type=availability"
+        url = 'https://api.target.com/available_to_promise_aggregator/v1?key=adaptive-pdp&request_type=availability'
 
-        payload = {
-                    "products": [
-                        {
-                          "request_line_id": 1,
-                          "product": {
-                            "product_id": str(product_id),
-                            "location_ids": "190",
-                            "multichannel_option": "none",
-                            "inventory_type": "stores",
-                            "requested_quantity": "1",
-                            "field_groups": "location_summary"
-                          }
-                        },
-                        {
-                          "request_line_id": 2,
-                          "product": {
-                            "product_id": str(product_id),
-                            "multichannel_option": "shipguest",
-                            "inventory_type": "stores",
-                            "requested_quantity": "1",
-                            "field_groups": "summary"
-                          }
-                        }
-                    ]
+        payload = { 'products': [] }
+
+        for item in variants:
+            payload['products'].append(
+                {
+                    'request_line_id': 1,
+                    'product': {
+                        'product_id': str(item['partNumber']),
+                        'multichannel_option': 'none',
+                        'location_ids': str(self.location_id),
+                        'inventory_type': 'stores',
+                        'requested_quantity': '1',
+                        'field_groups': 'location_summary'
+                  }
                 }
+            )
+
         headers = {
-            "Accept": "application/json, text/javascript, */*; q=0.01",
-            "Accept-Encoding": "gzip, deflate, sdch, br",
-            "Accept-Language": "en-US,en;q=0.8,ja;q=0.6,vi;q=0.4,es;q=0.2,fr;q=0.2,zh-CN;q=0.2,zh;q=0.2,pt;q=0.2",
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "Content-Type": "application/json",
-            "Host": "api.target.com",
-            "Origin": "http://www.target.com",
-            "Pragma": "no-cache",
-            "Referer": item_info["dynamicKitURL"],
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.84 Safari/537.36"
-            }
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Encoding': 'gzip, deflate, sdch, br',
+            'Accept-Language': 'en-US,en;q=0.8,ja;q=0.6,vi;q=0.4,es;q=0.2,fr;q=0.2,zh-CN;q=0.2,zh;q=0.2,pt;q=0.2',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/json',
+            'Host': 'api.target.com',
+            'Origin': 'http://www.target.com',
+            'Pragma': 'no-cache',
+            'Referer': self.item_info['dynamicKitURL'],
+            'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+        }
 
         response = requests.post(url, json=payload, headers=headers)
+        return response.json()['products']
 
-        return response.json()
+    def _extract_location_id(self, product_id):
+        " extract location id to use it in stock status checking "
+
+        url = 'https://api.target.com/available_to_promise/v2/%s/search?nearby=%s&requested_quantity=1&inventory_type=stores&radius=100&multichannel_option=none&field_groups=location_summary&key=q0jGNkIyuqUTYIlzZKoCfK6ugaNGSP8h' % (product_id, self.zipcode)
+
+        headers = {
+            'Accept': 'application/json, text/javascript, */*',
+            'Accept-Encoding': 'gzip, deflate, sdch, br',
+            'Accept-Language': 'en-US,en;q=0.8,ja;q=0.6,vi;q=0.4,es;q=0.2,fr;q=0.2,zh-CN;q=0.2,zh;q=0.2,pt;q=0.2',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Host': 'api.target.com',
+            'Origin': 'http://www.target.com',
+            'Pragma': 'no-cache',
+            'Referer': self.item_info['dynamicKitURL'],
+            'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+        }
+
+        response = requests.get(url, headers=headers)
+        try:
+            return response.json()['products'][0]['locations'][0]['location_id']
+        except Exception as e:
+            print str(e)
+            return ''
 
     def _variants(self):
         if self.item_info:
             variants = []
+
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            }
+            page_raw_text = requests.get(self.item_info['dynamicKitURL'], headers=headers).content
+            # decides if users can see "get it in 4-7 business days"
+            refresh_items = {}
+            match = re.search(r'refreshItems = (.*?)\s*<', page_raw_text)
+            if match:
+                data = json.loads(match.group(1).strip())
+                for item in data:
+                    refresh_items[item['Attributes']['partNumber']] = item['Attributes']['callToActionDetail']['shipToStoreEligible']
+
+            if not self.location_id:
+                self.location_id = self._extract_location_id(self.item_info['SKUs'][0]['partNumber'])
+
+            availability_info = {}
+            items = self._availability_info(self.item_info['SKUs'])
+            for item in items:
+                product_id = item['products'][0]['product_id']
+
+                availability_info[product_id] = [refresh_items[product_id]]
+
+                if 'locations' in item['products'][0]:
+                    status = True if item['products'][0]['locations'][0]['availability_status'] == 'IN_STOCK' else False
+                    try:
+                        availability_info[product_id].append(status)
+                    except KeyError:
+                        availability_info[product_id] = [status]
 
             for item in self.item_info['SKUs']:
                 try:
@@ -187,12 +237,7 @@ class TargetVariants(object):
                     'selected' : None,
                 }
 
-                if item.get('inventoryStatus'):
-                    v['in_stock'] = not ('out of stock' in item['inventoryStatus'])
-                    # double check when item is out of stock
-                    if not v['in_stock']:
-                        availability_info = self._availability_info(self.item_info, item['partNumber'])
-                        v['in_stock'] = any([item['products'][0]['availability_status'] == 'IN_STOCK' for item in availability_info['products']])
+                v['in_stock'] = any(availability_info[item['partNumber']])
 
                 for attribute in item.get('VariationAttributes', []):
                     v['properties'][ attribute['name'].lower() ] = attribute['value']
