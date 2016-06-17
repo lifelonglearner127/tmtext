@@ -1871,7 +1871,7 @@ class WalmartScraper(Scraper):
             return True
         else:
             try:
-                return Scraper._no_image(self, url)
+                return Scraper._no_image(self, url, True)
             except:
                 return True
 
