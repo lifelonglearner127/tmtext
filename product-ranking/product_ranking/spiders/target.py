@@ -8,6 +8,8 @@ import string
 import urllib
 import urllib2
 import urlparse
+import copy
+import datetime
 
 import requests
 from scrapy import Selector
@@ -36,6 +38,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     settings = TargetValidatorSettings
 
+    user_agent_override = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+
     # TODO: support new currencies if you're going to scrape target.canada
     #  or any other target.* different from target.com!
     SEARCH_URL = "http://tws.target.com/searchservice/item/search_" \
@@ -48,6 +52,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     CALL_RECOMM = True
     POPULATE_VARIANTS = False
     POPULATE_REVIEWS = True
+    POPULATE_QA = True
     SORTING = None
 
     SORT_MODES = {
@@ -60,6 +65,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     }
 
     REVIEW_API_PASS = "aqxzr0zot28ympbkxbxqacldq"
+    QA_API_PASS = "tr1a5rnjztlsup5cvro29iv8w"
 
     REVIEW_API_URL = "http://api.bazaarvoice.com/data/batch.json" \
                      "?passkey={apipass}&apiversion=5.5" \
@@ -71,6 +77,15 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                          '&apiversion=5.4&resource.q0=products&filter.q0=id%3Aeq%3A{tcin}'
                          '&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_US'
                          '&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US')
+
+    QUESTION_API_URL = "http://api.bazaarvoice.com/data/questions.json" \
+                 "?passkey={apipass}&Offset=0&apiversion=5.4" \
+                 "&Filter=Productid:{product_id}" \
+                 "&Sort=TotalAnswerCount:desc,HasStaffAnswers:desc"
+
+    ANSWER_API_URL = "http://api.bazaarvoice.com/data/answers.json" \
+                     "?passkey={apipass}&apiversion=5.4" \
+                     "&Filter=Questionid:{question_id}"
 
     JSON_SEARCH_URL = "http://tws.target.com/searchservice/item" \
                       "/search_results/v1/by_keyword" \
@@ -106,13 +121,15 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             **kwargs)
 
     def start_requests(self):
-        yield Request(url=self.start_urls[0], callback=self._start_search)
+        yield Request(url=self.start_urls[0], callback=self._start_search,
+                      headers={'User-Agent': self.user_agent_override})
 
     def _start_search(self, response):
         for request in super(TargetProductSpider, self).start_requests():
             #request.meta['dont_redirect'] = True
             request.meta['handle_httpstatus_list'] = [302]
             request.meta['search_start'] = True
+            request.headers['User-Agent'] = self.user_agent_override
             yield request
 
     def parse(self, response):
@@ -134,7 +151,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                                           category=category, index=90,
                                           sort_mode=self.SORTING or '',
                                           page=1),
-                meta=new_meta)
+                meta=new_meta,
+                headers={'User-Agent': self.user_agent_override})
         return list(super(TargetProductSpider, self).parse(response))
 
     def _request_reviews_v2(self, product, response):
@@ -143,40 +161,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             self.REVIEW_API_URL_V2.format(tcin=self._get_tcin(response)),
             meta=response.meta,
             callback=self._parse_reviews,
-            dont_filter=True
+            dont_filter=True,
+            headers={'User-Agent': self.user_agent_override}
         )
-
-    def HASDDAASDASD(self):
-        try:
-            url = 'sdfsdfsdfsdf'
-            contents = urllib.urlopen(url).read()
-            jsn = json.loads(contents)
-            review_info = jsn['BatchedResults']['q0']['Results'][0]['ReviewStatistics']
-            self.review_count = review_info['TotalReviewCount']
-            self.average_review = review_info['AverageOverallRating']
-            self.reviews = None
-
-            min_ratingval = None
-            max_ratingval = None
-
-            if self.review_count > 0:
-                self.reviews = [[1, 0], [2, 0], [3, 0], [4, 0], [5, 0]]
-
-                for review in review_info['RatingDistribution']:
-                    if min_ratingval == None or review['RatingValue'] < min_ratingval:
-                        if review['Count'] > 0:
-                            min_ratingval = review['RatingValue']
-                    if max_ratingval == None or review['RatingValue'] > max_ratingval:
-                        if review['Count'] > 0:
-                            max_ratingval = review['RatingValue']
-
-                    self.reviews[int(review['RatingValue']) - 1][1] = int(review['Count'])
-
-            self.min_score = min_ratingval
-            self.max_score = max_ratingval
-        except Exception as e:
-            print e
-            raise
 
     def _get_tcin(self, response):
         if not self._is_v1(response):
@@ -286,7 +273,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 return Request(
                     rurls[0],
                     self._parse_recomm_json,
-                    meta=new_meta)
+                    meta=new_meta,
+                    headers={'User-Agent': self.user_agent_override})
 
         if self.CALL_RR:
             if payload:
@@ -297,10 +285,12 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 return Request(
                     rr_url,
                     self._parse_rr_json,
-                    meta=new_meta)
+                    meta=new_meta,
+                    headers={'User-Agent': self.user_agent_override})
             else:
                 self.log("No {rr} payload at %s" % response.url, DEBUG)
-
+        if self.POPULATE_QA:
+            return self._request_QA(response, prod)
         if self.POPULATE_REVIEWS:
             return self._request_reviews(response, prod, canonical_url)
         else:
@@ -337,7 +327,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     def _item_info_helper(self, partNumber):
         response = requests.get(
             'http://tws.target.com/productservice/services/item_service/v1/by_itemid?id='
-            + partNumber + '&alt=json&callback=itemInfoCallback&_=1464382778193').content
+            + partNumber + '&alt=json&callback=itemInfoCallback&_=1464382778193',
+            headers={'User-Agent': self.user_agent_override}).content
 
         item_info = re.match('itemInfoCallback\((.*)\)$', response, re.DOTALL).group(1)
         return json.loads(item_info)['CatalogEntryView'][0]
@@ -546,7 +537,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             return Request(
                 url,
                 self._parse_recomm_json,
-                meta=new_meta)
+                meta=new_meta,
+                headers={'User-Agent': self.user_agent_override})
+
+        if self.POPULATE_QA:
+            return self._request_QA(response, product)
 
         if self.POPULATE_REVIEWS:
             canonical_url = response.meta['canonical_url']
@@ -599,6 +594,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
             product['related_products'] = {"recommended": ritems,
                                            "buyers_also_bought": obitems}
+        if self.POPULATE_QA:
+            return self._request_QA(response, product)
+
         if self.POPULATE_REVIEWS:
             canonical_url = response.meta['canonical_url']
             return self._request_reviews(response, product, canonical_url)
@@ -682,7 +680,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                     ))
                     price = Price(priceCurrency=currency, price=amount)
                 cond_set_value(product, 'price', price)
-            yield url, product
+            new_meta = copy.deepcopy(response.meta)
+            new_meta['product'] = product
+            yield (Request(url, callback=self.parse_product, meta=new_meta,
+                           headers={'User-Agent': self.user_agent_override}),
+                   product)
 
     def _scrape_product_links_json(self, response):
         for item in self._get_json_data(response)['items']['Item']:
@@ -706,7 +708,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                     ))
                     price = Price(priceCurrency=currency, price=amount)
                 cond_set_value(product, 'price', price)
-            yield url, product
+            new_meta = copy.deepcopy(response.meta)
+            new_meta['product'] = product
+            yield (Request(url, callback=self.parse_product, meta=new_meta,
+                           headers={'User-Agent': self.user_agent_override}),
+                   product)
 
     def _scrape_product_links_html(self, response):
         sterm = response.xpath(
@@ -845,7 +851,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 method='POST',
                 formdata=data,
                 callback=self._parse_link_post,
-                meta=new_meta)
+                meta=new_meta,
+                headers={'User-Agent': self.user_agent_override})
 
     def _parse_link_post(self, response):
         jsdata = json.loads(response.body)
@@ -892,7 +899,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             requests.append(Request(
                 url,
                 callback=self.parse_product,
-                meta=new_meta, dont_filter=True))
+                meta=new_meta, dont_filter=True,
+                headers={'User-Agent': self.user_agent_override}),)
         return requests
 
     def _scrape_next_results_page_link(self, response):
@@ -912,7 +920,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         search_term = args['keyword']
         url = self.SEARCH_URL.format(
             search_term=search_term).replace('offset=0', 'offset=%d' % next_offset)
-        return Request(url, meta=response.meta)
+        return Request(url, meta=response.meta, headers={'User-Agent': self.user_agent_override})
 
     def _scrape_next_results_page_link_json(self, response):
         #raw_input(len(list(self._scrape_product_links_json(response))))
@@ -929,7 +937,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                                             index=per_page * current,
                                             page=current + 1,
                                             category=response.meta['category'])
-            return Request(url, meta=new_meta)
+            return Request(url, meta=new_meta, headers={'User-Agent': self.user_agent_override})
 
     def _scrape_next_results_page_link_html(self, response):
         next_page = response.xpath(
@@ -957,7 +965,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         if prod_id:
             url = self.REVIEW_API_URL.format(apipass=self.REVIEW_API_PASS,
                                              model=prod_id)
-            return Request(url, self._parse_reviews, meta=response.meta, dont_filter=True)
+            return Request(url, self._parse_reviews, meta=response.meta, dont_filter=True,
+                           headers={'User-Agent': self.user_agent_override})
         else:
             return product
 
@@ -1007,3 +1016,115 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
+
+    def _request_QA(self, response, product):
+        product_id = re.search('\d+\w', response.url)
+        if not product_id:
+            product_id = re.search('\d+\Z', product['url'])
+        if product_id:
+            product_id = product_id.group()
+            url = self.QUESTION_API_URL.format(apipass=self.QA_API_PASS,
+                                               product_id=product_id)
+            return Request(url, self._parse_questions, meta=response.meta, dont_filter=True,
+                           headers={'User-Agent': self.user_agent_override})
+        else:
+            return product
+
+    def _parse_questions(self, response):
+        product = response.meta['product']
+        data = json.loads(response.body_as_unicode())
+        reqs = []
+        if data and data['Results']:
+            for question in data['Results']:
+                q={}
+                q['question_summary'] = question['QuestionSummary']
+                time = question['SubmissionTime']
+                date = is_empty(time.split('T'))
+                if date:
+                    q['submissionDate'] = date
+                q['userNickname'] = question['UserNickname']
+                q['totalAnswersCount'] = question['TotalAnswerCount']
+                q['questionId'] = question['Id']
+                if q['questionId']:
+                    url = self.ANSWER_API_URL.format(apipass=self.QA_API_PASS, 
+                                                     question_id=q['questionId'])
+                    meta = response.meta
+                    meta['q'] = q
+                    reqs.append(Request(url, self._parse_answer, meta = meta, dont_filter=True,
+                                        headers={'User-Agent': self.user_agent_override}))
+            if reqs:
+                yield self.send_next_request(reqs, response)
+        else:
+            product['all_questions'] = []
+            if self.POPULATE_REVIEWS:
+                canonical_url = response.meta['canonical_url']
+                yield self._request_reviews(response, product, canonical_url)
+            else:
+                yield product
+
+    def _parse_answer(self, response):
+        product = response.meta['product']
+        reqs = response.meta.get('reqs',[])
+        all_questions = product.get('all_questions', [])
+        q = response.meta['q']
+        q['answers'] = []
+        data = json.loads(response.body_as_unicode())
+        if data['Results']:
+            for answer in data['Results']:
+                a={}
+                a['userNickname'] = answer['UserNickname']
+                a['answerSummary'] = a['answerText'] = answer['AnswerText'].replace('\xa0', '')
+                time = answer['SubmissionTime']
+                date = is_empty(time.split('T'))
+                if date:
+                    a['submissionDate'] = date
+                a['PositiveVoteCount'] = answer['TotalPositiveFeedbackCount']
+                a['NegativeVoteCount'] = answer['TotalNegativeFeedbackCount']
+                q['answers'].append(a)
+        if q['answers'] or not data['Results']:
+            all_questions.append(q)
+            product['all_questions'] = all_questions
+            product['recent_questions'] = product['all_questions']
+            # get date_of_last_question
+            product['date_of_last_question'] = self._get_latest_questions_date(product['all_questions'])
+            for req in reqs:
+                req.meta['product'] = product
+            if reqs:
+                return self.send_next_request(reqs, response)
+            elif self.POPULATE_REVIEWS:
+                canonical_url = response.meta['canonical_url']
+                return self._request_reviews(response, product, canonical_url)
+            else:
+                return product
+
+    @staticmethod
+    def _get_latest_questions_date(all_questions):
+        dateconv = lambda date: datetime.datetime.strptime(date, '%Y-%m-%d').date()
+
+        last_date = None
+        for q in all_questions:
+            date = q.get('submissionDate', None)
+            if date is not None:
+                date = dateconv(date)
+                if date:
+                    if last_date is None:
+                        last_date = date
+                    elif date > last_date:
+                        last_date = date
+
+        if last_date is None:
+            return
+        else:
+            return last_date.strftime('%Y-%m-%d')
+
+    def send_next_request(self, reqs, response):
+        """
+        Helps to handle several requests for parsing QA
+        """
+
+        req = reqs.pop(0)
+        new_meta = req.meta.copy()
+        if reqs:
+            new_meta["reqs"] = reqs
+
+        return req.replace(meta=new_meta)
