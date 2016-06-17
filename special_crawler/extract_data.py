@@ -13,7 +13,7 @@ import mmh3 as MurmurHash
 import os
 import random
 
-from no_img_hash import fetch_bytes, fetch_chunk
+from no_img_hash import fetch_bytes
 from socket import timeout
 
 from lxml import html, etree
@@ -639,7 +639,7 @@ class Scraper():
 
         return False
 
-    def _image_hash(self, image_url, walmart=None):
+    def _image_hash(self, image_url):
         """Computes hash for an image.
         To be used in _no_image, and for value of _image_hashes
         returned by scraper.
@@ -647,13 +647,11 @@ class Scraper():
 
         :param image_url: url of image to be hashed
         """
-        if walmart:
-            return str(MurmurHash.hash(fetch_chunk(image_url)))
         return str(MurmurHash.hash(fetch_bytes(image_url)))
 
     # Checks if image given as parameter is "no  image" image
     # To be used by subscrapers
-    def _no_image(self, image_url, walmart=None):
+    def _no_image(self, image_url):
         """Verifies if image with URL given as argument is
         a "no image" image.
 
@@ -669,7 +667,7 @@ class Scraper():
         """
         print "***********test start*************"
         try:
-            first_hash = self._image_hash(image_url, walmart)
+            first_hash = self._image_hash(image_url)
         except IOError:
             return False
         print first_hash

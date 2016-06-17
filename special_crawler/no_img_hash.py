@@ -97,15 +97,6 @@ def fetch_bytes(url):
             data = b.getvalue()
             return data
 
-def fetch_chunk(url):
-    agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
-    headers ={'User-agent': agent}
-    with requests.Session() as s:
-        response = s.get(url, headers=headers, stream=True, timeout=15)
-        for chunk in response.iter_content(1000):
-            response.close()
-            return chunk
-
 @app.errorhandler(500)
 def handle_internal_error(error):
     response = jsonify({"error" : "Internal server error"})
