@@ -205,7 +205,7 @@ class TargetVariants(object):
             page_raw_text = requests.get(self.item_info['dynamicKitURL'], headers=headers).content
             # decides if users can see "get it in 4-7 business days"
             refresh_items = {}
-            match = re.search(r'refreshItems = (.*?)\s*<', page_raw_text)
+            match = re.search(r'refreshItems = (.*?)\s*</script>', page_raw_text)
             if match:
                 data = json.loads(match.group(1).strip())
                 for item in data:
@@ -222,7 +222,10 @@ class TargetVariants(object):
             for item in items if items else []:
                 product_id = item['products'][0]['product_id']
 
-                availability_info[product_id] = [refresh_items[product_id]]
+                try:
+                    availability_info[product_id] = [refresh_items[product_id]]  # TODO: this fails sometimes, wrapped in exception but not sure it's what we need
+                except KeyError:
+                    continue
 
                 if 'locations' in item['products'][0]:
                     status = True if item['products'][0]['locations'][0]['availability_status'] == 'IN_STOCK' else False
@@ -241,7 +244,7 @@ class TargetVariants(object):
                 v = {
                     'in_stock' : False,
                     'price': float( price[1:].replace(',',''))\
-                        if price not in ('Too low to display', None)\
+                        if price not in ('Too low to display', None, 'price varies')\
                         else None, # convert price
                     'properties' : {},
                     'image_url' : item['Images'][0]['PrimaryImage'][0]['image'],
