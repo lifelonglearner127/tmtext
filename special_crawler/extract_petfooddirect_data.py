@@ -229,6 +229,10 @@ class PetFoodDirectScraper(Scraper):
                 if not high_price or variant['price'] > high_price:
                     high_price = variant['price']
 
+            max_price = self._products_json().get('maxPrice')
+            if max_price:
+                high_price = float(max_price)
+
             return '$%.2f - $%.2f' % (low_price, high_price)
 
         return self.tree_html.xpath('//span[@class="price"]/text()')[0].split(' - ')[0]
