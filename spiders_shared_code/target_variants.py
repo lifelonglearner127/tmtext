@@ -145,6 +145,9 @@ class TargetVariants(object):
                 }
             )
 
+        if not payload['products']:
+            return
+
         headers = {
             'Accept': 'application/json, text/javascript, */*; q=0.01',
             'Accept-Encoding': 'gzip, deflate, sdch, br',
@@ -159,8 +162,12 @@ class TargetVariants(object):
             'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
         }
 
-        response = requests.post(url, json=payload, headers=headers)
-        return response.json()['products']
+        response = requests.post(url, data=json.dumps(payload), headers=headers)
+        # TODO: url http://www.target.com/p/mid-rise-straight-leg-jeans-curvy-fit-black-mossimo/-/A-15545812 fails
+        try:
+            return response.json()['products']
+        except:
+            print 'ERROR! ' + response.text
 
     def _extract_location_id(self, product_id):
         " extract location id to use it in stock status checking "
@@ -204,12 +211,15 @@ class TargetVariants(object):
                 for item in data:
                     refresh_items[item['Attributes']['partNumber']] = item['Attributes']['callToActionDetail']['shipToStoreEligible']
 
-            if not self.location_id:
-                self.location_id = self._extract_location_id(self.item_info['SKUs'][0]['partNumber'])
+            if not getattr(self, 'location_id', None):
+                if self.item_info['SKUs']:
+                    self.location_id = self._extract_location_id(self.item_info['SKUs'][0]['partNumber'])
+                else:
+                    self.location_id = None
 
             availability_info = {}
             items = self._availability_info(self.item_info['SKUs'])
-            for item in items:
+            for item in items if items else []:
                 product_id = item['products'][0]['product_id']
 
                 availability_info[product_id] = [refresh_items[product_id]]
@@ -238,7 +248,7 @@ class TargetVariants(object):
                     'selected' : None,
                 }
 
-                v['in_stock'] = any(availability_info[item['partNumber']])
+                v['in_stock'] = any(availability_info.get(item.get('partNumber', True), [True]))  # TODO: this fails if written as indexes ([]), not get()
 
                 for attribute in item.get('VariationAttributes', []):
                     v['properties'][ attribute['name'].lower() ] = attribute['value']

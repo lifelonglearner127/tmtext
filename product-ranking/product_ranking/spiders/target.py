@@ -27,6 +27,9 @@ from product_ranking.validators.target_validator import TargetValidatorSettings
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 
+# TODO: invalid buyer reviews and stock status for http://www.target.com/p/black-decker-2-slice-bread-and-bagel-toaster/-/A-13193088
+
+
 is_empty = lambda x, y=None: x[0] if x else y
 
 
@@ -167,8 +170,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     def _get_tcin(self, response):
         if not self._is_v1(response):
-            if self.item_info.get('parentPartNumber'):
-                return self.item_info['parentPartNumber']
+            if response.meta['item_info'].get('parentPartNumber'):
+                return response.meta['item_info']['parentPartNumber']
             else:
                 return self._product_id_v2(response)
         tcin = re.search(u'Online Item #:[^\d]*(\d+)', response.body_as_unicode())
@@ -185,6 +188,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         ).extract()
         prod = response.meta['product']
 
+        response.meta['item_info'] = self._item_info_v2(response)
+
         response.meta['average'] = is_empty(re.findall(r'var averageRating=  (\d+)', response.body_as_unicode()))
         response.meta['total'] = is_empty(re.findall(r'var totalReviewsValue=(\d+)', response.body_as_unicode()))
 
@@ -196,7 +201,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(prod, 'locale', 'en-US')
 
         tv = TargetVariants()
-        tv.setupSC(response, zip_code=self.zip_code)
+        tv.setupSC(response, zip_code=self.zip_code, item_info=response.meta['item_info'])
         prod['variants'] = tv._variants()
 
         price = is_empty(response.xpath(
@@ -322,7 +327,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         if not isinstance(response_or_url, (str, unicode)):
             response_or_url = response_or_url.url
         # else get it from the url
-        return re.search('A-(\d+)', response_or_url).group(1)
+        _id = re.search('A-(\d+)', response_or_url)
+        if _id:
+            return _id.group(1)
 
     def _item_info_helper(self, partNumber):
         response = requests.get(
@@ -334,13 +341,13 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         return json.loads(item_info)['CatalogEntryView'][0]
 
     def _item_info_v2(self, response):
-        self.item_info = self._item_info_helper(self._product_id_v2(response))
+        item_info = self._item_info_helper(self._product_id_v2(response))
 
-        if (self.item_info.get('parentPartNumber') and self.item_info['parentPartNumber']
+        if (item_info.get('parentPartNumber') and item_info['parentPartNumber']
                 != self._product_id_v2(response)):
-            self.item_info = self._item_info_helper(self.item_info['parentPartNumber'])
+            item_info = self._item_info_helper(item_info['parentPartNumber'])
 
-        return self.item_info
+        return item_info
 
     @staticmethod
     def _get_price_v2(item_info):
@@ -396,8 +403,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             product['is_out_of_stock'] = not item_info.get('inventoryStatus', '') == 'in stock'
 
             tv = TargetVariants()
-            tv.setupSC(response=response, item_info=item_info)
-            product['variants'] = tv._variants()
+            if not product['variants']:
+                tv.setupSC(response=response, zip_code=self.zip_code, item_info=item_info)
+                product['variants'] = tv._variants()
 
             # TODO: shipping and store availability? see "purchasingChannel: Sold Online + in Stores" in item_info; http://www.target.com/p/denizen-from-levi-s-women-s-curvy-bootcut-jeans-denim-blue/-/A-50234669
             # http://www.target.com/p/black-decker-2-slice-bread-and-bagel-toaster/-/A-13193088
@@ -953,6 +961,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             return self._gen_next_request(response, next_page)
 
     def _request_reviews(self, response, product, canonical_url=None):
+        return self._request_reviews_v2(product, response)
+        """
         if canonical_url:
             main_url = canonical_url[0]
         else:
@@ -969,6 +979,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                            headers={'User-Agent': self.user_agent_override})
         else:
             return product
+        """
 
     def _parse_reviews(self, response):
         product = response.meta['product']
@@ -978,6 +989,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         data = data.get('FilteredReviewStatistics', {})
         average = data.get('AverageOverallRating')
         total = data.get('TotalReviewCount')
+        #import pdb; pdb.set_trace()
         if not average:
             average = response.meta['average']
             total = response.meta['total']
@@ -991,7 +1003,6 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 reviews = BuyerReviews(int(total), int(average), fdist)
                 cond_set_value(product, 'buyer_reviews', reviews)
         if average and total:
-            distribution = data.get('RatingDistribution', [])
             distribution = {d['RatingValue']: d['Count']
                             for d in data.get('RatingDistribution', [])}
             fdist = {i: 0 for i in range(1, 6)}
@@ -1053,14 +1064,14 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                     reqs.append(Request(url, self._parse_answer, meta = meta, dont_filter=True,
                                         headers={'User-Agent': self.user_agent_override}))
             if reqs:
-                yield self.send_next_request(reqs, response)
+                return self.send_next_request(reqs, response)
         else:
             product['all_questions'] = []
             if self.POPULATE_REVIEWS:
                 canonical_url = response.meta['canonical_url']
-                yield self._request_reviews(response, product, canonical_url)
+                return self._request_reviews(response, product, canonical_url)
             else:
-                yield product
+                return product
 
     def _parse_answer(self, response):
         product = response.meta['product']
