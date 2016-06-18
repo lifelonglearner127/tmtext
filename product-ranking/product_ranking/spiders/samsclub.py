@@ -15,7 +15,6 @@ from product_ranking.spiders import cond_set, cond_set_value
 from scrapy.http import Request, FormRequest
 from scrapy.log import DEBUG, ERROR
 
-
 class SamsclubProductsSpider(BaseProductsSpider):
     name = 'samsclub_products'
     allowed_domains = ["samsclub.com"]
@@ -26,10 +25,11 @@ class SamsclubProductsSpider(BaseProductsSpider):
         "&_requestid=29417"
 
     _NEXT_PAGE_URL = "http://www.samsclub.com/sams/shop/common" \
-        "/ajaxSearchPageLazyLoad.jsp?sortKey=relevance&searchCategoryId=all" \
-        "&searchTerm={search_term}&noOfRecordsPerPage={prods_per_page}" \
-        "&sortOrder=0&offset={offset}&rootDimension=0&tireSearch=" \
-        "&selectedFilter=null&pageView=list&servDesc=null&_=1407437029456"
+                     "/ajaxSearchPageLazyLoad.jsp?sortKey=relevance&searchCategoryId=all" \
+                     "&searchTerm={search_term}&noOfRecordsPerPage={prods_per_page}" \
+                     "&sortOrder=0&offset={offset}&rootDimension=0&tireSearch=" \
+                     "&selectedFilter=null&pageView=list&servDesc=null&_=1407437029456"
+
     CLUB_SET_URL = (
         "http://www.samsclub.com/sams/search/wizard/common"
         "/displayClubs.jsp?_DARGS=/sams/search/wizard/common"
@@ -348,13 +348,21 @@ class SamsclubProductsSpider(BaseProductsSpider):
 
     def _scrape_total_matches(self, response):
         if response.url.find('ajaxSearch') > 0:
-            items = response.xpath("//body/li[contains(@class,'item')]")
+            items = response.xpath("//a[@class='shelfProdImgHolder']/@href")
             return len(items)
 
         totals = response.xpath(
             "//div[contains(@class,'shelfSearchRelMsg2')]"
             "/span/span[@class='gray3']/text()"
         ).extract()
+        if not totals:
+            totals = response.xpath(
+                '//*[@class="resultsfound"]/span[@ng-show="!clientAjaxCall"]/text()'
+            ).extract()
+            # links = response.xpath(
+            #     "//div[@class='products']//a[@class='cardProdLink' or @class='cardProdLink ng-scope']/@href").extract()
+            # total = len(links)
+            # return total
         if totals:
             total = int(totals[0])
         elif response.css('.nullSearchShelfZeroResults'):
@@ -371,6 +379,10 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 "//ul[contains(@class,'shelfItems')]"
                 "/li[contains(@class,'item')]/a/@href"
             ).extract()
+
+        if not links:
+            links = response.xpath(
+                "//div[@class='products']//a[@class='cardProdLink' or @class='cardProdLink ng-scope']/@href").extract()
 
         if not links:
             self.log("Found no product links.", ERROR)
