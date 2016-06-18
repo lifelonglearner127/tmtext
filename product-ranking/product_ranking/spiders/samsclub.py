@@ -284,6 +284,7 @@ class SamsclubProductsSpider(BaseProductsSpider):
         categorie_filters = [u'sam\u2019s club']
         # Clean and filter categories names from breadcrumb
         bc = response.xpath('//*[@id="breadcrumb"]//a/text()').extract()
+        bc = [b.strip() for b in bc if b.strip()]
         if not bc:
             bc = response.xpath('//*[@id="breadcrumb"]//a//*[@itemprop="title"]/text()').extract()
         categories = list(filter((lambda x: x.lower() not in categorie_filters),
