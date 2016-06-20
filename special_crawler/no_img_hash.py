@@ -79,10 +79,15 @@ def validate_args(args):
     return True
 
 
-def fetch_bytes(url):
+def fetch_bytes(url, walmart=None):
     agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
     headers ={'User-agent': agent}
     with requests.Session() as s:
+        if walmart:
+            response = s.get(url, headers=headers, stream=True, timeout=15)
+            for chunk in response.iter_content(5000):
+                response.close()
+                return chunk
         response = s.get(url, headers=headers, timeout=15)
         if response != 'Error' and response.ok:
             img = Image.open(StringIO(response.content))
