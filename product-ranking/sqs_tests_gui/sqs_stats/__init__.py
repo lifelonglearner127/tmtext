@@ -47,6 +47,23 @@ def get_number_of_instances_in_autoscale_groups():
     return result
 
 
+def get_max_instances_in_groups():
+    global AUTOSCALE_GROUPS
+    result = OrderedDict()
+    conf = read_access_and_secret_keys()
+    conn = boto.ec2.autoscale.connect_to_region(
+        "us-east-1",
+        aws_access_key_id=conf[0],
+        aws_secret_access_key=conf[1])
+    for group_name in AUTOSCALE_GROUPS:
+        group = conn.get_all_groups([group_name])[0]
+        result[group_name] = {
+            'group': group,
+            'max_size': group.max_size,
+        }
+    return result
+
+
 def set_autoscale_group_capacity(group, num_instances,
                                  attributes=('min_size', 'max_size', 'desired_capacity')):
     """ Changes "min_size", "max_size", and/or "desired_capacity"
