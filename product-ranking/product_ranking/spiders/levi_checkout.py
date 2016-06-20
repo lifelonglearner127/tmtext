@@ -20,7 +20,7 @@ class LeviSpider(BaseCheckoutSpider):
         yield scrapy.Request('http://www.levi.com/US/en_US/')
 
     def _get_colors_names(self):
-        xpath = ('//*[@class="color-swatches"]//'
+        xpath = ('//*[contains(@class,"color-swatches")]//'
                  'li[not(contains(@class,"not-available"))]'
                  '/img[@class="color-swatch-img"]')
 
@@ -40,9 +40,10 @@ class LeviSpider(BaseCheckoutSpider):
 
     def select_color(self, element=None, color=None):
         # If color was requested and is available
-        if color and color in self._get_colors_names():
+        if color and color.lower() in map(
+                (lambda x: x.lower()), self._get_colors_names()):
             color_attribute_xpath = (
-                '*//*[@class="color-swatches"]//'
+                '*//*[contains(@class,"color-swatches")]//'
                 'li[contains(@class,"color-swatch") '
                 'and img[translate(@title, "ABCDEFGHIJKLMNOPQRSTUVWXYZ",'
                 ' "abcdefghijklmnopqrstuvwxyz")="%s"]]' % color.lower())
@@ -50,7 +51,7 @@ class LeviSpider(BaseCheckoutSpider):
         # If color is set by default on the page
         else:
             color_attribute_xpath = (
-                '*//*[@class="color-swatches"]//'
+                '*//*[contains(@class,"color-swatches")]//'
                 'li[contains(@class,"color-swatch") '
                 'and contains(@class, "selected")]')
 
@@ -63,6 +64,8 @@ class LeviSpider(BaseCheckoutSpider):
         self._click_attribute(color_attribute_xpath,
                               color_attributes_xpath,
                               element)
+
+        print "end select_color"
 
     def select_waist(self, element=None):
         size_attribute_xpath = (
@@ -96,10 +99,18 @@ class LeviSpider(BaseCheckoutSpider):
     def _pre_parse_products(self):
         """Close Modal Windows requesting Email"""
         promp_window = self._find_by_xpath(
-            '//*[@class="email-lightbox"]//span[@class="close"]')
+            '//*[@class="email-lightbox" or @class="email-lightbox"'
+            ']//span[@class="close"]')
 
         if promp_window and promp_window[0].is_displayed():
             promp_window[0].click()
+            time.sleep(2)
+
+        more_colors_button = self._find_by_xpath(
+            '//*[@class="color-swatch more-button"]')
+
+        if more_colors_button and more_colors_button[0].is_displayed():
+            more_colors_button[0].click()
             time.sleep(2)
 
     def _get_products(self):
