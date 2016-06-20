@@ -69,14 +69,19 @@ class MacysVariants(object):
 
     def __fill_variant(self, variant, colors_information):
             vr = {}
-            vr['properties'] = {'color': variant['color'], 'size': variant['size']}
+
+            variant_color = variant['color']
+            if variant_color == 'Bleach Wash':
+                variant_color = 'Bleached Wash'
+
+            vr['properties'] = {'color': variant_color, 'size': variant['size']}
             vr['in_stock'] = True if variant.get('isAvailable',None) == "true" else False
-            vr['price'] = colors_information[variant['color']]['price']
+            vr['price'] = colors_information[variant_color]['price']
             
             if variant.get('upc',None):
                 vr['upc'] = variant['upc']
-            if colors_information[variant['color']].get('img_urls', None):
-                vr['img_urls'] = colors_information[variant['color']]['img_urls']
+            if colors_information[variant_color].get('img_urls', None):
+                vr['img_urls'] = colors_information[variant_color]['img_urls']
             if variant.get('type',False):
                 vr['type'] = variant['type']
             return vr
