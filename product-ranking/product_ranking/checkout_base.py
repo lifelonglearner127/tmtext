@@ -240,11 +240,11 @@ class BaseCheckoutSpider(scrapy.Spider):
         return target.find_elements(By.XPATH, xpath)
 
     def _click_attribute(self, selected_attribute_xpath, others_attributes_xpath, element=None):
-    """
-    Check if the attribute given by selected_attribute_xpath is checkout
-    if checkeck don't do it anything,
-    else find the first available attribute and click on it
-    """
+        """
+        Check if the attribute given by selected_attribute_xpath is checkout
+        if checkeck don't do it anything,
+        else find the first available attribute and click on it
+        """
         if element:
             target = element
         else:
