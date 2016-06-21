@@ -451,19 +451,10 @@ class SamsclubScraper(Scraper):
                     reviews.append(m[0])
 
                 reviews = reviews[:5]
-                score = 5
-                for review in reviews:
-                    if int(review) > 0:
-                        self.max_score = score
-                        break
-                    score -= 1
 
-                score = 1
-                for review in reversed(reviews):
-                    if int(review) > 0:
-                        self.min_score = score
-                        break
-                    score += 1
+                scores = [v[0] for v in self.reviews if int(v[1]) > 0]
+                self.max_score = max(scores)
+                self.min_score = min(scores)
 
                 self.reviews = []
                 score = 1
@@ -490,18 +481,9 @@ class SamsclubScraper(Scraper):
                 self.review_count = brs['ReviewStatistics']['TotalReviewCount']
                 self.average_review = brs['ReviewStatistics']['AverageOverallRating']
 
-                score = 5
-                for review in [v[0] for v in self.reviews]:
-                    if int(review) > 0:
-                        self.max_score = score
-                        break
-
-                score = 1
-                for review in reversed([v[0] for v in self.reviews]):
-                    if int(review) > 0:
-                        self.min_score = score
-                        break
-                    score += 1
+                scores = [v[0] for v in self.reviews if int(v[1])>0]
+                self.max_score = max(scores)
+                self.min_score = min(scores)
 
     def _average_review(self):
         self._load_reviews()
