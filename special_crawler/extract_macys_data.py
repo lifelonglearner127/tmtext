@@ -133,7 +133,10 @@ class MacysScraper(Scraper):
 
     def _upc(self):
         upc = None
-        variants = self._variants()
+        try:
+            variants = self._variants()
+        except:
+            return self.product_info_json['upcMap'][self._product_id()][0]['upc']
 
         if not variants:
             upc = re.findall(r'"upc": "(.*?)",', html.tostring(self.tree_html), re.DOTALL)[0]
