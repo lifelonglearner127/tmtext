@@ -48,9 +48,6 @@ class WalmartGroceryScraper(Scraper):
     def _product_name(self):
         return self._product_data()['data']['name']
 
-    def _upc(self):
-        return self._product_data()['data']['id']
-
     def _model(self):
         return self._product_data()['data']['modelNum']
 
@@ -107,7 +104,6 @@ class WalmartGroceryScraper(Scraper):
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
         "description" : _description, \
-        "upc": _upc, \
         "model": _model, \
 
         # CONTAINER : PAGE_ATTRIBUTES
