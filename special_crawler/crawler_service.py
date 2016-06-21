@@ -91,6 +91,7 @@ from extract_wag_data import WagScraper
 from extract_chewy_data import ChewyScraper
 from extract_petfooddirect_data import PetFoodDirectScraper
 from extract_pet360_data import Pet360Scraper
+from extract_walmartgrocery_data import WalmartGroceryScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -194,6 +195,7 @@ SUPPORTED_SITES = {
                     "chewy" : ChewyScraper,
                     "petfooddirect": PetFoodDirectScraper,
                     "pet360" : Pet360Scraper,
+                    "walmartgrocery" : WalmartGroceryScraper,
                     }
 
 # add logger
@@ -293,6 +295,8 @@ def extract_domain(url):
         return "amazonfr"
     if "store.nike.com" in url:
         return "nike"
+    if 'grocery.walmart.com' in url:
+        return 'walmartgrocery'
 
     m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:
