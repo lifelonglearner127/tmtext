@@ -95,7 +95,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         from pyvirtualdisplay import Display
         display = Display(visible=False)
         display.start()
-        driver = self._init_firefox()
+        driver = self._init_chromium()
         self._prepare_driver(driver)
         driver.get('http://' + self.allowed_domains[0])
         time.sleep(10)
