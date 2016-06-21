@@ -114,7 +114,7 @@ class KohlsScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = self.product_info_json["productItem"]["productDetails"]["productId"]
+        product_id = re.search('prd-(.+)/', self._url()).group(1)
 
         return product_id
 

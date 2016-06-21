@@ -17,4 +17,5 @@
     <field name="url" version="1.0"></field>
     <field name="variants" version="1.0"></field>
     <field name="not_found" version="1.0"></field>
+    <field name="marketplace" version="1.1"></field>
 </fields>

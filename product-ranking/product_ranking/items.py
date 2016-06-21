@@ -255,10 +255,10 @@ class SiteProductItem(Item):
                                      # only after you put the product in cart
 
     seller_ranking = Field()  # for Walmart
+
     _subitem = Field()
 
     minimum_order_quantity = Field() # Costco.com
-
 
     available_online = Field()
     available_store = Field()
@@ -284,3 +284,16 @@ class DiscountCoupon(Item):
     end_date = Field()  # (10/31/2015)
     discount = Field()  # (Discount value or Percentage (20% OFF)
     conditions = Field()  # (Applies to select items priced $50 or more...)
+
+class CheckoutProductItem(Item):
+    name = Field()
+    id = Field()
+    price = Field()             # In-cart Product Value
+    price_on_page = Field()     # On-Page Product Value
+    quantity = Field()
+    requested_color = Field()
+    requested_color_not_available = Field()
+    color = Field()
+    order_subtotal = Field()    # Pre-tax & shipping Cart Value
+    order_total = Field()       # Post-tax & shipping Cart Value
+    url = Field()

@@ -67,7 +67,7 @@ class Scraper():
             "product_id",
             "site_id",
             "walmart_no",
-            "tsin",
+            "tcin",
             "date",
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
@@ -79,6 +79,7 @@ class Scraper():
             "title_seo", # SEO title, string
             "model", # model of product, string
             "upc", # upc of product, string
+            "asin", # Amazon asin
             "features", # features of product, string
             "feature_count", # number of features of product, int
             "model_meta", # model from meta, string
@@ -109,12 +110,25 @@ class Scraper():
             "related_products_urls",
             "bundle",
             "bundle_components",
+            "details",
             "mta",
+            "bullet_feature_1",
+            "bullet_feature_2",
+            "bullet_feature_3",
+            "bullet_feature_4",
+            "bullet_feature_5",
+            "usage",
+            "directions",
+            "warnings",
+            "indications",
+            "amazon_ingredients",
+
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
             "image_urls", # urls of product images, list of strings
             "image_dimensions", # dimensions of product images
+            "no_image_available", # binary (0/1), whether there is a 'no image available' image
             "video_count", # nr of videos, int
             "video_urls", # urls of product videos, list of strings
             "wc_360", # binary (0/1), whether 360 view exists or not
@@ -138,7 +152,8 @@ class Scraper():
             "thumbnail", # thumbnail of the main product image on the page - tbd
             "manufacturer", # manufacturer info for this product
             "return_to", # return to for this product
-
+            "comparison_chart", # whether page contains a comparison chart, 1/0
+            "btv", # if page has a 'buy together value' offering, 1/0
 
             # reviews
             "review_count", # total number of reviews, int
@@ -212,15 +227,17 @@ class Scraper():
     #       maybe put it as an instance variable
     # TODO: add one for root? to make sure nothing new appears in root either?
     DICT_STRUCTURE = {
-        "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
+        "product_info": ["product_name", "product_title", "title_seo", "model", "upc", "asin", \
                         "features", "feature_count", "model_meta", "description", "seller_ranking", "long_description", "shelf_description", "apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
-                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "mta"],
-        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "video_count", "video_urls", "wc_360", \
+                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "details", "mta", \
+                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5",
+                        "usage", "directions", "warnings", "indications", "amazon_ingredients"],
+        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
-                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls"], \
+                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "in_stock", \
@@ -425,7 +442,6 @@ class Scraper():
 
         return nested_results_dict
 
-
     # method that returns xml tree of page, to extract the desired elemets from
     def _extract_page_tree(self):
         """Builds and sets as instance variable the xml tree of the product page
@@ -444,10 +460,16 @@ class Scraper():
                 except Exception, e:
                     continue
         else:
+            costco_url = re.match('http://www.costco.com/(.*)', self.product_page_url)
+            wag_url = re.match('https?://www.wag.com/(.*)', self.product_page_url)
+
+            if costco_url:
+                self.product_page_url = 'http://www.costco.com/' + urllib2.quote(costco_url.group(1).encode('utf8'))
+
             request = urllib2.Request(self.product_page_url)
             # set user agent to avoid blocking
             agent = ''
-            if self.bot_type == "google":
+            if self.bot_type == "google" or wag_url:
                 agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
             else:
                 agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
@@ -644,7 +666,10 @@ class Scraper():
             True if it's a "no image" image, False otherwise
         """
         print "***********test start*************"
-        first_hash = self._image_hash(image_url)
+        try:
+            first_hash = self._image_hash(image_url)
+        except IOError:
+            return False
         print first_hash
         print "***********test end*************"
 
