@@ -1,11 +1,19 @@
 from .samsclub import SamsclubProductsSpider
 import re
 from scrapy.http import Request
+import urlparse
+from product_ranking.items import SiteProductItem
 
+is_empty = lambda x: x[0] if x else None
 
 class SamsclubShelfPagesSpider(SamsclubProductsSpider):
     name = 'samsclub_shelf_urls_products'
     allowed_domains = ["samsclub.com"]
+
+    _NEXT_SHELF_URL = "http://www.samsclub.com/sams/shop/common/ajaxSearchPageLazyLoad.jsp?sortKey=p_sales_rank" \
+                      "&searchCategoryId={category_id}&searchTerm=null&noOfRecordsPerPage={prods_per_page}" \
+                      "&sortOrder=0&offset={offset}" \
+                      "&rootDimension=0&tireSearch=&selectedFilter=null&pageView=list&servDesc=null&_=1407437029456"
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
@@ -43,6 +51,25 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
                       meta=self._setup_meta_compatibility())  # meta is for SC baseclass compatibility
 
     def _scrape_product_links(self, response):
-
+        item = response.meta.get('product', SiteProductItem())
         meta = response.meta
-        urls = response.xpath('').extract()
+        if response.url.find('ajaxSearch') > 0:
+            urls = response.xpath("//body/ul/li/a/@href").extract()
+        else:
+            urls = response.xpath('.//a[@class="cardProdLink ng-scope" or @class="cardProdLink"]/@href').extract()
+        if not urls:
+            urls = response.xpath('//*[contains(@href, ".ip") and contains(@href, "/sams/")]/@href').extract()
+        if urls:
+            urls = [urlparse.urljoin(response.url, x) for x in urls if x.strip()]
+
+        shelf_categories = [c.strip() for c in response.xpath('.//ol[@id="breadCrumbs"]/li//a/text()').extract()
+                            if len(c.strip()) > 1]
+        shelf_category = shelf_categories[-1] if shelf_categories else None
+
+        for url in urls:
+            item = SiteProductItem()
+            if shelf_category:
+                item['shelf_name'] = shelf_category
+            if shelf_categories:
+                item['shelf_path'] = shelf_categories
+            yield url, item
