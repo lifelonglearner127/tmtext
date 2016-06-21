@@ -1048,7 +1048,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         if data and data['Results']:
             for question in data['Results']:
                 q={}
-                q['question_summary'] = question['QuestionSummary']
+                q['questionSummary'] = question['QuestionSummary']
                 time = question['SubmissionTime']
                 date = is_empty(time.split('T'))
                 if date:
