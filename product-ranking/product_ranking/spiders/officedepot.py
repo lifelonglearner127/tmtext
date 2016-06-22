@@ -201,7 +201,8 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         # Parse categories and category
         categories = self._parse_categories(response)
         cond_set_value(product, 'categories', categories)
-        cond_set_value(product, 'category', categories[-1])
+        if categories:
+            cond_set_value(product, 'category', categories[-1])
 
         # Parse related products
         related_product = self._parse_related_product(response)
