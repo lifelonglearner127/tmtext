@@ -127,7 +127,29 @@ def upload_image(br, file):
         return False
 
 
-def download_report(br):
+def download_report_v2(br):
+    try:
+        br.get('https://vendorcentral.amazon.com/st/vendor/members/analytics/basic/dashboard')
+        br.find_element_by_partial_link_text("Reports").click()
+        time.sleep(2)
+        br.find_element_by_partial_link_text('Amazon Retail Analytics Basic').click()
+        time.sleep(2)
+        #br.find_element_by_xpath('//span[@id="vxa-report-selector-wrapper"]').click()
+        #br.find_element_by_partial_link_text("Product Details").click()
+
+        br.find_element_by_xpath('//span[@id="vxa-ab-reporting-period"]').click()
+        br.find_element_by_link_text('Last reported day').click()
+        time.sleep(2)
+        br.find_element_by_xpath('//button[@id="a-autoid-26-announce"]').click()
+        br.find_element_by_partial_link_text("CSV").click()
+        logging_info('Report was downloaded successfully')
+        return True
+    except Exception as e:
+        logging_info('Failed to downoad report ' + str(e), level='ERROR')
+        return False
+
+
+def download_report_v1(br):
     try:
         br.find_element_by_partial_link_text("Reports").click()
         time.sleep(2)
@@ -210,10 +232,12 @@ def main():
             logging_info("Could not upload the file! Exit...", level='ERROR')
             on_close(br, display)
             sys.exit(1)
-    elif not download_report(br):
+    elif not download_report_v1(br):
+        if not download_report_v2(br):
+
             logging_info("Could not download the file! Exit...", level='ERROR')
             on_close(br, display)
-            sys.exit(1) 
+            sys.exit(1)
 
     on_close(br, display)
 
