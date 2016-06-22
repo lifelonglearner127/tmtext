@@ -1,8 +1,10 @@
+from __future__ import division, absolute_import, unicode_literals
 from .samsclub import SamsclubProductsSpider
 import re
 from scrapy.http import Request
 import urlparse
 from product_ranking.items import SiteProductItem
+from scrapy.log import DEBUG, ERROR, WARNING
 
 is_empty = lambda x: x[0] if x else None
 
@@ -73,3 +75,60 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
             if shelf_categories:
                 item['shelf_path'] = shelf_categories
             yield url, item
+
+    def parse_product(self, response):
+        return super(SamsclubProductsSpider, self).parse_product(response)
+
+    def _get_next_products_page(self, response, prods_found):
+        link_page_attempt = response.meta.get('link_page_attempt', 1)
+
+        result = None
+        if prods_found is not None:
+            # This was a real product listing page.
+            remaining = response.meta['remaining']
+            remaining -= prods_found
+            if remaining > 0:
+                next_page = self._scrape_next_results_page_link(response, remaining)
+                if next_page is None:
+                    pass
+                elif isinstance(next_page, Request):
+                    next_page.meta['remaining'] = remaining
+                    result = next_page
+                else:
+                    url = urlparse.urljoin(response.url, next_page)
+                    new_meta = dict(response.meta)
+                    new_meta['remaining'] = remaining
+                    result = Request(url, self.parse, meta=new_meta, priority=1)
+        elif link_page_attempt > self.MAX_RETRIES:
+            self.log(
+                "Giving up on results page after %d attempts: %s" % (
+                    link_page_attempt, response.request.url),
+                ERROR
+            )
+        else:
+            self.log(
+                "Will retry to get results page (attempt %d): %s" % (
+                    link_page_attempt, response.request.url),
+                WARNING
+            )
+
+            # Found no product links. Probably a transient error, lets retry.
+            new_meta = response.meta.copy()
+            new_meta['link_page_attempt'] = link_page_attempt + 1
+            result = response.request.replace(
+                meta=new_meta, cookies={}, dont_filter=True)
+
+        return result
+
+    def _scrape_next_results_page_link(self, response, remaining):
+        # If the total number of matches cannot be scrapped it will not be set.
+        num_items = min(response.meta.get('total_matches', 0), self.quantity)
+        if num_items:
+            return SamsclubProductsSpider._NEXT_PAGE_URL.format(
+                search_term=response.meta['search_term'],
+                offset=num_items - remaining,
+                prods_per_page=min(200, num_items))
+        return None
+
+    def _get_shelf_id_from_url(self, url):
+        pass
