@@ -362,7 +362,7 @@ class SamsclubProductsSpider(BaseProductsSpider):
             pSkuId = ''.join(response.xpath('//*[@id="mbxSkuId"]/@value').extract())
             shipping_prices_url = "http://www.samsclub.com/sams/shop/product/moneybox/shippingDeliveryInfo.jsp?zipCode=%s&productId=%s&skuId=%s" % (self.zip_code, productId, pSkuId)
             return Request(shipping_prices_url, 
-                           meta={'product': product}, 
+                           meta={'product': product, 'prod_id':productId},
                            callback=self._parse_shipping_cost)
 
         elif not product.get('buyer_reviews'):
@@ -378,6 +378,7 @@ class SamsclubProductsSpider(BaseProductsSpider):
 
     def _parse_shipping_cost(self, response):
         product = response.meta['product']
+        productId = response.meta['prod_id']
         product['shipping'] = []
         shipping_names = response.xpath('//tr/td[1]/span/text()').extract()
         shipping_prices = response.xpath('//tr/td[2]/text()').re('[\d\.\,]+')
@@ -386,9 +387,6 @@ class SamsclubProductsSpider(BaseProductsSpider):
             product['shipping'].append({'name': shipping[0], 'cost': shipping[1]})
 
         if not product.get('buyer_reviews'):
-            productId = ''.join(response.xpath('//*[@id="mbxProductId"]/@value').extract())
-            if not productId:
-                productId = self._product_id(response)
             reviews_url = self._REVIEWS_URL.format(prod_id=productId)
             return Request(reviews_url,
                            meta={'product': product, 'prod_id':productId},
