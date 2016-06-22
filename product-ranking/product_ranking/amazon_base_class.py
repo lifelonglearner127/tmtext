@@ -632,6 +632,7 @@ class AmazonBaseClass(BaseProductsSpider):
         title = product.get('title', '')
 
         brand = response.xpath(xpathes).extract()
+        brand = self._is_empty([b for b in brand if b.strip()])
 
         if brand and (u'®' in brand):
             brand = brand.replace(u'®', '')
