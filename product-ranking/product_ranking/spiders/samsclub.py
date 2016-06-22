@@ -7,8 +7,10 @@ import re
 import string
 import urllib
 import urlparse
+import json
 
-from product_ranking.items import SiteProductItem, Price
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider
 from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
@@ -17,7 +19,7 @@ from scrapy.log import DEBUG, ERROR
 
 class SamsclubProductsSpider(BaseProductsSpider):
     name = 'samsclub_products'
-    allowed_domains = ["samsclub.com"]
+    allowed_domains = ["samsclub.com", "api.bazaarvoice.com"]
     start_urls = []
 
     SEARCH_URL = "http://www.samsclub.com/sams/search/searchResults.jsp" \
@@ -34,6 +36,28 @@ class SamsclubProductsSpider(BaseProductsSpider):
         "http://www.samsclub.com/sams/search/wizard/common"
         "/displayClubs.jsp?_DARGS=/sams/search/wizard/common"
         "/displayClubs.jsp.selectId")
+
+    _REVIEWS_URL = ('http://api.bazaarvoice.com/data/batch.json?passkey=dap59bp2pkhr7ccd1hv23n39x&apiversion=5.5'
+           '&displaycode=1337-en_us&resource.q0=products&filter.q0=id%3Aeq%3Aprod16470189'
+           '&stats.q0=questions%2Creviews&filteredstats.q0=questions%2Creviews'
+           '&filter_questions.q0=contentlocale%3Aeq%3Aen_US&filter_answers.q0=contentlocale%3Aeq%3Aen_US'
+           '&filter_reviews.q0=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US'
+           '&resource.q1=reviews&filter.q1=isratingsonly%3Aeq%3Afalse&filter.q1=productid%3Aeq%3A{prod_id}'
+           '&filter.q1=contentlocale%3Aeq%3Aen_US&sort.q1=helpfulness%3Adesc%2Ctotalpositivefeedbackcount%3Adesc'
+           '&stats.q1=reviews&filteredstats.q1=reviews&include.q1=authors%2Cproducts%2Ccomments'
+           '&filter_reviews.q1=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q1=contentlocale%3Aeq%3Aen_US'
+           '&filter_comments.q1=contentlocale%3Aeq%3Aen_US&limit.q1=8&offset.q1=0&limit_comments.q1=3'
+           '&resource.q2=reviews&filter.q2=productid%3Aeq%3A{prod_id}&filter.q2=contentlocale%3Aeq%3Aen_US'
+           '&limit.q2=1&resource.q3=reviews&filter.q3=productid%3Aeq%3A{prod_id}'
+           '&filter.q3=isratingsonly%3Aeq%3Afalse&filter.q3=rating%3Agt%3A3'
+           '&filter.q3=totalpositivefeedbackcount%3Agte%3A3&filter.q3=contentlocale%3Aeq%3Aen_US'
+           '&sort.q3=totalpositivefeedbackcount%3Adesc&include.q3=authors%2Creviews%2Cproducts'
+           '&filter_reviews.q3=contentlocale%3Aeq%3Aen_US&limit.q3=1&resource.q4=reviews'
+           '&filter.q4=productid%3Aeq%3A{prod_id}&filter.q4=isratingsonly%3Aeq%3Afalse'
+           '&filter.q4=rating%3Alte%3A3&filter.q4=totalpositivefeedbackcount%3Agte%3A3'
+           '&filter.q4=contentlocale%3Aeq%3Aen_US&sort.q4=totalpositivefeedbackcount%3Adesc'
+           '&include.q4=authors%2Creviews%2Cproducts&filter_reviews.q4=contentlocale%3Aeq%3Aen_US'
+           '&limit.q4=1&callback=bv_1111_4516')
 
     def __init__(self, clubno='4704', zip_code='94117', *args, **kwargs):
         self.clubno = clubno
@@ -334,11 +358,22 @@ class SamsclubProductsSpider(BaseProductsSpider):
 
         if not shipping_included and not product.get('no_longer_available'):
             productId = ''.join(response.xpath('//*[@id="mbxProductId"]/@value').extract())
+            if not productId:
+                productId = self._product_id(response)
             pSkuId = ''.join(response.xpath('//*[@id="mbxSkuId"]/@value').extract())
             shipping_prices_url = "http://www.samsclub.com/sams/shop/product/moneybox/shippingDeliveryInfo.jsp?zipCode=%s&productId=%s&skuId=%s" % (self.zip_code, productId, pSkuId)
             return Request(shipping_prices_url, 
                            meta={'product': product}, 
                            callback=self._parse_shipping_cost)
+
+        elif not product.get('buyer_reviews'):
+            productId = ''.join(response.xpath('//*[@id="mbxProductId"]/@value').extract())
+            if not productId:
+                productId = self._product_id(response)
+            reviews_url = self._REVIEWS_URL.format(prod_id=productId)
+            return Request(reviews_url,
+                           meta={'product': product, 'prod_id':productId},
+                           callback=self._load_reviews)
 
         return product
 
@@ -350,6 +385,120 @@ class SamsclubProductsSpider(BaseProductsSpider):
 
         for shipping in zip(shipping_names, shipping_prices):
             product['shipping'].append({'name': shipping[0], 'cost': shipping[1]})
+
+        if not product.get('buyer_reviews'):
+            productId = ''.join(response.xpath('//*[@id="mbxProductId"]/@value').extract())
+            if not productId:
+                productId = self._product_id(response)
+            reviews_url = self._REVIEWS_URL.format(prod_id=productId)
+            return Request(reviews_url,
+                           meta={'product': product, 'prod_id':productId},
+                           callback=self._load_reviews)
+
+        return product
+
+    @staticmethod
+    def _return_br_block_for_prod_id(brs, prod_id):
+        for key, value in brs['BatchedResults'].items():
+            for sub_group in value['Results']:
+                if sub_group.get('Id', None) == prod_id:
+                    return sub_group
+        for key, value in brs['BatchedResults'].items():
+            for sub_group_product, sub_group_product_data in value['Includes'].get('Products', {}).items():
+                if sub_group_product == prod_id:
+                    return sub_group_product_data
+
+    def _product_id(self, response):
+        try:
+            product_id = response.xpath(
+                "//input[@name='/atg/commerce/order/purchase/CartModifierFormHandler.baseProductId']/@value").extract()
+            product_id = product_id[0].strip() if product_id else product_id
+            return product_id
+        except:
+            pass
+        try:
+            product_id = response.xpath("//input[@id='mbxProductId']/@value").extract()
+            product_id = product_id[0].strip() if product_id else product_id
+        except IndexError:
+            product_id = response.xpath("//div[@id='myShoppingList']/@data-productid").extract()
+            product_id = product_id[0].strip() if product_id else product_id
+        return product_id
+
+    def _load_reviews(self, response):
+        productId = response.meta.get('prod_id')
+        product = response.meta['product']
+        buyer_reviews = {}
+
+        contents = response.body_as_unicode()
+        try:
+            tmp_reviews = re.findall(r'<span class=\\"BVRRHistAbsLabel\\">(.*?)<\\/span>', contents)
+            if not tmp_reviews:
+                raise BaseException
+            reviews = []
+            for review in tmp_reviews:
+                review = review.replace(",", "")
+                m = re.findall(r'([0-9]+)', review)
+                reviews.append(m[0])
+
+            reviews = reviews[:5]
+
+            by_star = {}
+
+            score = 1
+            total_review = 0
+            review_cnt = 0
+            for review in reversed(reviews):
+                by_star[str(score)] = int(review)
+                total_review += score * int(review)
+                review_cnt += int(review)
+                score += 1
+            # filling missing scores with zero count for consistency
+            for sc in range(1,6):
+                if str(sc) not in by_star:
+                    by_star[str(sc)] = 0
+
+            review_count = review_cnt
+
+            buyer_reviews['rating_by_star'] = by_star
+
+            buyer_reviews['num_of_reviews'] = review_count
+            average_review = total_review * 1.0 /
+            # rounding
+            average_review = float(format(average_review, '.2f'))
+
+            buyer_reviews['average_rating'] = average_review
+            product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
+            if review_count == 0:
+                raise BaseException  # we have to jump to the version #2
+        except:
+            if not product.get('buyer_reviews'):
+                contents = json.loads(contents.replace('bv_1111_4516(', '')[0:-1])
+                brs = self._return_br_block_for_prod_id(contents, productId)
+                if brs:
+                    by_star = {}
+                    for d in brs['ReviewStatistics']['RatingDistribution']:
+                        by_star[str(d['RatingValue'])] = d['Count']
+                    for sc in range(1, 6):
+                        if str(sc) not in by_star:
+                            by_star[str(sc)] = 0
+                    buyer_reviews['rating_by_star'] = by_star
+                    review_count = brs['ReviewStatistics']['TotalReviewCount']
+
+                    if review_count == 0:
+                        product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+                        return product
+
+                    buyer_reviews['num_of_reviews'] = review_count
+                    average_review = brs['ReviewStatistics']['AverageOverallRating']
+                    average_review = float(format(average_review, '.2f'))
+                    buyer_reviews['average_rating'] = average_review
+
+                    product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
+                else:
+                    product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+
+        if not product.get('buyer_reviews'):
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
 
         return product
 
