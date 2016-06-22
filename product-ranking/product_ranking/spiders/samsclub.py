@@ -15,7 +15,7 @@ from product_ranking.spiders import BaseProductsSpider
 from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
 from scrapy.http import Request, FormRequest
-from scrapy.log import DEBUG, ERROR
+from scrapy.log import DEBUG, ERROR, WARNING
 
 class SamsclubProductsSpider(BaseProductsSpider):
     name = 'samsclub_products'
@@ -219,7 +219,6 @@ class SamsclubProductsSpider(BaseProductsSpider):
             oos_pr = '.'.join(response.xpath(
                 '//*[contains(@class,"pricingInfo oos")]'
                 '/ul[@class="lgFont"]//span/text()').re('\d+'))
-
             if oos_pr:
                 price = [float(oss_pr)]
 
@@ -462,7 +461,7 @@ class SamsclubProductsSpider(BaseProductsSpider):
             buyer_reviews['rating_by_star'] = by_star
 
             buyer_reviews['num_of_reviews'] = review_count
-            average_review = total_review * 1.0 /
+            average_review = total_review * 1.0 / review_cnt
             # rounding
             average_review = float(format(average_review, '.2f'))
 
