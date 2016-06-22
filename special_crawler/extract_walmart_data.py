@@ -744,18 +744,18 @@ class WalmartScraper(Scraper):
 
             has_product_name = False
 
-            if product_name_bold in lxml.html.tostring(description_elements) or \
-                product_name_strong in lxml.html.tostring(description_elements):
+            if product_name_bold in html.tostring(description_elements) or \
+                product_name_strong in html.tostring(description_elements):
 
                 has_product_name = True
 
             short_description = self._clean_text (description_elements.text)
 
             for description_element in description_elements:
-                if not description_element.text_content().strip():
+                if not description_element.text_content().strip() and not (description_element.tail and description_element.tail.strip()):
                     continue
 
-                sub_description = lxml.html.tostring(description_element)
+                sub_description = html.tostring(description_element)
 
                 if product_name_bold in sub_description or \
                     product_name_strong in sub_description or \
@@ -913,7 +913,7 @@ class WalmartScraper(Scraper):
         full_description = ""
 
         for description_element in long_description_elements:
-            full_description += lxml.html.tostring(description_element)
+            full_description += html.tostring(description_element)
 
         if not full_description:
             return None
@@ -947,16 +947,16 @@ class WalmartScraper(Scraper):
 
             has_product_name = False
 
-            if product_name_bold in lxml.html.tostring(description_elements) or \
-                product_name_strong in lxml.html.tostring(description_elements):
+            if product_name_bold in html.tostring(description_elements) or \
+                product_name_strong in html.tostring(description_elements):
 
                 has_product_name = True
 
             for description_element in description_elements:
-                if not description_element.text_content().strip():
+                if not description_element.text_content().strip() and not (description_element.tail and description_element.tail.strip()):
                     continue
                     
-                sub_description = lxml.html.tostring(description_element)
+                sub_description = html.tostring(description_element)
 
                 if re.match('<h3>', sub_description):
                     break
@@ -1089,12 +1089,12 @@ class WalmartScraper(Scraper):
 
             for description_element in description_elements:
                 if not long_description_start and "<h2>Product Description</h2>" in \
-                        lxml.html.tostring(description_element):
+                        html.tostring(description_element):
                     long_description_start = True
 
-                if long_description_start and "<h2>Product Description</h2>" not in lxml.html.tostring(description_element) \
+                if long_description_start and "<h2>Product Description</h2>" not in html.tostring(description_element) \
                         and (description_element.tag == "p" or description_element.tag == "h2" or (description_element.tag == "ul" and not description_element.get("class"))):
-                    full_description += lxml.html.tostring(description_element)
+                    full_description += html.tostring(description_element)
 
         # return None if empty
         if not full_description:
@@ -1197,7 +1197,7 @@ class WalmartScraper(Scraper):
         return None
 
     def _related_product_urls(self):
-        page_raw_text = lxml.html.tostring(self.tree_html)
+        page_raw_text = html.tostring(self.tree_html)
         startIndex = page_raw_text.find('"variantProducts":') + len('"variantProducts":')
 
         if startIndex == -1:
