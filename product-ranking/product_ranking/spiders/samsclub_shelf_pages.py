@@ -27,6 +27,7 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
         else:
             self.num_pages = 1  # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
         self.current_page = 1
+        # Default - will be overwritten when first page is fetched
         self.quantity = self.num_pages * 18
         # TODO rework this properly, depending on amount of items per page
 
@@ -114,6 +115,11 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
 
     def _scrape_next_results_page_link(self, response, remaining):
         #If the total number of matches cannot be scrapped it will not be set.
+        # from scrapy.shell import inspect_response
+        # inspect_response(response, self)
+        prods_per_page = self._get_items_per_page(response)
+        if prods_per_page:
+            self.quantity = prods_per_page * self.num_pages
         num_items = min(response.meta.get('total_matches', 0), self.quantity)
         if num_items:
             return self._NEXT_SHELF_URL.format(
@@ -149,6 +155,19 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
                 match_list = re.findall(rgx, response.url)
                 cat_id =  match_list[0] if match_list else None
         return cat_id
+
+    @staticmethod
+    def _get_items_per_page(response):
+        js_text = response.xpath('//script[contains(text(), "searchInfo")]/text()').extract()
+        js_text = js_text[0] if js_text else None
+        try:
+            js_text = js_text.split(';')[0].split('=')[1].strip().replace("'", '"')
+            jsn = json.loads(js_text)
+            itm_per_page = jsn.get('numberOfRecordsRequested', None)
+            itm_per_page = int(itm_per_page) if itm_per_page else None
+        except BaseException:
+            itm_per_page = None
+        return itm_per_page
 
     def _scrape_total_matches(self, response):
         if response.url.find('ajaxSearch') > 0:
