@@ -355,6 +355,9 @@ class SamsclubProductsSpider(BaseProductsSpider):
                        'available_online',
                        1 if available_online and not oos_in_both else 0)
 
+        if str(product.get('available_online', None)) == '0' and str(product.get('available_store', None)) == '0':
+            product['is_out_of_stock'] = True
+
         if not shipping_included and not product.get('no_longer_available'):
             productId = ''.join(response.xpath('//*[@id="mbxProductId"]/@value').extract())
             if not productId:
