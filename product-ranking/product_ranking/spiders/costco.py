@@ -178,6 +178,9 @@ class CostcoProductsSpider(BaseProductsSpider):
         not_available_store = re.search('Not available for purchase on Costco.com', response.body_as_unicode())
         cond_set_value(prod, 'available_online', 0 if not_available_store else 1)
 
+        if str(prod.get('available_online', None)) == '0' and str(prod.get('available_store', None)) == '0':
+            prod['is_out_of_stock'] = True
+
         count_review = response.xpath('//meta[contains(@itemprop, "reviewCount")]/@content').extract()
         product_id = re.findall(r'var bvProductId = \'(.+)\';', response.body_as_unicode())
 
