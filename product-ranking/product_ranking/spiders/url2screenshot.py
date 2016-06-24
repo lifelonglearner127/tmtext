@@ -105,6 +105,13 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self.code_200_required = False
             self._site_settings_activated_for = domain
             self.log('Site-specified settings activated for: %s' % domain)
+        if domain == 'macys.com':
+            self.use_proxies = True
+            self.proxy = _get_random_proxy()
+            self.proxy_type = 'http'
+            self.code_200_required = False
+            self._site_settings_activated_for = domain
+            self.log('Site-specified settings activated for: %s' % domain)
 
     def start_requests(self):
         req = Request(self.product_url, dont_filter=True)
