@@ -110,6 +110,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self.proxy = _get_random_proxy()
             self.proxy_type = 'http'
             self.code_200_required = False
+            self.visit_before_product_url = 'http://www1.macys.com'
             self._site_settings_activated_for = domain
             self.log('Site-specified settings activated for: %s' % domain)
 
@@ -244,6 +245,9 @@ class URL2ScreenshotSpider(scrapy.Spider):
         driver.set_window_size(int(self.width), int(self.height))
 
     def make_screenshot(self, driver, output_fname):
+        _visit_before = getattr(self, 'visit_before_product_url', None)
+        if _visit_before:
+            driver.get(_visit_before)
         driver.get(self.product_url)
         time.sleep(6)
         # maximize height of the window
