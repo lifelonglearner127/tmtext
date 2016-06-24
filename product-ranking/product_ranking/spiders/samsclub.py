@@ -285,10 +285,13 @@ class SamsclubProductsSpider(BaseProductsSpider):
         # Clean and filter categories names from breadcrumb
         bc = response.xpath('//*[@id="breadcrumb"]//a/text()').extract()
         bc = [b.strip() for b in bc if b.strip()]
+        if not bc or len(bc)==1:
+            bc = response.xpath(".//*[@id='breadcrumb']//text()").extract()
+        bc = [b.strip() for b in bc if b.strip()]
         if not bc:
             bc = response.xpath('//*[@id="breadcrumb"]//a//*[@itemprop="title"]/text()').extract()
-        if not bc:
-            bc = response.xpath(".//*[@id='breadcrumb']/text()").extract()
+        bc = [b.strip() for b in bc if b.strip()]
+
         categories = list(filter((lambda x: x.lower() not in categorie_filters),
                                  map((lambda x: x.strip()), bc)))
         category = categories[-1] if categories else None
