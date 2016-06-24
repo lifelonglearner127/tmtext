@@ -295,6 +295,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             else:
                 self.log("No {rr} payload at %s" % response.url, DEBUG)
         if self.POPULATE_QA:
+            response.meta['canonical_url'] = canonical_url
             return self._request_QA(response, prod)
         if self.POPULATE_REVIEWS:
             return self._request_reviews(response, prod, canonical_url)
@@ -1057,7 +1058,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 q['totalAnswersCount'] = question['TotalAnswerCount']
                 q['questionId'] = question['Id']
                 if q['questionId']:
-                    url = self.ANSWER_API_URL.format(apipass=self.QA_API_PASS, 
+                    url = self.ANSWER_API_URL.format(apipass=self.QA_API_PASS,
                                                      question_id=q['questionId'])
                     meta = response.meta
                     meta['q'] = q
