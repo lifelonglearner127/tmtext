@@ -67,7 +67,7 @@ class StaplesShelfPagesSpider(StaplesProductsSpider):
         urls = response.xpath('//a[contains(@property, "url")]/@href').extract()
 
         urls = [urlparse.urljoin(response.url, x) for x in urls]
-        shelf_category = response.xpath('//h1/text()').extract()
+        shelf_category = response.xpath('//h1/text()').extract()[0].strip(' \t\n')
 
         for url in urls:
             item = SiteProductItem()
@@ -78,8 +78,16 @@ class StaplesShelfPagesSpider(StaplesProductsSpider):
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1
-        #need to fix this for pages that already have a ?
-        return (self.product_url + "?fids=&pn=%d&sr=true&sby=&min=&max=" % self.current_page)
+        spliturl = self.product_url.split('?')
+        nextlink = spliturl[0]
+        if len(spliturl) == 1:
+            return (nextlink + "?pn=%d" % self.current_page)
+        else:
+            nextlink += "?"
+            for s in spliturl[1].split('&'):
+                if not "pn=" in s:
+                    nextlink += s + "&"
+            return (nextlink + "pn=%d" % self.current_page)
 
     def parse_product(self, response):
         return super(StaplesShelfPagesSpider, self).parse_product(response)
