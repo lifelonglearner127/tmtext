@@ -13,7 +13,7 @@ from product_ranking.spiders import BaseProductsSpider
 from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
 from scrapy.http import Request, FormRequest
-from scrapy.log import DEBUG, ERROR
+from scrapy.log import DEBUG, ERROR, WARNING
 
 
 class SamsclubProductsSpider(BaseProductsSpider):
@@ -173,7 +173,12 @@ class SamsclubProductsSpider(BaseProductsSpider):
 
             if old_price:
                 cond_set_value(product, 'price', Price(price=old_price,
-                                                       priceCurrency='USD'))
+                                                   priceCurrency='USD'))
+                if not price:
+                    price = response.xpath(
+                        ".//div[contains(@class, 'pricingInfo')]//*[@class='lgFont']/li/span[@class='price' or "\
+                        "@class='superscript' and position()>1]/text()").extract()
+                    price = ['.'.join(price)]
                 cond_set_value(product, 'price_with_discount', Price(price=price[0],
                                                                      priceCurrency='USD'))
 
@@ -278,10 +283,12 @@ class SamsclubProductsSpider(BaseProductsSpider):
         # Categories
         categorie_filters = [u'sam\u2019s club']
         # Clean and filter categories names from breadcrumb
+        bc = response.xpath('//*[@id="breadcrumb"]//a/text()').extract()
+        bc = [b.strip() for b in bc if b.strip()]
+        if not bc:
+            bc = response.xpath('//*[@id="breadcrumb"]//a//*[@itemprop="title"]/text()').extract()
         categories = list(filter((lambda x: x.lower() not in categorie_filters),
-                          map((lambda x: x.strip()),
-                              response.xpath(
-                              '//*[@id="breadcrumb"]//a/text()').extract())))
+                                 map((lambda x: x.strip()), bc)))
         category = categories[-1] if categories else None
         cond_set_value(product, 'categories', categories)
         cond_set_value(product, 'category', category)
