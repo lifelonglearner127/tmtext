@@ -2,9 +2,8 @@ from __future__ import division, absolute_import, unicode_literals
 from .samsclub import SamsclubProductsSpider
 import re
 from scrapy.http import Request, FormRequest
-import urlparse
 from product_ranking.items import SiteProductItem
-from scrapy.log import DEBUG
+from scrapy.log import DEBUG, WARNING
 import urllib
 import urlparse
 import json
@@ -27,9 +26,9 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
         else:
             self.num_pages = 1  # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
         self.current_page = 1
+        self.prods_per_page = 18
         # Default - will be overwritten when first page is fetched
-        self.quantity = self.num_pages * 18
-        # TODO rework this properly, depending on amount of items per page
+        self.quantity = self.num_pages * self.prods_per_page
 
     def start_requests(self):
         yield Request(
@@ -83,50 +82,62 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
             c = " ".join(x.strip() for x in c if len(x.strip()) > 0)
             self.log("Selected club: '%s' '%s'" % (
                 self.clubno, " ".join(c.split())), DEBUG)
-            return Request(self.product_url, meta={
-                          'search_term': '',
-                          'remaining': self.quantity,
-                          'club': 4})
+            return Request(self.product_url, callback=self._get_shelf_path_from_firstpage ,meta={
+                'search_term': '',
+                'remaining': self.quantity,
+                'club': 4})
 
         elif club == 4:
             return super(SamsclubProductsSpider, self).parse(response)
 
-    def _scrape_product_links(self, response):
-        if response.url.find('ajaxSearch') > 0:
-            urls = response.xpath("//body/ul/li/a/@href").extract()
-        else:
-            urls = response.xpath('.//a[@class="cardProdLink ng-scope" or @class="cardProdLink"]/@href').extract()
-        if not urls:
-            urls = response.xpath('//*[contains(@href, ".ip") and contains(@href, "/sams/")]/@href').extract()
-        if urls:
-            urls = [urlparse.urljoin(response.url, x) for x in urls if x.strip()]
-
+    def _get_shelf_path_from_firstpage(self, response):
         shelf_categories = [c.strip() for c in response.xpath('.//ol[@id="breadCrumbs"]/li//a/text()').extract()
                             if len(c.strip()) > 1]
-        shelf_category = shelf_categories[-1] if shelf_categories else None
 
-        for url in urls:
-            item = response.meta.get('product', SiteProductItem())
-            if shelf_category:
-                item['shelf_name'] = shelf_category
-            if shelf_categories:
-                item['shelf_path'] = shelf_categories
-            yield url, item
+        shelf_category = shelf_categories[-1] if shelf_categories else None
+        return Request(self._NEXT_SHELF_URL.format(
+            category_id=self._get_category_id(response),
+            offset=0,
+            prods_per_page=self.prods_per_page), meta={
+            'shelf_path': shelf_categories,
+            'shelf_name': shelf_category,
+            'search_term': '',
+            'remaining': self.quantity,
+            'club': 4},
+            dont_filter=True)
+
+    def _scrape_product_links(self, response):
+        if response.url.find('ajaxSearch') > 0:
+            shelf_category = response.meta.get('shelf_name')
+            shelf_categories = response.meta.get('shelf_path')
+            urls = response.xpath("//body/ul/li/a/@href").extract()
+            if not urls:
+                urls = response.xpath('//*[contains(@href, ".ip") and contains(@href, "/sams/")]/@href').extract()
+            if urls:
+                urls = [urlparse.urljoin(response.url, x) for x in urls if x.strip()]
+            for url in urls:
+                item = response.meta.get('product', SiteProductItem())
+                if shelf_category:
+                    item['shelf_name'] = shelf_category
+                if shelf_categories:
+                    item['shelf_path'] = shelf_categories
+                yield url, item
+        else:
+            self.log("This method should not be called with such url {}".format(
+                response.url), WARNING)
 
     def _scrape_next_results_page_link(self, response, remaining):
-        #If the total number of matches cannot be scrapped it will not be set.
-        # from scrapy.shell import inspect_response
-        # inspect_response(response, self)
+        if self.current_page >= self.num_pages:
+            return None
+        self.current_page += 1
         prods_per_page = self._get_items_per_page(response)
         if prods_per_page:
+            self.prods_per_page = prods_per_page
             self.quantity = prods_per_page * self.num_pages
-        num_items = min(response.meta.get('total_matches', 0), self.quantity)
-        if num_items:
-            return self._NEXT_SHELF_URL.format(
-                category_id=self._get_category_id(response),
-                offset=num_items - remaining,
-                prods_per_page=min(200, num_items))
-        return None
+        return self._NEXT_SHELF_URL.format(
+            category_id=self._get_category_id(response),
+            offset=self.current_page*self.prods_per_page,
+            prods_per_page=self.prods_per_page)
 
     @staticmethod
     def _get_category_id(response):
