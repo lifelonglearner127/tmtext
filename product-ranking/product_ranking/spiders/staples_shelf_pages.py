@@ -10,7 +10,6 @@ from scrapy.http import Request
 from scrapy import Selector
 
 from product_ranking.items import SiteProductItem
-#from spiders_shared_code.walmart_categories import WalmartCategoryParser
 
 is_empty = lambda x: x[0] if x else None
 
@@ -68,13 +67,19 @@ class StaplesShelfPagesSpider(StaplesProductsSpider):
         urls = response.xpath('//a[contains(@property, "url")]/@href').extract()
 
         urls = [urlparse.urljoin(response.url, x) for x in urls]
+        shelf_category = response.xpath('//h1/text()').extract()
 
         for url in urls:
             item = SiteProductItem()
+            item['shelf_name'] = shelf_category
             yield url, item
 
     def _scrape_next_results_page_link(self, response):
-        return
+        if self.current_page >= self.num_pages:
+            return
+        self.current_page += 1
+        #need to fix this for pages that already have a ?
+        return (self.product_url + "?fids=&pn=%d&sr=true&sby=&min=&max=" % self.current_page)
 
     def parse_product(self, response):
-        return
+        return super(StaplesShelfPagesSpider, self).parse_product(response)
