@@ -287,6 +287,8 @@ class SamsclubProductsSpider(BaseProductsSpider):
         bc = [b.strip() for b in bc if b.strip()]
         if not bc:
             bc = response.xpath('//*[@id="breadcrumb"]//a//*[@itemprop="title"]/text()').extract()
+        if not bc:
+            bc = response.xpath(".//*[@id='breadcrumb']/text()").extract()
         categories = list(filter((lambda x: x.lower() not in categorie_filters),
                                  map((lambda x: x.strip()), bc)))
         category = categories[-1] if categories else None
