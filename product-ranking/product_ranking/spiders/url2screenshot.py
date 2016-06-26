@@ -11,6 +11,7 @@ import socket
 import random
 import re
 import urlparse
+import shutil
 
 import scrapy
 from scrapy.conf import settings
@@ -29,6 +30,8 @@ except ImportError:
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', '..'))
+
+DEBUG_MODE = False  # TODO! fix
 
 try:
     from search.captcha_solver import CaptchaBreakerWrapper
@@ -58,6 +61,34 @@ def _get_random_proxy():
 
 def _get_domain(url):
     return urlparse.urlparse(url).netloc.replace('www.', '')
+
+"""
+def authenticate_driver_and_get(driver, url):
+    driver.set_page_load_timeout(60)
+    # handle http basic auth for Crawlera proxy, if needed
+
+    driver.get(url)
+
+    from selenium.webdriver.common.alert import Alert
+    time.sleep(3)
+    alert = Alert(driver)
+    time.sleep(3)
+    #alert.authenticate(CRAWLERA_APIKEY, '')
+    #import pdb; pdb.set_trace()
+    alert.send_keys(settings['CRAWLERA_APIKEY'] + '\n')
+    alert.accept()
+    #alert.send_keys('\t')
+    #alert.send_keys('\n')
+    #import pdb; pdb.set_trace()
+    driver.set_page_load_timeout(30)
+"""
+
+
+def _check_bad_results_macys(driver):
+    if u'something went wrong' in driver.page_source.lower():
+        return True
+    if u'Access Denied' in driver.page_source and u"You don't have permission" in driver.page_source:
+        return True
 
 
 class URL2ScreenshotSpider(scrapy.Spider):
@@ -105,14 +136,28 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self.code_200_required = False
             self._site_settings_activated_for = domain
             self.log('Site-specified settings activated for: %s' % domain)
-        if domain == 'macys.com':
-            self.use_proxies = True
-            self.proxy = _get_random_proxy()
-            self.proxy_type = 'http'
+        if domain == 'macys.com' or domain == 'www1.macys.com':
             self.code_200_required = False
-            self.visit_before_product_url = 'http://www1.macys.com'
+            #self.proxy = _get_random_proxy()
+            #self.proxy_type = 'http'
+            settings.overrides['CRAWLERA_ENABLED'] = True
+            self.make_screenshot = self.make_screenshot_for_macys
             self._site_settings_activated_for = domain
             self.log('Site-specified settings activated for: %s' % domain)
+            self.check_bad_results_function = _check_bad_results_macys
+
+    def make_screenshot_for_macys(self, driver, output_fname):
+        rasterize_script = os.path.join(CWD, 'rasterize.js')
+        os.system("phantomjs --ssl-protocol=any {script} {url} {output_fname} {width}*{height}".format(
+            script=rasterize_script, url=self.product_url, output_fname=output_fname,
+            width=self.width, height=self.height))
+        assert os.path.exists(output_fname), 'Output file does not exist'
+        if self.image_copy:  # save a copy of the file if needed
+            shutil.copyfile(output_fname, self.image_copy)
+        try:
+            driver.quit()
+        except:
+            pass
 
     def start_requests(self):
         req = Request(self.product_url, dont_filter=True)
@@ -190,6 +235,27 @@ class URL2ScreenshotSpider(scrapy.Spider):
             if d != self._driver:
                 return d
 
+    def _init_phantomjs(self):
+        from selenium import webdriver
+        from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+        self.log('No product links found at first attempt'
+                 ' - trying PhantomJS with UA %s' % self.user_agent)
+        dcap = dict(DesiredCapabilities.PHANTOMJS)
+        dcap["phantomjs.page.settings.userAgent"] = self.user_agent
+        service_args = []
+        if self.proxy:
+            service_args.append('--proxy="%s"' % self.proxy)
+            service_args.append('--proxy-type=' + self.proxy_type)
+            proxy_auth = getattr(self, '_proxy_auth', None)
+            if proxy_auth:
+                service_args.append("--proxy-auth=\"%s\":" % proxy_auth)
+
+        #assert False, service_args
+        driver = webdriver.PhantomJS(desired_capabilities=dcap, service_args=service_args)
+        driver.set_page_load_timeout(60)
+        driver.set_script_timeout(60)
+        return driver
+
     def _init_chromium(self):
         from selenium import webdriver
         chrome_flags = webdriver.DesiredCapabilities.CHROME  # this is for Chrome?
@@ -199,6 +265,9 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 '--proxy-server=%s' % self.proxy_type+'://'+self.proxy)
         chrome_flags["chrome.switches"] = ['--user-agent=%s' % self.user_agent]
         chrome_options.add_argument('--user-agent=%s' % self.user_agent)
+        extension_file = os.path.join(CWD, '..', '..', '..', 'chrome_proxy.zip')
+        assert os.path.exists(extension_file), 'extension file not found'
+        chrome_options.add_argument(extension_file)
         executable_path = '/usr/sbin/chromedriver'
         if not os.path.exists(executable_path):
             executable_path = '/usr/local/bin/chromedriver'
@@ -245,9 +314,6 @@ class URL2ScreenshotSpider(scrapy.Spider):
         driver.set_window_size(int(self.width), int(self.height))
 
     def make_screenshot(self, driver, output_fname):
-        _visit_before = getattr(self, 'visit_before_product_url', None)
-        if _visit_before:
-            driver.get(_visit_before)
         driver.get(self.product_url)
         time.sleep(6)
         # maximize height of the window
@@ -289,7 +355,14 @@ class URL2ScreenshotSpider(scrapy.Spider):
         driver.save_screenshot(output_fname)
         if self.image_copy:  # save a copy of the file if needed
             driver.save_screenshot(self.image_copy)
-        driver.quit()
+
+        _check_bad_results_function = getattr(self, 'check_bad_results_function', None)
+        if _check_bad_results_function is not None and callable(_check_bad_results_function):
+            if _check_bad_results_function(driver):
+                assert False, 'Bad results returned'
+
+        if not DEBUG_MODE:
+            driver.quit()
 
     @staticmethod
     def _get_proxy_ip(driver):
@@ -308,8 +381,9 @@ class URL2ScreenshotSpider(scrapy.Spider):
         print('Created temporary image file: %s' % t_file.name)
         self.log('Created temporary image file: %s' % t_file.name)
 
-        display = Display(visible=0, size=(self.width, self.height))
-        display.start()
+        if not DEBUG_MODE:
+            display = Display(visible=int(bool(DEBUG_MODE)), size=(self.width, self.height))
+            display.start()
 
         # we will use requesocks for checking response code
         r_session = requests.session()
@@ -326,7 +400,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
             if page_code != 200:
                 self.log('Page returned code %s at %s' % (page_code, self.product_url), ERROR)
                 yield ScreenshotItem()  # return empty item
-                display.stop()
+                if not DEBUG_MODE:
+                    display.stop()
                 return
 
         driver = self.init_driver()
@@ -346,14 +421,16 @@ class URL2ScreenshotSpider(scrapy.Spider):
             # lets try with another driver
             another_driver_name = self._choose_another_driver()
             try:
-                driver.quit()  # clean RAM
+                if not DEBUG_MODE:
+                    driver.quit()  # clean RAM
             except Exception as e:
                 pass
             driver = self.init_driver(name=another_driver_name)
             self.prepare_driver(driver)
             self.make_screenshot(driver, t_file.name)
             try:
-                driver.quit()
+                if not DEBUG_MODE:
+                    driver.quit()
             except:
                 pass
 
@@ -384,7 +461,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
         item['image'] = base64.b64encode(img_content)
         item['site_settings'] = getattr(self, '_site_settings_activated_for', None)
 
-        display.stop()
+        if not DEBUG_MODE:
+            display.stop()
 
         if img_content:
             yield item
