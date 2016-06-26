@@ -403,7 +403,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         seller_ranking = self._scrape_seller_ranking(response)
         if seller_ranking:
-            product['seller_ranking'] = seller_ranking
+            # product['seller_ranking'] = seller_ranking
+            seller_ranking = seller_ranking[0].get('ranking') if seller_ranking else None
+            product['bestseller_rank'] = seller_ranking
 
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
