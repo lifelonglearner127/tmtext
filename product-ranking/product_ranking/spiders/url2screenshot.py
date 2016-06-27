@@ -148,6 +148,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
     def make_screenshot_for_macys(self, driver, output_fname):
         rasterize_script = os.path.join(CWD, 'rasterize.js')
+        # TODO: phantomjs2
         cmd = 'phantomjs --ssl-protocol=any {script} "{url}" {output_fname} {width}px*{height}px'.format(
             script=rasterize_script, url=self.product_url, output_fname=output_fname,
             width=self.width, height=self.height)
