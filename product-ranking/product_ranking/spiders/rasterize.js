@@ -2,6 +2,7 @@
 var page = require('webpage').create(),
     system = require('system'),
     address, output, size, pageWidth, pageHeight;
+//page.settings.userAgent = 'Firefox';
 
 if (system.args.length < 3 || system.args.length > 5) {
     console.log('Usage: rasterize.js URL filename [paperwidth*paperheight|paperformat] [zoom]');
@@ -43,7 +44,7 @@ if (system.args.length < 3 || system.args.length > 5) {
             window.setTimeout(function () {
                 page.render(output);
                 phantom.exit();
-            }, 500);
+            }, 5000);
         }
     });
 }
