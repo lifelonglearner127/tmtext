@@ -68,10 +68,14 @@ class StaplesShelfPagesSpider(StaplesProductsSpider):
 
         urls = [urlparse.urljoin(response.url, x) for x in urls]
         shelf_category = response.xpath('//h1/text()').extract()[0].strip(' \t\n')
+        shelf_path = response.xpath('//div[contains(@class, "stp--breadcrumbs")]/ul/li/a/text()').extract()
 
         for url in urls:
             item = SiteProductItem()
-            item['shelf_name'] = shelf_category
+            if shelf_category:
+                item['shelf_name'] = shelf_category
+            if shelf_path:
+                item['shelf_path'] = shelf_path
             yield url, item
 
     def _scrape_next_results_page_link(self, response):
