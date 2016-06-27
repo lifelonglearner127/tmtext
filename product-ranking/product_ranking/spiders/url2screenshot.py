@@ -265,9 +265,6 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 '--proxy-server=%s' % self.proxy_type+'://'+self.proxy)
         chrome_flags["chrome.switches"] = ['--user-agent=%s' % self.user_agent]
         chrome_options.add_argument('--user-agent=%s' % self.user_agent)
-        extension_file = os.path.join(CWD, '..', '..', '..', 'chrome_proxy.zip')
-        assert os.path.exists(extension_file), 'extension file not found'
-        chrome_options.add_argument(extension_file)
         executable_path = '/usr/sbin/chromedriver'
         if not os.path.exists(executable_path):
             executable_path = '/usr/local/bin/chromedriver'
