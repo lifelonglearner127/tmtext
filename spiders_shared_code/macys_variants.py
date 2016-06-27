@@ -2,20 +2,22 @@ import json
 
 import lxml.html
 import itertools
-import re
+import re, copy
 
 
 class MacysVariants(object):
     IMAGE_BASE_URL = "http://slimages.macysassets.com/is/image/MCY/products/"
 
-    def setupSC(self, response):
+    def setupSC(self, response, is_bundle=False):
         """ Call it from SC spiders """
         self.response = response
         self.tree_html = lxml.html.fromstring(response.body)
+        self.is_bundle = is_bundle
 
-    def setupCH(self, tree_html):
+    def setupCH(self, tree_html, is_bundle=False):
         """ Call it from CH spiders """
         self.tree_html = tree_html
+        self.is_bundle = is_bundle
 
     def _extract_product_info_json(self):
         try:
@@ -89,6 +91,81 @@ class MacysVariants(object):
     def _variants(self):
             variants = []
 
+            if self.is_bundle:
+                image_map_list = re.findall('MACYS.pdp.primaryImages\[(\d+)\] = ({[^;]*});', lxml.html.tostring(self.tree_html))
+
+                image_map = {}
+                for item in image_map_list:
+                    image_map[item[0]] = json.loads(item[1])
+
+                image_prefix = 'http://slimages.macysassets.com/is/image/MCY/products/'
+
+                products = self.tree_html.xpath('//div[contains(@class,"memberProducts")]')
+
+                for product in products:
+                    product_variants = []
+
+                    prod_id = product.xpath('.//img/@id')[0].split('_')[0]
+                    product_name = product.xpath('.//div[@id="prodName"]/text()')[0].strip()
+
+                    colorSelection = product.xpath('.//div[@class="colorSelection"]//ul/li')
+
+                    selected_color = product.xpath('.//span[@class="productColor"]/text()')
+
+                    if not colorSelection:
+                        if selected_color:
+                            colorSelection = [{'title' : selected_color[0]}]
+                        else:
+                            colorSelection = [{}]
+
+                    price = product.xpath('.//span[@class="colorway-price"]/span/text()')[-1]
+                    price = float( price.split(' ')[-1].strip()[1:])
+
+                    for color in colorSelection:
+                        v = {
+                            'product_name' : product_name,
+                            'img_urls' : None,
+                            'in_stock' : True,
+                            'price' : price,
+                            'properties' : {},
+                            'selected' : False
+                        }
+
+                        if color.get('title'):
+                            if color.get('title') in image_map[prod_id]:
+                                v['img_urls'] = [image_prefix + image_map[prod_id][color.get('title')]]
+                            v['properties']['color'] = color.get('title')
+                            if selected_color:
+                                v['selected'] = color.get('title') == selected_color[0]
+
+                        if not v['img_urls']:
+                            v['img_urls'] = [product.xpath('.//img/@src')[0].split('?')[0]]
+
+                        product_variants.append(v)
+
+                    sizeSelection = product.xpath('.//div[@class="sizeSelection"]//ul/li')
+
+                    selected_size = product.xpath('.//span[@class="productSize"]/text()')
+
+                    new_variants = []
+
+                    for size in sizeSelection:
+                        for variant in product_variants:
+                            new_variant = copy.deepcopy(variant)
+                            new_variant['properties']['size'] = size.get('title')
+                            if selected_size:
+                                new_variant['selected'] = variant['selected'] and size.get('title') == selected_size[0]
+                            else:
+                                new_variant['selected'] = False
+                            new_variants.append(new_variant)
+
+                    if new_variants:
+                        variants.extend(new_variants)
+                    else:
+                        variants.extend(product_variants)
+
+                return variants
+
             # Load product data
             product_info_json = self._extract_product_info_json()
 
@@ -119,6 +196,40 @@ class MacysVariants(object):
 
     def _swatches(self):
         swatch_list = []
+
+        if self.is_bundle:
+            image_map_list = re.findall('MACYS.pdp.primaryImages\[(\d+)\] = ({[^;]*});', lxml.html.tostring(self.tree_html))
+
+            image_map = {}
+            for item in image_map_list:
+                image_map[item[0]] = json.loads(item[1])
+
+            image_prefix = 'http://slimages.macysassets.com/is/image/MCY/products/'
+
+            colors = self.tree_html.xpath('//div[@id="masterColorSelection"]/div[@class="colors"]/ul/li')
+
+            for color in colors:
+                hero_image = []
+
+                for color_map in image_map.itervalues():
+                    image_frag = color_map.get(color.get('title'))
+                    if image_frag and not image_prefix + image_frag in hero_image:
+                        hero_image.append( image_prefix + image_frag)
+
+                s = {
+                    'color' : color.get('title'),
+                    'hero' : 1,
+                    'hero_image' : hero_image if hero_image else None,
+                    'thumb' : 1,
+                    'thumb_image' : [image_prefix + color.get('data-imgurl')],
+                }
+
+                swatch_list.append(s)
+
+            if swatch_list:
+                return swatch_list
+            return None
+
         product_info_json = self.tree_html.xpath("//script[@id='productMainData' and @type='application/json']/text()")
         product_info_json = json.loads( product_info_json[0] )
         color_list = {}
