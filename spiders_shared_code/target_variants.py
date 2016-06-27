@@ -240,6 +240,8 @@ class TargetVariants(object):
                 except ValueError as e:
                     if 'low to display' in str(e):
                         price = None  # in cart price?
+                except KeyError:
+                    price = None
 
                 v = {
                     'in_stock' : False,

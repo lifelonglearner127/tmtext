@@ -7,8 +7,8 @@
     <field name="results_per_page" version="1.1"></field>
     <field name="scraped_results_per_page" version="1.1"></field>
     <field name="is_single_result" version="1.1"></field>
-    <field name="title" version="1.2"></field>
-    <field name="upc" version="1.1"></field>
+    <field name="title" version="1.4"></field>
+    <field name="upc" version="1.2"></field>
     <field name="model" version="1.1"></field>
     <field name="url" version="1.1"></field>
     <field name="image_url" version="1.1"></field>
@@ -19,7 +19,7 @@
     <field name="locale" version="1.1"></field>
     <field name="related_products" version="1.1"></field>
     <field name="sponsored_links" version="1.1"></field>
-    <field name="is_in_store_only" version="1.1"></field>
+    <field name="is_in_store_only" version="1.2"></field>
     <field name="is_out_of_stock" version="1.1"></field>
     <field name="buyer_reviews" version="1.1"></field>
     <field name="bestseller_rank" version="1.1"></field>
@@ -30,10 +30,7 @@
     <field name="search_term_in_title_interleaved" version="1.1"></field>
     <field name="google_source_site" version="1.1"></field>
     <field name="is_mobile_agent" version="1.1"></field>
-    <field name="limited_stock" version="1.1"></field>
-    <field name="prime" version="1.1"></field>
-    <field name="is_pickup_only" version="1.1"></field>
-    <field name="date_of_last_question" version="1.1"></field>
-    <field name="recent_questions" version="1.1"></field>
-    <field name="special_pricing" version="1.1"></field>
+    <field name="is_mobile_agent" version="1.1"></field>
+    <field name="variants" version="1.1"></field>
+    <field name="no_longer_available" version="1.2"></field>
 </fields>
