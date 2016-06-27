@@ -4,9 +4,9 @@ import re
 from scrapy.http import Request, FormRequest
 from product_ranking.items import SiteProductItem
 from scrapy.log import DEBUG, WARNING
-import urllib
 import urlparse
 import json
+from math import ceil
 
 is_empty = lambda x: x[0] if x else None
 
@@ -25,7 +25,7 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
             self.num_pages = int(kwargs['num_pages'])
         else:
             self.num_pages = 1  # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
-        self.current_page = 1
+        self.current_page = 0
         self.prods_per_page = 18
         # Default - will be overwritten when first page is fetched
         self.quantity = self.num_pages * self.prods_per_page
@@ -82,7 +82,7 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
             c = " ".join(x.strip() for x in c if len(x.strip()) > 0)
             self.log("Selected club: '%s' '%s'" % (
                 self.clubno, " ".join(c.split())), DEBUG)
-            return Request(self.product_url, callback=self._get_shelf_path_from_firstpage ,meta={
+            return Request(self.products_url, callback=self._get_shelf_path_from_firstpage ,meta={
                 'search_term': '',
                 'remaining': self.quantity,
                 'club': 4})
@@ -95,12 +95,20 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
                             if len(c.strip()) > 1]
 
         shelf_category = shelf_categories[-1] if shelf_categories else None
+        total_matches = self._scrape_total_matches(response)
+        if total_matches:
+            try:
+                # determining final amount of pages to scrape
+                self.num_pages = min(ceil(int(total_matches)/float(self.prods_per_page)),self.num_pages)
+            except BaseException:
+                pass
         return Request(self._NEXT_SHELF_URL.format(
             category_id=self._get_category_id(response),
             offset=0,
             prods_per_page=self.prods_per_page), meta={
             'shelf_path': shelf_categories,
             'shelf_name': shelf_category,
+            'total_matches':total_matches,
             'search_term': '',
             'remaining': self.quantity,
             'club': 4},
@@ -110,6 +118,7 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
         if response.url.find('ajaxSearch') > 0:
             shelf_category = response.meta.get('shelf_name')
             shelf_categories = response.meta.get('shelf_path')
+            total_matches = response.meta.get('total_matches', 0)
             urls = response.xpath("//body/ul/li/a/@href").extract()
             if not urls:
                 urls = response.xpath('//*[contains(@href, ".ip") and contains(@href, "/sams/")]/@href').extract()
@@ -117,6 +126,7 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
                 urls = [urlparse.urljoin(response.url, x) for x in urls if x.strip()]
             for url in urls:
                 item = response.meta.get('product', SiteProductItem())
+                item['total_matches'] = total_matches
                 if shelf_category:
                     item['shelf_name'] = shelf_category
                 if shelf_categories:
@@ -127,17 +137,17 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
                 response.url), WARNING)
 
     def _scrape_next_results_page_link(self, response, remaining):
-        if self.current_page >= self.num_pages:
-            return None
-        self.current_page += 1
         prods_per_page = self._get_items_per_page(response)
         if prods_per_page:
             self.prods_per_page = prods_per_page
-            self.quantity = prods_per_page * self.num_pages
-        return self._NEXT_SHELF_URL.format(
-            category_id=self._get_category_id(response),
-            offset=self.current_page*self.prods_per_page,
-            prods_per_page=self.prods_per_page)
+        if self.current_page >= int(self.num_pages):
+            return None
+        else:
+            self.current_page += 1
+            return self._NEXT_SHELF_URL.format(
+                category_id=self._get_category_id(response),
+                offset=self.current_page * self.prods_per_page,
+                prods_per_page=self.prods_per_page)
 
     @staticmethod
     def _get_category_id(response):

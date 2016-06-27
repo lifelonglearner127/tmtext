@@ -337,9 +337,26 @@ class SamsclubProductsSpider(BaseProductsSpider):
                        'available_online',
                        1 if available_online and not oos_in_both else 0)
 
+        if str(product.get('available_online', None)) == '0' and str(product.get('available_store', None)) == '0':
+            product['is_out_of_stock'] = True
+
         if not shipping_included and not product.get('no_longer_available'):
+
             productId = ''.join(response.xpath('//*[@id="mbxProductId"]/@value').extract())
             pSkuId = ''.join(response.xpath('//*[@id="mbxSkuId"]/@value').extract())
+            # This is fixing bug with sku and prod_id extraction for bundle products
+            if not productId or pSkuId:
+                js_sku_prodid = response.xpath(
+                    './/script[contains(text(), "var skuId") and contains(text(), "var productId")]/text()').extract()
+                js_sku_prodid = ''.join(js_sku_prodid) if js_sku_prodid else None
+                if js_sku_prodid:
+                    rgx = r'(prod\d+)'
+                    match_list = re.findall(rgx, js_sku_prodid)
+                    productId = match_list[0] if match_list else None
+
+                    rgx = r'(sku\d+)'
+                    match_list = re.findall(rgx, js_sku_prodid)
+                    pSkuId = match_list[0] if match_list else None
             shipping_prices_url = "http://www.samsclub.com/sams/shop/product/moneybox/shippingDeliveryInfo.jsp?zipCode=%s&productId=%s&skuId=%s" % (self.zip_code, productId, pSkuId)
             return Request(shipping_prices_url, 
                            meta={'product': product}, 
@@ -349,13 +366,25 @@ class SamsclubProductsSpider(BaseProductsSpider):
 
     def _parse_shipping_cost(self, response):
         product = response.meta['product']
-        product['shipping'] = []
-        shipping_names = response.xpath('//tr/td[1]/span/text()').extract()
-        shipping_prices = response.xpath('//tr/td[2]/text()').re('[\d\.\,]+')
-
-        for shipping in zip(shipping_names, shipping_prices):
-            product['shipping'].append({'name': shipping[0], 'cost': shipping[1]})
-
+        # product['shipping'] = []
+        shipping_list = []
+        # from scrapy.shell import inspect_response
+        # inspect_response(response, self)
+        # shipping_blocks = response.xpath('//tr/td[contains(@class, "colLeft")]')
+        shipping_blocks = response.xpath('//tr')
+        for block in shipping_blocks:
+            name_l = block.xpath('./td//span/text()').extract()
+            name = name_l[0] if name_l else None
+            cost = block.xpath('.//*[contains(text(), "$")]/text()').re('[\d\.\,]+')
+            cost = cost[0] if cost else None
+            if not cost:
+                if block.xpath('./*[contains(text(), "FREE")]').extract() or 'FREE' in name_l:
+                    cost = '0'
+                else:
+                    cost = None
+            if cost and name:
+                shipping_list.append({'name': name, 'cost': cost})
+        product['shipping'] = shipping_list
         return product
 
     def _scrape_total_matches(self, response):
