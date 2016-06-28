@@ -10,36 +10,20 @@ class DrugstoreShelfPagesSpider(DrugstoreProductsSpider):
     allowed_domains = ["drugstore.com",
                        "recs.richrelevance.com"]
 
-    def _setup_class_compatibility(self):
-        """ Needed to maintain compatibility with the SC spiders baseclass """
-        self.quantity = 99999
-        self.site_name = self.allowed_domains[0]
-        self.user_agent_key = None
-        self.zip_code = '12345'
-        self.current_page = 1
-
-    def _setup_meta_compatibility(self):
-        """ Needed to prepare first request.meta vars to use """
-        return {'remaining': 99999, 'search_term': ''}.copy()
-
     def __init__(self, *args, **kwargs):
-        self._setup_class_compatibility()
+        super(DrugstoreShelfPagesSpider, self).__init__(*args, **kwargs)
         self.product_url = kwargs['product_url']
 
         if "num_pages" in kwargs:
             self.num_pages = int(kwargs['num_pages'])
         else:
             self.num_pages = 1
-        self.user_agent = "Mozilla/5.0 (X11; Linux i686 (x86_64))" \
-                          " AppleWebKit/537.36 (KHTML, like Gecko)" \
-                          " Chrome/37.0.2062.120 Safari/537.36"
 
-        # variants are switched off by default, see Bugzilla 3982#c11
-        self.scrape_variants_with_extra_requests = False
-        if 'scrape_variants_with_extra_requests' in kwargs:
-            scrape_variants_with_extra_requests = kwargs['scrape_variants_with_extra_requests']
-            if scrape_variants_with_extra_requests in (1, '1', 'true', 'True', True):
-                self.scrape_variants_with_extra_requests = True
+        self.prods_per_page = 18
+
+        self.quantity = self.num_pages * self.prods_per_page
+        if "quantity" in kwargs:
+            self.quantity = int(kwargs['quantity'])
 
     @staticmethod
     def valid_url(url):
@@ -49,7 +33,8 @@ class DrugstoreShelfPagesSpider(DrugstoreProductsSpider):
 
     def start_requests(self):
         yield Request(url=self.valid_url(self.product_url),
-                      meta=self._setup_meta_compatibility())  # meta is for SC baseclass compatibility
+                      meta={'remaining': self.quantity,
+                            'search_term': ''})
 
     def _scrape_product_links(self, response):
         urls = response.xpath('//div[@class="info"]/'
