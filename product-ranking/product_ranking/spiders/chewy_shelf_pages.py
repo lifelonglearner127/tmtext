@@ -71,7 +71,8 @@ class ChewyShelfPagesSpider(ChewyProductsSpider):
         shelf_category = response.xpath('//h1/strong/text()').extract()
         if shelf_category:
             shelf_category = shelf_category[0]
-        shelf_path = response.xpath('//div[contains(@class, "breadcrumbs")]/ul/li/a/text() | //div[contains(@class, "breadcrumbs")]/ul/li/strong/text()').extract()
+        shelf_path = response.xpath('//div[contains(@class, "breadcrumbs")]/ul/li/a/text() '
+                                    '| //div[contains(@class, "breadcrumbs")]/ul/li/strong/text()').extract()
         for p in shelf_path:
             if p:
                 p.strip(' \t\n')
