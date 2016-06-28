@@ -157,5 +157,4 @@ class InstagramHashtagsSpider(Spider):
         request.meta['csrf_token'] = csrf_token
         request.meta['url'] = url
         return request
-
-
+    
