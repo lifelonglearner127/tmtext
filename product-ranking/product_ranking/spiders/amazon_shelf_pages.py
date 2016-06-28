@@ -4,13 +4,14 @@ import urlparse
 import json
 
 import scrapy
-from scrapy.log import WARNING, ERROR
+from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 from scrapy.http import Request, HtmlResponse
 from scrapy import Selector
-
+from product_ranking.spiders import cond_set_value
 from product_ranking.items import SiteProductItem
 from product_ranking.marketplace import Amazon_marketplace
 from spiders_shared_code.amazon_variants import AmazonVariants
+from itertools import islice
 
 is_empty = lambda x: x[0] if x else None
 
@@ -81,8 +82,11 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         self.mtp_class = Amazon_marketplace(self)
         self._cbw = CaptchaBreakerWrapper()
 
-        self.ranking_override = 0
-
+        #backup when total matches cannot be scraped
+        self.total_items_scraped = 0
+        self.remaining = self.quantity
+        # self.ranking_override = 0
+        self.total_matches_re = r'of\s([\d\,]+)\s'
         super(AmazonShelfPagesSpider, self).__init__(*args, **kwargs)
 
     @staticmethod
@@ -152,7 +156,6 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                 item['shelf_path'] = shelf_categories
             yield url, item
         """
-
         for link in links:
             _href = link.xpath('./@href').extract()[0]
             if '/product-reviews/' in _href:
@@ -162,15 +165,97 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             is_prime_pantry = link.xpath(
                 './..//*[contains(@class, "a-icon-prime-pantry")]')
             product = SiteProductItem()
-            product['total_matches'] = self.quantity
             if is_prime:
                 product['prime'] = 'Prime'
             if is_prime_pantry:
                 product['prime'] = 'PrimePantry'
             yield urlparse.urljoin(response.url, _href), product
 
-    def _scrape_total_matches(self, response):
-        return self.quantity
+    def _get_products(self, response):
+        remaining = response.meta['remaining']
+        search_term = response.meta['search_term']
+        prods_per_page = response.meta.get('products_per_page')
+        total_matches = response.meta.get('total_matches')
+        scraped_results_per_page = response.meta.get('scraped_results_per_page')
+
+        prods = self._scrape_product_links(response)
+
+        if prods_per_page is None:
+            # Materialize prods to get its size.
+            prods = list(prods)
+            prods_per_page = len(prods)
+            response.meta['products_per_page'] = prods_per_page
+
+        if scraped_results_per_page is None:
+            scraped_results_per_page = self._scrape_results_per_page(response)
+            if scraped_results_per_page:
+                self.log(
+                    "Found %s products at the first page" % scraped_results_per_page
+                    , INFO)
+            else:
+                scraped_results_per_page = prods_per_page
+                if hasattr(self, 'is_nothing_found'):
+                    if not self.is_nothing_found(response):
+                        self.log(
+                            "Failed to scrape number of products per page", ERROR)
+            response.meta['scraped_results_per_page'] = scraped_results_per_page
+
+        if total_matches is None:
+            total_matches = self._scrape_total_matches(response)
+            if total_matches is not None:
+                response.meta['total_matches'] = total_matches
+                self.log("Found %d total matches." % total_matches, INFO)
+            else:
+                if hasattr(self, 'is_nothing_found'):
+                    if not self.is_nothing_found(response):
+                        self.log(
+                            "Failed to parse total matches for %s" % response.url, ERROR)
+
+        if total_matches and not prods_per_page:
+            # Parsing the page failed. Give up.
+            self.log("Failed to get products for %s" % response.url, ERROR)
+            return
+
+        if self.current_page == 1:
+            self.quantity = total_matches if total_matches else self.quantity
+            self.remaining = self.quantity
+        else:
+            self.remaining -= prods_per_page
+
+        for i, (prod_url, prod_item) in enumerate(islice(prods, 0, remaining)):
+            # Initialize the product as much as possible.
+            prod_item['site'] = self.site_name
+            prod_item['search_term'] = search_term
+            prod_item['total_matches'] = total_matches
+            prod_item['results_per_page'] = prods_per_page
+            prod_item['scraped_results_per_page'] = scraped_results_per_page
+            # The ranking is the position in this page plus the number of
+            # products from other pages.
+
+            if not total_matches:
+                prod_item['ranking'] = (i + 1) + self.total_items_scraped
+            else:
+                prod_item['ranking'] = (i + 1) + (self.quantity - self.remaining)
+            if self.user_agent_key not in ["desktop", "default"]:
+                prod_item['is_mobile_agent'] = True
+
+            if prod_url is None:
+                # The product is complete, no need for another request.
+                yield prod_item
+            elif isinstance(prod_url, Request):
+                cond_set_value(prod_item, 'url', prod_url.url)  # Tentative.
+                yield prod_url
+            else:
+                # Another request is necessary to complete the product.
+                url = urlparse.urljoin(response.url, prod_url)
+                cond_set_value(prod_item, 'url', url)  # Tentative.
+                yield Request(
+                    url,
+                    callback=self.parse_product,
+                    meta={'product': prod_item},
+                )
+
+        self.total_items_scraped += prods_per_page
 
     def _scrape_next_results_page_link(self, response):
         if self.current_page >= self.num_pages:
