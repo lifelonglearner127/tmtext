@@ -3,6 +3,7 @@ import re
 import json
 from collections import namedtuple
 from scrapy import Spider, FormRequest, Field, Item, Request
+from product_ranking.spiders import BaseProductsSpider
 
 
 class InstagramUsersItem(Item):
@@ -11,45 +12,21 @@ class InstagramUsersItem(Item):
     total_posts = Field()
     posts = Field()
 
-class InstagramCrawlerSpider(Spider):
+class InstagramCrawlerSpider(BaseProductsSpider):
     name = "instagram_users"
     allowed_domains = ["instagram.com"]
     download_delay = 0.25
     posts_url = 'https://www.instagram.com/query/'
 
-    def _setup_class_compatibility(self):
-        """ Needed to maintain compatibility with the SC spiders baseclass """
-        self.quantity = 99999
-        self.site_name = self.allowed_domains[0]
-        self.user_agent_key = None
-        self.zip_code = '12345'
-        self.current_page = 1
-
-    def _setup_meta_compatibility(self):
-        """ Needed to prepare first request.meta vars to use """
-        return {'remaining': 99999, 'search_term': ''}.copy()
-
     def __init__(self, *args, **kwargs):
-        self._setup_class_compatibility()
+        super(InstagramCrawlerSpider, self).__init__(
+            site_name="instagram.com",
+            *args, **kwargs)
         self.product_url = kwargs['product_url']
 
         self.comments = []
         self.likes = []
-
-        if "num_pages" in kwargs:
-            self.num_pages = int(kwargs['num_pages'])
-        else:
-            self.num_pages = 1
-        self.user_agent = "Mozilla/5.0 (X11; Linux i686 (x86_64))" \
-                          " AppleWebKit/537.36 (KHTML, like Gecko)" \
-                          " Chrome/37.0.2062.120 Safari/537.36"
-
-        # variants are switched off by default, see Bugzilla 3982#c11
-        self.scrape_variants_with_extra_requests = False
-        if 'scrape_variants_with_extra_requests' in kwargs:
-            scrape_variants_with_extra_requests = kwargs['scrape_variants_with_extra_requests']
-            if scrape_variants_with_extra_requests in (1, '1', 'true', 'True', True):
-                self.scrape_variants_with_extra_requests = True
+        self.num_pages = 1
 
     @staticmethod
     def valid_url(url):
@@ -59,8 +36,9 @@ class InstagramCrawlerSpider(Spider):
 
     def start_requests(self):
         yield Request(url=self.valid_url(self.product_url),
-                      meta=self._setup_meta_compatibility(),
-                      callback=self._parse_single_product)  # meta is for SC baseclass compatibility
+                      meta={'remaining': 99999,
+                            'search_term': ''},
+                      callback=self._parse_single_product)
 
     def _parse_single_product(self, response):
         # extracting json data from <script>
