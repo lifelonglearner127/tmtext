@@ -21,14 +21,15 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
 
     def __init__(self, *args, **kwargs):
         super(SamsclubProductsSpider, self).__init__(clubno='4704', zip_code='94117', *args, **kwargs)
+        self.current_page = 0
+        self.prods_per_page = 18
         if "num_pages" in kwargs:
             self.num_pages = int(kwargs['num_pages'])
         else:
             self.num_pages = 1  # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
-        self.current_page = 0
-        self.prods_per_page = 18
-        # Default - will be overwritten when first page is fetched
         self.quantity = self.num_pages * self.prods_per_page
+        if "quantity" in kwargs:
+            self.quantity = int(kwargs['quantity'])
 
     def start_requests(self):
         yield Request(
