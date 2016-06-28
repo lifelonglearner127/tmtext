@@ -82,7 +82,7 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
             c = " ".join(x.strip() for x in c if len(x.strip()) > 0)
             self.log("Selected club: '%s' '%s'" % (
                 self.clubno, " ".join(c.split())), DEBUG)
-            return Request(self.products_url, callback=self._get_shelf_path_from_firstpage ,meta={
+            return Request(self.product_url, callback=self._get_shelf_path_from_firstpage ,meta={
                 'search_term': '',
                 'remaining': self.quantity,
                 'club': 4})
