@@ -52,8 +52,7 @@ class DrugstoreShelfPagesSpider(DrugstoreProductsSpider):
                       meta=self._setup_meta_compatibility())  # meta is for SC baseclass compatibility
 
     def _scrape_product_links(self, response):
-        urls = response.xpath('//div[@itemtype="http://schema.org/Product"]/'
-                              'div[@class="info"]/'
+        urls = response.xpath('//div[@class="info"]/'
                               'span/a[@class="oesLink"]/'
                               '@href').extract()
         urls = [urlparse.urljoin(response.url, x) if x.startswith('/') else x
