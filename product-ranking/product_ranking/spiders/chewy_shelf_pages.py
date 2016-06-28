@@ -33,6 +33,7 @@ class ChewyShelfPagesSpider(ChewyProductsSpider):
         return {'remaining': 99999, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
+        super(ChewyShelfPagesSpider, self).__init__(*args, **kwargs)
         self._setup_class_compatibility()
 
         self.product_url = kwargs['product_url']
@@ -99,5 +100,4 @@ class ChewyShelfPagesSpider(ChewyProductsSpider):
             return (nextlink + "page=%d" % self.current_page)
 
     def parse_product(self, response):
-        super(ChewyShelfPagesSpider, self).__init__()
         return super(ChewyShelfPagesSpider, self).parse_product(response)
