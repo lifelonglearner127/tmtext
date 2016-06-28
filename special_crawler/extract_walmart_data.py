@@ -1959,15 +1959,17 @@ class WalmartScraper(Scraper):
 
         if self.is_bundle_product:
             image_list = self.tree_html.xpath("//div[contains(@class, 'choice-hero-non-carousel')]//img/@src")
-
+            image_dimensions = []
             for index, url in enumerate(image_list):
                 if ".jpg?" in url:
                     image_list[index] = url[:url.rfind(".jpg?") + 4]
                 elif ".png" in url:
                     image_list[index] = url[:url.rfind(".png?") + 4]
+                image_dimensions.append(1)
 
             image_list = [url for index, url in enumerate(image_list) if index > 4 or not self._no_image(url)]
 
+            self.image_dimensions = image_dimensions
             if image_list:
                 return image_list
 
