@@ -23,6 +23,7 @@ class WalmartVariants(object):
         return  re.sub(r'\s+', ' ', text)
 
     def _swatches(self):
+        version = 'Walmart v1'
         if self.tree_html.xpath("//meta[@name='keywords']/@content"):
             version = "Walmart v2"
         if self.tree_html.xpath("//meta[@name='Keywords']/@content"):
@@ -86,6 +87,7 @@ class WalmartVariants(object):
         return None
 
     def _variants(self):
+        version = 'Walmart v1'
         if self.tree_html.xpath("//meta[@name='keywords']/@content"):
             version = "Walmart v2"
         if self.tree_html.xpath("//meta[@name='Keywords']/@content"):

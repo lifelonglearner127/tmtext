@@ -139,7 +139,7 @@ class PetFoodDirectScraper(Scraper):
         image_urls = []
 
         images = self.tree_html.xpath('//p[@class="image"]/img/@src')
-        image_urls.append(images)
+        image_urls.extend(images)
 
         if image_urls:
             return image_urls

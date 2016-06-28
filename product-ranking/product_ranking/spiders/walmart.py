@@ -424,6 +424,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             x = [i for i in x if i != ' ']
             ranking_data.append(x)
 
+        ranking_data = [[e.strip() for e in r if e.strip()] for r in ranking_data]
+
         seller_ranking = []
         for i in ranking_data:
             data = {}
@@ -748,7 +750,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             conv=''.join
         )
 
-        if product['description']:
+        if product.get('description', ''):
             upc = re.findall('UPC: (\d+)', product['description'])
             cond_set(product, 'upc', upc)
 
