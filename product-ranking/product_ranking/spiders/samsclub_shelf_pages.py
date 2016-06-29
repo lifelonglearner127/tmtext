@@ -12,7 +12,7 @@ is_empty = lambda x: x[0] if x else None
 
 class SamsclubShelfPagesSpider(SamsclubProductsSpider):
     name = 'samsclub_shelf_urls_products'
-    allowed_domains = ["samsclub.com"]
+    allowed_domains = ["samsclub.com", "api.bazaarvoice.com"]
 
     _NEXT_SHELF_URL = "http://www.samsclub.com/sams/shop/common/ajaxSearchPageLazyLoad.jsp?sortKey=p_sales_rank" \
                       "&searchCategoryId={category_id}&searchTerm=null&noOfRecordsPerPage={prods_per_page}" \
@@ -20,7 +20,7 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
                       "&rootDimension=0&tireSearch=&selectedFilter=null&pageView=list&servDesc=null&_=1407437029456"
 
     def __init__(self, *args, **kwargs):
-        super(SamsclubProductsSpider, self).__init__(clubno='4704', zip_code='94117', *args, **kwargs)
+        super(SamsclubShelfPagesSpider, self).__init__(clubno='4704', zip_code='94117', *args, **kwargs)
         self.current_page = 0
         self.prods_per_page = 18
         if "num_pages" in kwargs:
