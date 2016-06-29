@@ -9,16 +9,13 @@ import unittest
 import json
 import random
 import sys
+import copy
 import os
 
 from scrapy import Selector
 from scrapy.exceptions import DropItem
-from scrapy import logformatter
-from scrapy import log
 from scrapy.xlib.pydispatch import dispatcher
 from scrapy import signals
-from scrapy import log
-from scrapy import logformatter
 import tldextract
 try:
     import mock
@@ -35,6 +32,11 @@ try:
     STATISTICS_ENABLED = True
 except ImportError as e:
     STATISTICS_ERROR_MSG = str(e)
+
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CWD, '..', '..', 'deploy'))
+from sqs_ranking_spiders.libs import convert_json_to_csv
 
 
 class CheckGoogleSourceSiteFieldIsCorrectJson(object):
@@ -81,6 +83,16 @@ class WalmartRedirectedItemFieldReplace(object):
         return item
 
 
+class SetRankingField(object):
+    """ Explicitly set "ranking" field value (needed for
+        Amazon Shelf spider, temporary solution """
+    def process_item(self, item, spider):
+        if hasattr(spider, 'ranking_override'):
+            ranking_override = getattr(spider, 'ranking_override')
+            item['ranking'] = ranking_override
+        return item
+
+
 class SetMarketplaceSellerType(object):
     def process_item(self, item, spider):
         spider_main_domain = spider.allowed_domains[0]
@@ -90,7 +102,10 @@ class SetMarketplaceSellerType(object):
         for marketplace in marketplaces:
             name = marketplace.get('name', '')
             if name:
-                name_domain = tldextract.extract(name).domain
+                try:
+                    name_domain = tldextract.extract(name).domain
+                except UnicodeEncodeError:  # non-ascii name (not domain)
+                    marketplace['seller_type'] = 'marketplace'
                 if spider_main_domain and name_domain:
                     if spider_main_domain.lower() in name_domain.lower():
                         marketplace['seller_type'] = 'site'
@@ -118,7 +133,7 @@ class AddSearchTermInTitleFields(object):
 
     @staticmethod
     def process_item(item, spider):
-        if not item.has_key("is_single_result"):
+        if not "is_single_result" in item:
             AddSearchTermInTitleFields.add_search_term_in_title_fields(
                 item, item.get('search_term', ''))
 
@@ -260,6 +275,10 @@ class MergeSubItems(object):
     def __init__(self):
         dispatcher.connect(self.spider_opened, signals.spider_opened)
         dispatcher.connect(self.spider_closed, signals.spider_closed)
+        # use extra 'create_csv_output' option for debugging
+        args_ = u''.join([a.decode('utf8') for a in sys.argv])
+        self.create_csv_output = (u'create_csv_output' in args_
+                                  or u'save_csv_output' in args_)
 
     @staticmethod
     def _get_output_filename(spider):
@@ -287,24 +306,45 @@ class MergeSubItems(object):
             for url, item in self._mapper.items():
                 fh.write(json.dumps(item, default=self._serializer)+'\n')
 
-    def spider_closed(self, spider):
+    def _dump_output(self, spider):
         if self._subitem_mode:  # rewrite output only if we're in "subitem mode"
             output_fname = self._get_output_filename(spider)
             if output_fname:
                 self._dump_mapper_to_fname(output_fname)
+
+    def spider_closed(self, spider):
+        if self._subitem_mode:  # rewrite output only if we're in "subitem mode"
+            self._dump_output(spider)
             _validation_filename = _get_spider_output_filename(spider)
             self._dump_mapper_to_fname(_validation_filename)
+            if self.create_csv_output and self._get_output_filename(spider):
+                # create CSV file as well
+                _output_file = self._get_output_filename(spider).lower().replace('.jl', '')
+                try:
+                    _output_csv = convert_json_to_csv(_output_file)
+                    print('Created CSV output: %s.csv' % _output_csv)
+                except Exception as e:
+                    print('Could not create CSV output: %s' % str(e))
 
     def process_item(self, item, spider):
+        _item = copy.deepcopy(item)
+        item = copy.deepcopy(_item)
+        del _item
         _subitem = item.get('_subitem', None)
         if not _subitem:
             return item  # we don't need to merge sub-items
         self._subitem_mode = True  # switch a flag if there's at least one item with "subitem mode" found
         if 'url' in item:  # sub-items: collect them and dump them on "on_close" call
-            if not item['url'] in self._mapper:
-                self._mapper[item['url']] = {}
-            self._mapper[item['url']].update(item)
+            _url = item['url']
+            if not _url in self._mapper:
+                self._mapper[_url] = {}
+            self._mapper[_url].update(item)
+            del item
+            if random.randint(0, 100) == 0:
+                # dump output from time to time to show progress (non-empty output file)
+                self._dump_output(spider)
             raise DropItem('Multiple Sub-Items found')
+
 
 class CollectStatistics(object):
     """ Gathers server and spider statistics, such as RAM, HDD, CPU etc. """

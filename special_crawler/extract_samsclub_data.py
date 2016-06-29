@@ -15,6 +15,7 @@ from lxml import etree
 import time
 import requests
 from extract_data import Scraper
+from spiders_shared_code.samsclub_variants import SamsclubVariants
 
 
 class SamsclubScraper(Scraper):
@@ -40,11 +41,19 @@ class SamsclubScraper(Scraper):
     video_urls = None
     pdf_count = None
     pdf_urls = None
+    failure_type = None
+    sv = SamsclubVariants()
 
     def check_url_format(self):
         # for ex: http://www.samsclub.com/sams/dawson-fireplace-fall-2014/prod14520017.ip?origin=item_page.rr1&campaign=rr&sn=ClickCP&campaign_data=prod14170040
-        m = re.match(r"^http://www\.samsclub\.com/sams/(.+)?/(.+)", self.product_page_url)
+        m = re.match(r"^http://www\.samsclub\.com/sams/(.+)?/(.+)\.ip", self.product_page_url)
         return not not m
+
+    def _failure_type(self):
+        if not self.tree_html.xpath("//div[@class='container' and @itemtype='http://schema.org/Product']"):
+            self.failure_type = "Invalid url"
+
+        return self.failure_type
 
     def not_a_product(self):
         '''Overwrites parent class method that determines if current page
@@ -53,13 +62,26 @@ class SamsclubScraper(Scraper):
         and returns True if current page is one.
         '''
 
-        if len(self.tree_html.xpath("//div[contains(@class, 'imgCol')]//div[@id='plImageHolder']//img")) < 1:
+        try:
+            self.sv.setupCH(self.tree_html)
+        except:
+            pass
+
+        self._failure_type()
+
+        if self.failure_type:
+            self.ERROR_RESPONSE["failure_type"] = self.failure_type
+
             return True
+
         return False
 
     ##########################################
     #### ########### CONTAINER : NONE
     ##########################################
+
+    def _canonical_link(self):
+        return self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
     def _url(self):
         return self.product_page_url
@@ -128,40 +150,49 @@ class SamsclubScraper(Scraper):
     def _model_meta(self):
         return None
 
-    def _description(self):
-        description = self._description_helper()
-        if len(description) < 1:
-            return self._long_description_helper()
-        return description
+    def _variants(self):
+        if self._no_longer_available():
+            return None
 
-    def _description_helper(self):
-        rows = self.tree_html.xpath("//div[contains(@class,'itemBullets')]//text()")
-        rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
-        description = "\n".join(rows)
-        return description
+        return self.sv._variants()
+
+    def _no_longer_available(self):
+        try:
+            txt = self.tree_html.xpath("//span[@class='lgFont ft14']/text()")
+            txt = "" . join(txt)
+            if "We're sorry, this item is not available in your selected Club." in txt:
+                return True
+        except:
+            pass
+
+        return False
+
+    def _description(self):
+        try:
+            description = self._exclude_javascript_from_description(html.tostring(self.tree_html.xpath("//div[contains(@class,'itemBullets')]")[0]).strip())
+        except:
+            description = None
+
+        if description:
+            return description
+
+        return None
 
     def _long_description(self):
-        description = self._description_helper()
-        if len(description) < 1:
-            return None
-        return self._long_description_helper()
+        try:
+            long_description = self._exclude_javascript_from_description(
+                html.tostring(self.tree_html.xpath("//span[@itemprop='description']")[0]).strip())
+        except:
+            try:
+                long_description = self._exclude_javascript_from_description(
+                    html.tostring(self.tree_html.xpath("//div[@itemprop='description']")[0]).strip())
+            except:
+                long_description = None
 
-    def _long_description_helper(self):
-        rows = self.tree_html.xpath("//*[@itemprop='description']//text()")
-        long_description = "".join(rows)
-        long_description = long_description.replace("View a video of this product.", "")
-        long_description = long_description.replace("View a video of this product", "")
-        rows = self.tree_html.xpath("//*[@itemprop='description']/*")
-        row_txts = []
-        for row in rows:
-            if row.tag == 'style' or row.tag == 'h3':
-                row_txt = "".join(row.xpath(".//text()"))
-                long_description = long_description.replace(row_txt, "")
-        # row_txts = [self._clean_text(r) for r in row_txts if len(self._clean_text(r)) > 0]
-        # if row_txts[0] == "Description":
-        #     row_txts = row_txts[1:]
-        # long_description = "\n".join(row_txts)
-        return long_description.strip()
+        if long_description:
+            return long_description
+
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -255,20 +286,21 @@ class SamsclubScraper(Scraper):
         html = urllib.urlopen(url).read()
         # \"src\":\"\/_cp\/products\/1374451886781\/tab-6174b48c-58f3-4d4b-8d2f-0d9bf0c90a63
         # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
+        video_base_url = self._find_between(html, 'data-resources-base=\\"', '\\">').replace("\\", "") + "%s"
         m = re.findall(r'"src":"([^"]*?\.mp4)"', html.replace("\\",""), re.DOTALL)
         for item in m:
             if ".blkbry" in item or ".mobile" in item:
                 pass
             else:
-                if "http://content.webcollage.net%s" % item not in rows and item.count(".mp4") < 2:
-                    rows.append("http://content.webcollage.net%s" % item)
+                if video_base_url % item not in rows and item.count(".mp4") < 2:
+                    rows.append(video_base_url % item)
         m = re.findall(r'"src":"([^"]*?\.flv)"', html.replace("\\",""), re.DOTALL)
         for item in m:
             if ".blkbry" in item or ".mobile" in item:
                 pass
             else:
-                if "http://content.webcollage.net%s" % item not in rows and item.count(".flv") < 2:
-                    rows.append("http://content.webcollage.net%s" % item)
+                if video_base_url % item not in rows and item.count(".flv") < 2:
+                    rows.append(video_base_url % item)
         if len(rows) < 1:
             return None
         new_rows = [r for r in rows if ("%s.flash.flv" % r) not in rows]
@@ -367,6 +399,17 @@ class SamsclubScraper(Scraper):
     def _keywords(self):
         return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
 
+    @staticmethod
+    def _return_br_block_for_prod_id(brs, prod_id):
+        for key, value in brs['BatchedResults'].items():
+            for sub_group in value['Results']:
+                if sub_group.get('Id', None) == prod_id:
+                    return sub_group
+        for key, value in brs['BatchedResults'].items():
+            for sub_group_product, sub_group_product_data in value['Includes'].get('Products', {}).items():
+                if sub_group_product == prod_id:
+                    return sub_group_product_data
+
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
@@ -377,6 +420,29 @@ class SamsclubScraper(Scraper):
                 # for ex: http://samsclub.ugc.bazaarvoice.com/1337/prod12250457/reviews.djs?format=embeddedhtml
                 url = "http://samsclub.ugc.bazaarvoice.com/1337/%s/reviews.djs?format=embeddedhtml" % self._product_id()
                 contents = urllib.urlopen(url).read()
+                if 'page you have requested cannot be found' in contents.lower():
+                    url = ('http://api.bazaarvoice.com/data/batch.json?passkey=dap59bp2pkhr7ccd1hv23n39x&apiversion=5.5'
+                           '&displaycode=1337-en_us&resource.q0=products&filter.q0=id%3Aeq%3Aprod16470189'
+                           '&stats.q0=questions%2Creviews&filteredstats.q0=questions%2Creviews'
+                           '&filter_questions.q0=contentlocale%3Aeq%3Aen_US&filter_answers.q0=contentlocale%3Aeq%3Aen_US'
+                           '&filter_reviews.q0=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US'
+                           '&resource.q1=reviews&filter.q1=isratingsonly%3Aeq%3Afalse&filter.q1=productid%3Aeq%3A{prod_id}'
+                           '&filter.q1=contentlocale%3Aeq%3Aen_US&sort.q1=helpfulness%3Adesc%2Ctotalpositivefeedbackcount%3Adesc'
+                           '&stats.q1=reviews&filteredstats.q1=reviews&include.q1=authors%2Cproducts%2Ccomments'
+                           '&filter_reviews.q1=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q1=contentlocale%3Aeq%3Aen_US'
+                           '&filter_comments.q1=contentlocale%3Aeq%3Aen_US&limit.q1=8&offset.q1=0&limit_comments.q1=3'
+                           '&resource.q2=reviews&filter.q2=productid%3Aeq%3A{prod_id}&filter.q2=contentlocale%3Aeq%3Aen_US'
+                           '&limit.q2=1&resource.q3=reviews&filter.q3=productid%3Aeq%3A{prod_id}'
+                           '&filter.q3=isratingsonly%3Aeq%3Afalse&filter.q3=rating%3Agt%3A3'
+                           '&filter.q3=totalpositivefeedbackcount%3Agte%3A3&filter.q3=contentlocale%3Aeq%3Aen_US'
+                           '&sort.q3=totalpositivefeedbackcount%3Adesc&include.q3=authors%2Creviews%2Cproducts'
+                           '&filter_reviews.q3=contentlocale%3Aeq%3Aen_US&limit.q3=1&resource.q4=reviews'
+                           '&filter.q4=productid%3Aeq%3A{prod_id}&filter.q4=isratingsonly%3Aeq%3Afalse'
+                           '&filter.q4=rating%3Alte%3A3&filter.q4=totalpositivefeedbackcount%3Agte%3A3'
+                           '&filter.q4=contentlocale%3Aeq%3Aen_US&sort.q4=totalpositivefeedbackcount%3Adesc'
+                           '&include.q4=authors%2Creviews%2Cproducts&filter_reviews.q4=contentlocale%3Aeq%3Aen_US'
+                           '&limit.q4=1&callback=bv_1111_4516')
+                    contents = urllib.urlopen(url.format(prod_id=self._product_id())).read()
                 tmp_reviews = re.findall(r'<span class=\\"BVRRHistAbsLabel\\">(.*?)<\\/span>', contents)
                 reviews = []
                 for review in tmp_reviews:
@@ -385,19 +451,10 @@ class SamsclubScraper(Scraper):
                     reviews.append(m[0])
 
                 reviews = reviews[:5]
-                score = 5
-                for review in reviews:
-                    if int(review) > 0:
-                        self.max_score = score
-                        break
-                    score -= 1
 
-                score = 1
-                for review in reversed(reviews):
-                    if int(review) > 0:
-                        self.min_score = score
-                        break
-                    score += 1
+                scores = [v[0] for v in self.reviews if int(v[1]) > 0]
+                self.max_score = max(scores)
+                self.min_score = min(scores)
 
                 self.reviews = []
                 score = 1
@@ -411,12 +468,26 @@ class SamsclubScraper(Scraper):
                 self.review_count = review_cnt
                 self.average_review = total_review * 1.0 / review_cnt
                 # self.reviews_tree = html.fromstring(contents)
+
+                if not self.review_count or not self.average_review:
+                    raise BaseException  # we have to jump to the version #2
         except:
-            pass
+            if not self.review_count or not self.average_review:
+                contents = json.loads(contents.replace('bv_1111_4516(', '')[0:-1])
+                brs = self._return_br_block_for_prod_id(contents, self._product_id())
+                #import pdb; pdb.set_trace()
+                distrib = [(d['RatingValue'], d['Count']) for d in brs['ReviewStatistics']['RatingDistribution']]
+                self.reviews = sorted(distrib, key=lambda val: val[0], reverse=True)
+                self.review_count = brs['ReviewStatistics']['TotalReviewCount']
+                self.average_review = brs['ReviewStatistics']['AverageOverallRating']
+
+                scores = [v[0] for v in self.reviews if int(v[1])>0]
+                self.max_score = max(scores)
+                self.min_score = min(scores)
 
     def _average_review(self):
         self._load_reviews()
-        return "%.2f" % self.average_review
+        return float("%.2f" % self.average_review)
 
     def _review_count(self):
         self._load_reviews()
@@ -547,15 +618,21 @@ class SamsclubScraper(Scraper):
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
-        rows = self.tree_html.xpath("//div[contains(@class,'biggraybtn')]//text()")
-        if "Out of stock online" in rows:
-            return 1
-        return 0
+        if self._site_online() == 1:
+            if self.tree_html.xpath("//*[@itemprop='availability']/@href")[0] == "http://schema.org/OutOfStock":
+                return 1
+
+            return 0
+
+        return None
 
     def _in_stores_out_of_stock(self):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
+        if self._in_stores() == 1:
+            return 1
+
         return None
 
     ##########################################
@@ -563,8 +640,12 @@ class SamsclubScraper(Scraper):
     ##########################################
     def _categories(self):
         all = self.tree_html.xpath("//div[contains(@id, 'breadcrumb')]//a/text()")
-        out = [self._clean_text(r) for r in all]
-        return out[1:]
+        out = [self._clean_text(r) for r in all][1:]
+
+        if out:
+            return out
+
+        return None
 
     def _category_name(self):
         return self._categories()[-1]
@@ -599,7 +680,8 @@ class SamsclubScraper(Scraper):
         "feature_count" : _feature_count, \
         "description" : _description, \
         "long_description" : _long_description, \
-
+        "variants": _variants, \
+        "no_longer_available": _no_longer_available, \
         # CONTAINER : PAGE_ATTRIBUTES
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
@@ -626,6 +708,7 @@ class SamsclubScraper(Scraper):
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
         "category_name" : _category_name, \
+        "canonical_link": _canonical_link,
         "brand" : _brand, \
 
         "loaded_in_seconds": None \

@@ -66,8 +66,23 @@ def main():
         f.write(cmd)
         f.write('\n')
     os.system('crontab %s' % tmp_cron_name)
+    os.system('sudo apt-get update')
     _install_system_package('tesseract-ocr')
+    _install_system_package('xvfb')
+    _install_system_package('chromium-browser')
+    _install_system_package('firefox')
     _install_system_package('phantomjs')
+    _install_system_package('python-setuptools')
+    _install_system_package('python-distutils-extra')
+    _install_system_package('python-apt')
+    # TODO: phantomjs2
+    os.system(
+        "cd ~"
+        " && wget http://chromedriver.storage.googleapis.com/2.9/chromedriver_linux64.zip"
+        " && unzip chromedriver_linux64.zip"
+        " && sudo mv chromedriver /usr/sbin/"
+        " && sudo chmod +x /usr/sbin/chromedriver"
+    )
     # disable marketplaces (they are too slow)
     disabler = '/tmp/stop_marketplaces'
     os.system('echo "1" > %s' % disabler)

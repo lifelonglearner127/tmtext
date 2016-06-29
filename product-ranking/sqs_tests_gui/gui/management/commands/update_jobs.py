@@ -29,7 +29,7 @@ from test_sqs_flow import download_s3_file, AMAZON_BUCKET_NAME, unzip_file
 from list_all_files_in_s3_bucket import list_files_in_bucket, \
         AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
 
-LOCAL_AMAZON_LIST_CACHE = os.path.join(CWD, '_amazon_listing.txt')
+LOCAL_AMAZON_LIST = os.path.join(CWD, '_amazon_listing.txt')
 
 
 def run(command, shell=None):
@@ -50,7 +50,7 @@ def run(command, shell=None):
 
 
 def list_amazon_bucket(bucket=AMAZON_BUCKET_NAME,
-                       local_fname=LOCAL_AMAZON_LIST_CACHE):
+                       local_fname=LOCAL_AMAZON_LIST):
     filez = list_files_in_bucket(AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, bucket)
     # dump to a temporary file and replace the original one then
     tmp_file = tempfile.NamedTemporaryFile(mode='rb', delete=False)
@@ -166,7 +166,7 @@ class Command(BaseCommand):
         # get random jobs
         jobs = Job.objects.filter(
             Q(status='pushed into sqs') | Q(status='in progress')
-        ).order_by('?').distinct()[0:50]
+        ).order_by('?').distinct()[0:300]
 
         # get output & progress queue names
         output_queues = get_output_queues_for_jobs(jobs)
@@ -216,6 +216,7 @@ class Command(BaseCommand):
                     _delete_queue_message(progress_queue, m)
                     print('Deleted progress message: %s' % str(m_body))
                 if progress == 'failed':
+                    print("DB Job %s reported as failed (in progress message)" % db_job.pk)
                     db_job.status = 'failed'
                     db_job.save()
                     _delete_queue_message(progress_queue, m)
@@ -275,9 +276,11 @@ class Command(BaseCommand):
                     with open(full_local_log_path, 'r') as fh:
                         cont = fh.read()
                         if not "'finish_reason': 'finished'" in cont:
-                            db_job.status = 'failed'
-                            db_job.save()
-                            continue
+                            if not "INFO: Closing spider (finished)" in cont:
+                                print('Successful job ending is not found for job %s' % db_job.pk)
+                                db_job.status = 'failed'
+                                db_job.save()
+                                continue
 
                 if amazon_data_file:
                     print 'For job with task ID %s we found amazon fname [%s]' % (

@@ -18,7 +18,7 @@ class JCPenneyShelfPagesSpider(JcpenneyProductsSpider):
         self.quantity = 99999
         self.site_name = self.allowed_domains[0]
         self.user_agent_key = None
-        self.zipcode = '12345'
+        self.zip_code = '12345'
         self.current_page = 1
 
     def _setup_meta_compatibility(self):

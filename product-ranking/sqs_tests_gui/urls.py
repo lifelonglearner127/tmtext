@@ -3,7 +3,10 @@ from django.contrib import admin
 from django.views.decorators.csrf import csrf_exempt
 
 from gui.views import LogFileView, CSVDataFileView, AddJob, ProgressMessagesView,\
-    ProgressFileView, SearchFilesView, GetS3FileView
+    ProgressFileView, SearchFilesView, GetS3FileView, SearchS3Cache, \
+    RenderS3CachePage, ViewBase64Image
+from sqs_stats.views import SQSAutoscaleStats
+from kill_servers.views import KillRestoreServersView
 
 
 from django.conf import settings
@@ -25,9 +28,17 @@ urlpatterns = [
         name='progress_file_view'),
     url(r'^add-job', csrf_exempt(AddJob.as_view()),
         name='add_job_view'),
+    url(r'^view-base64-image/(?P<job>[0-9]+)/$', ViewBase64Image.as_view(),
+        name='view_base64_image'),
     url(r'^progress/', ProgressMessagesView.as_view(), name='progress'),
     url(r'^search-files/', SearchFilesView.as_view(), name='search-files'),
-    url(r'^get-file/', GetS3FileView.as_view(), name='get-file')
+    url(r'^get-file/', GetS3FileView.as_view(), name='get-file'),
+    url(r'^s3-cache/$', SearchS3Cache.as_view(), name='s3-cache'),
+    url(r'^sqs-stats/$', SQSAutoscaleStats.as_view(), name='sqs-stats'),
+    url(r'^kill-restore-servers/$', KillRestoreServersView.as_view(), name='kill-restore-servers'),
+    url(r'^render-s3-cache/$', RenderS3CachePage.as_view(), name='render-s3-cache'),
+
+    url('^fcgi/$', include('fcgi.urls'))
 ]
 
 if settings.DEBUG:

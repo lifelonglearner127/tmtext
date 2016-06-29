@@ -25,9 +25,9 @@ def get_sqs_tasks_count():
     return tasks_count
 
 
-def scale_instances(tasks_per_instance, groups_names=('SCCluster1', 'SCCluster2', 'SCCluster3')):
+def scale_instances(tasks_per_instance, group_name, total_groups):
     conn = AutoScaleConnection()
-    group = conn.get_all_groups(names=[random.choice(groups_names)])[0]
+    group = conn.get_all_groups(names=[group_name])[0]
 
     if group.desired_capacity == group.max_size:
         logger.info('Maximum number of instances reached')
@@ -37,13 +37,15 @@ def scale_instances(tasks_per_instance, groups_names=('SCCluster1', 'SCCluster2'
         logger.info('No tasks left in queues')
         return
     logger.info('Num of tasks in queues %s', tasks_count)
+
     tasks_per_instance = float(tasks_per_instance)
-    additional_instances_count = int(ceil(tasks_count/tasks_per_instance) / len(groups_names))
+    additional_instances_count = int(ceil(tasks_count/tasks_per_instance) / total_groups)
     updated_instances_count = \
         group.desired_capacity + additional_instances_count
     # consider max allowed instances
     if updated_instances_count > group.max_size:
         updated_instances_count = group.max_size
+
     logger.info('Updating group from %s to %s instances',
                 group.desired_capacity, updated_instances_count)
     group.set_capacity(updated_instances_count)
@@ -53,4 +55,8 @@ def scale_instances(tasks_per_instance, groups_names=('SCCluster1', 'SCCluster2'
 
 
 if __name__ == '__main__':
-    scale_instances(12)
+    groups_names = ('SCCluster1', 'SCCluster2', 'SCCluster3', 'SCCluster4')
+    for group_name in groups_names:
+        logger.info('PROCESSING QUEUE %s', group_name)
+        scale_instances(tasks_per_instance=32, group_name=group_name,
+                        total_groups=len(groups_names))

@@ -169,8 +169,8 @@ def _s3_cache_on_spider_close(spider, reason):
     if uploaded_to_s3:
         create_db_cache_record(spider, utcnow)
     # remove local cache
-    cache.clear_local_cache(settings.HTTPCACHE_DIR, spider,
-                            datetime.datetime.utcnow())
+    # DO NOT CLEAR LOCAL CACHE on file upload - otherwise you may delete cache of
+    #  a spider working in parallel!
 
 
 class S3CacheUploader(object):
@@ -273,6 +273,9 @@ class SignalsExtension(object):
     def item_scraped(self, item, spider):
         SignalsExtension.CONNECTION.send(dict(name='item_scraped'))
 
+    def item_dropped(self, item, spider, exception):
+        SignalsExtension.CONNECTION.send(dict(name='item_dropped'))
+
     def spider_error(self, failure, response, spider):
         SignalsExtension.CONNECTION.send(dict(name='spider_error'))
 
@@ -301,6 +304,7 @@ class SignalsExtension(object):
         crawler.signals.connect(ext.spider_opened, signals.spider_opened)
         crawler.signals.connect(ext.spider_closed, signals.spider_closed)
         crawler.signals.connect(ext.item_scraped, signals.item_scraped)
+        crawler.signals.connect(ext.item_dropped, signals.item_dropped)
         crawler.signals.connect(ext.spider_error, signals.spider_error)
         return ext
 
@@ -314,6 +318,17 @@ class SignalsExtension(object):
         except socket_error:
             print 'no connection'
             raise NotConfigured
+
+
+class IPCollector(object):
+
+    def __init__(self, crawler, *args, **kwargs):
+        dispatcher.connect(_ip_on_spider_open, signals.spider_opened)
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler)
+
 
 if __name__ == '__main__':
     from pprint import pprint
@@ -345,13 +360,3 @@ if __name__ == '__main__':
         for f in (list_files_in_bucket(
                 amazon_public_key, amazon_secret_key, bucket_name)):
             print f.key
-
-
-class IPCollector(object):
-
-    def __init__(self, crawler, *args, **kwargs):
-        dispatcher.connect(_ip_on_spider_open, signals.spider_opened)
-
-    @classmethod
-    def from_crawler(cls, crawler):
-        return cls(crawler)

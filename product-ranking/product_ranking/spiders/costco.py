@@ -4,8 +4,10 @@ from future_builtins import *
 import re
 
 from scrapy.log import ERROR
+from scrapy import Request
 
-from product_ranking.items import SiteProductItem, Price
+from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
@@ -20,13 +22,31 @@ class CostcoProductsSpider(BaseProductsSpider):
 
     DEFAULT_CURRENCY = u'USD'
 
+    REVIEW_URL = 'http://api.bazaarvoice.com/data/products.json?passkey=bai25xto36hkl5erybga10t99&apiversion=5.5&filter=id:{product_id}&stats=reviews'
+
+    def __init__(self, *args, **kwargs):
+        self.br = BuyerReviewsBazaarApi(called_class=self)
+
+        super(CostcoProductsSpider, self).__init__(
+            site_name=self.allowed_domains[0], *args, **kwargs)
+
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
     def parse_product(self, response):
         prod = response.meta['product']
 
-        if response.xpath('//h1[text()="Product Not Found"]'):
+        meta = response.meta.copy()
+        reqs = []
+        meta['reqs'] = reqs
+
+        # not longer available
+        no_longer_available = response.xpath(
+            '//*[@class="server-error" and contains(text(),'
+            '"out of stock and cannot be added to your cart at this time")]')
+        cond_set_value(prod, 'no_longer_available', 1 if no_longer_available else 0)
+
+        if not no_longer_available and response.xpath('//h1[text()="Product Not Found"]'):
             prod['not_found'] = True
             return prod
 
@@ -40,6 +60,9 @@ class CostcoProductsSpider(BaseProductsSpider):
         title = response.xpath('//h1[@itemprop="name"]/text()').extract()
         cond_set(prod, 'title', title)
 
+        # Title key must be present even if it is blank
+        cond_set_value(prod, 'title', "")
+
         tab2 = ''.join(
             response.xpath('//div[@id="product-tab2"]//text()').extract()
         ).strip()
@@ -52,22 +75,48 @@ class CostcoProductsSpider(BaseProductsSpider):
             prod['brand'] = brand
 
 
-        price_value = response.xpath(
-            '//input[contains(@name,"price")]/@value').re('[\d.]+')
+        merchandising_price = response.xpath('//*[@class="top_review_panel"]/*[@class="merchandisingText"]/text()').re('\$([\d\.\,]+) OFF')
+        price_value = ''.join(response.xpath('//input[contains(@name,"price")]/@value').re('[\d.]+')).strip()
+        configured_price_html = response.xpath(
+            '//span[contains(text(),"Configured Price")]')
 
-        if price_value:
-            price_value = u''.join(price_value)
-            if price_value != '0.00':
-                price = Price(
-                    priceCurrency=self.DEFAULT_CURRENCY,
-                    price=u''.join(price_value)
-                )
+        if configured_price_html:
+            configured_price = configured_price_html.xpath(
+                'following-sibling::span[@class="currency"]'
+                '/text()').re('[\d\.\,]+')
+            if configured_price:
+                cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                    price=configured_price[0]))
 
-                cond_set_value(prod, 'price', price)
+        elif merchandising_price:
+            diff_price = str(float(price_value) + float(merchandising_price[0].replace(',','')))
+            cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                    price=diff_price))
+
+            cond_set_value(prod, 'price_with_discount', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                                    price=price_value))
+        else:
+            price_without_discount = ''.join(response.xpath('//*[@class="online-price"]/span[@class="currency"]/text()').re('[\d\.\,]+')).strip().replace(',','')
+            if price_value:
+                if price_without_discount:
+                    cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                        price=price_without_discount))
+                    cond_set_value(prod, 'price_with_discount', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                                        price=price_value))
+                else:
+                    cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                        price=price_value))
+
 
         des = response.xpath('//div[@id="product-tab1"]//text()').extract()
         des = ' '.join(i.strip() for i in des)
-        if des.strip():
+        if '[ProductDetailsESpot_Tab1]' in des.strip():
+            des = response.xpath("//div[@id='product-tab1']/*[position()>1]//text()").extract()
+            des = ' '.join(i.strip() for i in des)
+            if des.strip():
+                prod['description'] = des.strip()
+
+        elif des:
             prod['description'] = des.strip()
 
         img_url = response.xpath('//img[@itemprop="image"]/@src').extract()
@@ -76,7 +125,101 @@ class CostcoProductsSpider(BaseProductsSpider):
         cond_set_value(prod, 'locale', 'en-US')
         prod['url'] = response.url
 
+        # Categories
+        categorie_filters = ['home']
+        # Clean and filter categories names from breadcrumb
+        categories = list(filter((lambda x: x.lower() not in categorie_filters),
+                        map((lambda x: x.strip()), response.xpath('//*[@itemprop="breadcrumb"]//a/text()').extract())))
+
+        category = categories[-1] if categories else None
+
+        cond_set_value(prod, 'categories', categories)
+        cond_set_value(prod, 'category', category)
+
+        # Minimum Order Quantity
+        try:
+            minium_order_quantity = re.search('Minimum Order Quantity: (\d+)', response.body_as_unicode()).group(1)
+            cond_set_value(prod, 'minimum_order_quantity', minium_order_quantity)
+        except:
+            pass
+
+        shipping = ''.join(response.xpath(
+            '//*[contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ",'
+            ' "abcdefghijklmnopqrstuvwxyz"), "shipping & handling:")]'
+        ).re('[\d\.\,]+')).strip().replace(',', '')
+        if not shipping:
+            shipping = ''.join(response.xpath(
+            '//*[contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ",'
+            ' "abcdefghijklmnopqrstuvwxyz"), "shipping and handling:")]'
+        ).re('[\d\.\,]+')).strip().replace(',', '')
+
+        if shipping:
+            cond_set_value(prod, 'shipping_cost', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                        price=shipping))
+
+        shipping_included = ''.join(response.xpath(
+            '//*[contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ",'
+            ' "abcdefghijklmnopqrstuvwxyz"),"shipping & handling included")]'
+        ).extract()).strip().replace(',', '') or \
+            response.xpath(
+                '//*[@class="merchandisingText" and '
+                'contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", '
+                '"abcdefghijklmnopqrstuvwxyz"), "free shipping")]') or \
+            ''.join(response.xpath(
+                '//p[contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ",'
+                ' "abcdefghijklmnopqrstuvwxyz"),"shipping and handling included")]'
+            ).extract()).strip().replace(',', '')
+
+        cond_set_value(prod, 'shipping_included', 1 if shipping_included or shipping == "0.00" else 0)
+
+        available_store = re.search('Item may be available in your local warehouse', response.body_as_unicode())
+        cond_set_value(prod, 'available_store', 1 if available_store else 0)
+
+        not_available_store = re.search('Not available for purchase on Costco.com', response.body_as_unicode())
+        cond_set_value(prod, 'available_online', 0 if not_available_store else 1)
+
+        if str(prod.get('available_online', None)) == '0' and str(prod.get('available_store', None)) == '0':
+            prod['is_out_of_stock'] = True
+
+        count_review = response.xpath('//meta[contains(@itemprop, "reviewCount")]/@content').extract()
+        product_id = re.findall(r'var bvProductId = \'(.+)\';', response.body_as_unicode())
+
+        if product_id and count_review:
+            reqs.append(
+                Request(
+                    url=self.REVIEW_URL.format(product_id=product_id[0], index=0),
+                    dont_filter=True,
+                    callback=self.parse_buyer_reviews,
+                    meta=meta
+                ))
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
         return prod
+
+    def parse_buyer_reviews(self, response):
+        meta = response.meta.copy()
+        product = response.meta['product']
+        reqs = meta.get('reqs', [])
+
+        product['buyer_reviews'] = self.br.parse_buyer_reviews_products_json(response)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+        else:
+            return product
+
+    def send_next_request(self, reqs, response):
+        """
+        Helps to handle several requests
+        """
+        req = reqs.pop(0)
+        new_meta = response.meta.copy()
+        if reqs:
+            new_meta["reqs"] = reqs
+
+        return req.replace(meta=new_meta)
 
     def _search_page_error(self, response):
         if not self._scrape_total_matches(response):

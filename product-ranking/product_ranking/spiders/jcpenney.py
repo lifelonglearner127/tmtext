@@ -17,7 +17,11 @@ from scrapy.log import WARNING
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.randomproxy import RandomProxy
-from product_ranking.settings import ZERO_REVIEWS_VALUE, PROXY_LIST
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+try:
+    from product_ranking.settings import PROXY_LIST
+except ImportError:
+    PROXY_LIST = []
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.validation import BaseValidator
@@ -26,33 +30,11 @@ from product_ranking.spiders import cond_set_value
 from spiders_shared_code.jcpenney_variants import JcpenneyVariants
 from spiders_shared_code.jcpenney_variants import JcpenneyVariants, extract_ajax_variants
 from product_ranking.validation import BaseValidator
+from product_ranking.validators.jcpenney_validator import JcpenneyValidatorSettings
+from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
 
 is_empty = lambda x, y="": x[0] if x else y
-
-
-class JcpenneyValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = []
-    ignore_fields = [
-        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'description', 'special_pricing',
-        'bestseller_rank', 'model',
-    ]
-    ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = True  # ... duplicated requests?
-    ignore_log_filtered = True  # ... filtered requests?
-    test_requests = {
-        'sdfsdgdf': 0,  #+ should return 'no products' or just 0 products
-        'benny benassi': 0,
-        'water proof': [110, 210],
-        'peace': [10, 70],
-        'hot': [100, 300],
-        'drink': [30, 130],
-        'term': [30, 130],
-        'tiny': [10, 80],
-        'selling': [20, 100],
-        'night': [40, 140],
-    }
 
 
 class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
@@ -98,6 +80,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
     REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{product_id}" \
                  "/reviews.djs?format=embeddedhtml"
+    SEPHORA_REVIEW_URL = 'http://sephora.ugc.bazaarvoice.com/8723jcp/' \
+                         '{product_id}/reviews.djs?format=embeddedhtml'
 
     RELATED_URL = "http://recs.richrelevance.com/rrserver/p13n_generated.js?" \
                   "a=5387d7af823640a7&" \
@@ -120,6 +104,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     settings = JcpenneyValidatorSettings
 
     def __init__(self, sort_mode=None, *args, **kwargs):
+        self.buyer_reviews = BuyerReviewsBazaarApi(called_class=self)
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
@@ -199,7 +184,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             try:
                 new_variant = {
                     'lot': current_lot,
-                    'price': price_data.get(current_lot, price),
+                    'price': float(price_data.get(current_lot, price)),
                     'in_stock': None,
                     'selected': False,
                     'properties': prop}.copy()
@@ -225,6 +210,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         chest = _props.pop('chest') if 'chest' in _props else None
         length = _props.pop('length') if 'length' in _props else None
         price = _props.pop('price') if 'price' in _props else None
+        cup = _props.pop('cup') if 'cup' in _props else None
+        width = _props.pop('width') if 'width' in _props else None
         # check if there are still some keys
         if _props.keys():
             self.log('Error: extra variants found, url %s' % response.url, WARNING)
@@ -239,6 +226,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         _format_args['chest'] = chest if chest else ''
         _format_args['length'] = length if length else ''
         _format_args['price'] = price if price else ''
+        _format_args['cup'] = cup if cup else ''
+        _format_args['width'] = width if width else ''
 
         if null_values and isinstance(null_values, (list, tuple)):
             for null_value in null_values:
@@ -261,7 +250,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             attribute_name = 'Lot'
         """
         # TODO: moar `attribute_name` values!
-        _format_args['color'] = ''
+        _format_args['color'] = color if color else ''
         _format_args['neck'] = neck if neck else ''
         _format_args['sleeve'] = sleeve if sleeve else ''
         _format_args['attribute_name'] = attribute_name[0] \
@@ -274,35 +263,40 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         _format_args['new_lot'] = new_lot if new_lot else ''
         _format_args['param'] = _format_args[_format_args['attribute_name_value']]
 
-        size_url = ('http://www.jcpenney.com/jsp/browse/pp/graphical/'
-                    'graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&'
-                    'grView=&_dyncharset=UTF-8'
-                    '&selectedSKUAttributeName={attribute_name}&'
-                    '_D%3AselectedSKUAttributeName=+&'
-                    'sucessUrl=%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
-                    '2FgraphicalSKUOptions.jsp'
-                    '%3FfromEditBag%3D%26fromEditFav%3D%26grView%'
-                    '3D&_D%3AsucessUrl=+'
-                    '&ppType=regular&_D%'
-                    '3AppType=+&'
-                    'shipToCountry=US&_D%'
-                    '3AshipToCountry=+&'
-                    'ppId={pp_id}&_D%'
-                    '3AppId=+&'
-                    'selectedLotValue={new_lot}&_D%'
-                    '3AselectedLotValue=+'
-                    '&skuSelectionMap.SIZE={size}'
+        size_url = ('http://www.jcpenney.com/jsp/browse/pp/graphical'
+                    '/graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&grView=&_dyncharset=UTF-8'
+                    '&selectedSKUAttributeName={attribute_name}&_D%'
+                    '3AselectedSKUAttributeName=+'
+                    '&sucessUrl=%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
+                    '2FgraphicalSKUOptions.jsp%3FfromEditBag%3D%26fromEditFav%3D%'
+                    '26grView%3D&_D%3AsucessUrl=+&ppType=regular&_D%'
+                    '3AppType=+&shipToCountry=US&_D%'
+                    '3AshipToCountry=+'
+                    '&ppId={pp_id}'
+                    '&_D%3AppId='
+                    '+&selectedLotValue={new_lot}'
+                    '&_D%3AselectedLotValue=+'
                     '&skuSelectionMap.WAIST={waist}'
+                    '&_D%3AskuSelectionMap.WAIST=+'
                     '&skuSelectionMap.INSEAM={inseam}'
                     '&_D%3AskuSelectionMap.INSEAM=+'
+                    '&skuSelectionMap.SIZE={size}'
+                    '&_D%3AskuSelectionMap.SIZE=+'
+                    '&skuSelectionMap.CUP={cup}'
+                    '&_D%3AskuSelectionMap.CUP=+'
+                    '&skuSelectionMap.WIDTH={width}'
+                    '&_D%3AskuSelectionMap.WIDTH=+'
                     '&skuSelectionMap.CHEST={chest}'
+                    '&_D%3AskuSelectionMap.CHEST=+'
                     '&skuSelectionMap.NECK={neck}'
+                    '&_D%3AskuSelectionMap.NECK=+'
                     '&skuSelectionMap.SLEEVE={sleeve}'
-                    '&_D%3AskuSelectionMap.{attribute_name}'
-                    '=+&skuSelectionMap.COLOR={color}'
-                    '&_D%3AskuSelectionMap.COLOR=+&_DARGS=%'
-                    '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
-                    '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
+                    '&_D%3AskuSelectionMap.SLEEVE=+'
+                    '&skuSelectionMap.COLOR={color}'
+                    '&_D%3AskuSelectionMap.COLOR=+'
+                    '&_DARGS=%2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%2'
+                    'FgraphicalLotSKUSelection.jsp').format(**_format_args)
+
         if async:
             return Request(
                 size_url,
@@ -313,40 +307,54 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             )
 
         else:
-            size_url = ('http://www.jcpenney.com/jsp/browse/pp/graphical/'
-                    'graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&'
-                    'grView=&_dyncharset=UTF-8'
-                    '&selectedSKUAttributeName={attribute_name}&'
-                    '_D%3AselectedSKUAttributeName=+&'
-                    'sucessUrl=%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
-                    '2FgraphicalSKUOptions.jsp'
-                    '%3FfromEditBag%3D%26fromEditFav%3D%26grView%'
-                    '3D&_D%3AsucessUrl=+'
-                    '&ppType=regular&_D%'
-                    '3AppType=+&'
-                    'shipToCountry=US&_D%'
-                    '3AshipToCountry=+&'
-                    'ppId={pp_id}&_D%'
-                    '3AppId=+&'
-                    'selectedLotValue={new_lot}&_D%'
-                    '3AselectedLotValue=+'
-                    '&skuSelectionMap.INSEAM='
-                    '&_D%3AskuSelectionMap.INSEAM=+'
-                    '&skuSelectionMap.{attribute_name}={size}'
-                    '&_D%3AskuSelectionMap.{attribute_name}'
-                    '=+&skuSelectionMap.COLOR={color}'
-                    '&_D%3AskuSelectionMap.COLOR=+&_DARGS=%'
-                    '2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
-                    '2FgraphicalLotSKUSelection.jsp').format(**_format_args)
 
-            _rp = RandomProxy({'PROXY_LIST': PROXY_LIST})
+            size_url = ('http://www.jcpenney.com/jsp/browse/pp/graphical/graphicalSKUOptions.jsp?fromEditBag=&fromEditFav=&grView=&_dyncharset=UTF-8'
+                        '&selectedSKUAttributeName={attribute_name}&_D%'
+                        '3AselectedSKUAttributeName=+'
+                        '&sucessUrl=%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%'
+                        '2FgraphicalSKUOptions.jsp%3FfromEditBag%3D%26fromEditFav%3D%'
+                        '26grView%3D&_D%3AsucessUrl=+&ppType=regular&_D%'
+                        '3AppType=+&shipToCountry=US&_D%'
+                        '3AshipToCountry=+'
+                        '&ppId={pp_id}'
+                        '&_D%3AppId='
+                        '+&selectedLotValue={new_lot}'
+                        '&_D%3AselectedLotValue=+'
+                        '&skuSelectionMap.WAIST='
+                        '&_D%3AskuSelectionMap.WAIST=+'
+                        '&skuSelectionMap.INSEAM='
+                        '&_D%3AskuSelectionMap.INSEAM=+'
+                        '&skuSelectionMap.SIZE='
+                        '&_D%3AskuSelectionMap.SIZE=+'
+                        '&skuSelectionMap.CUP='
+                        '&_D%3AskuSelectionMap.CUP=+'
+                        '&skuSelectionMap.WIDTH='
+                        '&_D%3AskuSelectionMap.WIDTH=+'
+                        '&skuSelectionMap.CHEST='
+                        '&_D%3AskuSelectionMap.CHEST=+'
+                        '&skuSelectionMap.NECK='
+                        '&_D%3AskuSelectionMap.NECK=+'
+                        '&skuSelectionMap.SLEEVE='
+                        '&_D%3AskuSelectionMap.SLEEVE=+'
+                        '&skuSelectionMap.COLOR='
+                        '&_D%3AskuSelectionMap.COLOR=+'
+                        '&_DARGS=%2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%2FgraphicalLotSKUSelection.jsp').format(**_format_args)
+
+            try:
+                _rp = RandomProxy({'PROXY_LIST': PROXY_LIST})
+            except TypeError:
+                _rp = None
 
             # try to fetch the page using a random proxy until it works
             for _ in range(100):
-                random_proxy = random.choice(_rp.proxies.keys())
+                if _rp is not None:
+                    random_proxy = random.choice(_rp.proxies.keys())
+                else:
+                    random_proxy = None
                 proxies = {"http": random_proxy, "https": random_proxy}
                 self.log('Using "Requests" lib to scrape the following url: %s, proxy: %s' % (
                     size_url, random_proxy))
+
                 # perform sync request
                 try:
                     result = requests.get(size_url, proxies=proxies, timeout=15)
@@ -363,22 +371,31 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     continue
             return lot, new_variants_structure
 
-
     def _on_variant_response(self, response):
         variant = response.meta['variant']
         product = response.meta['product']
         result = response.body
         color = variant['properties'].get('color', None)
         #import pdb; pdb.set_trace()
-        if u'function()' in response.body_as_unicode():
-            variant['in_stock'] = None
-            return
+        # if u'function()' in response.body_as_unicode():
+        #     variant['in_stock'] = None
+        #     return
         try:
             result = json.loads(result)
         except Exception as e:
             self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
             variant['in_stock'] = None
 
+        if result.get('priceHtml', None):
+            price_data = result['priceHtml']
+            if price_data:
+                price = re.findall(r'\$(\d+\.*\d+)&nbsp', price_data)
+                if price:
+                    try:
+                        price = price[1]
+                    except:
+                        price = price[0]
+                    variant['price'] = price
         # find of such a combination is available
         if color:
             _avail = [a['options'] for a in result['skuOptions'] if a.get('key', None).lower() == 'color']
@@ -390,10 +407,20 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                 variant['in_stock'] = _avail[color]
         yield product
 
+    @staticmethod
+    def _is_sephora_reviews(response):
+        return ('varisSephora=true'
+                in response.body_as_unicode().replace(' ', '').replace("'", ''))
+
     def parse_product(self, response):
         prod = response.meta['product']
         prod['url'] = response.url
         prod['_subitem'] = True
+
+        if "what you are looking for is currently unavailable" in response.body_as_unicode().lower():
+            prod['not_found'] = True
+            yield prod
+            return
 
         product_id = is_empty(re.findall('ppId=([a-zA-Z0-9]+)&{0,1}', response.url))
 
@@ -408,41 +435,42 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         processed_lots = []  # lots for which we collected dynamic variants
         new_lot_structure = {}
         p_l = 0
-        for var_indx, variant in enumerate(prod['variants']):
-            if getattr(self, 'scrape_variants_with_extra_requests', None):
+        if prod.get('variants'):
+            for var_indx, variant in enumerate(prod['variants']):
+                if getattr(self, 'scrape_variants_with_extra_requests', None):
 
-                if variant.get('properties', {}).get('lot', '').lower() in processed_lots:
-                    continue
-                _lot, _dynamic_structure = self._ajax_variant_request(
-                    product_id, response, prod['variants'], variant, var_indx,
-                    async=False, null_values=['size']
-                )
-                if variant.get('properties', {}).get('lot', '').lower():
-                    processed_lots.append(variant.get('properties', {}).get('lot', '').lower())
-                else:
-                    processed_lots.append(variant.get('lot', '').lower())
+                    if variant.get('properties', {}).get('lot', '').lower() in processed_lots:
+                        continue
+                    _lot, _dynamic_structure = self._ajax_variant_request(
+                        product_id, response, prod['variants'], variant, var_indx,
+                        async=False, null_values=['size']
+                    )
+                    if variant.get('properties', {}).get('lot', '').lower():
+                        processed_lots.append(variant.get('properties', {}).get('lot', '').lower())
+                    else:
+                        processed_lots.append(variant.get('lot', '').lower())
 
-                new_lot_structure[_lot] = _dynamic_structure
-                if _lot:
-                    self.remove_old_static_variants_of_lot(prod['variants'], _lot)
-                    self.append_new_dynamic_variants(prod, prod['variants'], _lot, _dynamic_structure, self.log)
-        try:
-            processed_lots[1] = processed_lots[0]
-        except:
-            pass
-        for var_indx, variant in enumerate(prod['variants']):
-            if getattr(self, 'scrape_variants_with_extra_requests', None):
+                    new_lot_structure[_lot] = _dynamic_structure
+                    if _lot:
+                        self.remove_old_static_variants_of_lot(prod['variants'], _lot)
+                        self.append_new_dynamic_variants(prod, prod['variants'], _lot, _dynamic_structure, self.log)
+            try:
+                processed_lots[1] = processed_lots[0]
+            except:
+                pass
+            for var_indx, variant in enumerate(prod['variants']):
+                if getattr(self, 'scrape_variants_with_extra_requests', None):
 
-                if processed_lots:
-                    lot_id = processed_lots[p_l]
-                    p_l += 1
-                    if p_l >= len(processed_lots):
-                        p_l = 0
-                else:
-                    lot_id = ''
-                yield self._ajax_variant_request(
-                    product_id, response, prod['variants'], variant, var_indx,
-                    Lot=lot_id)
+                    if processed_lots:
+                        lot_id = processed_lots[p_l]
+                        p_l += 1
+                        if p_l >= len(processed_lots):
+                            p_l = 0
+                    else:
+                        lot_id = ''
+                    yield self._ajax_variant_request(
+                        product_id, response, prod['variants'], variant, var_indx,
+                        Lot=lot_id)
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
@@ -452,16 +480,20 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         review_id = is_empty(response.xpath(
             '//script/text()[contains(.,"reviewId")]'
         ).re('reviewId:\"(\d+)\",'))
-        if review_id:
-            yield Request(self.url_formatter.format(self.REVIEW_URL,
-                                                     product_id=review_id),
-                           meta=new_meta, callback=self._parse_reviews,
-                           dont_filter=True)
-        elif product_id:
-            yield Request(self.url_formatter.format(self.REVIEW_URL,
-                                                     product_id=product_id),
-                           meta=new_meta, callback=self._parse_reviews,
-                           dont_filter=True)
+        if not review_id:
+            review_id = is_empty(response.xpath(
+                '//script/text()[contains(.,"reviewIdNew")]'
+            ).re('reviewId.*?\=.*?([a-zA-Z\d]+)'))
+
+        if JcpenneyProductsSpider._is_sephora_reviews(response):
+            review_url = self.url_formatter.format(
+                self.SEPHORA_REVIEW_URL, product_id=review_id or product_id)
+        else:
+            review_url = self.url_formatter.format(
+                self.REVIEW_URL, product_id=review_id or product_id)
+        yield Request(review_url, meta=new_meta,
+                      callback=self._parse_reviews, dont_filter=True)
+
         yield prod
 
     def _populate_from_html(self, response, product):
@@ -498,7 +530,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
         if json_data:
             data = json.loads(json_data)
-            brand = is_empty(is_empty(data['products'])['lots'])['brandName']
+            brand = is_empty(is_empty(data['products'])['lots']).get('brandName', None)
             cond_set_value(
                 product,
                 'brand',
@@ -576,7 +608,22 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         product = response.meta['product']
         product_id = response.meta.get('product_id')
         text = response.body_as_unicode().encode('utf-8')
-        if response.status == 200:
+
+        """ for debugging only!
+        import requests
+        text2 = requests.get('http://sephora.ugc.bazaarvoice.com/8723jcp/P261621/reviews.djs?format=embeddedhtml&page=0').text
+        result = self.buyer_reviews.parse_buyer_reviews_per_page(response)
+        open('/tmp/text', 'w').write(text)
+        open('/tmp/text2', 'w').write(text2.encode('utf8'))
+        import pdb; pdb.set_trace()
+        """
+
+        brs = self.buyer_reviews.parse_buyer_reviews_per_page(response)
+        if brs.get('average_rating', None):
+            if brs.get('rating_by_star', None):
+                product['buyer_reviews'] = brs
+
+        if not product.get('buyer_reviews', None) and response.status == 200:
             x = re.search(
                 r"var materials=(.*),\sinitializers=", text, re.M + re.S)
             if x:
@@ -590,6 +637,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     "/div[@class='BVRRRatingNormalOutOf']"
                     "/span[contains(@class,'BVRRRatingNumber')]"
                     "/text()").extract()
+                if not avrg:
+                    avrg = sel.css('.BVRRNumber .BVRRRatingNumber ::text').extract()
                 if avrg:
                     try:
                         avrg = float(avrg[0])
@@ -604,7 +653,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     "/span[@class='BVRRNumber']/text()").extract()
                 if total:
                     try:
-                        total = int(total[0])
+                        total = int(total[0].replace(',', ''))
                     except ValueError:
                         total = 0
                 else:

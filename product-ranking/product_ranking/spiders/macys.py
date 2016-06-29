@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import urllib
 import string
 import urlparse
@@ -9,6 +11,7 @@ from scrapy.log import INFO
 from scrapy import Request
 from scrapy import Selector
 from scrapy.selector import HtmlXPathSelector
+from scrapy.conf import settings
 
 from product_ranking.items import SiteProductItem, RelatedProduct, \
     Price, BuyerReviews
@@ -16,11 +19,13 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import cond_set, cond_set_value, \
     FLOATING_POINT_RGEX, cond_replace
 from contrib.product_spider import ProductsSpider
+from product_ranking.validation import BaseValidator
 from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.macys_variants import MacysVariants
+from product_ranking.validators.macys_validator import MacysValidatorSettings
 
 
-class MacysProductsSpider(ProductsSpider):
+class MacysProductsSpider(BaseValidator, ProductsSpider):
     name = 'macys_products'
     allowed_domains = ['macys.com']
     SEARCH_URL = "http://www1.macys.com/shop/search?keyword={search_term}" \
@@ -42,13 +47,16 @@ class MacysProductsSpider(ProductsSpider):
 
     REQUIRE_PRODUCT_PAGE = False
 
+    settings = MacysValidatorSettings
+
     def __init__(self, sort_mode='default', *args, **kwargs):
         super(MacysProductsSpider, self).__init__(*args, **kwargs)
+        #settings.overrides['CRAWLERA_ENABLED'] = True
         self.sort_mode = self.SORT_MODES.get(sort_mode, 'ORIGINAL')
-        self.url_formatter.defaults['page'] = 1
 
     def start_requests(self):  # Stolen from walmart
         """Generate Requests from the SEARCH_URL and the search terms."""
+        self.url_formatter.defaults['page'] = 1
         for st in self.searchterms:
             yield Request(
                 self.url_formatter.format(
@@ -62,7 +70,8 @@ class MacysProductsSpider(ProductsSpider):
                     'page': 1,
                     },
                 headers={"User-Agent": self.user_agent},
-                dont_filter=True
+                dont_filter=True,
+                cookies={'shippingCountry': 'US', 'currency': 'USD'}
             )
 
         if self.product_url:
@@ -182,6 +191,10 @@ class MacysProductsSpider(ProductsSpider):
         """
         product = response.meta.get('product', SiteProductItem())
 
+        if u'>this product is currently unavailable' in response.body_as_unicode().lower():
+            product['no_longer_available'] = True
+            return
+
         mv = MacysVariants()
         mv.setupSC(response)
         product['variants'] = mv._variants()
@@ -197,6 +210,10 @@ class MacysProductsSpider(ProductsSpider):
             ).re(FLOATING_POINT_RGEX)
         if response.css('.priceSale::text'):
             price = response.css('.priceSale::text').re(FLOATING_POINT_RGEX)
+        if not price:
+            price = response.xpath('//*[contains(@id, "priceInfo")]').re(FLOATING_POINT_RGEX)
+        if not price:
+            price = response.xpath('//*[contains(@class, "singlePrice")][contains(text(), "$")]')
         if price:
                 product['price'] = Price(price=price[0],
                                          priceCurrency='USD')
@@ -207,10 +224,36 @@ class MacysProductsSpider(ProductsSpider):
                 "//img[contains(@id, 'mainView')]/@src").extract()
             if image_url:
                 product["image_url"] = image_url[0]
+        if not product.get('image_url'):
+            cond_set(
+                product, 'image_url',
+                response.xpath('//*[contains(@class,'
+                               ' "productImageSection")]//img/@src').extract()
+            )
+        if not product.get('image_url'):
+            cond_set(
+                product, 'image_url',
+                response.xpath('//*[contains(@class, "mainImages")]'
+                               '//*[contains(@class, "imageItem")]//img/@src').extract()
+            )
+        if not product.get("image_url") or \
+                "data:image" in product.get("image_url"):
+            img_src = response.xpath('//*[contains(@class, "imageItem") '
+                                 'and contains(@class, "selected")]/img/@src').extract()
+            if img_src:
+                product['image_url'] = img_src[0]
 
         title = response.css('#productTitle::text').extract()
+        if not title:
+            title = response.xpath('//*[contains(@class, "productTitle")]'
+                                   '[contains(@itemprop, "name")]/text()').extract()
         if title:
-            cond_replace(product, 'title', title)
+            cond_replace(product, 'title', [''.join(title).strip()])
+        if not product.get('title', None):
+            title = response.xpath('//h1[contains(@class,"productName")]//text()').extract()
+            if title:
+                product['title'] = title[0].strip()
+
         path = '//*[@id="memberProductDetails"]/node()[normalize-space()]'
         desc = response.xpath(path).extract()
         if not desc:
@@ -221,6 +264,10 @@ class MacysProductsSpider(ProductsSpider):
                 desc = [d for d in desc if 'id="adPool"' not in d]
         cond_set_value(product, 'description',
                        desc, ''.join)
+        if not product.get('description', ''):
+            product['description'] = (
+                ' '.join(response.css('#product-detail-control ::text').extract()))
+
         locale = response.css('#headerCountryFlag::attr(title)').extract()
         if not locale:
             locale = response.xpath(
@@ -229,11 +276,19 @@ class MacysProductsSpider(ProductsSpider):
         cond_set(product, 'locale', locale)
         brand = response.css('#brandLogo img::attr(alt)').extract()
         if not brand:
-            brand = guess_brand_from_first_words(product['title'])
+            brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
             brand = [brand]
         cond_set(product, 'brand', brand)
 
+        if product.get('brand', '').lower() == 'levis':
+            product['brand'] = "Levi's"
+
         product_id = response.css('#productId::attr(value)').extract()
+        if not product_id:
+            product_id = response.xpath('//*[contains(@class,"productID")]'
+                                        '[contains(text(), "Web ID:")]/text()').extract()
+            if product_id:
+                product_id = [''.join([c for c in product_id[0] if c.isdigit()])]
 
         if product_id:  # Reviews
             url = "http://macys.ugc.bazaarvoice.com/7129aa/%s" \

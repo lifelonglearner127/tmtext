@@ -19,32 +19,9 @@ from product_ranking.spiders import cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.kohls_variants import KohlsVariants
 from product_ranking.validation import BaseValidator
-
+from product_ranking.validators.kohls_validator import KohlsValidatorSettings
 
 is_empty = lambda x, y="": x[0] if x else y
-
-class KohlsValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand', 'description']
-    ignore_fields = [
-        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'special_pricing', 'ranking',
-        'bestseller_rank', 'model', 'image_url'
-    ]
-    ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = True  # ... duplicated requests?
-    ignore_log_filtered = True  # ... filtered requests?
-    test_requests = {
-        'sdfsdgdf': 0,  # should return 'no products' or just 0 products
-        'benny benassi': 0,
-        'red car': [100, 200],
-        'black stone': [50, 200],
-        'red ball': [5, 150],
-        'green rose': [10, 100],
-        'long term black': [1, 50],
-        'yellow ion': [15, 100],
-        'water proof': [50, 85],
-        'long night': [30, 200],
-    }
 
 
 class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
@@ -101,6 +78,8 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                   "r5R3Hr2yextBMfdBluokiEGnVwVqprBs9_dcYQYmmCp0Jeu8ZCNAVX69phHt&" \
                   "l=1"
 
+    handle_httpstatus_list = [404]
+
     def __init__(self, sort_mode=None, *args, **kwargs):
         self.start_pos = 0
         if sort_mode:
@@ -132,16 +111,27 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         if self.product_url:
             prod = SiteProductItem()
             prod['is_single_result'] = True
-            yield Request(self.product_url,
-                          self._parse_single_product,
-                          meta={'product': prod})
+            yield Request(
+                self.product_url, self._parse_single_product,
+                dont_filter=True, meta={
+                    'product': prod,
+                    'handle_httpstatus_list': self.handle_httpstatus_list}
+            )
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
+    def _is_not_found(self, response):
+        if response.status == 404:
+            return True
+
     def parse_product(self, response):
         prod = response.meta['product']
         prod['url'] = response.url
+
+        if self._is_not_found(response):
+            prod['not_found'] = True
+            return prod
 
         kv = KohlsVariants()
         kv.setupSC(response)
@@ -175,12 +165,15 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         product['description'] = self.parse_description(response)
         # cond_set_value(product, 'description', description)
 
+        if product.get('image_url'):
+            product['image_url'] = KohlsProductsSpider._fix_image_url(product['image_url'])
+
         cond_set(
             product,
             'image_url',
-            response.xpath(
-                '//div[@id="easyzoom_wrap"]/div/a/img/@src'
-            ).extract()
+            KohlsProductsSpider._fix_image_url(
+                response.xpath('//div[@id="easyzoom_wrap"]/div/a/img/@src').extract()
+            )
         )
 
         upc_codes = []
@@ -257,6 +250,17 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
         return description
 
+    @staticmethod
+    def _get_product_json_data(response):
+        start = response.body_as_unicode().find('var productJsonData =')
+        end = response.body_as_unicode().find('};', start)
+        if start < 0 or end < 0:
+            return
+        product_json_data = response.body_as_unicode()[
+                            start+len('var productJsonData ='):end]
+        product_json_data = json.loads(product_json_data.strip() + '}')
+        return product_json_data
+
     def _set_price(self, response, product):
         price = response.xpath(
             '//div[@class="multiple-price"]/div[2]/text()[normalize-space()] |'
@@ -265,10 +269,29 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
             '//div[@class="sale"]/text()[normalize-space()] |'
             '//div[contains(@class, "main_price")]/text()'
         ).re("\d+.?\d{0,2}")
-
+        if not price:
+            price = response.xpath(
+                '//*[contains(@class, "price-holder")]'
+                '//*[contains(@class, "price_label")]/..//text()').re("\d+.?\d{0,2}")
         if price:
             product['price'] = Price(price=price[0], priceCurrency='USD')
         else:
+            price = response.xpath(
+                '//meta[contains(@property, "og:product:price:amount")]/@value').extract()
+            if price and price[0]:
+                product['price'] = Price(price=price[0], priceCurrency='USD')
+                return
+            price = None
+            json_data = self._get_product_json_data(response)
+            pricing_info = json_data.get('productItem', {}).get('pricing', {})
+            if pricing_info.get('salePrice', ''):
+                price = re.search('\$([\d\.]+)', pricing_info.get('salePrice', ''))
+            elif pricing_info.get('regularPrice', ''):
+                price = re.search('\$([\d\.]+)', pricing_info.get('regularPrice', ''))
+            if price:
+                price = price.group(1)
+                product['price'] = Price(price=price, priceCurrency='USD')
+                return
             product['price'] = Price(price='0.0', priceCurrency='USD')
 
     def _parse_related_products(self, response):
@@ -307,10 +330,17 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                 url = is_empty(sel.xpath('@href').extract())
                 if url:
                     title = is_empty(sel.xpath('./div/p/text()').extract())
+                    _original_type_str = False
+                    if isinstance(title, str):
+                        _original_type_str = True
+                        title = title.decode('utf8')
+                    title = title.replace(u"\xe9", u"Ã©")\
+                        .replace(u"\xf6", "").replace(u"\xb0", "")
+                    if _original_type_str:
+                        title = title.decode('utf8')
                     related.append(
                         RelatedProduct(
-                            title=unicode.decode(title.replace("\xe9", "Ã©").
-                                replace("\xf6", "").replace("\xb0", "")),
+                            title=title,
                             url=urllib.unquote('http'+url.split('http')[-1])
                         ))
             if key and key not in product['related_products'].keys():
@@ -319,6 +349,16 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                 product['related_products'][key] += related
 
         return product
+
+    @staticmethod
+    def _fix_image_url(url):
+        if isinstance(url, (list, tuple)):
+            if not url:
+                return
+            url = url[0]
+        url = url.rstrip('&op_sharpen')
+        url = url.replace('wid=130', 'wid=256').replace('hei=130', 'hei=256')
+        return url
 
     def _parse_reviews(self, response):
         product = response.meta['product']
@@ -420,7 +460,8 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                 cond_set(
                     product,
                     'image_url',
-                    block.xpath('.//a/img/@src').extract())
+                    KohlsProductsSpider._fix_image_url(block.xpath('.//a/img/@src').extract())
+                )
 
                 self._set_price(response, product)
 

@@ -11,31 +11,9 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults, cond_set_value, dump_url_to_file
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.validation import BaseValidator
+from product_ranking.validators.maplin_validator import MaplinValidatorSettings
 
-
-class MaplinValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand', 'limited_stock']
-    ignore_fields = [
-        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'special_pricing',
-        'bestseller_rank', 'model', 'description'
-    ]
-    ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = True  # ... duplicated requests?
-    ignore_log_filtered = True  # ... filtered requests?
-    test_requests = {
-        'sdfsdgdf': 0,  # should return 'no products' or just 0 products
-        'benny benassi': 0,
-        'red car': [20, 80],
-        'stone': [50, 120],
-        'ball': [5, 150],
-        'rose': [10, 70],
-        'long term black': [1, 12],
-        'selling': [15, 40],
-        'water proof': [50, 108],
-        'long night': [30, 90],
-    }
-
+is_empty = lambda x, y="": x[0] if x else y
 
 # scrapy crawl maplin_products -a searchterms_str="Earth" [-a order=default]
 class MaplinProductsSpider(BaseValidator, BaseProductsSpider):
@@ -108,10 +86,12 @@ class MaplinProductsSpider(BaseValidator, BaseProductsSpider):
         ).extract()
         cond_set(prod, 'title', title)
 
-        brand = re.findall(r'"manufacturer":\s"(.*)",', response.body)
+        brand = [is_empty(
+                        re.findall(r'"manufacturer":\s"(.*)",', response.body),
+                        None)]
         if not brand:
             if prod.get("title"):
-                brand = [guess_brand_from_first_words(prod['title'])]
+                brand = is_empty([guess_brand_from_first_words(prod['title'])], None)
         if brand:
             cond_set(prod, 'brand', brand)
 
@@ -128,6 +108,10 @@ class MaplinProductsSpider(BaseValidator, BaseProductsSpider):
             if re.match("\d+(.\d+){0,1}", price[0]):
                 prod["price"] = Price(priceCurrency=priceCurrency[0],
                                       price=price[0])
+            else:
+                prod["price"] = Price(priceCurrency="GBP", price=0.00)
+        else:
+            prod["price"] = Price(priceCurrency="GBP", price=0.00)
 
         des = response.xpath('//div[@class="productDescription"]').extract()
         cond_set(prod, 'description', des)

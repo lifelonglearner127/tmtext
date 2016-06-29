@@ -3,6 +3,7 @@ import sys
 
 from django.db import models
 from django.utils import timezone
+from django.core.urlresolvers import reverse_lazy
 
 
 CWD = os.path.dirname(os.path.abspath(__file__))
@@ -61,7 +62,7 @@ class Job(models.Model):
 
     name = models.CharField(max_length=100, blank=True, null=True,
                             help_text='Optional, just for convenience')
-    spider = models.CharField(max_length=100, choices=[])
+    spider = models.CharField(max_length=100, choices=[])  # see gui/forms.py
 
     search_term = models.CharField(
         max_length=255, blank=True, null=True,
@@ -97,9 +98,9 @@ class Job(models.Model):
         help_text='Branch to use at the instance(s); leave blank for sc_production'
     )
 
-    save_s3_cache = models.BooleanField(
+    save_raw_pages = models.BooleanField(
         default=False, help_text='Upload raw cache to S3?')
-    #load_s3_cache = models.DateField(  # DISABLED for now!
+    #load_raw_pages = models.DateField(  # DISABLED for now!
     #    blank=True, null=True, default=timezone.now().date(),
     #    help_text='Load raw cache from S3'
     #)
@@ -117,6 +118,15 @@ class Job(models.Model):
         return ('SearchTerm [%s]' % self.search_term if self.search_term
                 else 'URL')
     searchterm_or_url.short_description = 'Type'
+
+    def view_as_image(self):
+        # for url2screenshot spider
+        if 'url2screenshot' in self.spider:
+            return "<a href='%s' target='_blank'>Image</a>" % reverse_lazy(
+                'view_base64_image', kwargs={'job': self.pk})
+        return ''
+    view_as_image.short_description = 'Image'
+    view_as_image.allow_tags = True
 
     def get_input_queue(self):
         if self.mode == 'no cache':

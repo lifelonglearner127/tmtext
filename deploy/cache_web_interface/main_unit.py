@@ -137,7 +137,7 @@ def stats():
         context = dict()
         conn = boto.ec2.autoscale.AutoScaleConnection()
         groups = conn.get_all_groups(
-            names=['SCCluster1', 'SCCluster2', 'SCCluster3'])
+            names=['SCCluster1', 'SCCluster2', 'SCCluster3', 'SCCluster4'])
         instances = {group.name: len(group.instances) for group in groups}
         context['running_instances'] = sum(instances.itervalues())
         context['running_instances_info'] = instances
@@ -185,6 +185,15 @@ def autoscale_history():
     resp = make_response(json.dumps(data))
     resp.headers['Content-Type'] = 'application/json'
     return resp
+
+
+@app.route('/fcgi', methods=['GET', 'POST'])
+def fcgi():
+    file_path = '/tmp/reload_uwsgi.ini'
+    if request.method == 'POST':
+        cmd = 'touch %s' % file_path
+        os.system(cmd)
+    return render_template('fcgi.html')
 
 
 # ###################################

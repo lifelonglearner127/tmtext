@@ -1,4 +1,4 @@
-# TODO: check "product_per_page" fields, may be wrong
+# -*- coding: utf-8 -*-
 
 import re
 import json
@@ -30,7 +30,7 @@ class MacysShelfPagesSpider(MacysProductsSpider):
         self.quantity = 99999
         self.site_name = self.allowed_domains[0]
         self.user_agent_key = None
-        self.zipcode = '12345'
+        self.zip_code = '12345'
         self.current_page = 1
 
     def _setup_meta_compatibility(self):
@@ -60,7 +60,8 @@ class MacysShelfPagesSpider(MacysProductsSpider):
 
     def start_requests(self):
         yield Request(url=self.valid_url(self.product_url),
-                      meta=self._setup_meta_compatibility())
+                      meta=self._setup_meta_compatibility(),
+                      dont_filter=True)
 
     @staticmethod
     def valid_url(url):
@@ -122,6 +123,10 @@ class MacysShelfPagesSpider(MacysProductsSpider):
             ).re(FLOATING_POINT_RGEX)
         if response.css('.priceSale::text'):
             price = response.css('.priceSale::text').re(FLOATING_POINT_RGEX)
+        if not price:
+            price = [p.strip() for p in
+                     response.xpath('//*[@id="priceInfo"]//text()').extract()
+                     if p.strip()]
         if price:
             product['price'] = Price(price=price[0],
                                      priceCurrency='USD')
@@ -134,8 +139,12 @@ class MacysShelfPagesSpider(MacysProductsSpider):
                 product["image_url"] = image_url[0]
 
         title = response.css('#productTitle::text').extract()
+        if not title:
+            title = response.xpath('//*[contains(@class, "productTitle")]'
+                                   '[contains(@itemprop, "name")]/text()').extract()
         if title:
-            cond_replace(product, 'title', title)
+            cond_replace(product, 'title', [''.join(title).strip()])
+
         path = '//*[@id="memberProductDetails"]/node()[normalize-space()]'
         desc = response.xpath(path).extract()
         if not desc:
@@ -154,9 +163,12 @@ class MacysShelfPagesSpider(MacysProductsSpider):
         cond_set(product, 'locale', locale)
         brand = response.css('#brandLogo img::attr(alt)').extract()
         if not brand:
-            brand = guess_brand_from_first_words(product['title'])
+            brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
             brand = [brand]
         cond_set(product, 'brand', brand)
+
+        if product.get('brand', '').lower() == 'levis':
+            product['brand'] = "Levi's"
 
         product_id = response.css('#productId::attr(value)').extract()
 

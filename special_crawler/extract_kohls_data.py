@@ -20,12 +20,12 @@ class KohlsScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.kohls.com/product/prd-<product-id>/<optional-part-of-product-name>.jsp"
     REVIEW_URL = "http://kohls.ugc.bazaarvoice.com/9025/{}/reviews.djs?format=embeddedhtml"
+    WEBCOLLAGE_CHANNEL_URL = "http://content.webcollage.net/kohls/product-content-page?channel-product-id={0}"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         # whether product has any webcollage media
-        self.price_json = None
         self.failure_type = None
         self.kv = KohlsVariants()
 
@@ -36,15 +36,43 @@ class KohlsScraper(Scraper):
         self.variants = None
         self.is_variant_checked = False
 
+        self.wc_360 = 0
+        self.wc_emc = 0
+        self.wc_video = 0
+        self.wc_pdf = 0
+        self.wc_prodtour = 0
+        self.is_webcollage_contents_checked = False
+        self.is_video_checked = False
+        self.product_info_json = None
+        self.is_product_info_json_checked = False
+        self.video_urls = []
+
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
 
-        m = re.match(r"^http://www.kohls.com/product/prd-.+/.+\.jsp$", self.product_page_url)
+        m = re.match(r"^http://www.kohls.com/product/prd-.+/.+\.jsp(\?.*)?$", self.product_page_url)
 
         return not not m
+
+    def _extract_product_info_json(self):
+        if self.is_product_info_json_checked:
+            return self.product_info_json
+
+        self.is_product_info_json_checked = True
+
+        try:
+            product_info_json = self.tree_html.xpath("//script[contains(text(), 'var productJsonData = {')]/text()")[0].strip()
+            start_index = product_info_json.find("var productJsonData = ") + len("var productJsonData = ")
+            end_index = product_info_json.rfind(";")
+            product_info_json = product_info_json[start_index:end_index].strip()
+            product_info_json = json.loads(product_info_json)
+        except:
+            product_info_json = None
+
+        self.product_info_json = product_info_json
 
     def not_a_product(self):
         """Checks if current page is not a valid product page
@@ -69,6 +97,8 @@ class KohlsScraper(Scraper):
         except Exception:
             return True
 
+        self._extract_product_info_json()
+
         return False
 
     ##########################################
@@ -84,20 +114,18 @@ class KohlsScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = self.tree_html.xpath("//input[@class='preSelectedskuId']/@value")[0].strip()[:-1]
+        product_id = re.search('prd-(.+)/', self._url()).group(1)
 
         return product_id
 
     def _failure_type(self):
-        itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
+        itemtype = self.tree_html.xpath('//div[@itemtype="http://schema.org/Product"]')
 
-        if itemtype != "product":
+        if not itemtype:
             self.failure_type = "Not a product"
             return
 
-        collectiontype = self.tree_html.xpath('//input[@id="collectionType"]/@value')[0].strip()
-
-        if collectiontype.startswith("collection"):
+        if "var page = 'collectionPDPPage';" in self.page_raw_text:
             self.failure_type = "Collection product"
             return
 
@@ -105,19 +133,19 @@ class KohlsScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//title/text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//title/text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self.tree_html.xpath('//title/text()')[0].strip()
 
     def _model(self):
         return None
 
     def _features(self):
-        description_block = self.tree_html.xpath("//div[@class='Bdescription']")[0]
+        description_block = html.fromstring("<div>" + self.product_info_json["productItem"]["accordions"]["productDetails"]["content"] + "</div>")
         is_features_found = False
         features_title_list = ["Product Features:", "PRODUCT FEATURES", "Product Features", "Features"]
 
@@ -149,7 +177,7 @@ class KohlsScraper(Scraper):
         return 0
 
     def _description(self):
-        description_block = self.tree_html.xpath("//div[@class='Bdescription']")[0]
+        description_block = html.fromstring("<div>" + self.product_info_json["productItem"]["accordions"]["productDetails"]["content"] + "</div>")
         short_description = ""
         features_title_list = ["Product Features:", "PRODUCT FEATURES", "Product Features", "Features"]
 
@@ -181,13 +209,11 @@ class KohlsScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        description_block = self.tree_html.xpath("//div[@id='pdp_details_segment']//div[@class='Bdescription']")
+        description_block = html.fromstring("<div>" + self.product_info_json["productItem"]["accordions"]["productDetails"]["content"] + "</div>")
         features_title_list = ["Product Features:", "PRODUCT FEATURES", "Product Features", "Features"]
 
         if not description_block:
             return None
-
-        description_block = description_block[0]
 
         long_description = ""
 
@@ -252,26 +278,19 @@ class KohlsScraper(Scraper):
         pass
         
     def _image_urls(self):
-        image_urls = self.tree_html.xpath("//div[@id='leftCarousel']/div[@class='ver-carousel']/ul/li//img/@src")
+        image_urls = [self.product_info_json["productItem"]["media"]["defaultImage"]["largeImage"]]
 
-        image_urls = [x for x in image_urls if "videoPlayer_Icon.png" not in x]
+        if self.product_info_json["productItem"]["media"].get("alternateImages", None):
+            for alt_image in self.product_info_json["productItem"]["media"]["alternateImages"]:
+                if not alt_image["largeImage"] in image_urls:
+                    image_urls.append(alt_image["largeImage"])
 
-        if not image_urls:
-            image_urls = self.tree_html.xpath("//div[@id='largeViewer']//div[@id='easyzoom_wrap']//a/img/@src")
-
-        for index, url in enumerate(image_urls):
-            if "?wid=" in url:
-                image_urls[index] = url[:url.find("?wid=")]
-
-        swatches = self._swatches()
-
-        if swatches:
-            for swatch in swatches:
-                try:
-                    if swatch["hero_image"] and swatch["hero_image"] not in image_urls:
-                        image_urls.append(swatch["hero_image"])
-                except:
-                    pass
+        if self.product_info_json["productItem"]["variants"].get('preSelectedColor',None):                
+            color_swatch_images = self.tree_html.xpath("//div[@itemtype='http://schema.org/Product']/meta[@itemprop='image']/@content")
+            color_swatch_images = [url[:url.find("?")] + "?wid=1000&amp;hei=1000&amp;op_sharpen=1" if url.find("?") > 0 else url for url in color_swatch_images]
+            for img in color_swatch_images:
+                if not img in image_urls:
+                    image_urls.append(img)
 
         if image_urls:
             return image_urls
@@ -285,18 +304,26 @@ class KohlsScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        return None
+        if self.is_video_checked:
+            return self.video_urls
+
+        self.is_video_checked = True
+
+        self._extract_webcollage_contents()
+
+        if self.product_info_json["productItem"]["media"].get("videoURL", None):
+            video_page_html = html.fromstring(self.load_page_from_url_with_number_of_retries(self.product_info_json["productItem"]["media"]["videoURL"]))
+            video_urls = video_page_html.xpath("//video[@id='product-video']/source[contains(@type, 'video')]/@src")
+
+            if video_urls:
+                self.video_urls.extend([video_urls[0]])
+
+        return self.video_urls if self.video_urls else None
 
     def _video_count(self):
-        video_count = 0
-        image_urls = self.tree_html.xpath("//div[@id='leftCarousel']/div[@class='ver-carousel']/ul/li//img/@src")
+        video_urls = self._video_urls()
 
-        video_urls = [x for x in image_urls if "videoPlayer_Icon.png" in x]
-
-        if not video_urls:
-            return 0
-
-        return len(video_urls)
+        return len(video_urls) if video_urls else 0
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
@@ -305,8 +332,78 @@ class KohlsScraper(Scraper):
     def _pdf_count(self):
         return 0
 
+    def _extract_webcollage_contents(self):
+        if self.is_webcollage_contents_checked:
+            return
+
+        self.is_webcollage_contents_checked = True
+
+        try:
+            webcollage_page_contents = self.load_page_from_url_with_number_of_retries(self.WEBCOLLAGE_CHANNEL_URL.format(self._product_id()))
+
+            if webcollage_page_contents.startswith("<HTML><HEAD></HEAD><BODY><P>Product information is currently unavailable</P>"):
+                raise Exception
+
+            webcollage_page_contents = html.fromstring(webcollage_page_contents)
+
+            video_gallery_element = webcollage_page_contents.xpath("//div[@data-resources-base and starts-with(@id, 'videoGallery')]")
+
+            if video_gallery_element:
+                video_gallery_element = video_gallery_element[0]
+            else:
+                raise Exception
+
+            base_video_url = video_gallery_element.xpath("./@data-resources-base")[0]
+            wc_json_data = json.loads(video_gallery_element.xpath(".//div[@class='wc-json-data']/text()")[0].strip())
+            webcollage_video_list = []
+
+            for video_info in wc_json_data["videos"]:
+                if base_video_url[-1] == "/" and video_info["src"]["src"][0] == "/":
+                    webcollage_video_list.append(base_video_url + video_info["src"]["src"][1:])
+                else:
+                    webcollage_video_list.append(base_video_url + video_info["src"]["src"])
+
+            if webcollage_video_list:
+                self.video_urls.extend(webcollage_video_list)
+                self.wc_video = 1
+
+            if webcollage_page_contents.xpath("//div[@id='navbar']//ul/li//span[text()='Interactive Tour']"):
+                self.wc_prodtour = 1
+
+            if webcollage_page_contents.xpath("//div[@id='navbar']//ul/li//span[text()='360 Zoom']"):
+                self.wc_360 = 1
+
+            return
+        except:
+            pass
+
+        return
+
     def _webcollage(self):
+        if self._wc_360() + self._wc_emc() + self._wc_pdf() + self._wc_prodtour() + self._wc_video() > 0:
+            return 1
+
         return 0
+
+    def _wc_360(self):
+        self._extract_webcollage_contents()
+        return self.wc_360
+
+    def _wc_emc(self):
+        self._extract_webcollage_contents()
+        return self.wc_emc
+
+    def _wc_video(self):
+        self._extract_webcollage_contents()
+        return self.wc_video
+
+    def _wc_pdf(self):
+        self._extract_webcollage_contents()
+        return self.wc_pdf
+
+    def _wc_prodtour(self):
+        self._extract_webcollage_contents()
+        return self.wc_prodtour
 
     def _htags(self):
         htags_dict = {}
@@ -321,26 +418,6 @@ class KohlsScraper(Scraper):
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
-
-    def _extract_price_json(self):
-        if self.price_json:
-            return
-
-        price_json = self.tree_html.xpath("//script[@type='text/javascript' and contains(text(), 'var pageData=')]")
-
-        if price_json:
-            price_json = price_json[0].text
-            start_index = price_json.find("var pageData=") + len("var pageData=")
-            end_index = price_json.find("};", start_index) + 1
-            price_json = price_json[start_index:end_index]
-            start_index = price_json.find('"itemName":"') + len('"itemName":"')
-            end_index = price_json.find('"itemProductID":')
-            end_index = price_json.rfind('"', start_index, end_index)
-            item_product_id_text = price_json[start_index:end_index]
-            item_product_id_text = item_product_id_text.replace('"', '\\"')
-            price_json = price_json[:start_index] + item_product_id_text + price_json[end_index:]
-            self.price_json = json.loads(price_json)
-
 
     def _average_review(self):
         if self._review_count() == 0:
@@ -383,13 +460,7 @@ class KohlsScraper(Scraper):
 
         self.is_review_checked = True
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
-        contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
+        contents = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(self._product_id()))
 
         try:
             start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
@@ -416,69 +487,79 @@ class KohlsScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        self._extract_price_json()
+        if self.product_info_json["productItem"]["pricing"].get("salePrice", None):
+            return self.product_info_json["productItem"]["pricing"]["salePrice"]
 
-        if not self.price_json:
-            return None
+        if self.product_info_json["productItem"]["pricing"].get("regularPrice", None):
+            return self.product_info_json["productItem"]["pricing"]["regularPrice"]
 
-        price = None
-
-        if not self.price_json["product_Details"]["itemSalePrice"]:
-            price = self.price_json["product_Details"]["itemOriginalPrice"]
-        else:
-            price = self.price_json["product_Details"]["itemSalePrice"]
-
-        if "|" in price:
-            price = price[:price.find("|")]
-
-        return price.strip()
+        return "$" + self.tree_html.xpath("//meta[@property='og:product:price:amount']/@content")[0]
 
     def _price_amount(self):
-        self._extract_price_json()
-
-        if not self.price_json:
-            return None
-
-        price_amount = 0
-
-        if not self.price_json["product_Details"]["itemSalePrice"]:
-            price_amount = self.price_json["product_Details"]["itemOriginalPrice"]
-        else:
-            price_amount = self.price_json["product_Details"]["itemSalePrice"]
-
-        if "|" in price_amount:
-            price_amount = price_amount[:price_amount.find("|")]
-
-        price_amount = price_amount.strip()
-
-        return float(price_amount[1:])
+        price_text = self._price()
+        price = re.findall(r"\d*\.\d+|\d+", price_text.replace(",", ""))
+        return float(price[0])
 
     def _price_currency(self):
-        return self.tree_html.xpath("//meta[@property='og:price:currency']/@content")[0]
-
-    def _owned(self):
-        return 0
+        return "USD"
 
     def _marketplace(self):
+        if self.product_info_json["productItem"]["productDetails"].get("isMarketPlaceItem", False):
+            return 1
+
         return 0
 
     def _site_online(self):
-        return 1
-
-    def _in_stores(self):
-        if self.tree_html.xpath("//img[@alt='Online_Exclusive.gif']"):
+        if self._marketplace() == 1:
             return 0
 
         return 1
 
+    def _in_stores(self):
+        if self.product_info_json["productItem"]["productDetails"].get("isStorePickUpEligible", False):
+            return 1
+
+        return 0
+
     def _site_online_out_of_stock(self):
+        if self._marketplace() == 1:
+            return None
+
+        if not self.tree_html.xpath("//meta[@itemprop='availability' and @content='http://schema.org/InStock']"):
+            return 1
+
         return 0
 
     def _marketplace_sellers(self):
+        sellers = self.tree_html.xpath("//div[@class='marketplacePDP']//a[@id='pdp_vendor']/text()")
+
+        if sellers:
+            return sellers
+
+        return None
+
+    def _marketplace_lowest_price(self):
+        marketplace_prices = self._marketplace_prices()
+
+        if marketplace_prices:
+            return min(marketplace_prices)
+
+        return None
+
+    def _marketplace_prices(self):
+        if self._marketplace() == 1:
+            return [self._price_amount()]
+
         return None
 
     def _marketplace_out_of_stock(self):
-        return 0
+        if self._marketplace() == 1:
+            if not self.tree_html.xpath("//meta[@itemprop='availability' and @content='http://schema.org/InStock']"):
+                return 1
+            else:
+                return 0
+
+        return None
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
@@ -490,7 +571,7 @@ class KohlsScraper(Scraper):
         return None
 
     def _brand(self):
-        brand = re.search('googletag\.pubads\(\)\.setTargeting\("brd", "(.+?)"', lxml.html.tostring(self.tree_html)).group(1)
+        brand = re.search('googletag\.pubads\(\)\.setTargeting\("brd", "(.+?)"', self.page_raw_text).group(1)
         return brand
 
     ##########################################
@@ -531,7 +612,12 @@ class KohlsScraper(Scraper):
         "video_urls" : _video_urls, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
-        "webcollage" : _webcollage, \
+        "wc_360": _wc_360, \
+        "wc_emc": _wc_emc, \
+        "wc_video": _wc_video, \
+        "wc_pdf": _wc_pdf, \
+        "wc_prodtour": _wc_prodtour, \
+        "webcollage": _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "canonical_link": _canonical_link,
@@ -546,14 +632,14 @@ class KohlsScraper(Scraper):
         "price" : _price, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
-        "owned" : _owned, \
         "marketplace" : _marketplace, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "in_stores" : _in_stores, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
-
+        "marketplace_prices" : _marketplace_prices, \
+        "marketplace_lowest_price" : _marketplace_lowest_price, \
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \
         "category_name" : _category_name, \

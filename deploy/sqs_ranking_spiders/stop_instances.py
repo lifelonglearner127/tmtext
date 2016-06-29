@@ -69,7 +69,8 @@ TOTAL_WAS_TERMINATED = 0
 autoscale_conn = None
 
 
-def get_all_group_instances_and_conn(groups_names=('SCCluster1', 'SCCluster2', 'SCCluster3')):
+def get_all_group_instances_and_conn(
+        groups_names=('SCCluster1', 'SCCluster2', 'SCCluster3', 'SCCluster4')):
     conn = AutoScaleConnection()
     global autoscale_conn
     autoscale_conn = conn
@@ -141,7 +142,8 @@ def stop_if_required(inst_ip, inst_id):
     tmp_file = '/tmp/tmp_file'
     # purge previous entry
     open(tmp_file, 'w').close()
-    ssh_key = '/home/ubuntu/.ssh/ubuntu_id_rsa'
+    # ssh_key = '/home/ubuntu/.ssh/ubuntu_id_rsa'
+    ssh_key = '/home/ubuntu/.ssh/tmtext_rsa'
     cmd = 'scp -o "StrictHostKeyChecking no" -i %s '\
           'ubuntu@%s:/tmp/remote_instance_starter2.log %s'
     run_cmd = cmd % (ssh_key, inst_ip, tmp_file)

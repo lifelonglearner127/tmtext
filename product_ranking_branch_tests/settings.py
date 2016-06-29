@@ -24,7 +24,7 @@ DEBUG = True
 
 TEMPLATE_DEBUG = True
 
-HOST_NAME = 'ranking-auto-tests.contentanalyticsinc.com'
+HOST_NAME = 'sc-branch-tests.contentanalyticsinc.com'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', HOST_NAME, '52.0.7.54']
 
@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
 
     'tests_app',
+    'fcgi',
     'django_ses',
     'adminplus'
 )
@@ -105,6 +106,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
 STATIC_URL = '/static/'
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static')
+)
 
 
 # some specific constants

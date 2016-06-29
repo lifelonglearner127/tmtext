@@ -8,17 +8,19 @@ import urlparse
 
 from scrapy.http import Request
 
+from scrapy.log import ERROR
 from product_ranking.items import Price
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
 from spiders_shared_code.jet_variants import JetVariants
-
+from product_ranking.validators.jet_validator import JetValidatorSettings
+from product_ranking.validation import BaseValidator
 
 is_empty = lambda x, y=None: x[0] if x else y
 
 
-class JetProductsSpider(BaseProductsSpider):
+class JetProductsSpider(BaseValidator, BaseProductsSpider):
     name = 'jet_products'
     allowed_domains = ["jet.com"]
 
@@ -26,7 +28,7 @@ class JetProductsSpider(BaseProductsSpider):
 
     START_URL = "http://jet.com"
 
-    PRICE_URL = "https://jet.com/api/product/price"
+    PRICE_URL = "https://jet.com/api/productAndPrice"
 
     SYM_USD = '$'
     SYM_GBP = '£'
@@ -52,6 +54,8 @@ class JetProductsSpider(BaseProductsSpider):
     product_links = []
 
     DEFAULT_MARKETPLACE = "Jet"
+
+    settings = JetValidatorSettings
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         super(JetProductsSpider, self).__init__(*args, **kwargs)
@@ -196,51 +200,25 @@ class JetProductsSpider(BaseProductsSpider):
         cond_set(
             product, "title", response.xpath(
                 "//div[contains(@class, 'content')]"
-                "//div[contains(@class, 'title')]"
+                "//div[contains(@class, 'title')]/text()"
             ).extract()
         )
+        if not product.get('title', '').strip():
+            cond_set(
+                product, "title", response.css("h1.title ::text").extract()
+            )
 
-        sample = response.xpath('//script[contains(text(), "jet.__variants")]')\
-            .extract()
-
-        size_list = []
-        sku_list = []
-        variants_list = []
-
-        data_line = re.search(r'jet.__variants = (.*)', sample[0]).group(1)
-        size_list += re.findall(r'"Size":"(.*?)"', data_line)
-        sku_list += re.findall(r'"sku":"(.*?)"', data_line)
-
-        for index, i in enumerate(size_list):
-            test_list = {}
-            properties = {}
-
-            properties['size'] = i.split(",")[0]
-
-            try:
-                line = i.split(",")[1]
-            except IndexError:
-                continue
-            properties['count'] = re.search(r'(\d+)', line).group(0)
-
-            properties['sku'] = sku_list[index]
-            test_list['properties'] = properties
-
-            variants_list.append(test_list)
-
-        product['variants'] = variants_list
-
-        response.meta['model'] = is_empty(
-            response.xpath("//div[contains(@class, 'products')]"
-                           "/div/@rel").extract()
-        )
+        models = response.xpath("//div[contains(@class, 'products')]/div/@rel").extract()
+        response.meta['model'] = response.url.split('/')[-1] if len(models) > 1 else is_empty(models)
 
         brand = is_empty(response.xpath("//div[contains(@class, 'content')]"
                                         "/div[contains(@class, 'brand')]/text()").extract())
+        if not brand:
+            brand = is_empty(response.css('.manufacturer ::text').extract())
         if brand:
             brand = brand.replace("by ", "")
             product["brand"] = brand
-        
+
         image_url = is_empty(response.xpath(
             "//div[contains(@class,'images')]/div/@style"
         ).extract())
@@ -258,6 +236,12 @@ class JetProductsSpider(BaseProductsSpider):
                 image_url = is_empty(re.findall(
                     "background\:url\(([^\)]*)", image_url))
             product["image_url"] = image_url
+
+        if not product.get('image_url'):
+            cond_set(product, 'image_url',
+                response.xpath(
+                    '//*[contains(@class, "container-image")]/img/@src').extract()
+            )
 
         cond_set(
             product, "description", response.xpath(
@@ -277,6 +261,25 @@ class JetProductsSpider(BaseProductsSpider):
         product["variants"] = JV._variants()
 
         csrf = self.get_csrf(response)
+
+        # For each variant with SkuId we need to do a POST to get its price
+        for skuids in map((lambda x: x['skuId']),filter((lambda x: 'skuId' in x), product["variants"] or [])):
+            reqs.append(
+                Request(
+                    url=self.PRICE_URL+"?sku=%s" % skuids,
+                    method="POST",
+                    callback=self.parse_variant_prices,
+                    meta={"product": product},
+                    body=json.dumps({"sku": skuids}),
+                    headers={
+                        "content-type": "application/json",
+                        "x-csrf-token": csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    dont_filter=True,
+                )
+            )
+
         if response.meta.get("model") and csrf:
             reqs.append(
                 Request(
@@ -288,6 +291,7 @@ class JetProductsSpider(BaseProductsSpider):
                     headers={
                         "content-type": "application/json",
                         "x-csrf-token": csrf,
+                        'X-Requested-With': 'XMLHttpRequest',
                     },
                     dont_filter=True,
                 )
@@ -298,45 +302,76 @@ class JetProductsSpider(BaseProductsSpider):
 
         return product
 
+    def parse_variant_prices(self, response):
+        sku = response.url.split('?sku=')[-1]
+        product = response.meta.get('product')
+        reqs = response.meta.get('reqs')
+        data = json.loads(response.body)
+
+        # Search for the variant with the given skuId on the list
+        for variant in filter((lambda x: 'skuId' in x), product['variants']):
+            if variant['skuId'] == sku:
+                break
+
+        # Got it's index
+        index = product['variants'].index(variant)
+
+        #Update price
+        variant['price'] = data.get("referencePrice")
+
+        # Replace it on the list 
+        product['variants'].pop(index)
+        product['variants'].insert(index, variant)
+        
+        # Continue with others requests
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
     def parse_price_and_marketplace(self, response):
         product = response.meta.get("product")
         reqs = response.meta.get("reqs")
+        try:
+            data = json.loads(response.body)
 
-        data = json.loads(response.body)
+            if str(data.get("twoDay")) == "True":
+                product["deliver_in"] = "2 Days"
 
-        if str(data.get("twoDay")) == "True":
-            product["deliver_in"] = "2 Days"
+            if data.get("unavailable", None):
+                cond_set_value(product, "is_out_of_stock", True)
+            else:
+                cond_set_value(product, "is_out_of_stock", False)
 
-        if data["unavailable"]:
-            cond_set_value(product, "is_out_of_stock", True)
-        else:
-            cond_set_value(product, "is_out_of_stock", False)
+            if not product.get("price"):
+                for price in data.get("quantities", []):
+                    if price.get("quantity") == 1:
+                        product["price"] = Price(
+                            priceCurrency="USD",
+                            price=price.get("price")
+                        )
 
-        if not product.get("price"):
-            for price in data.get("quantities", []):
-                if price.get("quantity") == 1:
-                    product["price"] = Price(
-                        priceCurrency="USD",
-                        price=price.get("price")
-                    )
+            marketplace = []
+            if data.get("comparisons"):
+                for markp in data.get("comparisons", []):
+                    marketplace.append({
+                        "name": markp.get("source"),
+                        "price": Price(
+                            priceCurrency="USD",
+                            price=markp.get("price")
+                        )
+                    })
+                if marketplace:
+                    marketplace.append({
+                        "name": self.DEFAULT_MARKETPLACE,
+                        "price": product["price"]
+                    })
+                    product["marketplace"] = marketplace
 
-        marketplace = []
-        if data.get("comparisons"):
-            for markp in data.get("comparisons", []):
-                marketplace.append({
-                    "name": markp.get("source"),
-                    "price": Price(
-                        priceCurrency="USD",
-                        price=markp.get("price")
-                    )
-                })
-            if marketplace:
-                marketplace.append({
-                    "name": self.DEFAULT_MARKETPLACE,
-                    "price": product["price"]
-                })
-                product["marketplace"] = marketplace
-
+            if data.get('unavailable', None):
+                product['not_found'] = True
+        except Exception as e:
+            self.log(str(e), ERROR)
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -361,7 +396,7 @@ class JetProductsSpider(BaseProductsSpider):
 
         if "24 of 10,000+ results" in response.body_as_unicode():
             total_matches = self.tm
-        
+
         return int(total_matches)
 
     def _scrape_product_links(self, response):

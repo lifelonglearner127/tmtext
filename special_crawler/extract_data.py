@@ -1,6 +1,7 @@
  #!/usr/bin/python
 
 import urllib2
+import requests
 from httplib import IncompleteRead
 import re
 import sys
@@ -10,6 +11,7 @@ import cStringIO
 from PIL import Image
 import mmh3 as MurmurHash
 import os
+import random
 
 from no_img_hash import fetch_bytes
 from socket import timeout
@@ -39,7 +41,18 @@ class Scraper():
         MAX_RETRIES (int): number of retries before giving up fetching product page soruce (if errors encountered
             - usually IncompleteRead exceptions)
     """
-
+    # Browser agent string list
+    BROWSER_AGENT_STRING_LIST = {"Firefox": ["Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1",
+                                             "Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0",
+                                             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10; rv:33.0) Gecko/20100101 Firefox/33.0"],
+                                 "Chrome":  ["Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36",
+                                             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.1 Safari/537.36",
+                                             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.0 Safari/537.36",
+                                             "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.0 Safari/537.36"],
+                                 "Safari":  ["Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A",
+                                             "Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5355d Safari/8536.25",
+                                             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.13+ (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2"]
+                                 }
     # number of retries for fetching product page source before giving up
     MAX_RETRIES = 3
 
@@ -54,6 +67,7 @@ class Scraper():
             "product_id",
             "site_id",
             "walmart_no",
+            "tcin",
             "date",
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
@@ -65,6 +79,7 @@ class Scraper():
             "title_seo", # SEO title, string
             "model", # model of product, string
             "upc", # upc of product, string
+            "asin", # Amazon asin
             "features", # features of product, string
             "feature_count", # number of features of product, int
             "model_meta", # model from meta, string
@@ -95,10 +110,25 @@ class Scraper():
             "related_products_urls",
             "bundle",
             "bundle_components",
+            "details",
+            "mta",
+            "bullet_feature_1",
+            "bullet_feature_2",
+            "bullet_feature_3",
+            "bullet_feature_4",
+            "bullet_feature_5",
+            "usage",
+            "directions",
+            "warnings",
+            "indications",
+            "amazon_ingredients",
+
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
             "image_urls", # urls of product images, list of strings
+            "image_dimensions", # dimensions of product images
+            "no_image_available", # binary (0/1), whether there is a 'no image available' image
             "video_count", # nr of videos, int
             "video_urls", # urls of product videos, list of strings
             "wc_360", # binary (0/1), whether 360 view exists or not
@@ -122,7 +152,8 @@ class Scraper():
             "thumbnail", # thumbnail of the main product image on the page - tbd
             "manufacturer", # manufacturer info for this product
             "return_to", # return to for this product
-
+            "comparison_chart", # whether page contains a comparison chart, 1/0
+            "btv", # if page has a 'buy together value' offering, 1/0
 
             # reviews
             "review_count", # total number of reviews, int
@@ -163,6 +194,7 @@ class Scraper():
             # classification
             "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
             "category_name", # category for this product, string
+            "shelf_links_by_level", # list of category urls
             "brand" # brand of product, string
 
             # Deprecated:
@@ -195,22 +227,24 @@ class Scraper():
     #       maybe put it as an instance variable
     # TODO: add one for root? to make sure nothing new appears in root either?
     DICT_STRUCTURE = {
-        "product_info": ["product_name", "product_title", "title_seo", "model", "upc", \
+        "product_info": ["product_name", "product_title", "title_seo", "model", "upc", "asin", \
                         "features", "feature_count", "model_meta", "description", "seller_ranking", "long_description", "shelf_description", "apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
-                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to"],
-        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "video_count", "video_urls", "wc_360", \
+                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "details", "mta", \
+                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5",
+                        "usage", "directions", "warnings", "indications", "amazon_ingredients"],
+        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
-                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls"], \
+                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "in_stock", \
                     "site_online", "site_online_in_stock", "site_online_out_of_stock", "marketplace_in_stock", \
                     "marketplace_out_of_stock", "marketplace_prices", "in_stores_in_stock", \
                     "in_stores_out_of_stock", "online_only"],
-        "classification": ["categories", "category_name", "brand"]
+        "classification": ["categories", "category_name", "brand", "shelf_links_by_level"]
     }
 
     # response in case of error
@@ -224,6 +258,47 @@ class Scraper():
         "failure_type": None,
         "owned": None
     }
+
+    def select_browser_agents_randomly(self, agent_type=None):
+        if agent_type and agent_type in self.BROWSER_AGENT_STRING_LIST:
+            return random.choice(self.BROWSER_AGENT_STRING_LIST[agent_type])
+
+        return random.choice(random.choice(self.BROWSER_AGENT_STRING_LIST.values()))
+
+    def load_page_from_url_with_number_of_retries(self, url, max_retries=3, extra_exclude_condition=None):
+        for index in range(1, max_retries):
+            header = {"User-Agent": self.select_browser_agents_randomly()}
+            s = requests.Session()
+            a = requests.adapters.HTTPAdapter(max_retries=3)
+            b = requests.adapters.HTTPAdapter(max_retries=3)
+            s.mount('http://', a)
+            s.mount('https://', b)
+            contents = s.get(url, headers=header).text
+
+            if not extra_exclude_condition or extra_exclude_condition not in contents:
+                return contents
+
+        return None
+
+    def remove_duplication_keeping_order_in_list(self, seq):
+        if seq:
+            seen = set()
+            seen_add = seen.add
+            return [x for x in seq if not (x in seen or seen_add(x))]
+
+        return None
+
+    def _exclude_javascript_from_description(self, description):
+        description = re.subn(r'<(script).*?</\1>(?s)', '', description)[0]
+        description = re.subn(r'<(style).*?</\1>(?s)', '', description)[0]
+        description = re.subn("(<!--.*?-->)", "", description)[0]
+        return description
+
+    def _clean_text(self, text):
+        text = text.replace("\n", " ").replace("\t", " ").replace("\r", " ")
+       	text = re.sub("&nbsp;", " ", text).strip()
+
+        return re.sub(r'\s+', ' ', text)
 
     def load_image_hashes():
         '''Read file with image hashes list
@@ -259,6 +334,7 @@ class Scraper():
         # if needed. (more specifically overwrite functions for extracting certain data
         # (especially sellers-related fields))
         self._pre_set_fields()
+        self.proxy_config = None
 
         # update data types dictionary to overwrite names of implementing methods for each data type
         # with implmenting function from subclass
@@ -366,74 +442,96 @@ class Scraper():
 
         return nested_results_dict
 
-
     # method that returns xml tree of page, to extract the desired elemets from
     def _extract_page_tree(self):
         """Builds and sets as instance variable the xml tree of the product page
         Returns:
             lxml tree object
         """
+        if self.proxy_config:
+            for i in range(self.MAX_RETRIES):
+                try:
+                    contents = requests.get(self.product_page_url, proxies=self.proxy_config["proxies"], auth=self.proxy_config["proxy_auth"], timeout=20).text.encode("utf-8")
+                    contents = self._clean_null(contents)
+                    self.page_raw_text = contents
+                    self.tree_html = html.fromstring(contents)
 
-        request = urllib2.Request(self.product_page_url)
-        # set user agent to avoid blocking
-        agent = ''
-        if self.bot_type == "google":
-            print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
-            agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-        else:
-            agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
-        request.add_header('User-Agent', agent)
-
-        for i in range(self.MAX_RETRIES):
-            try:
-                contents = urllib2.urlopen(request, timeout=20).read()
-
-            # handle urls with special characters
-            except UnicodeEncodeError, e:
-
-                request = urllib2.Request(self.product_page_url.encode("utf-8"))
-                request.add_header('User-Agent', agent)
-                contents = urllib2.urlopen(request).read()
-
-            except IncompleteRead, e:
-                continue
-            except timeout:
-                self.is_timeout = True
-                self.ERROR_RESPONSE["failure_type"] = "Timeout"
-                return
-            except urllib2.HTTPError, err:
-                if err.code == 404:
-                    self.ERROR_RESPONSE["failure_type"] = "HTTP 404 - Page Not Found"
                     return
-                else:
-                    raise
-            try:
+                except Exception, e:
+                    continue
+        else:
+            costco_url = re.match('http://www.costco.com/(.*)', self.product_page_url)
+            wag_url = re.match('https?://www.wag.com/(.*)', self.product_page_url)
+
+            if costco_url:
+                self.product_page_url = 'http://www.costco.com/' + urllib2.quote(costco_url.group(1).encode('utf8'))
+
+            request = urllib2.Request(self.product_page_url)
+            # set user agent to avoid blocking
+            agent = ''
+            if self.bot_type == "google" or wag_url:
+                agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            else:
+                agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+            request.add_header('User-Agent', agent)
+
+            for i in range(self.MAX_RETRIES):
+                try:
+                    contents = urllib2.urlopen(request, timeout=20).read()
+
+                # handle urls with special characters
+                except UnicodeEncodeError, e:
+
+                    request = urllib2.Request(self.product_page_url.encode("utf-8"))
+                    request.add_header('User-Agent', agent)
+                    contents = urllib2.urlopen(request).read()
+
+                except IncompleteRead, e:
+                    continue
+                except timeout:
+                    self.is_timeout = True
+                    self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                    return
+                except urllib2.HTTPError, err:
+                    if err.code == 404:
+                        self.ERROR_RESPONSE["failure_type"] = "HTTP 404 - Page Not Found"
+                        return
+                    else:
+                        raise
+                try:
+                    # replace NULL characters
+                    contents = self._clean_null(contents).decode("utf8")
+                    self.page_raw_text = contents
+                    self.tree_html = html.fromstring(contents)
+                except UnicodeError, e:
+                    # If not utf8, try latin-1
+                    try:
+                        contents = self._clean_null(contents).decode("latin-1")
+                        self.page_raw_text = contents
+                        self.tree_html = html.fromstring(contents)
+
+                    except UnicodeError, e:
+                        # if string was neither utf8 or latin-1, don't decode
+                        print "Warning creating html tree from page content: ", e.message
+
+                        # replace NULL characters
+                        contents = self._clean_null(contents)
+                        self.page_raw_text = contents
+                        self.tree_html = html.fromstring(contents)
+
+                # if we got it we can exit the loop and stop retrying
+                return
+
+                # try getting it again, without catching exception.
+                # if it had worked by now, it would have returned.
+                # if it still doesn't work, it will throw exception.
+                # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
+
+                contents = urllib2.urlopen(request).read()
                 # replace NULL characters
                 contents = self._clean_null(contents)
-
-                self.tree_html = html.fromstring(contents.decode("utf8"))
-            except UnicodeError, e:
-                # if string was not utf8, don't deocde it
-                print "Warning creating html tree from page content: ", e.message
-
-                # replace NULL characters
-                contents = self._clean_null(contents)
-
+                self.page_raw_text = contents
                 self.tree_html = html.fromstring(contents)
-
-            # if we got it we can exit the loop and stop retrying
-            return
-
-
-            # try getting it again, without catching exception.
-            # if it had worked by now, it would have returned.
-            # if it still doesn't work, it will throw exception.
-            # TODO: catch in crawler_service so it returns an "Error communicating with server" as well
-
-            contents = urllib2.urlopen(request).read()
-            # replace NULL characters
-            contents = self._clean_null(contents)
-            self.tree_html = html.fromstring(contents)
 
 
     def _clean_null(self, text):
@@ -541,7 +639,7 @@ class Scraper():
 
         return False
 
-    def _image_hash(self, image_url):
+    def _image_hash(self, image_url, walmart=None):
         """Computes hash for an image.
         To be used in _no_image, and for value of _image_hashes
         returned by scraper.
@@ -549,11 +647,11 @@ class Scraper():
 
         :param image_url: url of image to be hashed
         """
-        return str(MurmurHash.hash(fetch_bytes(image_url)))
+        return str(MurmurHash.hash(fetch_bytes(image_url, walmart)))
 
     # Checks if image given as parameter is "no  image" image
     # To be used by subscrapers
-    def _no_image(self, image_url):
+    def _no_image(self, image_url, walmart=None):
         """Verifies if image with URL given as argument is
         a "no image" image.
 
@@ -567,8 +665,14 @@ class Scraper():
         Returns:
             True if it's a "no image" image, False otherwise
         """
+        print "***********test start*************"
+        try:
+            first_hash = self._image_hash(image_url, walmart)
+        except IOError:
+            return False
+        print first_hash
+        print "***********test end*************"
 
-        first_hash = self._image_hash(image_url)
         if first_hash in self.NO_IMAGE_HASHES:
             print "not an image"
             return True
@@ -683,7 +787,7 @@ class Scraper():
         # in_stores is 1 and in_stores_out_of_stock is 0
         if in_stores == 1 and in_stores_out_of_stock == 0:
             return 1
-        if in_stores == 1 and in_stores_out_of_stock == 0:
+        if in_stores == 1 and in_stores_out_of_stock == 1:
             return 0
 
         return None

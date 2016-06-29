@@ -4,7 +4,9 @@ import urllib
 import re
 import sys
 import json
-
+import mechanize
+from requests.auth import HTTPProxyAuth
+import cookielib
 from lxml import html, etree
 import time
 import requests
@@ -19,6 +21,7 @@ class LeviScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.levi.com/US/en_US/<category-name>/p/<product-id>"
     REVIEW_URL = "http://levistrauss.ugc.bazaarvoice.com/9090-en_us/{0}/reviews.djs?format=embeddedhtml"
+    ADD_REVIEW_URL = "http://levistrauss.ugc.bazaarvoice.com/9090-en_us/{0}/reviews.djs?format=embeddedhtml&page={1}&"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -28,16 +31,21 @@ class LeviScraper(Scraper):
         self.buy_stack_json = None
         # whether product has any webcollage media
         self.review_json = None
-        self.review_list = None
+        self.rev_list = None
         self.is_review_checked = False
         self.lv = LeviVariants()
+        self.proxy_host = "proxy.crawlera.com"
+        self.proxy_port = "8010"
+        self.proxy_auth = HTTPProxyAuth("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
+        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+        self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.levi.com/US/en_US/.*/p/[a-zA-Z0-9\-]+$", self.product_page_url)
+        m = re.match(r"^http://www.levi.com/US/en_US/(.*/)?p/.*$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -77,7 +85,11 @@ class LeviScraper(Scraper):
             product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\r")
             self.product_json = json.loads(product_json_text)
         except:
-            self.product_json = None
+            try:
+                product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\n")
+                self.product_json = json.loads(product_json_text)
+            except:
+                self.product_json = None
 
         try:
             buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
@@ -240,16 +252,16 @@ class LeviScraper(Scraper):
     def _review_count(self):
         self._reviews()
 
-        if not self.review_json:
+        if not self.glob_review_count:
             return 0
 
-        return int(self.review_json["jsonData"]["attributes"]["numReviews"])
+        return self.glob_review_count
 
     def _max_review(self):
         if self._review_count() == 0:
             return None
 
-        for i, review in enumerate(self.review_list):
+        for i, review in enumerate(self.rev_list):
             if review[1] > 0:
                 return 5 - i
 
@@ -257,13 +269,13 @@ class LeviScraper(Scraper):
         if self._review_count() == 0:
             return None
 
-        for i, review in enumerate(reversed(self.review_list)):
+        for i, review in enumerate(reversed(self.rev_list)):
             if review[1] > 0:
                 return i + 1
 
     def _reviews(self):
         if self.is_review_checked:
-            return self.review_list
+            return self.rev_list
 
         self.is_review_checked = True
 
@@ -285,37 +297,48 @@ class LeviScraper(Scraper):
             self.review_json = None
             return None
 
-        review_count = int(self.review_json["jsonData"]["attributes"]["numReviews"])
-
-        if review_count == 0:
-            return None
-
         offset = 0
-        review_list = None
+        number_of_passes = int(self.review_json["jsonData"]["attributes"]["numReviews"])
 
-        review_list = [[5, 0], [4, 0], [3, 0], [2, 0], [1, 0]]
+        real_count = []
+        real_count += re.findall(r'<div class=\\"BVRRHeaderPagingControls\\">'
+                                 r'SHOWING \d+-\d+ OF (\d+)', contents)
 
-        while review_count > 0:
-            ratingValue = self._find_between(contents, '<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', "<\\/span>", offset).strip()
+        review_count = self.glob_review_count = 0
 
-            if offset == 0:
-                offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">') + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
-                continue
+        if real_count:
+            review_count = int(real_count[0])
+            self.glob_review_count = int(real_count[0]) # for transfer to another method
 
-            if not ratingValue:
-                break
+        if review_count > 0:
+            for index, i in enumerate(xrange(1, review_count + 1, 30)):
+                contents += s.get(self.ADD_REVIEW_URL.
+                                  format(self._product_id(), index + 2),
+                                  headers=h, timeout=5).text
 
-            offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', offset) + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
+            marks = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
 
-            ratingValue = int(float(ratingValue))
-            review_list[5 - ratingValue][1] = review_list[5 - ratingValue][1] + 1
+            while number_of_passes > 0:
+                ratingValue = self._find_between(contents, '<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', "<\\/span>", offset).strip()
 
+                if offset == 0:
+                    offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">') + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
+                    continue
 
-            review_count = review_count - 1
+                if not ratingValue:
+                    break
 
-        self.review_list = review_list
+                offset = contents.find('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">', offset) + len('<span itemprop=\\"ratingValue\\" class=\\"BVRRNumber BVRRRatingNumber\\">')
 
-        return self.review_list
+                if ratingValue.endswith('0'):
+                    ratingValue = int(float(ratingValue))
+                    marks[ratingValue] += 1
+
+                number_of_passes -= 1
+
+            self.rev_list = [[item, marks[item]] for item in sorted(marks.keys(),
+                                                                    reverse=True)]
+        return self.rev_list
 
     ##########################################
     ############### CONTAINER : SELLERS

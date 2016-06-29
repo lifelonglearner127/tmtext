@@ -17,10 +17,13 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FLOATING_POINT_RGEX
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.validation import BaseValidator
+from product_ranking.validators.homedepot_validator import HomedepotValidatorSettings
+from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
 from lxml import html
 
 is_empty =lambda x,y=None: x[0] if x else y
+
 
 def is_num(s):
     try:
@@ -28,30 +31,6 @@ def is_num(s):
         return True
     except ValueError:
         return False
-
-
-class HomedepotValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
-    optional_fields = ['brand', 'price']
-    ignore_fields = [
-        'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
-        'google_source_site', 'description', 'special_pricing', 
-        'bestseller_rank',
-    ]
-    ignore_log_errors = False  # don't check logs for errors?
-    ignore_log_duplications = True  # ... duplicated requests?
-    ignore_log_filtered = True  # ... filtered requests?
-    test_requests = {
-        'sdfsdgdf': 0,  # should return 'no products' or just 0 products
-        'benny benassi': 0,
-        'red car': [20, 150],
-        'red stone': [40, 150],
-        'musci': [110, 210],
-        'funky': [10, 110],
-        'bunny': [7, 90],
-        'soldering iron': [30, 120],
-        'burger': [1, 40],
-        'hold': [30, 200],
-    }
 
 
 class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
@@ -72,6 +51,7 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
     def __init__(self, *args, **kwargs):
         # All this is to set the site_name since we have several
         # allowed_domains.
+        self.br = BuyerReviewsBazaarApi()
         super(HomedepotProductsSpider, self).__init__(
             site_name=self.allowed_domains[0],
             *args,
@@ -82,6 +62,7 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
+        product['_subitem'] = True
 
         cond_set(
             product,
@@ -358,37 +339,10 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_buyer_reviews(self, response):
         product = response.meta.get("product")
-        data = html.fromstring(response.body_as_unicode())
-        rating_by_stars = {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0}
-
-        avg = float(is_empty(is_empty(
-            re.findall("\"avgRating\"\:(\d+(.\d+){0,1})", 
-            response.body_as_unicode()
-        ), []), 0))
-        total = data.xpath(
-            "//span[contains(@class, 'BVRRCount')]/strong/span/text()"
-        ) or 0
-        alls = data.xpath("//span[contains(@class, 'BVRRHistAbsLabel')]/text()")[:5]
-        alls = [x.replace("(", "").replace(")", "").strip() for x in alls]
-        alls.reverse()
-        for i, rev in enumerate(alls):
-            rating_by_stars[str(i+1)] = rev
-        if total:
-            total = is_empty(re.findall(
-                FLOATING_POINT_RGEX,
-                is_empty(total, "")
-            ), 0)
-        if avg:
-            avg = float("{0:.2f}".format(avg))
-        if avg and total:
-            product["buyer_reviews"] = BuyerReviews(
-                int(total.replace(",", "")), 
-                float(avg), 
-                rating_by_stars
-            )
-        else:
-            product["buyer_reviews"] = ZERO_REVIEWS_VALUE
-        
+        brs = self.br.parse_buyer_reviews_per_page(response)
+        self.br.br_count = brs.get('num_of_reviews', None)
+        brs['rating_by_star'] = self.br.get_rating_by_star(response)
+        product['buyer_reviews'] = brs
         return product
 
     def _scrape_total_matches(self, response):
@@ -406,7 +360,13 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
             if 'we could not find any' in no_matches[0] or \
                'we found 0 matches for' in no_matches[0]:
                 return 0
-        return None
+        total_matches = response.xpath('//*[contains(@id, "all_products")]//text()').extract()
+        if total_matches:
+            total_matches = ''.join(total_matches)
+            total_matches = ''.join(c for c in total_matches if c.isdigit())
+            if total_matches and total_matches.isdigit():
+                return int(total_matches)
+        return
 
     def _scrape_product_links(self, response):
         links = response.xpath(

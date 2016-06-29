@@ -11,6 +11,7 @@ import cgi
 import subprocess
 import tempfile
 import time
+import urllib
 
 from flask import Flask, jsonify, abort, request
 app = Flask(__name__)
@@ -215,6 +216,21 @@ ajax_template = """
 </html>
 """
 
+fcgi_template = '''
+<!DOCTYPE html>
+<html>
+    <head lang="en">
+        <meta charset="UTF-8">
+        <title>Reload fcgi</title>
+    </head>
+    <body>
+        <form method="post" action="">
+            <button type="submit">Reload</button>
+        </form>
+    </body>
+</html>
+'''
+
 
 def _find_spider_by_url(url):
     given_domain = urlparse.urlparse(url).netloc.replace('www.', '')
@@ -263,22 +279,35 @@ def check_running_instances(marker):
     return processes
 
 
-def _start_spider_and_wait_for_finish(spider, url, max_wait=60*2):
+def _start_spider_and_wait_for_finish(spider, url, close_popups=False, max_wait=60*2):
     """ Returns output data file name """
     output_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jl')
     try:
         output_file.close()
     except:
         pass
+    close_popups = ' ' if not close_popups else ' -a close_popups=1 '
     # production or local machine?
     if os.path.exists('/home/web_runner/virtual-environments/web-runner/bin/scrapy'):
-        cmd = ("cd /home/web_runner/repos/tmtext/product-ranking;"
-               " /home/web_runner/virtual-environments/web-runner/bin/scrapy"
-               " crawl {spider} -a product_url={url} -o {output} > /tmp/_flask_server_scrapy.log 2>&1")
+        cmd = ('cd /home/web_runner/repos/tmtext/product-ranking;'
+               ' /home/web_runner/virtual-environments/web-runner/bin/scrapy'
+               ' crawl {spider} -a product_url="{url}" -o {output} -a image_copy=/tmp/_img_copy.png'
+               ' {close_popups} '
+               ' > /tmp/_flask_server_scrapy.log 2>&1')
     else:
-        cmd = ("scrapy crawl {spider} -a product_url={url} -o {output}"
-               " > /tmp/_flask_server_scrapy.log 2>&1")
-    run(cmd.format(spider=spider, url=url, output=output_file.name))
+        cmd = ('scrapy crawl {spider} -a product_url="{url}" -o {output}'
+               ' -a image_copy=/tmp/_img_copy.png'
+               ' {close_popups} '
+               ' > /tmp/_flask_server_scrapy.log 2>&1')
+    if isinstance(url, unicode):
+        url = url.encode('utf8')
+    try:
+        url = urllib.unquote(url)
+    except Exception as e:
+        return str(e)
+    _cmd = cmd.format(spider=spider, url=url, output=output_file.name, close_popups=close_popups)
+    print('Executing spider command: %s' % _cmd)
+    run(_cmd)
     _total_slept = 0
     while 1:
         _total_slept += 1
@@ -293,10 +322,13 @@ def _start_spider_and_wait_for_finish(spider, url, max_wait=60*2):
 @app.route('/get_data_ajax')
 def get_data_ajax():
     url = request.args.get('url', '').strip()
+    if isinstance(url, unicode):
+        url = url.encode('utf-8')
     spider = request.args['spider'].strip()
+    close_popups = request.args.get('close_popups', '').strip()
     print 'SPIDER', spider
     print 'PROCESSING URL', url
-    output_fname = _start_spider_and_wait_for_finish(spider, url)
+    output_fname = _start_spider_and_wait_for_finish(spider, url, close_popups)
     if output_fname:
         content = [json.loads(l.strip()) for l in open(output_fname, 'r').readlines()
                    if l.strip()]
@@ -320,6 +352,50 @@ def get_data():
     if not url:
         return 'Invalid URL param given (use "url" GET param)'
     return ajax_template.replace('{{ url }}', url).replace('{{ spider }}', spider)  # django-like templates =)
+
+
+@app.route('/get_raw_data', methods=['GET'])
+def get_raw_data():
+    url = request.args.get('url', '').strip()
+    spider = request.args.get('spider', '').strip()
+    close_popups = request.args.get('close_popups', '').strip()
+    if not spider:
+        spider = _find_spider_by_url(url)
+    if isinstance(spider, (str, unicode)):
+        if not '_products' in spider:
+            spider = spider + '_products'
+    if spider not in _get_all_spidernames():
+        return 'Invalid spider name. Allowed: <br><br> %s' % '<br>'.join(sorted(_get_all_spidernames()))
+    if not url:
+        return 'Invalid URL param given (use "url" GET param)'
+    if isinstance(url, unicode):
+        url = url.encode('utf-8')
+    print 'SPIDER', spider
+    print 'PROCESSING URL', url
+    output_fname = _start_spider_and_wait_for_finish(spider, url, close_popups)
+    if output_fname:
+        return open(output_fname).read()
+
+
+@app.route('/get_img_data', methods=['GET'])
+def get_img_data():
+    data = get_raw_data()
+    try:
+        j = json.loads(data)
+    except Exception as e:
+        return "Error while loading json: " + str(e)
+    if not 'image' in j:
+        return '"image" field not found in output data'
+    return '<img alt="Embedded Image" src="data:image/png;base64,%s" />' % j['image']
+
+
+@app.route('/fcgi', methods=['GET', 'POST'])
+def fcgi():
+    file_path = '/tmp/reload_uwsgi.ini'
+    if request.method == 'POST':
+        cmd = 'touch %s' % file_path
+        os.system(cmd)
+    return fcgi_template
 
 
 if __name__ == "__main__":

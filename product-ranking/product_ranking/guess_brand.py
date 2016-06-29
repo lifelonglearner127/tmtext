@@ -1,3 +1,5 @@
+# ~~coding=utf-8~~
+
 from pkg_resources import resource_string
 
 BRANDS = ()
@@ -32,6 +34,9 @@ def guess_brand_from_first_words(text, fname='data/brands.list', max_words=7):
     global BRANDS
     _load_brands(fname)
     # prepare the data
+    if isinstance(text, str):
+        text = text.decode('utf8')
+    text = text.replace(u'®', ' ').replace(u'©', ' ').replace(u'™', ' ')
     text = text.strip().replace('  ', ' ')
     # take `max_words` first words; `max_words`-1; `max_words`-2; and so on
     for cur_words in list(reversed(range(max_words)))[0:-1]:

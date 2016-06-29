@@ -9,11 +9,11 @@
 import os
 import sys
 import random
-
-from scrapy import log
 import requests
+from scrapy import log
 from requests.exceptions import (Timeout as ReqTimeout,
-                                 ProxyError as ReqProxyError, SSLError)
+                                 ProxyError as ReqProxyError, SSLError,
+                                 ContentDecodingError, ConnectionError)
 
 
 def _install_pip():
@@ -34,7 +34,8 @@ ITEM_PIPELINES = {
     'product_ranking.pipelines.SetMarketplaceSellerType': 300,
     'product_ranking.pipelines.AddSearchTermInTitleFields': 300,
     'product_ranking.pipelines.CheckGoogleSourceSiteFieldIsCorrectJson': 400,
-    'product_ranking.pipelines.WalmartRedirectedItemFieldReplace': 999,
+    'product_ranking.pipelines.WalmartRedirectedItemFieldReplace': 800,
+    'product_ranking.pipelines.SetRankingField': 900,
     'product_ranking.pipelines.MergeSubItems': 1000,
     'product_ranking.pipelines.CollectStatistics': 1300
 }
@@ -69,8 +70,9 @@ EXTENSIONS['product_ranking.extensions.IPCollector'] = 500
 
 # memory limit
 EXTENSIONS['scrapy.contrib.memusage.MemoryUsage'] = 500
-MEMUSAGE_LIMIT_MB = 768
+MEMUSAGE_LIMIT_MB = 2048
 MEMUSAGE_ENABLED = True
+
 
 
 # redefine log foramtter. DropItem exception provided with ERROR level
@@ -94,7 +96,13 @@ RETRY_HTTP_CODES = [500, 502, 503, 504, 400, 403, 404, 408]
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.contrib.downloadermiddleware.retry.RetryMiddleware': 90,
     'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
+    'scrapy_crawlera.CrawleraMiddleware': 600  # pip install scrapy-crawlera
 }
+
+
+CRAWLERA_ENABLED = False  # false by default
+CRAWLERA_APIKEY = 'eff4d75f7d3a4d1e89115c0b59fab9b2'
+
 
 _args_names = [arg.split('=')[0] if '=' in arg else arg for arg in sys.argv]
 if 'validate' in _args_names:
@@ -102,22 +110,23 @@ if 'validate' in _args_names:
         ITEM_PIPELINES = {}
     ITEM_PIPELINES['product_ranking.validation.ValidatorPipeline'] = 99
 
-if 'save_s3_cache' in _args_names:
+
+HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_s3_cache')  # default
+
+if 'save_raw_pages' in _args_names:
     #DOWNLOADER_MIDDLEWARES['scrapy.contrib.downloadermiddleware.httpcache.HttpCacheMiddleware'] = 50
     #DOWNLOADER_MIDDLEWARES['product_ranking.cache.PersistentCacheMiddleware'] = 50
     HTTPCACHE_ENABLED = True
     HTTPCACHE_POLICY = 'product_ranking.cache.CustomCachePolicy'
     HTTPCACHE_STORAGE = 'product_ranking.cache.S3CacheStorage'
     HTTPCACHE_EXPIRATION_SECS = 0  # forever
-    HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_s3_cache')
     EXTENSIONS['product_ranking.extensions.S3CacheUploader'] = 999
 
-if 'load_s3_cache' in _args_names:
+if 'load_raw_pages' in _args_names:
     HTTPCACHE_ENABLED = True
     HTTPCACHE_POLICY = 'product_ranking.cache.CustomCachePolicy'
     HTTPCACHE_STORAGE = 'product_ranking.cache.S3CacheStorage'
     HTTPCACHE_EXPIRATION_SECS = 0  # forever
-    HTTPCACHE_DIR = os.path.join(CWD, '..', '_http_s3_cache')
     EXTENSIONS['product_ranking.extensions.S3CacheDownloader'] = 999
 
 if 'enable_cache' in _args_names:  # for local development purposes only!
@@ -173,10 +182,10 @@ def _check_if_proxies_available(http_proxy_path, timeout=10):
             )
             print('successfully fetched host %s using proxy %s' % (h, prox))
             return True
-        except ReqTimeout:
+        except (ReqTimeout, ConnectionError):
             print('failed to fetch host %s using proxy %s' % (h, prox))
             pass  # got timeout - proxy not available
-        except (ReqProxyError, SSLError):
+        except (ReqProxyError, SSLError, ContentDecodingError):
             print('proxy %s - failed to fetch host %s' % (prox, h))
 
 if not os.path.exists('/tmp/_stop_proxies'):

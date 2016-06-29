@@ -115,17 +115,21 @@ def scrapy_marketplace_serializer(value):
     result = []
 
     for rec in value:
+        #import pdb; pdb.set_trace()
         if isinstance(rec, Price):
             converted = {u'price': float(rec.price),
                          u'currency': unicode(rec.priceCurrency),
                          u'name': None}
         elif isinstance(rec, dict):
-            converted = {
-                u'price': get(rec, 'price', 'price', float),
-                u'currency': get(rec, 'price', 'priceCurrency', unicode),
-                u'name': conv_or_none(rec.get('name'), unicode),
-                u'seller_type': rec.get('seller_type', None)
-            }
+            if rec.get('price', None) and rec.get('currency', None):
+                converted = rec
+            else:
+                converted = {
+                    u'price': get(rec, 'price', 'price', float),
+                    u'currency': get(rec, 'price', 'priceCurrency', unicode),
+                    u'name': conv_or_none(rec.get('name'), unicode),
+                    u'seller_type': rec.get('seller_type', None)
+                }
         else:
             converted = {u'price': None, u'currency': None,
                          u'name': unicode(rec)}
@@ -168,7 +172,9 @@ class SiteProductItem(Item):
     description = Field()  # String with HTML tags.
     brand = Field()  # String.
     price = Field(serializer=scrapy_price_serializer)  # see Price obj
+    price_with_discount = Field(serializer=scrapy_price_serializer)
     marketplace = Field(serializer=scrapy_marketplace_serializer)  # see marketplace obj
+
     locale = Field()  # String.
     # Dict of RelatedProducts. The key is the relation name.
     related_products = Field()
@@ -184,7 +190,8 @@ class SiteProductItem(Item):
     bestseller_rank = Field()
     department = Field()  # now for Amazons only; may change in the future
     category = Field()  # now for Amazons only; may change in the future
-    categories = Field() # now for amazon and maybe walmart
+    categories = Field()  # now for amazon and maybe walmart
+    categories_full_info = Field()  # for Walmart, see BZ 5828
 
     # Calculated data.
     search_term_in_title_partial = Field()  # Bool
@@ -206,6 +213,7 @@ class SiteProductItem(Item):
 
     date_of_last_question = Field()  # now for Walmart only
     recent_questions = Field()  # now for Walmart only; may change in the future
+    all_questions = Field()  # contains all questions (and answers if applicable)
 
     special_pricing = Field()  # True/False/None for TPC, Rollback; target, walmart
 
@@ -215,6 +223,8 @@ class SiteProductItem(Item):
     variants = Field()
 
     shipping = Field()  # now for Walmart only; may change in the future
+    shipping_included = Field()
+    shipping_cost = Field(serializer=scrapy_price_serializer)
 
     img_count = Field()   # now for Walmart only; may change in the future
     video_count = Field()   # now for Walmart only; may change in the future
@@ -241,7 +251,18 @@ class SiteProductItem(Item):
     shelf_name = Field()  # see https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c8
     shelf_path = Field()
 
+    price_details_in_cart = Field()  # returns True if the price is available
+                                     # only after you put the product in cart
+
+    seller_ranking = Field()  # for Walmart
+
     _subitem = Field()
+
+    minimum_order_quantity = Field() # Costco.com
+
+    available_online = Field()
+    available_store = Field()
+    subscribe_and_save = Field() # Samclub.com
 
 
 class DiscountCoupon(Item):
@@ -263,3 +284,16 @@ class DiscountCoupon(Item):
     end_date = Field()  # (10/31/2015)
     discount = Field()  # (Discount value or Percentage (20% OFF)
     conditions = Field()  # (Applies to select items priced $50 or more...)
+
+class CheckoutProductItem(Item):
+    name = Field()
+    id = Field()
+    price = Field()             # In-cart Product Value
+    price_on_page = Field()     # On-Page Product Value
+    quantity = Field()
+    requested_color = Field()
+    requested_color_not_available = Field()
+    color = Field()
+    order_subtotal = Field()    # Pre-tax & shipping Cart Value
+    order_total = Field()       # Post-tax & shipping Cart Value
+    url = Field()

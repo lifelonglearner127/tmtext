@@ -1,14 +1,16 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <title></title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-    <script src="https://raw.githubusercontent.com/jasonalvis/show-more/master/jquery.showmore.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script type="text/javascript" src="{% static 'js/jquery.showmore.min.js' %}"></script>
     <style>
         .showmore { line-height:18px; }
         .showmore_content { position:relative; overflow:hidden; }
         .showmore_trigger { width:100%; height:45px; line-height:45px; cursor:pointer; }
         .showmore_trigger span { display:block; }
+        .more-info.hidden { display: none; }
     </style>
 </head>
 <body>
@@ -28,8 +30,20 @@
                 <td>{{ diff.line }}</td>
                 <td>{{ diff.diff.0.field }}</td>
                 {% if diff.diff.0.field %}
-                    <td><div style="width:400px" class="showmore">{{ diff.diff.0.f1 }}</div></td>
-                    <td><div style="width:400px" class="showmore">{{ diff.diff.0.f2 }}</div></td>
+                    <td>
+                        <div style="width:400px" class="showmore">{{ diff.diff.0.f1 }}</div>
+                        {% if 'data1' in diff %}
+							<small><a href="#" class="more-info-click">Show data line</a></small>
+							<div class="more-info hidden">{{ diff.data1 }}</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="width:400px" class="showmore">{{ diff.diff.0.f2 }}</div>
+                        {% if 'data2' in diff %}
+							<small><a href="#" class="more-info-click">Show data line</a></small>
+							<div class="more-info hidden">{{ diff.data2 }}</div>
+                        {% endif %}
+                    </td>
                 {% else %}
                     <td colspan='2' style="color: blue">
                         {{ diff }}
@@ -47,6 +61,11 @@
                   showText: 'Show more',
                   hideText: 'Show less'
              });
+
+            $('.more-info-click').click(function(e){
+                e.preventDefault();
+                $(this).parent().next().toggleClass('hidden');
+            });
         });
     </script>
 </body>

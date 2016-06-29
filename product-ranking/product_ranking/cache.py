@@ -67,7 +67,7 @@ def _get_searchterms_str_or_product_url():
 
 
 def _get_load_from_date():
-    arg = [a for a in sys.argv if 'load_s3_cache' in a]
+    arg = [a for a in sys.argv if 'load_raw_pages' in a]
     if arg:
         arg = arg[0].split('=')[1].strip()
         return datetime.datetime.strptime(arg, '%Y-%m-%d')
@@ -142,6 +142,18 @@ class S3CacheStorage(FilesystemCacheStorage):
             utcnow = UTC_NOW
         return get_request_path_with_date(self.cachedir, spider, request,
                                           utcnow)
+
+    def store_response(self, spider, request, response):
+        # store request URL as an empty file
+        rpath = self._get_request_path(spider, request)
+        if not os.path.exists(rpath):
+            os.makedirs(rpath)
+        fname = '__MARKER_URL__' + _slugify(request.url)
+        fname = fname[0:254]
+        fname = os.path.join(rpath, fname)
+        with open(fname, 'w') as f:
+            f.write(response.url)
+        return super(S3CacheStorage, self).store_response(spider, request, response)
 
 
 class CustomCachePolicy(DummyPolicy):

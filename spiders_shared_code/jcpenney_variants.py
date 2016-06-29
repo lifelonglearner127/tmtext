@@ -77,16 +77,20 @@ class JcpenneyVariants(object):
         swatch_list = []
 
         for swatch in self.tree_html.xpath("//div[@id='color_chooser_{0}']//a[@class='swatch']".format(product_id)):
-#            image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
-
-            image_id = self._find_between(swatch.xpath("./@onclick")[0], "'{}','".format(product_id), "')")
+            image_id = self._find_between(swatch.xpath("./@onclick")[0], "'{}','".format(product_id), "')").strip()
             swatch_info = {}
             swatch_info["swatch_name"] = "color"
             swatch_info["color"] = swatch.xpath("./img/@name")[0]
-            swatch_info["hero"] = 1
+            swatch_info["hero"] = 0
             swatch_info["thumb"] = 1
-            swatch_info["hero_image"] = "http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % image_id
-            swatch_info["thumb_image"] = swatch.xpath("./img/@src")[0]
+
+            if not image_id:
+                swatch_info["hero_image"] = None
+            else:
+                swatch_info["hero_image"] = ["http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % image_id]
+                swatch_info["hero"] = 1
+
+            swatch_info["thumb_image"] = [swatch.xpath("./img/@src")[0]]
             swatch_list.append(swatch_info)
 
         if swatch_list:
@@ -284,6 +288,9 @@ class JcpenneyVariants(object):
                 variation_key_list.append("color")
                 variation_values_list.append(visible_color_list)
                 stockstatus_list_by_variation.append(dict(zip(visible_color_list, stockstatus_list)))
+
+            if not variation_values_list:
+                return None
 
             variation_combinations_values = list(itertools.product(*variation_values_list))
 

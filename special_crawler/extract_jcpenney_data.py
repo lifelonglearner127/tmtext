@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #!/usr/bin/python
 
 import re
@@ -21,6 +23,14 @@ class JcpenneyScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www\.jcpenney\.com/.*/prod\.jump\?ppId=.+$"
     REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{}/reviews.djs?format=embeddedhtml"
+    REVIEW_URL_ALTER = "http://sephora.ugc.bazaarvoice.com/8723jcp/{}/reviews.djs?format=embeddedhtml"
+    STOCK_STATUS_URL = "http://www.jcpenney.com/jsp/browse/pp/graphical/graphicalSKUOptions.jsp?fromEditBag=&" \
+                       "fromEditFav=&grView=&_dyncharset=UTF-8&_dynSessConf=-{0}&sucessUrl=%2Fjsp" \
+                       "%2Fbrowse%2Fpp%2Fgraphical%2FgraphicalSKUOptions.jsp%" \
+                       "3FfromEditBag%3D%26fromEditFav%3D%26grView%3D&_D%3AsucessUrl=+&" \
+                       "ppType=regular&_D%3AppType=+&shipToCountry=US&_D%3AshipToCountry=+&" \
+                       "ppId={1}&_D%3AppId=+&selectedLotValue=1+OZ+EAU+DE+PARFUM&_D%3AselectedLotValue=+" \
+                       "&_DARGS=%2Fdotcom%2Fjsp%2Fbrowse%2Fpp%2Fgraphical%2FgraphicalLotSKUSelection.jsp"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -66,13 +76,18 @@ class JcpenneyScraper(Scraper):
             itemtype = self.tree_html.xpath('//div[@class="pdp_details"]')
 
             if not itemtype:
+                self.ERROR_RESPONSE["failure_type"] = "Not a product"
+
                 if self.tree_html.xpath("//div[@class='product_row bottom_border flt_wdt']"):
                     self.ERROR_RESPONSE["failure_type"] = "Bundle"
 
                 raise Exception()
 
+
         except Exception:
             return True
+
+        self.analyze_media_contents()
 
         return False
 
@@ -116,40 +131,50 @@ class JcpenneyScraper(Scraper):
         return 0
 
     def _description(self):
-        description_block = self.tree_html.xpath("//div[@id='longCopyCont']")[0]
-        description = description_block.text_content().strip()
-        description = re.sub('\\n+', ' ', description).strip()
-        description = re.sub('\\t+', ' ', description).strip()
-        description = re.sub('\\r+', ' ', description).strip()
-        description = re.sub(' +', ' ', description).strip()
+        if self.tree_html.xpath("//div[@id='longCopyCont']"):
+            description_html_text = html.tostring(self.tree_html.xpath("//div[@id='longCopyCont']")[0])
 
-        long_description = self._long_description()
+            if description_html_text.startswith('<div id="longCopyCont" class="pdp_brand_desc_info" itemprop="description">'):
+                short_description_start_index = len('<div id="longCopyCont" class="pdp_brand_desc_info" itemprop="description">')
+            else:
+                short_description_start_index = 0
 
-        if long_description:
-            description = description.replace(long_description, "")
+            if description_html_text.find('<div style="page-break-after: always;">') > 0:
+                short_description_end_index = description_html_text.find('<div style="page-break-after: always;">')
+            elif description_html_text.find('<ul>') > 0:
+                short_description_end_index = description_html_text.find('<ul>')
+            elif description_html_text.find('<p>&#9679;') > 0:
+                short_description_end_index = description_html_text.find('<p>&#9679;')
+            elif short_description_start_index > 0:
+                short_description_end_index = description_html_text.rfind("</div>")
+            else:
+                short_description_end_index = len(description_html_text)
 
-        return description.strip()
+            return description_html_text[short_description_start_index:short_description_end_index].strip()
+
+        return None
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        try:
-            description_block = self.tree_html.xpath("//div[@id='longCopyCont']//ul")[0]
-            long_description = description_block.text_content().strip()
+        if self.tree_html.xpath("//div[@id='longCopyCont']"):
+            description_html_text = html.tostring(self.tree_html.xpath("//div[@id='longCopyCont']")[0])
 
-            if not long_description:
-                return None
-            else:
-                long_description = re.sub('\\n+', ' ', long_description).strip()
-                long_description = re.sub('\\t+', ' ', long_description).strip()
-                long_description = re.sub('\\r+', ' ', long_description).strip()
-                long_description = re.sub(' +', ' ', long_description).strip()
+            if description_html_text.find('<div style="page-break-after: always;">') > 0:
+                long_description_start_index = description_html_text.find('<div style="page-break-after: always;">')
+                long_description_start_index = description_html_text.find('</div>', long_description_start_index) + len("</div>")
 
-                return long_description
-        except:
-            pass
+            elif description_html_text.find('<ul>') > 0:
+                long_description_start_index = description_html_text.find('<ul>')
+
+            elif description_html_text.find('<p>&#9679;') > 0:
+                long_description_start_index = description_html_text.find('<p>&#9679;')
+
+            if long_description_start_index:
+                long_description_end_index = description_html_text.rfind("</div>")
+                return self._clean_text( description_html_text[long_description_start_index:long_description_end_index])
 
         return None
 
@@ -174,15 +199,24 @@ class JcpenneyScraper(Scraper):
     def _image_urls(self):
         image_ids = re.search('var imageName = "(.+?)";', html.tostring(self.tree_html)).group(1)
         image_ids = image_ids.split(",")
-        image_urls = ["http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id for id in image_ids]
+
+        image_urls = []
+
+        for id in image_ids:
+            url = "http://s7d2.scene7.com/is/image/JCPenney/%s?fmt=jpg&op_usm=.4,.8,0,0&resmode=sharp2" % id
+            if not url in image_urls:
+                image_urls.append(url)
 
         swatches = self._swatches()
+        swatches = swatches if swatches else []
 
         for swatch in swatches:
-            if swatch["hero_image"] not in image_urls:
-                image_urls.append(swatch["hero_image"])
+            if not swatch["hero_image"]:
+                continue
 
-        image_urls = list(set(image_urls))
+            for img in swatch["hero_image"]:
+                if not img in image_urls:
+                    image_urls.append(img)
 
         if image_urls:
             return image_urls
@@ -205,25 +239,27 @@ class JcpenneyScraper(Scraper):
 
         #check pdf
         try:
-            pdf_url = re.search('href="(.+\.pdf?)"', page_raw_text).group(1)
+            pdf_urls = re.findall(r'href="(.+\.pdf?)"', page_raw_text)
 
-            if not pdf_url:
+            if not pdf_urls:
                 raise Exception
 
-            if not pdf_url.startswith("http://"):
-                pdf_url = "http://www.jcpenney.com" + pdf_url
+            for index, url in enumerate(pdf_urls):
+                if not url.startswith("http://"):
+                    pdf_urls[index] = "http://www.jcpenney.com" + url
 
-            self.pdf_urls = [pdf_url]
+            self.pdf_urls = pdf_urls
             self.pdf_count = len(self.pdf_urls)
         except:
             pass
 
-        video_json = None
+        video_urls_list = None
 
         try:
-            video_json = ast.literal_eval(self._find_between(html.tostring(self.tree_html), "videoIds.push(", ");\nvar videoThumbsMap = "))
+            video_urls_list = re.findall('videoIds.push\((.*?)\);\n', html.tostring(self.tree_html), re.DOTALL)
+            video_urls_list = [ast.literal_eval(video_url)["url"] for video_url in video_urls_list]
         except:
-            video_json = None
+            video_urls_list = None
 
         #check media contents window existence
         if self.tree_html.xpath("//a[@class='InvodoViewerLink']"):
@@ -231,9 +267,7 @@ class JcpenneyScraper(Scraper):
             media_contents_window_link = self.tree_html.xpath("//a[@class='InvodoViewerLink']/@onclick")[0]
             media_contents_window_link = re.search("window\.open\('(.+?)',", media_contents_window_link).group(1)
 
-            h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-
-            contents = requests.get(media_contents_window_link, headers=h).text
+            contents = self.load_page_from_url_with_number_of_retries(media_contents_window_link)
 
             #check media contents
             if "webapps.easy2.com" in media_contents_window_link:
@@ -255,7 +289,7 @@ class JcpenneyScraper(Scraper):
                     pass
             elif "content.webcollage.net" in media_contents_window_link:
                 webcollage_link = re.search("document\.location\.replace\('(.+?)'\);", contents).group(1)
-                contents = requests.get(webcollage_link, headers=h).text
+                contents = self.load_page_from_url_with_number_of_retries(webcollage_link)
                 webcollage_page_tree = html.fromstring(contents)
 
                 try:
@@ -292,49 +326,43 @@ class JcpenneyScraper(Scraper):
                 except:
                     pass
 
-        if video_json:
-            if not self.video_urls:
-                self.video_urls = [video_json['url']]
-                self.video_count = 1
-            else:
-                self.video_urls.append(video_json["url"])
-                self.video_count = self.video_count + 1
+        try:
+            if video_urls_list:
+                if not self.video_urls:
+                    self.video_urls = video_urls_list
+                    self.video_count = len(video_urls_list)
+                else:
+                    self.video_urls.extend(video_urls_list)
+                    self.video_count = self.video_count + len(video_urls_list)
+        except:
+            pass
 
     def _video_urls(self):
-        self.analyze_media_contents()
         return self.video_urls
 
     def _video_count(self):
-        self.analyze_media_contents()
         return self.video_count
 
     # return dictionary with one element containing the PDF
     def _pdf_urls(self):
-        self.analyze_media_contents()
         return self.pdf_urls
 
     def _pdf_count(self):
-        self.analyze_media_contents()
         return self.pdf_count
 
     def _wc_emc(self):
-        self.analyze_media_contents()        
         return self.wc_emc
 
     def _wc_prodtour(self):
-        self.analyze_media_contents()        
         return self.wc_prodtour
 
     def _wc_360(self):
-        self.analyze_media_contents()        
         return self.wc_360
 
     def _wc_video(self):
-        self.analyze_media_contents()        
         return self.wc_video
 
     def _wc_pdf(self):
-        self.analyze_media_contents()        
         return self.wc_pdf
 
     def _webcollage(self):
@@ -406,31 +434,30 @@ class JcpenneyScraper(Scraper):
 
         self.is_review_checked = True
 
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
-        review_id = self._find_between(html.tostring(self.tree_html), 'reviewId:"', '",').strip()
-        contents = s.get(self.REVIEW_URL.format(review_id), headers=h, timeout=5).text
+        review_id = self._find_between(html.tostring(self.tree_html), 'reviewIdNew = "', '";').strip()
+        contents = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(review_id))
+        contents_alter = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL_ALTER.format(review_id))
 
-        try:
-            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
-            end_index = contents.find(",\nwidgetInitializers:initializers", start_index)
+        for content in [contents, contents_alter]:
+            try:
+                start_index = content.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
+                end_index = content.find(",\nwidgetInitializers:initializers", start_index)
 
-            self.review_json = contents[start_index:end_index]
-            self.review_json = json.loads(self.review_json)
-        except:
-            self.review_json = None
+                self.review_json = content[start_index:end_index]
+                self.review_json = json.loads(self.review_json)
+            except:
+                self.review_json = None
 
-        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
-        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
-        reviews_by_mark = reviews_by_mark[:5]
-        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
+            review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', content).group(1))
+            reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
+            reviews_by_mark = reviews_by_mark[:5]
+            review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
 
-        if not review_list:
-            review_list = None
+            if not review_list:
+                review_list = None
+
+            if review_list:
+                break
 
         self.review_list = review_list
 
@@ -440,36 +467,32 @@ class JcpenneyScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        self._extract_price_json()
+        if self.tree_html.xpath("//div[@id='priceDetails']//span[@class='gallery_page_price flt_wdt comparisonPrice']"):
+            price = self.tree_html.xpath("//div[@id='priceDetails']//span[@class='gallery_page_price flt_wdt comparisonPrice']")[0].text_content().strip().replace(",", "")
+            price = re.search(ur'([$])([\d,]+(?:\.\d{2})?)', price).groups()
+            price = price[0] + price[1]
 
-        if not self.price_json:
-            return None
+            return price
 
-        price = self.price_json["price"]
+        if self.tree_html.xpath("//span[contains(@class, 'gallery_page_price') and @itemprop='price']"):
+            price = self.tree_html.xpath("//span[contains(@class, 'gallery_page_price') and @itemprop='price']")[0].text_content().strip()
+            price = re.search(ur'([$])([\d,]+(?:\.\d{2})?)', price).groups()
+            price = price[0] + price[1]
 
-        if float(price).is_integer():
-            price = int(price)
+            return price
 
-        return "$" + str(price)
+        return None
 
     def _price_amount(self):
-        self._extract_price_json()
-
-        if not self.price_json:
-            return None
-
-        price = self.price_json["price"]
-
-        if float(price).is_integer():
-            price = int(price)
-
-        return price
+        return float(re.findall(r"\d*\.\d+|\d+", self._price().replace(",", ""))[0])
 
     def _price_currency(self):
-        return "USD"
+        currency = self._price()[0]
 
-    def _owned(self):
-        return 0
+        if currency == "$":
+            return "USD"
+
+        return None
 
     def _marketplace(self):
         return 0
@@ -478,29 +501,41 @@ class JcpenneyScraper(Scraper):
         return 1
 
     def _in_stores(self):
-        try:
-            if self.tree_html.xpath("//div[contains(@id, 'channelAvailabilitypp')]/text()")[0] == "online":
-                return 0
-        except:
+        if self.tree_html.xpath("//input[@class='bp-pp-btn-check-availability']"):
             return 1
 
+        return 0
+
     def _site_online_out_of_stock(self):
+        try:
+            session_value = self.tree_html.xpath("//input[@name='_dynSessConf']/@value")[0]
+            stock_status_json = self.load_page_from_url_with_number_of_retries(self.STOCK_STATUS_URL.format(session_value, self._product_id()))
+            stock_status_json = json.loads(stock_status_json)
+
+            if "Out of stock online." in stock_status_json["estimatedDeliveryMsg"]:
+                return 1
+        except:
+            pass
+
         return 0
-
-    def _marketplace_sellers(self):
-        return None
-
-    def _marketplace_out_of_stock(self):
-        return 0
-
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################    
     def _categories(self):
-        return self.tree_html.xpath("//div[@id='breadcrumb']/ul/li/a/text()")[1:-1]
+        categoryies = self.tree_html.xpath("//div[@id='breadcrumb']/ul/li/a/text()")
+
+        if categoryies[0].strip() == "jcpenney":
+            categoryies = categoryies[1:]
+
+        if categoryies[-1].strip() == "return to product results":
+            categoryies = categoryies[:-1]
+
+        return categoryies if categoryies else None
 
     def _category_name(self):
-        return self.tree_html.xpath("//div[@id='breadcrumb']/ul/li/a/text()")[-2]
+        categories = self._categories()
+
+        return categories[-1] if categories else None
 
     def _brand(self):
         self._extract_price_json()
@@ -514,7 +549,7 @@ class JcpenneyScraper(Scraper):
     ################ HELPER FUNCTIONS
     ##########################################
     def _clean_text(self, text):
-        return re.sub("&nbsp;", " ", text).strip()
+        return re.sub(' +', ' ', re.sub("&nbsp;|&#160;", " ", text)).strip()
 
     ##########################################
     ################ RETURN TYPES
@@ -568,13 +603,10 @@ class JcpenneyScraper(Scraper):
         "price" : _price, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
-        "owned" : _owned, \
         "marketplace" : _marketplace, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "in_stores" : _in_stores, \
-        "marketplace_sellers" : _marketplace_sellers, \
-        "marketplace_out_of_stock": _marketplace_out_of_stock, \
 
         # CONTAINER : CLASSIFICATION
         "categories" : _categories, \

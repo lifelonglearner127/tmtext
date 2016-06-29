@@ -2,9 +2,8 @@ import os
 import sys
 import time
 import json
+import random
 import zipfile
-import codecs
-import csv
 import unidecode
 import string
 import redis
@@ -35,6 +34,7 @@ sys.path.insert(2, os.path.join(CWD, '..', '..', 'product-ranking'))
 sys.path.insert(1, os.path.join(path, '..'))
 sys.path.insert(2, os.path.join(path, '..', '..', 'special_crawler',
                                 'queue_handler'))
+sys.path.insert(3, os.path.join(path, 'tmtext', 'product-ranking'))
 
 
 from sqs_ranking_spiders.task_id_generator import \
@@ -54,6 +54,7 @@ except ImportError:
 sys.path.insert(
     3, os.path.join(REPO_BASE_PATH, 'deploy', 'sqs_ranking_spiders'))
 from sqs_queue import SQS_Queue
+from libs import convert_json_to_csv
 from cache_layer import REDIS_HOST, REDIS_PORT, INSTANCES_COUNTER_REDIS_KEY, \
     TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET
 
@@ -78,7 +79,7 @@ S3_CONN = boto.connect_s3(
 S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
 
 # settings
-MAX_CONCURRENT_TASKS = 12  # tasks per instance, all with same git branch
+MAX_CONCURRENT_TASKS = 16  # tasks per instance, all with same git branch
 MAX_TRIES_TO_GET_TASK = 100  # tries to get max tasks for same branch
 LISTENER_ADDRESS = ('localhost', 9070)  # address to listen for signals
 # SCRAPY_LOGS_DIR = ''  # where to put log files
@@ -112,7 +113,7 @@ CACHE_URL_GET = 'get_cache'  # url to retrieve task cache from
 CACHE_URL_SAVE = 'save_cache'  # to save cached result to
 CACHE_URL_STATS = 'complete_task'  # to have some stats about completed tasks
 CACHE_URL_FAIL = 'fail_task'  # to manage broken tasks
-CACHE_AUTH = 'Basic YWRtaW46Q29udGVudDEyMzQ1'  # auth header value
+CACHE_AUTH = ('admin', 'SD*/#n\%4a')
 CACHE_TIMEOUT = 15  # 15 seconds request timeout
 # key in task data to not retrieve cached result
 # if True, task will be executed even if there is result for it in cache
@@ -366,7 +367,7 @@ def compress_multiple_files(output_fname, *filenames):
         mode = zipfile.ZIP_DEFLATED
     except ImportError:
         mode = zipfile.ZIP_STORED
-    zf = zipfile.ZipFile(output_fname, 'a', mode)
+    zf = zipfile.ZipFile(output_fname, 'a', mode, allowZip64=True)
     for filename in filenames:
         zf.write(filename=filename, arcname=os.path.basename(filename))
     zf.close()
@@ -394,7 +395,7 @@ def put_file_into_s3(bucket_name, fname,
             mode = zipfile.ZIP_STORED
         archive_name = filename + '.zip'
         archive_path = fname + '.zip'
-        zf = zipfile.ZipFile(archive_path, 'w', mode)
+        zf = zipfile.ZipFile(archive_path, 'w', mode, allowZip64=True)
         try:
             zf.write(filename=fname, arcname=filename)
             logger.info("Adding %s to archive", filename)
@@ -428,43 +429,6 @@ def put_file_into_s3(bucket_name, fname,
     except Exception:
         logger.warning("Failed to load files to S3. "
                        "Check file path and amazon keys/permissions.")
-
-
-def convert_json_to_csv(filepath):
-    json_filepath = filepath + '.jl'
-    logger.info("Convert %s to .csv", json_filepath)
-    field_names = set()
-    items = []
-    with codecs.open(json_filepath, "r", "utf-8") as jsonfile:
-        for line in jsonfile:
-            item = json.loads(line.strip())
-            items.append(item)
-            fields = [name for name, val in item.items()]
-            field_names = field_names | set(fields)
-
-    csv.register_dialect(
-        'json',
-        delimiter=',',
-        doublequote=True,
-        quoting=csv.QUOTE_ALL)
-
-    csv_filepath = filepath + '.csv'
-
-    with open(csv_filepath, "w") as csv_out_file:
-        csv_out_file.write(codecs.BOM_UTF8)
-        writer = csv.writer(csv_out_file, 'json')
-        writer.writerow(list(field_names))
-        for item in items:
-            vals = []
-            for name in field_names:
-                val = item.get(name, '')
-                if name == 'description':
-                    val = val.replace("\n", '\\n')
-                if type(val) == type(unicode("")):
-                    val = val.encode('utf-8')
-                vals.append(val)
-            writer.writerow(vals)
-    return csv_filepath
 
 
 def dump_result_data_into_sqs(data_key, logs_key, csv_data_key,
@@ -607,10 +571,12 @@ class ScrapyTask(object):
         ext_cache_down = 'cache_downloading'
         ext_cache_up = 'cache_uploading'
         cmd_args = self.task_data.get('cmd_args', {})
-        if cmd_args.get('save_s3_cache', False):
+        if not isinstance(cmd_args, dict):
+            cmd_args = {}
+        if cmd_args.get('save_raw_pages', False):
             self.required_signals[SIGNAL_SPIDER_OPENED]['wait'] += \
                 EXTENSION_SIGNALS[ext_cache_up]
-        if cmd_args.get('load_s3_cache'):
+        if cmd_args.get('load_raw_pages'):
             self.required_signals[SIGNAL_SCRIPT_CLOSED]['wait'] += \
                 EXTENSION_SIGNALS[ext_cache_down]
 
@@ -660,6 +626,12 @@ class ScrapyTask(object):
         if data['name'] == 'item_scraped':
             self.items_scraped += 1
             return None
+        elif data['name'] == 'item_dropped':
+            # items dropped - most likely because of "subitems" mode,
+            # so calculate the number of really scraped items
+            if random.randint(0, 30) == 0:  # do not overload server's filesystem
+                self._update_items_scraped()
+            return
         elif data['name'] == 'spider_error':
             self.spider_errors += 1
             return None
@@ -764,7 +736,7 @@ class ScrapyTask(object):
         global CONVERT_TO_CSV
         if CONVERT_TO_CSV:
             try:
-                csv_filepath = convert_json_to_csv(output_path)
+                csv_filepath = convert_json_to_csv(output_path, logger)
                 logger.info('Zip created at: %r.', csv_filepath)
                 csv_data_key = put_file_into_s3(
                     AMAZON_BUCKET_NAME, csv_filepath)
@@ -810,6 +782,19 @@ class ScrapyTask(object):
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
 
+    def _update_items_scraped(self):
+        output_path = self.get_output_path() + '.jl'
+        if os.path.exists(output_path):
+            cont = None
+            try:
+                with open(output_path, 'r') as fh:
+                    cont = fh.readlines()
+            except Exception as ex:
+                logger.error('Could not read output file [%s]: %s' % (output_path, str(ex)))
+            if cont is not None:
+                if isinstance(cont, (list, tuple)):
+                    self.items_scraped = len(cont)
+
     def _success_finish(self):
         """
         used to indicate, that scrapy process finished
@@ -817,6 +802,8 @@ class ScrapyTask(object):
         """
         # run this task after scrapy process successfully finished
         # cache result, if there is at least one scraped item
+        time.sleep(2)  # let the data to be dumped into the output file?
+        self._update_items_scraped()
         if self.items_scraped:
             self.save_cached_result()
         else:
@@ -845,10 +832,16 @@ class ScrapyTask(object):
         urls = self.task_data.get('urls', None)
         site = self.task_data['site']
         cmd_line_args = self.task_data.get('cmd_args', {})
+        if not isinstance(cmd_line_args, dict):
+            cmd_line_args = {}
         output_path = self.get_output_path()
         options = ' '
         arg_name = arg_value = None
         for key, value in cmd_line_args.items():
+            # exclude raw s3 cache - otherwise 2 spiders will work in parallel
+            #  with cache enabled
+            if is_bsr and key == 'save_raw_pages':
+                continue
             options += ' -a %s=%s' % (key, value)
         if searchterms_str:
             arg_name = 'searchterms_str'
@@ -1142,7 +1135,7 @@ def get_task_result_from_cache(task, queue_name):
     data = dict(task=json.dumps(task), queue=queue_name)
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                             headers={'Authorization': CACHE_AUTH})
+                             auth=CACHE_AUTH)
     except Exception as ex:
         logger.warning(ex)
         return None
@@ -1169,7 +1162,7 @@ def save_task_result_to_cache(task, output_path):
     data = dict(task=json.dumps(task), message=message)
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                             headers={'Authorization': CACHE_AUTH})
+                             auth=CACHE_AUTH)
     except Exception as ex:  # timeout passed but no response received
         logger.warning(ex)
         return False
@@ -1193,7 +1186,7 @@ def log_failed_task(task):
     data = dict(task=json.dumps(task))
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                             headers={'Authorization': CACHE_AUTH})
+                             auth=CACHE_AUTH)
     except Exception as ex:
         logger.warning(ex)
         return False
@@ -1210,17 +1203,17 @@ def log_failed_task(task):
         return False
 
 
-def cache_complete_task(task, is_from_cache=False):
-    """send request to notice that task is completed (for statistics)"""
+def notify_cache(task, is_from_cache=False):
+    """send request to cache (for statistics)"""
     url = CACHE_HOST + CACHE_URL_STATS
     data = dict(task=json.dumps(task), is_from_cache=json.dumps(is_from_cache))
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                             headers={'Authorization': CACHE_AUTH})
-        logger.info('Updated completed task (%s), status %s.',
+                             auth=CACHE_AUTH)
+        logger.info('Cache: updated task (%s), status %s.',
                     task.get('task_id'), resp.status_code)
     except Exception as ex:
-        logger.warning('Update completed task error: %s.', ex)
+        logger.warning('Cache: update completed task error: %s.', ex)
 
 
 def del_duplicate_tasks(tasks):
@@ -1308,6 +1301,7 @@ def main():
     # names of the queues in SQS, ordered by priority
     q_keys = ['urgent', 'production', 'test', 'dev']
     q_ind = 0  # index of current queue
+    global MAX_CONCURRENT_TASKS
     # try to get tasks, untill max number of tasks is reached or
     # max number of tries to get tasks is reached
     while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
@@ -1330,6 +1324,39 @@ def main():
             time.sleep(3)
             continue
         task_data, queue = msg
+        if 'url' in task_data and 'searchterms_str' not in task_data:
+            if MAX_CONCURRENT_TASKS < 70:  # increase num of parallel jobs
+                                           # for "light" URL-based jobs
+                MAX_CONCURRENT_TASKS += 1
+        if task_data['site'] == 'walmart':
+            task_quantity = task_data.get('cmd_args', {}).get('quantity', 20)
+            with_best_seller_ranking = task_data.get('with_best_seller_ranking', None)
+            if task_quantity > 600:
+                # decrease num of parallel tasks for "heavy" Walmart jobs
+                MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
+                logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
+                            ' (because of big walmart quantity)' % MAX_CONCURRENT_TASKS)
+                if with_best_seller_ranking:
+                    # decrease max_concurrent_tasks even more if it's BS task
+                    #  which actually runs 2x spiders
+                    MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
+                    logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
+                                ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
+            elif 300 < task_quantity < 600:
+                # decrease num of parallel tasks for "heavy" Walmart jobs
+                MAX_CONCURRENT_TASKS -= 3 if MAX_CONCURRENT_TASKS > 0 else 0
+                logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
+                            ' (because of big walmart quantity)' % MAX_CONCURRENT_TASKS)
+                if with_best_seller_ranking:
+                    # decrease max_concurrent_tasks even more if it's BS task
+                    #  which actually runs 2x spiders
+                    MAX_CONCURRENT_TASKS -= 3 if MAX_CONCURRENT_TASKS > 0 else 0
+                    logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
+                                ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
+        elif task_data['site'] in ('dockers', 'nike'):
+            MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
+            logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Firefox-based spider in use' % MAX_CONCURRENT_TASKS)
+
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))
         # prepare to run task
@@ -1355,7 +1382,7 @@ def main():
         if task.get_cached_result(TASK_QUEUE_NAME):
             # if found response in cache, upload data, delete task from sqs
             task.queue.task_done()
-            cache_complete_task(task_data, is_from_cache=True)
+            notify_cache(task_data, is_from_cache=True)
             del task
             continue
         if task.start():
@@ -1365,7 +1392,7 @@ def main():
                 'Task %s started successfully, removing it from the queue',
                 task.task_data.get('task_id'))
             task.queue.task_done()
-            cache_complete_task(task_data, is_from_cache=False)
+            notify_cache(task_data, is_from_cache=False)
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
                          task.task_data.get('task_id', 0))
@@ -1388,6 +1415,7 @@ def main():
     max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 61
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
+    # loop where we wait for all the tasks to complete
     try:
         for i in xrange(0, max_wait_time, step_time):
             if is_all_tasks_finished(tasks_taken):
@@ -1395,6 +1423,7 @@ def main():
                 break
             send_tasks_status(tasks_taken)
             time.sleep(step_time)
+            logger.info('Server statistics: ' + str(statistics.report_statistics()))
         else:
             logger.error('Some of the tasks not finished in allowed time, '
                          'stopping them.')

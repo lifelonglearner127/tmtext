@@ -58,6 +58,8 @@ class TestRun(models.Model):
         choices=[(k,k) for k in sorted(get_sc_fields())],
         null=True, blank=True,
         default=DEFAULT_EXCLUDE_FIELDS)
+    exclude_duplicates = models.BooleanField(
+        help_text='Exclude duplicated products', default=False)
     skip_urls = models.CharField(
         max_length=150, blank=True, null=True,
         help_text="All URLs containing this pattern will be skipped")

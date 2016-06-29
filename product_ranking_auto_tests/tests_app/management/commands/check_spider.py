@@ -91,7 +91,7 @@ def get_spider_to_check(spider_to_get=None):
             if spider_is_running(spider.name):
                 continue
     # check one more time (there is a chance the test run
-    #  was stopped while switching between the requests)
+    # was stopped while switching between the requests)
     time.sleep(3)
     if not spider_is_running(spider.name):
         time.sleep(3)
@@ -138,10 +138,13 @@ def get_scrapy_spider_and_settings(spider):
         if type(getattr(module, obj, '')) == type:
             if hasattr(getattr(module, obj), 'test_requests'):
                 validator = getattr(module, obj)
+            elif hasattr(getattr(module, obj), 'test_urls'):
+                validator = getattr(module, obj)
             elif (hasattr(getattr(module, obj), 'name')
                     and hasattr(getattr(module, obj), 'start_urls')):
                 if not 'Base' in str(getattr(module, obj)):
-                    scrapy_spider = getattr(module, obj)
+                    if '.ProductsSpider' not in str(getattr(module, obj)):
+                        scrapy_spider = getattr(module, obj)
     return scrapy_spider, validator
 
 
@@ -210,9 +213,41 @@ def create_alert_if_needed(test_run_or_spider, wait_time='12hrs'):
 def check_spider(spider):
     test_run = TestRun.objects.create(status='running', spider=spider)
     scrapy_spider, spider_settings = get_scrapy_spider_and_settings(spider)
+
+    test_requests = spider_settings.test_requests
+    test_run_searchterm = _check_spider_searchterms(spider, scrapy_spider, test_requests, test_run)
+    searchterm_passed = is_test_run_passed(test_run_searchterm)
+
+    test_urls = getattr(spider_settings, 'test_urls', None)
+
+    if test_urls:
+        test_run_url = _check_spider_urls(spider, scrapy_spider, test_urls, test_run)
+        url_passed = is_test_run_passed(test_run_url)
+    else:
+        url_passed = True
+
+    if searchterm_passed and url_passed:
+        test_run.status = 'passed'
+        print ' '*3, 'test run PASSED'
+    else:
+        test_run.status = 'failed'
+        print ' '*3, 'test run FAILED'
+        create_alert_if_needed(test_run_searchterm)
+
+    test_run.when_finished = timezone.now()
+    test_run.save()
+
+
+def _check_spider_searchterms(spider, scrapy_spider, test_requests, test_run):
+    """ Running spider on searchterms """
     scrapy_spider = scrapy_spider()  # instantiate class to use its methods
-    for req, req_range in spider_settings.test_requests.items():
-        _log_fname = run_spider(spider, req, time_marker=timezone.now())
+
+    for req, req_range in test_requests.items():
+        _log_fname = run_spider(
+            spider=spider,
+            mode='searchterm',
+            arg=req,
+            time_marker=timezone.now())
         errors = scrapy_spider.errors()
         html_errors = scrapy_spider.errors_html()
         output_data = scrapy_spider._validation_data()
@@ -247,16 +282,37 @@ def check_spider(spider):
         if os.path.exists(_log_fname):
             os.remove(_log_fname)
 
-    if is_test_run_passed(test_run):
-        test_run.status = 'passed'
-        print ' '*3, 'test run PASSED'
-    else:
-        test_run.status = 'failed'
-        print ' '*3, 'test run FAILED'
-        create_alert_if_needed(test_run)
+    return test_run
 
-    test_run.when_finished = timezone.now()
-    test_run.save()
+
+def _check_spider_urls(spider, scrapy_spider, test_urls, test_run):
+    """ Running spider on searchterms """
+    scrapy_spider = scrapy_spider(product_url=True)  # instantiate class to use its methods
+
+    for url in test_urls:
+        _log_fname = run_spider(
+            spider=spider,
+            mode='url',
+            arg=url,
+            time_marker=timezone.now())
+        errors = scrapy_spider.errors()
+        html_errors = scrapy_spider.errors_html()
+        if errors:
+            test_run.num_of_failed_requests += 1
+            create_failed_request(test_run, scrapy_spider, url, _log_fname,
+                                  errors, html_errors)
+            print ' '*7, 'url failed:', url
+        else:
+            test_run.num_of_successful_requests += 1
+            print ' '*7, 'url passed:', url
+
+        # remove the log file if it still exists (it happens if the request
+        # did not fail but completed successfully, and the log file was not
+        # moved
+        if os.path.exists(_log_fname):
+            os.remove(_log_fname)
+
+    return test_run
 
 
 def wait_until_spider_finishes(spider):
@@ -264,10 +320,11 @@ def wait_until_spider_finishes(spider):
         time.sleep(1)
 
 
-def run_spider(spider, search_term, time_marker):
+def run_spider(spider, mode, arg, time_marker):
     """ Executes spider
     :param spider: DB spider instance
-    :param search_term: str, request to search
+    :param mode: mode of spider: url(product_url) or searchterm(searchterms_str)
+    :param arg: value of searchterm or url
     :param time_marker: datetime
     :return: str, path to the temporary file
     """
@@ -278,19 +335,60 @@ def run_spider(spider, search_term, time_marker):
     scrapy_path = '/home/web_runner/virtual-environments/web-runner/bin/scrapy'
     if not os.path.exists(scrapy_path):
         scrapy_path = 'scrapy'
-    cmd = r'%s crawl %s -a searchterms_str="%s" -a validate=1' % (
-        scrapy_path, spider.name, search_term)
+
+    if mode == 'searchterm':
+        cmd, _log_filename = _run_spider_searchterm(scrapy_path, spider, arg, time_marker)
+    elif mode == 'url':
+        cmd, _log_filename = _run_spider_url(scrapy_path, spider, arg, time_marker)
+
+    cmd += ' -s LOG_FILE=%s' % _log_filename
+    cmd = str(cmd)  # avoid TypeError: must be encoded string without NULL ...
+    subprocess.Popen(shlex.split(cmd), stdout=open(os.devnull, 'w')).wait()
+    os.chdir(old_cwd)
+    return _log_filename
+
+
+def _run_spider_searchterm(scrapy_path, spider, search_term, time_marker):
+    """ Executes spider
+    :param spider: DB spider instance
+    :param search_term: str, request to search
+    :param time_marker: datetime
+    :return: str, path to the temporary file
+    """
+    cmd = '{path} crawl {spider} -a searchterms_str="{searchterm}" -a validate=1'.format(
+        path=scrapy_path,
+        spider=spider.name,
+        searchterm=search_term
+    )
     if ENABLE_CACHE:
         cmd += ' -a enable_cache=1'
     if isinstance(time_marker, (datetime.date, datetime.datetime)):
         time_marker = slugify(str(time_marker))
     _log_filename = '/tmp/%s__%s__%s.log' % (
         spider.name, slugify(search_term), time_marker)
-    cmd += ' -s LOG_FILE=%s' % _log_filename
-    cmd = str(cmd)  # avoid TypeError: must be encoded string without NULL ...
-    subprocess.Popen(shlex.split(cmd), stdout=open(os.devnull, 'w')).wait()
-    os.chdir(old_cwd)
-    return _log_filename
+    return cmd, _log_filename
+
+
+def _run_spider_url(scrapy_path, spider, url, time_marker):
+    """ Executes spider
+    :param spider: DB spider instance
+    :param url: str, url to search
+    :param time_marker: datetime
+    :return: str, path to the temporary file
+    """
+    cmd = '{path} crawl {spider} -a product_url="{url}" -a validate=1'.format(
+        path=scrapy_path,
+        spider=spider.name,
+        url=url
+    )
+
+    if ENABLE_CACHE:
+        cmd += ' -a enable_cache=1'
+    if isinstance(time_marker, (datetime.date, datetime.datetime)):
+        time_marker = slugify(str(time_marker))
+    _log_filename = '/tmp/%s__%s__%s.log' % (
+        spider.name, slugify(url), time_marker)
+    return cmd, _log_filename
 
 
 class Command(BaseCommand):

@@ -1,10 +1,20 @@
 import sys
 import os
+import cPickle as pickle
+import subprocess
+import os
+import sys
+from collections import OrderedDict
 
 from sqlalchemy import Column, ForeignKey, \
     String, Integer, SmallInteger, Date, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
+
+
+CWD = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(os.path.join(CWD, '..'))
+from sqs_tests_gui.settings import CACHE_MODELS_FILENAME
 
 
 Base = declarative_base()
@@ -17,6 +27,36 @@ TERM_TYPES = {
     URL_TERM: 1,
     URLS_TERM: 2
 }
+
+
+def run(command, shell=None):
+    """ Run the given command and return its output
+    """
+    out_stream = subprocess.PIPE
+    err_stream = subprocess.PIPE
+
+    if shell is not None:
+        p = subprocess.Popen(command, shell=True, stdout=out_stream,
+                             stderr=err_stream, executable=shell)
+    else:
+        p = subprocess.Popen(command, shell=True, stdout=out_stream,
+                             stderr=err_stream)
+    (stdout, stderr) = p.communicate()
+
+    return stdout, stderr
+
+
+def num_of_running_instances(file_path):
+    """ Check how many instances of the given file are running """
+    processes = 0
+    output = run('ps aux')
+    output = ' '.join(output)
+    for line in output.split('\n'):
+        line = line.strip()
+        line = line.decode('utf-8')
+        if file_path in line and not '/bin/sh' in line:
+            processes += 1
+    return processes
 
 
 class Spider(Base):
@@ -154,20 +194,15 @@ def list_db_cache(spider=None, term=None, date=None):
             query = query.join(Term).filter(Term.term == term)
     if date:
         query = query.filter(Run.date == date)
-    runs = query.all()
+    runs = query.order_by(Run.date.desc()).distinct()
 
-    # TODO: possible alternative
-    # get list of strings, representing s3 paths to the needed folders
-    # cache_map = [run.get_folder() for run in runs]
-    # return cache_map
-
-    cache_map = {}
+    cache_map = OrderedDict()
     for r in runs:
         spider = r.spider.name
         date = r.date
         searchterm = r.term.term
         if spider not in cache_map:
-            cache_map[spider] = {}
+            cache_map[spider] = OrderedDict()
         if date not in cache_map[spider]:
             cache_map[spider][date] = []
         if searchterm not in cache_map[spider][date]:
@@ -179,6 +214,7 @@ if __name__ == '__main__':
     create_tables()
     if 'clear_cache' in sys.argv:
         if raw_input('Delete all records? y/n: ').lower() == 'y':
+            #TODO: this doesn't work because of constraints - fix
             session.query(Spider).delete()
             session.query(Run).delete()
             session.query(Term).delete()
@@ -186,3 +222,22 @@ if __name__ == '__main__':
             print('Cleared')
         else:
             print('You did not type "y" - exit...')
+    if 'list' in sys.argv:
+        listing = list_db_cache()
+        for spider in listing.keys():
+            print
+            print spider.upper(), '*'*50
+            for date in listing[spider].keys():
+                print ' '*4, date, '-'*20
+                for searchterm in listing[spider][date]:
+                    print ' '*8, searchterm
+    if 'list_to_pickle' in sys.argv:
+        # like 'python cache_models.py list_to_pickle output_filename.pickle'
+        if num_of_running_instances('cache_models') > 1:
+            print 'an instance of the script is already running...'
+            sys.exit()
+        listing = list_db_cache()
+        # change date(time) objects to strings
+        fname = sys.argv[2] if len(sys.argv) > 2 else CACHE_MODELS_FILENAME
+        with open(fname, 'wb') as fh:
+            fh.write(pickle.dumps(listing))

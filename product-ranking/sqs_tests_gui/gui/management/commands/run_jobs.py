@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -20,7 +21,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         jobs = Job.objects.filter(status='created').order_by(
-            'created').distinct()[0:50]
+            '?').distinct()[0:500]
         for job in jobs:
             msg = {
                 'task_id': int(job.task_id),
@@ -30,11 +31,11 @@ class Command(BaseCommand):
             }
             if not job.quantity:
                 del msg['cmd_args']['quantity']
-            if job.save_s3_cache:
-                msg['cmd_args']['save_s3_cache'] = '1'
-            #elif job.load_s3_cache:
-            #    msg['cmd_args']['load_s3_cache'] \
-            #        = job.load_s3_cache.strftime('%Y-%m-%d')
+            if job.save_raw_pages:
+                msg['cmd_args']['save_raw_pages'] = '1'
+            #elif job.load_raw_pages:
+            #    msg['cmd_args']['load_raw_pages'] \
+            #        = job.load_raw_pages.strftime('%Y-%m-%d')
             if not msg['cmd_args']:
                 del msg['cmd_args']
             if job.search_term:
@@ -49,9 +50,13 @@ class Command(BaseCommand):
                 msg['branch_name'] = job.branch_name
             if job.extra_cmd_args and job.extra_cmd_args.strip():
                 for _arg in job.extra_cmd_args.split('\n'):
-                    extra_arg_name, extra_arg_value = _arg.split('=')
-                    extra_arg_name = extra_arg_name.strip()
-                    extra_arg_value = extra_arg_value.strip()
+                    if not _arg.strip():
+                        continue  # skip empty lines
+		    search =  re.findall('^(.*?)=(.*)$', _arg.strip())
+                    if search:
+                        extra_arg_name, extra_arg_value = search[0]
+                        extra_arg_name = extra_arg_name.strip()
+                        extra_arg_value = extra_arg_value.strip()
                     if not 'cmd_args' in msg:
                         msg['cmd_args'] = {}
                     msg['cmd_args'][extra_arg_name] = extra_arg_value

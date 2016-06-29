@@ -4,12 +4,16 @@ from __future__ import print_function
 import re
 import urlparse
 from urllib import unquote
+import urllib2
 import json
 import string
+import random
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
+import lxml.html
+import requests
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
@@ -61,6 +65,23 @@ class AmazonBaseClass(BaseProductsSpider):
 
     handle_httpstatus_list = [404]
 
+    AMAZON_PRIME_URL = 'http://www.amazon.com/gp/product/du' \
+                       '/bbop-ms3-ajax-endpoint.html?ASIN={0}&merchantID={1}' \
+                       '&bbopruleID=Acquisition_AddToCart_PrimeBasicFreeTrial' \
+                       'UpsellEligible&sbbopruleID=Acquisition_AddToCart_' \
+                       'PrimeBasicFreeTrialUpsellEligible&deliveryOptions=' \
+                       '%5Bsame-us%2Cnext%2Csecond%2Cstd-n-us%2Csss-us%5D' \
+                       '&preorder=false&releaseDateDeliveryEligible=false'
+
+    MKTP_USER_AGENTS = [
+        'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/601.4.4 (KHTML, like Gecko) Version/9.0.3 Safari/601.4.4',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:44.0) Gecko/20100101 Firefox/44.0',
+        'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.109 Safari/537.36'
+    ]
+
     def __init__(self, captcha_retries='10', *args, **kwargs):
         super(AmazonBaseClass, self).__init__(
             site_name=self.allowed_domains[0],
@@ -71,6 +92,11 @@ class AmazonBaseClass(BaseProductsSpider):
         self.mtp_class = Amazon_marketplace(self)
         self.captcha_retries = int(captcha_retries)
         self._cbw = CaptchaBreakerWrapper()
+        self.ignore_variant_data = kwargs.get('ignore_variant_data', None)
+        if self.ignore_variant_data in ('1', True, 'true', 'True'):
+            self.ignore_variant_data = True
+        else:
+            self.ignore_variant_data = False
 
     def _is_empty(self, x, y=None):
         return x[0] if x else y
@@ -337,13 +363,35 @@ class AmazonBaseClass(BaseProductsSpider):
         upc = self._parse_upc(response)
         cond_set_value(product, 'upc', upc)
 
+        # No longer available
+        no_longer_avail = self._parse_no_longer_available(response)
+        cond_set_value(product, 'no_longer_available', no_longer_avail)
+        if product.get('no_longer_available', None):
+            product['is_out_of_stock'] = True
+
         # Prime & PrimePantry
         if not product.get('prime', None) and self._parse_prime_pantry(response):
             product['prime'] = self._parse_prime_pantry(response)
 
+        if not product.get('prime', None):
+            data_body = response.xpath('//script[contains(text(), '
+                                       '"merchantID")]/text()').extract()
+            if data_body:
+                asin = is_empty(re.findall(r'"ASIN" : "(\w+)"', data_body[0]),
+                                None)
+                merchantID = is_empty(re.findall(r'"merchantID" : "(\w+)"',
+                                                 data_body[0]), None)
+
+                if asin and merchantID:
+                    reqs.append(
+                        Request(url=self.AMAZON_PRIME_URL.format(asin, merchantID),
+                                meta=meta, callback=self._amazon_prime_check)
+                    )
+
         # Parse variants
-        variants = self._parse_variants(response)
-        product['variants'] = variants
+        if not self.ignore_variant_data:
+            variants = self._parse_variants(response)
+            product['variants'] = variants
 
         # Parse buyer reviews
         buyer_reviews = self._parse_buyer_reviews(response)
@@ -367,9 +415,23 @@ class AmazonBaseClass(BaseProductsSpider):
         )
 
         # Parse marketplaces
-        marketplace_req = self._parse_marketplace(response)
-        if marketplace_req:
-            reqs.append(marketplace_req)
+        _prod = self._parse_marketplace_from_top_block(response)
+        if _prod:
+            product = _prod
+
+
+        _prod, req = self._parse_marketplace_from_static_right_block(response)
+        if _prod:
+            product = _prod
+        
+        # There are more sellers to extract    
+        if req:
+            reqs.append(req)
+
+        # TODO: fix the block below - it removes previously scraped marketplaces
+        #marketplace_req = self._parse_marketplace(response)
+        #if marketplace_req:
+        #    reqs.append(marketplace_req)
 
         # Parse category
         categories = self._parse_category(response)
@@ -392,11 +454,14 @@ class AmazonBaseClass(BaseProductsSpider):
 
         _avail = response.css('#availability ::text').extract()
         _avail = ''.join(_avail)
-        if "nichtauflager" in _avail.lower().replace(' ', ''):
+        _avail_lower = _avail.lower().replace(' ', '')
+        # Check if any of the keywords for oos is in the _avail text
+        if any(map((lambda x: x in _avail_lower), ['nichtauflager', 'currentlyunavailable'])):
             product['is_out_of_stock'] = True
-        else:
-            product['is_out_of_stock'] = False
 
+        req  = self._parse_questions(response)
+        if req:
+            reqs.append(req)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -415,6 +480,9 @@ class AmazonBaseClass(BaseProductsSpider):
         if isinstance(prod_id, (list, tuple)):
             prod_id = [s for s in prod_id if s][0]
         return prod_id
+
+    def _parse_questions(self, response):
+        None
 
     def _parse_category(self, response):
         cat = response.xpath(
@@ -483,7 +551,8 @@ class AmazonBaseClass(BaseProductsSpider):
                   '/img[@class="egcDesignPreviewBG"]/@src |' \
                   '//img[@id="main-image"]/@src |' \
                   '//*[@id="imgTagWrapperId"]/.//img/@data-old-hires |' \
-                  '//img[@id="imgBlkFront"]/@src'
+                  '//img[@id="imgBlkFront"]/@src |' \
+                  '//img[@class="masrw-main-image"]/@src'
         if add_xpath:
             xpathes += ' |' + add_xpath
 
@@ -532,6 +601,15 @@ class AmazonBaseClass(BaseProductsSpider):
 
         return image
 
+    def _parse_no_longer_available(self, response):
+        if response.xpath('//*[contains(@id, "availability")]'
+                          '//*[contains(text(), "navailable")]'):  # Unavailable or unavailable
+            return True
+        if response.xpath('//*[contains(@id, "outOfStock")]'
+                          '//*[contains(text(), "navailable")]'):  # Unavailable or unavailable
+            return True
+
+
     def _parse_brand(self, response, add_xpath=None):
         """
         Parses product brand.
@@ -544,7 +622,6 @@ class AmazonBaseClass(BaseProductsSpider):
                   '//*[@id="contributorLink"]/text() |' \
                   '//*[@id="by-line"]/.//a/text() |' \
                   '//*[@id="artist-container"]/.//a/text() |' \
-                  '//*[@id="byline"]/.//*[contains(@class,"author")]/a/text() |' \
                   '//div[@class="buying"]/.//a[contains(@href, "search-type=ss")]/text() |' \
                   '//a[@id="ProductInfoArtistLink"]/text() |' \
                   '//a[contains(@href, "field-author")]/text()'
@@ -555,6 +632,7 @@ class AmazonBaseClass(BaseProductsSpider):
         title = product.get('title', '')
 
         brand = response.xpath(xpathes).extract()
+        brand = self._is_empty([b for b in brand if b.strip()])
 
         if brand and (u'®' in brand):
             brand = brand.replace(u'®', '')
@@ -567,12 +645,15 @@ class AmazonBaseClass(BaseProductsSpider):
                 brand = brand_logo.split('/')[1]
 
         if not brand and title:
-            brand = guess_brand_from_first_words(title)
+            try:
+                brand = guess_brand_from_first_words(title)
+            except:
+                brand = guess_brand_from_first_words(title[0])
             if brand:
                 brand = [brand]
 
         if isinstance(brand, list):
-            brand = [br for br in brand if br is not 'search results']
+            brand = [br.strip() for br in brand if brand and 'search result' not in br.lower()]
 
         brand = brand or ['NO BRAND']
 
@@ -582,6 +663,10 @@ class AmazonBaseClass(BaseProductsSpider):
             else:
                 brand = None
                 break
+
+        # remove authors
+        if response.xpath('//*[contains(@id, "byline")]//*[contains(@class, "author")]'):
+            brand = None
 
         return brand
 
@@ -788,6 +873,8 @@ class AmazonBaseClass(BaseProductsSpider):
         else:
             price = '0.00'
 
+        price = self._fix_dots_commas(price)
+
         # Price is parsed in different format:
         # 1,235.00 --> 1235.00
         # 2,99 --> 2.99
@@ -812,6 +899,18 @@ class AmazonBaseClass(BaseProductsSpider):
                 try:
                     price = float(_price)
                 except:
+                    pass
+
+        if price == 0.0:
+            # "add to cart first" price?
+            _price = re.search(r'asin\-metadata.{3,100}?price.{3,100}?([\d\.]+)',
+                               response.body_as_unicode())
+            if _price:
+                _price = _price.group(1)
+                try:
+                    _price = float(_price)
+                    price = _price
+                except ValueError:
                     pass
 
         return Price(price=price, priceCurrency=self.price_currency)
@@ -900,8 +999,10 @@ class AmazonBaseClass(BaseProductsSpider):
                                '%0A%20%20%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A', res)
                 if f:
                     desc = unquote(f[0])
-                    description = [desc]
+                    description = desc
 
+        if isinstance(description, (list, tuple)):
+            description = description[0]
         return description.strip() if description else None
 
     def _parse_upc(self, response):
@@ -939,6 +1040,19 @@ class AmazonBaseClass(BaseProductsSpider):
             return 'PrimePantry'
         if response.css('.feature i.a-icon-prime').extract():
             return 'Prime'
+
+    def _amazon_prime_check(self, response):
+        product = response.meta['product']
+        reqs = response.meta.get('reqs')
+
+        if response.xpath('//p[contains(text(), "Yes, I want FREE Two-Day '
+                          'Shipping with Amazon Prime")]'):
+            product['prime'] = 'Prime'
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
 
     def _parse_last_buyer_review_date(self, response):
         if self._has_captcha(response):
@@ -1037,6 +1151,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 self.get_buyer_reviews_from_2nd_page
             )
         product = response.meta["product"]
+        reqs = response.meta.get('reqs',[])
         buyer_reviews = {}
         product["buyer_reviews"] = {}
         buyer_reviews["num_of_reviews"] = is_empty(response.xpath(
@@ -1073,6 +1188,8 @@ class AmazonBaseClass(BaseProductsSpider):
                 meta=meta,
                 dont_filter=True
             )
+        elif reqs:
+            return self.send_next_request(reqs, response)
 
         return product
 
@@ -1091,6 +1208,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 if "%" in is_perc:
                     break
                 if number:
+                    number = number.replace('.', '')
                     buyer_reviews['rating_by_star'][rating] = int(
                         number.replace(',', '')
                     )
@@ -1136,6 +1254,7 @@ class AmazonBaseClass(BaseProductsSpider):
             )
 
     def _get_rating_by_star_by_individual_request(self, response):
+        reqs = response.meta.get('reqs',[])
         product = response.meta['product']
         mkt_place_link = response.meta.get("mkt_place_link")
         current_star = response.meta['_current_star']
@@ -1172,7 +1291,9 @@ class AmazonBaseClass(BaseProductsSpider):
             # ok we collected all marks for all stars - can return the product
             product['buyer_reviews'] = BuyerReviews(**product['buyer_reviews'])
             if mkt_place_link:
-                return self.mkt_request(mkt_place_link, {"product": product})
+                return self.mkt_request(mkt_place_link, {"product": product})                
+            elif reqs:
+                return self.send_next_request(reqs, response)
             return product
 
     def send_next_request(self, reqs, response):
@@ -1243,3 +1364,246 @@ class AmazonBaseClass(BaseProductsSpider):
             next_req.replace(meta={"product": product})
             return next_req
         return product
+
+    def _marketplace_seller_name_parse(self, name):
+        if not name:
+            return name
+
+        if ' by ' in name:  # most likely it's ' and Fulfilled by' remains
+            name = name.split('and Fulfilled', 1)[0].strip()
+            name = name.split('and fulfilled', 1)[0].strip()
+            name = name.split('Dispatched from', 1)[0].strip()
+            name = name.split('Gift-wrap', 1)[0].strip()
+        if ' by ' in name:
+            self.log('Multiple "by" occurrences found at %s' % response.url, ERROR)
+        if 'Inc. ' in name:
+            name = name.split(', Inc.', 1)[0] + ', Inc.'
+        if 'Guarantee Delivery' in name:
+            name = name.split('Guarantee Delivery', 1)[0].strip()
+        if 'Deals in' in name:
+            name = name.split('Deals in', 1)[0].strip()
+        if 'Choose' in name:
+            name = name.split('Choose', 1)[0].strip()
+        if 'tax' in name:
+            name = name.split('tax', 1)[0].strip()
+        if 'in easy-to-open' in name:
+            name = name.split('in easy-to-open', 1)[0].strip()
+        if 'easy-to-open' in name:
+            name = name.split('easy-to-open', 1)[0].strip()
+        if '(' in name:
+            name = name.split('(', 1)[0].strip()
+        if 'exclusively for Prime members' in name:
+            name = name.split('exclusively for Prime members',1)[0].strip()
+        if name.endswith('.'):
+            name = name[0:-1]
+        return name
+
+
+    def _parse_marketplace_from_top_block(self, response):
+        """ Parses "top block" marketplace ("Sold by ...") """
+        top_block = response.xpath('//*[contains(@id, "sns-availability")]'
+                                   '//*[contains(text(), "old by")]')
+        if not top_block:
+            top_block = response.xpath('//*[contains(@id, "merchant-info")]'
+                                       '[contains(text(), "old by")]')
+        if not top_block:
+            return
+
+        seller_id = re.search(r'seller=([a-zA-Z0-9]+)">', top_block.extract()[0])
+        if not seller_id:
+            seller_id = re.search(r'seller=([a-zA-Z0-9]+)&', top_block.extract()[0])
+        if seller_id:
+            seller_id = seller_id.group(1)
+
+        sold_by_str = ''.join(top_block.xpath('.//text()').extract()).strip()
+        sold_by_str = sold_by_str.replace('.com.', '.com').replace('\t', '')\
+            .replace('\n', '').replace('Gift-wrap available', '').replace(' .', '').strip()
+        sold_by_whom = sold_by_str.split('by', 1)[1].strip()
+        sold_by_whom = self._marketplace_seller_name_parse(sold_by_whom)
+        if not sold_by_whom:
+            self.log('Invalid "sold by whom" at %s' % response.url, ERROR)
+            return
+        product = response.meta['product']
+        _marketplace = product.get('marketplace', [])
+        _price = product.get('price', None)
+        _currency = None
+        _price_decimal = None
+        if _price is not None:
+            _price_decimal = float(_price.price)
+            _currency = _price.priceCurrency
+        _marketplace.append({
+            'currency': _currency if _price else None,
+            'price': _price_decimal if _price else None,
+            'name': sold_by_whom,
+            'seller_id': seller_id if seller_id else None
+        })
+        product['marketplace'] = _marketplace
+        return product
+
+    @staticmethod
+    def _strip_currency_from_price(val):
+        return val.strip().replace('$', '').replace('£', '')\
+            .replace('CDN', '').replace(u'\uffe5', '').replace('EUR', '')\
+            .replace(',', '.').strip()
+
+    @staticmethod
+    def _replace_duplicated_seps(price):
+        """ 1.264.67 --> # 1264.67, 1,264,67 --> # 1264,67 """
+        if '.' in price:
+            sep = '.'
+        elif ',' in price:
+            sep = ','
+        else:
+            return price
+        left_part, reminder = price.rsplit(sep, 1)
+        return left_part.replace(sep, '') + '.' + reminder
+
+    @staticmethod
+    def _fix_dots_commas(price):
+        if '.' and ',' in price:
+            dot_index = price.find('.')
+            comma_index = price.find(',')
+            if dot_index < comma_index:  # 1.264,67
+                price = price.replace('.', '')
+            else:  # 1,264.45
+                price = price.replace(',', '')
+        if price.count('.') >= 2 or price.count(',') >= 2:  # something's wrong - # 1.264.67
+            price = AmazonBaseClass._replace_duplicated_seps(price)
+        return price
+
+    def _get_marketplace_price_from_cart(self, response, marketplace_block):
+        data_modal = {}
+        try:
+            data_modal = json.loads(marketplace_block.xpath(
+                '//*[contains(@data-a-modal, "hlc")]/@data-a-modal'
+            ).extract()[0])
+        except Exception as e:
+            self.log('Error while parsing JSON modal data %s at %s' % (
+                str(e), response.url), ERROR)
+        get_price_url = data_modal.get('url', None)
+        if get_price_url.startswith('/') and not get_price_url.startswith('//'):
+            domain = urlparse.urlparse(response.url).netloc
+            get_price_url = urlparse.urljoin('http://'+domain, get_price_url)
+        if get_price_url:
+            self.log('Getting "cart" seller price at %s for %s' % (
+                response.url, get_price_url))
+            seller_price_cont = requests.get(
+                get_price_url,
+                headers={'User-Agent': random.choice(self.MKTP_USER_AGENTS)}
+            ).text
+            lxml_doc = lxml.html.fromstring(seller_price_cont)
+            seller_price = lxml_doc.xpath(
+                '//*[contains(@id, "priceblock_ourprice")]//text()')
+            if seller_price:
+                _price = ' '.join([p.strip() for p in seller_price])
+                _price = re.search(r' .{0,2}([\d\.,]+) ', _price)
+                if _price:
+                    return [_price.group(1)]
+
+    def _parse_marketplace_from_static_right_block_more(self, response):
+        product = response.meta['product']
+        reqs = response.meta.get('reqs')
+
+        _prod_price = product.get('price', [])
+        _prod_price_currency = None
+        if _prod_price:
+            _prod_price_currency = _prod_price.priceCurrency
+
+        _marketplace = product.get('marketplace', [])
+        for seller_row in response.xpath('//*[@id="olpOfferList"]//div[contains(@class,"olpOffer")]'):
+            _name = seller_row.xpath('div[4]//h3//a/text()|div[4]//@alt').extract()
+            _price = seller_row.xpath('div[1]//*[contains(@class,"olpOfferPrice")]/text()').extract()
+            _price = float(self._strip_currency_from_price(
+                           self._fix_dots_commas(_price[0].strip()))) if _price else None
+
+            _seller_id = seller_row.xpath('div[4]//h3//a/@href').re('seller=(.*)\&?') or seller_row.xpath('div[4]//h3//a/@href').re('shops/(.*?)/')
+            _seller_id = _seller_id[0] if _seller_id else None
+
+            if _name:
+                _name = self._marketplace_seller_name_parse(_name[0])
+                _marketplace.append({
+                            'name': _name.replace('\n', '').strip(),
+                            'price': _price,
+                            'currency': _prod_price_currency,
+                            'seller_id': _seller_id
+                        })
+        if _marketplace:
+            product['marketplace'] = _marketplace
+        else:
+            product['marketplace'] = []
+
+        next_page = response.xpath('//*[@class="a-pagination"]/li[@class="a-last"]/a/@href').extract()
+        meta = response.meta
+        if next_page:
+            return Request(
+                url=urlparse.urljoin(response.url, next_page[0]),
+                callback=self._parse_marketplace_from_static_right_block_more,
+                meta=response.meta,
+                dont_filter=True
+            )
+
+        elif reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def _parse_marketplace_from_static_right_block(self, response):
+        # try to collect marketplaces from the main page first, before sending extra requests
+        product = response.meta['product']
+
+        others_sellers = response.xpath('//*[@id="mbc"]//a[contains(@href, "offer-listing")]/@href').extract()
+        if not others_sellers:
+            others_sellers = response.xpath('//span[@id="availability"]/a/@href').extract()
+        if not others_sellers:
+            others_sellers = response.xpath('//div[@id="availability"]/span/a/@href').extract()
+        if others_sellers:
+            return product, Request(url= urlparse.urljoin(response.url, others_sellers[0]),
+                                    callback=self._parse_marketplace_from_static_right_block_more,
+                                    meta=response.meta,
+                                    dont_filter=True,
+                            )
+
+        _prod_price = product.get('price', [])
+        _prod_price_currency = None
+        if _prod_price:
+            _prod_price_currency = _prod_price.priceCurrency
+
+        _marketplace = product.get('marketplace', [])
+        for mbc_row in response.xpath('//*[@id="mbc"]//*[contains(@class, "mbc-offer-row")]'):
+            _price = mbc_row.xpath('.//*[contains(@class, "a-color-price")]/text()').extract()
+            _name = mbc_row.xpath('.//*[contains(@class, "mbcMerchantName")]/text()').extract()
+            
+            _json_data = None
+            try:
+                _json_data = json.loads(mbc_row.xpath(
+                    './/*[contains(@class, "a-declarative")]'
+                    '[contains(@data-a-popover, "{")]/@data-a-popover').extract()[0])
+            except Exception as e:
+                self.log("Error while parsing json_data: %s at %s" % (
+                    str(e), response.url), ERROR)
+            merchant_id = None
+            if _json_data:
+                merchant_url = _json_data.get('url', '')
+                merchant_id = re.search(r'&me=([A-Za-z\d]{3,30})&', merchant_url)
+                if merchant_id:
+                    merchant_id = merchant_id.group(1)
+
+            if not _price:  # maybe price for this seller available only "in cart"
+                _price = self._get_marketplace_price_from_cart(response, mbc_row)
+
+            _price = float(self._strip_currency_from_price(
+                           self._fix_dots_commas(_price[0]))) \
+                     if _price else None
+
+            if _name:
+                _name = self._marketplace_seller_name_parse(_name)
+                # handle values like 1.264,67
+                _marketplace.append({
+                    'name': _name.replace('\n', '').strip(),
+                    'price': _price,
+                    'currency': _prod_price_currency,
+                    'seller_id': merchant_id
+                })
+
+        product['marketplace'] = _marketplace
+        return product, None
