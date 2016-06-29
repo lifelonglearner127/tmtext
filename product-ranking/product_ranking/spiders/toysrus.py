@@ -11,7 +11,7 @@ from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 is_empty = lambda x, y=None: x[0] if x else y
 
 
-class ToysrusProductSpider(BaseProductsSpider):
+class ToysrusProductsSpider(BaseProductsSpider):
 
     name = 'toysrus_products'
     allowed_domains = ["toysrus.com"]
@@ -24,9 +24,8 @@ class ToysrusProductSpider(BaseProductsSpider):
     start_links = 'http://www.toysrus.com'
 
     def __init__(self, *args, **kwargs):
+        super(ToysrusProductsSpider, self).__init__(site_name=self.allowed_domains[0], *args, **kwargs)
         self.br = BuyerReviewsBazaarApi(called_class=self)
-
-        super(ToysrusProductSpider, self).__init__(*args, **kwargs)
 
     def parse_product(self, response):
         reqs = []
@@ -105,7 +104,7 @@ class ToysrusProductSpider(BaseProductsSpider):
 
     def _parse_department(self, response):
         department = self._parse_categories(response)
-        return department[1]
+        return department[len(department)-1]
 
     def _parse_categories(self, response):
         categories = []
@@ -114,7 +113,7 @@ class ToysrusProductSpider(BaseProductsSpider):
         for i in categories_sel:
             categories.append(i.strip())
 
-        return categories_sel
+        return categories
 
     def _parse_price(self, response):
         price = is_empty(response.xpath('//li[contains(@class, "retail fl")]'
