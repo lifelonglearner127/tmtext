@@ -12,7 +12,6 @@ class InstagramUsersItem(Item):
     total_posts = Field()
     posts = Field()
 
-
     # Search metadata.
     site = Field()  # String.
     search_term = Field()  # String.
@@ -29,7 +28,6 @@ class InstagramUsersItem(Item):
 class InstagramCrawlerSpider(BaseProductsSpider):
     name = "instagram_users_products"
     allowed_domains = ["instagram.com"]
-    download_delay = 0.25
     posts_url = 'https://www.instagram.com/query/'
 
     def __init__(self, *args, **kwargs):

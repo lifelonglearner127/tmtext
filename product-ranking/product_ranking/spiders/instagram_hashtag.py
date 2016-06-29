@@ -2,17 +2,29 @@
 import re
 import json
 from scrapy import Spider, FormRequest, Item, Field, Request
+from product_ranking.spiders import BaseProductsSpider
 
 
 class InstagramHashtagItem(Item):
     handles = Field()
     count = Field()
 
+    # Search metadata.
+    site = Field()  # String.
+    search_term = Field()  # String.
+    ranking = Field()  # Integer.
+    total_matches = Field()  # Integer.
+    results_per_page = Field()  # Integer.
+    scraped_results_per_page = Field()  # Integer.
+    search_term_in_title_exactly = Field()
+    search_term_in_title_partial = Field()
+    search_term_in_title_interleaved = Field()
+    _statistics = Field()
 
-class InstagramHashtagsSpider(Spider):
-    name = "instagram_hashtags"
+
+class InstagramHashtagsSpider(BaseProductsSpider):
+    name = "instagram_hashtags_products"
     allowed_domains = ["instagram.com"]
-    download_delay = 0.25
     SEARCH_URL = 'https://www.instagram.com/explore/tags/{}'
 
     def _setup_class_compatibility(self):
@@ -23,18 +35,11 @@ class InstagramHashtagsSpider(Spider):
         self.zip_code = '12345'
         self.current_page = 1
 
-    def _setup_meta_compatibility(self):
-        """ Needed to prepare first request.meta vars to use """
-        return {'remaining': 99999, 'search_term': ''}.copy()
-
     def __init__(self, *args, **kwargs):
         self._setup_class_compatibility()
         super(InstagramHashtagsSpider, self).__init__(
             site_name="instagram.com",
             *args, **kwargs)
-        self.hashtag =  self.searchterms_str
-
-
 
         self.num_pages = 1
         self.user_agent = "Mozilla/5.0 (X11; Linux i686 (x86_64))" \
@@ -55,13 +60,14 @@ class InstagramHashtagsSpider(Spider):
         return url
 
     def start_requests(self):
-        yield Request(url=self.valid_url(self.SEARCH_URL.format(self.hashtag)),
-                      meta=self._setup_meta_compatibility(),
-                      callback=self._parse_single_product)  # meta is for SC baseclass compatibility
+        for st in self.searchterms:
+            print st
+            yield Request(url=self.valid_url(self.SEARCH_URL.format(st)),
+                          meta={'remaining': 99999, 'search_term': st},
+                          callback=self._parse_single_product)
 
     def _parse_single_product(self, response):
-        url = response.url
-        hashtag = url.split('/')[-2]
+        hashtag = response.meta.get('search_term').strip()
         javascript = "".join(response.xpath(
             '//script[contains(text(), "sharedData")]/text()'
         ).extract())
