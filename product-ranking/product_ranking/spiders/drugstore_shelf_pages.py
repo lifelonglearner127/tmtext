@@ -24,6 +24,7 @@ class DrugstoreShelfPagesSpider(DrugstoreProductsSpider):
         self.quantity = self.num_pages * self.prods_per_page
         if "quantity" in kwargs:
             self.quantity = int(kwargs['quantity'])
+        self.current_page = 1
 
     @staticmethod
     def valid_url(url):
