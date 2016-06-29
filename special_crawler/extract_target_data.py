@@ -49,6 +49,8 @@ class TargetScraper(Scraper):
         self.item_info = None
         self.item_info_checked = False
 
+        self.images = None
+
         self.wc_360 = 0
         self.wc_emc = 0
         self.wc_video = 0
@@ -113,6 +115,8 @@ class TargetScraper(Scraper):
         if not self.item_info_checked:
             self.item_info_checked = True
             item_info = self._item_info_helper( self._product_id())
+
+            self.images = item_info["Images"][0]
 
             if item_info.get('parentPartNumber') and item_info['parentPartNumber'] != self._product_id():
                 item_info = self._item_info_helper( item_info['parentPartNumber'])
@@ -312,7 +316,8 @@ class TargetScraper(Scraper):
         image_urls = []
 
         if self.version == 2:
-            images = self._item_info()["Images"][0]
+            self._item_info()
+            images = self.images
 
             image_urls.append( images["PrimaryImage"][0]["image"])
 
