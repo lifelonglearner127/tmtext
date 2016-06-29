@@ -92,7 +92,8 @@ class DrugstoreProductsSpider(BaseProductsSpider):
                 )
 
         cond_set_value(product, 'description', response.xpath(
-            "//div[@id='divPromosPDetail']/table/tr/td").extract())
+            "//div[@id='divPromosPDetail']/table/tr/td").extract(),
+                       conv=''.join)
 
         brand = response.xpath('//div[@id="brandStoreLink"]/a/text()').extract()
         if brand:
