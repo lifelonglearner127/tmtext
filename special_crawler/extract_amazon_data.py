@@ -659,7 +659,7 @@ class AmazonScraper(Scraper):
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
-        if canonical_link.startswith("http://www.amazon.com"):
+        if re.match("https?://www.amazon.com", canonical_link):
             return canonical_link
         else:
             return "http://www.amazon.com" + canonical_link
