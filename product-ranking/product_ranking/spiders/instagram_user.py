@@ -12,8 +12,22 @@ class InstagramUsersItem(Item):
     total_posts = Field()
     posts = Field()
 
+
+    # Search metadata.
+    site = Field()  # String.
+    search_term = Field()  # String.
+    ranking = Field()  # Integer.
+    total_matches = Field()  # Integer.
+    results_per_page = Field()  # Integer.
+    scraped_results_per_page = Field()  # Integer.
+    search_term_in_title_exactly = Field()
+    search_term_in_title_partial = Field()
+    search_term_in_title_interleaved = Field()
+    _statistics = Field()
+
+
 class InstagramCrawlerSpider(BaseProductsSpider):
-    name = "instagram_users"
+    name = "instagram_users_products"
     allowed_domains = ["instagram.com"]
     download_delay = 0.25
     posts_url = 'https://www.instagram.com/query/'
