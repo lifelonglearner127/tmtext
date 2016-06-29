@@ -268,16 +268,20 @@ class MacysScraper(Scraper):
             print "WARNING: ", e.message
 
         if self.is_bundle:
-            return [image_url]
+            image_url_frags = []
 
-        image_url_frags = [self.product_info_json['images']['imageSource']]
-        
-        image_url_frags += self.product_info_json['images']['additionalImages']
-        
-        image_url_frags += self.product_info_json['images']['colorwayPrimaryImages'].values()
-        
-        for c in self.product_info_json['images']['colorwayAdditionalImages'].values():
-            image_url_frags += c.split(',')
+            for additional_images in re.findall('MACYS.pdp.memberAdditionalImages\[\d+\] = "([^"]*)"', self.page_raw_text):
+                image_url_frags += additional_images.split(',')
+
+        else:
+            image_url_frags = [self.product_info_json['images']['imageSource']]
+            
+            image_url_frags += self.product_info_json['images']['additionalImages']
+            
+            image_url_frags += self.product_info_json['images']['colorwayPrimaryImages'].values()
+            
+            for c in self.product_info_json['images']['colorwayAdditionalImages'].values():
+                image_url_frags += c.split(',')
 
         image_urls_tmp = map(lambda f: "http://slimages.macysassets.com/is/image/MCY/products/%s" % f, image_url_frags)
 
