@@ -91,8 +91,9 @@ class DrugstoreProductsSpider(BaseProductsSpider):
                     priceCurrency='USD'
                 )
 
-        cond_set_value(product, 'description', response.xpath(
-            "//div[@id='divPromosPDetail']/table/tr/td").extract(),
+        cond_set_value(product,
+                       'description',
+                       response.xpath("//div[@id='divPromosPDetail']/table/tr/td").extract(),
                        conv=''.join)
 
         brand = response.xpath('//div[@id="brandStoreLink"]/a/text()').extract()
