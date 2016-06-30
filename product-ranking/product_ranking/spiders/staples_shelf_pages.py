@@ -70,7 +70,8 @@ class StaplesShelfPagesSpider(StaplesProductsSpider):
         shelf_category = response.xpath('//h1/text()').extract()
         if shelf_category:
             shelf_category = shelf_category[0].strip(' \t\n')
-        shelf_path = response.xpath('//div[contains(@class, "stp--breadcrumbs")]/ul/li/a/text()').extract()
+        shelf_path = response.xpath('//div[contains(@class, "stp--breadcrumbs")]/ul/li/a/text()'
+                                    ' | //div[contains(@class, "stp--breadcrumbs")]/ul/li[@class="last"]/text()').extract()
 
         for url in urls:
             item = SiteProductItem()
