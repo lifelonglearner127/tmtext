@@ -65,7 +65,8 @@ class StaplesShelfPagesSpider(StaplesProductsSpider):
 
     def _scrape_product_links(self, response):
         urls = response.xpath('//a[contains(@property, "url")]/@href').extract()
-
+        if not urls:
+            urls = response.xpath('//a[@class="product-title scTrack pfm"]/@href').extract()
         urls = [urlparse.urljoin(response.url, x) for x in urls]
         shelf_category = response.xpath('//h1/text()').extract()
         if shelf_category:
