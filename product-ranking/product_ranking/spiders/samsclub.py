@@ -308,10 +308,14 @@ class SamsclubProductsSpider(BaseProductsSpider):
         # Clean and filter categories names from breadcrumb
         bc = response.xpath('//*[@id="breadcrumb"]//a/text()').extract()
         bc = [b.strip() for b in bc if b.strip()]
+        if not bc or len(bc)==1:
+            bc = response.xpath(".//*[@id='breadcrumb']//text()").extract()
+        bc = [b.strip() for b in bc if b.strip()]
         if not bc:
             bc = response.xpath('//*[@id="breadcrumb"]//a//*[@itemprop="title"]/text()').extract()
+        bc = [b.strip() for b in bc if b.strip()]
         categories = list(filter((lambda x: x.lower() not in categorie_filters),
-                          map((lambda x: x.strip()), bc)))
+                                 map((lambda x: x.strip()), bc)))
         category = categories[-1] if categories else None
         cond_set_value(product, 'categories', categories)
         cond_set_value(product, 'category', category)
@@ -363,8 +367,20 @@ class SamsclubProductsSpider(BaseProductsSpider):
             if not productId:
                 productId = self._product_id(response)
             pSkuId = ''.join(response.xpath('//*[@id="mbxSkuId"]/@value').extract())
+            # This is fixing bug with sku and prod_id extraction for bundle products
+            if not productId or not pSkuId:
+                js_sku_prodid = response.xpath(
+                    './/script[contains(text(), "var skuId") and contains(text(), "var productId")]/text()').extract()
+                js_sku_prodid = ''.join(js_sku_prodid) if js_sku_prodid else None
+                if js_sku_prodid:
+                    rgx = r'(prod\d+)'
+                    match_list = re.findall(rgx, js_sku_prodid)
+                    productId = match_list[0] if match_list else None
+                    rgx = r'(sku\d+)'
+                    match_list = re.findall(rgx, js_sku_prodid)
+                    pSkuId = match_list[0] if match_list else None
             shipping_prices_url = "http://www.samsclub.com/sams/shop/product/moneybox/shippingDeliveryInfo.jsp?zipCode=%s&productId=%s&skuId=%s" % (self.zip_code, productId, pSkuId)
-            return Request(shipping_prices_url, 
+            return Request(shipping_prices_url,
                            meta={'product': product, 'prod_id':productId},
                            callback=self._parse_shipping_cost)
 
@@ -382,12 +398,21 @@ class SamsclubProductsSpider(BaseProductsSpider):
     def _parse_shipping_cost(self, response):
         product = response.meta['product']
         productId = response.meta['prod_id']
-        product['shipping'] = []
-        shipping_names = response.xpath('//tr/td[1]/span/text()').extract()
-        shipping_prices = response.xpath('//tr/td[2]/text()').re('[\d\.\,]+')
-
-        for shipping in zip(shipping_names, shipping_prices):
-            product['shipping'].append({'name': shipping[0], 'cost': shipping[1]})
+        shipping_list = []
+        shipping_blocks = response.xpath('//tr')
+        for block in shipping_blocks:
+            name_l = block.xpath('./td//span/text()').extract()
+            name = name_l[0] if name_l else None
+            cost = block.xpath('.//*[contains(text(), "$")]/text()').re('[\d\.\,]+')
+            cost = cost[0] if cost else None
+            if not cost:
+                if block.xpath('./*[contains(text(), "FREE")]').extract() or 'FREE' in name_l:
+                    cost = '0'
+                else:
+                    cost = None
+            if cost and name:
+                shipping_list.append({'name': name, 'cost': cost})
+        product['shipping'] = shipping_list
 
         if not product.get('buyer_reviews'):
             reviews_url = self._REVIEWS_URL.format(prod_id=productId)
