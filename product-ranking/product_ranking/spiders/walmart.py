@@ -136,6 +136,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         # avoid tons of 'items' in logs
         SiteProductItem.__repr__ = lambda _: '[product item]'
+        self.use_data_from_redirect_url = kwargs.get('use_data_from_redirect_url', False)
         super(WalmartProductsSpider, self).__init__(
             site_name=self.allowed_domains[0],
             url_formatter=FormatterWithDefaults(
@@ -423,6 +424,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             x = [i for i in x if i != ' ']
             ranking_data.append(x)
 
+        ranking_data = [[e.strip() for e in r if e.strip()] for r in ranking_data]
+
         seller_ranking = []
         for i in ranking_data:
             data = {}
@@ -459,6 +462,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         return not_available
 
     def _on_api_response(self, response):
+        if self.use_data_from_redirect_url:
+            yield self.parse_product(response.meta['original_response_'])
+            return
+
         if hasattr(response, 'getErrorMessage'):
             if response.getErrorMessage():
                 # API request failed
@@ -742,6 +749,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             response.css('.about-product-section, #SITCC_1column').extract(),
             conv=''.join
         )
+
+        if product.get('description', ''):
+            upc = re.findall('UPC: (\d+)', product['description'])
+            cond_set(product, 'upc', upc)
 
         title = is_empty(response.xpath(
                 "//h1[contains(@class,'product-name')]/text() |"

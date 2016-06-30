@@ -44,7 +44,10 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
 
     'gui',
-    'fcgi'
+    'fcgi',
+    'watchdog',
+    'kill_servers',
+    'sqs_stats',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -62,7 +65,7 @@ ROOT_URLCONF = 'urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates'), ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -170,3 +173,8 @@ TEST_QUEUE = QUEUES_LIST['test']
 TEST_CACHE_QUEUE = CACHE_QUEUES_LIST['test']
 
 CACHE_MODELS_FILENAME = '/tmp/cache_models.pickle'
+
+try:
+    from local_settings import *
+except ImportError:
+    pass

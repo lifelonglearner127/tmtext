@@ -11,6 +11,7 @@ from scrapy.log import INFO
 from scrapy import Request
 from scrapy import Selector
 from scrapy.selector import HtmlXPathSelector
+from scrapy.conf import settings
 
 from product_ranking.items import SiteProductItem, RelatedProduct, \
     Price, BuyerReviews
@@ -50,6 +51,7 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
 
     def __init__(self, sort_mode='default', *args, **kwargs):
         super(MacysProductsSpider, self).__init__(*args, **kwargs)
+        #settings.overrides['CRAWLERA_ENABLED'] = True
         self.sort_mode = self.SORT_MODES.get(sort_mode, 'ORIGINAL')
 
     def start_requests(self):  # Stolen from walmart
@@ -247,6 +249,11 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
                                    '[contains(@itemprop, "name")]/text()').extract()
         if title:
             cond_replace(product, 'title', [''.join(title).strip()])
+        if not product.get('title', None):
+            title = response.xpath('//h1[contains(@class,"productName")]//text()').extract()
+            if title:
+                product['title'] = title[0].strip()
+
         path = '//*[@id="memberProductDetails"]/node()[normalize-space()]'
         desc = response.xpath(path).extract()
         if not desc:

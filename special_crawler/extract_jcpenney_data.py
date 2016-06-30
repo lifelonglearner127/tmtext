@@ -143,6 +143,8 @@ class JcpenneyScraper(Scraper):
                 short_description_end_index = description_html_text.find('<div style="page-break-after: always;">')
             elif description_html_text.find('<ul>') > 0:
                 short_description_end_index = description_html_text.find('<ul>')
+            elif description_html_text.find('<p>&#9679;') > 0:
+                short_description_end_index = description_html_text.find('<p>&#9679;')
             elif short_description_start_index > 0:
                 short_description_end_index = description_html_text.rfind("</div>")
             else:
@@ -163,15 +165,16 @@ class JcpenneyScraper(Scraper):
             if description_html_text.find('<div style="page-break-after: always;">') > 0:
                 long_description_start_index = description_html_text.find('<div style="page-break-after: always;">')
                 long_description_start_index = description_html_text.find('</div>', long_description_start_index) + len("</div>")
-                long_description_end_index = description_html_text.rfind("</div>")
 
-                return description_html_text[long_description_start_index:long_description_end_index].strip()
-
-            if description_html_text.find('<ul>') > 0:
+            elif description_html_text.find('<ul>') > 0:
                 long_description_start_index = description_html_text.find('<ul>')
-                long_description_end_index = description_html_text.rfind("</div>")
 
-                return description_html_text[long_description_start_index:long_description_end_index].strip()
+            elif description_html_text.find('<p>&#9679;') > 0:
+                long_description_start_index = description_html_text.find('<p>&#9679;')
+
+            if long_description_start_index:
+                long_description_end_index = description_html_text.rfind("</div>")
+                return self._clean_text( description_html_text[long_description_start_index:long_description_end_index])
 
         return None
 
@@ -546,7 +549,7 @@ class JcpenneyScraper(Scraper):
     ################ HELPER FUNCTIONS
     ##########################################
     def _clean_text(self, text):
-        return re.sub("&nbsp;", " ", text).strip()
+        return re.sub(' +', ' ', re.sub("&nbsp;|&#160;", " ", text)).strip()
 
     ##########################################
     ################ RETURN TYPES

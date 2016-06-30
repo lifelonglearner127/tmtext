@@ -67,7 +67,7 @@ class Scraper():
             "product_id",
             "site_id",
             "walmart_no",
-            "tsin",
+            "tcin",
             "date",
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
@@ -110,12 +110,25 @@ class Scraper():
             "related_products_urls",
             "bundle",
             "bundle_components",
+            "details",
             "mta",
+            "bullet_feature_1",
+            "bullet_feature_2",
+            "bullet_feature_3",
+            "bullet_feature_4",
+            "bullet_feature_5",
+            "usage",
+            "directions",
+            "warnings",
+            "indications",
+            "amazon_ingredients",
+
             # page_attributes
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
             "image_urls", # urls of product images, list of strings
             "image_dimensions", # dimensions of product images
+            "no_image_available", # binary (0/1), whether there is a 'no image available' image
             "video_count", # nr of videos, int
             "video_urls", # urls of product videos, list of strings
             "wc_360", # binary (0/1), whether 360 view exists or not
@@ -219,8 +232,10 @@ class Scraper():
                         "features", "feature_count", "model_meta", "description", "seller_ranking", "long_description", "shelf_description", "apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
-                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "mta"],
-        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "video_count", "video_urls", "wc_360", \
+                        "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "details", "mta", \
+                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5",
+                        "usage", "directions", "warnings", "indications", "amazon_ingredients"],
+        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
                             "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv", \
@@ -429,7 +444,6 @@ class Scraper():
 
         return nested_results_dict
 
-
     # method that returns xml tree of page, to extract the desired elemets from
     def _extract_page_tree(self):
         """Builds and sets as instance variable the xml tree of the product page
@@ -449,12 +463,15 @@ class Scraper():
                     continue
         else:
             costco_url = re.match('http://www.costco.com/(.*)', self.product_page_url)
+            wag_url = re.match('https?://www.wag.com/(.*)', self.product_page_url)
+
             if costco_url:
                 self.product_page_url = 'http://www.costco.com/' + urllib2.quote(costco_url.group(1).encode('utf8'))
+
             request = urllib2.Request(self.product_page_url)
             # set user agent to avoid blocking
             agent = ''
-            if self.bot_type == "google":
+            if self.bot_type == "google" or wag_url:
                 agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
             else:
                 agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
@@ -624,7 +641,7 @@ class Scraper():
 
         return False
 
-    def _image_hash(self, image_url):
+    def _image_hash(self, image_url, walmart=None):
         """Computes hash for an image.
         To be used in _no_image, and for value of _image_hashes
         returned by scraper.
@@ -632,11 +649,11 @@ class Scraper():
 
         :param image_url: url of image to be hashed
         """
-        return str(MurmurHash.hash(fetch_bytes(image_url)))
+        return str(MurmurHash.hash(fetch_bytes(image_url, walmart)))
 
     # Checks if image given as parameter is "no  image" image
     # To be used by subscrapers
-    def _no_image(self, image_url):
+    def _no_image(self, image_url, walmart=None):
         """Verifies if image with URL given as argument is
         a "no image" image.
 
@@ -651,7 +668,10 @@ class Scraper():
             True if it's a "no image" image, False otherwise
         """
         print "***********test start*************"
-        first_hash = self._image_hash(image_url)
+        try:
+            first_hash = self._image_hash(image_url, walmart)
+        except IOError:
+            return False
         print first_hash
         print "***********test end*************"
 

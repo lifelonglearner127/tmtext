@@ -166,31 +166,32 @@ class BuyerReviewsBazaarApi(object):
                 data = json.loads(data)
                 histogram_data = data['BVRRSourceID'].replace('\\ ', '')\
                     .replace('\\', '').replace('\\"', '')
-
-                date = is_empty(
-                    re.findall(
-                        r'<span class="BVRRValue BVRRReviewDate">(\d+ \w+ \d+).+</span>',
-                        histogram_data
-                    )
+                dates = re.findall(
+                    r'<span class="BVRRValue BVRRReviewDate">(\d+ \w+ \d+).+</span>',
+                    histogram_data
                 )
 
-                if not date:
-                    date = is_empty(
-                        re.findall(
-                            r'<span class=\"BVRRValue BVRRReviewDate\">(\w+ \d+. \d+)',
-                            histogram_data
-                        )
+                if not dates:
+                    dates = re.findall(
+                        r'<span class=\"BVRRValue BVRRReviewDate\">(\w+ \d+. \d+)',
+                        histogram_data
                     )
-                if date:
-                    try:
-                        last_buyer_review_date = datetime.strptime(date.replace('.', '').replace(',', ''), '%d %B %Y')
-                    except:
-                        try:
-                            last_buyer_review_date = datetime.strptime(date.replace('.', '').replace(',', ''), '%B %d %Y')
-                        except:
-                            last_buyer_review_date = datetime.strptime(date.replace('.', '').replace(',', ''), '%b %d %Y')
 
-                    product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d-%m-%Y')
+                new_dates = []
+                if dates:
+                    for date in dates:
+                        try:
+                            new_date = datetime.strptime(date.replace('.', '').replace(',', ''), '%d %B %Y')
+                        except:
+                            try:
+                                new_date = datetime.strptime(date.replace('.', '').replace(',', ''), '%B %d %Y')
+                            except:
+                                new_date = datetime.strptime(date.replace('.', '').replace(',', ''), '%b %d %Y')
+                        new_dates.append(new_date)
+
+                if new_dates:
+                    product['last_buyer_review_date'] = max(new_dates).strftime(
+                        '%d-%m-%Y')
 
                 stars_data = re.findall(
                     r'<span class="BVRRHistStarLabelText">(\d+) (?:S|s)tars?</span>|'

@@ -23,6 +23,7 @@ class WalmartVariants(object):
         return  re.sub(r'\s+', ' ', text)
 
     def _swatches(self):
+        version = 'Walmart v1'
         if self.tree_html.xpath("//meta[@name='keywords']/@content"):
             version = "Walmart v2"
         if self.tree_html.xpath("//meta[@name='Keywords']/@content"):
@@ -63,13 +64,17 @@ class WalmartVariants(object):
 
                             if "imageAssets" in variant:
                                 swatch_info["hero"] = 1
+                                swatch_info['hero_image'] = [variant['imageAssets'][0]['versions']['hero']]
                             else:
                                 swatch_info["hero"] = 0
+                                swatch_info['hero_image'] = None
 
                             if "imageUrl" in variant and "no-image" not in variant["imageUrl"]:
                                 swatch_info["thumb"] = 1
+                                swatch_info['thumb_image'] = [variant['imageUrl']]
                             else:
                                 swatch_info["thumb"] = 0
+                                swatch_info['thumb_image'] = None
 
                             swatch_list.append(swatch_info)
 
@@ -82,6 +87,7 @@ class WalmartVariants(object):
         return None
 
     def _variants(self):
+        version = 'Walmart v1'
         if self.tree_html.xpath("//meta[@name='keywords']/@content"):
             version = "Walmart v2"
         if self.tree_html.xpath("//meta[@name='Keywords']/@content"):

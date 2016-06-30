@@ -133,7 +133,10 @@ class MacysScraper(Scraper):
 
     def _upc(self):
         upc = None
-        variants = self._variants()
+        try:
+            variants = self._variants()
+        except:
+            return self.product_info_json['upcMap'][self._product_id()][0]['upc']
 
         if not variants:
             upc = re.findall(r'"upc": "(.*?)",', html.tostring(self.tree_html), re.DOTALL)[0]
@@ -246,6 +249,9 @@ class MacysScraper(Scraper):
         return None
 
     def _image_urls(self):
+        if not self.product_info_json:
+            return self.tree_html.xpath('//div[@class="productImageSection"]/img/@src')
+
         image_url = self.product_info_json['imageUrl']
 
         try:
@@ -287,13 +293,29 @@ class MacysScraper(Scraper):
         video_urls = []
         rows = re.findall(r'videoid: "(.*?)"', " ".join(self.tree_html.xpath("//script//text()")), re.DOTALL)
         video_urls = rows
-        if len(video_urls) < 1:
-            return None
 
         url_template = "http://c.brightcove.com/services/viewer/federated_f9?&width=328&height=412&flashID={}_v&bgcolor=%23FFFFFF&playerID=34437976001&publisherID=24953835001&%40videoPlayer=ref%3A{}&isVid=true&isUI=true&wmode=transparent"
-        self.video_urls = [url_template.format(r, r) for r in video_urls]
-        self.video_count = len(self.video_urls)
-        return self.video_urls
+        video_urls = [url_template.format(r, r) for r in video_urls]
+
+        for video_id in re.findall('"videoID": "([^"]+)"', html.tostring(self.tree_html)):
+            videos_json = json.loads(requests.get('https://edge.api.brightcove.com/playback/v1/accounts/24953835001/videos/ref:' + video_id, headers={'Accept': 'application/json;pk=BCpkADawqM1zkb9gepUqJUigGl8BbTj-cvrHiWCc8KIrwo2ex89DkqokI_tsvGDhn2oB4dO9v8tyPUgiUaYoKJmqA8Ia7kzcrVVVAbd3VjZdjOCnHjyJbqTFvAw'}).content)
+
+            max_size = None
+
+            for source in videos_json['sources']:
+                if source.get('src'):
+                    if not max_size or source.get('size') > max_size:
+                        max_size = source['size']
+
+            for source in videos_json['sources']:
+                if source['size'] == max_size and source.get('src'):
+                    video_urls.append(source['src'].split('?')[0])
+                    break
+
+        self.video_count = len(video_urls)
+        if video_urls:
+            self.video_urls = video_urls
+            return self.video_urls
 
     def _video_count(self):
         if self.video_count is None:

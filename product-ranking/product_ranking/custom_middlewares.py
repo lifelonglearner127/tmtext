@@ -12,17 +12,16 @@ class VerizonMetaRefreshMiddleware(MetaRefreshMiddleware):
         request.meta['dont_filter'] = True
         if 'dont_redirect' in request.meta or request.method == 'HEAD' or \
                 not isinstance(response, HtmlResponse) or request.meta.get('redirect_times') >= 1:
-
             request.meta['dont_redirect'] = True
             return response
 
         if isinstance(response, HtmlResponse):
             interval, url = get_meta_refresh(response)
             if url and interval < self._maxdelay:
-                print "BBBBBBBBBBBBBBBBBBb"
                 redirected = self._redirect_request_using_get(request, url)
                 redirected.dont_filter = True
                 return self._redirect(redirected, request, spider, 'meta refresh')
+
         return response
 
 class VerizonRedirectMiddleware(RedirectMiddleware):
