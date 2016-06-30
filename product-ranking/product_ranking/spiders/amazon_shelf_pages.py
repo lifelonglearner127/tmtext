@@ -217,12 +217,12 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             return
 
         if self.current_page == 1:
-            self.quantity = total_matches if total_matches else self.quantity
+            self.quantity = min(total_matches, self.quantity) if total_matches else self.quantity
             self.remaining = self.quantity
         else:
             self.remaining -= prods_per_page
 
-        for i, (prod_url, prod_item) in enumerate(islice(prods, 0, remaining)):
+        for i, (prod_url, prod_item) in enumerate(islice(prods, 0, self.remaining)):
             # Initialize the product as much as possible.
             prod_item['site'] = self.site_name
             prod_item['search_term'] = search_term
