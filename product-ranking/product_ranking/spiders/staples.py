@@ -14,7 +14,7 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value
-
+from scrapy.conf import settings
 is_empty = lambda x, y=None: x[0] if x else y
 
 
@@ -53,6 +53,7 @@ class StaplesProductsSpider(BaseProductsSpider):
 
         super(StaplesProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
+        settings.overrides['CRAWLERA_ENABLED'] = True
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
