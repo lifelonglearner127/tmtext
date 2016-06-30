@@ -72,7 +72,7 @@ class WagShelfPagesSpider(WagProductsSpider):
         for url in urls:
             item = SiteProductItem()
             if shelf_category:
-                item['shelf_name'] = shelf_category.replace('"', "").strip()
+                item['shelf_name'] = shelf_category[0].replace('"', "").strip()
             if shelf_categories:
                 item['shelf_path'] = shelf_categories
             yield url, item
