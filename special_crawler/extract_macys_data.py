@@ -52,6 +52,7 @@ class MacysScraper(Scraper):
         self.is_review_checked = False
         self.product_info_json = None
         self.is_product_info_json_checked = False
+        self.is_bundle = False
 
     def check_url_format(self):
         # for ex: http://www1.macys.com/shop/product/closeout-biddeford-comfort-knit-fleece-heated-king-blanket?ID=694761
@@ -65,10 +66,16 @@ class MacysScraper(Scraper):
         self.is_product_info_json_checked = True
 
         try:
-            product_info_json = self.tree_html.xpath("//script[@id='productMainData' and @type='application/json']/text()")
+            if self.is_bundle:
+                product_info_json = self.tree_html.xpath("//script[@id='pdpMainData' and @type='application/json']/text()")
 
-            if product_info_json:
-                product_info_json = json.loads(product_info_json[0])
+                if product_info_json:
+                    product_info_json = json.loads(product_info_json[0])['productDetail']
+            else:
+                product_info_json = self.tree_html.xpath("//script[@id='productMainData' and @type='application/json']/text()")
+
+                if product_info_json:
+                    product_info_json = json.loads(product_info_json[0])
         except:
             product_info_json = None
 
@@ -81,15 +88,15 @@ class MacysScraper(Scraper):
         and returns True if current page is one.
         '''
 
-        self.mv.setupCH(self.tree_html)
-
         #if len(self.tree_html.xpath("//div[@id='imageZoomer']//div[contains(@class,'main-view-holder')]/img")) < 1:
         #    return True
         if len(self.tree_html.xpath("//*[contains(@class, 'productTitle')]")) < 1:
             return True
+
         if len(self.tree_html.xpath("//div[@id='viewCollectionItemsButton']")) > 0:
-            self.ERROR_RESPONSE["failure_type"] = "Bundle"
-            return True
+            self.is_bundle = True
+
+        self.mv.setupCH(self.tree_html, self.is_bundle)
 
         self._extract_product_info_json()
 
@@ -260,14 +267,21 @@ class MacysScraper(Scraper):
         except Exception, e:
             print "WARNING: ", e.message
 
-        image_url_frags = [self.product_info_json['images']['imageSource']]
-        
-        image_url_frags += self.product_info_json['images']['additionalImages']
-        
-        image_url_frags += self.product_info_json['images']['colorwayPrimaryImages'].values()
-        
-        for c in self.product_info_json['images']['colorwayAdditionalImages'].values():
-            image_url_frags += c.split(',')
+        if self.is_bundle:
+            image_url_frags = []
+
+            for additional_images in re.findall('MACYS.pdp.memberAdditionalImages\[\d+\] = "([^"]*)"', self.page_raw_text):
+                image_url_frags += additional_images.split(',')
+
+        else:
+            image_url_frags = [self.product_info_json['images']['imageSource']]
+            
+            image_url_frags += self.product_info_json['images']['additionalImages']
+            
+            image_url_frags += self.product_info_json['images']['colorwayPrimaryImages'].values()
+            
+            for c in self.product_info_json['images']['colorwayAdditionalImages'].values():
+                image_url_frags += c.split(',')
 
         image_urls_tmp = map(lambda f: "http://slimages.macysassets.com/is/image/MCY/products/%s" % f, image_url_frags)
 
@@ -336,6 +350,9 @@ class MacysScraper(Scraper):
         if self.pdf_count is None:
             self._pdf_urls()
         return self.pdf_count
+
+    def _bundle(self):
+        return self.is_bundle
 
     # extract htags (h1, h2) from its product product page tree
     def _htags(self):
@@ -431,18 +448,18 @@ class MacysScraper(Scraper):
     def _price(self):
         if self._site_online_out_of_stock():
             return "out of stock - no price given"
+
+        if self.is_bundle:
+            price_range = self.tree_html.xpath('//span[contains(@class, "fullrange")]/text()')
+            if price_range:
+                return price_range[0].replace('\n', ' ').strip()
+
+            if self.product_info_json.get('salePrice'):
+                return '$' + self.product_info_json['salePrice']
+            else:
+                return '$' + self.product_info_json['regularPrice']
+
         return self.tree_html.xpath("//meta[@itemprop='price']/@content")[0].strip()
-        
-        '''
-        if self.product_info_json:
-             sale_price = self.product_info_json.get("productDetail", {}).get("salePrice", "")
-             regular_price = self.product_info_json.get("productDetail", {}).get("regularPrice", "")
- 
-             if sale_price:
-                 return "$" + sale_price
-             elif regular_price:
-                 return "$" + regular_price
-        '''
 
     def _price_amount(self):
         price = self._price()
@@ -452,14 +469,10 @@ class MacysScraper(Scraper):
 
     def _price_currency(self):
         price = self._price()
-        price = price.replace(",", "")
-        price_amount = re.findall(r"[\d\.]+", price)[0]
-        price_currency = price.replace(price_amount, "")
-        if price_currency == "$":
+        if price and price[0] == "$":
             return "USD"
-        if not price_currency:
+        else:
             return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0].strip()
-        return price_currency
 
     def _in_stores(self):
         # MACYS.pdp.productAvailable = "true";
@@ -477,15 +490,6 @@ class MacysScraper(Scraper):
         return None
 
     def _marketplace_lowest_price(self):
-        return None
-
-    def _marketplace_out_of_stock(self):
-        """Extracts info on whether currently unavailable from any marketplace seller - binary
-        Uses functions that work on both old page design and new design.
-        Will choose whichever gives results.
-        Returns:
-            1/0
-        """
         return None
 
     def _site_online(self):
@@ -515,7 +519,11 @@ class MacysScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        all = self.product_info_json['breadCrumbCategory'].split('-')
+        if self.is_bundle:
+            all = self.tree_html.xpath('//meta[@itemprop="breadcrumb"]/@content')[0].split('-')
+        else:
+            all = self.product_info_json['breadCrumbCategory'].split('-')
+
         out = [self._clean_text(r) for r in all]
         if len(out) < 1:
             return None
@@ -570,6 +578,7 @@ class MacysScraper(Scraper):
         "mobile_image_same" : _mobile_image_same, \
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
+        "bundle" : _bundle, \
 
         # CONTAINER : SELLERS
         "price" : _price, \
@@ -579,7 +588,6 @@ class MacysScraper(Scraper):
         "marketplace": _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
-        "_marketplace_out_of_stock" : _marketplace_out_of_stock, \
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
