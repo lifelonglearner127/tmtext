@@ -327,7 +327,7 @@ class TargetScraper(Scraper):
                 for alt_number in alternate_images['imageAltNumber'].split(','):
                     image_urls.append( alternate_images['image'] + alt_number)
 
-            return image_urls
+            return map( lambda i: i + '?scl=1', image_urls)
 
         start_index = self.product_page_url.find("/-/A-") + len("/-/A-")
         end_index = self.product_page_url.rfind("?")
