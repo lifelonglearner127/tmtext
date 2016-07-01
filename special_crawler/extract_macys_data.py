@@ -273,6 +273,10 @@ class MacysScraper(Scraper):
             for additional_images in re.findall('MACYS.pdp.memberAdditionalImages\[\d+\] = "([^"]*)"', self.page_raw_text):
                 image_url_frags += additional_images.split(',')
 
+            for additional_images in re.findall('MACYS.pdp.additionalImages\[\d+\] = ({[^}]*})', self.page_raw_text):
+                for frag_string in json.loads(additional_images).itervalues():
+                    image_url_frags += frag_string.split(',')
+
         else:
             image_url_frags = [self.product_info_json['images']['imageSource']]
             
