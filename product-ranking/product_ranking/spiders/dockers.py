@@ -187,6 +187,9 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             product.update({"no_longer_available": True})
             product.update({"locale": 'en-US'})
             return product
+        else:
+            product.update({"no_longer_available": False})
+
         reqs = []
         meta['reqs'] = reqs
 
