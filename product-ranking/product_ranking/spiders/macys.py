@@ -86,6 +86,7 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
                           meta={'product': prod}, dont_filter=True)
 
     def _parse_single_product(self, response):
+        self.use_proxies = False  # turn off proxies for individual urls
         return self.parse_product(response)
 
     def parse(self, response):  # Stolen again
