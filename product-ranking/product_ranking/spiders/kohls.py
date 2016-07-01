@@ -83,9 +83,11 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
     handle_httpstatus_list = [404]
 
+    use_proxies = True
+
     def __init__(self, sort_mode=None, *args, **kwargs):
         self.start_pos = 0
-        settings.overrides['CRAWLERA_ENABLED'] = True
+        #settings.overrides['CRAWLERA_ENABLED'] = True
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
