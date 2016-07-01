@@ -4,7 +4,7 @@
 import re, json, requests
 from lxml import html, etree
 from extract_data import Scraper
-import urllib2
+import urllib2, socket
 
 class PetcoScraper(Scraper):
 
@@ -32,12 +32,6 @@ class PetcoScraper(Scraper):
         for i in range(self.MAX_RETRIES):
             try:
                 contents = urllib2.urlopen(request, timeout=30).read()
-            except urllib2.URLError, err:
-                if str(err) == '<urlopen error timed out>':
-                    self.ERROR_RESPONSE["failure_type"] = "Timeout"
-                    continue
-                else:
-                    raise
             except urllib2.HTTPError, err:
                 if err.code == 404:
                     self.ERROR_RESPONSE["failure_type"] = "404 Not Found"
@@ -47,6 +41,17 @@ class PetcoScraper(Scraper):
                     continue
                 else:
                     raise
+            except urllib2.URLError, err:
+                if str(err) == '<urlopen error timed out>':
+                    self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                    continue
+                else:
+                    raise
+            except socket.timeout, err:
+                self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                continue
+
+            break
 
         if self.ERROR_RESPONSE["failure_type"]:
             return
@@ -67,7 +72,7 @@ class PetcoScraper(Scraper):
             return True
 
         if 'Generic Error' in self.tree_html.xpath('//title/text()')[0]:
-            self.ERROR_RESPONSE["failure_type"] = 'Generic Error'
+            self.ERROR_RESPONSE["failure_type"] = '404 Not Found'
             return True
 
         return False
