@@ -101,16 +101,17 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
 
     _scraped_product_links_count = 0  # TODO: remove and implement another way of controlling the limits
     def _scrape_product_links(self, response):
-        links_xpath = (
-            '//*[@id="dealHoverContent"]//a[contains(@href, "p/")]'
-            ' | //div[contains(@class, "imageContainer")]'
-            '/../../..//a[contains(@href, "p/")]'
-            ' | //div[contains(@id, "atfResults")]//a[contains(@href, "p/")]'
-            ' | //a[contains(@href, "p/") and contains(@class, "dealTitle")]'
-            ' | //*[contains(@class, "imagebox_imagemap")]/../../a[contains(@href, "p/")]'
-            ' | //li[contains(@id, "result_")]//h2/../../a[contains(@href, "p/")]'
-            ' | //*[contains(@class, "dv-shelf-item")]//img/../../a[contains(@href, "p/")]'
-        )
+        # links_xpath = (
+        #     '//*[@id="dealHoverContent"]//a[contains(@href, "p/")]'
+        #     ' | //div[contains(@class, "imageContainer")]'
+        #     '/../../..//a[contains(@href, "p/")]'
+        #     ' | //div[contains(@id, "atfResults")]//a[contains(@href, "p/")]'
+        #     ' | //a[contains(@href, "p/") and contains(@class, "dealTitle")]'
+        #     ' | //*[contains(@class, "imagebox_imagemap")]/../../a[contains(@href, "p/")]'
+        #     ' | //li[contains(@id, "result_")]//h2/../../a[contains(@href, "p/")]'
+        #     ' | //*[contains(@class, "dv-shelf-item")]//img/../../a[contains(@href, "p/")]'
+        # )
+        links_xpath = './/*[@id="mainResults" or @id="resultsCol"]//a[@title]'
         links = response.xpath(links_xpath)
 
         # TODO: remove later
@@ -158,8 +159,9 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         """
         for link in links:
             _href = link.xpath('./@href').extract()[0]
-            if '/product-reviews/' in _href:
-                continue
+            # Only relevant for old big xpath
+            # if '/product-reviews/' in _href:
+            #     continue
             is_prime = link.xpath(
                 './..//*[contains(@class, "a-icon-prime")]')
             is_prime_pantry = link.xpath(
