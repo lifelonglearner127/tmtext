@@ -127,10 +127,13 @@ class MacysScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//h1[contains(@class, 'productName')]//text()")[0].strip()
+        try:
+            return self.tree_html.xpath("//h1[contains(@class, 'productName')]//text()")[0].strip()
+        except:
+            return self.tree_html.xpath("//h1[@id='productTitle']/text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath("//h1[contains(@class, 'productName')]//text()")[0].strip()
+        return self._product_name()
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
