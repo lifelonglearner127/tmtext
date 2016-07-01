@@ -49,14 +49,21 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
 
     settings = MacysValidatorSettings
 
+    use_proxies = True
+
     def __init__(self, sort_mode='default', *args, **kwargs):
         super(MacysProductsSpider, self).__init__(*args, **kwargs)
-        settings.overrides['CRAWLERA_ENABLED'] = True
+        #settings.overrides['CRAWLERA_ENABLED'] = True
+        RETRY_HTTP_CODES = settings['RETRY_HTTP_CODES']
+        RETRY_HTTP_CODES.append(507)
+        settings.overrides['RETRY_HTTP_CODES'] = RETRY_HTTP_CODES
+        if self.product_url:
+            self.use_proxies = False  # turn off proxies for individual urls
         self.sort_mode = self.SORT_MODES.get(sort_mode, 'ORIGINAL')
 
     def start_requests(self):  # Stolen from walmart
         """Generate Requests from the SEARCH_URL and the search terms."""
-        settings.overrides['CRAWLERA_ENABLED'] = True
+        #settings.overrides['CRAWLERA_ENABLED'] = True
         self.url_formatter.defaults['page'] = 1
         for st in self.searchterms:
             yield Request(
@@ -91,7 +98,7 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
             yield self._create_from_redirect(response)
         else:
             for item in super(MacysProductsSpider, self).parse(response):
-                settings.overrides['CRAWLERA_ENABLED'] = False
+                #settings.overrides['CRAWLERA_ENABLED'] = False
                 if isinstance(item, Request):
                     item.meta['dont_redirect'] = True
                     item.meta['handle_httpstatus_list'] = [302]
@@ -192,10 +199,6 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         @scrapes title description locale
         """
         product = response.meta.get('product', SiteProductItem())
-
-        if response.status == 302:
-            yield self._create_from_redirect(response)
-            return
 
         if u'>this product is currently unavailable' in response.body_as_unicode().lower():
             product['no_longer_available'] = True
