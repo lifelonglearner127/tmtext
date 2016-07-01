@@ -193,10 +193,6 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         """
         product = response.meta.get('product', SiteProductItem())
 
-        if response.status == 302:
-            yield self._create_from_redirect(response)
-            return
-
         if u'>this product is currently unavailable' in response.body_as_unicode().lower():
             product['no_longer_available'] = True
             return
