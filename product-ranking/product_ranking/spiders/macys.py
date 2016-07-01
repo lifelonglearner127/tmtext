@@ -54,6 +54,11 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
     def __init__(self, sort_mode='default', *args, **kwargs):
         super(MacysProductsSpider, self).__init__(*args, **kwargs)
         #settings.overrides['CRAWLERA_ENABLED'] = True
+        RETRY_HTTP_CODES = settings['RETRY_HTTP_CODES']
+        RETRY_HTTP_CODES.append(507)
+        settings.overrides['RETRY_HTTP_CODES'] = RETRY_HTTP_CODES
+        if self.product_url:
+            self.use_proxies = False  # turn off proxies for individual urls
         self.sort_mode = self.SORT_MODES.get(sort_mode, 'ORIGINAL')
 
     def start_requests(self):  # Stolen from walmart
@@ -86,7 +91,6 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
                           meta={'product': prod}, dont_filter=True)
 
     def _parse_single_product(self, response):
-        self.use_proxies = False  # turn off proxies for individual urls
         return self.parse_product(response)
 
     def parse(self, response):  # Stolen again
