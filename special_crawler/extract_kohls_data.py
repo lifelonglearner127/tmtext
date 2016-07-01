@@ -47,6 +47,17 @@ class KohlsScraper(Scraper):
         self.is_product_info_json_checked = False
         self.video_urls = []
 
+    def _extract_page_tree(self):
+        Scraper._extract_page_tree(self)
+
+        if self.ERROR_RESPONSE["failure_type"] == "HTTP 404 - Page Not Found":
+            self.ERROR_RESPONSE["failure_type"] = None
+
+            contents = self.load_page_from_url_with_number_of_retries(self.product_page_url)
+
+            self.page_raw_text = contents
+            self.tree_html = html.fromstring(contents)
+
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
@@ -118,8 +129,21 @@ class KohlsScraper(Scraper):
 
         return product_id
 
+    def _is_out_of_stock(self):
+        try:
+            message = html.tostring(self.tree_html.xpath('//div[@id="content"]/p')[0])
+            message = re.sub('[\r\n\t]', '', message)
+
+            if re.match('<p><strong>We&#8217;re very sorry, this item</strong><b>.+</b><strong> is out of stock.</strong></p>', message):
+                return True
+        except:
+            return False
+
     def _failure_type(self):
         itemtype = self.tree_html.xpath('//div[@itemtype="http://schema.org/Product"]')
+
+        if self._is_out_of_stock():
+            return
 
         if not itemtype:
             self.failure_type = "Not a product"
@@ -132,14 +156,19 @@ class KohlsScraper(Scraper):
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
+    def _out_of_stock_product_name(self):
+        return self.tree_html.xpath('//div[@id="content"]/p/b/text()')[0]
+
     def _product_name(self):
+        if self._is_out_of_stock():
+            return self._out_of_stock_product_name()
         return self.tree_html.xpath('//title/text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//title/text()')[0].strip()
+        return self._product_name()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//title/text()')[0].strip()
+        return self._product_name()
 
     def _model(self):
         return None
@@ -510,6 +539,9 @@ class KohlsScraper(Scraper):
         return 0
 
     def _site_online(self):
+        if self._is_out_of_stock():
+            return 1
+
         if self._marketplace() == 1:
             return 0
 
@@ -522,6 +554,9 @@ class KohlsScraper(Scraper):
         return 0
 
     def _site_online_out_of_stock(self):
+        if self._is_out_of_stock():
+            return 1
+
         if self._marketplace() == 1:
             return None
 
