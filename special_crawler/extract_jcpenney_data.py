@@ -70,9 +70,9 @@ class JcpenneyScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        self.jv.setupCH(self.tree_html)
-
         try:
+            self.jv.setupCH(self.tree_html)
+
             itemtype = self.tree_html.xpath('//div[@class="pdp_details"]')
 
             if not itemtype:
