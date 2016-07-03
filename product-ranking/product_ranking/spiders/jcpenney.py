@@ -63,7 +63,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                  "fromSearch=true&" \
                  "Ntt={search_term}&" \
                  "ruleZoneName=XGNSZone&" \
-                 "Ns={sort_mode}&pageSize=72&" \
+                 "Ns={sort_mode}&" \
                  "redirectTerm=skirts{search_term}"
     SORTING = None
     SORT_MODES = {
