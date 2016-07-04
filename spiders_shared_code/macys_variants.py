@@ -78,7 +78,10 @@ class MacysVariants(object):
 
             vr['properties'] = {'color': variant_color, 'size': variant['size']}
             vr['in_stock'] = True if variant.get('isAvailable',None) == "true" else False
-            vr['price'] = colors_information[variant_color]['price']
+            try:
+                vr['price'] = colors_information[variant_color]['price']
+            except KeyError:
+                return  # no such variant?
             
             if variant.get('upc',None):
                 vr['upc'] = variant['upc']
@@ -183,13 +186,15 @@ class MacysVariants(object):
             upcMap = product_info_json.get('upcMap', [])
             for variant in upcMap[self._get_prod_id()]:
                 vr = self.__fill_variant(variant, colors_information)
-                variation_values_crossed.discard((variant['size'], variant['color']))
-                variants.append(vr)
+                if vr:
+                    variation_values_crossed.discard((variant['size'], variant['color']))
+                    variants.append(vr)
 
             # Product not in stock
-            for size,color in variation_values_crossed:
+            for size, color in variation_values_crossed:
                 vr = self.__fill_variant({'color': color, 'size':size}, colors_information)
-                variants.append(vr)
+                if vr:
+                    variants.append(vr)
 
             return variants
 
