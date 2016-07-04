@@ -37,27 +37,9 @@ class SamsclubProductsSpider(BaseProductsSpider):
         "/displayClubs.jsp?_DARGS=/sams/search/wizard/common"
         "/displayClubs.jsp.selectId")
 
-    _REVIEWS_URL = ('http://api.bazaarvoice.com/data/batch.json?passkey=dap59bp2pkhr7ccd1hv23n39x&apiversion=5.5'
-           '&displaycode=1337-en_us&resource.q0=products&filter.q0=id%3Aeq%3Aprod16470189'
-           '&stats.q0=questions%2Creviews&filteredstats.q0=questions%2Creviews'
-           '&filter_questions.q0=contentlocale%3Aeq%3Aen_US&filter_answers.q0=contentlocale%3Aeq%3Aen_US'
-           '&filter_reviews.q0=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US'
-           '&resource.q1=reviews&filter.q1=isratingsonly%3Aeq%3Afalse&filter.q1=productid%3Aeq%3A{prod_id}'
-           '&filter.q1=contentlocale%3Aeq%3Aen_US&sort.q1=helpfulness%3Adesc%2Ctotalpositivefeedbackcount%3Adesc'
-           '&stats.q1=reviews&filteredstats.q1=reviews&include.q1=authors%2Cproducts%2Ccomments'
-           '&filter_reviews.q1=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q1=contentlocale%3Aeq%3Aen_US'
-           '&filter_comments.q1=contentlocale%3Aeq%3Aen_US&limit.q1=8&offset.q1=0&limit_comments.q1=3'
-           '&resource.q2=reviews&filter.q2=productid%3Aeq%3A{prod_id}&filter.q2=contentlocale%3Aeq%3Aen_US'
-           '&limit.q2=1&resource.q3=reviews&filter.q3=productid%3Aeq%3A{prod_id}'
-           '&filter.q3=isratingsonly%3Aeq%3Afalse&filter.q3=rating%3Agt%3A3'
-           '&filter.q3=totalpositivefeedbackcount%3Agte%3A3&filter.q3=contentlocale%3Aeq%3Aen_US'
-           '&sort.q3=totalpositivefeedbackcount%3Adesc&include.q3=authors%2Creviews%2Cproducts'
-           '&filter_reviews.q3=contentlocale%3Aeq%3Aen_US&limit.q3=1&resource.q4=reviews'
-           '&filter.q4=productid%3Aeq%3A{prod_id}&filter.q4=isratingsonly%3Aeq%3Afalse'
-           '&filter.q4=rating%3Alte%3A3&filter.q4=totalpositivefeedbackcount%3Agte%3A3'
-           '&filter.q4=contentlocale%3Aeq%3Aen_US&sort.q4=totalpositivefeedbackcount%3Adesc'
-           '&include.q4=authors%2Creviews%2Cproducts&filter_reviews.q4=contentlocale%3Aeq%3Aen_US'
-           '&limit.q4=1&callback=bv_1111_4516')
+
+    _REVIEWS_URL = "http://api.bazaarvoice.com/data/reviews.json?apiversion=5.5&passkey=dap59bp2pkhr7ccd1hv23n39x" \
+                   "&Filter=ProductId:{prod_id}&Include=Products&Stats=Reviews"
 
     def __init__(self, clubno='4704', zip_code='94117', *args, **kwargs):
         self.clubno = clubno
@@ -422,17 +404,6 @@ class SamsclubProductsSpider(BaseProductsSpider):
 
         return product
 
-    @staticmethod
-    def _return_br_block_for_prod_id(brs, prod_id):
-        for key, value in brs['BatchedResults'].items():
-            for sub_group in value['Results']:
-                if sub_group.get('Id', None) == prod_id:
-                    return sub_group
-        for key, value in brs['BatchedResults'].items():
-            for sub_group_product, sub_group_product_data in value['Includes'].get('Products', {}).items():
-                if sub_group_product == prod_id:
-                    return sub_group_product_data
-
     def _product_id(self, response):
         try:
             product_id = response.xpath(
@@ -497,8 +468,9 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 raise BaseException  # we have to jump to the version #2
         except:
             if not product.get('buyer_reviews'):
-                contents = json.loads(contents.replace('bv_1111_4516(', '')[0:-1])
-                brs = self._return_br_block_for_prod_id(contents, productId)
+                contents = json.loads(contents)
+                incl = contents.get('Includes')
+                brs = incl.get('Products').get(productId) if incl else None
                 if brs:
                     by_star = {}
                     for d in brs['ReviewStatistics']['RatingDistribution']:
