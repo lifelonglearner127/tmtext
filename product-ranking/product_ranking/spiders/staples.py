@@ -125,17 +125,25 @@ class StaplesProductsSpider(BaseProductsSpider):
         try:
             jsonresponse = json.loads(response.body_as_unicode())
 
+            num_reviews = 0
+            avg_rating = 0
+
             stars = product['buyer_reviews'].rating_by_star
             for k in stars:
                 rate = re.findall(r'quot;%s&amp;quot;&amp;gt;\((\d+)\)&amp;' % k, jsonresponse['result'])
                 if rate:
                     stars[k] = rate[0]
+                    num_reviews += int(rate[0])
+                    avg_rating += int(k) * int(rate[0])
+
+            if num_reviews > 0:
+                avg_rating = round(avg_rating/num_reviews, 1)
 
             last_date = re.findall(r'yotpo-review-date&amp;quot;&amp;gt;(\d+/\d+/\d+)&amp;lt;', jsonresponse['result'])
 
             product['buyer_reviews'] = BuyerReviews(
-                num_of_reviews=product['buyer_reviews'].num_of_reviews,
-                average_rating=product['buyer_reviews'].average_rating,
+                num_of_reviews=num_reviews,
+                average_rating=avg_rating,
                 rating_by_star=stars
             )
             if last_date:
