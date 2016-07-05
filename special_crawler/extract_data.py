@@ -462,6 +462,7 @@ class Scraper():
         else:
             costco_url = re.match('http://www.costco.com/(.*)', self.product_page_url)
             wag_url = re.match('https?://www.wag.com/(.*)', self.product_page_url)
+            jcpenney_url = re.match('http://www.jcpenney.com/(.*)', self.product_page_url)
 
             if costco_url:
                 self.product_page_url = 'http://www.costco.com/' + urllib2.quote(costco_url.group(1).encode('utf8'))
@@ -477,7 +478,10 @@ class Scraper():
 
             for i in range(self.MAX_RETRIES):
                 try:
-                    contents = urllib2.urlopen(request, timeout=20).read()
+                    if jcpenney_url:
+                        contents = urllib2.urlopen(request, timeout=30).read()
+                    else:
+                        contents = urllib2.urlopen(request, timeout=20).read()
 
                 # handle urls with special characters
                 except UnicodeEncodeError, e:
