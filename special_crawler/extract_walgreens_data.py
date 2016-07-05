@@ -144,7 +144,7 @@ class WalgreensScraper(Scraper):
         product_info = json.loads(product_info)['BatchedResults']['q0']
         product_info = product_info['Results'][0]['Description']
 
-        return re.sub('([a-z.])([A-Z])', r'\1\n\2', product_info)
+        return re.sub('([a-z][a-z\).])([A-Z\d])', r'\1\n\2', product_info)
 
     def _ingredients(self):
         if not self.ingredients:
