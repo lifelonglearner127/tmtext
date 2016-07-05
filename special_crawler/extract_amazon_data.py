@@ -1001,9 +1001,10 @@ class AmazonScraper(Scraper):
         return None
 
     def _best_seller_category(self):
-        sales_rank = self.tree_html.xpath('//li[@id="SalesRank"]')
-        if sales_rank:
-            return re.search('#[\d,]+ in (.+) \(', sales_rank[0].text_content()).group(1)
+        try:
+            return re.search('#[\d,]+ in ([^\(]+) \(', html.tostring(self.tree_html)).group(1)
+        except:
+            return re.search('#[\d,]+ in ([^<]+)</span>', html.tostring(self.tree_html)).group(1)
 
     ##########################################
     ################ CONTAINER : REVIEWS
