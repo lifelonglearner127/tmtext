@@ -97,6 +97,7 @@ class RiteAidProductsSpider(ProductsSpider):
         if num_reviews and average_rating:
             average_rating = float(average_rating[0]) / 20
             num_reviews = int(num_reviews[0])
+            rating_by_star = None
             if value_rating and quality_rating:
                 rating_by_star = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
                 for (a, b) in zip(value_rating, quality_rating):
@@ -106,7 +107,7 @@ class RiteAidProductsSpider(ProductsSpider):
 
             return BuyerReviews(num_of_reviews=num_reviews,
                                 average_rating=average_rating,
-                                rating_by_star=rating_by_star or None)
+                                rating_by_star=rating_by_star)
 
         return None
 
