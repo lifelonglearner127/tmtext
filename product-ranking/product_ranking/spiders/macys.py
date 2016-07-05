@@ -193,11 +193,41 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         else:
             return None
 
+    def parse_product(self, response):
+        is_collection = response.xpath(".//*[@id='memberItemsTab']/a[@href='#collectionItems']"
+                                       "/*[contains(text(),'Choose Your Items')]")
+        if is_collection:
+            self.log("{} - item is collection, dropping the item".format(response.url), INFO)
+            return
+
+        product = response.meta['product']
+        self._populate_from_html(response, product)
+        self._get_model_from_title(product)
+
+        # Request optional fields
+        if self.options:
+            response.meta['options'] = set(self.options)
+            for option in self.options:
+                yield getattr(self, '_request_%s' % option)(response)
+        else:  # No optional fields required
+            yield product
+
+    # def parse_product(self, response):
+    #     is_collection = response.xpath(".//*[@id='memberItemsTab']/a[@href='#collectionItems']"
+    #                                    "/*[contains(text(),'Choose Your Items')]")
+    #     if is_collection:
+    #         self.log("{} - item is collection, dropping the item".format(response.url), INFO)
+    #         return
+    #     else:
+    #         yield super(MacysProductsSpider, self).parse_product(response)
+
+
     def _populate_from_html(self, response, product):
         """
         @returns items 1 1
         @scrapes title description locale
         """
+
         product = response.meta.get('product', SiteProductItem())
 
         if u'>this product is currently unavailable' in response.body_as_unicode().lower():

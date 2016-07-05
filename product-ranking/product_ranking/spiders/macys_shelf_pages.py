@@ -17,6 +17,7 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.macys_variants import MacysVariants
 from .macys import MacysProductsSpider
+from scrapy.log import INFO
 
 is_empty = lambda x: x[0] if x else None
 
@@ -98,8 +99,14 @@ class MacysShelfPagesSpider(MacysProductsSpider):
         return super(MacysShelfPagesSpider,
                      self)._scrape_next_results_page_link(response)
 
-    def parse_product(self, response):
-        return super(MacysShelfPagesSpider, self).parse_product(response)
+    # def parse_product(self, response):
+    #     is_collection = response.xpath(".//*[@id='memberItemsTab']/a[@href='#collectionItems']"
+    #                                    "/*[contains(text(),'Choose Your Items')]")
+    #     if is_collection:
+    #         self.log("{} - item is collection, dropping the item".format(response.url), INFO)
+    #         return None
+    #     else:
+    #         return super(MacysShelfPagesSpider, self).parse_product(response)
 
     def _populate_from_html(self, response, product):
         """

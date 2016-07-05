@@ -64,6 +64,16 @@ class MacysVariants(object):
         # Single Color Product
         else:
             selected_color = product_info_json.get('selectedColor', None)
+            if not selected_color:
+                # Sometimes selectedColor is empty, getting color from upcMap
+                prod_id = product_info_json.get('id', None)
+                try:
+                    color_list = product_info_json.get('upcMap', None).get(prod_id, None)
+                    selected_color = list(set([l.get('color') for l in color_list]))
+                    selected_color = selected_color[0] if len(selected_color)==1 else None
+                except BaseException:
+                    print "Unable to get single color for product id {}".format(prod_id)
+                    selected_color = None
             colors_information[selected_color] = {}
             price = self.tree_html.xpath('//*[@id="productHeader"]//meta[@itemprop="price"]/@content')[0]
             colors_information[selected_color]['price'] = float(price.replace("$",""))
@@ -79,7 +89,7 @@ class MacysVariants(object):
             vr['properties'] = {'color': variant_color, 'size': variant['size']}
             vr['in_stock'] = True if variant.get('isAvailable',None) == "true" else False
             vr['price'] = colors_information[variant_color]['price']
-            
+
             if variant.get('upc',None):
                 vr['upc'] = variant['upc']
             if colors_information[variant_color].get('img_urls', None):
@@ -87,6 +97,7 @@ class MacysVariants(object):
             if variant.get('type',False):
                 vr['type'] = variant['type']
             return vr
+
 
     def _variants(self):
             variants = []
