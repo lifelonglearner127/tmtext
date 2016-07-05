@@ -134,21 +134,49 @@ class MacysShelfPagesSpider(MacysProductsSpider):
             price = [p.strip() for p in
                      response.xpath('//*[@id="priceInfo"]//text()').extract()
                      if p.strip()]
+        if not price:
+            price = response.xpath('//*[contains(@id, "priceInfo")]').re(FLOATING_POINT_RGEX)
+        if not price:
+            price = response.xpath('//*[contains(@class, "singlePrice")][contains(text(), "$")]')
         if price:
             product['price'] = Price(price=price[0],
                                      priceCurrency='USD')
 
         if not product.get("image_url") or \
-                        "data:image" in product.get("image_url"):
+                            "data:image" in product.get("image_url"):
             image_url = response.xpath(
-                "//img[contains(@id, 'mainView')]/@src").extract()
+                    "//img[contains(@id, 'mainView')]/@src").extract()
             if image_url:
                 product["image_url"] = image_url[0]
+        if not product.get('image_url'):
+            cond_set(
+                product, 'image_url',
+                response.xpath('//*[contains(@class,'
+                               ' "productImageSection")]//img/@src').extract()
+            )
+        if not product.get('image_url'):
+            cond_set(
+                product, 'image_url',
+                response.xpath('//*[contains(@class, "mainImages")]'
+                               '//*[contains(@class, "imageItem")]//img/@src').extract()
+            )
+        if not product.get("image_url") or \
+                        "data:image" in product.get("image_url"):
+            img_src = response.xpath('//*[contains(@class, "imageItem") '
+                                     'and contains(@class, "selected")]/img/@src').extract()
+            if img_src:
+                product['image_url'] = img_src[0]
+
 
         title = response.css('#productTitle::text').extract()
         if not title:
             title = response.xpath('//*[contains(@class, "productTitle")]'
                                    '[contains(@itemprop, "name")]/text()').extract()
+            title = title[0].strip() if title else ''
+        if not product.get('title', None):
+            title = response.xpath('//h1[contains(@class,"productName")]//text()').extract()
+            title = title[0].strip() if title else ''
+
         if title:
             cond_replace(product, 'title', [''.join(title).strip()])
 
