@@ -165,6 +165,7 @@ class SiteProductItem(Item):
     # Product data.
     title = Field()  # String.
     upc = Field(serializer=scrapy_upc_serializer)  # Integer.
+    asin = Field()
     model = Field()  # String, alphanumeric code.
     sku = Field()  # product SKU, if any
     url = Field()  # String, URL.
@@ -190,6 +191,7 @@ class SiteProductItem(Item):
     bestseller_rank = Field()
     department = Field()  # now for Amazons only; may change in the future
     category = Field()  # now for Amazons only; may change in the future
+    subcategory = Field() # for Amazon
     categories = Field()  # now for amazon and maybe walmart
     categories_full_info = Field()  # for Walmart, see BZ 5828
 
