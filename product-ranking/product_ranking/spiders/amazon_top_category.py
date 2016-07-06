@@ -15,7 +15,7 @@ from product_ranking.spiders import BaseProductsSpider,FormatterWithDefaults, \
 
 
 class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
-    name = 'amazonca_top_categories_products'
+    name = 'amazon_top_categories_products'
     allowed_domains = ["amazon.com"]
 
     settings = AmazoncaValidatorSettings
