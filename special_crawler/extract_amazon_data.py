@@ -1000,6 +1000,12 @@ class AmazonScraper(Scraper):
 
         return None
 
+    def _best_seller_category(self):
+        try:
+            return re.search('#[\d,]+ in ([^\(]+) \(', html.tostring(self.tree_html)).group(1)
+        except:
+            return re.search('#[\d,]+ in ([^<]+)</span>', html.tostring(self.tree_html)).group(1)
+
     ##########################################
     ################ CONTAINER : REVIEWS
     ##########################################
@@ -1531,6 +1537,7 @@ class AmazonScraper(Scraper):
         "meta_tags": _meta_tags,\
         "meta_tag_count": _meta_tag_count,\
         "canonical_link": _canonical_link,
+        "best_seller_category" : _best_seller_category, \
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \
