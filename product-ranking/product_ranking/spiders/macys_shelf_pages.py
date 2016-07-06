@@ -17,6 +17,7 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.macys_variants import MacysVariants
 from .macys import MacysProductsSpider
+from scrapy.log import INFO
 
 is_empty = lambda x: x[0] if x else None
 
@@ -98,8 +99,14 @@ class MacysShelfPagesSpider(MacysProductsSpider):
         return super(MacysShelfPagesSpider,
                      self)._scrape_next_results_page_link(response)
 
-    def parse_product(self, response):
-        return super(MacysShelfPagesSpider, self).parse_product(response)
+    # def parse_product(self, response):
+    #     is_collection = response.xpath(".//*[@id='memberItemsTab']/a[@href='#collectionItems']"
+    #                                    "/*[contains(text(),'Choose Your Items')]")
+    #     if is_collection:
+    #         self.log("{} - item is collection, dropping the item".format(response.url), INFO)
+    #         return None
+    #     else:
+    #         return super(MacysShelfPagesSpider, self).parse_product(response)
 
     def _populate_from_html(self, response, product):
         """
@@ -127,21 +134,49 @@ class MacysShelfPagesSpider(MacysProductsSpider):
             price = [p.strip() for p in
                      response.xpath('//*[@id="priceInfo"]//text()').extract()
                      if p.strip()]
+        if not price:
+            price = response.xpath('//*[contains(@id, "priceInfo")]').re(FLOATING_POINT_RGEX)
+        if not price:
+            price = response.xpath('//*[contains(@class, "singlePrice")][contains(text(), "$")]')
         if price:
             product['price'] = Price(price=price[0],
                                      priceCurrency='USD')
 
         if not product.get("image_url") or \
-                        "data:image" in product.get("image_url"):
+                            "data:image" in product.get("image_url"):
             image_url = response.xpath(
-                "//img[contains(@id, 'mainView')]/@src").extract()
+                    "//img[contains(@id, 'mainView')]/@src").extract()
             if image_url:
                 product["image_url"] = image_url[0]
+        if not product.get('image_url'):
+            cond_set(
+                product, 'image_url',
+                response.xpath('//*[contains(@class,'
+                               ' "productImageSection")]//img/@src').extract()
+            )
+        if not product.get('image_url'):
+            cond_set(
+                product, 'image_url',
+                response.xpath('//*[contains(@class, "mainImages")]'
+                               '//*[contains(@class, "imageItem")]//img/@src').extract()
+            )
+        if not product.get("image_url") or \
+                        "data:image" in product.get("image_url"):
+            img_src = response.xpath('//*[contains(@class, "imageItem") '
+                                     'and contains(@class, "selected")]/img/@src').extract()
+            if img_src:
+                product['image_url'] = img_src[0]
+
 
         title = response.css('#productTitle::text').extract()
         if not title:
             title = response.xpath('//*[contains(@class, "productTitle")]'
                                    '[contains(@itemprop, "name")]/text()').extract()
+            title = title[0].strip() if title else ''
+        if not product.get('title', None):
+            title = response.xpath('//h1[contains(@class,"productName")]//text()').extract()
+            title = title[0].strip() if title else ''
+
         if title:
             cond_replace(product, 'title', [''.join(title).strip()])
 
