@@ -74,6 +74,8 @@ class WalgreensShelfPagesSpider(WalGreensProductsSpider):
     @staticmethod
     def _get_page_id(url):
         _id = re.search('N=(\d+)', url)
+        if not _id:
+            _id = re.search('ID=(\d+)', url)
         if _id:
             return _id.group(1)
 
