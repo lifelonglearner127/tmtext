@@ -266,7 +266,6 @@ class MacysShelfPagesSpider(MacysProductsSpider):
         if product_id:  # Reviews
             url = "http://macys.ugc.bazaarvoice.com/7129aa/%s" \
                   "/reviews.djs?format=embeddedhtml" % (product_id[0],)
-            print url
             r = requests.get(url)
             resp = r.text
             resp = re.findall("var materials=(.*)", resp)
