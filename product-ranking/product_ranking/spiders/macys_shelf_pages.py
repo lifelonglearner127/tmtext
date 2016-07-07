@@ -207,8 +207,7 @@ class MacysShelfPagesSpider(MacysProductsSpider):
 
         product_id = response.css('#productId::attr(value)').extract()
 
-        if self.scrape_variants_with_extra_requests:
-            self._parse_reviews(response, product)
+        self._parse_reviews(response, product)
 
         # Related Products
         if product_id:
@@ -258,11 +257,15 @@ class MacysShelfPagesSpider(MacysProductsSpider):
 
     def _parse_reviews(self, response, product):
         product_id = response.css('#productId::attr(value)').extract()
+        if not product_id:
+            product_id = response.xpath('//*[contains(@class,"productID")]'
+                                        '[contains(text(), "Web ID:")]/text()').extract()
+            if product_id:
+                product_id = [''.join([c for c in product_id[0] if c.isdigit()])]
 
         if product_id:  # Reviews
             url = "http://macys.ugc.bazaarvoice.com/7129aa/%s" \
                   "/reviews.djs?format=embeddedhtml" % (product_id[0],)
-
             r = requests.get(url)
             resp = r.text
             resp = re.findall("var materials=(.*)", resp)
