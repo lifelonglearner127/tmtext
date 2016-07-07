@@ -46,7 +46,7 @@ class DrugstoreProductsSpider(BaseProductsSpider):
             ),
             site_name="drugstore.com",
             *args, **kwargs)
-        settings.overrides['CRAWLERA_ENABLED'] = True
+        #settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         for st in self.searchterms:
