@@ -20,7 +20,7 @@ class HomedepotShelfPagesSpider(HomedepotProductsSpider):
         else:
             self.num_pages = 1
         self.current_page = 1
-        settings.overrides['CRAWLERA_ENABLED'] = True
+        #settings.overrides['CRAWLERA_ENABLED'] = True
 
     @staticmethod
     def valid_url(url):
@@ -38,22 +38,29 @@ class HomedepotShelfPagesSpider(HomedepotProductsSpider):
             "//div[contains(@class,'product') "
             "and contains(@class,'plp-grid')]"
             "//descendant::a[contains(@class, 'item_description')]/@href").extract()
+        urls = [urlparse.urljoin(response.url, x) if x.startswith('/') else x
+                for x in urls]
 
         if not urls:
             self.log("Found no product links.", DEBUG)
 
-        for link in links:
-            if link in self.product_filter:
-                continue
-            self.product_filter.append(link)
         # parse shelf category
-        shelf_categories =  response.xpath('//ul[@id="headerCrumb"]/li/a/text()'
-                                           ).extract()
+        shelf_categories = response.xpath(
+            '//ul[@id="headerCrumb"]/li//text()').extract()
+        shelf_categories = [category.strip() for category in shelf_categories]
+        shelf_categories = filter(None, shelf_categories)
+        try:
+            shelf_name = response.xpath('//h1[@class="page-title"]/text()').extract()[0].strip()
+        except IndexError:
+            pass
         for url in urls:
+            if url in self.product_filter:
+                continue
+            self.product_filter.append(url)
             item = SiteProductItem()
             if shelf_categories:
                 if shelf_categories:
-                    item['shelf_name'] = shelf_categories[-1]
+                    item['shelf_name'] = shelf_name
                     item['shelf_path'] = shelf_categories[1:]
             yield url, item
 
