@@ -167,9 +167,12 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
     def parse_price(self, response):
         price = is_empty(response.xpath(
             '//p[@class="current-price"]/span/text()').re(r'(\d+\.?\d+)'))
+
         currency = is_empty(response.xpath(
             '//meta[@itemprop="priceCurrency"]/@content').extract())
-
+        if not price:
+            price = is_empty(response.xpath(
+                '//span[@itemprop="price"]/text()').re(r'(\d+\.?\d+)'))
         if not price:
             price = is_empty(response.xpath(
                                    '//span[@itemprop="price"]/text()').re(r'Starting from .(\d+\.?\d+)'))
@@ -183,6 +186,12 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
     def parse_image_url(self, response):
         image_url = is_empty(response.xpath(
             '//div[@class="image-container"]/@data-src').extract())
+        if not image_url:
+            image_url = is_empty(response.xpath(
+                './/*[@class="product-hero base-hero"]/li[1]/img/@src').extract())
+        if not image_url:
+            image_url = is_empty(response.xpath(
+                './/*[@data-class="poster"]/@data-src').extract())
         if image_url:
             return image_url
 
