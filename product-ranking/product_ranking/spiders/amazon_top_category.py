@@ -37,7 +37,7 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
 
         # Locale
         self.locale = 'en-US'
-        #settings.overrides['CRAWLERA_ENABLED'] = True
+        settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         if self.product_url:
@@ -50,11 +50,6 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
                               callback=self._request_product_links)
 
     def _request_product_links(self, response):
-        if self._has_captcha(response):
-            yield self._handle_captcha(
-                response,
-                self._request_product_links
-            )
         url = response.url + '&pg={}&ajax=1&isAboveTheFold={}'
         for page in range(1, 6):
             for position in [1, 0]:
@@ -69,11 +64,6 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
                 yield request
 
     def _scrape_product_links(self, response):
-        if self._has_captcha(response):
-            yield self._handle_captcha(
-                response,
-                self._scrape_product_links
-            )
         products = response.xpath('//div[@class="zg_itemImmersion"]')
         for product in products:
             url = product.xpath('.//div[@class="zg_title"]/a/@href').extract()[0].strip()
@@ -84,11 +74,6 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
             yield request
 
     def parse_product(self, response):
-        if self._has_captcha(response):
-            yield self._handle_captcha(
-                response,
-                self.parse_product
-            )
         product = SiteProductItem()
         cond_set_value(product, 'shelf_path', response.meta.get('shelf_path'))
         cond_set_value(product, 'shelf_name', response.meta.get('shelf_name'))
