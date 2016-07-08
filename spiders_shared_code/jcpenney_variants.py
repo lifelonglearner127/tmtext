@@ -122,7 +122,7 @@ class JcpenneyVariants(object):
                         properties['length'] = inseam_value
                     # BZ case 2
                     if 'waist' in properties:
-                        if (set(properties.keys()) - set(['lot', 'color'])) == set(['waist']):
+                        if (set(properties.keys()) - set(['lot']) - set(['color'])) == set(['waist']):
                             waist_value = properties.pop('waist')
                             properties['size'] = waist_value
             variants[i]['properties'] = properties
