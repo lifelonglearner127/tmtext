@@ -98,6 +98,36 @@ class JcpenneyVariants(object):
 
         return None
 
+    def _transform_variants(self, variants):
+        # see BZ #9913
+        if not hasattr(self, 'response'):
+            return variants  # skip CH for now
+
+        # TODO: CH!
+        _has_size_range = self.response.xpath(
+            '//*[contains(@class, "skuOptions") and contains(text(), "size range")]')
+
+        for i, variant in enumerate(variants):
+            properties = variant.get('properties', None)
+            if properties:
+                # BZ case 3
+                if 'size' in properties and 'lot' in properties and _has_size_range:
+                    lot_value = properties.pop('lot')
+                    size_value = properties.pop('size')
+                    properties['size'] = lot_value + '/' + str(size_value)
+                else:
+                    # BZ case 1
+                    if 'inseam' in properties and not 'length' in properties:
+                        inseam_value = properties.pop('inseam')
+                        properties['length'] = inseam_value
+                    # BZ case 2
+                    if 'waist' in properties:
+                        if (set(properties.keys()) - set(['lot', 'color'])) == set(['waist']):
+                            waist_value = properties.pop('waist')
+                            properties['size'] = waist_value
+            variants[i] = properties
+        return variants
+
     def _variants(self):
         try:
             canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -331,6 +361,8 @@ class JcpenneyVariants(object):
                         stockstatus_for_variants["image_url"] = img.get("img")
 
                 stockstatus_for_variants_list.append(stockstatus_for_variants)
+
+            stockstatus_for_variants_list = self._transform_variants(stockstatus_for_variants_list)
 
             if not stockstatus_for_variants_list:
                 return None
