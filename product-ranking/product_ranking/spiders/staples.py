@@ -229,7 +229,7 @@ class StaplesProductsSpider(BaseProductsSpider):
         currency = response.xpath('//meta[contains(@itemprop, "priceCurrency")]/@content').extract()
 
         if currency:
-            meta['product']['price'] = Price(price=0.00, priceCurrency=currency[0])
+            meta['product']['price'] = Price(price=0.00, priceCurrency=str(currency[0]))
 
         if js_data['review']['count'] > 0:
             reqs.append(
@@ -320,7 +320,7 @@ class StaplesProductsSpider(BaseProductsSpider):
             product['is_out_of_stock'] = False
         try:
             product['price'] = Price(price=jsonresponse['pricing']['finalPrice'],
-                                     priceCurrency=product['price'].priceCurrency)
+                                     priceCurrency=str(product['price'].priceCurrency))
             #import pdb
             #pdb.set_trace()
             # additionalProductsWarrantyServices
@@ -358,13 +358,13 @@ class StaplesProductsSpider(BaseProductsSpider):
             for v in meta['product']['variants']:
                 if v['properties']['prod_doc_key'] == id:
                     v['price'] = Price(price=jsonresponse['pricing']['finalPrice'],
-                                       priceCurrency=product['price'].priceCurrency)
+                                       priceCurrency=str(product['price'].priceCurrency))
 
                     # additionalProductsWarrantyServices
                     if jsonresponse['additionalProductsWarrantyServices']:
                         for w in jsonresponse['additionalProductsWarrantyServices']:
                             new_price = Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
-                                              priceCurrency=product['price'].priceCurrency)
+                                              priceCurrency=str(product['price'].priceCurrency))
                             new_variants.append({
                                 'price': new_price,
                                 'properties': {"name": v['properties']['name'] if 'name' in v['properties'] else '',
