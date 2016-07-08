@@ -63,7 +63,7 @@ class VerizonwirelessProductsSpider(ProductsSpider):
         for item_url in item_urls:
             yield urlparse.urljoin(
                 response.url, item_url), SiteProductItem()
-        
+
         # Search Special Case
         if not item_urls:
             urls = set()
