@@ -77,7 +77,8 @@ class MacysShelfPagesSpider(MacysProductsSpider):
 
         urls = ['http://www1.macys.com' + i for i in urls]
 
-        shelf_categories = response.xpath('.//*[@id="nav_category"]//text()').extract()
+        shelf_categories = response.xpath(
+            './/*[@id="nav_category"]//*[@id="viewAllInCategory" or @id="currentCatNavHeading"]/text()').extract()
         shelf_categories = [i.replace('View All','').strip() for i in shelf_categories if i.strip()]
         shelf_category = shelf_categories[-1] if shelf_categories else None
 
