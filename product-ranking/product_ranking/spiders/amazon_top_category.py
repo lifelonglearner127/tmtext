@@ -37,7 +37,7 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
 
         # Locale
         self.locale = 'en-US'
-        settings.overrides['CRAWLERA_ENABLED'] = True
+        #settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         if self.product_url:
@@ -50,17 +50,30 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
                               callback=self._request_product_links)
 
     def _request_product_links(self, response):
+        if self._has_captcha(response):
+            yield self._handle_captcha(
+                response,
+                self._request_product_links
+            )
         url = response.url + '&pg={}&ajax=1&isAboveTheFold={}'
         for page in range(1, 6):
             for position in [1, 0]:
                 request = Request(url=url.format(page, position),
                                   callback=self._scrape_product_links,
                                   dont_filter=True)
-                request.meta['shelf_name'] = response.xpath('//span[@class="zg_selected"]/text()').extract()[0]
-                request.meta['shelf_path'] = response.xpath('//li[@class="zg_browseUp"]/a/text()').extract()[1:]
+                request.meta['shelf_name'] = response.xpath(
+                    '//h1/span[@class="category"]/text()').extract()
+                request.meta['shelf_path'] = response.xpath(
+                    '//li[@class="zg_browseUp"]/a/text()').extract()[1:] + response.xpath(
+                    '//span[@class="zg_selected"]/text()').extract()
                 yield request
 
     def _scrape_product_links(self, response):
+        if self._has_captcha(response):
+            yield self._handle_captcha(
+                response,
+                self._scrape_product_links
+            )
         products = response.xpath('//div[@class="zg_itemImmersion"]')
         for product in products:
             url = product.xpath('.//div[@class="zg_title"]/a/@href').extract()[0].strip()
@@ -71,12 +84,22 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
             yield request
 
     def parse_product(self, response):
+        if self._has_captcha(response):
+            yield self._handle_captcha(
+                response,
+                self.parse_product
+            )
         product = SiteProductItem()
         cond_set_value(product, 'shelf_path', response.meta.get('shelf_path'))
         cond_set_value(product, 'shelf_name', response.meta.get('shelf_name'))
         title = response.xpath('//h1/span/text()').extract()[0].strip()
         cond_set_value(product, 'title', title)
-        asin = re.findall('\/([A-Z0-9]{10})', response.url)[0]
+        data_body = response.xpath('//script[contains(text(), '
+                                   '"merchantID")]/text()').extract()
+        try:
+            asin = re.findall(r'"ASIN" : "(\w+)"', data_body[0])[0]
+        except IndexError:
+            asin = re.findall('\/([A-Z0-9]{10})', response.url)[0]
         cond_set_value(product, 'asin', asin)
         cond_set_value(product, 'url',response.url)
         cond_set_value(product, 'upc', self.convert_ASIN2UPC(asin))
