@@ -125,7 +125,7 @@ class JcpenneyVariants(object):
                         if (set(properties.keys()) - set(['lot', 'color'])) == set(['waist']):
                             waist_value = properties.pop('waist')
                             properties['size'] = waist_value
-            variants[i] = properties
+            variants[i][properties] = properties
         return variants
 
     def _variants(self):
