@@ -1,6 +1,5 @@
 import os, flask, requests
 from flask import Flask, request
-import parser
 
 app = Flask(__name__)
 
@@ -11,16 +10,22 @@ def parse():
     url = request.args.get('url')
 
     if not url:
-	return 'Please specify the url of an xml file to parse<br/><br/>e.g. http://matt-test.contentanalyticsinc.com:8888/parse?url=http://&lt;server&gt;/&lt;path-to-file&gt;/filename.xlsx'
+        return 'Please specify the url of an xml file to parse<br/><br/>e.g. http://matt-test.contentanalyticsinc.com:8888/parse?url=http://&lt;server&gt;/&lt;path-to-file&gt;/filename.xlsx'
 
     filename = url.split('/')[-1]
 
     content = requests.get(url).content
 
-    response = parser.parse(content)
+    # Write the content to a local file with the same name
+    f = open(filename, 'w')
+    f.write(content)
+    f.close()
 
-    #requests.post(MC_API, data=response, headers={'Content-Type': 'application/json'})
-    return flask.jsonify(response)
+    err = os.system('python parser.py %s %s' % (filename, MC_API))
+    if err == 0:
+        return filename + ' is being parsed and the result will be sent to ' + MC_API
+    else:
+        return 'an error occurred'
 
 if __name__ == '__main__':
     app.run('0.0.0.0', debug=True, port=8888)
