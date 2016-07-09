@@ -1,5 +1,4 @@
-#
-import time
+#Note: you need Firefox < 47 for selenium to work
 import sys
 import os
 import argparse
