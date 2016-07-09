@@ -41,7 +41,7 @@ class MicrosoftStoreShelfPagesSpider(MicrosoftStoreProductSpider):
         Scraping product links from search page
         """
         links = response.xpath(
-            '//div[@class="product-row"]/a/@href'
+            './/a[contains(@class, "product")]/@href'
         ).extract()
         if links:
             if not shelf_categories:
