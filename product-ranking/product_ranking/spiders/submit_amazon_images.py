@@ -1,3 +1,4 @@
+#
 import time
 import sys
 import os
@@ -100,6 +101,8 @@ def login(br, username, password):
         cap_result = solve_login_captcha(br, username, password)  # reliably solve captcha
         if cap_result == -1:
             return -1
+    if br.current_url == u'https://vendorcentral.amazon.com/gp/vendor/sign-in/answer-contact':
+        br.get('https://vendorcentral.amazon.com/gp/vendor/members/home')
     if br.current_url == u'https://vendorcentral.amazon.com/st/vendor/members/dashboard':
         logging_info('Passed login form')
         return True
