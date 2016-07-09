@@ -251,8 +251,10 @@ class TargetVariants(object):
                     'properties' : {},
                     'image_url' : item['Images'][0]['PrimaryImage'][0]['image'],
                     'selected' : None,
+                    'upc':None,
                 }
-
+                # Adding UPC
+                v['upc'] = item.get('UPC')
                 v['in_stock'] = any(availability_info.get(item.get('partNumber', True), [True]))  # TODO: this fails if written as indexes ([]), not get()
 
                 for attribute in item.get('VariationAttributes', []):
