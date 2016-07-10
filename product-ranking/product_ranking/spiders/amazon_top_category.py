@@ -3,9 +3,10 @@
 from __future__ import division, absolute_import, unicode_literals
 from datetime import datetime
 import re
-from scrapy import Request
+from scrapy import Request, Selector
 from lxml import html
 import requests
+import urlparse
 from scrapy.conf import settings
 from product_ranking.amazon_tests import AmazonTests
 from product_ranking.amazon_base_class import AmazonBaseClass
@@ -41,15 +42,13 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
 
     def start_requests(self):
         if self.product_url:
-            yield Request(self.product_url,
-                          callback=self._request_product_links)
+            yield Request(self.product_url)
         if self.products_url:
             urls = self.products_url.split('||||')
             for url in urls:
-                yield Request(url,
-                              callback=self._request_product_links)
+                yield Request(url)
 
-    def _request_product_links(self, response):
+    def parse(self, response):
         url = response.url + '&pg={}&ajax=1&isAboveTheFold={}'
         for page in range(1, 6):
             for position in [1, 0]:
@@ -86,8 +85,11 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
         except IndexError:
             asin = re.findall('\/([A-Z0-9]{10})', response.url)[0]
         cond_set_value(product, 'asin', asin)
-        cond_set_value(product, 'url',response.url)
-        cond_set_value(product, 'upc', self.convert_ASIN2UPC(asin))
+        cond_set_value(product, 'url', response.url)
+        upc = self.convert_ASIN2UPC(asin)
+        cond_set_value(product, 'upc', upc)
+        if upc:
+            self._match_walmart(product, upc)
         cond_set_value(product, 'ranking', response.meta.get('ranking'))
         yield product
 
@@ -123,3 +125,21 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
             except:
                 pass
         return upc
+
+    @staticmethod
+    def _match_walmart(product, upc):
+        url = 'http://www.walmart.com/search/?query={}'
+        walmart_selector = Selector(text=requests.get(
+            url.format(upc)).text)
+        walmart_category = walmart_selector.xpath('//p[@class="dept-head-list-heading"]/a/text()').extract()
+        walmart_url = walmart_selector.xpath('//a[@class="js-product-title"][1]/@href').extract()
+        if walmart_url:
+            walmart_exists = True
+            walmart_url = urlparse.urljoin('http://www.walmart.com/', walmart_url[0])
+        else:
+            walmart_exists = False
+        cond_set_value(product, 'walmart_url', walmart_url)
+        cond_set_value(product, 'walmart_category', walmart_category)
+        cond_set_value(product, 'walmart_exists', walmart_exists)
+
+

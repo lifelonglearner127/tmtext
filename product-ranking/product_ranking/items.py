@@ -264,6 +264,9 @@ class SiteProductItem(Item):
     available_online = Field()
     available_store = Field()
     subscribe_and_save = Field() # Samclub.com
+    walmart_url = Field()
+    walmart_category = Field()
+    walmart_exists = Field()
 
 
 class DiscountCoupon(Item):
