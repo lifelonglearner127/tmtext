@@ -15,6 +15,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import COMMASPACE, formatdate
 
+import boto
+
 con = None
 con = psycopg2.connect(database='scraper_test', user='root', password='QdYoAAIMV46Kg2qB', host='scraper-test.cmuq9py90auz.us-east-1.rds.amazonaws.com', port='5432')
 cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -299,18 +301,17 @@ email_content += (website_header)
 
 
 fromaddr = "jenkins@contentanalyticsinc.com"
-toaddrs = ["jacob.cats426@gmail.com", "diogo.medeiros1115@gmail.com", "adriana@contentanalyticsinc.com", "support@contentanalyticsinc.com"] # must be a list
-#toaddrs = ["jacob.cats426@gmail.com"] # must be a list
+toaddrs = ["adriana@contentanalyticsinc.com", "support@contentanalyticsinc.com", "no.andrey@gmail.com"]  # must be a list
 subject = "{0} Daily Notification from Regression Service : {1}".format(website.upper(), today.isoformat())
 
 print "Message length is " + repr(len(email_content))
 
 #Change according to your settings
-smtp_server = 'email-smtp.us-east-1.amazonaws.com'
-smtp_username = 'AKIAI2XV5DZO5VTJ6LXQ'
-smtp_password = 'AgWhl58LTqq36BpcFmKPs++24oz6DuS/J1k2GrAmp1T6'
-smtp_port = '587'
-smtp_do_tls = True
+#smtp_server = 'email-smtp.us-east-1.amazonaws.com'
+#smtp_username = 'AKIAI2XV5DZO5VTJ6LXQ'
+#smtp_password = 'AgWhl58LTqq36BpcFmKPs++24oz6DuS/J1k2GrAmp1T6'
+#smtp_port = '587'
+#smtp_do_tls = True
 
 msg = MIMEMultipart(
         From=fromaddr,
@@ -352,6 +353,7 @@ if os.path.isfile(csv_file_name_walmart_v1 + ".gz"):
 
 msg.attach(MIMEText(email_content))
 
+"""
 server = smtplib.SMTP(
     host = smtp_server,
     port = smtp_port,
@@ -365,3 +367,12 @@ server.login(smtp_username, smtp_password)
 server.sendmail(fromaddr, toaddrs, msg.as_string())
 
 print server.quit()
+"""
+
+
+connection = boto.connect_ses()
+
+# and send the message
+result = connection.send_raw_email(
+    msg.as_string(),
+    fromaddr, toaddrs)
