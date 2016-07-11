@@ -757,12 +757,15 @@ class AmazonScraper(Scraper):
             if swatch_image_json:
                 try:
                     selected_color = self.tree_html.xpath('//span[@class="selection"]/text()')[0].strip()
-                    no_selection = False
                 except:
-                    no_selection = True
+                    try:
+                        selected_variations = json.loads( re.search('selected_variations":({.*?})', html.tostring(self.tree_html)).group(1))
+                        selected_color = ' '.join(reversed(selected_variations.values()))
+                    except:
+                        selected_color = None
 
                 for color in swatch_image_json:
-                    if no_selection or color == selected_color:
+                    if color == selected_color:
                         for image in swatch_image_json[color]:
                             swatch_images = self._swatch_image_helper(image, swatch_images)
 
