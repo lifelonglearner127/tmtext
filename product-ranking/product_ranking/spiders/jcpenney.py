@@ -422,6 +422,9 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             yield prod
             return
 
+        prod['_jcpenney_has_size_range'] = bool(response.xpath(
+            '//*[contains(@class, "skuOptions") and contains(text(), "size range")]'))  # a temporary hack, see BZ #9913
+
         product_id = is_empty(re.findall('ppId=([a-zA-Z0-9]+)&{0,1}', response.url))
 
         cond_set_value(prod, 'locale', 'en-US')
