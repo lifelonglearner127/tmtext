@@ -11,10 +11,10 @@ import datetime
 from scrapy import Request, FormRequest
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews
+    BuyerReviews, scrapy_price_serializer
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value
-
+from scrapy.conf import settings
 is_empty = lambda x, y=None: x[0] if x else y
 
 
@@ -53,6 +53,7 @@ class StaplesProductsSpider(BaseProductsSpider):
 
         super(StaplesProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
+        #settings.overrides['CRAWLERA_ENABLED'] = True
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -313,35 +314,38 @@ class StaplesProductsSpider(BaseProductsSpider):
         meta = response.meta.copy()
         product = response.meta['product']
         reqs = meta.get('reqs', [])
-        jsonresponse = json.loads(response.body_as_unicode())
-        if u'currentlyOutOfStock' in jsonresponse['cartAction']:
-            product['is_out_of_stock'] = True
-        else:
-            product['is_out_of_stock'] = False
         try:
-            product['price'] = Price(price=jsonresponse['pricing']['finalPrice'],
-                                     priceCurrency='USD')
-            #import pdb
-            #pdb.set_trace()
-            # additionalProductsWarrantyServices
-            new_variants = []
-            if jsonresponse['additionalProductsWarrantyServices']:
-                for w in jsonresponse['additionalProductsWarrantyServices']:
-                    new_price = Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
-                                      priceCurrency='USD')
-                    new_variants.append({
-                        'price': new_price,
-                        'properties': {"name": product['title'] if 'title' in product else '',
-                                       "partnumber": w['partnumber'] if 'partnumber' in w else '',
-                                       "prod_doc_key": w['prod_doc_key'] if 'prod_doc_key' in w else '',
-                                       'warranty': w['name'] if 'name' in w else '',
-                                       'isWarranty': w['isWarranty'] if 'isWarranty' in w else '',
-                                       },
-                        'selected': False,
-                    })
-            meta['product']['variants'].extend(new_variants)
-        except:
-            pass
+            jsonresponse = json.loads(response.body_as_unicode())
+            if u'currentlyOutOfStock' in jsonresponse['cartAction']:
+                product['is_out_of_stock'] = True
+            else:
+                product['is_out_of_stock'] = False
+            try:
+                product['price'] = Price(price=jsonresponse['pricing']['finalPrice'],
+                                         priceCurrency=product['price'].priceCurrency)
+                #import pdb
+                #pdb.set_trace()
+                # additionalProductsWarrantyServices
+                new_variants = []
+                if jsonresponse['additionalProductsWarrantyServices']:
+                    for w in jsonresponse['additionalProductsWarrantyServices']:
+                        new_price = scrapy_price_serializer(Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
+                                          priceCurrency=product['price'].priceCurrency))
+                        new_variants.append({
+                            'price': new_price,
+                            'properties': {"name": product['title'] if 'title' in product else '',
+                                           "partnumber": w['partnumber'] if 'partnumber' in w else '',
+                                           "prod_doc_key": w['prod_doc_key'] if 'prod_doc_key' in w else '',
+                                           'warranty': w['name'] if 'name' in w else '',
+                                           'isWarranty': w['isWarranty'] if 'isWarranty' in w else '',
+                                           },
+                            'selected': False,
+                        })
+                meta['product']['variants'].extend(new_variants)
+            except:
+                pass
+        except ValueError:
+            print "JSON error"
         if reqs:
             return self.send_next_request(reqs, response)
         else:
@@ -357,14 +361,16 @@ class StaplesProductsSpider(BaseProductsSpider):
             new_variants = []
             for v in meta['product']['variants']:
                 if v['properties']['prod_doc_key'] == id:
-                    v['price'] = Price(price=jsonresponse['pricing']['finalPrice'],
-                                       priceCurrency='USD')
+
+                    v['price'] = scrapy_price_serializer(Price(price=jsonresponse['pricing']['finalPrice'],
+                                       priceCurrency=product['price'].priceCurrency))
 
                     # additionalProductsWarrantyServices
                     if jsonresponse['additionalProductsWarrantyServices']:
                         for w in jsonresponse['additionalProductsWarrantyServices']:
-                            new_price = Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
-                                              priceCurrency='USD')
+
+                            new_price = scrapy_price_serializer(Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
+                                              priceCurrency=product['price'].priceCurrency))
                             new_variants.append({
                                 'price': new_price,
                                 'properties': {"name": v['properties']['name'] if 'name' in v['properties'] else '',
