@@ -89,6 +89,12 @@ class WalGreensProductsSpider(BaseProductsSpider):
             *args,
             **kwargs)
 
+    def start_requests(self):
+        # Specific for this website
+        if self.searchterms:
+            self.searchterms = [st.replace('-', ' ') for st in self.searchterms]
+        return super(WalGreensProductsSpider, self).start_requests()
+    
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
