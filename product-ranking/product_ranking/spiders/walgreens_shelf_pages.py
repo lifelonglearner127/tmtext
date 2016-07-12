@@ -26,7 +26,7 @@ class WalgreensShelfPagesSpider(WalGreensProductsSpider):
 
     JSON_SEARCH_STRUCT = {"p": "1", "s": "20", "sort": "Top Sellers", "view": "allView",
                           "geoTargetEnabled": 'false', "id": "[{page_id}]", "requestType": "tier3",
-                          "deviceType": "desktop", "closeMatch": 'false'}
+                          "deviceType": "desktop",}# "closeMatch": 'false'}
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
@@ -73,11 +73,11 @@ class WalgreensShelfPagesSpider(WalGreensProductsSpider):
 
     @staticmethod
     def _get_page_id(url):
-        _id = re.search('N=(\d+)', url)
+        _id = re.search('N=([\d\-]+)', url)
         if not _id:
-            _id = re.search('ID=(\d+)', url)
+            _id = re.search('ID=([\d\-]+)', url)
         if _id:
-            return _id.group(1)
+            return _id.group(1).replace('-', ',')
 
     def start_requests(self):
         self.page_id = self._get_page_id(self.product_url)
