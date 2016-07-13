@@ -237,6 +237,10 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         mv = MacysVariants()
         mv.setupSC(response)
         product['variants'] = mv._variants()
+        if product.get('variants'):
+            # One-variation product
+            if len(product.get('variants')) == 1:
+                product['upc'] = product.get('variants')[0]['upc']
 
         if response.xpath('//li[@id="memberItemsTab"]').extract():
             price = response.xpath(
