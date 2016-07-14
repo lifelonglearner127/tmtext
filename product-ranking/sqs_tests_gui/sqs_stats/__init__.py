@@ -12,6 +12,8 @@ sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
 sys.path.append(os.path.join(CWD,  '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
 
+from add_task_to_sqs import QUEUES_LIST
+
 AUTOSCALE_GROUPS = ['SCCluster1', 'SCCluster2', 'SCCluster3', 'SCCluster4']
 
 
