@@ -11,7 +11,7 @@ import datetime
 from scrapy import Request, FormRequest
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews
+    BuyerReviews, scrapy_price_serializer
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value
 
@@ -322,7 +322,7 @@ class StaplesProductsSpider(BaseProductsSpider):
                     new_price = Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
                                       priceCurrency=product['price'].priceCurrency)
                     new_variants.append({
-                        'price': new_price,
+                        'price': scrapy_price_serializer(new_price),
                         'properties': {"name": product['title'] if 'title' in product else '',
                                        "partnumber": w['partnumber'] if 'partnumber' in w else '',
                                        "prod_doc_key": w['prod_doc_key'] if 'prod_doc_key' in w else '',
@@ -349,8 +349,8 @@ class StaplesProductsSpider(BaseProductsSpider):
             new_variants = []
             for v in meta['product']['variants']:
                 if v['properties']['prod_doc_key'] == id:
-                    v['price'] = Price(price=jsonresponse['pricing']['finalPrice'],
-                                       priceCurrency=product['price'].priceCurrency)
+                    v['price'] = scrapy_price_serializer(Price(price=jsonresponse['pricing']['finalPrice'],
+                                       priceCurrency=product['price'].priceCurrency))
 
                     # additionalProductsWarrantyServices
                     if jsonresponse['additionalProductsWarrantyServices']:
@@ -358,7 +358,7 @@ class StaplesProductsSpider(BaseProductsSpider):
                             new_price = Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
                                               priceCurrency=product['price'].priceCurrency)
                             new_variants.append({
-                                'price': new_price,
+                                'price': scrapy_price_serializer(new_price),
                                 'properties': {"name": v['properties']['name'] if 'name' in v['properties'] else '',
                                                "partnumber": w['partnumber'] if 'partnumber' in w else '',
                                                "variant_name": v['properties']['variant_name'] if 'variant_name' in v['properties'] else '',

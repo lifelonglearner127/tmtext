@@ -922,6 +922,9 @@ class WalmartScraper(Scraper):
 
             start_index = self._get_description_separator_index(description)
 
+            if not start_index:
+                return
+
             long_description = description[start_index:]
 
             possible_end_indexes = []
@@ -936,7 +939,7 @@ class WalmartScraper(Scraper):
                     possible_end_indexes.append(index)
 
             index = long_description.find('<h3>')
-            if index > -1:
+            if index > -1 and not index == long_description.find('<h3>About'):
                 possible_end_indexes.append(index)
 
             if possible_end_indexes:

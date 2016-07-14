@@ -139,7 +139,7 @@ class BestBuyProductSpider(ProductsSpider):
 
     def _unify_price(self, product):
         price = product.get('price')
-        if price is None:
+        if not price:
             return
         price_match = re.search('\$ *([, 0-9]+(?:\.[, 0-9]+)?)', price)
         price = price_match.group(1)
