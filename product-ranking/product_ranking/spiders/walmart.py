@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import division, absolute_import, unicode_literals
 
 import json
@@ -771,13 +772,18 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             title = ''.join(title).strip()
             if title:
                 product['title'] = title
-
-        cond_set(
-            product,
-            'brand',
-            response.xpath(
+        brand = is_empty(response.xpath(
                 "//div[@class='product-subhead-section']"
                 "/a[@id='WMItemBrandLnk']/text()").extract())
+        if not brand:
+            brand = is_empty(response.xpath(
+                ".//*[@id='WMItemBrandLnk']//*[@itemprop='brand']/text()").extract())
+        if not brand:
+            brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
+            brand = [brand]
+        if '&amp;' in brand:
+            brand=brand.replace('&amp;', "&")
+        cond_set(product, 'brand', brand)
 
         try:
             cond_set(
