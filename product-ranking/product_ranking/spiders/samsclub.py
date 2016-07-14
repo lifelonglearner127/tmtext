@@ -407,6 +407,12 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 contents = json.loads(contents)
                 incl = contents.get('Includes')
                 brs = incl.get('Products').get(productId) if incl else None
+                if not brs:
+                    try:
+                        prod_id = incl.get('Products').keys()[0]
+                        brs = incl.get('Products').get(prod_id)
+                    except IndexError:
+                        pass
                 if brs:
                     by_star = {}
                     for d in brs['ReviewStatistics']['RatingDistribution']:
