@@ -771,13 +771,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             title = ''.join(title).strip()
             if title:
                 product['title'] = title
-
-        cond_set(
-            product,
-            'brand',
-            response.xpath(
+        brand = is_empty(response.xpath(
                 "//div[@class='product-subhead-section']"
                 "/a[@id='WMItemBrandLnk']/text()").extract())
+        if not brand:
+            brand = is_empty(response.xpath(
+                ".//*[@id='WMItemBrandLnk']//*[@itemprop='brand']/text()").extract())
+        cond_set(product, 'brand', brand)
 
         try:
             cond_set(
