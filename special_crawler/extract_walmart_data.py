@@ -939,7 +939,7 @@ class WalmartScraper(Scraper):
                     possible_end_indexes.append(index)
 
             index = long_description.find('<h3>')
-            if index > -1:
+            if index > -1 and not index == long_description.find('<h3>About'):
                 possible_end_indexes.append(index)
 
             if possible_end_indexes:
