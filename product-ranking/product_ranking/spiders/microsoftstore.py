@@ -34,19 +34,11 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
                    '20descending?keywords={search_term}&' \
                    'Env=BASE&callingPage=productSearchResultPage'
 
-    REVIEWS_URL = 'http://api.bazaarvoice.com/data/batch.json' \
-                  '?passkey=291coa9o5ghbv573x7ercim80&apiversion=5.5' \
-                  '&displaycode=5681-en_us&resource.q0=reviews' \
-                  '&filter.q0=isratingsonly%3Aeq%3Afalse' \
-                  '&filter.q0=productid%3Aeq%3A{product_id}' \
-                  '&filter.q0=contentlocale%3Aeq%3Aen_US' \
-                  '&sort.q0=helpfulness%3Adesc%' \
-                  '2Ctotalpositivefeedbackcount%3Adesc' \
-                  '&stats.q0=reviews&filteredstats.q0=reviews' \
-                  '&include.q0=authors%2Cproducts%2Ccomments' \
-                  '&filter_reviews'
-
-
+    # Simplified bazaarapi url, returns both full review stats and filtered stats
+    # https://developer.bazaarvoice.com/docs/read/conversations/reviews/display/5_4
+    REVIEWS_URL = 'http://api.bazaarvoice.com/data/reviews.json?apiversion=5.5&passkey=291coa9o5ghbv573x7ercim80&' \
+                  'Filter=ProductId:eq:{product_id}&Include=Products&Stats=Reviews&filter=contentlocale:eq:en_US&' \
+                  'filteredstats=reviews'
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
@@ -75,7 +67,7 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
         brand = self.parse_brand(response)
         cond_set_value(product, 'brand', brand)
 
-       # Parse price
+        # Parse price
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
@@ -127,10 +119,12 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
 
             if data:
                 try:
-                    js = data["BatchedResults"]['q0']['Includes']['Products'][product_id]['ReviewStatistics']
+                    # Need to use FilteredReviewStatistics as on website.
+                    # shows only reviews that match current locale
+                    js = data['Includes']['Products'][product_id]['FilteredReviewStatistics']
                     total = js['TotalReviewCount']
                     average = js['AverageOverallRating']
-                    stars = data["BatchedResults"]['q0']['Includes']['Products'][product_id]['ReviewStatistics']['RatingDistribution']
+                    stars = js['RatingDistribution']
 
                     for star in stars:
                        rating_by_star[str(star['RatingValue'])] = star['Count']
@@ -161,21 +155,20 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
     def parse_brand(self, response):
         brand = is_empty(response.xpath(
             '//div[@class="shell-header-brand"]/a/@title').extract())
-
         return brand
 
     def parse_price(self, response):
         price = is_empty(response.xpath(
-            '//p[@class="current-price"]/span/text()').re(r'(\d+\.?\d+)'))
+            '//p[@class="current-price"]/span/text()').re(r'([\d\.\,]+)'))
 
         currency = is_empty(response.xpath(
             '//meta[@itemprop="priceCurrency"]/@content').extract())
         if not price:
             price = is_empty(response.xpath(
-                '//span[@itemprop="price"]/text()').re(r'(\d+\.?\d+)'))
+                '//span[@itemprop="price"]/text()').re(r'([\d\.\,]+)'))
         if not price:
             price = is_empty(response.xpath(
-                                   '//span[@itemprop="price"]/text()').re(r'Starting from .(\d+\.?\d+)'))
+                                   '//span[@itemprop="price"]/text()').re(r'Starting from .([\d\.\,]+)'))
 
         if price and currency:
             price = Price(price=price, priceCurrency=currency)

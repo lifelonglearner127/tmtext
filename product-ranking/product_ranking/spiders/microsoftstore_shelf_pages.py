@@ -35,6 +35,18 @@ class MicrosoftStoreShelfPagesSpider(MicrosoftStoreProductSpider):
                 meta={'search_term': '', 'remaining': self.quantity},
             )
 
+    def _scrape_results_per_page(self, response):
+        per_page = is_empty(response.xpath(
+            './/*[@class="fromTo"]/text()').re(r'-(\d+)'))
+        per_page = int(per_page) if per_page else None
+        if not per_page:
+            links = response.xpath(
+                './/a[contains(@class, "product") and contains(@href, "/pdp/")]/@href'
+            ).extract()
+
+            per_page = len(links)
+        return per_page
+
     def _scrape_product_links(self, response):
         shelf_categories = response.meta.get('shelf_categories')
         """
@@ -48,12 +60,17 @@ class MicrosoftStoreShelfPagesSpider(MicrosoftStoreProductSpider):
                 shelf_categories = self._get_shelf_path(response)
             shelf_category = shelf_categories[-1] if shelf_categories else None
             for link in links:
-                item = SiteProductItem()
-                if shelf_category:
-                    item['shelf_name'] = shelf_category
-                if shelf_categories:
-                    item['shelf_path'] = shelf_categories
-                yield urlparse.urljoin(response.url, link), item
+                # sometimes there is link to category instead of a product like here:
+                # https://www.microsoftstore.com/store/msusa/en_US/cat/Microsoft-Lumia/categoryID.66852000?icid=en_US_Homepage_whatsnew_5_TEST_EDU_160525
+                if '/pdp/' not in link:
+                    self.log("Found shelf link instead of product link {url}".format(url=link), INFO)
+                else:
+                    item = SiteProductItem()
+                    if shelf_category:
+                        item['shelf_name'] = shelf_category
+                    if shelf_categories:
+                        item['shelf_path'] = shelf_categories
+                    yield urlparse.urljoin(response.url, link), item
 
         else:
             self.log("Found no product links in {url}".format(url=response.url), INFO)
