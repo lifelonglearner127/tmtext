@@ -65,11 +65,7 @@ class Command(BaseCommand):
         if num_of_running_instances('remove_old_s3_files') > 1:
             print 'an instance of the script is already running...'
             sys.exit()
-        conn = boto.connect_s3(
-            aws_access_key_id=AMAZON_ACCESS_KEY,
-            aws_secret_access_key=AMAZON_SECRET_KEY,
-            is_secure=False,  # uncomment if you are not using ssl
-        )
+        conn = boto.connect_s3(is_secure=False)
         # Get current bucket
         bucket = conn.get_bucket(AMAZON_BUCKET_NAME, validate=False)
         for s3_key in bucket.list():
