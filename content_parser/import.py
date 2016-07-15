@@ -1,7 +1,7 @@
 import os, re, json
 from ftplib import FTP
 from StringIO import StringIO
-import parser
+import pg_parser
 
 c = open('config.txt', 'r')
 config = json.loads(c.read())
@@ -22,6 +22,6 @@ if config['import'] == 'FTP':
         ftp.retrbinary('RETR ' + filename, r.write)
 
         if config['parser'] == 'P&G':
-            parser.setup_parse(r.getvalue(), config['push'])
+            pg_parser.setup_parse(r.getvalue(), config['push'])
 
     ftp.quit()
