@@ -84,12 +84,12 @@ def main():
         " && sudo chmod +x /usr/sbin/chromedriver"
     )
     # download & install phantojs2
-    os.system(
-        "cd ~"
-        " && wget https://github.com/Pyppe/phantomjs2.0-ubuntu14.04x64/raw/master/bin/phantomjs"
-        " && sudo mv phantomjs /usr/sbin/phantomjs2"
-        " && sudo chmod +x /usr/sbin/phantomjs2"
-    )
+    # os.system(
+    #     "cd ~"
+    #     " && wget https://github.com/Pyppe/phantomjs2.0-ubuntu14.04x64/raw/master/bin/phantomjs"
+    #     " && sudo mv phantomjs /usr/sbin/phantomjs2"
+    #     " && sudo chmod +x /usr/sbin/phantomjs2"
+    # )
     # disable marketplaces (they are too slow)
     disabler = '/tmp/stop_marketplaces'
     os.system('echo "1" > %s' % disabler)
