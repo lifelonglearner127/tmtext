@@ -65,6 +65,15 @@ class BestBuyProductSpider(ProductsSpider):
         cond_set(product, 'image_url', product_tree.xpath(
             "descendant::*[not (@itemtype)]/img[@itemprop='image']/@src"
         ).extract())
+        if not product.get('image_url', None):
+            image = response.xpath('//meta[contains(@property, "og:image")]/@content').extract()
+            if image:
+                product['image_url'] = image[0]
+        if product.get('image_url', None):
+            image = product.get('image_url')
+            if 'maxHeight' in image:
+                image = image.split(';maxHeight', 1)[0]
+                product['image_url'] = image
         cond_set(product, 'model', product_tree.xpath(
             "descendant::*[not (@itemtype)]/*[@itemprop='model']/text()"
         ).extract())
