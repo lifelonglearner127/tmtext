@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import division, absolute_import, unicode_literals
 import re
 import urlparse
 
@@ -61,6 +63,11 @@ class VerizonwirelessShelfPagesSpider(VerizonwirelessProductsSpider):
         yield Request(url=self.valid_url(self.product_url),
                       meta=self._setup_meta_compatibility())  # meta is for SC baseclass compatibility
 
+    def _total_matches_from_html(self, response):
+        total = response.xpath(
+            ".//*[@id='filter-selections']/strong/text()").re('\d+')
+        return int(total[0]) if total else 0
+
     def _scrape_product_links(self, response):
         urls = response.xpath('//h6[@class="fontsz_sub2 bold color_red"]/a/@href').extract()
         if not urls:
@@ -80,20 +87,30 @@ class VerizonwirelessShelfPagesSpider(VerizonwirelessProductsSpider):
             yield url, item
 
     def _scrape_next_results_page_link(self, response):
-        if self.current_page >= self.num_pages:
-            return
-        self.current_page += 1
-        spliturl = self.product_url.split('?')
-        nextlink = spliturl[0]
-        npp = super(VerizonwirelessShelfPagesSpider, self)._scrape_results_per_page(response)
-        if len(spliturl) == 1:
-            return (nextlink + "?no=%d" % (self.current_page-1)*npp)
+        next_link = response.xpath('.//*[@id="pageNav"]/a/*[@ class="next"]/../@href').extract()
+        next_link = next_link[0] if next_link else None
+        if not next_link or self.current_page >= int(self.num_pages):
+            return None
         else:
-            nextlink += "?"
-            for s in spliturl[1].split('&'):
-                if not "no=" in s:
-                    nextlink += s + "&"
-            return (nextlink + "no=%d" % (self.current_page-1)*npp)
+            self.current_page += 1
+            return next_link
+
+    # This wasn't working
+    # def _scrape_next_results_page_link(self, response):
+    #     if self.current_page >= self.num_pages:
+    #         return
+    #     self.current_page += 1
+    #     spliturl = self.product_url.split('?')
+    #     nextlink = spliturl[0]
+    #     npp = super(VerizonwirelessShelfPagesSpider, self)._scrape_results_per_page(response)
+    #     if len(spliturl) == 1:
+    #         return (nextlink + "?no=%d" % (self.current_page-1)*npp)
+    #     else:
+    #         nextlink += "?"
+    #         for s in spliturl[1].split('&'):
+    #             if not "no=" in s:
+    #                 nextlink += s + "&"
+    #         return (nextlink + "no=%d" % (self.current_page-1)*npp)
 
     def parse_product(self, response):
         return super(VerizonwirelessShelfPagesSpider, self).parse_product(response)
