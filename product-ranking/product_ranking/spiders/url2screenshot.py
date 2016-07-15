@@ -102,7 +102,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.product_url = kwargs['product_url']
         self.width = kwargs.get('width', 1280)
         self.height = kwargs.get('height', 1024)
-        self.timeout = kwargs.get('timeout', 30)
+        self.timeout = kwargs.get('timeout', 60)
         self.image_copy = kwargs.get('image_copy', None)
         self.user_agent = kwargs.get(
             'user_agent',
