@@ -6,9 +6,8 @@ import re
 import time
 import urllib
 import urlparse
-
 import datetime
-from scrapy import Request, FormRequest
+from scrapy import Request, FormRequest, Selector
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews, scrapy_price_serializer
@@ -123,35 +122,34 @@ class StaplesProductsSpider(BaseProductsSpider):
         product = response.meta['product']
         reqs = meta.get('reqs', [])
 
+        jsonresponse = json.loads(response.body_as_unicode())
+        response_selector = Selector(text=self._htmlspecialchars_decode(
+            jsonresponse.get('result')))
         try:
-            jsonresponse = json.loads(response.body_as_unicode())
-
+            num_reviews = response_selector.xpath(
+                '//span[@class="font-color-gray based-on"]/text()').re('\d+')[0]
+        except IndexError:
             num_reviews = 0
+        try:
+            avg_rating = response_selector.xpath('//span[@class="yotpo-star-digits"]/text()').extract()[0].strip()
+        except IndexError:
             avg_rating = 0
+        review_stars = response_selector.xpath(
+            '//span[contains(@class, "yotpo-sum-reviews")]/text()').re('\((\d+)\)')[::-1]
+        stars = product['buyer_reviews'].rating_by_star
+        for star_index, star_value in enumerate(review_stars):
+            star_index = str(star_index+1)
+            stars[star_index] = star_value
+        last_date = response_selector.xpath('//label[contains(@class, "yotpo-review-date")]/text()').extract()
 
-            stars = product['buyer_reviews'].rating_by_star
-            for k in stars:
-                rate = re.findall(r'quot;%s&amp;quot;&amp;gt;\((\d+)\)&amp;' % k, jsonresponse['result'])
-                if rate:
-                    stars[k] = rate[0]
-                    num_reviews += int(rate[0])
-                    avg_rating += int(k) * int(rate[0])
-
-            if num_reviews > 0:
-                avg_rating = round(avg_rating/num_reviews, 1)
-
-            last_date = re.findall(r'yotpo-review-date&amp;quot;&amp;gt;(\d+/\d+/\d+)&amp;lt;', jsonresponse['result'])
-
-            product['buyer_reviews'] = BuyerReviews(
-                num_of_reviews=num_reviews,
-                average_rating=avg_rating,
-                rating_by_star=stars
-            )
-            if last_date:
-                last_buyer_review_date = datetime.datetime.strptime(last_date[0], '%m/%d/%y')
-                product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d-%m-%Y')
-        except:
-            pass
+        product['buyer_reviews'] = BuyerReviews(
+            num_of_reviews=num_reviews,
+            average_rating=avg_rating,
+            rating_by_star=stars
+        )
+        if last_date:
+            last_buyer_review_date = datetime.datetime.strptime(last_date[0], '%m/%d/%y')
+            product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d-%m-%Y')
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -232,14 +230,14 @@ class StaplesProductsSpider(BaseProductsSpider):
         if currency:
             meta['product']['price'] = Price(price=0.00, priceCurrency='USD')
 
-        if js_data['review']['count'] > 0:
-            reqs.append(
-                Request(
-                    url=self.REVIEW_URL.format(sku=sku),
-                    dont_filter=True,
-                    callback=self.parse_buyer_reviews,
-                    meta=meta
-                ))
+        # if js_data['review']['count'] > 0:
+        reqs.append(
+            Request(
+                url=self.REVIEW_URL.format(sku=sku),
+                dont_filter=True,
+                callback=self.parse_buyer_reviews,
+                meta=meta
+            ))
 
         url = self.RELATED_PRODUCT.format(sku=sku)
         params = {'pType': 'product',
@@ -472,3 +470,12 @@ class StaplesProductsSpider(BaseProductsSpider):
                                                     })
 
         return js_data
+
+    @staticmethod
+    def _htmlspecialchars_decode(text):
+        return (
+            text.replace('&amp;', '&').
+                replace('&quot;', '"').
+                replace('&lt;', '<').
+                replace('&gt;', '>')
+        )
