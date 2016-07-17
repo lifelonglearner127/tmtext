@@ -190,6 +190,9 @@ class JcpenneyScraper(Scraper):
     def _swatches(self):
         return self.jv.swatches()
 
+    def _no_longer_available(self):
+        return 0
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -563,6 +566,7 @@ class JcpenneyScraper(Scraper):
         "url" : _url, \
         "product_id" : _product_id, \
         "site_id" : _site_id, \
+
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
         "product_title" : _product_title, \
@@ -576,6 +580,8 @@ class JcpenneyScraper(Scraper):
         "ingredient_count": _ingredients_count,
         "variants": _variants,
         "swatches": _swatches,
+        "no_longer_available": _no_longer_available,
+
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
