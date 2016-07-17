@@ -151,7 +151,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         # TODO: phantomjs2
         cmd = 'phantomjs --ssl-protocol=any {script} "{url}" {output_fname} {width}px*{height}px'.format(
             script=rasterize_script, url=self.product_url, output_fname=output_fname,
-            width=self.width, height=self.height)
+            width=self.width)#, height=self.height
         os.system(cmd)
         assert os.path.exists(output_fname), 'Output file does not exist'
         if self.image_copy:  # save a copy of the file if needed
