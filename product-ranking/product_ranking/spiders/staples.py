@@ -472,9 +472,12 @@ class StaplesProductsSpider(BaseProductsSpider):
 
     @staticmethod
     def _htmlspecialchars_decode(text):
-        return (
-            text.replace('&amp;', '&').
-                replace('&quot;', '"').
-                replace('&lt;', '<').
-                replace('&gt;', '>')
-        )
+        if isinstance(text, str):
+            return (
+                text.replace('&amp;', '&').
+                    replace('&quot;', '"').
+                    replace('&lt;', '<').
+                    replace('&gt;', '>')
+            )
+        else:
+            return ''
