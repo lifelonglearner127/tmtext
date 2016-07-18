@@ -17,7 +17,7 @@ class UltaScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.ulta.com/ulta/browse/productDetail.jsp?productId=<product-id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.ulta.com/ulta/browse/productDetail.jsp?productId=<product-id> or http://www.ulta.com/<product-name>?productId=xlsImpprod<product-id>"
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -26,7 +26,9 @@ class UltaScraper(Scraper):
         """
         m = re.match(r"^http://www\.ulta\.com/ulta/browse/productDetail\.jsp\?productId=.+$", self.product_page_url)
 
-        return not not m
+        m1 = re.match(r"^http://www\.ulta\.com/.+\?productId=xlsImpprod\d+$", self.product_page_url)
+
+        return m or m1
 
     def not_a_product(self):
         """Checks if current page is not a valid product page
@@ -149,6 +151,11 @@ class UltaScraper(Scraper):
 
         return None
     '''
+
+    def _no_longer_available(self):
+        if re.search('Sorry, this product is no longer available.', self.page_raw_text):
+            return 1
+        return 0
 
     # extract product long description from its product product page tree
     # ! may throw exception if not found
@@ -448,6 +455,7 @@ class UltaScraper(Scraper):
         "ingredients": _ingredients, \
         "ingredient_count": _ingredients_count,
         "variants": _variants,
+        "no_longer_available": _no_longer_available,
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
@@ -466,6 +474,7 @@ class UltaScraper(Scraper):
         "max_review" : _max_review, \
         "min_review" : _min_review, \
         "reviews" : _reviews, \
+
         # CONTAINER : SELLERS
         "price" : _price, \
         "price_amount" : _price_amount, \
