@@ -102,7 +102,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.product_url = kwargs['product_url']
         self.width = kwargs.get('width', 1280)
         self.height = kwargs.get('height', 1024)
-        self.timeout = kwargs.get('timeout', 30)
+        self.timeout = kwargs.get('timeout', 60)
         self.image_copy = kwargs.get('image_copy', None)
         self.user_agent = kwargs.get(
             'user_agent',
@@ -148,10 +148,16 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
     def make_screenshot_for_macys(self, driver, output_fname):
         rasterize_script = os.path.join(CWD, 'rasterize.js')
-        # TODO: phantomjs2
-        cmd = 'phantomjs --ssl-protocol=any {script} "{url}" {output_fname} {width}px*{height}px'.format(
+        phantomjs_binary = 'phantomjs' if not os.path.exists('/usr/sbin/phantomjs2') else 'phantomjs2'
+        # cmd = 'phantomjs --ssl-protocol=any {script} "{url}" {output_fname} {width}px*{height}px'.format(
+        #     script=rasterize_script, url=self.product_url, output_fname=output_fname,
+        #     width=self.width)#, height=self.height
+        cmd = '{phantomjs_binary} --ssl-protocol=any {script} "{url}" {output_fname} {width}px'.format(
             script=rasterize_script, url=self.product_url, output_fname=output_fname,
-            width=self.width, height=self.height)
+            width=self.width, phantomjs_binary=phantomjs_binary)#, height=self.height
+        self.log('Using %s' % phantomjs_binary)
+        print "*"*100
+        print cmd
         os.system(cmd)
         assert os.path.exists(output_fname), 'Output file does not exist'
         if self.image_copy:  # save a copy of the file if needed
