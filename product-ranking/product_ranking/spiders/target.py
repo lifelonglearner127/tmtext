@@ -807,6 +807,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     def _scrape_total_matches_json_2(self, response):
         data = json.loads(response.body)
         args = self._json_get_args(data['searchResponse'])
+        if not 'prodCount' in data['searchResponse']:
+            return 0
         return int(args.get('prodCount'))
 
     def _scrape_total_matches_json(self, response):
@@ -925,7 +927,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     def _scrape_next_results_page_link_json_2(self, response):
         data = json.loads(response.body)
         args = self._json_get_args(data['searchResponse'])
-        next_offset = (int(args['currentPage'])) * int(args['resultsPerPage'])
+        next_offset = (int(args.get('currentPage', 0))) * int(args.get('resultsPerPage', 0))
         search_term = args['keyword']
         url = self.SEARCH_URL.format(
             search_term=search_term).replace('offset=0', 'offset=%d' % next_offset)

@@ -359,7 +359,6 @@ class StaplesProductsSpider(BaseProductsSpider):
             new_variants = []
             for v in meta['product']['variants']:
                 if v['properties']['prod_doc_key'] == id:
-
                     v['price'] = scrapy_price_serializer(Price(price=jsonresponse['pricing']['finalPrice'],
                                        priceCurrency=product['price'].priceCurrency))
 
@@ -370,7 +369,7 @@ class StaplesProductsSpider(BaseProductsSpider):
                             new_price = scrapy_price_serializer(Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
                                               priceCurrency=product['price'].priceCurrency))
                             new_variants.append({
-                                'price': new_price,
+                                'price': scrapy_price_serializer(new_price),
                                 'properties': {"name": v['properties']['name'] if 'name' in v['properties'] else '',
                                                "partnumber": w['partnumber'] if 'partnumber' in w else '',
                                                "variant_name": v['properties']['variant_name'] if 'variant_name' in v['properties'] else '',

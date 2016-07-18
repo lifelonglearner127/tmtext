@@ -85,7 +85,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         self.start_pos = 0
-        settings.overrides['CRAWLERA_ENABLED'] = True
+        #settings.overrides['CRAWLERA_ENABLED'] = True
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
@@ -179,17 +179,19 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                 response.xpath('//div[@id="easyzoom_wrap"]/div/a/img/@src').extract()
             )
         )
-
-        upc_codes = []
-        upc_codes_from_script = response.xpath(
-            '//script[contains(text(), "allVariants")]'
-        ).re('\"skuUpcCode\":\"(\d+)\"')
-
-        for upc in upc_codes_from_script:
-            if upc not in upc_codes:
-                upc_codes.append(upc)
-
-        product['upc'] = ', '.join(upc_codes)
+        if not product.get('variants'):
+            try:
+                product_info_json = \
+                response.xpath("//script[contains(text(), 'var productJsonData = {')]/text()").extract()
+                product_info_json = product_info_json[0].strip() if product_info_json else ''
+                start_index = product_info_json.find("var productJsonData = ") + len("var productJsonData = ")
+                end_index = product_info_json.rfind(";")
+                product_info_json = product_info_json[start_index:end_index].strip()
+                product_info_json = json.loads(product_info_json)
+                upc = product_info_json.get('productItem').get('skuDetails')[0].get('skuUpcCode')
+            except:
+                upc = None
+            product['upc'] = upc
 
         self._set_price(response, product)
 

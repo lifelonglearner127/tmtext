@@ -325,10 +325,15 @@ class AmazonScraper(Scraper):
         description = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
         if description:
             description = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")[0]
+
+            hidden = description.xpath('//*[@class="aok-hidden"]')
             more_button = description.xpath('//div[@id="fbExpanderMoreButtonSection"]')
+
             description = html.tostring(description)
-            if more_button:
-                description = re.sub(html.tostring(more_button[0]), '', description)
+
+            for exclude in hidden + more_button:
+                description = re.sub(html.tostring(exclude), '', description)
+
             return self._clean_text(self._exclude_javascript_from_description(description))
 
         short_description = " " . join(self.tree_html.xpath("//div[@class='dv-simple-synopsis dv-extender']//text()")).strip()
@@ -755,7 +760,14 @@ class AmazonScraper(Scraper):
             swatch_image_json = json.loads(self._find_between(html.tostring(self.tree_html), 'data["colorImages"] = ', ';\n'))
 
             if swatch_image_json:
-                selected_color = self.tree_html.xpath('//span[@class="selection"]/text()')[0]
+                try:
+                    selected_color = self.tree_html.xpath('//span[@class="selection"]/text()')[0].strip()
+                except:
+                    try:
+                        selected_variations = json.loads( re.search('selected_variations":({.*?})', html.tostring(self.tree_html)).group(1))
+                        selected_color = ' '.join(reversed(selected_variations.values()))
+                    except:
+                        selected_color = None
 
                 for color in swatch_image_json:
                     if color == selected_color:
@@ -999,6 +1011,12 @@ class AmazonScraper(Scraper):
             return related_product_url_list
 
         return None
+
+    def _best_seller_category(self):
+        try:
+            return re.search('#[\d,]+ in ([^\(]+) \(', html.tostring(self.tree_html)).group(1)
+        except:
+            return re.search('#[\d,]+ in ([^<]+)</span>', html.tostring(self.tree_html)).group(1)
 
     ##########################################
     ################ CONTAINER : REVIEWS
@@ -1531,6 +1549,7 @@ class AmazonScraper(Scraper):
         "meta_tags": _meta_tags,\
         "meta_tag_count": _meta_tag_count,\
         "canonical_link": _canonical_link,
+        "best_seller_category" : _best_seller_category, \
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \

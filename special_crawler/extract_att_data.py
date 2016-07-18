@@ -49,7 +49,7 @@ class ATTScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match('^https://www.att.com/.*\.html\??$', self.product_page_url)
+        m = re.match('^https://www.att.com/.*\.html\??(#sku=sku\d+)?$', self.product_page_url)
         return not not m
 
     def not_a_product(self):

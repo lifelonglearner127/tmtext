@@ -1,13 +1,13 @@
 #!/usr/bin/python
 
 import re
-import HTMLParser
 import json
 import copy
+import requests
 
 from lxml import html, etree
+from HTMLParser import HTMLParser
 from extract_data import Scraper
-
 
 class WalgreensScraper(Scraper):
 
@@ -120,32 +120,31 @@ class WalgreensScraper(Scraper):
     def _description(self):
         description = '<ul>'
 
-        for li in self.tree_html.xpath('//ul[@id="wag-vpd-overview-ul"]//li[not(contains(@class,"wag-list-unstyled"))]'):
+        description_elements = self.tree_html.xpath('//ul[@id="wag-vpd-overview-ul"]//li[not(contains(@class,"wag-list-unstyled"))]')
 
+        if not description_elements:
+            desc = re.search('&lt;ul id=&quot;wag-vpd-overview-ul&quot;.*?&lt;/ul&gt;', self.page_raw_text, re.DOTALL).group(0)
+
+            desc = HTMLParser().unescape(desc)
+            desc = self._exclude_javascript_from_description(desc)
+            desc = html.fromstring(desc)
+
+            description_elements = desc.xpath('//ul[@id="wag-vpd-overview-ul"]//li[not(contains(@class,"wag-list-unstyled"))]')
+
+        for li in description_elements:
             description += self._clean_html( html.tostring(li))
 
-        description += '</ul>'
+        if description != '<ul>':
+            return description + '</ul>'
 
-        if description != '<ul></ul>':
-            return description
 
     def _long_description(self):
-        description = ''
+        product_info = requests.get('http://api.bazaarvoice.com/data/batch.json?passkey=tpcm2y0z48bicyt0z3et5n2xf&apiversion=5.5&displaycode=2001-en_us&resource.q0=products&filter.q0=id%3Aeq%3Aprod' + self._product_id()).content
 
-        first_bold = False
+        product_info = json.loads(product_info)['BatchedResults']['q0']
+        product_info = product_info['Results'][0]['Description']
 
-        for element in self.tree_html.xpath('//div[@class="description-list"]/*'):
-            is_bold = element.xpath('span[contains(@style, "font-weight: bold;")]')
-
-            if is_bold:
-                if first_bold:
-                    break
-                first_bold = True
-
-            description += self._clean_html( html.tostring(element))
-
-        if description:
-            return description
+        return re.sub('([a-z][a-z\).])([A-Z\d])', r'\1\n\2', product_info)
 
     def _ingredients(self):
         if not self.ingredients:
@@ -520,7 +519,7 @@ class WalgreensScraper(Scraper):
         return text.strip()
 
     def _clean_html(self, html):
-        html = HTMLParser.HTMLParser().unescape( html)
+        html = HTMLParser().unescape( html)
         html = re.sub( ' \w+="[^"]+"', '', html)
         return html
 

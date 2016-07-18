@@ -922,6 +922,9 @@ class WalmartScraper(Scraper):
 
             start_index = self._get_description_separator_index(description)
 
+            if not start_index:
+                return
+
             long_description = description[start_index:]
 
             possible_end_indexes = []
@@ -936,7 +939,7 @@ class WalmartScraper(Scraper):
                     possible_end_indexes.append(index)
 
             index = long_description.find('<h3>')
-            if index > -1:
+            if index > -1 and not index == long_description.find('<h3>About'):
                 possible_end_indexes.append(index)
 
             if possible_end_indexes:
@@ -1826,15 +1829,17 @@ class WalmartScraper(Scraper):
 
         if self.is_bundle_product:
             image_list = self.tree_html.xpath("//div[contains(@class, 'choice-hero-non-carousel')]//img/@src")
-
+            image_dimensions = []
             for index, url in enumerate(image_list):
                 if ".jpg?" in url:
                     image_list[index] = url[:url.rfind(".jpg?") + 4]
                 elif ".png" in url:
                     image_list[index] = url[:url.rfind(".png?") + 4]
+                image_dimensions.append(1)
 
             image_list = [url for index, url in enumerate(image_list) if index > 4 or not self._no_image(url)]
 
+            self.image_dimensions = image_dimensions
             if image_list:
                 return image_list
 
