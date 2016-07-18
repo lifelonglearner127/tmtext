@@ -155,6 +155,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         cmd = '{phantomjs_binary} --ssl-protocol=any {script} "{url}" {output_fname} {width}px'.format(
             script=rasterize_script, url=self.product_url, output_fname=output_fname,
             width=self.width, phantomjs_binary=phantomjs_binary)#, height=self.height
+        self.log('Using %s' % phantomjs_binary)
         print "*"*100
         print cmd
         os.system(cmd)
