@@ -37,11 +37,6 @@ class ATTShelfPagesSpider(ATTProductsSpider):
                        'api.bazaarvoice.com',
                        'recs.richrelevance.com']
 
-    # PAGINATE_URL = '{base_url}.deviceListView.flowtype-NEW.deviceGeoTarget-US.' \
-    #                '{device_group_type}.{payment_type}' \
-    #                '.packageType-undefined.json?showMoreListSize=24'
-    PAGINATE_URL = 'https://www.att.com/shop/wireless/devices/prepaidphones.accessoryListGridView.html' \
-                   '?showMoreListSize=24'
 
     def __init__(self, *args, **kwargs):
         # settings.overrides["DUPEFILTER_CLASS"] = 'product_ranking.spiders.att.CustomHashtagFilter'
@@ -55,11 +50,20 @@ class ATTShelfPagesSpider(ATTProductsSpider):
             self.quantity = int(kwargs['quantity'])
         self.shelf_categories = []
         self.page_size = 12
+        self.PAGINATE_URL = self.product_url.split('#')[0].split('?')[0].replace('.html','').replace('.htm','') + \
+                            '.accessoryListGridView.html?showMoreListSize={more_list_size}'
 
     def start_requests(self):
         if self.product_url:
-            yield Request(self.product_url,
-                          meta={'search_term': '', 'remaining': self.quantity}, )
+            # TODO fix wrong pagination at accessories also wrong items appear
+            # TODO add params for accessory page to work correctly
+            if 'accessories/cases.html' in self.product_url:
+                proper_firstpage = self.PAGINATE_URL.format(more_list_size=30)
+                yield Request(proper_firstpage,
+                              meta={'search_term': '', 'remaining': self.quantity}, )
+            else:
+                yield Request(self.product_url,
+                                meta={'search_term': '', 'remaining': self.quantity}, )
 
     def _scrape_product_links(self, response):
         item_urls = []
@@ -79,14 +83,15 @@ class ATTShelfPagesSpider(ATTProductsSpider):
             except BaseException:
                 item_urls = []
                 # No urls, give up
-        self.page_size = len(item_urls) if item_urls else 0
+
+        if self.current_page == 1:
+            self.page_size = len(item_urls) if item_urls else 0
+        elif item_urls:
+            # since page don't have proper pagination, we remove duplicate items from beginning of the list
+            dup_items_quant = self.current_page * self.page_size
+            item_urls = item_urls[dup_items_quant:]
         bc = response.xpath('.//*[@class="breadcrumb"]//*/text()').extract()
-        # TODO maybe rework this categories stuff and send it thru meta
-        if bc:
-            shelf_categories = [c.replace('/','').strip() for c in bc if len(c.strip()) > 1 and not c.strip() == "/"]
-            self.shelf_categories = shelf_categories
-        else:
-            shelf_categories = self.shelf_categories
+        shelf_categories = [c.replace('/', '').strip() for c in bc if len(c.strip()) > 1 and not c.strip() == "/"]
         shelf_category = shelf_categories[-1] if shelf_categories else None
         for item_url in item_urls:
             item = SiteProductItem()
@@ -100,7 +105,9 @@ class ATTShelfPagesSpider(ATTProductsSpider):
         if not list(self._scrape_product_links(response)) or self.current_page >= self.num_pages:
             return  # end of pagination reached
         else:
-            next_link = response.url.split('#')[0] + '#on={}page'.format(self.current_page)
+            self.current_page += 1
+            more_list_size = self.current_page * self.page_size
+            next_link = self.PAGINATE_URL.format(more_list_size=more_list_size)
             return next_link
 
     def _scrape_total_matches(self, response):
