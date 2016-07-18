@@ -137,15 +137,8 @@ class VerizonWirelessScraper(Scraper):
 
         return ''.join(filter(None, map((lambda x: x.strip()),description))).strip() if description else None
 
-
     def _long_description(self):
-        description = self.tree_html.xpath(
-            '//*[@itemprop="description" and '
-            '@class="is-hidden"]//text()')
-
-        return ''.join(filter(None, map((lambda x: x.strip()),description))).strip() if description else None
-
-
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
