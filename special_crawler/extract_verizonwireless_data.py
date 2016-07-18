@@ -176,14 +176,23 @@ class VerizonWirelessScraper(Scraper):
                             'set', {}).get('item') for x in data[
                                 'item'] if x.get('type') == 'img_set']))
                         images += [x for x in data['item'] if x.get('dx')]
-                        images.sort()
 
-                        # move the main image to the front
+                        is_spin = False
+
                         for image in images:
-                            if not '_spin' in image['i']['n']:
-                                images.remove(image)
-                                images.insert(0, image)
+                            if '_spin' in image['i']['n']:
+                                is_spin = True
                                 break
+
+                        if is_spin:
+                            images.sort()
+
+                            # move the main image to the front
+                            for image in images:
+                                if not '_spin' in image['i']['n']:
+                                    images.remove(image)
+                                    images.insert(0, image)
+                                    break
 
                     except:
                         data = self.json_data['set']['item']
