@@ -52,7 +52,7 @@ class StaplesProductsSpider(BaseProductsSpider):
 
         super(StaplesProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
-        settings.overrides['CRAWLERA_ENABLED'] = True
+        #settings.overrides['CRAWLERA_ENABLED'] = True
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
