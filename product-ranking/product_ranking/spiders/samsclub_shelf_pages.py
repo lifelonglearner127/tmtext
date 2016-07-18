@@ -213,8 +213,11 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
                 total = int(total) if total else None
             except BaseException:
                 rgx = r'totalRecords[\'\:]+(\d+)'
-                match_list = re.findall(rgx, js_text)
-                total = int(match_list[0]) if match_list else None
+                try:
+                    match_list = re.findall(rgx, js_text)
+                    total = int(match_list[0]) if match_list else None
+                except TypeError:
+                    total = None
             if not total:
                 js_text = response.xpath('//script[@id="tb-djs-hubbleParams"]/text()').extract()
                 js_text = js_text[0] if js_text else None
