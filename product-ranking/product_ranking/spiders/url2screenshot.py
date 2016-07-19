@@ -421,6 +421,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         try:
             self.prepare_driver(driver)
             self.make_screenshot(driver, t_file.name)
+            self.log('Screenshot was made for file %s' % t_file.name)
         except Exception as e:
             self.log('Exception while getting response using selenium! %s' % str(e))
             # lets try with another driver
@@ -433,6 +434,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
             driver = self.init_driver(name=another_driver_name)
             self.prepare_driver(driver)
             self.make_screenshot(driver, t_file.name)
+            self.log('Screenshot was made for file %s (2nd attempt)' % t_file.name)
             try:
                 if not DEBUG_MODE:
                     driver.quit()
@@ -452,14 +454,17 @@ class URL2ScreenshotSpider(scrapy.Spider):
                    self.crop_top+self.crop_height)
             area = img.crop(box)
             area.save(t_file.name, 'png')
+            self.log('Screenshot was cropped and saved to %s' % t_file.name)
             if self.image_copy:  # save a copy of the file if needed
                 area.save(self.image_copy, 'png')
 
         with open(t_file.name, 'rb') as fh:
             img_content = fh.read()
+            self.log('Screenshot content was read, size: %s bytes' % len(img_content))
 
         if self.remove_img is True:
             os.unlink(t_file.name)  # remove old output file
+            self.log('Screenshot file was removed: %s' % t_file.name)
 
         # yield the item
         item['url'] = response.url
@@ -468,6 +473,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         if not DEBUG_MODE:
             display.stop()
+
+        self.log('Item image key length: %s' % len(item.get('image', '')))
 
         if img_content:
             yield item
