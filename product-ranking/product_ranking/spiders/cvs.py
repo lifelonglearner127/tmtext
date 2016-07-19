@@ -104,7 +104,7 @@ class CvsProductsSpider(BaseProductsSpider):
         self.current_page = 1
         super(CvsProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
-        #settings.overrides['CRAWLERA_ENABLED'] = True
+        settings.overrides['CRAWLERA_ENABLED'] = True
 
     def _set_brand(self, product, phrase, brands):
         phrase = _normalize(phrase)
