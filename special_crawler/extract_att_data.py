@@ -463,7 +463,7 @@ class ATTScraper(Scraper):
         if self._get_product_details():
             for skuId in self.product_details['skuItems']:
                 variant_json = self.product_details['skuItems'][skuId]
-                if variant_json['selectedSku']:
+                if variant_json['selectedSku'] or len(self.product_details['skuItems']) == 1:
                     return variant_json
 
     ##########################################
