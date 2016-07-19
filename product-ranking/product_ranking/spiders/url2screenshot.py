@@ -12,6 +12,7 @@ import random
 import re
 import urlparse
 import shutil
+import datetime
 
 import scrapy
 from scrapy.conf import settings
@@ -156,9 +157,17 @@ class URL2ScreenshotSpider(scrapy.Spider):
             script=rasterize_script, url=self.product_url, output_fname=output_fname,
             width=self.width, phantomjs_binary=phantomjs_binary)#, height=self.height
         self.log('Using %s' % phantomjs_binary)
-        print "*"*100
-        print cmd
+        self.log(cmd)
+        # extra debug data
+        version_file = '/tmp/phantomjs_version.txt'
+        if not os.path.exists(version_file):
+            os.system('{phantomjs_binary} -v > {version_file}'.format(
+                phantomjs_binary=phantomjs_binary, version_file=version_file))
+        if os.path.exists(version_file):
+            self.log('PhantomJS real version: %s' % open(version_file, 'r').read())
+        _start = datetime.datetime.now()
         os.system(cmd)
+        self.log('Command finished in %s second(s)' % ((datetime.datetime.now() - _start).total_seconds()))
         assert os.path.exists(output_fname), 'Output file does not exist'
         if self.image_copy:  # save a copy of the file if needed
             shutil.copyfile(output_fname, self.image_copy)
