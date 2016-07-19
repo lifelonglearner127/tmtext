@@ -72,6 +72,7 @@ class ATTShelfPagesSpider(ATTProductsSpider):
         # here we decide how we will parse first page
         exclusions = ["/hotspots", '/child-gps-locators', ]
         any_true = [e for e in exclusions if e in response.url]
+        print any_true
         if any_true:
             yield Request(response.url, callback=self.parse,
                           meta={'search_term': '', 'remaining': self.quantity}, dont_filter=True)
@@ -94,6 +95,9 @@ class ATTShelfPagesSpider(ATTProductsSpider):
                     proper_link = simple_firstpage_link.format(page_size=self.page_size)
                     yield Request(proper_link, callback=self.parse,
                                   meta={'search_term': '', 'remaining': self.quantity}, )
+                else:
+                    yield Request(response.url, callback=self.parse,
+                                  meta={'search_term': '', 'remaining': self.quantity}, dont_filter=True)
 
 
     def _scrape_product_links(self, response):
