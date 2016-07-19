@@ -139,9 +139,9 @@ class Job(models.Model):
             elif self.mode == 'cache':
                 return settings.TEST_CACHE_QUEUE
         if self.mode == 'no cache':
-            return settings.QUEUES_LIST[self.mode]
+            return settings.QUEUES_LIST[self.priority]
         elif self.mode == 'cache':
-            return settings.CACHE_QUEUES_LIST[self.mode]
+            return settings.CACHE_QUEUES_LIST[self.priority]
 
 
 class JobGrouperCache(models.Model):
