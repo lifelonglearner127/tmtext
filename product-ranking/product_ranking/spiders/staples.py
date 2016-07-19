@@ -6,15 +6,14 @@ import re
 import time
 import urllib
 import urlparse
-
 import datetime
-from scrapy import Request, FormRequest
+from scrapy import Request, FormRequest, Selector
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews, scrapy_price_serializer
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value
-
+from scrapy.conf import settings
 is_empty = lambda x, y=None: x[0] if x else y
 
 
@@ -53,6 +52,7 @@ class StaplesProductsSpider(BaseProductsSpider):
 
         super(StaplesProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
+        #settings.overrides['CRAWLERA_ENABLED'] = True
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -122,27 +122,34 @@ class StaplesProductsSpider(BaseProductsSpider):
         product = response.meta['product']
         reqs = meta.get('reqs', [])
 
+        jsonresponse = json.loads(response.body_as_unicode())
+        response_selector = Selector(text=self._htmlspecialchars_decode(
+            jsonresponse.get('result')))
         try:
-            jsonresponse = json.loads(response.body_as_unicode())
+            num_reviews = response_selector.xpath(
+                '//span[@class="font-color-gray based-on"]/text()').re('\d+')[0]
+        except IndexError:
+            num_reviews = 0
+        try:
+            avg_rating = response_selector.xpath('//span[@class="yotpo-star-digits"]/text()').extract()[0].strip()
+        except IndexError:
+            avg_rating = 0
+        review_stars = response_selector.xpath(
+            '//span[contains(@class, "yotpo-sum-reviews")]/text()').re('\((\d+)\)')[::-1]
+        stars = product['buyer_reviews'].rating_by_star
+        for star_index, star_value in enumerate(review_stars):
+            star_index = str(star_index+1)
+            stars[star_index] = star_value
+        last_date = response_selector.xpath('//label[contains(@class, "yotpo-review-date")]/text()').extract()
 
-            stars = product['buyer_reviews'].rating_by_star
-            for k in stars:
-                rate = re.findall(r'quot;%s&amp;quot;&amp;gt;\((\d+)\)&amp;' % k, jsonresponse['result'])
-                if rate:
-                    stars[k] = rate[0]
-
-            last_date = re.findall(r'yotpo-review-date&amp;quot;&amp;gt;(\d+/\d+/\d+)&amp;lt;', jsonresponse['result'])
-
-            product['buyer_reviews'] = BuyerReviews(
-                num_of_reviews=product['buyer_reviews'].num_of_reviews,
-                average_rating=product['buyer_reviews'].average_rating,
-                rating_by_star=stars
-            )
-            if last_date:
-                last_buyer_review_date = datetime.datetime.strptime(last_date[0], '%m/%d/%y')
-                product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d-%m-%Y')
-        except:
-            pass
+        product['buyer_reviews'] = BuyerReviews(
+            num_of_reviews=num_reviews,
+            average_rating=avg_rating,
+            rating_by_star=stars
+        )
+        if last_date:
+            last_buyer_review_date = datetime.datetime.strptime(last_date[0], '%m/%d/%y')
+            product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d-%m-%Y')
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -221,16 +228,16 @@ class StaplesProductsSpider(BaseProductsSpider):
         currency = response.xpath('//meta[contains(@itemprop, "priceCurrency")]/@content').extract()
 
         if currency:
-            meta['product']['price'] = Price(price=0.00, priceCurrency=currency[0])
+            meta['product']['price'] = Price(price=0.00, priceCurrency='USD')
 
-        if js_data['review']['count'] > 0:
-            reqs.append(
-                Request(
-                    url=self.REVIEW_URL.format(sku=sku),
-                    dont_filter=True,
-                    callback=self.parse_buyer_reviews,
-                    meta=meta
-                ))
+        # if js_data['review']['count'] > 0:
+        reqs.append(
+            Request(
+                url=self.REVIEW_URL.format(sku=sku),
+                dont_filter=True,
+                callback=self.parse_buyer_reviews,
+                meta=meta
+            ))
 
         url = self.RELATED_PRODUCT.format(sku=sku)
         params = {'pType': 'product',
@@ -305,35 +312,38 @@ class StaplesProductsSpider(BaseProductsSpider):
         meta = response.meta.copy()
         product = response.meta['product']
         reqs = meta.get('reqs', [])
-        jsonresponse = json.loads(response.body_as_unicode())
-        if u'currentlyOutOfStock' in jsonresponse['cartAction']:
-            product['is_out_of_stock'] = True
-        else:
-            product['is_out_of_stock'] = False
         try:
-            product['price'] = Price(price=jsonresponse['pricing']['finalPrice'],
-                                     priceCurrency=product['price'].priceCurrency)
-            #import pdb
-            #pdb.set_trace()
-            # additionalProductsWarrantyServices
-            new_variants = []
-            if jsonresponse['additionalProductsWarrantyServices']:
-                for w in jsonresponse['additionalProductsWarrantyServices']:
-                    new_price = Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
-                                      priceCurrency=product['price'].priceCurrency)
-                    new_variants.append({
-                        'price': scrapy_price_serializer(new_price),
-                        'properties': {"name": product['title'] if 'title' in product else '',
-                                       "partnumber": w['partnumber'] if 'partnumber' in w else '',
-                                       "prod_doc_key": w['prod_doc_key'] if 'prod_doc_key' in w else '',
-                                       'warranty': w['name'] if 'name' in w else '',
-                                       'isWarranty': w['isWarranty'] if 'isWarranty' in w else '',
-                                       },
-                        'selected': False,
-                    })
-            meta['product']['variants'].extend(new_variants)
-        except:
-            pass
+            jsonresponse = json.loads(response.body_as_unicode())
+            if u'currentlyOutOfStock' in jsonresponse['cartAction']:
+                product['is_out_of_stock'] = True
+            else:
+                product['is_out_of_stock'] = False
+            try:
+                product['price'] = Price(price=jsonresponse['pricing']['finalPrice'],
+                                         priceCurrency=product['price'].priceCurrency)
+                #import pdb
+                #pdb.set_trace()
+                # additionalProductsWarrantyServices
+                new_variants = []
+                if jsonresponse['additionalProductsWarrantyServices']:
+                    for w in jsonresponse['additionalProductsWarrantyServices']:
+                        new_price = scrapy_price_serializer(Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
+                                          priceCurrency=product['price'].priceCurrency))
+                        new_variants.append({
+                            'price': new_price,
+                            'properties': {"name": product['title'] if 'title' in product else '',
+                                           "partnumber": w['partnumber'] if 'partnumber' in w else '',
+                                           "prod_doc_key": w['prod_doc_key'] if 'prod_doc_key' in w else '',
+                                           'warranty': w['name'] if 'name' in w else '',
+                                           'isWarranty': w['isWarranty'] if 'isWarranty' in w else '',
+                                           },
+                            'selected': False,
+                        })
+                meta['product']['variants'].extend(new_variants)
+            except:
+                pass
+        except ValueError:
+            print "JSON error"
         if reqs:
             return self.send_next_request(reqs, response)
         else:
@@ -355,8 +365,9 @@ class StaplesProductsSpider(BaseProductsSpider):
                     # additionalProductsWarrantyServices
                     if jsonresponse['additionalProductsWarrantyServices']:
                         for w in jsonresponse['additionalProductsWarrantyServices']:
-                            new_price = Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
-                                              priceCurrency=product['price'].priceCurrency)
+
+                            new_price = scrapy_price_serializer(Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
+                                              priceCurrency=product['price'].priceCurrency))
                             new_variants.append({
                                 'price': scrapy_price_serializer(new_price),
                                 'properties': {"name": v['properties']['name'] if 'name' in v['properties'] else '',
@@ -458,3 +469,15 @@ class StaplesProductsSpider(BaseProductsSpider):
                                                     })
 
         return js_data
+
+    @staticmethod
+    def _htmlspecialchars_decode(text):
+        if text:
+            return (
+                text.replace('&amp;', '&').
+                    replace('&quot;', '"').
+                    replace('&lt;', '<').
+                    replace('&gt;', '>')
+            )
+        else:
+            return ''
