@@ -69,27 +69,31 @@ class ATTShelfPagesSpider(ATTProductsSpider):
         # now lets get proper url for first page
         js_code = response.xpath('.//*[contains(text(),"setlayoutURL")]/text()').extract()
         js_code = js_code[0] if js_code else None
-        if js_code:
-            self.JSON_PAGINATE_URL = self._build_base_json_pagination_link(js_code)
-            proper_link = self.JSON_PAGINATE_URL.format(more_list_size=self.page_size)
-            yield Request(proper_link, callback=self.parse,
-                          meta={'search_term': '', 'remaining': self.quantity}, )
+        # here we decide how we will parse first page
+        exclusions = ["/hotspots", '/child-gps-locators', ]
+        any_true = [e for e in exclusions if e in response.url]
+        if any_true:
+            yield Request(response.url, callback=self.parse,
+                          meta={'search_term': '', 'remaining': self.quantity}, dont_filter=True)
         else:
-            self.HTML_PAGINATE_URL = self._build_base_html_pagination_link(response)
-            # 13 is magic number hardcoded somewhere in js code
-            if self.page_size == 13 or self.page_size == 17:
-                self.page_size = 30
-                simple_firstpage_link = self.HTML_PAGINATE_URL.replace('&offset=1&offsetValue={offset_value}','')
-                # if '/wearables/' in response.url:
-                #     proper_link = simple_firstpage_link.replace(
-                #         '?taxoCategory=&sortByProperties=bestSelling&showMoreListSize={page_size}','')
-                # else:
-                proper_link = simple_firstpage_link.format(page_size=self.page_size)
+            if js_code:
+                self.JSON_PAGINATE_URL = self._build_base_json_pagination_link(js_code)
+                proper_link = self.JSON_PAGINATE_URL.format(more_list_size=self.page_size)
                 yield Request(proper_link, callback=self.parse,
                               meta={'search_term': '', 'remaining': self.quantity}, )
             else:
-                yield Request(response.url, callback=self.parse,
-                              meta={'search_term': '', 'remaining': self.quantity}, dont_filter=True)
+                self.HTML_PAGINATE_URL = self._build_base_html_pagination_link(response)
+                # 13 is magic number hardcoded somewhere in js code
+                if self.page_size == 13 or self.page_size == 17:
+                    self.page_size = 30
+                    simple_firstpage_link = self.HTML_PAGINATE_URL.replace('&offset=1&offsetValue={offset_value}','')
+                    # if '/wearables/' in response.url:
+                    #     proper_link = simple_firstpage_link.replace(
+                    #         '?taxoCategory=&sortByProperties=bestSelling&showMoreListSize={page_size}','')
+                    # else:
+                    proper_link = simple_firstpage_link.format(page_size=self.page_size)
+                    yield Request(proper_link, callback=self.parse,
+                                  meta={'search_term': '', 'remaining': self.quantity}, )
 
 
     def _scrape_product_links(self, response):
@@ -98,34 +102,29 @@ class ATTShelfPagesSpider(ATTProductsSpider):
             # try:
             js_response = json.loads(response.body_as_unicode())
             item_list = js_response.get('devices')
-            # self.total_matches = len(item_list)
-            # print "^^^^^^^^{}^^^^^^^^^^^^^^^".format(len(item_list))
-            for item in item_list:
-                item_url = item.get('product').get('url')
-                if item_url:
-                    # thats temporary
-                    if 'sku6320484' in item_url:
-                        item_url = '/tablets/ipad/ipad-retina.html#sku=sku6320484'
-                    item_urls.append(item_url)
-                    # print item.get('name')
-                    # print item_url
-                else:
-                    # print "no url"
-                    # who need that url field anyway
-                    body = item.get('usingTheBody')
-                    item_url = re.search(r"a\shref=[^/]+(/[^;]+)", body)
-                    item_url = item_url.group(1) if item_url else None
+            if item_list:
+                for item in item_list:
+                    item_url = item.get('product').get('url')
                     if item_url:
-                        item_url = 'https://www.att.com{}'.format(item_url)
+                        # thats temporary
+                        if 'sku6320484' in item_url:
+                            item_url = '/tablets/ipad/ipad-retina.html#sku=sku6320484'
                         item_urls.append(item_url)
-                        # print "WTF"
-                        # print item_url
-            # since page don't have proper pagination, we remove duplicate items from beginning of the list
-            # to not have problems with ranking later
-            dup_items_quant = (self.current_page - 1) * self.page_size
-            next_items_quant = self.current_page * self.page_size
-            # apparently it returns full item json each time
-            item_urls = item_urls[dup_items_quant:next_items_quant]
+                    else:
+                        body = item.get('usingTheBody')
+                        item_url = re.search(r"a\shref=[^/]+(/[^;]+)", body)
+                        item_url = item_url.group(1) if item_url else None
+                        if item_url:
+                            item_url = 'https://www.att.com{}'.format(item_url)
+                            item_urls.append(item_url)
+                # since page don't have proper pagination, we remove duplicate items from beginning of the list
+                # to not have problems with ranking later
+                dup_items_quant = (self.current_page - 1) * self.page_size
+                next_items_quant = self.current_page * self.page_size
+                # apparently it returns full item json each time
+                item_urls = item_urls[dup_items_quant:next_items_quant]
+            else:
+                item_urls = []
         else:
             item_urls = response.xpath(
                 './/*[@class="list-title" or @class="listGridAcc-title" or'
@@ -163,7 +162,7 @@ class ATTShelfPagesSpider(ATTProductsSpider):
         taxo_style = re.search(r"filetrDefault\s=\s'([A-Z]+)", js_code)
         taxo_style = taxo_style.group(1) if taxo_style else None
         pagination_url += "?showMoreListSize={more_list_size}"
-        if 'SMARTPHONES' in taxo_style:
+        if taxo_style and 'SMARTPHONES' in taxo_style:
             pagination_url += "&taxoStyle={taxo_style}".format(taxo_style=taxo_style)
         # but this part is tablet only
         else:
@@ -205,13 +204,17 @@ class ATTShelfPagesSpider(ATTProductsSpider):
             js_response = json.loads(response.body_as_unicode())
             item_list = js_response.get('devices')
             result_count = len(item_list)
-            return result_count
-        elif '/wearables/' in response.url:
-            result_count = len(list(self._scrape_product_links(response)))
-            return result_count
         else:
             result_count = re.search(r'var\s+v_accessorySize\s+=(\d+);', response.body_as_unicode())
             result_count = result_count.group(1) if result_count else ''
-            if result_count.isdigit():
-                return int(result_count)
-        return 0
+        if result_count:
+            if not isinstance(result_count, int):
+                if result_count.isdigit():
+                    result_count = int(result_count)
+                else:
+                    result_count = 0
+            return result_count
+        else:
+            result_count = len(list(self._scrape_product_links(response)))
+            return result_count
+
