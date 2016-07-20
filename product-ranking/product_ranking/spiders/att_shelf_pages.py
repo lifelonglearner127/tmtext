@@ -123,7 +123,7 @@ class ATTShelfPagesSpider(ATTProductsSpider):
                         item_urls.append(item_url)
                     else:
                         body = item.get('usingTheBody')
-                        item_url = re.search(r"a\shref=[^/]+(/[^;]+)", body)
+                        item_url = re.search(r"a\s?href\s?=\s?[^/]+(/[^;]+)", body)
                         item_url = item_url.group(1) if item_url else None
                         if item_url:
                             item_url = 'https://www.att.com{}'.format(item_url)
@@ -157,20 +157,19 @@ class ATTShelfPagesSpider(ATTProductsSpider):
         js_url = "https://www.att.com{base_url}flowtype-NEW.deviceGeoTarget-US.deviceGroupType-{dev_group_type}" \
                  ".paymentType-{payment_type}.packageType-undefined.json"
 
-        base_url = re.findall(r"ATT.listPage.setlayoutURL\([\'\"]([\/a-zA-Z.]+)", js_code)
+        base_url = re.findall(r"ATT.listPage.setlayoutURL\s?\(\s?[\'\"]([\/a-zA-Z.]+)", js_code)
         base_url = base_url[0].replace('html','').replace('htm','') if base_url else None
         # Yes, missed letter in 'Type' is "intentional".
-        dev_group_type = re.search(r"ATT.listPage.setdeviceTye\([\'\"]([\/a-zA-Z.]+)", js_code)
+        dev_group_type = re.search(r"ATT.listPage.setdeviceTye\s?\(\s?[\'\"]([\/a-zA-Z.]+)", js_code)
         dev_group_type = dev_group_type.group(1) if dev_group_type else None
-        payment_type = re.search(r"ATT.listPage.setpaymentType\([\'\"]([\/a-zA-Z.]+)", js_code)
+        payment_type = re.search(r"ATT.listPage.setpaymentType\s?\(\s?[\'\"]([\/a-zA-Z.]+)", js_code)
         payment_type = payment_type.group(1) if payment_type else None
         pagination_url = js_url.format(base_url=base_url,
                                        dev_group_type=dev_group_type,
                                        payment_type=payment_type,
                                        )
-
         # taxo style is only used for smartphones, dont you dare use it on anything else
-        taxo_style = re.search(r"filetrDefault\s=\s'([A-Z]+)", js_code)
+        taxo_style = re.search(r"filetrDefault\s?=\s?[\'\"]([A-Z]+)", js_code)
         taxo_style = taxo_style.group(1) if taxo_style else None
         pagination_url += "?showMoreListSize={more_list_size}"
         if taxo_style and 'SMARTPHONES' in taxo_style:
@@ -218,7 +217,7 @@ class ATTShelfPagesSpider(ATTProductsSpider):
             item_list = js_response.get('devices')
             result_count = len(item_list)
         else:
-            result_count = re.search(r'var\s+v_accessorySize\s+=(\d+);', response.body_as_unicode())
+            result_count = re.search(r'var\s?v_accessorySize\s?=\s?(\d+);', response.body_as_unicode())
             result_count = result_count.group(1) if result_count else ''
         if result_count:
             if not isinstance(result_count, int):
