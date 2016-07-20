@@ -56,6 +56,7 @@ class PetcoShelfPagesSpider(PetcoProductsSpider):
 
     def _scrape_product_links(self, response):
         urls = response.xpath(
+            "//div[contains(@class,'product-display-grid')]"
             "//div[contains(@class,'product-image')]/a/@href"
             ).extract()
         urls = [urlparse.urljoin(response.url, x) if x.startswith('/') else x
