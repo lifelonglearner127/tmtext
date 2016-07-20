@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 MC_API = '/'
 
-ERR_MESSAGE = 'Please specify the url of an %s file to parse<br/><br/>e.g. http://matt-test.con    tentanalyticsinc.com:8888/parse?url=http://&lt;server&gt;/&lt;path-to-file&gt;/filename.%s'
+ERR_MESSAGE = 'Please specify the url of an %s file to parse e.g. http://matt-test.contentanalyticsinc.com:8888/parse?url=http://<server>/<path-to-file>/filename.%s'
 
 def _wrap(message):
     return jsonify({'message' : message})
@@ -16,7 +16,7 @@ def parse():
     url = request.args.get('url')
 
     if not url:
-        return _wrap(ERR_MESSAGE), 400
+        return _wrap(ERR_MESSAGE % (('xml/xls(x)',)*2)), 400
 
     filename = url.split('/')[-1]
 
