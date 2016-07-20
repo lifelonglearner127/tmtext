@@ -148,8 +148,9 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self.check_bad_results_function = _check_bad_results_macys
 
     def make_screenshot_for_macys(self, driver, output_fname):
+        #time.sleep(7*60)  # delay for PhantomJS2 unpacking?
         rasterize_script = os.path.join(CWD, 'rasterize.js')
-        phantomjs_binary = 'phantomjs' if not os.path.exists('/usr/sbin/phantomjs2') else 'phantomjs2'
+        phantomjs_binary = 'phantomjs' if not os.path.exists('/usr/sbin/phantomjs2') else '/usr/sbin/phantomjs2'
         # cmd = 'phantomjs --ssl-protocol=any {script} "{url}" {output_fname} {width}px*{height}px'.format(
         #     script=rasterize_script, url=self.product_url, output_fname=output_fname,
         #     width=self.width)#, height=self.height
@@ -161,7 +162,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         # extra debug data
         version_file = '/tmp/phantomjs_version.txt'
         if not os.path.exists(version_file):
-            os.system('{phantomjs_binary} -v > {version_file}'.format(
+            os.system('{phantomjs_binary} -v > {version_file} 2>&1'.format(
                 phantomjs_binary=phantomjs_binary, version_file=version_file))
         if os.path.exists(version_file):
             self.log('PhantomJS real version: %s' % open(version_file, 'r').read())

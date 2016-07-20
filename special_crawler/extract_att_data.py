@@ -155,8 +155,7 @@ class ATTScraper(Scraper):
         return None
 
     def _description(self):
-        self._load_product_json()
-        return self.product_json['Description']
+        return self.tree_html.xpath('//meta[@property="og:description" or @name="og:description"]/@content')[0]
 
     def _long_description(self):
         return None

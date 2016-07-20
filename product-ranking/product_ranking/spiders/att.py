@@ -197,6 +197,13 @@ class ATTProductsSpider(BaseProductsSpider):
     def _on_buyer_reviews_response(self, response):
         prod = response.meta['product']
         brs = json.loads(response.body.split('(', 1)[1][0:-1])
+        # get brand name if empty
+        try:
+            if not prod.get('brand'):
+                prod['brand'] = brs.get(
+                    'BatchedResults').get('q0').get('Results')[0].get('Brand').get('Name')
+        except IndexError:
+            pass
         try:
             brs_sku = brs['BatchedResults']['q2']['Includes']['Products'][prod['sku']]
         except (IndexError, KeyError):
