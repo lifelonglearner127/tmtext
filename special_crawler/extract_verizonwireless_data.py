@@ -54,12 +54,9 @@ class VerizonWirelessScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        try:
-            if not self.tree_html.xpath('//*[@itemtype="http://schema.org/Product"]'):
-                raise Exception()
-        except Exception:
+        if not (self.tree_html.xpath('//*[@itemtype="http://schema.org/Product"]') \
+            or self.tree_html.xpath('//script[@id="accessoryPdpJson"]')):
             return True
-
         return False
 
     ##########################################
