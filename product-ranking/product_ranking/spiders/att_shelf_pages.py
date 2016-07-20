@@ -79,9 +79,16 @@ class ATTShelfPagesSpider(ATTProductsSpider):
         else:
             if js_code:
                 self.JSON_PAGINATE_URL = self._build_base_json_pagination_link(js_code)
-                proper_link = self.JSON_PAGINATE_URL.format(more_list_size=self.page_size)
-                yield Request(proper_link, callback=self.parse,
-                              meta={'search_term': '', 'remaining': self.quantity}, )
+                if self.JSON_PAGINATE_URL:
+                    proper_link = self.JSON_PAGINATE_URL.format(more_list_size=self.page_size)
+                    yield Request(proper_link, callback=self.parse,
+                                  meta={'search_term': '', 'remaining': self.quantity}, )
+                else:
+                    # JS code broken, backup plan
+                    print "Cant build json pagination link, paring first page only"
+                    yield Request(response.url, callback=self.parse,
+                                  meta={'search_term': '', 'remaining': self.quantity}, dont_filter=True)
+
             else:
                 self.HTML_PAGINATE_URL = self._build_base_html_pagination_link(response)
                 # 13 is magic number hardcoded somewhere in js code
@@ -150,12 +157,12 @@ class ATTShelfPagesSpider(ATTProductsSpider):
         js_url = "https://www.att.com{base_url}flowtype-NEW.deviceGeoTarget-US.deviceGroupType-{dev_group_type}" \
                  ".paymentType-{payment_type}.packageType-undefined.json"
 
-        base_url = re.findall(r"ATT.listPage.setlayoutURL\('([\/a-zA-Z.]+)", js_code)
+        base_url = re.findall(r"ATT.listPage.setlayoutURL\([\'\"]([\/a-zA-Z.]+)", js_code)
         base_url = base_url[0].replace('html','').replace('htm','') if base_url else None
         # Yes, missed letter in 'Type' is "intentional".
-        dev_group_type = re.search(r"ATT.listPage.setdeviceTye\('([\/a-zA-Z.]+)", js_code)
+        dev_group_type = re.search(r"ATT.listPage.setdeviceTye\([\'\"]([\/a-zA-Z.]+)", js_code)
         dev_group_type = dev_group_type.group(1) if dev_group_type else None
-        payment_type = re.search(r"ATT.listPage.setpaymentType\('([\/a-zA-Z.]+)", js_code)
+        payment_type = re.search(r"ATT.listPage.setpaymentType\([\'\"]([\/a-zA-Z.]+)", js_code)
         payment_type = payment_type.group(1) if payment_type else None
         pagination_url = js_url.format(base_url=base_url,
                                        dev_group_type=dev_group_type,
@@ -171,6 +178,8 @@ class ATTShelfPagesSpider(ATTProductsSpider):
         # but this part is tablet only
         else:
             pagination_url += "&commitmentTerm=24"
+        if not base_url or not dev_group_type:
+            return ''
         return pagination_url
 
     @staticmethod
