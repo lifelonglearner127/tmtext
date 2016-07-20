@@ -82,7 +82,7 @@ class ATTShelfPagesSpider(ATTProductsSpider):
                 if self.JSON_PAGINATE_URL:
                     proper_link = self.JSON_PAGINATE_URL.format(more_list_size=self.page_size)
                     if '/smartphones' in response.url and not "SMARTPHONES" in proper_link:
-                        proper_link = proper_link += '&taxoStyle=SMARTPHONES'
+                        proper_link += '&taxoStyle=SMARTPHONES'
                     yield Request(proper_link, callback=self.parse,
                                   meta={'search_term': '', 'remaining': self.quantity}, )
                 else:
