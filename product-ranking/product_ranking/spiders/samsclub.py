@@ -407,6 +407,10 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 contents = json.loads(contents)
                 incl = contents.get('Includes')
                 brs = incl.get('Products').get(productId) if incl else None
+                if not incl:
+                    if not product.get('buyer_reviews'):
+                        product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+                    return product
                 if not brs:
                     try:
                         prod_id = incl.get('Products').keys()[0]
