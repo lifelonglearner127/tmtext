@@ -264,6 +264,11 @@ class SiteProductItem(Item):
     available_store = Field()
     subscribe_and_save = Field() # Samclub.com
 
+    price_club = Field(serializer=scrapy_price_serializer) # Samclub.com
+    price_club_with_discount = Field(serializer=scrapy_price_serializer) # Samclub.com
+
+    _jcpenney_has_size_range = Field()  # see BZ 9913
+
 
 class DiscountCoupon(Item):
     # Search metadata.

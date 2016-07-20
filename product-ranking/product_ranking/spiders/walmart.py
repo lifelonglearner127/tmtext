@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import division, absolute_import, unicode_literals
 
 import json
@@ -403,8 +404,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 product['is_out_of_stock'] = True
 
         seller_ranking = self._scrape_seller_ranking(response)
-        if seller_ranking:
-            product['seller_ranking'] = seller_ranking
+        # if seller_ranking:
+            # product['seller_ranking'] = seller_ranking
+        # seller_ranking = seller_ranking[0].get('ranking') if seller_ranking else None
+        product['bestseller_rank'] = seller_ranking
 
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
@@ -416,26 +419,30 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         )
 
     def _scrape_seller_ranking(self, response):
-        ranking = response.xpath('//div[@class="Grid-col item-ranks"]/ol')
-        ranking_data = []
-
-        for i in ranking:
-            x = i.xpath('li//text()').extract()
-            x = [i for i in x if i != ' ']
-            ranking_data.append(x)
-
-        ranking_data = [[e.strip() for e in r if e.strip()] for r in ranking_data]
-
-        seller_ranking = []
-        for i in ranking_data:
-            data = {}
-            rank = i[0].replace('#', '').replace(',', '')
-            data['ranking'] = int(rank)
-
-            cat = i[2:]
-            data['categories'] = cat
-            seller_ranking.append(data)
-
+        # Old, more detailed bestseller ranking format
+        # ranking = response.xpath('//div[@class="Grid-col item-ranks"]/ol')
+        # ranking_data = []
+        # for i in ranking:
+        #     x = i.xpath('li//text()').extract()
+        #     x = [i for i in x if i != ' ']
+        #     ranking_data.append(x)
+        #
+        # seller_ranking = []
+        # for i in ranking_data:
+        #     data = {}
+        #     rank = i[0].replace('#', '').replace(',', '')
+        #     print rank
+        #     data['ranking'] = int(rank) if rank else None
+        #
+        #     cat = i[2:]
+        #     data['categories'] = cat
+        #     seller_ranking.append(data)
+        bestseller_rank = response.xpath('(//*[@class="item-rank"])[1]/span[1]/text()').extract()
+        try:
+            bestseller_rank = bestseller_rank[0].strip().strip('#').replace(',','') if bestseller_rank else None
+            seller_ranking = int(bestseller_rank) if bestseller_rank else None
+        except BaseException:
+            seller_ranking = None
         if seller_ranking:
             return seller_ranking
 
@@ -771,13 +778,18 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             title = ''.join(title).strip()
             if title:
                 product['title'] = title
-
-        cond_set(
-            product,
-            'brand',
-            response.xpath(
+        brand = is_empty(response.xpath(
                 "//div[@class='product-subhead-section']"
                 "/a[@id='WMItemBrandLnk']/text()").extract())
+        if not brand:
+            brand = is_empty(response.xpath(
+                ".//*[@id='WMItemBrandLnk']//*[@itemprop='brand']/text()").extract())
+        if not brand:
+            brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
+            brand = [brand]
+        if '&amp;' in brand:
+            brand=brand.replace('&amp;', "&")
+        cond_set(product, 'brand', brand)
 
         try:
             cond_set(

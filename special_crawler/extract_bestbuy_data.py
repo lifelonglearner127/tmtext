@@ -211,12 +211,10 @@ class BestBuyScraper(Scraper):
         return None
 
     def _image_urls(self):
-        image_url = self.tree_html.xpath('//div[@id="pdp-model-data"]/@data-gallery-images')[0]
-        json_list = json.loads(image_url)
-        image_url = []
-        for i in json_list:
-            image_url.append(i['url'])
-        return image_url
+        image_urls = self.tree_html.xpath('//div[contains(@class,"image-wrapper")]/img/@data-src')
+        image_urls = filter(lambda i: not 'default_movies_l.jpg' in i, image_urls)
+        if image_urls:
+            return map(lambda u: u.split(';')[0], image_urls)
     
     def _image_count(self):
         return len(self._image_urls())

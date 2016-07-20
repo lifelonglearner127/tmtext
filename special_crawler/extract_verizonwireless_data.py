@@ -137,15 +137,8 @@ class VerizonWirelessScraper(Scraper):
 
         return ''.join(filter(None, map((lambda x: x.strip()),description))).strip() if description else None
 
-
     def _long_description(self):
-        description = self.tree_html.xpath(
-            '//*[@itemprop="description" and '
-            '@class="is-hidden"]//text()')
-
-        return ''.join(filter(None, map((lambda x: x.strip()),description))).strip() if description else None
-
-
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -175,7 +168,7 @@ class VerizonWirelessScraper(Scraper):
                         images += list(itertools.chain.from_iterable([x.get(
                             'set', {}).get('item') for x in data[
                                 'item'] if x.get('type') == 'img_set']))
-                        images += [x for x in data['item'] if x.get('dx')]
+                        images = [x for x in data['item'] if x.get('dx')] + images
 
                     except:
                         data = self.json_data['set']['item']

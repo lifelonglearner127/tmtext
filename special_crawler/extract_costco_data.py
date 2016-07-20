@@ -30,6 +30,9 @@ class CostcoScraper(Scraper):
         self.sp_content = None
         self.is_video_checked = False
         self.video_urls = None
+        self.widget_pdfs = None
+        self.widget_videos = None
+        self.widgets_checked = False
 
     def check_url_format(self):
         url = self.product_page_url.lower()
@@ -247,11 +250,16 @@ class CostcoScraper(Scraper):
             webcollage_contents = html.fromstring(webcollage_contents)
 
             if webcollage_contents.xpath("//div[@class='wc-json-data']/text()"):
-                wc_video_json = json.loads(webcollage_contents.xpath("//div[@class='wc-json-data']/text()")[0].decode("unicode-escape"))
+                wc_video_json = json.loads(webcollage_contents.xpath("//div[@class='wc-json-data']/text()")[0])
                 wc_video_base_url = webcollage_contents.xpath("//*[@data-resources-base]/@data-resources-base")[0]
 
-                for video_item in wc_video_json["videos"]:
+                for video_item in wc_video_json.get("videos", []):
                     video_urls.append(wc_video_base_url + video_item["src"]["src"])
+
+        self._check_widgets()
+
+        if self.widget_videos:
+            video_urls.extend(self.widget_videos)
 
         # liveclicker videos
         dim5 = re.search('LCdim5 = "(\d+)"', html.tostring(self.tree_html))
@@ -291,6 +299,38 @@ class CostcoScraper(Scraper):
 
         return len(video_urls) if video_urls else 0
 
+    def _check_widgets(self):
+        if not self.widgets_checked:
+            self.widgets_checked = True
+
+            pdfs = []
+            videos = []
+
+            sellpoint = json.loads(requests.get('http://a.sellpoint.net/w/83/l/' + self._product_id() + '.json').content)
+            widgets = sellpoint.get('widgets', [])
+
+            for widget in widgets:
+                sellpoint = json.loads(requests.get('http://a.sellpoint.net/w/83/w/' + widget + '.json').content)
+                widgets2 = sellpoint['widgets']
+
+                for widget2 in widgets2:
+                    sellpoint = json.loads(requests.get('http://a.sellpoint.net/w/83/w/' + widget2 + '.json').content)
+                    if sellpoint.get('items'):
+                        for item in sellpoint['items']:
+                            url = item['url'][2:]
+                            if not url in pdfs:
+                                pdfs.append(url)
+                    if sellpoint.get('videos') and not 'callout' in sellpoint['targetSelector']:
+                        for video in sellpoint['videos']:
+                            mp4 = video['src']['mp4']['res' + str(video['maxresolution'])]
+                            if not mp4 in videos:
+                                videos.append(mp4)
+
+            if pdfs:
+                self.widget_pdfs = pdfs
+            if videos:
+                self.widget_videos = videos
+
     # return one element containing the PDF
     def _pdf_urls(self):
         pdf = self.tree_html.xpath("//a[contains(@href,'.pdf')]/@href")
@@ -298,7 +338,12 @@ class CostcoScraper(Scraper):
 
         if len(pdf) > 0:
             pdf = set(pdf)
-            pdf_list = ["http://www.costco.com" + p for p in pdf if "Cancellation" not in p]
+            pdf_list = ["http://www.costco.com" + p for p in pdf if "Cancellation" not in p and 'Restricted-Zip-Codes' not in p and 'Curbside' not in p]
+
+        self._check_widgets()
+
+        if self.widget_pdfs:
+            pdf_list.extend(self.widget_pdfs)
 
         webcollage_contents = self._wc_content()
 

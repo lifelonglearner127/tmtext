@@ -183,7 +183,8 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
     def parse_product(self, response):
         meta = response.meta.copy()
         product = meta.get('product', SiteProductItem())
-        if response.status == 404:
+        if response.status == 404 or "www.dockers.com/US/en_US/error" in response.url:
+            product.update({"not_found": True})
             product.update({"no_longer_available": True})
             product.update({"locale": 'en-US'})
             return product

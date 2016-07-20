@@ -109,6 +109,5 @@ if __name__ == '__main__':
     else:
         print 'SQS: OK'
 
-
     test_code = check_ses()
     print 'SES: check mailbox no.andrey@gmail.com for an email with code %s' % test_code

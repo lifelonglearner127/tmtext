@@ -34,6 +34,10 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         self.price_currency = 'USD'
         self.price_currency_view = '$'
 
+        self.scrape_questions = kwargs.get('scrape_questions', None)
+        if self.scrape_questions not in ('1', 1, True, 'true'):
+            self.scrape_questions = False
+
         # Locale
         self.locale = 'en-US'
 
@@ -83,6 +87,12 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     def _parse_recent_questions(self, response):
         product = response.meta['product']
         reqs = response.meta.get('reqs', [])
+
+        if not self.scrape_questions:
+            if reqs:
+                return self.send_next_request(reqs, response)
+            else:
+                return product
 
         recent_questions = product.get('recent_questions', [])
         questions = response.css('.askTeaserQuestions > div')

@@ -77,11 +77,9 @@ class MacysShelfPagesSpider(MacysProductsSpider):
 
         urls = ['http://www1.macys.com' + i for i in urls]
 
-        sample = response.xpath(
-            '//div[@id="featureNav"]/ul/li//text()').extract()
-        categories = [i.strip() for i in reversed(sample) if i.strip()]
-
-        shelf_categories = categories[1:]
+        shelf_categories = response.xpath(
+            './/*[@id="nav_category"]//*[@id="viewAllInCategory" or @id="currentCatNavHeading"]/text()').extract()
+        shelf_categories = [i.replace('View All','').strip() for i in shelf_categories if i.strip()]
         shelf_category = shelf_categories[-1] if shelf_categories else None
 
         for url in urls:
@@ -198,6 +196,8 @@ class MacysShelfPagesSpider(MacysProductsSpider):
         cond_set(product, 'locale', locale)
         brand = response.css('#brandLogo img::attr(alt)').extract()
         if not brand:
+            brand = response.xpath('.//*[@class="productTitle"]/a[@class="brandNameLink"]/text()').extract()
+        if not brand:
             brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
             brand = [brand]
         cond_set(product, 'brand', brand)
@@ -207,8 +207,7 @@ class MacysShelfPagesSpider(MacysProductsSpider):
 
         product_id = response.css('#productId::attr(value)').extract()
 
-        if self.scrape_variants_with_extra_requests:
-            self._parse_reviews(response, product)
+        self._parse_reviews(response, product)
 
         # Related Products
         if product_id:
@@ -258,11 +257,15 @@ class MacysShelfPagesSpider(MacysProductsSpider):
 
     def _parse_reviews(self, response, product):
         product_id = response.css('#productId::attr(value)').extract()
+        if not product_id:
+            product_id = response.xpath('//*[contains(@class,"productID")]'
+                                        '[contains(text(), "Web ID:")]/text()').extract()
+            if product_id:
+                product_id = [''.join([c for c in product_id[0] if c.isdigit()])]
 
         if product_id:  # Reviews
             url = "http://macys.ugc.bazaarvoice.com/7129aa/%s" \
                   "/reviews.djs?format=embeddedhtml" % (product_id[0],)
-
             r = requests.get(url)
             resp = r.text
             resp = re.findall("var materials=(.*)", resp)

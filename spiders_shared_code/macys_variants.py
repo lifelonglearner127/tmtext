@@ -75,8 +75,8 @@ class MacysVariants(object):
                     print "Unable to get single color for product id {}".format(prod_id)
                     selected_color = None
             colors_information[selected_color] = {}
-            price = self.tree_html.xpath('//*[@id="productHeader"]//meta[@itemprop="price"]/@content')[0]
-            colors_information[selected_color]['price'] = float(price.replace("$",""))
+            price = self.tree_html.xpath('//*[@id="productHeader"]//meta[@itemprop="price"]/@content')
+            colors_information[selected_color]['price'] = float(price[0].replace("$","")) if price else None
         return colors_information
 
     def __fill_variant(self, variant, colors_information):
@@ -186,7 +186,7 @@ class MacysVariants(object):
 
             # Get dict of key:color, value: {price, img_urls}
             colors_information = self._get_color_to_price_and_url(product_info_json)
-            
+
             # Calculate all variants crossing sizes with colors
             variation_values_list = [sizes, colors_information.keys()]
             variation_values_crossed = set(itertools.product(*variation_values_list))
