@@ -22,6 +22,11 @@ class BestBuyProductSpider(ProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
+        rows = ''.join(response.xpath("//div[contains(@class,'cart-button')]/@data-add-to-cart-message").extract())
+        if "Sold Out Online" in rows:
+            product['is_out_of_stock'] = True
+        else:
+            product['is_out_of_stock'] = False
         if 'this item is no longer available' in response.body_as_unicode().lower():
             product['not_found'] = True
             return product
