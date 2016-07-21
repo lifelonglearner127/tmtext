@@ -62,12 +62,10 @@ class PetcoShelfPagesSpider(PetcoProductsSpider):
         urls = [urlparse.urljoin(response.url, x) if x.startswith('/') else x
                 for x in urls]
 
-        shelf_categories = response.xpath(
-            "//ol[contains(@class,'breadcrumb')]/li//text()"
-            ).extract()
-        shelf_category = response.xpath(
-            "//ol[contains(@class,'breadcrumb')]/li/text()"
-            ).extract()[0]
+        categories = response.css('.breadcrumb a::text').extract()
+        shelf_categories = categories if categories else None
+
+        shelf_category = categories[-1] if categories else None
 
         urls = ["".join(i.replace('http://www.petco.com', '')) for i in urls]
 
