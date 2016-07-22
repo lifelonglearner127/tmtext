@@ -47,8 +47,8 @@ class JCpenneySpider(BaseCheckoutSpider):
                                   'not(span[@class="color_illegal"])]')
 
         if color and color in self._get_colors_names():
-            color_attributes_xpath = '*//*[@class="small_swatches"]//a' \
-                                     '[img[@name="%s"]]' % color
+            color_attribute_xpath = '*//*[@class="small_swatches"]//a' \
+                                    '[img[@name="%s"]]' % color
 
         self._click_attribute(color_attribute_xpath,
                               color_attributes_xpath,

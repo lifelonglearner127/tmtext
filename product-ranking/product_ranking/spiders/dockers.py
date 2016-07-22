@@ -72,6 +72,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                       "2Fwomens-jeans%2Fp%2F095450043&plk=&"
 
     use_proxies = True
+    handle_httpstatus_list = [404]
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
@@ -182,6 +183,14 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
     def parse_product(self, response):
         meta = response.meta.copy()
         product = meta.get('product', SiteProductItem())
+        if response.status == 404 or "www.dockers.com/US/en_US/error" in response.url:
+            product.update({"not_found": True})
+            product.update({"no_longer_available": True})
+            product.update({"locale": 'en-US'})
+            return product
+        else:
+            product.update({"no_longer_available": False})
+
         reqs = []
         meta['reqs'] = reqs
 

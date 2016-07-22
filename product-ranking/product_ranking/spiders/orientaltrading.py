@@ -142,7 +142,8 @@ class OrientaltradingProductsSpider(BaseProductsSpider):
         return img
 
     def parse_description(self, response):
-        description = response.xpath('//div[contains(@class, "pd-text-bloc")]/text()').extract()
+        description = response.xpath(
+            '//div[contains(@class, "pd-text-bloc")] | //p[contains(@class, "pd-text-bloc")]').extract()
         if description:
             return description
         else:

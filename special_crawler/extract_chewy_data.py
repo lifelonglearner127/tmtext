@@ -164,11 +164,11 @@ class ChewyScraper(Scraper):
 
         for link in self.tree_html.xpath('//div[@id="media-selector"]//a/@href'):
             if not link == '#':
-                image_urls.append(link[2:]) # remove initial '//'
+                image_urls.append('http:' + link)
 
         for link in self.tree_html.xpath('//div[@id="product-image"]//a/@href'):
             if link[2:] and not link[2:] in image_urls:
-                image_urls.append(link[2:])
+                image_urls.append('http:' + link)
 
         '''
         item_data = self._variant_data()

@@ -154,6 +154,7 @@ class Scraper():
             "return_to", # return to for this product
             "comparison_chart", # whether page contains a comparison chart, 1/0
             "btv", # if page has a 'buy together value' offering, 1/0
+            "best_seller_category", # name of best seller category (Amazon)
 
             # reviews
             "review_count", # total number of reviews, int
@@ -237,7 +238,8 @@ class Scraper():
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags","meta_tag_count", \
-                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv"], \
+                            "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv", \
+                            "best_seller_category"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "in_stock", \
@@ -462,6 +464,7 @@ class Scraper():
         else:
             costco_url = re.match('http://www.costco.com/(.*)', self.product_page_url)
             wag_url = re.match('https?://www.wag.com/(.*)', self.product_page_url)
+            jcpenney_url = re.match('http://www.jcpenney.com/(.*)', self.product_page_url)
 
             if costco_url:
                 self.product_page_url = 'http://www.costco.com/' + urllib2.quote(costco_url.group(1).encode('utf8'))
@@ -477,7 +480,10 @@ class Scraper():
 
             for i in range(self.MAX_RETRIES):
                 try:
-                    contents = urllib2.urlopen(request, timeout=20).read()
+                    if jcpenney_url:
+                        contents = urllib2.urlopen(request, timeout=30).read()
+                    else:
+                        contents = urllib2.urlopen(request, timeout=20).read()
 
                 # handle urls with special characters
                 except UnicodeEncodeError, e:
@@ -639,7 +645,7 @@ class Scraper():
 
         return False
 
-    def _image_hash(self, image_url):
+    def _image_hash(self, image_url, walmart=None):
         """Computes hash for an image.
         To be used in _no_image, and for value of _image_hashes
         returned by scraper.
@@ -647,11 +653,11 @@ class Scraper():
 
         :param image_url: url of image to be hashed
         """
-        return str(MurmurHash.hash(fetch_bytes(image_url)))
+        return str(MurmurHash.hash(fetch_bytes(image_url, walmart)))
 
     # Checks if image given as parameter is "no  image" image
     # To be used by subscrapers
-    def _no_image(self, image_url):
+    def _no_image(self, image_url, walmart=None):
         """Verifies if image with URL given as argument is
         a "no image" image.
 
@@ -667,7 +673,7 @@ class Scraper():
         """
         print "***********test start*************"
         try:
-            first_hash = self._image_hash(image_url)
+            first_hash = self._image_hash(image_url, walmart)
         except IOError:
             return False
         print first_hash

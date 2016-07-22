@@ -75,12 +75,20 @@ def main():
     _install_system_package('python-setuptools')
     _install_system_package('python-distutils-extra')
     _install_system_package('python-apt')
+    # TODO: phantomjs2
     os.system(
         "cd ~"
         " && wget http://chromedriver.storage.googleapis.com/2.9/chromedriver_linux64.zip"
         " && unzip chromedriver_linux64.zip"
         " && sudo mv chromedriver /usr/sbin/"
         " && sudo chmod +x /usr/sbin/chromedriver"
+    )
+    # download & install phantomjs2
+    os.system(
+        "cd ~"
+        " && wget https://github.com/Pyppe/phantomjs2.0-ubuntu14.04x64/raw/master/bin/phantomjs"
+        " && sudo mv phantomjs /usr/sbin/phantomjs2"
+        " && sudo chmod +x /usr/sbin/phantomjs2"
     )
     # disable marketplaces (they are too slow)
     disabler = '/tmp/stop_marketplaces'

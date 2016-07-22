@@ -205,6 +205,9 @@ class BJSProductsSpider(BaseValidator, ProductsSpider):
         club_avail = response.xpath('//div[@class="avail"]')
         product['available_store'] = 1 if club_avail else 0
 
+        if str(product.get('available_online', None)) == '0' and str(product.get('available_store', None)) == '0':
+            product['is_out_of_stock'] = True
+
         # Shipping & Handling Included: 1 or 0 (1 = yes, 0 = no)
         shipping_included = response.xpath('//div[@id="freeShipping"]/p')
         product['shipping_included'] = 1 if shipping_included else 0

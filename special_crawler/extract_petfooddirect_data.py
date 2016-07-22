@@ -139,7 +139,7 @@ class PetFoodDirectScraper(Scraper):
         image_urls = []
 
         images = self.tree_html.xpath('//p[@class="image"]/img/@src')
-        image_urls.append(images)
+        image_urls.extend(images)
 
         if image_urls:
             return image_urls
@@ -228,6 +228,10 @@ class PetFoodDirectScraper(Scraper):
                     low_price = variant['price']
                 if not high_price or variant['price'] > high_price:
                     high_price = variant['price']
+
+            max_price = self._products_json().get('maxPrice')
+            if max_price:
+                high_price = float(max_price)
 
             return '$%.2f - $%.2f' % (low_price, high_price)
 
