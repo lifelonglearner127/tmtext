@@ -24,6 +24,7 @@ class KohlsSpider(BaseCheckoutSpider):
         yield scrapy.Request('http://www.kohls.com/')
 
     def _get_colors_names(self):
+        time.sleep(4)
         swatches = self._find_by_xpath(
             '//a[@data-skucolor and '
             'not(contains(@class,"color-unavailable"))]')
@@ -41,6 +42,7 @@ class KohlsSpider(BaseCheckoutSpider):
         self._click_attribute(size_attribute_xpath,
                               size_attributes_xpath,
                               element)
+        time.sleep(1)
 
     def select_color(self, element=None, color=None):
         color_attribute_xpath = ('*//*[@class="pdp-color-swatches-info"]'
@@ -70,6 +72,7 @@ class KohlsSpider(BaseCheckoutSpider):
                               element)
 
     def _get_products(self):
+        time.sleep(4)
         return self._find_by_xpath(
             '//div[contains(@class, "pdp-main-container")]')
 
@@ -87,6 +90,7 @@ class KohlsSpider(BaseCheckoutSpider):
         return self.wait.until(condition)
 
     def _get_products_in_cart(self, product_list):
+        time.sleep(4)
         html_text = product_list.get_attribute('outerHTML')
         selector = scrapy.Selector(text=html_text)
         return selector.xpath(
