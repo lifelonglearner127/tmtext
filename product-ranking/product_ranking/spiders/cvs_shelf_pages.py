@@ -30,6 +30,7 @@ class CvsShelfPagesSpider(CvsProductsSpider):
                       "sortBy=nameAZ&" \
                       "version=1.0" \
 
+    use_proxies = True
 
     def __init__(self, *args, **kwargs):
         super(CvsShelfPagesSpider, self).__init__(*args, **kwargs)
@@ -42,7 +43,7 @@ class CvsShelfPagesSpider(CvsProductsSpider):
 
         self.current_page = 1
         self.shelf_categories = ''
-        settings.overrides['CRAWLERA_ENABLED'] = True
+        #settings.overrides['CRAWLERA_ENABLED'] = True
 
     @staticmethod
     def valid_url(url):
