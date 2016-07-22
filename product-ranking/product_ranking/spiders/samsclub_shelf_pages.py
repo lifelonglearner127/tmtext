@@ -4,11 +4,13 @@ import re
 from scrapy.http import Request, FormRequest
 from product_ranking.items import SiteProductItem
 from scrapy.log import DEBUG, WARNING
+from scrapy.conf import settings
 import urlparse
 import json
 from math import ceil
 
 is_empty = lambda x: x[0] if x else None
+
 
 class SamsclubShelfPagesSpider(SamsclubProductsSpider):
     name = 'samsclub_shelf_urls_products'
@@ -30,6 +32,7 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
         self.quantity = self.num_pages * self.prods_per_page
         if "quantity" in kwargs:
             self.quantity = int(kwargs['quantity'])
+        settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         yield Request(
