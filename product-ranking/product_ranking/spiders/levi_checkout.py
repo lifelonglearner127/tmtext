@@ -90,7 +90,7 @@ class LeviSpider(BaseCheckoutSpider):
                               color_attributes_xpath,
                               element)
 
-        print "end select_color"
+        time.sleep(1)
 
     def select_waist(self, element=None):
         size_attribute_xpath = (
@@ -115,6 +115,7 @@ class LeviSpider(BaseCheckoutSpider):
                               element)
 
     def _parse_attributes(self, product, color, quantity):
+        time.sleep(4)
         self.select_color(product, color)
         self.select_size(product)
         self.select_waist(product)
