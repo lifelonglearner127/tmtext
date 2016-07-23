@@ -15,7 +15,7 @@ from .wag import WagProductsSpider
 
 class WagShelfPagesSpider(WagProductsSpider):
     name = 'wag_shelf_urls_products'
-    allowed_domains = ["wag.com", "www.wag.com"]  # without this find_spiders() fails
+    allowed_domains = ["wag.com", "www.wag.com", "diapers.com", "www.diapers.com"]  # without this find_spiders() fails
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
