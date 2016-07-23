@@ -4,6 +4,7 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
+from product_ranking.items import CheckoutProductItem
 
 import scrapy
 
@@ -18,6 +19,30 @@ class LeviSpider(BaseCheckoutSpider):
 
     def start_requests(self):
         yield scrapy.Request('http://www.levi.com/US/en_US/')
+
+    def _parse_item(self, product):
+        item = CheckoutProductItem()
+        name = self._get_item_name(product)
+        item['name'] = name.strip() if name else name
+        item['id'] = self._get_item_id(product)
+        price = self._get_item_price(product)
+        item['price_on_page'] = self._get_item_price_on_page(product)
+        color = self._get_item_color(product)
+        quantity = self._get_item_quantity(product)
+
+        if quantity and price:
+            quantity = int(quantity)
+            item['price'] = float(price) / quantity
+            item['quantity'] = quantity
+            item['requested_color'] = self.requested_color
+
+        if color:
+            item['color'] = color
+
+        item['requested_color_not_available'] = (
+            color and self.requested_color and
+            (self.requested_color.lower() != color.lower()))
+        return item
 
     def _get_colors_names(self):
         xpath = ('//*[contains(@class,"color-swatches")]//'
@@ -126,9 +151,12 @@ class LeviSpider(BaseCheckoutSpider):
             time.sleep(4)
 
     def _set_quantity(self, product, quantity):
+        self._find_by_xpath(
+            '//div[@class="quantity-display"]')[0].click()
+        time.sleep(4)
         quantity_option = self._find_by_xpath(
             '*//*[@class="quantity"]'
-            '/li[@data-qty-dropdown-value="%d"]' % quantity, product)
+            '//li[@data-qty-dropdown-value="%d"]' % quantity, product)
 
         if quantity_option:
             quantity_option[0].click()
