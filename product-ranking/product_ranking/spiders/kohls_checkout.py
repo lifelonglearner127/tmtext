@@ -45,6 +45,7 @@ class KohlsSpider(BaseCheckoutSpider):
         time.sleep(1)
 
     def select_color(self, element=None, color=None):
+        time.sleep(4)
         color_attribute_xpath = ('*//*[@class="pdp-color-swatches-info"]'
                                  '/div[contains(@class,"active")]/a')
         color_attributes_xpath = ('*//*[@class="pdp-color-swatches-info"]'
