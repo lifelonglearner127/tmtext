@@ -119,6 +119,7 @@ class BaseCheckoutSpider(scrapy.Spider):
 
                     if isinstance(colors, basestring) or not colors:
                         colors = [colors]
+                    colors = map(lambda x: x.lower(), colors)
 
                 self.log('Colors %r' % (colors))
                 for color in colors:
@@ -129,6 +130,7 @@ class BaseCheckoutSpider(scrapy.Spider):
                     clickable_error = True
                     self.retries = 0
                     while clickable_error:
+                        self._pre_parse_products()
                         if self.retries >= self.MAX_RETRIES:
                             self.log('Max retries number reach,'
                                      ' skipping this product')
@@ -178,7 +180,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         item['id'] = self._get_item_id(product)
         price = self._get_item_price(product)
         item['price_on_page'] = self._get_item_price_on_page(product)
-        color = self._get_item_color(product)
+        color = self._get_item_color(product).lower()
         quantity = self._get_item_quantity(product)
 
         if quantity and price:

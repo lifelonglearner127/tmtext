@@ -17,14 +17,14 @@ class MacysSpider(BaseCheckoutSpider):
     SHOPPING_CART_URL = 'http://www1.macys.com/bag/index.ognc'
 
     def start_requests(self):
-        yield scrapy.Request('http://www1.macys.com/')
+        yield scrapy.Request('http://www1.macys.com/', dont_filter=True)
 
     def _get_colors_names(self):
         # Sometimes the spider is not able to load the page in time
         time.sleep(4)
         xpath = '//div[@class="colorsSection"]//li[@data-title]'
         swatches = self._find_by_xpath(xpath)
-        return [x.get_attribute("data-title") for x in swatches]
+        return [x.get_attribute("data-title").lower() for x in swatches]
 
     def select_size(self, element=None):
         size_attribute_xpath = (
@@ -43,7 +43,9 @@ class MacysSpider(BaseCheckoutSpider):
         # If color was requested and is available
         if color and color in self._get_colors_names():
             color_attribute_xpath = (
-                '*//div[@class="colorsSection"]//li[@data-title="%s"]' % color)
+                '*//div[@class="colorsSection"]//'
+                'li[translate(@data-title,'
+                '"ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")="%s"]' % color)
 
         # If color is set by default on the page
         else:
@@ -104,6 +106,7 @@ class MacysSpider(BaseCheckoutSpider):
             return is_empty(re.findall('\$([\d\.]+)', order_subtotal))
 
     def _get_total(self):
+        time.sleep(4)
         order_total_element = self.wait.until(
             EC.element_to_be_clickable(
                 (By.ID, 'bagTotal')))
@@ -135,3 +138,10 @@ class MacysSpider(BaseCheckoutSpider):
         return is_empty(item.xpath(
                         '//*[@class="colQty"]//'
                         'option[@selected]/text()').extract())
+
+    def _pre_parse_products(self):
+        more_sizes_button = self._find_by_xpath(
+            '//*[@class="columns small-2 viewMore"]')
+        if len(more_sizes_button) > 1 and more_sizes_button[1].is_displayed():
+            more_sizes_button[1].click()
+            time.sleep(2)
