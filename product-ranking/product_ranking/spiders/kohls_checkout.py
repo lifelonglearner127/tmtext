@@ -79,6 +79,7 @@ class KohlsSpider(BaseCheckoutSpider):
 
     def _add_to_cart(self):
         self._click_on_element_with_id('addtobagID')
+        time.sleep(4)
 
     def _set_quantity(self, product, quantity):
         self.driver.execute_script(
@@ -86,6 +87,7 @@ class KohlsSpider(BaseCheckoutSpider):
             ".setAttribute('value', '%s')" % quantity)
 
     def _get_product_list_cart(self):
+        time.sleep(4)
         condition = EC.visibility_of_element_located(
             (By.ID, 'shoppingCartLineItem_container'))
         return self.wait.until(condition)
