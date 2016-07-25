@@ -1872,7 +1872,7 @@ class WalmartScraper(Scraper):
                 zoom_image_url = item.get('versions', {}).get('zoom', None)
                 is_image_selected = False
 
-                if zoom_image_url and zoom_image_url.startswith("http://i5.walmartimages.com"):
+                if zoom_image_url and re.match("https?://i5.walmartimages.com", zoom_image_url):
                     if no_image_check_count_limit < 0:
                         images_carousel.append(zoom_image_url)
                         image_dimensions.append(1)
@@ -1883,7 +1883,7 @@ class WalmartScraper(Scraper):
                         image_dimensions.append(1)
                         no_image_check_count_limit -= 1
 
-                if not is_image_selected and hero_image_url and hero_image_url.startswith("http://i5.walmartimages.com"):
+                if not is_image_selected and hero_image_url and re.match("https?://i5.walmartimages.com", hero_image_url):
                     if no_image_check_count_limit < 0:
                         images_carousel.append(hero_image_url)
                         image_dimensions.append(0)
