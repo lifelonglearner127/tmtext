@@ -56,7 +56,7 @@ class BaseCheckoutSpider(scrapy.Spider):
     retries = 0
     MAX_RETRIES = 3
     SOCKET_WAIT_TIME = 120
-    WEBDRIVER_WAIT_TIME = 40
+    WEBDRIVER_WAIT_TIME = 100
 
     def __init__(self, *args, **kwargs):
         socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
@@ -130,7 +130,6 @@ class BaseCheckoutSpider(scrapy.Spider):
                     clickable_error = True
                     self.retries = 0
                     while clickable_error:
-                        self._pre_parse_products()
                         if self.retries >= self.MAX_RETRIES:
                             self.log('Max retries number reach,'
                                      ' skipping this product')
@@ -198,6 +197,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         return item
 
     def _parse_attributes(self, product, color, quantity):
+        self._pre_parse_products()
         self.select_color(product, color)
         self.select_size(product)
         self._set_quantity(product, quantity)
@@ -262,8 +262,7 @@ class BaseCheckoutSpider(scrapy.Spider):
             available_attributes[0].click()
         elif selected_attribute:
             selected_attribute[0].click()
-
-        time.sleep(4)
+        time.sleep(8)
 
     @abstractmethod
     def start_requests(self):
