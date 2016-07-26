@@ -67,7 +67,7 @@ class StaplesProductsSpider(BaseProductsSpider):
         locale = 'en_US'
         cond_set_value(product, 'locale', locale)
 
-        if 'Good thing this is not permant' in response.body_as_unicode():
+        if 'Good thing this is not permanent' in response.body_as_unicode():
             product['not_found'] = True
             return product
 
