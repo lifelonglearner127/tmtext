@@ -1366,8 +1366,6 @@ class AmazonBaseClass(BaseProductsSpider):
         return product
 
     def _marketplace_seller_name_parse(self, name):
-        print('*'*40, name)
-
         if not name:
             return name
 
