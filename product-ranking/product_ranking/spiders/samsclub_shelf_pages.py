@@ -10,6 +10,8 @@ import urlparse
 import json
 from math import ceil
 
+import lxml.html
+
 is_empty = lambda x: x[0] if x else None
 
 
@@ -61,7 +63,6 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
         return [l.get_attribute('href') for l in driver.find_elements_by_xpath(
             '//*[@id="productRow"]//a')]
 
-
     def parse(self, response):
         collected_links = []
 
@@ -106,10 +107,17 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
             item = SiteProductItem()
             item['ranking'] = i+1
             item['url'] = link
+            item['shelf_path'] = self._get_shelf_path_from_firstpage(response)
+            item['total_matches'] = self._scrape_total_matches(response)
             if not link.startswith('http'):
                 link = urlparse.urljoin('http://samsclub.com', link)
             yield Request(
                 link, callback=self.parse_product, meta={'product': item})
+
+    def _get_shelf_path_from_firstpage(self, response):
+        shelf_categories = [c.strip() for c in response.xpath('.//ol[@id="breadCrumbs"]/li//a/text()').extract()
+                            if len(c.strip()) > 1]
+        return shelf_categories
 
     def _scrape_total_matches(self, response):
         if response.url.find('ajaxSearch') > 0:
