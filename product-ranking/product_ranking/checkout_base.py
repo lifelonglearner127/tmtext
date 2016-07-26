@@ -197,7 +197,6 @@ class BaseCheckoutSpider(scrapy.Spider):
         return item
 
     def _parse_attributes(self, product, color, quantity):
-        self._pre_parse_products()
         self.select_color(product, color)
         self.select_size(product)
         self._set_quantity(product, quantity)
