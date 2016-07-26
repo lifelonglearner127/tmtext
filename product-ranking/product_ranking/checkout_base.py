@@ -56,7 +56,7 @@ class BaseCheckoutSpider(scrapy.Spider):
     retries = 0
     MAX_RETRIES = 3
     SOCKET_WAIT_TIME = 120
-    WEBDRIVER_WAIT_TIME = 40
+    WEBDRIVER_WAIT_TIME = 100
 
     def __init__(self, *args, **kwargs):
         socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
@@ -119,6 +119,7 @@ class BaseCheckoutSpider(scrapy.Spider):
 
                     if isinstance(colors, basestring) or not colors:
                         colors = [colors]
+                    colors = map(lambda x: x.lower(), colors)
 
                 self.log('Colors %r' % (colors))
                 for color in colors:
@@ -178,7 +179,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         item['id'] = self._get_item_id(product)
         price = self._get_item_price(product)
         item['price_on_page'] = self._get_item_price_on_page(product)
-        color = self._get_item_color(product)
+        color = self._get_item_color(product).lower()
         quantity = self._get_item_quantity(product)
 
         if quantity and price:
@@ -260,8 +261,7 @@ class BaseCheckoutSpider(scrapy.Spider):
             available_attributes[0].click()
         elif selected_attribute:
             selected_attribute[0].click()
-
-        time.sleep(4)
+        time.sleep(8)
 
     @abstractmethod
     def start_requests(self):
