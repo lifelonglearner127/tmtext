@@ -129,7 +129,7 @@ class BaseCheckoutSpider(scrapy.Spider):
                     clickable_error = True
                     self.retries = 0
                     while clickable_error:
-                    	self._pre_parse_products()
+                        self._pre_parse_products()
                         if self.retries >= self.MAX_RETRIES:
                             self.log('Max retries number reach,'
                                      ' skipping this product')
