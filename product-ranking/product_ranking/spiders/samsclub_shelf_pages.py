@@ -107,7 +107,8 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
             item = SiteProductItem()
             item['ranking'] = i+1
             item['url'] = link
-            item['shelf_path'] = self._get_shelf_path_from_firstpage(driver.page_source)
+            item['shelf_path'], item['shelf_name'] \
+                = self._get_shelf_path_from_firstpage(driver.page_source)
             item['total_matches'] = self._scrape_total_matches(driver.page_source)
             if not link.startswith('http'):
                 link = urlparse.urljoin('http://samsclub.com', link)
@@ -119,7 +120,8 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
         shelf_categories = [
             c.strip() for c in lxml_doc.xpath('.//ol[@id="breadCrumbs"]/li//a/text()')
             if len(c.strip()) > 1]
-        return shelf_categories
+        shelf_category = shelf_categories[-1] if shelf_categories else None
+        return shelf_categories, shelf_category
 
     def _scrape_total_matches(self, page_source):
         total_matches = re.search('plpCtrl.totalCount.+?>(.+)?<', page_source)
