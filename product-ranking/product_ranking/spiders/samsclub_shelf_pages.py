@@ -107,47 +107,22 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
             item = SiteProductItem()
             item['ranking'] = i+1
             item['url'] = link
-            item['shelf_path'] = self._get_shelf_path_from_firstpage(response)
-            item['total_matches'] = self._scrape_total_matches(response)
+            item['shelf_path'] = self._get_shelf_path_from_firstpage(driver.page_source)
+            item['total_matches'] = self._scrape_total_matches(driver.page_source)
             if not link.startswith('http'):
                 link = urlparse.urljoin('http://samsclub.com', link)
             yield Request(
                 link, callback=self.parse_product, meta={'product': item})
 
-    def _get_shelf_path_from_firstpage(self, response):
-        shelf_categories = [c.strip() for c in response.xpath('.//ol[@id="breadCrumbs"]/li//a/text()').extract()
-                            if len(c.strip()) > 1]
+    def _get_shelf_path_from_firstpage(self, page_source):
+        lxml_doc = lxml.html.fromstring(page_source)
+        shelf_categories = [
+            c.strip() for c in lxml_doc.xpath('.//ol[@id="breadCrumbs"]/li//a/text()')
+            if len(c.strip()) > 1]
         return shelf_categories
 
-    def _scrape_total_matches(self, response):
-        if response.url.find('ajaxSearch') > 0:
-            items = response.xpath("//body/li[contains(@class,'item')]")
-            return len(items)
-        totals = response.xpath(
-            "//div[contains(@class,'shelfSearchRelMsg2')]"
-            "/span/span[@class='gray3']/text()"
-        ).extract()
-        if not totals:
-            totals = response.xpath('//*[@class="resultsfound"]/span[@ng-show="!clientAjaxCall"]/text()').extract()
-        if totals:
-            total = int(totals[0])
-        else:
-            js_text = response.xpath('//script[contains(text(), "searchInfo")]/text()').extract()
-            js_text = js_text[0] if js_text else None
-            try:
-                js_text = js_text.split(';')[0].split('=')[1].strip().replace("'", '"')
-                jsn = json.loads(js_text)
-                total = jsn.get('totalRecords', None)
-                total = int(total) if total else None
-            except BaseException:
-                rgx = r'totalRecords[\'\:]+(\d+)'
-                match_list = re.findall(rgx, js_text)
-                total = int(match_list[0]) if match_list else None
-            if not total:
-                js_text = response.xpath('//script[@id="tb-djs-hubbleParams"]/text()').extract()
-                js_text = js_text[0] if js_text else None
-                if js_text:
-                    jsn = json.loads(js_text)
-                    total = jsn.get('total_results', None)
-                    total = int(total) if total else None
-        return total
+    def _scrape_total_matches(self, page_source):
+        total_matches = re.search('plpCtrl.totalCount.+?>(.+)?<', page_source)
+        if total_matches:
+            total_matches = total_matches.group(1)
+            return int(total_matches)
