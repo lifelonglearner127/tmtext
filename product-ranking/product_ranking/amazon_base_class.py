@@ -1375,7 +1375,7 @@ class AmazonBaseClass(BaseProductsSpider):
             name = name.split('Dispatched from', 1)[0].strip()
             name = name.split('Gift-wrap', 1)[0].strip()
         if ' by ' in name:
-            self.log('Multiple "by" occurrences found at %s' % response.url, ERROR)
+            self.log('Multiple "by" occurrences found', ERROR)
         if 'Inc. ' in name:
             name = name.split(', Inc.', 1)[0] + ', Inc.'
         if 'Guarantee Delivery' in name:

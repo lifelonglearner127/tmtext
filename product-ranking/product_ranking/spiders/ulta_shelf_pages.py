@@ -70,6 +70,9 @@ class UltaShelfPagesSpider(UltaProductSpider):
         links = response.xpath(
             '//a[contains(@class, "product")][contains(@href, "productDetail.jsp")]'
             '/img/../@href').extract()
+        if not links:
+            links = response.xpath('//*[contains(@id, "search-prod")]'
+                                   '//a[contains(@class, "product")]/@href').extract()
         for link in links:
             yield link, SiteProductItem()
 

@@ -102,9 +102,10 @@ class CvsProductsSpider(BaseProductsSpider):
         self.referer = None
         self.first_time_products = None
         self.current_page = 1
+        self.products_per_page = 20
         super(CvsProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
-        #settings.overrides['CRAWLERA_ENABLED'] = True
+        settings.overrides['CRAWLERA_ENABLED'] = True
 
     def _set_brand(self, product, phrase, brands):
         phrase = _normalize(phrase)
@@ -272,7 +273,6 @@ class CvsProductsSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
-        print "_scrape_total_matches"
         totals = response.xpath(
             '//*[@id="resultsTabs"]//'
             'a[@title="View Products"]/text()').re('\((\d+)\)')
@@ -283,6 +283,7 @@ class CvsProductsSpider(BaseProductsSpider):
             )
         elif totals:
             total = totals[0].strip()
+            self.total_matches_int = int(total)
             return int(total)
         else:
             self.log(
@@ -313,6 +314,9 @@ class CvsProductsSpider(BaseProductsSpider):
             referer=urllib.quote_plus(self.referer, ':'),
             page_num=self.current_page)
         self.current_page += 1
+
+        if self.current_page * self.products_per_page > self.total_matches_int + 30:
+            return
 
         headers = {'Accept': 'application/json, text/plain, */*',
                    'Cache-Control': 'no-cache',

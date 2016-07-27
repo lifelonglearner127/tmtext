@@ -197,6 +197,13 @@ class ATTProductsSpider(BaseProductsSpider):
     def _on_buyer_reviews_response(self, response):
         prod = response.meta['product']
         brs = json.loads(response.body.split('(', 1)[1][0:-1])
+        # get brand name if empty
+        try:
+            if not prod.get('brand'):
+                prod['brand'] = brs.get(
+                    'BatchedResults').get('q0').get('Results')[0].get('Brand').get('Name')
+        except IndexError:
+            pass
         try:
             brs_sku = brs['BatchedResults']['q2']['Includes']['Products'][prod['sku']]
         except (IndexError, KeyError):
@@ -247,9 +254,15 @@ class ATTProductsSpider(BaseProductsSpider):
         prod['brand'] = v['result']['methodReturnValue'].get('manufacturer', '')
         prod['variants'] = self._parse_ajax_variants(
             response, v['result']['methodReturnValue'].get('skuItems', {}))
+        # There is something wrong with sku for some smartphones with one variation
+        # (maybe broken js on page?), so we take sku from what we have
+        if len(prod['variants']) == 1:
+            only_sku = prod['variants'][0]['sku']
+            sel_v = v['result']['methodReturnValue'].get('skuItems', {}).get(only_sku)
         # get data of selected (default) variant
-        sel_v = v['result']['methodReturnValue'].get('skuItems', {}).get(
-            response.meta['selected_sku'])
+        else:
+            sel_v = v['result']['methodReturnValue'].get('skuItems', {}).get(
+                response.meta['selected_sku'])
         prod['is_out_of_stock'] = sel_v['outOfStock']
         prod['model'] = sel_v.get('model', '')
         # get the lowest price
@@ -352,7 +365,17 @@ class ATTProductsSpider(BaseProductsSpider):
         product['_subitem'] = True
         product['title'] = self._parse_title(response)
         if product['title']:
-            product['brand'] = guess_brand_from_first_words(product['title'])
+            # this needed only for att.com, mostly for headsets
+            split_title = product['title'].split(' - ') if ' - ' in product['title'] else None
+            if split_title:
+                split_title = [s.strip() for s in split_title if s.strip()]
+                brand_list = []
+                for section in split_title:
+                    brand_list.append(guess_brand_from_first_words(section))
+                brand_list = [b for b in brand_list if b]
+                product['brand'] = brand_list[0] if brand_list else None
+            else:
+                product['brand'] = guess_brand_from_first_words(product['title'])
         cond_set(
             product, 'description',
             response.xpath('//meta[contains(@name,"og:description")]/@content').extract())

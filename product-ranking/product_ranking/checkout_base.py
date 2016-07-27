@@ -264,7 +264,6 @@ class BaseCheckoutSpider(scrapy.Spider):
             available_attributes[0].click()
         elif selected_attribute:
             selected_attribute[0].click()
-
         time.sleep(8)
 
     @abstractmethod
