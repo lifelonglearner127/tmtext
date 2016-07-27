@@ -178,6 +178,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         item['id'] = self._get_item_id(product)
         price = self._get_item_price(product)
         item['price_on_page'] = self._get_item_price_on_page(product)
+        color = self._get_item_color(product)
         quantity = self._get_item_quantity(product)
 
         if quantity and price:
