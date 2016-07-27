@@ -10,7 +10,7 @@ import scrapy
 
 
 is_empty = lambda x, y="": x[0] if x else y
-
+delete_commas = lambda x: x.replace(',', '')
 
 class AmazonSpider(BaseCheckoutSpider):
     name = 'amazon_checkout_products'
@@ -154,7 +154,7 @@ class AmazonSpider(BaseCheckoutSpider):
                 By.XPATH, '(//span[contains(@class, "sc-white-space-nowrap")])[1]')))
         if order_subtotal_element:
             order_subtotal = order_subtotal_element.text
-            return is_empty(re.findall('\$([\d\.]+)', order_subtotal))
+            return delete_commas(is_empty(re.findall('\$(.*)', order_subtotal)))
 
     def _get_total(self):
         try:
@@ -177,7 +177,7 @@ class AmazonSpider(BaseCheckoutSpider):
                 'span[@class="a-nowrap"]')))
             if order_total_element:
                 order_total = order_total_element.text
-                return is_empty(re.findall('\$([\d\.]+)', order_total))
+                return delete_commas(is_empty(re.findall('\$(.*)', order_total)))
         except Exception as e:
             self.log('Error {}'.format(str(e)))
             return '0'
@@ -190,14 +190,14 @@ class AmazonSpider(BaseCheckoutSpider):
         return is_empty(item.xpath('@data-asin').extract())
 
     def _get_item_price(self, item):
-        return is_empty(item.xpath(
+        return delete_commas(is_empty(item.xpath(
                         '*//*[contains(@class,"sc-price-sign a-text-bold")]/text()'
-        ).re('\$(.*)'))
+        ).re('\$(.*)')))
 
     def _get_item_price_on_page(self, item):
-        return is_empty(item.xpath(
+        return delete_commas(is_empty(item.xpath(
                         '*//*[contains(@class, "a-color-price sc-price")]/text()'
-        ).re('\$(.*)'))
+        ).re('\$(.*)')))
 
     def _get_item_color(self, item):
         return is_empty(item.xpath(
