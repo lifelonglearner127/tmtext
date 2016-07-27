@@ -13,6 +13,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import TimeoutException
 from product_ranking.items import CheckoutProductItem
 
 import scrapy
@@ -56,7 +57,7 @@ class BaseCheckoutSpider(scrapy.Spider):
     retries = 0
     MAX_RETRIES = 3
     SOCKET_WAIT_TIME = 120
-    WEBDRIVER_WAIT_TIME = 40
+    WEBDRIVER_WAIT_TIME = 100
 
     def __init__(self, *args, **kwargs):
         socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
@@ -102,6 +103,7 @@ class BaseCheckoutSpider(scrapy.Spider):
             for qty in self.quantity:
                 self.requested_color = None
                 self.is_requested_color = False
+                self.requested_quantity_not_available = False
                 url = product.get('url')
                 # Fastest way to empty the cart
                 self._open_new_session(url)
@@ -119,6 +121,7 @@ class BaseCheckoutSpider(scrapy.Spider):
 
                     if isinstance(colors, basestring) or not colors:
                         colors = [colors]
+                    colors = map(lambda x: x.lower(), colors)
 
                 self.log('Colors %r' % (colors))
                 for color in colors:
@@ -140,7 +143,6 @@ class BaseCheckoutSpider(scrapy.Spider):
                         clickable_error = False
                         try:
                             self._parse_product_page(url, qty, color)
-
                             for item in self._parse_cart_page():
                                 item['url'] = url
                                 yield item
@@ -173,6 +175,7 @@ class BaseCheckoutSpider(scrapy.Spider):
 
     def _parse_item(self, product):
         item = CheckoutProductItem()
+        item['requested_quantity_not_available'] = self.requested_quantity_not_available
         name = self._get_item_name(product)
         item['name'] = name.strip() if name else name
         item['id'] = self._get_item_id(product)
@@ -244,6 +247,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         if checkeck don't do it anything,
         else find the first available attribute and click on it
         """
+        time.sleep(4)
         if element:
             target = element
         else:
@@ -261,7 +265,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         elif selected_attribute:
             selected_attribute[0].click()
 
-        time.sleep(4)
+        time.sleep(8)
 
     @abstractmethod
     def start_requests(self):
@@ -346,10 +350,24 @@ class BaseCheckoutSpider(scrapy.Spider):
 
     def _click_on_element_with_id(self, _id):
         try:
+            time.sleep(4)
             element = self.wait.until(EC.element_to_be_clickable((By.ID, _id)))
             element.click()
+            time.sleep(4)
+            return True
         except Exception as e:
             self.log('Error on clicking element with ID %s: %s' % (_id, str(e)))
+            return False
+
+    def _click_on_element_with_xpath(self, _xpath):
+        try:
+            time.sleep(4)
+            element = self.wait.until(EC.element_to_be_clickable((By.XPATH, _xpath)))
+            element.click()
+            time.sleep(4)
+            return True
+        except Exception as e:
+            self.log('Error on clicking element with XPATH %s: %s' % (_xpath, str(e)))
 
     def _choose_another_driver(self):
         for d in self.available_drivers:
