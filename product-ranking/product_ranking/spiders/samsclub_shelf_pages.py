@@ -7,12 +7,16 @@ from product_ranking.items import SiteProductItem
 from scrapy.log import DEBUG, WARNING, ERROR
 from scrapy.conf import settings
 import urlparse
+import socket
 import json
 from math import ceil
 
 import lxml.html
 
 is_empty = lambda x: x[0] if x else None
+
+
+socket.setdefaulttimeout(30)
 
 
 class SamsclubShelfPagesSpider(SamsclubProductsSpider):
@@ -114,6 +118,10 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
                 link = urlparse.urljoin('http://samsclub.com', link)
             yield Request(
                 link, callback=self.parse_product, meta={'product': item})
+
+    def parse_product(self, response):
+        if response.url != self.product_url:
+            return super(SamsclubShelfPagesSpider, self).parse_product(response)
 
     def _get_shelf_path_from_firstpage(self, page_source):
         lxml_doc = lxml.html.fromstring(page_source)
