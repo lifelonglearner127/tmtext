@@ -79,7 +79,7 @@ admin_status.allow_tags = True
 
 class JobAdmin(admin.ModelAdmin):
     list_display = (
-        'task_id', 'spider', 'name', 'searchterm_or_url', admin_status, 'mode',
+        'task_id', 'spider', 'name', 'searchterm_or_url', 'branch_name', admin_status, 'mode',
         'created', 'finished',
         admin_link_to_csv_data_file, admin_link_to_log_file,
         admin_link_to_progress_file, Job.view_as_image

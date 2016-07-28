@@ -11,7 +11,7 @@
     <field name="upc" version="1.1"></field>
     <field name="model" version="1.1"></field>
     <field name="url" version="1.1"></field>
-    <field name="image_url" version="1.1"></field>
+    <field name="image_url" version="1.2"></field>
     <field name="description" version="1.1"></field>
     <field name="brand" version="1.1"></field>
     <field name="price" version="1.1"></field>

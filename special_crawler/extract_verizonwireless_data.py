@@ -54,12 +54,9 @@ class VerizonWirelessScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        try:
-            if not self.tree_html.xpath('//*[@itemtype="http://schema.org/Product"]'):
-                raise Exception()
-        except Exception:
+        if not (self.tree_html.xpath('//*[@itemtype="http://schema.org/Product"]') \
+            or self.tree_html.xpath('//script[@id="accessoryPdpJson"]')):
             return True
-
         return False
 
     ##########################################
@@ -137,15 +134,8 @@ class VerizonWirelessScraper(Scraper):
 
         return ''.join(filter(None, map((lambda x: x.strip()),description))).strip() if description else None
 
-
     def _long_description(self):
-        description = self.tree_html.xpath(
-            '//*[@itemprop="description" and '
-            '@class="is-hidden"]//text()')
-
-        return ''.join(filter(None, map((lambda x: x.strip()),description))).strip() if description else None
-
-
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -175,7 +165,7 @@ class VerizonWirelessScraper(Scraper):
                         images += list(itertools.chain.from_iterable([x.get(
                             'set', {}).get('item') for x in data[
                                 'item'] if x.get('type') == 'img_set']))
-                        images += [x for x in data['item'] if x.get('dx')]
+                        images = [x for x in data['item'] if x.get('dx')] + images
 
                     except:
                         data = self.json_data['set']['item']
