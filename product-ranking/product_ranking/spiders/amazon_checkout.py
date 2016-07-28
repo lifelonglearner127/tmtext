@@ -18,18 +18,18 @@ class AmazonSpider(BaseCheckoutSpider):
 
     SHOPPING_CART_URL = 'https://www.amazon.com/gp/cart/view.html/ref=nav_cart'
     ZIP_CODE = '94117'
-
     def start_requests(self):
         yield scrapy.Request('http://www.amazon.com/')
 
     def _parse_item(self, product):
         item = CheckoutProductItem()
         name = self._get_item_name(product)
+        item['requested_quantity_not_available'] = self.requested_quantity_not_available
         item['name'] = name.strip() if name else name
         item['id'] = self._get_item_id(product)
         price = self._get_item_price(product)
         item['price_on_page'] = self._get_item_price_on_page(product)
-        color = self._get_item_color(product)
+        color = self.current_color
         quantity = self._get_item_quantity(product)
 
         if quantity and price:
@@ -43,7 +43,7 @@ class AmazonSpider(BaseCheckoutSpider):
 
         item['requested_color_not_available'] = (
             color and self.requested_color and
-            (self.requested_color != color))
+            (self.requested_color.lower() != color.lower()))
         return item
 
     def _get_colors_names(self):
@@ -55,7 +55,6 @@ class AmazonSpider(BaseCheckoutSpider):
             colors_names = ""
         try:
             matched_colors = filter(lambda x: len(x) > 1, pattern.findall(colors_names)[0].split('"'))
-            matched_colors = map(lambda x: x.lower(), matched_colors)
         except IndexError:
             matched_colors = [None]
         return matched_colors
@@ -69,17 +68,19 @@ class AmazonSpider(BaseCheckoutSpider):
         self.log('Size selected')
 
     def select_color(self, element=None, color=None):
-        color_attribute_xpath = '*//li[@class="swatchSelect"]'
+        time.sleep(4)
         color_attributes_xpath = ('*//li[@class="swatchAvailable"]')
 
-        if color and color in self._get_colors_names():
-            color_attribute_xpath = '//button//' \
-                                    'img[contains(translate(@alt, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"), "{}")]'.format(color)
+        if color and color.lower() in map(lambda x: x.lower(), self._get_colors_names()):
+            color_attribute_xpath = '//*[contains(@id, "color_name_")]//' \
+                                    'img[contains(translate(' \
+                                    '@alt, "ABCDEFGHIJKLMNOPQRSTUVWXYZ",' \
+                                    ' "abcdefghijklmnopqrstuvwxyz"), "{}")]'.format(color.lower())
 
         self._click_attribute(color_attribute_xpath,
                               color_attributes_xpath,
                               element)
-        self.log('Color selected')
+        self.log('Color {} selected'.format(color))
 
     def _parse_attributes(self, product, color, quantity):
         self.select_color(product, color)
@@ -116,7 +117,7 @@ class AmazonSpider(BaseCheckoutSpider):
 
     def _get_product_list_cart(self):
         if not self.requested_quantity_not_available:
-            time.sleep(8)
+            time.sleep(10)
             condition = EC.visibility_of_element_located(
                 (By.XPATH, '//div[@class="sc-list-body"]'))
             return self.wait.until(condition)
@@ -124,7 +125,6 @@ class AmazonSpider(BaseCheckoutSpider):
             return None
 
     def _parse_cart_page(self):
-        time.sleep(10)
         socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
         self.driver.get(self.SHOPPING_CART_URL)
         product_list = self._get_product_list_cart()
@@ -140,10 +140,11 @@ class AmazonSpider(BaseCheckoutSpider):
         else:
             self.log('Requested quantity not available')
             item = CheckoutProductItem()
-            item['requested_quantity_not_available'] = True
+            item['requested_quantity_not_available'] = self.requested_quantity_not_available
             yield item
 
     def _get_products_in_cart(self, product_list):
+        time.sleep(4)
         html_text = product_list.get_attribute('outerHTML')
         selector = scrapy.Selector(text=html_text)
         return selector.xpath('//div[contains(@class, "a-row sc-list-item")]')
@@ -151,7 +152,8 @@ class AmazonSpider(BaseCheckoutSpider):
     def _get_subtotal(self):
         order_subtotal_element = self.wait.until(
             EC.visibility_of_element_located((
-                By.XPATH, '(//span[contains(@class, "sc-white-space-nowrap")])[1]')))
+                By.XPATH, '(//span[contains(@class, "a-size-medium a-color-price'
+                          ' sc-price sc-white-space-nowrap  sc-price-sign")])[1]')))
         if order_subtotal_element:
             order_subtotal = order_subtotal_element.text
             return delete_commas(is_empty(re.findall('\$(.*)', order_subtotal)))
@@ -184,7 +186,7 @@ class AmazonSpider(BaseCheckoutSpider):
 
     def _get_item_name(self, item):
         return is_empty(item.xpath(
-                        '*//*[contains(@class,"sc-product-title a-text-bold")]/text()').extract())
+                        '*//*[contains(@class,"a-size-medium sc-product-title a-text-bold")]/text()').extract())
 
     def _get_item_id(self, item):
         return is_empty(item.xpath('@data-asin').extract())
@@ -207,3 +209,24 @@ class AmazonSpider(BaseCheckoutSpider):
     def _get_item_quantity(self, item):
         return is_empty(item.xpath(
                         '*//span[@class="a-dropdown-prompt"]/text()').extract())
+
+    def _click_on_element_with_id(self, _id):
+        try:
+            time.sleep(4)
+            element = self.wait.until(EC.element_to_be_clickable((By.ID, _id)))
+            element.click()
+            time.sleep(4)
+            return True
+        except Exception as e:
+            self.log('Error on clicking element with ID %s: %s' % (_id, str(e)))
+            return False
+
+    def _click_on_element_with_xpath(self, _xpath):
+        try:
+            time.sleep(4)
+            element = self.wait.until(EC.element_to_be_clickable((By.XPATH, _xpath)))
+            element.click()
+            time.sleep(4)
+            return True
+        except Exception as e:
+            self.log('Error on clicking element with XPATH %s: %s' % (_xpath, str(e)))
