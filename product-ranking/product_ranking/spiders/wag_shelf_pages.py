@@ -1,5 +1,7 @@
 import re
 import urlparse
+import requests
+from lxml import html
 
 import scrapy
 from scrapy.log import WARNING, ERROR
@@ -27,7 +29,16 @@ class WagShelfPagesSpider(WagProductsSpider):
 
     def _setup_meta_compatibility(self):
         """ Needed to prepare first request.meta vars to use """
-        return {'remaining': 99999, 'search_term': ''}.copy()
+        return {'remaining': 99999, 'search_term': '',
+                'dont_redirect': True,
+                'handle_httpstatus_list': [301, 302, 307]}.copy()
+
+    def make_requests_from_url(self, url):
+        return Request(url, dont_filter=True,
+                meta={'remaining': 99999, 'search_term': '',
+                    'dont_redirect': True,
+                    'handle_httpstatus_list': [301, 302, 307]}
+        )
 
     def __init__(self, *args, **kwargs):
         super(WagShelfPagesSpider, self).__init__(*args, **kwargs)
@@ -62,12 +73,16 @@ class WagShelfPagesSpider(WagProductsSpider):
                       meta=self._setup_meta_compatibility())  # meta is for SC baseclass compatibility
 
     def _scrape_product_links(self, response):
-        urls = response.xpath('//a[@class="product-box-link"]/@href').extract()
-        urls = [urlparse.urljoin(response.url, x) for x in urls]
+        contents = requests.get(response.url).text
+        tree = html.fromstring(contents)
 
-        shelf_categories = response.xpath('//ol[@class="breadcrumb"]/li/a/text()'
-                                            '| //ol[@class="breadcrumb"]/li/h1/text()').extract()
-        shelf_category = response.xpath('//div[@class="left-nav-title"]/span/text()').extract()
+        urls = tree.xpath('//a[@class="product-box-link"]/@href')
+
+        # urls = response.xpath('//a[@class="product-box-link"]/@href')
+        # urls = [urlparse.urljoin(response.url, x) for x in urls]
+
+        shelf_categories = tree.xpath('//ol[@class="breadcrumb"]/li/a/text()| //ol[@class="breadcrumb"]/li/h1/text()')
+        shelf_category = tree.xpath('//div[@class="left-nav-title"]/span/text()')
 
         for url in urls:
             item = SiteProductItem()
@@ -81,16 +96,10 @@ class WagShelfPagesSpider(WagProductsSpider):
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1
-        spliturl = self.product_url.split('?')
-        nextlink = spliturl[0]
-        if len(spliturl) == 1:
-            return (nextlink + "?pg=%d" % self.current_page)
-        else:
-            nextlink += "?"
-            for s in spliturl[1].split('&'):
-                if not "pg=" in s:
-                    nextlink += s + "&"
-            return (nextlink + "pg=%d" % self.current_page)
+        contents = requests.get(response.url).text
+        tree = html.fromstring(contents)
+        link = tree.xpath('//a[@class="next"]/@href')
+        return link[0] if link else None
 
     def parse_product(self, response):
         return super(WagShelfPagesSpider, self).parse_product(response)
