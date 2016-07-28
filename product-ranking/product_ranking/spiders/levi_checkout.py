@@ -5,6 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
 from product_ranking.items import CheckoutProductItem
+from product_ranking.checkout_retry_decorator import retry
 
 import scrapy
 
@@ -52,6 +53,7 @@ class LeviSpider(BaseCheckoutSpider):
         return item
 
     def _get_colors_names(self):
+        time.sleep(4)
         xpath = ('//*[contains(@class,"color-swatches")]//'
                  'li[not(contains(@class,"not-available"))]'
                  '/img[@class="color-swatch-img"]')
@@ -129,6 +131,7 @@ class LeviSpider(BaseCheckoutSpider):
         self.select_length(product)
         self._set_quantity(product, quantity)
 
+    @retry(Exception)
     def _pre_parse_products(self):
         """Close Modal Windows requesting Email"""
         promp_window = self._find_by_xpath(
@@ -158,6 +161,7 @@ class LeviSpider(BaseCheckoutSpider):
             add_to_bag[0].click()
             time.sleep(10)
 
+    @retry(Exception)
     def _set_quantity(self, product, quantity):
         self.current_requested_quantity = int(quantity)
         self._find_by_xpath(
@@ -176,6 +180,7 @@ class LeviSpider(BaseCheckoutSpider):
             './/*[@id="main-pdp-desc"]//*[@class="pdp-description"]')[0].click()
         time.sleep(4)
 
+    @retry(Exception)
     def _get_product_list_cart(self):
         condition = EC.visibility_of_element_located(
             (By.ID, 'useritems-container'))

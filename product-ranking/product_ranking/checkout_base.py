@@ -57,7 +57,7 @@ class BaseCheckoutSpider(scrapy.Spider):
 
     retries = 0
     MAX_RETRIES = 10
-    SOCKET_WAIT_TIME = 60
+    SOCKET_WAIT_TIME = 90
     WEBDRIVER_WAIT_TIME = 100
 
     def __init__(self, *args, **kwargs):
@@ -113,6 +113,7 @@ class BaseCheckoutSpider(scrapy.Spider):
                 self._open_new_session(url)
                 if product.get('FetchAllColors'):
                     # Parse all the products colors
+                    self._pre_parse_products()
                     colors = self._get_colors_names()
 
                 else:
@@ -134,7 +135,8 @@ class BaseCheckoutSpider(scrapy.Spider):
                     self.log('Parsing color - {}, quantity - {}'.format(color or 'None', qty))
                     self._pre_parse_products()
                     self._parse_product_page(url, qty, color)
-                    for item in self._parse_cart_page():
+                    items = self._parse_cart_page()
+                    for item in items:
                         item['url'] = url
                         yield item
                     # only need to open new window if its not last color
@@ -366,6 +368,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         driver = webdriver.Chrome(desired_capabilities=chrome_flags,
                                   chrome_options=chrome_options,
                                   executable_path=executable_path)
+        driver.set_page_load_timeout(60)
         return driver
 
     def _init_firefox(self):

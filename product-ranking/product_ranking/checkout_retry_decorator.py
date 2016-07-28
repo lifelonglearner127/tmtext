@@ -3,7 +3,7 @@ from functools import wraps
 import traceback
 import inspect
 import logging
-
+import socket
 
 def retry(ExceptionToCheck, tries=10, delay=2):
     """Retry calling the decorated function"""
@@ -19,7 +19,7 @@ def retry(ExceptionToCheck, tries=10, delay=2):
             while mtries > 1:
                 try:
                     return f(*args, **kwargs)
-                except ExceptionToCheck, e:
+                except (ExceptionToCheck, socket.timeout), e:
                     msg = "Exception - {}, retrying method {} in {} seconds, retries left: {}...".format(
                         str(e), f.__name__, mdelay, mtries)
                     func_args = "Arguments: {}".format(inspect.getargspec(f))
