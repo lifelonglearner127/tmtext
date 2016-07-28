@@ -81,9 +81,9 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.is_requested_color = False
         self.requested_quantity_not_available = False
 
-        from pyvirtualdisplay import Display
-        display = Display(visible=False)
-        display.start()
+        # from pyvirtualdisplay import Display
+        # display = Display(visible=False)
+        # display.start()
 
         if self.quantity:
             self.quantity = [int(x) for x in self.quantity.split(',')]
@@ -126,6 +126,7 @@ class BaseCheckoutSpider(scrapy.Spider):
                     if self.is_requested_color:
                         self.requested_color = color
                     self.current_color = color
+                    self.current_quantity = qty
                     self.log('Color: %s' % (color or 'None'))
                     clickable_error = True
                     self.retries = 0
@@ -245,7 +246,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         if checkeck don't do it anything,
         else find the first available attribute and click on it
         """
-        time.sleep(4)
+        time.sleep(2)
         if element:
             target = element
         else:
@@ -262,7 +263,7 @@ class BaseCheckoutSpider(scrapy.Spider):
             available_attributes[0].click()
         elif selected_attribute:
             selected_attribute[0].click()
-        time.sleep(8)
+        time.sleep(4)
 
     @abstractmethod
     def start_requests(self):

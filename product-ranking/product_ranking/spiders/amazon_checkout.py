@@ -24,7 +24,6 @@ class AmazonSpider(BaseCheckoutSpider):
     def _parse_item(self, product):
         item = CheckoutProductItem()
         name = self._get_item_name(product)
-        item['requested_quantity_not_available'] = self.requested_quantity_not_available
         item['name'] = name.strip() if name else name
         item['id'] = self._get_item_id(product)
         price = self._get_item_price(product)
@@ -37,6 +36,7 @@ class AmazonSpider(BaseCheckoutSpider):
             item['price'] = float(price) * quantity
             item['quantity'] = quantity
             item['requested_color'] = self.requested_color
+            item['requested_quantity_not_available'] = quantity != int(self.current_quantity)
 
         if color:
             item['color'] = color
@@ -82,11 +82,6 @@ class AmazonSpider(BaseCheckoutSpider):
                               element)
         self.log('Color {} selected'.format(color))
 
-    def _parse_attributes(self, product, color, quantity):
-        self.select_color(product, color)
-        self.select_size(product)
-        self._set_quantity(product, quantity)
-
     def _get_products(self):
         return self._find_by_xpath(
             '//*[@role="main"]')
@@ -107,44 +102,20 @@ class AmazonSpider(BaseCheckoutSpider):
             self.log('Added to bag')
 
     def _set_quantity(self, product, quantity):
-        quantity_xpath = '//select[@name="quantity"]/' \
+        quantity_attribute_xpath = '//select[@name="quantity"]/' \
                          'option[@value="{}"]'.format(quantity)
-        quantity_option = self._click_on_element_with_xpath(quantity_xpath)
-        if quantity_option:
-            self.log('Quantity "{}" selected'.format(quantity))
-        else:
-            self.requested_quantity_not_available = True
+        quantity_attributes_xpath = '//select[@name="quantity"]/option'
+        self._click_attribute(quantity_attribute_xpath,
+                              quantity_attributes_xpath)
+        self.log('Quantity selected')
 
     def _get_product_list_cart(self):
-        if not self.requested_quantity_not_available:
-            time.sleep(10)
-            condition = EC.visibility_of_element_located(
-                (By.XPATH, '//div[@class="sc-list-body"]'))
-            return self.wait.until(condition)
-        else:
-            return None
-
-    def _parse_cart_page(self):
-        socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
-        self.driver.get(self.SHOPPING_CART_URL)
-        product_list = self._get_product_list_cart()
-        if product_list:
-            for product in self._get_products_in_cart(product_list):
-                item = self._parse_item(product)
-                if item:
-                    item['order_subtotal'] = self._get_subtotal()
-                    item['order_total'] = self._get_total()
-                    yield item
-                else:
-                    self.log('Missing field in product from shopping cart')
-        else:
-            self.log('Requested quantity not available')
-            item = CheckoutProductItem()
-            item['requested_quantity_not_available'] = self.requested_quantity_not_available
-            yield item
+        time.sleep(4)
+        condition = EC.visibility_of_element_located(
+            (By.XPATH, '//div[@class="sc-list-body"]'))
+        return self.wait.until(condition)
 
     def _get_products_in_cart(self, product_list):
-        time.sleep(4)
         html_text = product_list.get_attribute('outerHTML')
         selector = scrapy.Selector(text=html_text)
         return selector.xpath('//div[contains(@class, "a-row sc-list-item")]')
@@ -160,7 +131,6 @@ class AmazonSpider(BaseCheckoutSpider):
 
     def _get_total(self):
         try:
-            time.sleep(4)
             xpath = '(//span[@class="a-expander-prompt"])[1]'
             self._click_on_element_with_xpath(xpath)
             self.wait.until(
@@ -170,6 +140,7 @@ class AmazonSpider(BaseCheckoutSpider):
                 '//input[@name="zipcode"]')[0]
             element.send_keys(self.ZIP_CODE)
             element.send_keys(Keys.ENTER)
+            time.sleep(4)
         except Exception as e:
             self.log('Error {}'.format(str(e)))
         try:
@@ -212,7 +183,6 @@ class AmazonSpider(BaseCheckoutSpider):
 
     def _click_on_element_with_id(self, _id):
         try:
-            time.sleep(4)
             element = self.wait.until(EC.element_to_be_clickable((By.ID, _id)))
             element.click()
             time.sleep(4)
@@ -223,7 +193,6 @@ class AmazonSpider(BaseCheckoutSpider):
 
     def _click_on_element_with_xpath(self, _xpath):
         try:
-            time.sleep(4)
             element = self.wait.until(EC.element_to_be_clickable((By.XPATH, _xpath)))
             element.click()
             time.sleep(4)
