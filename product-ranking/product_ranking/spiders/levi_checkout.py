@@ -34,6 +34,7 @@ class LeviSpider(BaseCheckoutSpider):
 
         if quantity and price:
             quantity = int(quantity)
+            print "########",quantity,self.current_requested_quantity
             if quantity < self.current_requested_quantity:
                 item['requested_quantity_not_available'] = True
             else:
@@ -86,7 +87,7 @@ class LeviSpider(BaseCheckoutSpider):
                 'li[contains(@class,"color-swatch") '
                 'and contains(@class, "selected")]')
 
-        # All Availables Collors
+        # All Availables Colors
         color_attributes_xpath = (
             '*//*[@class="color-swatches"]//'
             'li[contains(@class,"color-swatch") '
