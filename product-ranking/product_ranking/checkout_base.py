@@ -81,9 +81,9 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.is_requested_color = False
         self.requested_quantity_not_available = False
 
-        # from pyvirtualdisplay import Display
-        # display = Display(visible=False)
-        # display.start()
+        from pyvirtualdisplay import Display
+        display = Display(visible=False)
+        display.start()
 
         if self.quantity:
             self.quantity = [int(x) for x in self.quantity.split(',')]
