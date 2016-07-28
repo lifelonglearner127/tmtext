@@ -10,11 +10,15 @@ import urlparse
 
 from abc import abstractmethod
 from selenium.webdriver.common.by import By
+
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver import ActionChains
+
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import WebDriverException
 from product_ranking.items import CheckoutProductItem
-from product_ranking.checkout_retry_decorator import retry
+from product_ranking.checkout_retry_decorator import retry_func
 
 import scrapy
 from scrapy.conf import settings
@@ -58,7 +62,7 @@ class BaseCheckoutSpider(scrapy.Spider):
     retries = 0
     MAX_RETRIES = 10
     SOCKET_WAIT_TIME = 90
-    WEBDRIVER_WAIT_TIME = 100
+    WEBDRIVER_WAIT_TIME = 70
 
     def __init__(self, *args, **kwargs):
         socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
@@ -145,7 +149,7 @@ class BaseCheckoutSpider(scrapy.Spider):
 
                 self.driver.quit()
 
-    @retry(Exception)
+    @retry_func(Exception)
     def _open_new_session(self, url):
         old_driver = getattr(self, 'driver', None)
         if old_driver and not isinstance(old_driver, str):
@@ -167,7 +171,7 @@ class BaseCheckoutSpider(scrapy.Spider):
 
         if quantity and price:
             quantity = int(quantity)
-            item['price'] = float(price.replace(',','').replace('.','')) / quantity
+            item['price'] = round(float(price.replace(',','').replace('.','')) / quantity, 2)
             item['quantity'] = quantity
             item['requested_color'] = self.requested_color
 
@@ -197,11 +201,45 @@ class BaseCheckoutSpider(scrapy.Spider):
             self._add_to_cart()
             self._do_others_actions()
 
-    @retry(Exception)
+    @retry_func(Exception)
+    def _load_cart_page(self, cart_cookies=None):
+        self._open_new_session(self.SHOPPING_CART_URL)
+        # body = self.driver.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 't')
+        # self.driver.close()
+        # time.sleep(10)
+        # self.driver.get(self.SHOPPING_CART_URL)
+        if cart_cookies:
+            for cookie in cart_cookies:
+                self.driver.add_cookie(cookie)
+        time.sleep(5)
+        self.driver.refresh()
+
+        product_list = self._get_product_list_cart()
+        # self.driver.get(self.SHOPPING_CART_URL)
+        # retry the page until we get correct element
+        if product_list:
+            return product_list
+        else:
+            raise Exception
+
+    # @retry(Exception)
+    # def _load_cart_page(self):
+    #     # open new tab to not loose cookies
+    #     self.driver.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 't')
+    #     # close first tab - also helps when retrying
+    #     # self.driver.close()
+    #     self.driver.switch_to.window(self.driver.window_handles[-1])
+    #     self.driver.get(self.SHOPPING_CART_URL)
+
     def _parse_cart_page(self):
         socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
-        self.driver.get(self.SHOPPING_CART_URL)
-        product_list = self._get_product_list_cart()
+        # self._load_cart_page()
+        # actions = ActionChains(self.driver)
+        # about = self.driver.find_element_by_link_text('About')
+        # actions.key_down(Keys.CONTROL).click(about).key_up(Keys.CONTROL).perform()
+
+        cart_cookies = [c for c in self.driver.get_cookies() if 'levi.com' in c.get('domain')]
+        product_list = self._load_cart_page(cart_cookies=cart_cookies)
         if product_list:
             for product in self._get_products_in_cart(product_list):
                 item = self._parse_item(product)
@@ -223,7 +261,7 @@ class BaseCheckoutSpider(scrapy.Spider):
             target = self.driver
         return target.find_elements(By.XPATH, xpath)
 
-    @retry(Exception)
+    @retry_func(Exception)
     def _click_attribute(self, selected_attribute_xpath, others_attributes_xpath, element=None):
         """
         Check if the attribute given by selected_attribute_xpath is checkout
@@ -257,31 +295,31 @@ class BaseCheckoutSpider(scrapy.Spider):
         """Return the name of all the colors availables"""
         return
 
-    @retry(Exception)
+    # @retry(Exception)
     @abstractmethod
     def select_size(self, element=None):
         """Select the size for the product"""
         return
 
-    @retry(Exception)
+    # @retry(Exception)
     @abstractmethod
     def select_color(self, element=None, color=None):
         """Select the color for the product"""
         return
 
-    @retry(Exception)
+    # @retry(Exception)
     @abstractmethod
     def select_width(self, element=None):
         """Select the width for the product"""
         return
 
-    @retry(Exception)
+    # @retry(Exception)
     @abstractmethod
     def select_others(self, element=None):
         """Select others attributes for the product"""
         return
 
-    @retry(Exception)
+    # @retry(Exception)
     @abstractmethod
     def _set_quantity(self, product, quantity):
         """Select the quantity for the product"""
@@ -297,7 +335,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         """Add the product to the cart"""
         return
 
-    @retry(Exception)
+    # @retry(Exception)
     @abstractmethod
     def _do_others_actions(self):
         """Do actions after adding product to cart"""
@@ -339,7 +377,7 @@ class BaseCheckoutSpider(scrapy.Spider):
     def _pre_parse_products(self):
         return
 
-    @retry(Exception)
+    @retry_func(Exception)
     def _click_on_element_with_id(self, _id):
         # try:
         element = self.wait.until(EC.element_to_be_clickable((By.ID, _id)))

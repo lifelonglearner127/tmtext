@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
 from product_ranking.items import CheckoutProductItem
-from product_ranking.checkout_retry_decorator import retry
+from product_ranking.checkout_retry_decorator import retry_func
 
 import scrapy
 
@@ -131,7 +131,7 @@ class LeviSpider(BaseCheckoutSpider):
         self.select_length(product)
         self._set_quantity(product, quantity)
 
-    @retry(Exception)
+    @retry_func(Exception)
     def _pre_parse_products(self):
         """Close Modal Windows requesting Email"""
         promp_window = self._find_by_xpath(
@@ -161,7 +161,7 @@ class LeviSpider(BaseCheckoutSpider):
             add_to_bag[0].click()
             time.sleep(10)
 
-    @retry(Exception)
+    @retry_func(Exception)
     def _set_quantity(self, product, quantity):
         self.current_requested_quantity = int(quantity)
         self._find_by_xpath(
@@ -180,11 +180,14 @@ class LeviSpider(BaseCheckoutSpider):
             './/*[@id="main-pdp-desc"]//*[@class="pdp-description"]')[0].click()
         time.sleep(4)
 
-    @retry(Exception)
     def _get_product_list_cart(self):
-        condition = EC.visibility_of_element_located(
-            (By.ID, 'useritems-container'))
-        return self.wait.until(condition)
+        time.sleep(5)
+        # condition = EC.visibility_of_element_located(
+        #     (By.ID, 'useritems-container'))
+        # return self.wait.until(condition)
+        element = self._find_by_xpath(".//*[@id='useritems-container']")
+        element = element if element else None
+        return element
 
     def _get_products_in_cart(self, product_list):
         html_text = product_list.get_attribute('outerHTML')
@@ -214,6 +217,7 @@ class LeviSpider(BaseCheckoutSpider):
             '*//p[@class="name"]/text()').extract())
 
     def _get_item_id(self, item):
+        time.sleep(4)
         return is_empty(item.xpath(
                         '*//*[@class="material_sku"]/span/text()').extract())
 
@@ -226,6 +230,7 @@ class LeviSpider(BaseCheckoutSpider):
             '*//*[@class="prod-price-info"]//text()').re('\$(.*)'))
 
     def _get_item_color(self, item):
+        time.sleep(4)
         return is_empty(map((lambda x: x.strip()), filter((
             lambda x: x and 'color:' not in x.lower()),
             item.xpath('*//*[contains(@class,"material_color")]/text()').re(
