@@ -301,6 +301,8 @@ class KohlsScraper(Scraper):
         return self.kv.swatches()
 
     def _no_longer_available(self):
+        if self._is_out_of_stock():
+            return 1
         return 0
 
     ##########################################
