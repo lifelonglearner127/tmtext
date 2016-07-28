@@ -1,14 +1,23 @@
 from __future__ import division, absolute_import, unicode_literals
 from .samsclub import SamsclubProductsSpider
 import re
+import time
 from scrapy.http import Request, FormRequest
 from product_ranking.items import SiteProductItem
-from scrapy.log import DEBUG, WARNING
+from scrapy.log import DEBUG, WARNING, ERROR
+from scrapy.conf import settings
 import urlparse
+import socket
 import json
 from math import ceil
 
+import lxml.html
+
 is_empty = lambda x: x[0] if x else None
+
+
+socket.setdefaulttimeout(30)
+
 
 class SamsclubShelfPagesSpider(SamsclubProductsSpider):
     name = 'samsclub_shelf_urls_products'
@@ -30,196 +39,100 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
         self.quantity = self.num_pages * self.prods_per_page
         if "quantity" in kwargs:
             self.quantity = int(kwargs['quantity'])
+        #settings.overrides['CRAWLERA_ENABLED'] = True
+        self.proxy = None
 
-    def start_requests(self):
-        yield Request(
-            url="http://www.samsclub.com/",
-            meta={'club': 1})
+    def _init_phantomjs(self):
+        from selenium import webdriver
+        from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+        self.log('No product links found at first attempt'
+                 ' - trying PhantomJS with UA %s' % self.user_agent)
+        dcap = dict(DesiredCapabilities.PHANTOMJS)
+        dcap["phantomjs.page.settings.userAgent"] = self.user_agent
+        service_args = []
+        if self.proxy:
+            service_args.append('--proxy="%s"' % self.proxy)
+            service_args.append('--proxy-type=' + self.proxy_type)
+            proxy_auth = getattr(self, '_proxy_auth', None)
+            if proxy_auth:
+                service_args.append("--proxy-auth=\"%s\":" % proxy_auth)
+
+        #assert False, service_args
+        driver = webdriver.PhantomJS(desired_capabilities=dcap, service_args=service_args)
+        driver.set_page_load_timeout(60)
+        driver.set_script_timeout(60)
+        return driver
+
+    def _get_links_from_selenium_page(self, driver):
+        return [l.get_attribute('href') for l in driver.find_elements_by_xpath(
+            '//*[@id="productRow"]//a')]
 
     def parse(self, response):
-        club = response.meta.get('club')
-        self.log("Club stage: %s" % club, DEBUG)
-        if club == 1:
-            c = response.xpath(
-                "//div[@id='headerClubLocation']/text()").extract()
-            self.log("Club mark: %s" % c, DEBUG)
-            data = {'/sams_dyncharset': 'ISO-8859-1',
-                    '_dynSessConf': '-7856921515575376948',
-                    '/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.selectedClub': self.clubno,
-                    '_D:/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.selectedClub': '',
-                    'selectClub': 'null',
-                    '/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.neighboringClubs': self.clubno,
-                    '_D:/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.neighboringClubs': '',
-                    '/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.wizardClubSelection': 'submit',
-                    '_D:/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.wizardClubSelection': '',
-                    '_DARGS:/sams/search/wizard/common/displayClubs.jsp.selectId': ''
-                    }
+        collected_links = []
 
-            new_meta = response.meta.copy()
-            new_meta['club'] = 2
-            request = FormRequest.from_response(
-                response=response,
-                url=self.CLUB_SET_URL,
-                method='POST',
-                formdata=data,
-                callback=self.parse,
-                meta=new_meta)
-            return request
+        # get phantomjs page
+        driver = self._init_phantomjs()
+        driver.get(self.product_url)
+        time.sleep(15)
 
-        elif club == 2:
-            self.log("Select club '%s'' response: %s " % (
-                self.clubno,
-                response.body_as_unicode().encode('utf-8')), DEBUG)
-            new_meta = response.meta.copy()
-            new_meta['club'] = 3
-            return Request(
-                url="http://www.samsclub.com/",
-                meta=new_meta,
-                dont_filter=True)
+        num_exceptions = 0
+        while 1:
+            self.log('Selenium: collected %s links' % len(collected_links))
 
-        elif club == 3:
-            c = response.xpath(
-                "//a[@class='shopYourClubLink']/descendant::text()").extract()
-            c = " ".join(x.strip() for x in c if len(x.strip()) > 0)
-            self.log("Selected club: '%s' '%s'" % (
-                self.clubno, " ".join(c.split())), DEBUG)
-            return Request(self.product_url, callback=self._get_shelf_path_from_firstpage ,meta={
-                'search_term': '',
-                'remaining': self.quantity,
-                'club': 4})
+            if num_exceptions > 10:
+                break
 
-        elif club == 4:
-            return super(SamsclubProductsSpider, self).parse(response)
-
-    def _get_shelf_path_from_firstpage(self, response):
-        shelf_categories = [c.strip() for c in response.xpath('.//ol[@id="breadCrumbs"]/li//a/text()').extract()
-                            if len(c.strip()) > 1]
-
-        shelf_category = shelf_categories[-1] if shelf_categories else None
-        total_matches = self._scrape_total_matches(response)
-        if total_matches:
             try:
-                # determining final amount of pages to scrape
-                self.num_pages = min(ceil(int(total_matches)/float(self.prods_per_page)),self.num_pages)
-            except BaseException:
-                pass
-        return Request(self._NEXT_SHELF_URL.format(
-            category_id=self._get_category_id(response),
-            offset=0,
-            prods_per_page=self.prods_per_page), meta={
-            'shelf_path': shelf_categories,
-            'shelf_name': shelf_category,
-            'total_matches':total_matches,
-            'search_term': '',
-            'remaining': self.quantity,
-            'club': 4},
-            dont_filter=True)
+                for link in self._get_links_from_selenium_page(driver):
+                    if link not in collected_links:
+                        collected_links.append(link)
+                next_link_btn = driver.find_element_by_id('plp-seemore')
+                if next_link_btn:
+                    self.current_page += 1
+                    if self.current_page >= self.num_pages:
+                        break
+                    # TODO: check num_pages
+                    next_link_btn.click()
+                    time.sleep(15)
+                    continue
 
-    def _scrape_product_links(self, response):
-        if response.url.find('ajaxSearch') > 0:
-            shelf_category = response.meta.get('shelf_name')
-            shelf_categories = response.meta.get('shelf_path')
-            total_matches = response.meta.get('total_matches', 0)
-            urls = response.xpath("//body/ul/li/a/@href").extract()
-            if not urls:
-                urls = response.xpath('//*[contains(@href, ".ip") and contains(@href, "/sams/")]/@href').extract()
-            if urls:
-                urls = [urlparse.urljoin(response.url, x) for x in urls if x.strip()]
-            for url in urls:
-                item = response.meta.get('product', SiteProductItem())
-                item['total_matches'] = total_matches
-                if shelf_category:
-                    item['shelf_name'] = shelf_category
-                if shelf_categories:
-                    item['shelf_path'] = shelf_categories
-                yield url, item
-        else:
-            self.log("This method should not be called with such url {}".format(
-                response.url), WARNING)
+            except Exception as e:
+                self.log('Error: %s' % str(e), ERROR)
+                num_exceptions += 1
 
-    def _scrape_next_results_page_link(self, response, remaining):
-        prods_per_page = self._get_items_per_page(response)
-        if prods_per_page:
-            self.prods_per_page = prods_per_page
-        if self.current_page >= int(self.num_pages):
-            return None
-        else:
-            self.current_page += 1
-            return self._NEXT_SHELF_URL.format(
-                category_id=self._get_category_id(response),
-                offset=self.current_page * self.prods_per_page,
-                prods_per_page=self.prods_per_page)
-
-    @staticmethod
-    def _get_category_id(response):
-        cat_id = None
-        if response.url.find('ajaxSearch') > 0:
-            js_text = response.xpath('//script[@id="tb-djs-hubbleParams"]/text()').extract()
-            js_text = js_text[0] if js_text else None
-            if js_text:
-                jsn = json.loads(js_text)
-                cat_id = jsn.get('constraint', None)
-            if not cat_id:
-                rgx = r'searchCategoryId=(\d+)'
-                match_list = re.findall(rgx, response.url)
-                cat_id = match_list[0] if match_list else None
-        else:
-            js_text = response.xpath('//script[contains(text(), "searchInfo")]/text()').extract()
-            js_text = js_text[0] if js_text else None
-            try:
-                js_text = js_text.split(';')[0].split('=')[1].strip().replace("'", '"')
-                jsn = json.loads(js_text)
-                cat_id = jsn.get('searchCategoryId', None)
-            except BaseException:
-                cat_id = None
-            if not cat_id:
-                rgx = r'\/(\d+).cp'
-                match_list = re.findall(rgx, response.url)
-                cat_id =  match_list[0] if match_list else None
-        return cat_id
-
-    @staticmethod
-    def _get_items_per_page(response):
-        js_text = response.xpath('//script[contains(text(), "searchInfo")]/text()').extract()
-        js_text = js_text[0] if js_text else None
         try:
-            js_text = js_text.split(';')[0].split('=')[1].strip().replace("'", '"')
-            jsn = json.loads(js_text)
-            itm_per_page = jsn.get('numberOfRecordsRequested', None)
-            itm_per_page = int(itm_per_page) if itm_per_page else None
-        except BaseException:
-            itm_per_page = None
-        return itm_per_page
+            self.driver.quit()
+        except:
+            pass
 
-    def _scrape_total_matches(self, response):
-        if response.url.find('ajaxSearch') > 0:
-            items = response.xpath("//body/li[contains(@class,'item')]")
-            return len(items)
-        totals = response.xpath(
-            "//div[contains(@class,'shelfSearchRelMsg2')]"
-            "/span/span[@class='gray3']/text()"
-        ).extract()
-        if not totals:
-            totals = response.xpath('//*[@class="resultsfound"]/span[@ng-show="!clientAjaxCall"]/text()').extract()
-        if totals:
-            total = int(totals[0])
-        else:
-            js_text = response.xpath('//script[contains(text(), "searchInfo")]/text()').extract()
-            js_text = js_text[0] if js_text else None
-            try:
-                js_text = js_text.split(';')[0].split('=')[1].strip().replace("'", '"')
-                jsn = json.loads(js_text)
-                total = jsn.get('totalRecords', None)
-                total = int(total) if total else None
-            except BaseException:
-                rgx = r'totalRecords[\'\:]+(\d+)'
-                match_list = re.findall(rgx, js_text)
-                total = int(match_list[0]) if match_list else None
-            if not total:
-                js_text = response.xpath('//script[@id="tb-djs-hubbleParams"]/text()').extract()
-                js_text = js_text[0] if js_text else None
-                if js_text:
-                    jsn = json.loads(js_text)
-                    total = jsn.get('total_results', None)
-                    total = int(total) if total else None
-        return total
+        collected_links = [l for l in collected_links if l]
+
+        for i, link in enumerate(collected_links):
+            item = SiteProductItem()
+            item['ranking'] = i+1
+            item['url'] = link
+            item['shelf_path'], item['shelf_name'] \
+                = self._get_shelf_path_from_firstpage(driver.page_source)
+            item['total_matches'] = self._scrape_total_matches(driver.page_source)
+            if not link.startswith('http'):
+                link = urlparse.urljoin('http://samsclub.com', link)
+            yield Request(
+                link, callback=self.parse_product, meta={'product': item})
+
+    def parse_product(self, response):
+        if response.url != self.product_url:
+            return super(SamsclubShelfPagesSpider, self).parse_product(response)
+
+    def _get_shelf_path_from_firstpage(self, page_source):
+        lxml_doc = lxml.html.fromstring(page_source)
+        shelf_categories = [
+            c.strip() for c in lxml_doc.xpath('.//ol[@id="breadCrumbs"]/li//a/text()')
+            if len(c.strip()) > 1]
+        shelf_category = shelf_categories[-1] if shelf_categories else None
+        return shelf_categories, shelf_category
+
+    def _scrape_total_matches(self, page_source):
+        total_matches = re.search('plpCtrl.totalCount.+?>(.+)?<', page_source)
+        if total_matches:
+            total_matches = total_matches.group(1)
+            return int(total_matches)
