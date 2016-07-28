@@ -16,6 +16,8 @@ class LeviSpider(BaseCheckoutSpider):
     allowed_domains = ['levi.com']  # do not remove comment - used in find_spiders()
 
     SHOPPING_CART_URL = 'http://www.levi.com/US/en_US/cart'
+    # needed later in to get 'requested_quantity_not_available' field
+    current_requested_quantity = 1
 
     def start_requests(self):
         yield scrapy.Request('http://www.levi.com/US/en_US/')
@@ -32,6 +34,10 @@ class LeviSpider(BaseCheckoutSpider):
 
         if quantity and price:
             quantity = int(quantity)
+            if quantity < self.current_requested_quantity:
+                item['requested_quantity_not_available'] = True
+            else:
+                item['requested_quantity_not_available'] = False
             item['price'] = float(price) / quantity
             item['quantity'] = quantity
             item['requested_color'] = self.requested_color
@@ -149,9 +155,10 @@ class LeviSpider(BaseCheckoutSpider):
 
         if add_to_bag:
             add_to_bag[0].click()
-            time.sleep(4)
+            time.sleep(10)
 
     def _set_quantity(self, product, quantity):
+        self.current_requested_quantity = int(quantity)
         self._find_by_xpath(
             '//div[@class="quantity-display"]')[0].click()
         time.sleep(4)
@@ -162,6 +169,10 @@ class LeviSpider(BaseCheckoutSpider):
         if quantity_option:
             quantity_option[0].click()
 
+        time.sleep(4)
+        # to remove mouseover from size, blocking add to cart button
+        self._find_by_xpath(
+            './/*[@id="main-pdp-desc"]//*[@class="pdp-description"]')[0].click()
         time.sleep(4)
 
     def _get_product_list_cart(self):
