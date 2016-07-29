@@ -5,7 +5,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
 from product_ranking.items import CheckoutProductItem
-from product_ranking.checkout_retry_decorator import retry_func
+# retry decorator
+from product_ranking.checkout_base import retry_func
 
 import scrapy
 
