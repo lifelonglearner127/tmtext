@@ -56,7 +56,7 @@ class BaseCheckoutSpider(scrapy.Spider):
     retries = 0
     MAX_RETRIES = 3
     SOCKET_WAIT_TIME = 120
-    WEBDRIVER_WAIT_TIME = 40
+    WEBDRIVER_WAIT_TIME = 100
 
     def __init__(self, *args, **kwargs):
         socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
@@ -260,8 +260,7 @@ class BaseCheckoutSpider(scrapy.Spider):
             available_attributes[0].click()
         elif selected_attribute:
             selected_attribute[0].click()
-
-        time.sleep(4)
+        time.sleep(8)
 
     @abstractmethod
     def start_requests(self):
