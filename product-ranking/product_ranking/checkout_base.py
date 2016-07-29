@@ -239,10 +239,11 @@ class BaseCheckoutSpider(scrapy.Spider):
     def _load_cart_page(self, cart_cookies=None):
         # selenium need actual page opened to import cookies
         self._open_new_session(self.SHOPPING_CART_URL)
+        self.driver.delete_all_cookies()
         if cart_cookies:
             for cookie in cart_cookies:
                 self.driver.add_cookie(cookie)
-        time.sleep(5)
+        time.sleep(10)
         self.driver.refresh()
         product_list = self._get_product_list_cart()
         # retry the page until we get correct element
@@ -423,7 +424,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         driver = webdriver.Chrome(desired_capabilities=chrome_flags,
                                   chrome_options=chrome_options,
                                   executable_path=executable_path)
-        driver.set_page_load_timeout(60)
+        driver.set_page_load_timeout(self.SOCKET_WAIT_TIME)
         return driver
 
     def _init_firefox(self):
