@@ -34,7 +34,6 @@ class LeviSpider(BaseCheckoutSpider):
 
         if quantity and price:
             quantity = int(quantity)
-            print "########",quantity,self.current_requested_quantity
             if quantity < self.current_requested_quantity:
                 item['requested_quantity_not_available'] = True
             else:
