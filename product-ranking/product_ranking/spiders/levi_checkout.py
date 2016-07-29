@@ -3,10 +3,8 @@ import time
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from product_ranking.checkout_base import BaseCheckoutSpider
+from product_ranking.checkout_base import BaseCheckoutSpider, retry_func
 from product_ranking.items import CheckoutProductItem
-# retry decorator
-from product_ranking.checkout_base import retry_func
 
 import scrapy
 
@@ -187,7 +185,7 @@ class LeviSpider(BaseCheckoutSpider):
         #     (By.ID, 'useritems-container'))
         # return self.wait.until(condition)
         element = self._find_by_xpath(".//*[@id='useritems-container']")
-        element = element if element else None
+        element = element[0] if element else None
         return element
 
     def _get_products_in_cart(self, product_list):

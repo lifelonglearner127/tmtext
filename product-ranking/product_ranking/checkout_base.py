@@ -49,7 +49,7 @@ def _get_random_proxy():
 def _get_domain(url):
     return urlparse.urlparse(url).netloc.replace('www.', '')
 
-def retry_func(ExceptionToCheck, tries=15, delay=3):
+def retry_func(ExceptionToCheck, tries=10, delay=2):
     """Retry call for decorated function"""
 
     logging.basicConfig(level=logging.WARNING)
@@ -120,9 +120,9 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.requested_color = None
         self.is_requested_color = False
 
-        # from pyvirtualdisplay import Display
-        # display = Display(visible=False)
-        # display.start()
+        from pyvirtualdisplay import Display
+        display = Display(visible=False)
+        display.start()
 
         if self.quantity:
             self.quantity = [int(x) for x in self.quantity.split(',')]
@@ -237,42 +237,34 @@ class BaseCheckoutSpider(scrapy.Spider):
 
     @retry_func(Exception)
     def _load_cart_page(self, cart_cookies=None):
+        # selenium need actual page opened to import cookies
         self._open_new_session(self.SHOPPING_CART_URL)
-        # body = self.driver.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 't')
-        # self.driver.close()
-        # time.sleep(10)
-        # self.driver.get(self.SHOPPING_CART_URL)
         if cart_cookies:
             for cookie in cart_cookies:
                 self.driver.add_cookie(cookie)
         time.sleep(5)
         self.driver.refresh()
-
         product_list = self._get_product_list_cart()
-        # self.driver.get(self.SHOPPING_CART_URL)
         # retry the page until we get correct element
         if product_list:
             return product_list
         else:
             raise Exception
 
-    # @retry(Exception)
-    # def _load_cart_page(self):
-    #     # open new tab to not loose cookies
-    #     self.driver.find_element_by_tag_name('body').send_keys(Keys.CONTROL + 't')
-    #     # close first tab - also helps when retrying
-    #     # self.driver.close()
-    #     self.driver.switch_to.window(self.driver.window_handles[-1])
-    #     self.driver.get(self.SHOPPING_CART_URL)
+    @retry_func(Exception)
+    def _get_current_domain_name(self):
+        # trying to get current domain to filter cookies
+        url = self.driver.current_url
+        dom_name = urlparse.urlparse(url).netloc.replace('www.','')
+        if not dom_name:
+            dom_name = self.allowed_domains[0]
+        return dom_name
 
     def _parse_cart_page(self):
         socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
-        # self._load_cart_page()
-        # actions = ActionChains(self.driver)
-        # about = self.driver.find_element_by_link_text('About')
-        # actions.key_down(Keys.CONTROL).click(about).key_up(Keys.CONTROL).perform()
-
-        cart_cookies = [c for c in self.driver.get_cookies() if 'levi.com' in c.get('domain')]
+        # get cookies with our cart stuff and filter them
+        dom_name = self._get_current_domain_name()
+        cart_cookies = [c for c in self.driver.get_cookies() if dom_name in c.get('domain')]
         product_list = self._load_cart_page(cart_cookies=cart_cookies)
         if product_list:
             for product in self._get_products_in_cart(product_list):
@@ -329,31 +321,26 @@ class BaseCheckoutSpider(scrapy.Spider):
         """Return the name of all the colors availables"""
         return
 
-    # @retry(Exception)
     @abstractmethod
     def select_size(self, element=None):
         """Select the size for the product"""
         return
 
-    # @retry(Exception)
     @abstractmethod
     def select_color(self, element=None, color=None):
         """Select the color for the product"""
         return
 
-    # @retry(Exception)
     @abstractmethod
     def select_width(self, element=None):
         """Select the width for the product"""
         return
 
-    # @retry(Exception)
     @abstractmethod
     def select_others(self, element=None):
         """Select others attributes for the product"""
         return
 
-    # @retry(Exception)
     @abstractmethod
     def _set_quantity(self, product, quantity):
         """Select the quantity for the product"""
@@ -369,7 +356,6 @@ class BaseCheckoutSpider(scrapy.Spider):
         """Add the product to the cart"""
         return
 
-    # @retry(Exception)
     @abstractmethod
     def _do_others_actions(self):
         """Do actions after adding product to cart"""
@@ -413,11 +399,8 @@ class BaseCheckoutSpider(scrapy.Spider):
 
     @retry_func(Exception)
     def _click_on_element_with_id(self, _id):
-        # try:
         element = self.wait.until(EC.element_to_be_clickable((By.ID, _id)))
         element.click()
-        # except Exception as e:
-        #     self.log('Error on clicking element with ID %s: %s' % (_id, str(e)))
 
     def _choose_another_driver(self):
         for d in self.available_drivers:
@@ -436,7 +419,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         executable_path = '/usr/sbin/chromedriver'
         if not os.path.exists(executable_path):
             executable_path = '/usr/local/bin/chromedriver'
-        # initialize webdriver, open the page and make a screenshot
+        # initialize webdriver, open the page
         driver = webdriver.Chrome(desired_capabilities=chrome_flags,
                                   chrome_options=chrome_options,
                                   executable_path=executable_path)
