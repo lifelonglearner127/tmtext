@@ -2,6 +2,8 @@ import re
 import string
 import time
 import urllib
+import requests
+from lxml import html
 
 from scrapy import Request
 from scrapy.conf import settings
@@ -15,6 +17,7 @@ class WagProductsSpider(ProductsSpider):
     name = 'wag_products'
     handle_httpstatus_list = [404]
     allowed_domains = ['wag.com']
+    body_redirected = None
 
     SEARCH_URL = ("https://www.wag.com/search/{search_term}?s={search_term}"
                   "&ref=srbr_wa_unav#fromSearch=Y")
@@ -60,6 +63,12 @@ class WagProductsSpider(ProductsSpider):
                               meta={'product': prod})
 
     def _total_matches_from_html(self, response):
+        if len(response.body) == 0:
+            if self.body_redirected is None:
+                self.body_redirected = requests.get(response.url).text
+            tree = html.fromstring(self.body_redirected)
+            total = tree.xpath("//span[@class='searched-stats']/text()")[0]
+            return int(total[0].replace(',', '')) if total else 0
         total = response.css('.searched-stats::text').re('of ([\d\,]+)')
         return int(total[0].replace(',', '')) if total else 0
 
