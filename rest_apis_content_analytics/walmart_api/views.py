@@ -915,6 +915,7 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
             except Exception as e:
                 output[group_name] = {'error': str(e)}
                 continue
+            output['feed_id'] = request_feed_id
             output[group_name] = result_for_group
         return Response(output)
 
