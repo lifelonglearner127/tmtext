@@ -197,7 +197,7 @@ class BaseCheckoutSpider(scrapy.Spider):
 
         if quantity and price:
             quantity = int(quantity)
-            item['price'] = round(float(price.replace(',','').replace('.','')) / quantity, 2)
+            item['price'] = round(float(price.replace(',','')) / quantity, 2)
             item['quantity'] = quantity
             item['requested_color'] = self.requested_color
 
