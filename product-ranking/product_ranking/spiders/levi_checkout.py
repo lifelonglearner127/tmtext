@@ -5,6 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider, retry_func
 from product_ranking.items import CheckoutProductItem
+import selenium.webdriver.support.ui as ui
 
 import scrapy
 
@@ -179,10 +180,11 @@ class LeviSpider(BaseCheckoutSpider):
         time.sleep(4)
 
     def _get_product_list_cart(self):
-        time.sleep(5)
+        time.sleep(15)
         # condition = EC.visibility_of_element_located(
         #     (By.ID, 'useritems-container'))
         # return self.wait.until(condition)
+        ui.WebDriverWait(self.driver, 45).until(EC.presence_of_element_located((By.ID, 'useritems-container')))
         element = self._find_by_xpath(".//*[@id='useritems-container']")
         element = element[0] if element else None
         return element

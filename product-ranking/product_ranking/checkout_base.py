@@ -9,7 +9,6 @@ import traceback
 import urlparse
 from functools import wraps
 import inspect
-import logging
 
 from abc import abstractmethod
 from selenium.webdriver.common.by import By
@@ -24,6 +23,7 @@ import scrapy
 from scrapy.conf import settings
 from scrapy.http import FormRequest
 from scrapy.log import INFO, WARNING, ERROR
+from scrapy import log as scrapy_logger
 import lxml.html
 
 
@@ -49,11 +49,8 @@ def _get_random_proxy():
 def _get_domain(url):
     return urlparse.urlparse(url).netloc.replace('www.', '')
 
-def retry_func(ExceptionToCheck, tries=10, delay=2):
+def retry_func(ExceptionToCheck, tries=20, delay=2):
     """Retry call for decorated function"""
-
-    logging.basicConfig(level=logging.WARNING)
-    logger = logging.getLogger('RETRY_DECORATOR')
 
     def ext_retry(f):
 
@@ -69,14 +66,9 @@ def retry_func(ExceptionToCheck, tries=10, delay=2):
                     func_args = "Arguments: {}".format(inspect.getargspec(f))
                     trb = "################### TRACEBACK HERE ############## \n {} ################".format(
                         traceback.format_exc())
-                    if logger:
-                        logger.warning(msg)
-                        logger.warning(func_args)
-                        logger.warning(trb)
-                    else:
-                        print traceback.format_exc()
-                        print msg
-                        print func_args
+                    scrapy_logger.msg(msg, level=WARNING)
+                    scrapy_logger.msg(func_args, level=WARNING)
+                    scrapy_logger.msg(trb, level=WARNING)
                     time.sleep(mdelay)
                     mtries -= 1
             return f(*args, **kwargs)
@@ -120,9 +112,9 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.requested_color = None
         self.is_requested_color = False
 
-        from pyvirtualdisplay import Display
-        display = Display(visible=False)
-        display.start()
+        # from pyvirtualdisplay import Display
+        # display = Display(visible=False)
+        # display.start()
 
         if self.quantity:
             self.quantity = [int(x) for x in self.quantity.split(',')]
@@ -165,12 +157,12 @@ class BaseCheckoutSpider(scrapy.Spider):
                     if isinstance(colors, basestring) or not colors:
                         colors = [colors]
 
-                self.log('Got colors {}'.format(colors))
+                self.log('Got colors {}'.format(colors), level=WARNING)
                 for color in colors:
                     if self.is_requested_color:
                         self.requested_color = color
 
-                    self.log('Parsing color - {}, quantity - {}'.format(color or 'None', qty))
+                    self.log('Parsing color - {}, quantity - {}'.format(color or 'None', qty), level=WARNING)
                     self._pre_parse_products()
                     self._parse_product_page(url, qty, color)
                     items = self._parse_cart_page()
@@ -252,13 +244,14 @@ class BaseCheckoutSpider(scrapy.Spider):
         else:
             raise Exception
 
-    @retry_func(Exception)
+    # @retry_func(Exception)
     def _get_current_domain_name(self):
         # trying to get current domain to filter cookies
         url = self.driver.current_url
         dom_name = urlparse.urlparse(url).netloc.replace('www.','')
         if not dom_name:
             dom_name = self.allowed_domains[0]
+        self.log("Got domain name: %s" % dom_name, level=WARNING)
         return dom_name
 
     def _parse_cart_page(self):
@@ -266,6 +259,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         # get cookies with our cart stuff and filter them
         dom_name = self._get_current_domain_name()
         cart_cookies = [c for c in self.driver.get_cookies() if dom_name in c.get('domain')]
+        self.log("Got cookies from page: %s" % len(cart_cookies), level=WARNING)
         product_list = self._load_cart_page(cart_cookies=cart_cookies)
         if product_list:
             for product in self._get_products_in_cart(product_list):
@@ -312,6 +306,9 @@ class BaseCheckoutSpider(scrapy.Spider):
         elif selected_attribute:
             selected_attribute[0].click()
 
+    @abstractmethod
+    def _get_product_list_cart(self):
+        return
 
     @abstractmethod
     def start_requests(self):
