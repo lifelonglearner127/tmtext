@@ -29,6 +29,7 @@ class LeviSpider(BaseCheckoutSpider):
             fixed_q = 6 if q > 6 else q
             fixed_quantity.append(fixed_q)
         self.quantity = fixed_quantity
+        self.cookies_num = 0
 
     def start_requests(self):
         yield scrapy.Request('http://www.levi.com/US/en_US/')
@@ -168,7 +169,7 @@ class LeviSpider(BaseCheckoutSpider):
 
         if add_to_bag:
             add_to_bag[0].click()
-            time.sleep(10)
+            time.sleep(20)
 
     @retry_func(Exception)
     def _set_quantity(self, product, quantity):
@@ -260,3 +261,29 @@ class LeviSpider(BaseCheckoutSpider):
         return is_empty(item.xpath(
                         '*//*[@class="quantity"]//'
                         '*[@class="display"]/text()').extract())
+
+    def _parse_cart_page(self):
+        # socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
+        # get cookies with our cart stuff and filter them
+        dom_name = self._get_current_domain_name()
+        cart_cookies = [c for c in self.driver.get_cookies() if dom_name in c.get('domain')]
+        self.log("Got cookies from page: %s" % len(cart_cookies), level=WARNING)
+        if self.cookies_num == 0:
+            self.cookies_num = len(cart_cookies)
+        elif cart_cookies < self.cookies_num:
+            time.sleep(30)
+            cart_cookies = [c for c in self.driver.get_cookies() if dom_name in c.get('domain')]
+            self.log("Got cookies from page after timeout: %s" % len(cart_cookies), level=WARNING)
+        amount_in_cart = self._find_by_xpath('.//*[@id="minicart_bag_icon"]/*[@class="qty"]')
+        amount_in_cart = amount_in_cart[0].text if amount_in_cart else None
+        self.log("Amount of items in cart: %s" % amount_in_cart, level=WARNING)
+        product_list = self._load_cart_page(cart_cookies=cart_cookies)
+        if product_list:
+            for product in self._get_products_in_cart(product_list):
+                item = self._parse_item(product)
+                if item:
+                    item['order_subtotal'] = self._get_subtotal()
+                    item['order_total'] = self._get_total()
+                    yield item
+                else:
+                    self.log('Missing field in product from shopping cart')
