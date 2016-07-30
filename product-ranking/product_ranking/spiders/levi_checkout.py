@@ -20,6 +20,15 @@ class LeviSpider(BaseCheckoutSpider):
     # needed later in to get 'requested_quantity_not_available' field
     current_requested_quantity = 1
 
+    def __init__(self, *args, **kwargs):
+        super(LeviSpider, self).__init__(*args, **kwargs)
+        # Levis have max 6 items added to cart
+        fixed_quantity = []
+        for q in self.quantity:
+            fixed_q = 6 if q > 6 else q
+            fixed_quantity.append(fixed_q)
+        self.quantity = fixed_quantity
+
     def start_requests(self):
         yield scrapy.Request('http://www.levi.com/US/en_US/')
 
