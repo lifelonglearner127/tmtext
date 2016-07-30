@@ -61,7 +61,7 @@ class LeviSpider(BaseCheckoutSpider):
         return item
 
     def _get_colors_names(self):
-        time.sleep(4)
+        time.sleep(15)
         xpath = ('//*[contains(@class,"color-swatches")]//'
                  'li[not(contains(@class,"not-available"))]'
                  '/img[@class="color-swatch-img"]')
@@ -189,19 +189,22 @@ class LeviSpider(BaseCheckoutSpider):
         time.sleep(4)
 
     def _get_product_list_cart(self):
-        time.sleep(15)
-        # condition = EC.visibility_of_element_located(
-        #     (By.ID, 'useritems-container'))
-        # return self.wait.until(condition)
-        ui.WebDriverWait(self.driver, 45).until(EC.presence_of_element_located((By.ID, 'useritems-container')))
         element = self._find_by_xpath(".//*[@id='useritems-container']")
         element = element[0] if element else None
+        if not element:
+            time.sleep(45)
+            element = self._find_by_xpath(".//*[@id='useritems-container']")
+            element = element[0] if element else None
+        if not element:
+            # ui.WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.ID, 'useritems-container')))
+            condition = EC.visibility_of_element_located(
+            (By.ID, 'useritems-container'))
+            element = self.wait.until(condition)
         return element
 
     def _get_products_in_cart(self, product_list):
         html_text = product_list.get_attribute('outerHTML')
         selector = scrapy.Selector(text=html_text)
-
         return selector.xpath('//*[@class="product-tile"]')
 
     def _get_subtotal(self):
@@ -226,9 +229,13 @@ class LeviSpider(BaseCheckoutSpider):
             '*//p[@class="name"]/text()').extract())
 
     def _get_item_id(self, item):
-        time.sleep(4)
-        return is_empty(item.xpath(
-                        '*//*[@class="material_sku"]/span/text()').extract())
+        item_id = is_empty(item.xpath(
+            '*//*[@class="material_sku"]/span/text()').extract())
+        if not item_id:
+            time.sleep(30)
+            item_id = is_empty(item.xpath(
+                '*//*[@class="material_sku"]/span/text()').extract())
+        return item_id
 
     def _get_item_price(self, item):
         return is_empty(item.xpath(
