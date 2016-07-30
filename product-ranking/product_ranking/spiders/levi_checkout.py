@@ -50,7 +50,7 @@ class LeviSpider(BaseCheckoutSpider):
                 item['requested_quantity_not_available'] = True
             else:
                 item['requested_quantity_not_available'] = False
-            item['price'] = float(price) / quantity
+            item['price'] = round(float(price) / quantity, 2)
             item['quantity'] = quantity
             item['requested_color'] = self.requested_color
 
@@ -164,10 +164,18 @@ class LeviSpider(BaseCheckoutSpider):
             '//*[@itemtype="http://schema.org/Product"]')
 
     def _add_to_cart(self):
+        amount_in_cart = self._find_by_xpath('.//*[@id="minicart_bag_icon"]/*[@class="qty"]')
+        amount_in_cart = amount_in_cart[0].text if amount_in_cart else None
+        self.log("Amount of items in cart: %s" % amount_in_cart, level=WARNING)
         add_to_bag = self._find_by_xpath(
             '//*[contains(@class,"add-to-bag")]')
-
         if add_to_bag:
+            add_to_bag[0].click()
+            time.sleep(20)
+        amount_in_cart = self._find_by_xpath('.//*[@id="minicart_bag_icon"]/*[@class="qty"]')
+        amount_in_cart = amount_in_cart[0].text if amount_in_cart else None
+        self.log("Amount of items in cart: %s" % amount_in_cart, level=WARNING)
+        if not amount_in_cart:
             add_to_bag[0].click()
             time.sleep(20)
 
@@ -274,9 +282,6 @@ class LeviSpider(BaseCheckoutSpider):
             time.sleep(30)
             cart_cookies = [c for c in self.driver.get_cookies() if dom_name in c.get('domain')]
             self.log("Got cookies from page after timeout: %s" % len(cart_cookies), level=WARNING)
-        amount_in_cart = self._find_by_xpath('.//*[@id="minicart_bag_icon"]/*[@class="qty"]')
-        amount_in_cart = amount_in_cart[0].text if amount_in_cart else None
-        self.log("Amount of items in cart: %s" % amount_in_cart, level=WARNING)
         product_list = self._load_cart_page(cart_cookies=cart_cookies)
         if product_list:
             for product in self._get_products_in_cart(product_list):
