@@ -6,6 +6,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider, retry_func
 from product_ranking.items import CheckoutProductItem
 import selenium.webdriver.support.ui as ui
+from scrapy.log import WARNING
 
 import scrapy
 
@@ -192,10 +193,12 @@ class LeviSpider(BaseCheckoutSpider):
         element = self._find_by_xpath(".//*[@id='useritems-container']")
         element = element[0] if element else None
         if not element:
+            self.log("No element, waiting with timeout: %s" % element, level=WARNING)
             time.sleep(45)
             element = self._find_by_xpath(".//*[@id='useritems-container']")
             element = element[0] if element else None
         if not element:
+            self.log("No element, using visibility_of_element_located: %s" % element, level=WARNING)
             # ui.WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.ID, 'useritems-container')))
             condition = EC.visibility_of_element_located(
             (By.ID, 'useritems-container'))
@@ -232,6 +235,7 @@ class LeviSpider(BaseCheckoutSpider):
         item_id = is_empty(item.xpath(
             '*//*[@class="material_sku"]/span/text()').extract())
         if not item_id:
+            self.log("No item id timeout: %s" % item_id, level=WARNING)
             time.sleep(30)
             item_id = is_empty(item.xpath(
                 '*//*[@class="material_sku"]/span/text()').extract())
