@@ -26,17 +26,17 @@ class AmazonSpider(BaseCheckoutSpider):
         name = self._get_item_name(product)
         item['name'] = name.strip() if name else name
         item['id'] = self._get_item_id(product)
-        price = self._get_item_price(product)
+        price = self._get_subtotal()
         item['price_on_page'] = self._get_item_price_on_page(product)
         color = self.current_color
         quantity = self._get_item_quantity(product)
 
         if quantity and price:
             quantity = int(quantity)
-            item['price'] = float(price) * quantity
+            item['price'] = round(float(price) / quantity, 2)
             item['quantity'] = quantity
             item['requested_color'] = self.requested_color
-            item['requested_quantity_not_available'] = quantity != int(self.current_quantity)
+            item['requested_quantity_not_available'] = quantity != self.current_quantity
 
         if color:
             item['color'] = color
@@ -47,6 +47,7 @@ class AmazonSpider(BaseCheckoutSpider):
         return item
 
     def _get_colors_names(self):
+        time.sleep(4)
         pattern = re.compile("\"color_name\":\[(.+?)\]")
         try:
             colors_names = self._find_by_xpath(
@@ -179,7 +180,7 @@ class AmazonSpider(BaseCheckoutSpider):
 
     def _get_item_quantity(self, item):
         return is_empty(item.xpath(
-                        '*//span[@class="a-dropdown-prompt"]/text()').extract())
+                        '@data-quantity').extract())
 
     def _click_on_element_with_id(self, _id):
         try:
