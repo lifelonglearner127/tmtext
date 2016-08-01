@@ -42,13 +42,13 @@ from sqs_ranking_spiders.task_id_generator import \
 try:
     # try local mode (we're in the deploy dir)
     from sqs_ranking_spiders.remote_instance_starter import REPO_BASE_PATH,\
-        logging, AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+        logging, AMAZON_BUCKET_NAME
     from sqs_ranking_spiders import QUEUES_LIST
     from product_ranking import statistics
 except ImportError:
     # we're in /home/spiders/repo
     from repo.remote_instance_starter import REPO_BASE_PATH, logging, \
-        AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+        AMAZON_BUCKET_NAME
     from repo.remote_instance_starter import QUEUES_LIST
     from product_ranking import statistics
 sys.path.insert(
@@ -70,11 +70,8 @@ FOLDERS_PATH = None
 CONVERT_TO_CSV = True
 
 # Connect to S3
-S3_CONN = boto.connect_s3(
-    aws_access_key_id=AMAZON_ACCESS_KEY,
-    aws_secret_access_key=AMAZON_SECRET_KEY,
-    is_secure=False,  # uncomment if you are not using ssl
-)
+S3_CONN = boto.connect_s3(is_secure=False)  # uncomment if you are not using ssl
+
 # Get current bucket
 S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
 
@@ -373,10 +370,7 @@ def compress_multiple_files(output_fname, *filenames):
     zf.close()
 
 
-def put_file_into_s3(bucket_name, fname,
-                     amazon_public_key=AMAZON_ACCESS_KEY,
-                     amazon_secret_key=AMAZON_SECRET_KEY,
-                     compress=True):
+def put_file_into_s3(bucket_name, fname, compress=True):
     if TEST_MODE:
         print 'Simulate put file to s3, %s' % fname
         return True

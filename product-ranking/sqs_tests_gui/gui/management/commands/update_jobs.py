@@ -26,8 +26,7 @@ sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
 import scrapy_daemon
 from test_sqs_flow import download_s3_file, AMAZON_BUCKET_NAME, unzip_file
-from list_all_files_in_s3_bucket import list_files_in_bucket, \
-        AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+from list_all_files_in_s3_bucket import list_files_in_bucket
 
 LOCAL_AMAZON_LIST = os.path.join(CWD, '_amazon_listing.txt')
 
@@ -51,7 +50,7 @@ def run(command, shell=None):
 
 def list_amazon_bucket(bucket=AMAZON_BUCKET_NAME,
                        local_fname=LOCAL_AMAZON_LIST):
-    filez = list_files_in_bucket(AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, bucket)
+    filez = list_files_in_bucket(bucket)
     # dump to a temporary file and replace the original one then
     tmp_file = tempfile.NamedTemporaryFile(mode='rb', delete=False)
     tmp_file.close()
