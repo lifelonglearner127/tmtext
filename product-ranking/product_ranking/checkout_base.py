@@ -124,7 +124,7 @@ class BaseCheckoutSpider(scrapy.Spider):
                 for color in colors:
                     if self.is_requested_color:
                         self.requested_color = color
-
+                    self.current_quantity = qty
                     self.log('Color: %s' % (color or 'None'))
                     clickable_error = True
                     self.retries = 0
