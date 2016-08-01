@@ -167,19 +167,27 @@ class LeviSpider(BaseCheckoutSpider):
         amount_in_cart = self._find_by_xpath('.//*[@id="minicart_bag_icon"]/*[@class="qty"]')
         amount_in_cart = amount_in_cart[0].text if amount_in_cart else None
         self.log("Amount of items in cart: %s" % amount_in_cart, level=WARNING)
-        add_to_bag = self._find_by_xpath(
-            '//*[contains(@class,"add-to-bag")]')
-        if add_to_bag:
-            add_to_bag[0].click()
-            time.sleep(20)
+        add_to_bag = self.wait.until(EC.element_to_be_clickable((By.XPATH, '//*[contains(@class,"add-to-bag")]')))
+        add_to_bag.click()
+        # add_to_bag = self._find_by_xpath(
+        #     '//*[contains(@class,"add-to-bag")]')
+        # if add_to_bag:
+        # add_to_bag[0].click()
+            # time.sleep(10)
         amount_in_cart = self._find_by_xpath('.//*[@id="minicart_bag_icon"]/*[@class="qty"]')
         amount_in_cart = amount_in_cart[0].text if amount_in_cart else None
         self.log("Amount of items in cart: %s" % amount_in_cart, level=WARNING)
-        if not amount_in_cart:
-            add_to_bag[0].click()
-            time.sleep(20)
+        if not amount_in_cart or int(amount_in_cart) == 0:
+            # add_to_bag[0].click()
+            add_to_bag.click()
+            time.sleep(10)
+        amount_in_cart = self._find_by_xpath('.//*[@id="minicart_bag_icon"]/*[@class="qty"]')
+        amount_in_cart = amount_in_cart[0].text if amount_in_cart else None
+        self.log("Amount of items in cart: %s" % amount_in_cart, level=WARNING)
+        if not amount_in_cart or int(amount_in_cart) == 0:
+            raise Exception
 
-    @retry_func(Exception)
+    # @retry_func(Exception)
     def _set_quantity(self, product, quantity):
         self.current_requested_quantity = int(quantity)
         self._find_by_xpath(
@@ -209,8 +217,7 @@ class LeviSpider(BaseCheckoutSpider):
         if not element:
             self.log("No element, using visibility_of_element_located: %s" % element, level=WARNING)
             # ui.WebDriverWait(self.driver, 30).until(EC.presence_of_element_located((By.ID, 'useritems-container')))
-            condition = EC.visibility_of_element_located(
-            (By.ID, 'useritems-container'))
+            condition = EC.visibility_of_element_located((By.ID, 'useritems-container'))
             element = self.wait.until(condition)
         return element
 

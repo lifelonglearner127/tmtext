@@ -49,7 +49,7 @@ def _get_random_proxy():
 def _get_domain(url):
     return urlparse.urlparse(url).netloc.replace('www.', '')
 
-def retry_func(ExceptionToCheck, tries=20, delay=2):
+def retry_func(ExceptionToCheck, tries=10, delay=2):
     """Retry call for decorated function"""
 
     def ext_retry(f):
@@ -223,11 +223,17 @@ class BaseCheckoutSpider(scrapy.Spider):
         products = products if is_iterable else list(products)
 
         for product in products:
-            self._parse_attributes(product, color, quantity)
-            self._add_to_cart()
-            self._do_others_actions()
+            self._parse_one_product_page(product, quantity, color)
 
     @retry_func(Exception)
+    def _parse_one_product_page(self, product, quantity, color=None):
+        # this is moved to separate method to avoid situations in future
+        # where multiple product are given, and add to cart button not worked in one of them
+        self._parse_attributes(product, color, quantity)
+        self._add_to_cart()
+        self._do_others_actions()
+
+    # @retry_func(Exception)
     def _load_cart_page(self, cart_cookies=None):
         # selenium need actual page opened to import cookies
         self._open_new_session(self.SHOPPING_CART_URL)
@@ -282,7 +288,7 @@ class BaseCheckoutSpider(scrapy.Spider):
             target = self.driver
         return target.find_elements(By.XPATH, xpath)
 
-    @retry_func(Exception)
+    # @retry_func(Exception)
     def _click_attribute(self, selected_attribute_xpath, others_attributes_xpath, element=None):
         """
         Check if the attribute given by selected_attribute_xpath is checkout
@@ -395,7 +401,7 @@ class BaseCheckoutSpider(scrapy.Spider):
     def _pre_parse_products(self):
         return
 
-    @retry_func(Exception)
+    # @retry_func(Exception)
     def _click_on_element_with_id(self, _id):
         element = self.wait.until(EC.element_to_be_clickable((By.ID, _id)))
         element.click()
