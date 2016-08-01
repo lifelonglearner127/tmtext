@@ -95,6 +95,14 @@ def main():
     os.system('echo "1" > %s' % disabler)
 
 
+def remove_aws_credentials(keys=('/home/spiders/.aws/credentials', )):
+    """ Remove local AWS credentials file since we've switched to metadata-based keys """
+    for key in keys:
+        if os.path.exists(key):
+            print 'AWS credentials removed:', key
+            os.remove(key)
+
+
 if __name__ == '__main__':
     if not can_run():
         sys.exit()
