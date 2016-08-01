@@ -2410,6 +2410,14 @@ class WalmartScraper(Scraper):
 
         return None
 
+    def _seller_id(self):
+        self._extract_product_info_json()
+        return self.product_info_json["buyingOptions"]["seller"]["sellerId"]
+
+    def _us_seller_id(self):
+        self._extract_product_info_json()
+        return self.product_info_json["buyingOptions"]["seller"]["catalogSellerId"]
+
     def _site_online(self):
         """Extracts whether the item is sold by the site and delivered directly
         Works on both old and new page version.
@@ -3061,6 +3069,8 @@ class WalmartScraper(Scraper):
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
         "primary_seller": _primary_seller, \
+        "seller_id": _seller_id, \
+        "us_seller_id": _us_seller_id, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "review_count": _review_count, \

@@ -104,6 +104,7 @@ def remove_aws_credentials(keys=('/home/spiders/.aws/credentials', )):
 
 
 if __name__ == '__main__':
+    remove_aws_credentials()
     if not can_run():
         sys.exit()
     main()
