@@ -60,7 +60,7 @@ def retry_func(ExceptionToCheck, tries=10, delay=2):
             while mtries > 1:
                 try:
                     return f(*args, **kwargs)
-                except ExceptionToCheck, e:
+                except ExceptionToCheck as e:
                     msg = "Exception - {}, retrying method {} in {} seconds, retries left: {}...".format(
                         str(e), f.__name__, mdelay, mtries)
                     func_args = "Arguments: {}".format(inspect.getargspec(f))
@@ -88,7 +88,7 @@ class BaseCheckoutSpider(scrapy.Spider):
     retries = 0
     MAX_RETRIES = 10
     SOCKET_WAIT_TIME = 90
-    WEBDRIVER_WAIT_TIME = 70
+    WEBDRIVER_WAIT_TIME = 60
 
     def __init__(self, *args, **kwargs):
         socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
@@ -233,15 +233,17 @@ class BaseCheckoutSpider(scrapy.Spider):
         self._add_to_cart()
         self._do_others_actions()
 
-    # @retry_func(Exception)
+    @retry_func(Exception)
     def _load_cart_page(self, cart_cookies=None):
         # selenium need actual page opened to import cookies
         self._open_new_session(self.SHOPPING_CART_URL)
+        time.sleep(5)
         self.driver.delete_all_cookies()
+        time.sleep(5)
         if cart_cookies:
             for cookie in cart_cookies:
                 self.driver.add_cookie(cookie)
-        time.sleep(10)
+        time.sleep(5)
         self.driver.refresh()
         product_list = self._get_product_list_cart()
         # retry the page until we get correct element
