@@ -267,6 +267,9 @@ def transform_jcpenney_variants(has_size_range, variants):
 
     # TODO: move this method to shared variants to support CH?
 
+    if not variants:
+        return variants
+
     for i, variant in enumerate(variants):
         properties = variant.get('properties', None)
         if 'lot' in variant and not 'lot' in properties:
