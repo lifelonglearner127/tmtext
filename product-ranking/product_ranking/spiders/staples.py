@@ -289,10 +289,10 @@ class StaplesProductsSpider(BaseProductsSpider):
             try:
                 reqs.append(
                     Request(
-                        url=self.PRICE_URL.format(sku=v['properties']['partnumber'],
+                        url=self.PRICE_URL.format(sku=v['partnumber'],
                                                   metadata__coming_soon_flag=js_data['metadata']['coming_soon_flag'],
                                                   metadata__price_in_cart_flag=js_data['metadata']['price_in_cart_flag'],
-                                                  prod_doc_key=v['properties']['prod_doc_key'],
+                                                  prod_doc_key=v['prod_doc_key'],
                                                   metadata__product_type__id=js_data['metadata']['product_type']['id'],
                                                   metadata__preorder_flag=js_data['metadata']['preorder_flag'],
                                                   street_date=time.time(),
@@ -331,16 +331,23 @@ class StaplesProductsSpider(BaseProductsSpider):
                 new_variants = []
                 if jsonresponse['additionalProductsWarrantyServices']:
                     for w in jsonresponse['additionalProductsWarrantyServices']:
-                        new_price = scrapy_price_serializer(Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
-                                          priceCurrency=product['price'].priceCurrency))
+                        # new_price = scrapy_price_serializer(Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
+                        #                   priceCurrency=product['price'].priceCurrency))
+                        # changed format for variants from price object to simple float
+                        new_price = jsonresponse['pricing']['finalPrice'] + w['price']
                         new_variants.append({
                             'price': new_price,
-                            'properties': {"name": product['title'] if 'title' in product else '',
-                                           "partnumber": w['partnumber'] if 'partnumber' in w else '',
-                                           "prod_doc_key": w['prod_doc_key'] if 'prod_doc_key' in w else '',
-                                           'warranty': w['name'] if 'name' in w else '',
-                                           'isWarranty': w['isWarranty'] if 'isWarranty' in w else '',
-                                           },
+                            "partnumber": w.get('partnumber',''),
+                            'isWarranty': w.get('isWarranty',''),
+                            'warranty': w.get('name',''),
+                            "prod_doc_key": w.get('prod_doc_key',''),
+                            'properties': {},
+                            # 'properties': {"name": product['title'] if 'title' in product else '',
+                            #                "partnumber": w['partnumber'] if 'partnumber' in w else '',
+                            #                "prod_doc_key": w['prod_doc_key'] if 'prod_doc_key' in w else '',
+                            #                'warranty': w['name'] if 'name' in w else '',
+                            #                'isWarranty': w['isWarranty'] if 'isWarranty' in w else '',
+                            #                },
                             'selected': False,
                         })
                 meta['product']['variants'].extend(new_variants)
@@ -362,26 +369,23 @@ class StaplesProductsSpider(BaseProductsSpider):
             id = jsonresponse['pricing']['id']
             new_variants = []
             for v in meta['product']['variants']:
-                if v['properties']['prod_doc_key'] == id:
-                    v['price'] = scrapy_price_serializer(Price(price=jsonresponse['pricing']['finalPrice'],
-                                       priceCurrency=product['price'].priceCurrency))
+                if v['prod_doc_key'] == id:
+                    v['price'] = jsonresponse['pricing']['finalPrice']
 
                     # additionalProductsWarrantyServices
                     if jsonresponse['additionalProductsWarrantyServices']:
                         for w in jsonresponse['additionalProductsWarrantyServices']:
 
-                            new_price = scrapy_price_serializer(Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
-                                              priceCurrency=product['price'].priceCurrency))
+                            new_price = jsonresponse['pricing']['finalPrice'] + w['price']
                             new_variants.append({
-                                'price': scrapy_price_serializer(new_price),
-                                'properties': {"name": v['properties']['name'] if 'name' in v['properties'] else '',
-                                               "partnumber": w['partnumber'] if 'partnumber' in w else '',
-                                               "variant_name": v['properties']['variant_name'] if 'variant_name' in v['properties'] else '',
-                                               "prod_doc_key": v['properties']['prod_doc_key'] if 'prod_doc_key' in v['properties'] else '',
-                                               "variant_image": v['properties']['variant_image'] if 'variant_image' in v['properties'] else '',
-                                               'warranty': w['name'] if 'name' in w else '',
-                                               'isWarranty': w['isWarranty'] if 'isWarranty' in w else '',
-                                               },
+                                'price': new_price,
+                                "partnumber": w.get('partnumber', ''),
+                                "prod_doc_key": v.get('prod_doc_key',''),
+                                "variant_image": v.get('variant_image',''),
+                                'warranty': w.get('name',''),
+                                'isWarranty': w.get('isWarranty',''),
+                                'properties':{"variant_name": v['properties'].get('variant_name',''),},
+
                                 'selected': False,
                             })
             if new_variants:
@@ -461,14 +465,15 @@ class StaplesProductsSpider(BaseProductsSpider):
         if 'child_product' in js_data:
             print(js_data['child_product'])
             for child in js_data['child_product']:
+                swatch_image = child.get('collection')
+                swatch_image = swatch_image.get('collection_image').split('$')[0] if swatch_image else None
+                v_image = swatch_image if not child.get('variant_image', '') else child.get('variant_image', '')
                 meta['product']['variants'].append({
-                                                    'price': 0,
-                                                    'properties': {"name": child['name'] if 'name' in child else '',
-                                                                   "partnumber": child['partnumber'] if 'partnumber' in child else '',
-                                                                   "variant_name": child['variant_name'] if 'variant_name' in child else '',
-                                                                   "prod_doc_key": child['prod_doc_key'] if 'prod_doc_key' in child else '',
-                                                                   "variant_image": child['variant_image'] if 'variant_image' in child else '',
-                                                                   },
+                                                    'price': 0.0,
+                                                    "partnumber": child.get('partnumber',''),
+                                                    "prod_doc_key": child.get('prod_doc_key',''),
+                                                    "variant_image": v_image ,
+                                                    'properties': {"variant_name": child.get('variant_name',''),},
                                                     'selected': True if meta['product']['sku'] == child['partnumber'] else False,
                                                     })
 

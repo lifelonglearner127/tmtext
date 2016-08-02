@@ -34,7 +34,7 @@ class OfficeDepotScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www\.officedepot\.com/a/products/[0-9]+/.*?$", self.product_page_url)
+        m = re.match(r"^http://www\.officedepot\.com/a/products/[0-9]+(/.*)?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):

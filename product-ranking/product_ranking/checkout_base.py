@@ -79,7 +79,6 @@ class BaseCheckoutSpider(scrapy.Spider):
 
         self.requested_color = None
         self.is_requested_color = False
-        self.requested_quantity_not_available = False
 
         from pyvirtualdisplay import Display
         display = Display(visible=False)
@@ -125,7 +124,6 @@ class BaseCheckoutSpider(scrapy.Spider):
                 for color in colors:
                     if self.is_requested_color:
                         self.requested_color = color
-                    self.current_color = color
                     self.current_quantity = qty
                     self.log('Color: %s' % (color or 'None'))
                     clickable_error = True
@@ -263,7 +261,7 @@ class BaseCheckoutSpider(scrapy.Spider):
             available_attributes[0].click()
         elif selected_attribute:
             selected_attribute[0].click()
-        time.sleep(4)
+        time.sleep(8)
 
     @abstractmethod
     def start_requests(self):

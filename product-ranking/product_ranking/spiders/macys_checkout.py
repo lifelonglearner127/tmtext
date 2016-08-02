@@ -5,11 +5,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
 from selenium.common.exceptions import WebDriverException
+from product_ranking.items import CheckoutProductItem
 
 import scrapy
 
 is_empty = lambda x, y="": x[0] if x else y
-
+delete_commas = lambda x: x.replace(',', '')
 
 class MacysSpider(BaseCheckoutSpider):
     name = 'macys_checkout_products'
@@ -19,6 +20,31 @@ class MacysSpider(BaseCheckoutSpider):
 
     def start_requests(self):
         yield scrapy.Request('http://www1.macys.com/', dont_filter=True)
+
+    def _parse_item(self, product):
+        item = CheckoutProductItem()
+        name = self._get_item_name(product)
+        item['name'] = name.strip() if name else name
+        item['id'] = self._get_item_id(product)
+        price = self._get_item_price(product)
+        item['price_on_page'] = self._get_item_price_on_page(product)
+        color = self._get_item_color(product)
+        quantity = self._get_item_quantity(product)
+
+        if quantity and price:
+            quantity = int(quantity)
+            item['price'] = float(price) / quantity
+            item['quantity'] = quantity
+            item['requested_color'] = self.requested_color
+            item['requested_quantity_not_available'] = quantity != self.current_quantity
+
+        if color:
+            item['color'] = color
+
+        item['requested_color_not_available'] = (
+            color and self.requested_color and
+            (self.requested_color.lower() != color.lower()))
+        return item
 
     def _get_colors_names(self):
         xpath = '//div[@class="colorsSection"]//li[@data-title]'
@@ -44,7 +70,9 @@ class MacysSpider(BaseCheckoutSpider):
 
     def select_color(self, element=None, color=None):
         # If color was requested and is available
-        if color and color in self._get_colors_names():
+        if color:
+            color = color.lower()
+        if color and color in map(lambda x: x.lower(), self._get_colors_names()):
             color_attribute_xpath = (
                 '*//div[@class="colorsSection"]//'
                 'li[translate(@data-title,'
@@ -88,6 +116,7 @@ class MacysSpider(BaseCheckoutSpider):
 
         if add_to_bag:
             add_to_bag[0].click()
+            time.sleep(4)
             self.log('Added to cart')
             self.wait.until(
                 EC.presence_of_element_located(
@@ -129,7 +158,7 @@ class MacysSpider(BaseCheckoutSpider):
                 By.ID, 'bagMerchandiseTotal')))
         if order_subtotal_element:
             order_subtotal = order_subtotal_element.text
-            return is_empty(re.findall('\$([\d\.]+)', order_subtotal))
+            return delete_commas(is_empty(re.findall('\$(.*)', order_subtotal)))
 
     def _get_total(self):
         order_total_element = self.wait.until(
@@ -138,7 +167,7 @@ class MacysSpider(BaseCheckoutSpider):
 
         if order_total_element:
             order_total = order_total_element.text
-            return is_empty(re.findall('\$([\d\.]+)', order_total))
+            return delete_commas(is_empty(re.findall('\$(.*)', order_total)))
 
     def _get_item_name(self, item):
         return is_empty(item.xpath(
@@ -149,15 +178,15 @@ class MacysSpider(BaseCheckoutSpider):
                         '*//*[@class="valWebId"]/text()').extract())
 
     def _get_item_price(self, item):
-        return is_empty(item.xpath(
-                        '*//*[@class="itemTotal"]/text()').re('\$(.*)'))
+        return delete_commas(is_empty(item.xpath(
+                        '*//*[@class="itemTotal"]/text()').re('\$(.*)')))
 
     def _get_item_price_on_page(self, item):
-        return min(item.xpath('//*[@class="colPrice"]//text()').re('\$(.*)'))
+        return delete_commas(min(item.xpath('//*[@class="colPrice"]//text()').re('\$(.*)')))
 
     def _get_item_color(self, item):
-        return is_empty(item.xpath(
-                        '*//*[@class="valColor"]/text()').extract())
+        return delete_commas(is_empty(item.xpath(
+                        '*//*[@class="valColor"]/text()').extract()))
 
     def _get_item_quantity(self, item):
         return is_empty(item.xpath(

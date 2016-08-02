@@ -668,6 +668,9 @@ class AmazonBaseClass(BaseProductsSpider):
         if response.xpath('//*[contains(@id, "byline")]//*[contains(@class, "author")]'):
             brand = None
 
+        if isinstance(brand, (str, unicode)):
+            brand = brand.strip()
+
         return brand
 
     def _parse_price_subscribe_save(self, response, add_xpath=None):
