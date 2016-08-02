@@ -244,6 +244,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         if checkeck don't do it anything,
         else find the first available attribute and click on it
         """
+        time.sleep(2)
         if element:
             target = element
         else:
