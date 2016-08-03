@@ -300,6 +300,11 @@ class KohlsScraper(Scraper):
     def _swatches(self):
         return self.kv.swatches()
 
+    def _no_longer_available(self):
+        if self._is_out_of_stock():
+            return 1
+        return 0
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -633,6 +638,8 @@ class KohlsScraper(Scraper):
         "ingredient_count": _ingredients_count,
         "variants": _variants,
         "swatches": _swatches,
+        "no_longer_available": _no_longer_available,
+
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
