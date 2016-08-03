@@ -180,13 +180,13 @@ class LeviSpider(BaseCheckoutSpider):
         amount_in_cart = amount_in_cart[0].text if amount_in_cart else None
         self.log("Amount of items in cart: %s" % amount_in_cart, level=WARNING)
         if not amount_in_cart or int(amount_in_cart) == 0:
-            time.sleep(10)
+            time.sleep(30)
             add_to_bag = self._find_by_xpath(
                 '//*[contains(@class,"add-to-bag")]')
             self.log("Add to bag button: %s" % add_to_bag, level=WARNING)
             # add_to_bag[0].click()
             if add_to_bag:
-                add_to_bag.click()
+                add_to_bag[0].click()
             time.sleep(10)
             amount_in_cart = self._find_by_xpath('.//*[@id="minicart_bag_icon"]/*[@class="qty"]')
             amount_in_cart = amount_in_cart[0].text if amount_in_cart else None
