@@ -75,6 +75,13 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
         driver.get(self.product_url)
         time.sleep(15)
 
+        results_per_page = None
+        try:
+            results_per_page = int(re.search('Showing.+?>(\d+)?<', driver.page_source).group(1))
+        except Exception as e:
+            self.log('Error getting results_per_page: %s' % e, ERROR)
+            pass
+
         num_exceptions = 0
         while 1:
             self.log('Selenium: collected %s links' % len(collected_links))
@@ -114,6 +121,9 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
             item['shelf_path'], item['shelf_name'] \
                 = self._get_shelf_path_from_firstpage(driver.page_source)
             item['total_matches'] = self._scrape_total_matches(driver.page_source)
+            if results_per_page:
+                item['results_per_page'] = results_per_page
+            item['scraped_results_per_page'] = len(collected_links)
             if not link.startswith('http'):
                 link = urlparse.urljoin('http://samsclub.com', link)
             yield Request(

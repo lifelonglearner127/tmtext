@@ -132,6 +132,7 @@ class AmazonSpider(BaseCheckoutSpider):
 
     def _get_total(self):
         try:
+            time.sleep(2)
             xpath = '(//span[@class="a-expander-prompt"])[1]'
             self._click_on_element_with_xpath(xpath)
             self.wait.until(
@@ -140,6 +141,7 @@ class AmazonSpider(BaseCheckoutSpider):
             element = self._find_by_xpath(
                 '//input[@name="zipcode"]')[0]
             element.send_keys(self.ZIP_CODE)
+            time.sleep(2)
             element.send_keys(Keys.ENTER)
             time.sleep(4)
         except Exception as e:
