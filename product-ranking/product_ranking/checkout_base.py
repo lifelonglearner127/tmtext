@@ -214,7 +214,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.select_size(product)
         self._set_quantity(product, quantity)
 
-    def _parse_product_page(self, url, quantity, color=None):
+    def _parse_product_page(self, product_url, quantity, color=None):
         """ Process product and add it to the cart"""
         products = self._get_products()
 
@@ -223,13 +223,13 @@ class BaseCheckoutSpider(scrapy.Spider):
         products = products if is_iterable else list(products)
 
         for product in products:
-            self._parse_one_product_page(url, product, quantity, color)
+            self._parse_one_product_page(product, quantity, color)
 
     @retry_func(Exception)
-    def _parse_one_product_page(self, url, product, quantity, color=None):
+    def _parse_one_product_page(self, product, quantity, color=None):
         # this is moved to separate method to avoid situations in future
         # where multiple product are given, and add to cart button not worked in one of them
-        self._open_new_session(url)
+        # self._open_new_session(url)
         self._pre_parse_products()
         self._parse_attributes(product, color, quantity)
         self._add_to_cart()

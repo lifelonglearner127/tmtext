@@ -166,11 +166,12 @@ class LeviSpider(BaseCheckoutSpider):
         amount_in_cart = self._find_by_xpath('.//*[@id="minicart_bag_icon"]/*[@class="qty"]')
         amount_in_cart = amount_in_cart[0].text if amount_in_cart else None
         self.log("Amount of items in cart: %s" % amount_in_cart, level=WARNING)
-        time.sleep(10)
+        time.sleep(20)
         add_to_bag = self.wait.until(EC.element_to_be_clickable((By.XPATH, '//*[contains(@class,"add-to-bag")]')))
-        add_to_bag.click()
-        # add_to_bag = self._find_by_xpath(
-        #     '//*[contains(@class,"add-to-bag")]')
+        if add_to_bag:
+            self.log("Add to bag button: %s" % add_to_bag, level=WARNING)
+            add_to_bag.click()
+
         # if add_to_bag:
         # add_to_bag[0].click()
             # time.sleep(10)
@@ -180,13 +181,18 @@ class LeviSpider(BaseCheckoutSpider):
         self.log("Amount of items in cart: %s" % amount_in_cart, level=WARNING)
         if not amount_in_cart or int(amount_in_cart) == 0:
             time.sleep(10)
+            add_to_bag = self._find_by_xpath(
+                '//*[contains(@class,"add-to-bag")]')
+            self.log("Add to bag button: %s" % add_to_bag, level=WARNING)
             # add_to_bag[0].click()
-            add_to_bag.click()
+            if add_to_bag:
+                add_to_bag.click()
             time.sleep(10)
             amount_in_cart = self._find_by_xpath('.//*[@id="minicart_bag_icon"]/*[@class="qty"]')
             amount_in_cart = amount_in_cart[0].text if amount_in_cart else None
             self.log("Amount of items in cart: %s" % amount_in_cart, level=WARNING)
         if not amount_in_cart or int(amount_in_cart) == 0:
+            # self._open_new_session('http://www.levi.com/US/en_US/')
             raise Exception
 
     # @retry_func(Exception)
