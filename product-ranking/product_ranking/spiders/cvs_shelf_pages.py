@@ -90,7 +90,7 @@ class CvsShelfPagesSpider(CvsProductsSpider):
             yield link, item
 
     def _scrape_next_results_page_link(self, response):
-        if self.current_page - 1  >= int(self.num_pages):
+        if self.current_page - 1 >= self.num_pages:
             return None
         return super(CvsShelfPagesSpider,
                      self)._scrape_next_results_page_link(response)
