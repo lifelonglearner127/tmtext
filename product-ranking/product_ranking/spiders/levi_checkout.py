@@ -169,6 +169,9 @@ class LeviSpider(BaseCheckoutSpider):
         time.sleep(20)
         add_to_bag = self.wait.until(EC.element_to_be_clickable((By.XPATH, '//*[contains(@class,"add-to-bag")]')))
         if add_to_bag:
+            self._find_by_xpath(
+                './/*[@class="pdp-sizes pdp-length-sizes"]/span')[0].click()
+            time.sleep(4)
             self.log("Add to bag button: %s" % add_to_bag, level=WARNING)
             add_to_bag.click()
 
@@ -186,6 +189,10 @@ class LeviSpider(BaseCheckoutSpider):
             self.log("Add to bag button second try: %s" % add_to_bag, level=WARNING)
             # add_to_bag[0].click()
             if add_to_bag:
+                # to remove mouseover from size, blocking add to cart button
+                self._find_by_xpath(
+                    './/*[@class="pdp-sizes pdp-length-sizes"]/span')[0].click()
+                time.sleep(4)
                 add_to_bag[0].click()
             time.sleep(10)
             amount_in_cart = self._find_by_xpath('.//*[@id="minicart_bag_icon"]/*[@class="qty"]')
@@ -209,10 +216,6 @@ class LeviSpider(BaseCheckoutSpider):
         if quantity_option:
             quantity_option[0].click()
 
-        time.sleep(4)
-        # to remove mouseover from size, blocking add to cart button
-        self._find_by_xpath(
-            './/*[@id="main-pdp-desc"]//*[@class="pdp-description"]')[0].click()
         time.sleep(4)
 
     def _get_product_list_cart(self):
