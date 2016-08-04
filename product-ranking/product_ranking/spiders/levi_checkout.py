@@ -33,6 +33,59 @@ class LeviSpider(BaseCheckoutSpider):
     def start_requests(self):
         yield scrapy.Request('http://www.levi.com/US/en_US/')
 
+    def parse(self, request):
+        is_iterable = isinstance(self.product_data, (list, tuple))
+        self.product_data = (self.product_data
+                             if is_iterable
+                             else list(self.product_data))
+
+        for product in self.product_data:
+            self.log("Product: %r" % product)
+            # Open product URL
+            for qty in self.quantity:
+                self.requested_color = None
+                self.is_requested_color = False
+                url = product.get('url')
+                # Fastest way to empty the cart
+                self._open_new_session(url)
+                if product.get('FetchAllColors'):
+                    # Parse all the products colors
+                    self._pre_parse_products()
+                    colors = self._get_colors_names()
+
+                else:
+                    # Only parse the selected color
+                    # if None, the first fetched will be selected
+                    colors = product.get('color', None)
+
+                    if colors:
+                        self.is_requested_color = True
+
+                    if isinstance(colors, basestring) or not colors:
+                        colors = [colors]
+
+                self.log('Got colors {}'.format(colors), level=WARNING)
+                for color in colors:
+                    if self.is_requested_color:
+                        self.requested_color = color
+
+                    self.log('Parsing color - {}, quantity - {}'.format(color or 'None', qty), level=WARNING)
+                    # self._pre_parse_products()
+                    sold_out_item = self._parse_product_page(url, qty, color)
+                    if sold_out_item:
+                        sold_out_item['url'] = url
+                        yield sold_out_item
+                    else:
+                        items = self._parse_cart_page()
+                        for item in items:
+                            item['url'] = url
+                            yield item
+                    # only need to open new window if its not last color
+                    if not color == colors[-1]:
+                        self._open_new_session(url)
+
+                self.driver.quit()
+
     def _parse_item(self, product):
         item = CheckoutProductItem()
         name = self._get_item_name(product)
@@ -62,7 +115,7 @@ class LeviSpider(BaseCheckoutSpider):
         return item
 
     def _get_colors_names(self):
-        time.sleep(15)
+        time.sleep(10)
         xpath = ('//*[contains(@class,"color-swatches")]//'
                  'li[not(contains(@class,"not-available"))]'
                  '/img[@class="color-swatch-img"]')
@@ -162,11 +215,36 @@ class LeviSpider(BaseCheckoutSpider):
         return self._find_by_xpath(
             '//*[@itemtype="http://schema.org/Product"]')
 
-    def _add_to_cart(self):
+    def _parse_product_page(self, product_url, quantity, color=None):
+        """ Process product and add it to the cart"""
+        products = self._get_products()
+
+        # Make it iterable for convenience
+        is_iterable = isinstance(products, (list, tuple))
+        products = products if is_iterable else list(products)
+
+        for product in products:
+            sold_out_item = self._parse_one_product_page(product, quantity, color)
+            if sold_out_item:
+                return sold_out_item
+
+    @retry_func(Exception)
+    def _parse_one_product_page(self, product, quantity, color=None):
+        # this is moved to separate method to avoid situations in future
+        # where multiple product are given, and add to cart button not worked in one of them
+        # self._open_new_session(url)
+        self._pre_parse_products()
+        self._parse_attributes(product, color, quantity)
+        sold_out_item = self._add_to_cart(color)
+        if sold_out_item:
+            return sold_out_item
+        self._do_others_actions()
+
+    def _add_to_cart(self, color):
         amount_in_cart = self._find_by_xpath('.//*[@id="minicart_bag_icon"]/*[@class="qty"]')
         amount_in_cart = amount_in_cart[0].text if amount_in_cart else None
         self.log("Amount of items in cart: %s" % amount_in_cart, level=WARNING)
-        time.sleep(20)
+        time.sleep(15)
         add_to_bag = self.wait.until(EC.element_to_be_clickable((By.XPATH, '//*[contains(@class,"add-to-bag")]')))
         if add_to_bag:
             self._find_by_xpath(
@@ -182,8 +260,8 @@ class LeviSpider(BaseCheckoutSpider):
         amount_in_cart = self._find_by_xpath('.//*[@id="minicart_bag_icon"]/*[@class="qty"]')
         amount_in_cart = amount_in_cart[0].text if amount_in_cart else None
         self.log("Amount of items in cart after first try: %s" % amount_in_cart, level=WARNING)
+
         if not amount_in_cart or int(amount_in_cart) == 0:
-            time.sleep(30)
             add_to_bag = self._find_by_xpath(
                 '//*[contains(@class,"add-to-bag")]')
             self.log("Add to bag button second try: %s" % add_to_bag, level=WARNING)
@@ -198,10 +276,23 @@ class LeviSpider(BaseCheckoutSpider):
             amount_in_cart = self._find_by_xpath('.//*[@id="minicart_bag_icon"]/*[@class="qty"]')
             amount_in_cart = amount_in_cart[0].text if amount_in_cart else None
             self.log("Amount of items in cart after second try: %s" % amount_in_cart, level=WARNING)
+
+        # sold_last_one = self._find_by_xpath('.//*[@id="cart-info"]')
+        # sold_last_one = sold_last_one.text if sold_last_one else None
+        # self.log("Cart info: %s" % sold_last_one, level=WARNING)
+        #
+        # sold_last_one = self._find_by_xpath('.//*[@id="hasLowStockError"]')
+        # sold_last_one = sold_last_one.text if sold_last_one else None
+        # self.log("Sold last one message: %s" % sold_last_one, level=WARNING)
+
         if not amount_in_cart or int(amount_in_cart) == 0:
-            # TODO Maybe this is good idea?
+            # TODO add more reliable detection of sold out items
             # self._open_new_session('http://www.levi.com/US/en_US/')
-            raise Exception
+            # raise Exception
+            item = CheckoutProductItem()
+            item['requested_color_not_available'] = True
+            item['color'] = color
+            return item
 
     # @retry_func(Exception)
     def _set_quantity(self, product, quantity):
