@@ -57,7 +57,7 @@ class AmazonSpider(BaseCheckoutSpider):
         try:
             matched_colors = filter(lambda x: len(x) > 1, pattern.findall(colors_names)[0].split('"'))
         except IndexError:
-            matched_colors = [None]
+            matched_colors = []
         return matched_colors
 
     def select_size(self, element=None):
@@ -77,6 +77,8 @@ class AmazonSpider(BaseCheckoutSpider):
                                     'img[contains(translate(' \
                                     '@alt, "ABCDEFGHIJKLMNOPQRSTUVWXYZ",' \
                                     ' "abcdefghijklmnopqrstuvwxyz"), "{}")]'.format(color.lower())
+        else:
+            color_attribute_xpath = '//*[contains(@id, "color_name_") and @class="swatchSelect"]'
 
         self._click_attribute(color_attribute_xpath,
                               color_attributes_xpath,
