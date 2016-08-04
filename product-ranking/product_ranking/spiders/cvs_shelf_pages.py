@@ -37,13 +37,12 @@ class CvsShelfPagesSpider(CvsProductsSpider):
         self.product_url = kwargs['product_url']
 
         if "num_pages" in kwargs:
-            self.num_pages = int(kwargs['num_pages']) + 1
+            self.num_pages = int(kwargs['num_pages'])
         else:
-            self.num_pages = 2 #TODO: fix
+            self.num_pages = 1
 
         self.current_page = 1
         self.shelf_categories = ''
-        #settings.overrides['CRAWLERA_ENABLED'] = True
 
     @staticmethod
     def valid_url(url):
@@ -66,7 +65,7 @@ class CvsShelfPagesSpider(CvsProductsSpider):
             self.referer = response.url
         shelf_categories_text = response.xpath(
             '//script[contains(text(), "breadcrumb")]/text()').re(
-            'breadcrumb : (\[.+\])'
+            'breadcrumb : (\[.+?\])'
         )
         if not self.shelf_categories:
             self.shelf_categories = json.loads(shelf_categories_text[0])[2:]
@@ -91,7 +90,7 @@ class CvsShelfPagesSpider(CvsProductsSpider):
             yield link, item
 
     def _scrape_next_results_page_link(self, response):
-        if self.current_page >= self.num_pages:
+        if self.current_page - 1 >= self.num_pages:
             return
         return super(CvsShelfPagesSpider,
                      self)._scrape_next_results_page_link(response)
@@ -106,4 +105,9 @@ class CvsShelfPagesSpider(CvsProductsSpider):
         return super(CvsShelfPagesSpider, self)._get_products(response)
 
     def _scrape_total_matches(self, response):
+        if self.total_matches:
+            self.total_matches_int = self.total_matches
+        else:
+            self.total_matches_int = self.products_per_page
+
         return self.total_matches
