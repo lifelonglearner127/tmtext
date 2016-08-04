@@ -1,7 +1,8 @@
-import os, re, json
+import os, re, xml, json, requests
 from ftplib import FTP
 from StringIO import StringIO
 import pg_parser
+from api_lib import *
 
 c = open('config.txt', 'r')
 config = json.loads(c.read())
@@ -14,14 +15,27 @@ if config['import'] == 'FTP':
 
     filenames = ftp.nlst()
 
-    for filename in filenames:
-        if not re.match('.*\.xml', filename):
-            continue
+    # Only parse the most recent xml file (the last one in the list)
+    #filename = filter(lambda f: re.match('.*\.xml', f), filenames)[-1]
+    filenames = filter(lambda f: re.match('.*\.xml', f), filenames)
 
-        r = StringIO() 
+    for filename in filenames:
+        r = StringIO()
         ftp.retrbinary('RETR ' + filename, r.write)
 
+        token = request_token(filename)
+        print token
+
         if config['parser'] == 'P&G':
-            pg_parser.setup_parse(r.getvalue(), config['push'])
+            try:
+                pg_parser.setup_parse(r.getvalue(), config['push'], token)
+
+            except (ValueError, xml.etree.ElementTree.ParseError) as e:
+                print 'Error parsing %s with %s template parser: %s' % (filename, config['parser'], e.message)
+                report_status(token, 4)
+
+            except Exception as e:
+                print e
+                report_status(token, 4)
 
     ftp.quit()
