@@ -113,7 +113,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.is_requested_color = False
 
         from pyvirtualdisplay import Display
-        display = Display(visible=False)
+        display = Display(visible=False, size=(1024, 768))
         display.start()
 
         if self.quantity:
