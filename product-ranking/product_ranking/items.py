@@ -264,6 +264,21 @@ class SiteProductItem(Item):
     available_store = Field()
     subscribe_and_save = Field() # Samclub.com
 
+    price_club = Field(serializer=scrapy_price_serializer) # Samclub.com
+    price_club_with_discount = Field(serializer=scrapy_price_serializer) # Samclub.com
+
+    _jcpenney_has_size_range = Field()  # see BZ 9913
+    level1 = Field()
+    level2 = Field()
+    level3 = Field()
+    level4 = Field()
+    level5 = Field()
+    level6 = Field()
+    level7 = Field()
+    level8 = Field()
+    level9 = Field()
+    level10 = Field()
+
 
 class DiscountCoupon(Item):
     # Search metadata.
@@ -293,7 +308,7 @@ class CheckoutProductItem(Item):
     quantity = Field()
     requested_color = Field()
     requested_color_not_available = Field()
-    requested_quantity_not_available = Field()  # When requested quantity isn't available, this is set to True
+    requested_quantity_not_available = Field()  # True if quantity not available, else False
     color = Field()
     order_subtotal = Field()    # Pre-tax & shipping Cart Value
     order_total = Field()       # Post-tax & shipping Cart Value

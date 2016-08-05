@@ -117,7 +117,10 @@ class TargetShelfPagesSpider(TargetProductSpider):
                     amount = is_empty(re.findall(
                         '\d+\.{0,1}\d+', priceattr['amount']
                     ))
-                    price = Price(priceCurrency=currency, price=amount)
+                    if amount:
+                        price = Price(priceCurrency=currency, price=amount)
+                    else:
+                        price = None
                 cond_set_value(product, 'price', price)
             yield url, product
 

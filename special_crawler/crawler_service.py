@@ -87,6 +87,11 @@ from extract_att_data import ATTScraper
 from extract_verizonwireless_data import VerizonWirelessScraper
 from extract_lowes_data import LowesScraper
 from extract_petco_data import PetcoScraper
+from extract_wag_data import WagScraper
+from extract_chewy_data import ChewyScraper
+from extract_petfooddirect_data import PetFoodDirectScraper
+from extract_pet360_data import Pet360Scraper
+from extract_walmartgrocery_data import WalmartGroceryScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -185,7 +190,12 @@ SUPPORTED_SITES = {
                     "att": ATTScraper,
                     "verizonwireless": VerizonWirelessScraper,
                     "lowes": LowesScraper,
-                    "petco": PetcoScraper
+                    "petco": PetcoScraper,
+                    "wag": WagScraper,
+                    "chewy" : ChewyScraper,
+                    "petfooddirect": PetFoodDirectScraper,
+                    "pet360" : Pet360Scraper,
+                    "walmartgrocery" : WalmartGroceryScraper,
                     }
 
 # add logger
@@ -285,6 +295,8 @@ def extract_domain(url):
         return "amazonfr"
     if "store.nike.com" in url:
         return "nike"
+    if 'grocery.walmart.com' in url:
+        return 'walmartgrocery'
 
     m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from __future__ import division, absolute_import, unicode_literals
 import json
 import string
 import re
@@ -13,7 +15,7 @@ from product_ranking.items import SiteProductItem, BuyerReviews, Price
 from product_ranking.spiders import cond_set_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
 from spiders_shared_code.verizonwireless_variants import VerizonWirelessVariants
-
+from product_ranking.guess_brand import guess_brand_from_first_words
 
 class VerizonwirelessProductsSpider(ProductsSpider):
     handle_httpstatus_list = [404]
@@ -57,13 +59,22 @@ class VerizonwirelessProductsSpider(ProductsSpider):
             '//div[@itemtype="https://schema.org/Product" and '
             'not(contains(@class,"Device-SpecificInstructions") or '
             'contains(@class,"allother"))]'
-            '/a/@href').extract() or \
-            set([x.split('#')[0] for x in re.findall(
-                'pdpUrl":\["(.*?)\"]', response.body)])
+            '/a/@href').extract()
+
 
         for item_url in item_urls:
             yield urlparse.urljoin(
                 response.url, item_url), SiteProductItem()
+
+        # Search Special Case
+        if not item_urls:
+            urls = set()
+            item_urls = [x.split('#')[0] for x in re.findall(
+                'pdpUrl":\["(.*?)\"]', response.body)]
+            for url in item_urls:
+                if url not in urls:
+                    urls.add(url)
+                    yield urlparse.urljoin(response.url, url), SiteProductItem()
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -110,6 +121,16 @@ class VerizonwirelessProductsSpider(ProductsSpider):
             return "https://ss7.vzw.com/is/image/VerizonWireless/%s" % inits7_img[0]
 
         return None
+
+    def _parse_brand(self, response, product):
+        brand = response.xpath(".//*[@id='product-brand-field']/text()").extract()
+        if not brand:
+            brand = response.xpath('.//*[@itemprop="brand"]/text()').extract()
+            brand = brand[0].strip() if brand else ''
+        if not brand:
+            brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
+
+        return brand
 
     def _parse_sku(self, response):
         sku = re.findall('selectedSkuId":"(.*?)"', response.body)
@@ -243,6 +264,10 @@ class VerizonwirelessProductsSpider(ProductsSpider):
         # Parse title
         title = self._parse_title(response)
         cond_set_value(product, 'title', title, conv=string.strip)
+
+        # Parse brand
+        brand = self._parse_brand(response, product)
+        cond_set_value(product, 'brand', brand)
 
         # Parse category
         category = self._parse_category(response)

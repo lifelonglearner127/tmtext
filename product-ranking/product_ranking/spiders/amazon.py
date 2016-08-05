@@ -34,6 +34,10 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         self.price_currency = 'USD'
         self.price_currency_view = '$'
 
+        self.scrape_questions = kwargs.get('scrape_questions', None)
+        if self.scrape_questions not in ('1', 1, True, 'true'):
+            self.scrape_questions = False
+
         # Locale
         self.locale = 'en-US'
 
@@ -84,6 +88,12 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         product = response.meta['product']
         reqs = response.meta.get('reqs', [])
 
+        if not self.scrape_questions:
+            if reqs:
+                return self.send_next_request(reqs, response)
+            else:
+                return product
+
         recent_questions = product.get('recent_questions', [])
         questions = response.css('.askTeaserQuestions > div')
         for question in questions:
@@ -114,13 +124,13 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 a = {}
                 name = self._is_empty(
                     question.xpath('.//*[@class="a-color-tertiary"]/text()')
-                    .re('By (.*) on'))
+                    .re('By (.*) on '))
                 name = name.strip() if name else name
                 a['userNickname'] = name
 
                 date = self._is_empty(
                     question.xpath('.//*[@class="a-color-tertiary"]/text()')
-                    .re('on (.*)'))
+                    .re(' on (\w+ \d+, \d+)'))
                 a['submissionDate'] = date
                 q['submissionDate'] = date
 

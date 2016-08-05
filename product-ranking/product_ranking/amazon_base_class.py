@@ -632,6 +632,7 @@ class AmazonBaseClass(BaseProductsSpider):
         title = product.get('title', '')
 
         brand = response.xpath(xpathes).extract()
+        brand = self._is_empty([b for b in brand if b.strip()])
 
         if brand and (u'®' in brand):
             brand = brand.replace(u'®', '')
@@ -666,6 +667,9 @@ class AmazonBaseClass(BaseProductsSpider):
         # remove authors
         if response.xpath('//*[contains(@id, "byline")]//*[contains(@class, "author")]'):
             brand = None
+
+        if isinstance(brand, (str, unicode)):
+            brand = brand.strip()
 
         return brand
 
@@ -1374,7 +1378,7 @@ class AmazonBaseClass(BaseProductsSpider):
             name = name.split('Dispatched from', 1)[0].strip()
             name = name.split('Gift-wrap', 1)[0].strip()
         if ' by ' in name:
-            self.log('Multiple "by" occurrences found at %s' % response.url, ERROR)
+            self.log('Multiple "by" occurrences found', ERROR)
         if 'Inc. ' in name:
             name = name.split(', Inc.', 1)[0] + ', Inc.'
         if 'Guarantee Delivery' in name:

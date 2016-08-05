@@ -262,6 +262,39 @@ class FilterNonPartialSearchTermInTitleTest(unittest.TestCase):
         assert not item['search_term_in_title_exactly']
 
 
+def transform_jcpenney_variants(has_size_range, variants):
+    # see BZ #9913
+
+    # TODO: move this method to shared variants to support CH?
+
+    if not variants:
+        return variants
+
+    for i, variant in enumerate(variants):
+        properties = variant.get('properties', None)
+        if 'lot' in variant and not 'lot' in properties:
+            properties['lot'] = variant['lot']
+        if properties:
+            # BZ case 3
+            if 'size' in properties and 'lot' in properties and has_size_range:
+                lot_value = properties.pop('lot')
+                size_value = properties.pop('size')
+                properties['size'] = lot_value + '/' + str(size_value)
+            else:
+                # BZ case 1
+                if 'inseam' in properties and not 'length' in properties:
+                    inseam_value = properties.pop('inseam')
+                    properties['length'] = inseam_value
+                # BZ case 2
+                if 'waist' in properties:
+                    if (set(properties.keys()) - set(['lot']) - set(['color'])) == set(['waist']):
+                        waist_value = properties.pop('waist')
+                        properties['size'] = waist_value
+        variants[i]['properties'] = properties
+
+    return variants
+
+
 class MergeSubItems(object):
     """ A quote: You can't have the same item being filled in parallel requests.
         You either need to make sure the item is passed along in a chain like fashion,
@@ -302,8 +335,11 @@ class MergeSubItems(object):
         pass
 
     def _dump_mapper_to_fname(self, fname):
+        # only for JCPenney - transform variants, see BZ 9913
         with open(fname, 'w') as fh:
             for url, item in self._mapper.items():
+                if 'jcpenney' in url:
+                    item['variants'] = transform_jcpenney_variants(item['_jcpenney_has_size_range'], item['variants'])
                 fh.write(json.dumps(item, default=self._serializer)+'\n')
 
     def _dump_output(self, spider):
