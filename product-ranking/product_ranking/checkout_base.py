@@ -161,7 +161,8 @@ class BaseCheckoutSpider(scrapy.Spider):
                 for color in colors:
                     if self.is_requested_color:
                         self.requested_color = color
-
+                    self.current_color = color
+                    self.current_quantity = qty
                     self.log('Parsing color - {}, quantity - {}'.format(color or 'None', qty), level=WARNING)
                     # self._pre_parse_products()
                     self._parse_product_page(url, qty, color)
