@@ -62,7 +62,9 @@ class OfficedepotShelfPagesSpider(OfficedepotProductsSpider):
                       meta=self._setup_meta_compatibility())  # meta is for SC baseclass compatibility
 
     def _scrape_product_links(self, response):
-        urls = response.xpath('//a[@class="med_txt black"]/@href').extract()
+        urls = response.xpath('//div[contains(@class, "photo_container")]//a/img/../@href').extract()
+        if not urls:
+            urls = response.xpath('//a[@class="med_txt black"]/@href').extract()
         urls = [urlparse.urljoin(response.url, x) for x in urls]
 
         shelf_categories = response.xpath('//div[@id="siteBreadcrumb"]/ul/li/a/span/text()').extract()
