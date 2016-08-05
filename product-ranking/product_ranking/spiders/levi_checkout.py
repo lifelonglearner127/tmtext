@@ -95,7 +95,8 @@ class LeviSpider(BaseCheckoutSpider):
         item['price_on_page'] = self._get_item_price_on_page(product)
         color = self._get_item_color(product)
         quantity = self._get_item_quantity(product)
-
+        item['no_longer_available'] = False
+        item['not_found'] = False
         if quantity and price:
             quantity = int(quantity)
             if quantity < self.current_requested_quantity:
