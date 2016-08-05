@@ -201,6 +201,11 @@ class SamsclubScraper(Scraper):
     def _mobile_image_same(self):
         return None
 
+    def _meta_description(self):
+        if self.tree_html.xpath('//meta[@name="description"]/@content')[0]:
+            return 1
+        return 0
+
     def _image_urls(self):
         if self.image_count == -1:
             self.image_urls = None
@@ -686,16 +691,17 @@ class SamsclubScraper(Scraper):
         "long_description" : _long_description, \
         "variants": _variants, \
         "no_longer_available": _no_longer_available, \
+
         # CONTAINER : PAGE_ATTRIBUTES
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
-        # "no_image" : _no_image, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "pdf_urls" : _pdf_urls, \
         "pdf_count" : _pdf_count, \
         "mobile_image_same" : _mobile_image_same, \
+        "meta_description" : _meta_description, \
 
         # CONTAINER : SELLERS
         "price" : _price, \
