@@ -260,7 +260,7 @@ class BaseCheckoutSpider(scrapy.Spider):
     def _get_current_domain_name(self):
         # trying to get current domain to filter cookies
         url = self.driver.current_url
-        dom_name = urlparse.urlparse(url).netloc.replace('www.','')
+        dom_name = urlparse.urlparse(url).netloc.replace('www1','').replace('www3','').replace('www','')
         if not dom_name:
             dom_name = self.allowed_domains[0]
         self.log("Got domain name: %s" % dom_name, level=WARNING)
