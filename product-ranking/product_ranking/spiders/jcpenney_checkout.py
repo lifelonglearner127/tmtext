@@ -53,7 +53,7 @@ class JCpenneySpider(BaseCheckoutSpider):
         self._click_attribute(color_attribute_xpath,
                               color_attributes_xpath,
                               element)
-
+        time.sleep(5)
         # Remove focus to avoid hiddend the above element
         self._find_by_xpath('//h1')[0].click()
         time.sleep(4)
