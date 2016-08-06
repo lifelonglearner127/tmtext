@@ -13,6 +13,7 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews, scrapy_price_serializer
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value
+from product_ranking.guess_brand import guess_brand_from_first_words
 from scrapy.conf import settings
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -81,9 +82,10 @@ class StaplesProductsSpider(BaseProductsSpider):
         image = self.parse_image(response)
         cond_set(product, 'image_url', image)
 
-        # # Parse brand
-        # brand = self.parse_brand(response)
-        # cond_set_value(product, 'brand', brand)
+        # Parse brand
+        brand = self.parse_brand(product)
+        if brand:
+            product['brand'] = brand
         #
         # Parse sku
         sku = self.parse_sku(response)
@@ -92,7 +94,6 @@ class StaplesProductsSpider(BaseProductsSpider):
         # Parse model
         model = self.parse_model(response)
         cond_set_value(product, 'model', model)
-        # Parse brand
 
         # Parse description
         description = self.parse_description(response)
@@ -108,6 +109,12 @@ class StaplesProductsSpider(BaseProductsSpider):
 
         # Parse price, related_product, reviews
         return self.parse_addition_data(response, sku, js_data)
+
+    def parse_brand(self, product):
+        title = product.get('title', None)
+        if title:
+            brand = guess_brand_from_first_words(title)
+            return brand
 
     def parse_js_data(self, response):
         data = re.findall(r' products\["(.+)"\] = (.+);', response.body_as_unicode())
