@@ -434,7 +434,7 @@ class BaseCheckoutSpider(scrapy.Spider):
                                   chrome_options=chrome_options,
                                   executable_path=executable_path)
         driver.set_page_load_timeout(self.SOCKET_WAIT_TIME)
-        driver.maximize_window()
+        # driver.maximize_window()
         return driver
 
     def _init_firefox(self):
