@@ -55,6 +55,7 @@ class MacysSpider(BaseCheckoutSpider):
         return [x.get_attribute("data-title").lower() for x in swatches]
 
     def select_size(self, element=None):
+        time.sleep(15)
         size_attribute_xpath = (
             '*//*[@class="sizesSection"]//li[@class="swatch selected"]')
 
