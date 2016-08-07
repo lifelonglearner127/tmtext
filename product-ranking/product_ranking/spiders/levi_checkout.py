@@ -71,16 +71,26 @@ class LeviSpider(BaseCheckoutSpider):
 
                     self.log('Parsing color - {}, quantity - {}'.format(color or 'None', qty), level=WARNING)
                     # self._pre_parse_products()
-                    sold_out_item = self._parse_product_page(url, qty, color)
-                    if sold_out_item:
-                        sold_out_item['url'] = url
-                        yield sold_out_item
+                    no_longer_available = self._find_by_xpath(
+                        './/h2[contains(text(), "This product is no longer available")]')
+                    if no_longer_available:
+                        self.log('No longer available {}'.format(no_longer_available), level=WARNING)
+                        item = CheckoutProductItem()
+                        item['url'] = url
+                        item['color'] = color
+                        item['no_longer_available'] = True
+                        yield item
                     else:
-                        items = self._parse_cart_page()
-                        for item in items:
-                            item['url'] = url
-                            yield item
-                    # only need to open new window if its not last color
+                        sold_out_item = self._parse_product_page(url, qty, color)
+                        if sold_out_item:
+                            sold_out_item['url'] = url
+                            yield sold_out_item
+                        else:
+                            items = self._parse_cart_page()
+                            for item in items:
+                                item['url'] = url
+                                yield item
+                        # only need to open new window if its not last color
                     if not color == colors[-1]:
                         self._open_new_session(url)
 
@@ -125,6 +135,7 @@ class LeviSpider(BaseCheckoutSpider):
         return [x.get_attribute("title") for x in swatches]
 
     def select_size(self, element=None):
+        time.sleep(5)
         size_attribute_xpath = (
             '*//*[@id="pdp-buystack-size-values"]'
             '/li[contains(@class,"selected")]')
@@ -136,6 +147,7 @@ class LeviSpider(BaseCheckoutSpider):
                               element)
 
     def select_color(self, element=None, color=None):
+        time.sleep(5)
         # If color was requested and is available
         if color and color.lower() in map(
                 (lambda x: x.lower()), self._get_colors_names()):
