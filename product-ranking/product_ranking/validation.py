@@ -23,6 +23,7 @@ from twisted.python import log
 from product_ranking.items import SiteProductItem
 from product_ranking import settings
 
+
 class bcolors:  # constants to avoid using any 3rd-party lib
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'

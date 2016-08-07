@@ -1,6 +1,6 @@
 #
 # Use for debugging only!
-# Usage: just open web-browser and type http://localhost:5000/get_data?url=http://www.amazon.in/Philips-AquaTouch-AT890-16-Shaver/dp/B009H0B8FU
+# Usage: just open a web-browser and type http://localhost:5000/get_data?url=http://www.amazon.in/Philips-AquaTouch-AT890-16-Shaver/dp/B009H0B8FU
 #
 
 import os
