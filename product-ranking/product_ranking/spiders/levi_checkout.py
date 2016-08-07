@@ -138,7 +138,7 @@ class LeviSpider(BaseCheckoutSpider):
         time.sleep(5)
         size_attribute_xpath = (
             '*//*[@id="pdp-buystack-size-values"]'
-            '/li[contains(@class,"selected")]')
+            '/li[contains(@class,"selected") and not(contains(@class, "not-available"))]')
         size_attributes_xpath = (
             '*//*[@id="pdp-buystack-size-values"]'
             '/li[not(contains(@class, "not-available"))]')
@@ -179,7 +179,7 @@ class LeviSpider(BaseCheckoutSpider):
     def select_waist(self, element=None):
         size_attribute_xpath = (
             '*//*[@id="pdp-buystack-waist-values"]'
-            '/li[contains(@class,"selected")]')
+            '/li[contains(@class,"selected") and not(contains(@class, "not-available"))]')
         size_attributes_xpath = (
             '*//*[@id="pdp-buystack-waist-values"]'
             '/li[not(contains(@class, "not-available"))]')
@@ -190,7 +190,7 @@ class LeviSpider(BaseCheckoutSpider):
     def select_length(self, element=None):
         size_attribute_xpath = (
             '*//*[@id="pdp-buystack-length-values"]'
-            '/li[contains(@class,"selected")]')
+            '/li[contains(@class,"selected") and not(contains(@class, "not-available"))]')
         size_attributes_xpath = (
             '*//*[@id="pdp-buystack-length-values"]'
             '/li[not(contains(@class, "not-available"))]')
