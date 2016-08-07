@@ -309,6 +309,8 @@ class CheckoutProductItem(Item):
     requested_color = Field()
     requested_color_not_available = Field()
     requested_quantity_not_available = Field()  # True if quantity not available, else False
+    no_longer_available = Field()  # True if item no longer available, else False
+    not_found = Field()  # True if item not found, else False
     color = Field()
     order_subtotal = Field()    # Pre-tax & shipping Cart Value
     order_total = Field()       # Post-tax & shipping Cart Value
