@@ -146,6 +146,7 @@ class Scraper():
             "keywords", # keywords for this product, usually from meta tag, string
             "meta_tags",# a list of pairs of meta tag keys and values
             "meta_tag_count", # the number of meta tags in the source of the page
+            "meta_description_count", # char count of meta description field
             "canonical_link", # canoncial link of the page
             "buying_option",
             "image_hashes", # list of hash values of images as returned by _image_hash() function - list of strings (the same order as image_urls)
@@ -155,6 +156,13 @@ class Scraper():
             "comparison_chart", # whether page contains a comparison chart, 1/0
             "btv", # if page has a 'buy together value' offering, 1/0
             "best_seller_category", # name of best seller category (Amazon)
+            "results_per_page", # number of items on shelf page
+            "total_matches", # total number of items in shelf page category
+            "lowest_item_price",
+            "highest_item_price",
+            "num_items_price_displayed",
+            "num_items_no_price_displayed",
+            "body_copy",
 
             # reviews
             "review_count", # total number of reviews, int
@@ -237,9 +245,11 @@ class Scraper():
                         "usage", "directions", "warnings", "indications", "amazon_ingredients"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
-                            "meta_tags","meta_tag_count", \
+                            "meta_tags", "meta_tag_count", "meta_description_count", \
                             "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv", \
-                            "best_seller_category"], \
+                            "best_seller_category", "results_per_page", "total_matches", "lowest_item_price", "highest_item_price",
+                            "num_items_price_displayed", "num_items_no_price_displayed",
+                                "body_copy"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "in_stock", \
