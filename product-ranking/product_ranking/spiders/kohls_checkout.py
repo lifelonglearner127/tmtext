@@ -24,13 +24,14 @@ class KohlsSpider(BaseCheckoutSpider):
         yield scrapy.Request('http://www.kohls.com/')
 
     def _get_colors_names(self):
-        time.sleep(4)
+        time.sleep(5)
         swatches = self._find_by_xpath(
             '//a[@data-skucolor and '
             'not(contains(@class,"color-unavailable"))]')
         return [x.get_attribute("alt") for x in swatches]
 
     def select_size(self, element=None):
+        time.sleep(5)
         size_attribute_xpath = ('*//*[@id="size-dropdown"]/'
                                 'option[@select]|*//'
                                 'a[@class="pdp-size-swatch active"]')
@@ -42,10 +43,10 @@ class KohlsSpider(BaseCheckoutSpider):
         self._click_attribute(size_attribute_xpath,
                               size_attributes_xpath,
                               element)
-        time.sleep(1)
+        time.sleep(5)
 
     def select_color(self, element=None, color=None):
-        time.sleep(4)
+        time.sleep(5)
         color_attribute_xpath = ('*//*[@class="pdp-color-swatches-info"]'
                                  '/div[contains(@class,"active")]/a')
         color_attributes_xpath = ('*//*[@class="pdp-color-swatches-info"]'
@@ -61,7 +62,7 @@ class KohlsSpider(BaseCheckoutSpider):
                               element)
 
         # Remove focus to avoid hiddend the above element
-        self._find_by_xpath('//h1')[0].click()
+        # self._find_by_xpath('//h1')[0].click()
 
     def select_width(self, element=None):
         width_attribute_xpath = '*//div[@id="skuOptions_width"]//' \
@@ -73,27 +74,28 @@ class KohlsSpider(BaseCheckoutSpider):
                               element)
 
     def _get_products(self):
-        time.sleep(4)
+        time.sleep(10)
         return self._find_by_xpath(
             '//div[contains(@class, "pdp-main-container")]')
 
     def _add_to_cart(self):
         self._click_on_element_with_id('addtobagID')
-        time.sleep(4)
+        time.sleep(5)
 
     def _set_quantity(self, product, quantity):
         self.driver.execute_script(
             "document.getElementsByClassName('pdp-product-quantity')[0]"
             ".setAttribute('value', '%s')" % quantity)
+        time.sleep(5)
 
     def _get_product_list_cart(self):
-        time.sleep(4)
+        time.sleep(10)
         condition = EC.visibility_of_element_located(
             (By.ID, 'shoppingCartLineItem_container'))
         return self.wait.until(condition)
 
     def _get_products_in_cart(self, product_list):
-        time.sleep(4)
+        time.sleep(10)
         html_text = product_list.get_attribute('outerHTML')
         selector = scrapy.Selector(text=html_text)
         return selector.xpath(
