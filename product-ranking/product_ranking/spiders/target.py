@@ -403,6 +403,15 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                     './/*[contains(text(), "TCIN:")]/span/text()').extract()
                 tcin = tcin[0].strip() if tcin else None
             product['tcin'] = tcin
+            origin = response.xpath(
+                './/*[contains(text(), "Origin:")]/span/text()').extract()
+            origin = origin[0].strip() if origin else None
+            if not origin:
+                origin = response.xpath(
+                    ".//*[contains(text(), 'Store Item Number (DPCI)')]/../following-sibling::li[1]/text()").extract()
+                origin = origin[0].strip() if origin else None
+            product['origin'] = origin
+
         else:
             item_info = self._item_info_v2(response)
             product['title'] = item_info['title']
@@ -416,7 +425,12 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             product['price'], product['price_details_in_cart'] = self._get_price_v2(item_info)
             #product['related_products'] = None  # TODO
             product['is_out_of_stock'] = not item_info.get('inventoryStatus', '') == 'in stock'
-
+            origin = item_info.get('ItemAttributes')
+            origin = origin[0].get('Attribute') if origin else None
+            if origin:
+                origin = [atr.get('description') for atr in origin if atr.get('identifier') == "IMPORT_DESIGNATION"]
+                origin = origin[0] if origin else None
+            product['origin'] = origin
             tv = TargetVariants()
             if not product['variants']:
                 tv.setupSC(response=response, zip_code=self.zip_code, item_info=item_info)
