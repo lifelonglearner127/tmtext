@@ -408,8 +408,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             origin = origin[0].strip() if origin else None
             if not origin:
                 origin = response.xpath(
-                    ".//*[contains(text(), 'Store Item Number (DPCI)')]/"
-                    "../following-sibling::li[position()=last()]/text()").extract()
+                    './/h3[@class="heading-small" and contains (text(), "other Info.")]'
+                    '/following-sibling::ul[1]/li[position()=last()]/text()').extract()
                 origin = origin[0].strip() if origin else None
             product['origin'] = origin
 
