@@ -54,11 +54,7 @@ class CostcoShelfUrlsSpider(CostcoProductsSpider):
         else:
             self.current_page += 1
             links = response.xpath(
-                "//*[@class='pagination']"
-                "/ul[2]"  # [1] is for the Items Per Page section which has .active.
-                "/li[@class='active']"
-                "/following-sibling::li[1]"  # [1] is to get just the next sibling.
-                "/a/@href"
+                './/li[@class="forward"]/a/@href'
             ).extract()
             if links:
                 link = links[0]
