@@ -9,16 +9,29 @@ from product_ranking.checkout_base import BaseCheckoutSpider
 import scrapy
 import random
 import os
+import requests
 
 is_empty = lambda x, y="": x[0] if x else y
 
 def _get_random_proxy():
     proxy_file = '/tmp/http_proxies.txt'
     if os.path.exists(proxy_file):
-        with open(proxy_file, 'r') as fh:
-            lines = [l.strip().replace('http://', '')
-                     for l in fh.readlines() if l.strip()]
-            return random.choice(lines)
+        with open(proxy_file, 'r') as f:
+            proxies = [l.strip()
+                     for l in f.readlines() if l.strip()]
+            for i in proxies:
+                proxy = random.choice(proxies)
+                try:
+                    requests.get(
+                        'http://kohls.com/',
+                        proxies={'http': proxy, 'https': proxy},
+                        timeout=10
+                    )
+                    print('successfully fetched host')
+                    return proxy.replace('http://','')
+                except:
+                    pass
+
 
 class KohlsSpider(BaseCheckoutSpider):
     name = 'kohls_checkout_products'
