@@ -301,7 +301,7 @@ email_content += (website_header)
 
 
 fromaddr = "jenkins@contentanalyticsinc.com"
-toaddrs = ["adriana@contentanalyticsinc.com", "support@contentanalyticsinc.com", "no.andrey@gmail.com"]  # must be a list
+toaddrs = ["adriana@contentanalyticsinc.com", "support@contentanalyticsinc.com", "no.andrey@gmail.com", "alex@contentanalyticsinc.com"]  # must be a list
 subject = "{0} Daily Notification from Regression Service : {1}".format(website.upper(), today.isoformat())
 
 print "Message length is " + repr(len(email_content))
