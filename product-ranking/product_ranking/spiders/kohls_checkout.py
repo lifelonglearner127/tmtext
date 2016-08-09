@@ -5,6 +5,7 @@ import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
+from product_ranking.items import CheckoutProductItem
 
 import scrapy
 import random
@@ -22,13 +23,13 @@ def _get_random_proxy():
             for i in proxies:
                 proxy = random.choice(proxies)
                 try:
-                    requests.get(
+                    ans = requests.get(
                         'http://kohls.com/',
                         proxies={'http': proxy, 'https': proxy},
                         timeout=10
                     )
-                    print('successfully fetched host')
-                    return proxy.replace('http://','')
+                    if ans.status_code==200:
+                        return proxy.replace('http://','')
                 except:
                     pass
 
@@ -48,6 +49,31 @@ class KohlsSpider(BaseCheckoutSpider):
 
     def start_requests(self):
         yield scrapy.Request('http://www.kohls.com/')
+
+    def _parse_item(self, product):
+        item = CheckoutProductItem()
+        name = self._get_item_name(product)
+        item['name'] = name.strip() if name else name
+        item['id'] = self._get_item_id(product)
+        price = self._get_item_price(product)
+        item['price_on_page'] = self._get_item_price_on_page(product)
+        color = self._get_item_color(product)
+        quantity = self._get_item_quantity(product)
+
+        if quantity and price:
+            quantity = int(quantity)
+            item['price'] = float(price.replace(',', '')) / quantity
+            item['quantity'] = quantity
+            item['requested_color'] = self.requested_color
+            item['requested_quantity_not_available'] = quantity != self.current_quantity
+
+        if color:
+            item['color'] = color
+
+        item['requested_color_not_available'] = (
+            color and self.requested_color and
+            (self.requested_color != color))
+        return item
 
     def _get_colors_names(self):
         time.sleep(5)
