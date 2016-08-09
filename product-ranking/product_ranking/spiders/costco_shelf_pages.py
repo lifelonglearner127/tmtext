@@ -29,7 +29,9 @@ class CostcoShelfUrlsSpider(CostcoProductsSpider):
         links = response.xpath(
             '//div[contains(@class,"product-tile-image-container")]/a/@href'
         ).extract()
-        shelf_categories = [c.strip() for c in response.xpath(".//*[@id='breadcrumbs']/li//text()").extract()
+        if not links:
+            links = response.xpath('.//a[@class="thumbnail" and @itemid]/@href').extract()
+        shelf_categories = [c.strip() for c in response.xpath('.//*[@class="crumbs"]/li//text()').extract()
                             if len(c.strip()) > 1 and not "Home" in c]
         shelf_category = shelf_categories[-1] if shelf_categories else None
         for item_url in links:
@@ -39,6 +41,12 @@ class CostcoShelfUrlsSpider(CostcoProductsSpider):
             if shelf_categories:
                 item['shelf_path'] = shelf_categories
             yield item_url, item
+
+    def _scrape_results_per_page(self, response):
+        count = response.css(".table-cell.results.hidden-xs.hidden-sm.hidden-md>span").re(
+            r"Showing\s\d+-(\d+)\s?of")
+        count = int(count[0].replace('.', '').replace(',', '')) if count else None
+        return count
 
     def _scrape_next_results_page_link(self, response):
         if self.current_page >= int(self.num_pages):
