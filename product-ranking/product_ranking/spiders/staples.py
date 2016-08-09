@@ -280,7 +280,10 @@ class StaplesProductsSpider(BaseProductsSpider):
                                               metadata__backorder_flag=js_data['metadata']['backorder_flag']),
                     dont_filter=True,
                     callback=self.get_price_and_stockstatus,
-                    meta=meta
+                    meta=meta,
+                    headers={
+                        'X-Crawlera-Max-Retries': '8',
+                    },
                 ))
         except:
             pass
@@ -301,7 +304,10 @@ class StaplesProductsSpider(BaseProductsSpider):
                                                   metadata__backorder_flag=js_data['metadata']['backorder_flag']),
                         dont_filter=True,
                         callback=self.get_variant_price,
-                        meta=meta
+                        meta=meta,
+                        headers={
+                            'X-Crawlera-Max-Retries': '8',
+                        },
                     ))
 
             except:
