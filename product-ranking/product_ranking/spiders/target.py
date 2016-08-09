@@ -408,7 +408,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             origin = origin[0].strip() if origin else None
             if not origin:
                 origin = response.xpath(
-                    ".//*[contains(text(), 'Store Item Number (DPCI)')]/../following-sibling::li[1]/text()").extract()
+                    ".//*[contains(text(), 'Store Item Number (DPCI)')]/"
+                    "../following-sibling::li[position()=last()]/text()").extract()
                 origin = origin[0].strip() if origin else None
             product['origin'] = origin
 
@@ -430,7 +431,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             if origin:
                 origin = [atr.get('description') for atr in origin if atr.get('identifier') == "IMPORT_DESIGNATION"]
                 origin = origin[0] if origin else None
-            product['origin'] = origin
+                product['origin'] = origin
             tv = TargetVariants()
             if not product['variants']:
                 tv.setupSC(response=response, zip_code=self.zip_code, item_info=item_info)
