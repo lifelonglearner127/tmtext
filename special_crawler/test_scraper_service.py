@@ -13,7 +13,7 @@ import urllib
 import signal
 from datetime import date
 
-SUPPORTED_SITES = ["walmart", "amazon", "jcpenney", "kohls", "macys", "target", "uniqlo", "levi", "dockers", "nike", "samsclub"]
+SUPPORTED_SITES = ["walmart", "amazon", "jcpenney", "kohls", "macys", "target", "uniqlo", "levi", "dockers", "nike", "samsclub", "drugstore"]
 
 def signal_handler(signum, frame):
     raise Exception("Timed out!")
@@ -369,6 +369,18 @@ class ServiceScraperTest(unittest.TestCase):
         for url in self.urls_by_scraper["samsclub"]:
             try:
                 self._test("samsclub", url)
+            except:
+                pass
+
+    def test_drugstore(self):
+        if specified_website and specified_website != "drugstore":
+            return
+
+        self.initialize_scraper("drugstore")
+
+        for url in self.urls_by_scraper["drugstore"]:
+            try:
+                self._test("drugstore", url)
             except:
                 pass
 
