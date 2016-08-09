@@ -75,7 +75,8 @@ def target_urls_generator(input_csv):
                         URL = ""
                         TCIN = ""
 
-                    output_URLs_csvwriter.writerow([URL])
+                    if len(URL) > 0:
+                        output_URLs_csvwriter.writerow([URL])
                     output_3cols_csvwriter.writerow([DPCI, TCIN, URL])
                     if DEBUG:
                         print [DPCI, TCIN, URL]
