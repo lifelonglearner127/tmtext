@@ -46,13 +46,13 @@ class StaplesProductsSpider(BaseProductsSpider):
 
     RELATED_PRODUCT = "http://www.staples.com/asgard-node/v1/nad/staplesus/bloomreach/{sku}"
 
-    use_proxies = True
+    #use_proxies = True
 
     def __init__(self, *args, **kwargs):
 
         super(StaplesProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
-        #settings.overrides['CRAWLERA_ENABLED'] = True
+        settings.overrides['CRAWLERA_ENABLED'] = True
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -281,9 +281,6 @@ class StaplesProductsSpider(BaseProductsSpider):
                     dont_filter=True,
                     callback=self.get_price_and_stockstatus,
                     meta=meta,
-                    headers={
-                        'X-Crawlera-Max-Retries': '8',
-                    },
                 ))
         except:
             pass
@@ -305,9 +302,6 @@ class StaplesProductsSpider(BaseProductsSpider):
                         dont_filter=True,
                         callback=self.get_variant_price,
                         meta=meta,
-                        headers={
-                            'X-Crawlera-Max-Retries': '8',
-                        },
                     ))
 
             except:
