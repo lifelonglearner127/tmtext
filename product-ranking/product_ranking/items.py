@@ -279,6 +279,9 @@ class SiteProductItem(Item):
     level9 = Field()
     level10 = Field()
 
+    dpci = Field()  # Target.com unique item identifier, example - 008-09-1171
+    tcin = Field()  # Target.com online item number, for example - Online Item #: 16390220
+
 
 class DiscountCoupon(Item):
     # Search metadata.

@@ -391,10 +391,24 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             if image:
                 image = image[0].replace("_100x100.", ".")
                 product['image_url'] = image
+            dpci = response.xpath(
+                './/*[contains(text(), "Store Item Number (DPCI)")]/following-sibling::text()[1]').extract()
+            dpci = dpci[0].strip() if dpci else None
+            product['dpci'] = dpci
+            tcin = response.xpath(
+                './/*[contains(text(), "Online Item #")]/following-sibling::text()[1]').extract()
+            tcin = tcin[0].strip() if tcin else None
+            if not tcin:
+                tcin = response.xpath(
+                    './/*[contains(text(), "TCIN:")]/span/text()').extract()
+                tcin = tcin[0].strip() if tcin else None
+            product['tcin'] = tcin
         else:
             item_info = self._item_info_v2(response)
             product['title'] = item_info['title']
             product['upc'] = item_info.get('UPC', None)
+            product['dpci'] = item_info.get('DPCI', None)
+            product['tcin'] = item_info.get('partNumber', None)
             #product['sku'] = ''  # TODO
             product['image_url'] = item_info.get('Images', [{}])[0].get('PrimaryImage', [{}])[0].get('image')
             product['description'] = item_info.get('shortDescription', None)
