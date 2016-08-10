@@ -45,8 +45,8 @@ class KohlsSpider(BaseCheckoutSpider):
 
     def __init__(self, *args, **kwargs):
         super(KohlsSpider, self).__init__(*args, **kwargs)
-        self.proxy = _get_random_proxy()
-        self.proxy_type = 'http'
+        # self.proxy = _get_random_proxy()
+        # self.proxy_type = 'http'
 
     def start_requests(self):
         yield scrapy.Request('http://www.kohls.com/')
@@ -77,14 +77,14 @@ class KohlsSpider(BaseCheckoutSpider):
         return item
 
     def _get_colors_names(self):
-        time.sleep(15)
+        time.sleep(10)
         swatches = self._find_by_xpath(
             '//a[@data-skucolor and '
             'not(contains(@class,"color-unavailable"))]')
         return [x.get_attribute("alt") for x in swatches]
 
     def select_size(self, element=None):
-        time.sleep(7)
+        time.sleep(5)
         size_attribute_xpath = ('*//*[@id="size-dropdown"]/'
                                 'option[@select]|*//'
                                 'a[@class="pdp-size-swatch active"]')
@@ -96,11 +96,11 @@ class KohlsSpider(BaseCheckoutSpider):
         self._click_attribute(size_attribute_xpath,
                               size_attributes_xpath,
                               element)
-        time.sleep(7)
+        time.sleep(5)
         self.log('Size selected')
 
     def select_color(self, element=None, color=None):
-        time.sleep(7)
+        time.sleep(5)
         color_attribute_xpath = ('*//*[@class="pdp-color-swatches-info"]'
                                  '/div[contains(@class,"active")]/a')
         color_attributes_xpath = ('*//*[@class="pdp-color-swatches-info"]'
@@ -114,13 +114,13 @@ class KohlsSpider(BaseCheckoutSpider):
         self._click_attribute(color_attribute_xpath,
                               color_attributes_xpath,
                               element)
-        time.sleep(7)
+        time.sleep(5)
         self.log('Color selected')
         # Remove focus to avoid hiddend the above element
         # self._find_by_xpath('//h1')[0].click()
 
     def _get_products(self):
-        time.sleep(20)
+        time.sleep(30)
         return self._find_by_xpath(
             '//div[contains(@class, "pdp-main-container")]')
 
@@ -140,13 +140,13 @@ class KohlsSpider(BaseCheckoutSpider):
         self.log('Quantity selected')
 
     def _get_product_list_cart(self):
-        time.sleep(15)
+        time.sleep(30)
         condition = EC.visibility_of_element_located(
             (By.ID, 'shoppingCartLineItem_container'))
         return self.wait.until(condition)
 
     def _get_products_in_cart(self, product_list):
-        time.sleep(15)
+        time.sleep(10)
         html_text = product_list.get_attribute('outerHTML')
         selector = scrapy.Selector(text=html_text)
         return selector.xpath(
