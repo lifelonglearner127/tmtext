@@ -3,7 +3,7 @@
 from __future__ import division, absolute_import, unicode_literals
 from datetime import datetime
 import re
-from scrapy import Request, Selector
+from scrapy import Request, FormRequest, Selector
 from lxml import html
 import requests
 import urlparse
@@ -38,7 +38,7 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
 
         # Locale
         self.locale = 'en-US'
-        settings.overrides['CRAWLERA_ENABLED'] = True
+        # settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         if self.product_url:
@@ -86,53 +86,66 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
             asin = re.findall('\/([A-Z0-9]{10})', response.url)[0]
         cond_set_value(product, 'asin', asin)
         cond_set_value(product, 'url', response.url)
-        upc = self.convert_ASIN2UPC(asin)
-        cond_set_value(product, 'upc', upc)
-        if upc:
-            self._match_walmart(product, upc)
         cond_set_value(product, 'ranking', response.meta.get('ranking'))
-        yield product
+        req = Request(url='http://asintoupc.com/', callback=self.threadsafe_ASIN2UPC, dont_filter=True)
+        req.meta['asin'] = asin
+        yield req
 
-    def convert_ASIN2UPC(self, asin):
-        upc = ""
-        payload = {
-            r"ctl00$MainContent$txtASIN": asin,
-            r"ctl00$MainContent$btnSearch": "Search",
-        }
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.111 Safari/537.36'}
+        # upc = self.convert_ASIN2UPC(asin)
+        # cond_set_value(product, 'upc', upc)
+        # if upc:
+        #     self._match_walmart(product, upc)
+        #     self._match_target(product, upc)
+        # cond_set_value(product, 'ranking', response.meta.get('ranking'))
+        # yield product
 
-        with requests.session() as s:
-            s.headers = headers
-            try:
-                response = s.get('http://asintoupc.com/')
-
-                # soup = BeautifulSoup(response.content)
-                tree = html.fromstring(response.content)
-
+    def threadsafe_ASIN2UPC(self, response):
+        # TODO rework this using amazon API, and use this external service as backup
+        payload = response.meta.get('payload')
+        asin = response.meta.get('asin')
+        product = response.meta.get('product')
+        if asin:
+            if not response.xpath(".//*[@id='MainContent_lblTitle']"):
+                payload = {}
                 for input_name in ['__VIEWSTATE', '__VIEWSTATEGENERATOR', '__EVENTVALIDATION']:
-                    # payload[input_name] = soup.find('input', {'name': input_name}).get('value', '')
-                    payload[input_name] = tree.xpath("//input[@name='%s']/@value" % input_name)[0]
-                for i in range(1, 30):
-                    response2 = s.post("http://asintoupc.com/", data=payload)
-                    if 'WSE101: An asynchronous operation raised an exception.' not in response2.text:
-                        break
+                    p = response.xpath("//input[@name='%s']/@value" % input_name).extract()
+                    payload[input_name] = p[0] if p else None
+                print "##{}###".format(payload)
+                postreq = FormRequest('http://asintoupc.com/', dont_filter=True,
+                                      callback=self.threadsafe_ASIN2UPC, formdata=payload)
+                postreq.meta['asin'] = asin
+                postreq.meta['payload'] = payload
+                postreq.meta['product'] = product
+                yield postreq
+            else:
+                if 'WSE101: An asynchronous operation raised an exception.' in response.body_as_unicode():
+                    payload = {}
+                    for input_name in ['__VIEWSTATE', '__VIEWSTATEGENERATOR', '__EVENTVALIDATION']:
+                        p = response.xpath("//input[@name='%s']/@value" % input_name).extract()
+                        payload[input_name] = p[0] if p else None
+                    postreq = FormRequest('http://asintoupc.com/', dont_filter=True,
+                                          callback=self.threadsafe_ASIN2UPC, formdata=payload)
+                    postreq.meta['asin'] = asin
+                    postreq.meta['payload'] = payload
+                    postreq.meta['product'] = product
+                    yield postreq
+                else:
+                    upc = response.xpath("//span[@id='MainContent_lblUPC']/text()").extract()
+                    print"@@@@@@@@{}@@@@".format(upc)
+                    upc = upc[0] if upc else None
+                    if upc:
+                        cond_set_value(product, 'upc', upc)
+                        req = Request('http://www.walmart.com/search/?query={}'.format(upc),
+                                      callback=self._match_walmart_threadsafe)
+                        req.meta['product'] = product
+                        yield req
+                    else:
+                        yield product
 
-                # print(response2.content)
-                # soup = BeautifulSoup(response2.content)
-                tree = html.fromstring(response2.content)
-                upc = tree.xpath("//span[@id='MainContent_lblUPC']")[0].text
-            except:
-                pass
-        return upc
-
-    @staticmethod
-    def _match_walmart(product, upc):
-        url = 'http://www.walmart.com/search/?query={}'
-        walmart_selector = Selector(text=requests.get(
-            url.format(upc)).text)
-        walmart_category = walmart_selector.xpath('//p[@class="dept-head-list-heading"]/a/text()').extract()
-        walmart_url = walmart_selector.xpath('//a[@class="js-product-title"][1]/@href').extract()
+    def _match_walmart_threadsafe(self, response):
+        product = response.meta.get('product')
+        walmart_category = response.xpath('//p[@class="dept-head-list-heading"]/a/text()').extract()
+        walmart_url = response.xpath('//a[@class="js-product-title"][1]/@href').extract()
         if walmart_url:
             walmart_exists = True
             walmart_url = urlparse.urljoin('http://www.walmart.com/', walmart_url[0])
@@ -141,5 +154,70 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
         cond_set_value(product, 'walmart_url', walmart_url)
         cond_set_value(product, 'walmart_category', walmart_category)
         cond_set_value(product, 'walmart_exists', walmart_exists)
+        yield product
 
 
+    # def convert_ASIN2UPC(self, asin):
+    #     upc = ""
+    #     payload = {
+    #         r"ctl00$MainContent$txtASIN": asin,
+    #         r"ctl00$MainContent$btnSearch": "Search",
+    #     }
+    #     headers = {
+    #         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.111 Safari/537.36'}
+    #
+    #     with requests.session() as s:
+    #         s.headers = headers
+    #         try:
+    #             response = s.get('http://asintoupc.com/')
+    #
+    #             # soup = BeautifulSoup(response.content)
+    #             tree = html.fromstring(response.content)
+    #
+    #             for input_name in ['__VIEWSTATE', '__VIEWSTATEGENERATOR', '__EVENTVALIDATION']:
+    #                 # payload[input_name] = soup.find('input', {'name': input_name}).get('value', '')
+    #                 payload[input_name] = tree.xpath("//input[@name='%s']/@value" % input_name)[0]
+    #             for i in range(1, 30):
+    #                 response2 = s.post("http://asintoupc.com/", data=payload)
+    #                 if 'WSE101: An asynchronous operation raised an exception.' not in response2.text:
+    #                     break
+    #
+    #             # print(response2.content)
+    #             # soup = BeautifulSoup(response2.content)
+    #             tree = html.fromstring(response2.content)
+    #             upc = tree.xpath("//span[@id='MainContent_lblUPC']")[0].text
+    #         except:
+    #             pass
+    #     return upc
+    #
+    # @staticmethod
+    # def _match_walmart(product, upc):
+    #     url = 'http://www.walmart.com/search/?query={}'
+    #     walmart_selector = Selector(text=requests.get(
+    #         url.format(upc)).text)
+    #     walmart_category = walmart_selector.xpath('//p[@class="dept-head-list-heading"]/a/text()').extract()
+    #     walmart_url = walmart_selector.xpath('//a[@class="js-product-title"][1]/@href').extract()
+    #     if walmart_url:
+    #         walmart_exists = True
+    #         walmart_url = urlparse.urljoin('http://www.walmart.com/', walmart_url[0])
+    #     else:
+    #         walmart_exists = False
+    #     cond_set_value(product, 'walmart_url', walmart_url)
+    #     cond_set_value(product, 'walmart_category', walmart_category)
+    #     cond_set_value(product, 'walmart_exists', walmart_exists)
+    #
+    # @staticmethod
+    # def _match_target(product, upc):
+    #     url = 'http://www.walmart.com/search/?query={}'
+    #     walmart_selector = Selector(text=requests.get(
+    #         url.format(upc)).text)
+    #     walmart_category = walmart_selector.xpath('//p[@class="dept-head-list-heading"]/a/text()').extract()
+    #     walmart_url = walmart_selector.xpath('//a[@class="js-product-title"][1]/@href').extract()
+    #     if walmart_url:
+    #         walmart_exists = True
+    #         walmart_url = urlparse.urljoin('http://www.walmart.com/', walmart_url[0])
+    #     else:
+    #         walmart_exists = False
+    #     cond_set_value(product, 'target_url', walmart_url)
+    #     cond_set_value(product, 'target_category', walmart_category)
+    #     cond_set_value(product, 'target_exists', walmart_exists)

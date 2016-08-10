@@ -268,6 +268,10 @@ class SiteProductItem(Item):
     walmart_category = Field()  # For amazon_top_categories_products spider, category of product on Walmart, if found
     walmart_exists = Field()  # For amazon_top_categories_products - True/False
 
+    target_url = Field()  # For amazon_top_categories_products spider, url of product on Target, if found
+    target_category = Field()  # For amazon_top_categories_products spider, category of product on Target, if found
+    target_exists = Field()  # For amazon_top_categories_products - True/False
+
 
 class DiscountCoupon(Item):
     # Search metadata.
