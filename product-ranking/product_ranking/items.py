@@ -165,6 +165,7 @@ class SiteProductItem(Item):
     # Product data.
     title = Field()  # String.
     upc = Field(serializer=scrapy_upc_serializer)  # Integer.
+    asin = Field()
     model = Field()  # String, alphanumeric code.
     sku = Field()  # product SKU, if any
     url = Field()  # String, URL.
