@@ -46,7 +46,7 @@ class TargetShelfPagesSpider(TargetProductSpider):
 
         self.JSON_SEARCH_URL = "http://tws.target.com/searchservice/item/search_results/v2/by_keyword?" \
                                "callback=getPlpResponse&category={category}&faceted_value={faceted}" \
-                               "&zone=PLP&pageCount=60&page={page}&start_results={index}"
+                               "&zone=PLP&pageCount=24&page={page}&start_results={index}"
 
         if "num_pages" in kwargs:
             self.num_pages = int(kwargs['num_pages'])
