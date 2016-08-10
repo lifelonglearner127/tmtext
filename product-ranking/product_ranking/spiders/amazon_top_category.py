@@ -113,7 +113,7 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
                 for input_name in ['__VIEWSTATE', '__VIEWSTATEGENERATOR', '__EVENTVALIDATION']:
                     # payload[input_name] = soup.find('input', {'name': input_name}).get('value', '')
                     payload[input_name] = tree.xpath("//input[@name='%s']/@value" % input_name)[0]
-                for retry_n in range(30):
+                for i in range(1, 30):
                     response2 = s.post("http://asintoupc.com/", data=payload)
                     if 'WSE101: An asynchronous operation raised an exception.' not in response2.text:
                         break
