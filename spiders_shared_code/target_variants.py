@@ -167,7 +167,7 @@ class TargetVariants(object):
 
             return response.json()['products']
         except:
-            print 'ERROR! ' + response.text
+            print 'ERROR getting avilability info! '# + response.text
 
     def _extract_location_id(self, product_id):
         " extract location id to use it in stock status checking "
