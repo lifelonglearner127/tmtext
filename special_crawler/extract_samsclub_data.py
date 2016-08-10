@@ -42,6 +42,7 @@ class SamsclubScraper(Scraper):
     pdf_count = None
     pdf_urls = None
     failure_type = None
+    items = None
     sv = SamsclubVariants()
 
     def check_url_format(self):
@@ -463,11 +464,24 @@ class SamsclubScraper(Scraper):
                     return sub_group_product_data
 
     def _items(self):
-        return self.tree_html.xpath('//div[contains(@class,"sc-product-card")]')
+        if self.items:
+            return self.items
+
+        cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+
+        url = 'http://www.samsclub.com/soa/services/v1/catalogsearch/search?searchCategoryId=' + cat_id
+
+        headers = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0'}
+
+        j = json.loads(requests.get(url, headers=headers).content)
+
+        self.items = j['payload']['records']
+
+        return self.items
 
     def _results_per_page(self):
         if self._is_shelf():
-            return len(self._items())
+            return int(re.search('\'numberOfRecordsRequested\':\'(\d+)\'', self.page_raw_text).group(1))
 
     def _total_matches(self):
         if self._is_shelf():
@@ -478,10 +492,13 @@ class SamsclubScraper(Scraper):
             low_price = None
 
             for item in self._items():
-                try:
-                    price = float(item.xpath('footer//span[@data-price]/@data-price')[0])
-                except:
+                if not item.get('onlinePricing'):
                     continue
+
+                if item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
+                    continue
+
+                price = item['onlinePricing']['finalPrice']['currencyAmount']
 
                 if not low_price or price < low_price:
                     low_price = price
@@ -493,32 +510,32 @@ class SamsclubScraper(Scraper):
             high_price = None
 
             for item in self._items():
-                try:
-                    price = float(item.xpath('footer//span[@data-price]/@data-price')[0])
-                except:
+                if not item.get('onlinePricing'):
                     continue
+
+                if item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
+                    continue
+
+                price = item['onlinePricing']['finalPrice']['currencyAmount']
 
                 if not high_price or price > high_price:
                     high_price = price
 
             return high_price
 
-    def _num_items_price_displayed(self):
+    def _num_items_no_price_displayed(self):
         if self._is_shelf():
             n = 0
 
             for item in self._items():
-                try:
-                    float(item.xpath('footer//span[@data-price]/@data-price')[0])
+                if not item.get('onlinePricing') or item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
                     n += 1
-                except:
-                    pass
 
             return n
 
-    def _num_items_no_price_displayed(self):
+    def _num_items_price_displayed(self):
         if self._is_shelf():
-            return self._results_per_page() - self._num_items_price_displayed()
+            return self._results_per_page() - self._num_items_no_price_displayed()
 
     def _meta_description_count(self):
         return len(self.tree_html.xpath('//meta[@name="description"]/@content')[0])
