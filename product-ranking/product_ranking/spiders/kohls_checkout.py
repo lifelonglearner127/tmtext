@@ -14,6 +14,7 @@ import requests
 
 is_empty = lambda x, y="": x[0] if x else y
 
+
 def _get_random_proxy():
     proxy_file = '/tmp/http_proxies.txt'
     if os.path.exists(proxy_file):
@@ -28,7 +29,7 @@ def _get_random_proxy():
                         proxies={'http': proxy, 'https': proxy},
                         timeout=10
                     )
-                    if ans.status_code==200:
+                    if ans.status_code == 200:
                         return proxy.replace('http://','')
                 except:
                     pass
@@ -76,14 +77,14 @@ class KohlsSpider(BaseCheckoutSpider):
         return item
 
     def _get_colors_names(self):
-        time.sleep(5)
+        time.sleep(15)
         swatches = self._find_by_xpath(
             '//a[@data-skucolor and '
             'not(contains(@class,"color-unavailable"))]')
         return [x.get_attribute("alt") for x in swatches]
 
     def select_size(self, element=None):
-        time.sleep(5)
+        time.sleep(7)
         size_attribute_xpath = ('*//*[@id="size-dropdown"]/'
                                 'option[@select]|*//'
                                 'a[@class="pdp-size-swatch active"]')
@@ -95,11 +96,11 @@ class KohlsSpider(BaseCheckoutSpider):
         self._click_attribute(size_attribute_xpath,
                               size_attributes_xpath,
                               element)
-        time.sleep(5)
+        time.sleep(7)
         self.log('Size selected')
 
     def select_color(self, element=None, color=None):
-        time.sleep(5)
+        time.sleep(7)
         color_attribute_xpath = ('*//*[@class="pdp-color-swatches-info"]'
                                  '/div[contains(@class,"active")]/a')
         color_attributes_xpath = ('*//*[@class="pdp-color-swatches-info"]'
@@ -113,18 +114,19 @@ class KohlsSpider(BaseCheckoutSpider):
         self._click_attribute(color_attribute_xpath,
                               color_attributes_xpath,
                               element)
+        time.sleep(7)
         self.log('Color selected')
         # Remove focus to avoid hiddend the above element
         # self._find_by_xpath('//h1')[0].click()
 
     def _get_products(self):
-        time.sleep(10)
+        time.sleep(20)
         return self._find_by_xpath(
             '//div[contains(@class, "pdp-main-container")]')
 
     def _add_to_cart(self):
         self._click_on_element_with_id('addtobagID')
-        time.sleep(5)
+        time.sleep(10)
         select_lower = self._find_by_xpath('//*[contains(., "select a lower amount")]')
         if select_lower:
             self._set_quantity(None, 1)
@@ -134,17 +136,17 @@ class KohlsSpider(BaseCheckoutSpider):
         self.driver.execute_script(
             "document.getElementsByClassName('pdp-product-quantity')[0]"
             ".setAttribute('value', '%s')" % quantity)
-        time.sleep(5)
+        time.sleep(10)
         self.log('Quantity selected')
 
     def _get_product_list_cart(self):
-        time.sleep(10)
+        time.sleep(15)
         condition = EC.visibility_of_element_located(
             (By.ID, 'shoppingCartLineItem_container'))
         return self.wait.until(condition)
 
     def _get_products_in_cart(self, product_list):
-        time.sleep(10)
+        time.sleep(15)
         html_text = product_list.get_attribute('outerHTML')
         selector = scrapy.Selector(text=html_text)
         return selector.xpath(
