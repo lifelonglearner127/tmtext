@@ -161,10 +161,10 @@ class TargetVariants(object):
             'Referer': self.item_info['dynamicKitURL'],
             'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
         }
-
-        response = requests.post(url, data=json.dumps(payload), headers=headers)
-        # TODO: url http://www.target.com/p/mid-rise-straight-leg-jeans-curvy-fit-black-mossimo/-/A-15545812 fails
         try:
+            response = requests.post(url, data=json.dumps(payload), headers=headers)
+            # TODO: url http://www.target.com/p/mid-rise-straight-leg-jeans-curvy-fit-black-mossimo/-/A-15545812 fails
+
             return response.json()['products']
         except:
             print 'ERROR! ' + response.text
@@ -228,10 +228,12 @@ class TargetVariants(object):
                     continue
 
                 if 'locations' in item['products'][0]:
-                    status = True if item['products'][0]['locations'][0]['availability_status'] == 'IN_STOCK' else False
+                    status = False
                     try:
+                        status = True if item['products'][0]['locations'][0][
+                                             'availability_status'] == 'IN_STOCK' else False
                         availability_info[product_id].append(status)
-                    except KeyError:
+                    except (KeyError, IndexError):
                         availability_info[product_id] = [status]
 
             for item in self.item_info['SKUs']:
