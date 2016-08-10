@@ -125,6 +125,10 @@ class KohlsSpider(BaseCheckoutSpider):
     def _add_to_cart(self):
         self._click_on_element_with_id('addtobagID')
         time.sleep(5)
+        select_lower = self._find_by_xpath('//*[contains(., "select a lower amount")]')
+        if select_lower:
+            self._set_quantity(None, 1)
+            self._add_to_cart()
 
     def _set_quantity(self, product, quantity):
         self.driver.execute_script(
@@ -175,7 +179,7 @@ class KohlsSpider(BaseCheckoutSpider):
                         '\$(.*)'))
 
     def _get_item_price_on_page(self, item):
-        return min(map((lambda x: float(x.replace(',', '').strip())), 
+        return min(map((lambda x: float(x.replace(',', '').strip())),
                        item.xpath('*//*[contains(@id,"saleprice_")]/text()|'
                                   '*//*[contains(@id, "regularprice_")]'
                                   '/text()').re('\$(.*)')))
