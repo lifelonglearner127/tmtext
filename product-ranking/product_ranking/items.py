@@ -165,6 +165,7 @@ class SiteProductItem(Item):
     # Product data.
     title = Field()  # String.
     upc = Field(serializer=scrapy_upc_serializer)  # Integer.
+    asin = Field()
     model = Field()  # String, alphanumeric code.
     sku = Field()  # product SKU, if any
     url = Field()  # String, URL.
@@ -263,6 +264,9 @@ class SiteProductItem(Item):
     available_online = Field()
     available_store = Field()
     subscribe_and_save = Field() # Samclub.com
+    walmart_url = Field()  # For amazon_top_categories_products spider, url of product on Walmart, if found
+    walmart_category = Field()  # For amazon_top_categories_products spider, category of product on Walmart, if found
+    walmart_exists = Field()  # For amazon_top_categories_products - True/False
 
     price_club = Field(serializer=scrapy_price_serializer) # Samclub.com
     price_club_with_discount = Field(serializer=scrapy_price_serializer) # Samclub.com
@@ -278,6 +282,10 @@ class SiteProductItem(Item):
     level8 = Field()
     level9 = Field()
     level10 = Field()
+
+    dpci = Field()  # Target.com unique item identifier, example - 008-09-1171
+    tcin = Field()  # Target.com online item number, for example - Online Item #: 16390220
+    origin = Field()  # Target.com origin field, describes if item is imported or not
 
 
 class DiscountCoupon(Item):
