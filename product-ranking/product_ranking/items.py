@@ -264,9 +264,9 @@ class SiteProductItem(Item):
     available_online = Field()
     available_store = Field()
     subscribe_and_save = Field() # Samclub.com
-    walmart_url = Field()
-    walmart_category = Field()
-    walmart_exists = Field()
+    walmart_url = Field()  # For amazon_top_categories_products spider, url of product on Walmart, if found
+    walmart_category = Field()  # For amazon_top_categories_products spider, category of product on Walmart, if found
+    walmart_exists = Field()  # For amazon_top_categories_products - True/False
 
 
 class DiscountCoupon(Item):
