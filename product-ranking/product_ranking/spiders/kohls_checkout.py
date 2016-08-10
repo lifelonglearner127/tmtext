@@ -45,8 +45,8 @@ class KohlsSpider(BaseCheckoutSpider):
 
     def __init__(self, *args, **kwargs):
         super(KohlsSpider, self).__init__(*args, **kwargs)
-        # self.proxy = _get_random_proxy()
-        # self.proxy_type = 'http'
+        self.proxy = _get_random_proxy()
+        self.proxy_type = 'http'
 
     def start_requests(self):
         yield scrapy.Request('http://www.kohls.com/')
