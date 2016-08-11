@@ -84,7 +84,7 @@ class KohlsSpider(BaseCheckoutSpider):
         return [x.get_attribute("alt") for x in swatches]
 
     def select_size(self, element=None):
-        time.sleep(5)
+        time.sleep(10)
         size_attribute_xpath = ('*//*[@id="size-dropdown"]/'
                                 'option[@select]|*//'
                                 'a[@class="pdp-size-swatch active"]')
@@ -96,11 +96,11 @@ class KohlsSpider(BaseCheckoutSpider):
         self._click_attribute(size_attribute_xpath,
                               size_attributes_xpath,
                               element)
-        time.sleep(5)
+        time.sleep(10)
         self.log('Size selected')
 
     def select_color(self, element=None, color=None):
-        time.sleep(5)
+        time.sleep(10)
         color_attribute_xpath = ('*//*[@class="pdp-color-swatches-info"]'
                                  '/div[contains(@class,"active")]/a')
         color_attributes_xpath = ('*//*[@class="pdp-color-swatches-info"]'
@@ -114,7 +114,7 @@ class KohlsSpider(BaseCheckoutSpider):
         self._click_attribute(color_attribute_xpath,
                               color_attributes_xpath,
                               element)
-        time.sleep(5)
+        time.sleep(10)
         self.log('Color selected')
         # Remove focus to avoid hiddend the above element
         # self._find_by_xpath('//h1')[0].click()
@@ -125,6 +125,7 @@ class KohlsSpider(BaseCheckoutSpider):
             '//div[contains(@class, "pdp-main-container")]')
 
     def _add_to_cart(self):
+        time.sleep(10)
         self._click_on_element_with_id('addtobagID')
         time.sleep(20)
         select_lower = self._find_by_xpath('//*[contains(., "select a lower amount")]')
