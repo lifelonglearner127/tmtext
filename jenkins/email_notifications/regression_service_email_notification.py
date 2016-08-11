@@ -35,7 +35,7 @@ msg['Subject'] = subject
 msg.preamble = subject
 email_content = ""
 
-websites = ["walmart", "amazon", "jcpenney", "kohls", "macys", "target", "uniqlo", "levi", "dockers", "nike", "samsclub", "drugstore"]
+websites = ["walmart", "jcpenney", "kohls", "macys", "target", "levi", "dockers", "samsclub", "drugstore"]
 
 for website in websites:
     sql_sample_products = "select id, url, website, json, not_a_product from console_urlsample where website='{0}'".format(website)
