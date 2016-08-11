@@ -121,9 +121,12 @@ class LowesProductsSpider(BaseProductsSpider):
         return product
 
     def _scrape_total_matches(self, response):
-        total_matches = response.xpath(
-            '//*[@title="productduct Search Results"]/span/text()').re('\d+')
-        return int(total_matches[0]) if total_matches else None
+        # extracting total matches by calculating numbers on filter panel
+        panel_values = response.xpath('.//li[contains(@class, "refinement-label") '
+                                      'and contains(@data-name, "$")]//span[@id]/text()').re(r'\((\d+)\)')
+        panel_values = [int(p) for p in panel_values if p.isdigit()]
+        total_matches = sum(panel_values)
+        return total_matches
 
     def _scrape_product_links(self, response):
         links = response.xpath(
@@ -268,11 +271,11 @@ class LowesProductsSpider(BaseProductsSpider):
 
         # Reviews
         bv_product_id = response.xpath('//*[@id="bvProductId"]/@value').extract()
+        bv_product_id = bv_product_id[0] if bv_product_id else None
         if not bv_product_id:
-            bv_product_id = response.xpath(
-                './/strong[contains(text(), "Item #")]/following-sibling::text()[1]').extract()
+            bv_product_id = response.url.split('/')[-1]
         if bv_product_id:
-            url = self.RATING_URL.format(prodid=bv_product_id[0])                        
+            url = self.RATING_URL.format(prodid=bv_product_id)
             reqs.append(Request(
                     url,
                     meta=response.meta.copy(),
