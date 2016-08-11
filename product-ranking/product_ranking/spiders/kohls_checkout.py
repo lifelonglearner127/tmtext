@@ -180,7 +180,7 @@ class KohlsSpider(BaseCheckoutSpider):
         self.log('Size selected')
 
     def select_color(self, element=None, color=None):
-        time.sleep(10)
+        time.sleep(30)
         color_attribute_xpath = ('*//*[@class="pdp-color-swatches-info"]'
                                  '/div[contains(@class,"active")]/a')
         color_attributes_xpath = ('*//*[@class="pdp-color-swatches-info"]'
