@@ -10,6 +10,7 @@
 # - executing the crawler against the cached dir;
 # - error handling (blank page?); solving captcha issues at amazon
 # - CH support
+#
 
 import os
 import sys

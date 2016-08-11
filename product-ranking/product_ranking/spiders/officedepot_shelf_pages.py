@@ -1,17 +1,21 @@
 import re
+import urlparse
+
+import scrapy
+from scrapy.log import WARNING, ERROR
 from scrapy.http import Request
+from scrapy import Selector
 
 from product_ranking.items import SiteProductItem
-from .kohls import KohlsProductsSpider
 
 is_empty = lambda x: x[0] if x else None
 
+from .officedepot import OfficedepotProductsSpider
 
-class KohlsShelfPagesSpider(KohlsProductsSpider):
-    name = 'kohls_shelf_urls_products'
-    allowed_domains = ['kohls.com',
-                       'www.kohls.com',
-                       'kohls.ugc.bazaarvoice.com']
+
+class OfficedepotShelfPagesSpider(OfficedepotProductsSpider):
+    name = 'officedepot_shelf_urls_products'
+    allowed_domains = ["officedepot.com", "www.officedepot.com"]  # without this find_spiders() fails
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
@@ -26,14 +30,15 @@ class KohlsShelfPagesSpider(KohlsProductsSpider):
         return {'remaining': 99999, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
-        super(KohlsShelfPagesSpider, self).__init__(*args, **kwargs)
+        super(OfficedepotShelfPagesSpider, self).__init__(*args, **kwargs)
         self._setup_class_compatibility()
+
         self.product_url = kwargs['product_url']
 
         if "num_pages" in kwargs:
             self.num_pages = int(kwargs['num_pages'])
         else:
-            self.num_pages = 1
+            self.num_pages = 1  # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
 
         self.user_agent = "Mozilla/5.0 (X11; Linux i686 (x86_64))" \
             " AppleWebKit/537.36 (KHTML, like Gecko)" \
@@ -54,23 +59,16 @@ class KohlsShelfPagesSpider(KohlsProductsSpider):
 
     def start_requests(self):
         yield Request(url=self.valid_url(self.product_url),
-                      meta=self._setup_meta_compatibility())
+                      meta=self._setup_meta_compatibility())  # meta is for SC baseclass compatibility
 
     def _scrape_product_links(self, response):
-        prod_urls = response.xpath('//*[contains(@id, "content")]'
-                                   '//noscript//a[contains(@href, "prd-")]/img/../@href').extract()
-        if not prod_urls:
-            prod_urls = re.findall(
-                r'"prodSeoURL"\s?:\s+\"(.+)\"',
-                response.body_as_unicode()
-            )
+        urls = response.xpath('//div[contains(@class, "photo_container")]//a/img/../@href').extract()
+        if not urls:
+            urls = response.xpath('//a[@class="med_txt black"]/@href').extract()
+        urls = [urlparse.urljoin(response.url, x) for x in urls]
 
-        urls = ['http://www.kohls.com' + i for i in prod_urls]
-        breadcrumb = response.xpath('//title/text()').extract()
-
-        shelf_categories = breadcrumb[0].split()[:-2]
-        shelf_categories = [i for i in reversed(shelf_categories)]
-        shelf_category = shelf_categories[-1] if shelf_categories else None
+        shelf_categories = response.xpath('//div[@id="siteBreadcrumb"]/ul/li/a/span/text()').extract()
+        shelf_category = response.xpath('//div[@id="siteBreadcrumb"]/ul/li/span/text()').extract()
 
         for url in urls:
             item = SiteProductItem()
@@ -84,8 +82,6 @@ class KohlsShelfPagesSpider(KohlsProductsSpider):
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1
-        return super(KohlsShelfPagesSpider,
-                     self)._scrape_next_results_page_link(response)
 
     def parse_product(self, response):
-        return super(KohlsShelfPagesSpider, self).parse_product(response)
+        return super(OfficedepotShelfPagesSpider, self).parse_product(response)

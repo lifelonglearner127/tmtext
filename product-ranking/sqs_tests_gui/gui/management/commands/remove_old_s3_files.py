@@ -23,8 +23,7 @@ sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
 import scrapy_daemon
 from test_sqs_flow import download_s3_file, AMAZON_BUCKET_NAME, unzip_file
-from list_all_files_in_s3_bucket import list_files_in_bucket, \
-        AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+from list_all_files_in_s3_bucket import list_files_in_bucket
 
 
 def run(command, shell=None):
@@ -66,11 +65,7 @@ class Command(BaseCommand):
         if num_of_running_instances('remove_old_s3_files') > 1:
             print 'an instance of the script is already running...'
             sys.exit()
-        conn = boto.connect_s3(
-            aws_access_key_id=AMAZON_ACCESS_KEY,
-            aws_secret_access_key=AMAZON_SECRET_KEY,
-            is_secure=False,  # uncomment if you are not using ssl
-        )
+        conn = boto.connect_s3(is_secure=False)
         # Get current bucket
         bucket = conn.get_bucket(AMAZON_BUCKET_NAME, validate=False)
         for s3_key in bucket.list():

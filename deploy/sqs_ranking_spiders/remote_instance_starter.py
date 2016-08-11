@@ -27,8 +27,6 @@ if os.path.dirname(os.path.abspath(__file__)) == '/home/spiders/repo':  # remote
 FLAG_URL = "stop-sc-spiders.contentanalyticsinc.com"
 FLAG_S3_KEY = "scrapy_daemon_stop_flag"
 AMAZON_BUCKET_NAME = 'spyder-bucket'  # Amazon S3 bucket name
-AMAZON_ACCESS_KEY = 'AKIAIKTYYIQIZF3RWNRA'
-AMAZON_SECRET_KEY = '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'
 
 log_file_path = '/tmp/remote_instance_starter2.log'
 log_settings = {
@@ -107,14 +105,8 @@ def wait_until_post_starter_script_executed(script_name):
             return
 
 
-def stop_flag_exists_at_s3(bucket_name, key,
-                           amazon_public_key=AMAZON_ACCESS_KEY,
-                           amazon_secret_key=AMAZON_SECRET_KEY,):
-    conn = boto.connect_s3(
-        aws_access_key_id=amazon_public_key,
-        aws_secret_access_key=amazon_secret_key,
-        is_secure=False,
-    )
+def stop_flag_exists_at_s3(bucket_name, key):
+    conn = boto.connect_s3(is_secure=False)
     bucket = conn.get_bucket(bucket_name, validate=False)
     k = Key(bucket)
     k.key = "scrapy_daemon_stop_flag"

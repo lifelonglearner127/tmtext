@@ -391,10 +391,34 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             if image:
                 image = image[0].replace("_100x100.", ".")
                 product['image_url'] = image
+            dpci = response.xpath(
+                './/*[contains(text(), "Store Item Number (DPCI)")]/following-sibling::text()[1]').extract()
+            dpci = dpci[0].strip() if dpci else None
+            product['dpci'] = dpci
+            tcin = response.xpath(
+                './/*[contains(text(), "Online Item #")]/following-sibling::text()[1]').extract()
+            tcin = tcin[0].strip() if tcin else None
+            if not tcin:
+                tcin = response.xpath(
+                    './/*[contains(text(), "TCIN:")]/span/text()').extract()
+                tcin = tcin[0].strip() if tcin else None
+            product['tcin'] = tcin
+            origin = response.xpath(
+                './/*[contains(text(), "Origin:")]/span/text()').extract()
+            origin = origin[0].strip() if origin else None
+            if not origin:
+                origin = response.xpath(
+                    './/h3[@class="heading-small" and contains (text(), "other Info.")]'
+                    '/following-sibling::ul[1]/li[position()=last()]/text()').extract()
+                origin = origin[0].strip() if origin else None
+            product['origin'] = origin
+
         else:
             item_info = self._item_info_v2(response)
             product['title'] = item_info['title']
             product['upc'] = item_info.get('UPC', None)
+            product['dpci'] = item_info.get('DPCI', None)
+            product['tcin'] = item_info.get('partNumber', None)
             #product['sku'] = ''  # TODO
             product['image_url'] = item_info.get('Images', [{}])[0].get('PrimaryImage', [{}])[0].get('image')
             product['description'] = item_info.get('shortDescription', None)
@@ -402,7 +426,12 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             product['price'], product['price_details_in_cart'] = self._get_price_v2(item_info)
             #product['related_products'] = None  # TODO
             product['is_out_of_stock'] = not item_info.get('inventoryStatus', '') == 'in stock'
-
+            origin = item_info.get('ItemAttributes')
+            origin = origin[0].get('Attribute') if origin else None
+            if origin:
+                origin = [atr.get('description') for atr in origin if atr.get('identifier') == "IMPORT_DESIGNATION"]
+                origin = origin[0] if origin else None
+                product['origin'] = origin
             tv = TargetVariants()
             if not product['variants']:
                 tv.setupSC(response=response, zip_code=self.zip_code, item_info=item_info)

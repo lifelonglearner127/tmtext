@@ -322,6 +322,7 @@ class MockedCheckFeedStatusByWalmartApiViewSet(CheckFeedStatusByWalmartApiViewSe
                 new_status = response['itemDetails']['itemIngestionStatus'][index]['ingestionStatus']
                 history.set_statuses([new_status])
 
+        response['feed_id'] = request_feed_id
         return response
 
     def generate_items(self, items, in_progress, success, data_error, timeout_error):

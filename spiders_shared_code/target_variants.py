@@ -161,13 +161,13 @@ class TargetVariants(object):
             'Referer': self.item_info['dynamicKitURL'],
             'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
         }
-
-        response = requests.post(url, data=json.dumps(payload), headers=headers)
-        # TODO: url http://www.target.com/p/mid-rise-straight-leg-jeans-curvy-fit-black-mossimo/-/A-15545812 fails
         try:
+            response = requests.post(url, data=json.dumps(payload), headers=headers)
+            # TODO: url http://www.target.com/p/mid-rise-straight-leg-jeans-curvy-fit-black-mossimo/-/A-15545812 fails
+
             return response.json()['products']
         except:
-            print 'ERROR! ' + response.text
+            print 'ERROR getting avilability info! '# + response.text
 
     def _extract_location_id(self, product_id):
         " extract location id to use it in stock status checking "
@@ -228,10 +228,12 @@ class TargetVariants(object):
                     continue
 
                 if 'locations' in item['products'][0]:
-                    status = True if item['products'][0]['locations'][0]['availability_status'] == 'IN_STOCK' else False
+                    status = False
                     try:
+                        status = True if item['products'][0]['locations'][0][
+                                             'availability_status'] == 'IN_STOCK' else False
                         availability_info[product_id].append(status)
-                    except KeyError:
+                    except (KeyError, IndexError):
                         availability_info[product_id] = [status]
 
             for item in self.item_info['SKUs']:
@@ -252,9 +254,13 @@ class TargetVariants(object):
                     'image_url' : item['Images'][0]['PrimaryImage'][0]['image'],
                     'selected' : None,
                     'upc':None,
+                    'dpci': None,
                 }
-                # Adding UPC
+                # Adding UPC, dpci and tcin
                 v['upc'] = item.get('UPC')
+                v['dpci'] = item.get('DPCI')
+                img_url = v.get('image_url')
+                v['tcin'] = img_url.split('/')[-1] if img_url else None
                 v['in_stock'] = any(availability_info.get(item.get('partNumber', True), [True]))  # TODO: this fails if written as indexes ([]), not get()
 
                 for attribute in item.get('VariationAttributes', []):

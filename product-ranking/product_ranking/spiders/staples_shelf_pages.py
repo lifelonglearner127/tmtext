@@ -1,17 +1,24 @@
+import os.path
 import re
+import urlparse
+import requests
+import json
+
+import scrapy
+from scrapy.log import WARNING, ERROR
 from scrapy.http import Request
+from scrapy import Selector
 
 from product_ranking.items import SiteProductItem
-from .kohls import KohlsProductsSpider
 
 is_empty = lambda x: x[0] if x else None
 
+from .staples import StaplesProductsSpider
 
-class KohlsShelfPagesSpider(KohlsProductsSpider):
-    name = 'kohls_shelf_urls_products'
-    allowed_domains = ['kohls.com',
-                       'www.kohls.com',
-                       'kohls.ugc.bazaarvoice.com']
+
+class StaplesShelfPagesSpider(StaplesProductsSpider):
+    name = 'staples_shelf_urls_products'
+    allowed_domains = ["staples.com", "www.staples.com"]  # without this find_spiders() fails
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
@@ -26,14 +33,14 @@ class KohlsShelfPagesSpider(KohlsProductsSpider):
         return {'remaining': 99999, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
-        super(KohlsShelfPagesSpider, self).__init__(*args, **kwargs)
         self._setup_class_compatibility()
+
         self.product_url = kwargs['product_url']
 
         if "num_pages" in kwargs:
             self.num_pages = int(kwargs['num_pages'])
         else:
-            self.num_pages = 1
+            self.num_pages = 1  # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
 
         self.user_agent = "Mozilla/5.0 (X11; Linux i686 (x86_64))" \
             " AppleWebKit/537.36 (KHTML, like Gecko)" \
@@ -54,38 +61,41 @@ class KohlsShelfPagesSpider(KohlsProductsSpider):
 
     def start_requests(self):
         yield Request(url=self.valid_url(self.product_url),
-                      meta=self._setup_meta_compatibility())
+                      meta=self._setup_meta_compatibility())  # meta is for SC baseclass compatibility
 
     def _scrape_product_links(self, response):
-        prod_urls = response.xpath('//*[contains(@id, "content")]'
-                                   '//noscript//a[contains(@href, "prd-")]/img/../@href').extract()
-        if not prod_urls:
-            prod_urls = re.findall(
-                r'"prodSeoURL"\s?:\s+\"(.+)\"',
-                response.body_as_unicode()
-            )
-
-        urls = ['http://www.kohls.com' + i for i in prod_urls]
-        breadcrumb = response.xpath('//title/text()').extract()
-
-        shelf_categories = breadcrumb[0].split()[:-2]
-        shelf_categories = [i for i in reversed(shelf_categories)]
-        shelf_category = shelf_categories[-1] if shelf_categories else None
+        urls = response.xpath('//a[contains(@property, "url")]/@href').extract()
+        if not urls:
+            urls = response.xpath('//a[@class="product-title scTrack pfm"]/@href').extract()
+        urls = [urlparse.urljoin(response.url, x) for x in urls]
+        shelf_category = response.xpath('//h1/text()').extract()
+        if shelf_category:
+            shelf_category = shelf_category[0].strip(' \t\n')
+        shelf_path = response.xpath('//div[contains(@class, "stp--breadcrumbs")]/ul/li/a/text()'
+                                    ' | //div[contains(@class, "stp--breadcrumbs")]/ul/li[@class="last"]/text()').extract()
 
         for url in urls:
             item = SiteProductItem()
             if shelf_category:
                 item['shelf_name'] = shelf_category
-            if shelf_categories:
-                item['shelf_path'] = shelf_categories
+            if shelf_path:
+                item['shelf_path'] = shelf_path
             yield url, item
 
     def _scrape_next_results_page_link(self, response):
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1
-        return super(KohlsShelfPagesSpider,
-                     self)._scrape_next_results_page_link(response)
+        spliturl = self.product_url.split('?')
+        nextlink = spliturl[0]
+        if len(spliturl) == 1:
+            return (nextlink + "?pn=%d" % self.current_page)
+        else:
+            nextlink += "?"
+            for s in spliturl[1].split('&'):
+                if not "pn=" in s:
+                    nextlink += s + "&"
+            return (nextlink + "pn=%d" % self.current_page)
 
     def parse_product(self, response):
-        return super(KohlsShelfPagesSpider, self).parse_product(response)
+        return super(StaplesShelfPagesSpider, self).parse_product(response)

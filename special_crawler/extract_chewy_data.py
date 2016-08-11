@@ -11,13 +11,13 @@ class ChewyScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = 'Expected URL format is http://www.chewy.com/<item-name>/dp/<item-id>'
+    INVALID_URL_MESSAGE = 'Expected URL format is http(s)://www.chewy.com/<item-name>/dp/<item-id>'
 
     reviews_checked = False
     reviews_tree = None
 
     def check_url_format(self):
-        if re.match('^http://www\.chewy\.com/[\w-]+/dp/\d+$', self.product_page_url):
+        if re.match('^https?://www\.chewy\.com/[\w-]+/dp/\d+$', self.product_page_url):
             return True
         return False
 

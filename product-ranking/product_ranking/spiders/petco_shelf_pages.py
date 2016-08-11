@@ -1,17 +1,17 @@
 import re
+import urlparse
+
 from scrapy.http import Request
 
 from product_ranking.items import SiteProductItem
-from .kohls import KohlsProductsSpider
+from .petco import PetcoProductsSpider
 
 is_empty = lambda x: x[0] if x else None
 
 
-class KohlsShelfPagesSpider(KohlsProductsSpider):
-    name = 'kohls_shelf_urls_products'
-    allowed_domains = ['kohls.com',
-                       'www.kohls.com',
-                       'kohls.ugc.bazaarvoice.com']
+class PetcoShelfPagesSpider(PetcoProductsSpider):
+    name = 'petco_shelf_urls_products'
+    allowed_domains = ['petco.com', 'www.petco.com']
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
@@ -26,18 +26,16 @@ class KohlsShelfPagesSpider(KohlsProductsSpider):
         return {'remaining': 99999, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
-        super(KohlsShelfPagesSpider, self).__init__(*args, **kwargs)
+        super(PetcoShelfPagesSpider, self).__init__(*args, **kwargs)
         self._setup_class_compatibility()
         self.product_url = kwargs['product_url']
-
         if "num_pages" in kwargs:
             self.num_pages = int(kwargs['num_pages'])
         else:
             self.num_pages = 1
-
         self.user_agent = "Mozilla/5.0 (X11; Linux i686 (x86_64))" \
-            " AppleWebKit/537.36 (KHTML, like Gecko)" \
-            " Chrome/37.0.2062.120 Safari/537.36"
+                          " AppleWebKit/537.36 (KHTML, like Gecko)" \
+                          " Chrome/37.0.2062.120 Safari/537.36"
 
         # variants are switched off by default, see Bugzilla 3982#c11
         self.scrape_variants_with_extra_requests = False
@@ -57,35 +55,34 @@ class KohlsShelfPagesSpider(KohlsProductsSpider):
                       meta=self._setup_meta_compatibility())
 
     def _scrape_product_links(self, response):
-        prod_urls = response.xpath('//*[contains(@id, "content")]'
-                                   '//noscript//a[contains(@href, "prd-")]/img/../@href').extract()
-        if not prod_urls:
-            prod_urls = re.findall(
-                r'"prodSeoURL"\s?:\s+\"(.+)\"',
-                response.body_as_unicode()
-            )
+        urls = response.xpath(
+            "//div[contains(@class,'product-display-grid')]"
+            "//div[contains(@class,'product-image')]/a/@href"
+            ).extract()
+        urls = [urlparse.urljoin(response.url, x) if x.startswith('/') else x
+                for x in urls]
 
-        urls = ['http://www.kohls.com' + i for i in prod_urls]
-        breadcrumb = response.xpath('//title/text()').extract()
+        categories = response.css('.breadcrumb a::text').extract()
+        shelf_categories = categories if categories else None
 
-        shelf_categories = breadcrumb[0].split()[:-2]
-        shelf_categories = [i for i in reversed(shelf_categories)]
-        shelf_category = shelf_categories[-1] if shelf_categories else None
+        shelf_category = categories[-1] if categories else None
+
+        urls = ["".join(i.replace('http://www.petco.com', '')) for i in urls]
 
         for url in urls:
             item = SiteProductItem()
-            if shelf_category:
-                item['shelf_name'] = shelf_category
             if shelf_categories:
-                item['shelf_path'] = shelf_categories
+                item['shelf_name'] = shelf_categories
+            if shelf_category:
+                item['shelf_path'] = shelf_category
             yield url, item
 
     def _scrape_next_results_page_link(self, response):
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1
-        return super(KohlsShelfPagesSpider,
+        return super(PetcoShelfPagesSpider,
                      self)._scrape_next_results_page_link(response)
 
     def parse_product(self, response):
-        return super(KohlsShelfPagesSpider, self).parse_product(response)
+        return super(PetcoShelfPagesSpider, self).parse_product(response)

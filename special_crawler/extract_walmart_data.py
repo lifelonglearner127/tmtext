@@ -922,7 +922,7 @@ class WalmartScraper(Scraper):
 
             start_index = self._get_description_separator_index(description)
 
-            if not start_index:
+            if start_index == None:
                 return
 
             long_description = description[start_index:]
@@ -1872,7 +1872,7 @@ class WalmartScraper(Scraper):
                 zoom_image_url = item.get('versions', {}).get('zoom', None)
                 is_image_selected = False
 
-                if zoom_image_url and zoom_image_url.startswith("http://i5.walmartimages.com"):
+                if zoom_image_url and re.match("https?://i5.walmartimages.com", zoom_image_url):
                     if no_image_check_count_limit < 0:
                         images_carousel.append(zoom_image_url)
                         image_dimensions.append(1)
@@ -1883,7 +1883,7 @@ class WalmartScraper(Scraper):
                         image_dimensions.append(1)
                         no_image_check_count_limit -= 1
 
-                if not is_image_selected and hero_image_url and hero_image_url.startswith("http://i5.walmartimages.com"):
+                if not is_image_selected and hero_image_url and re.match("https?://i5.walmartimages.com", hero_image_url):
                     if no_image_check_count_limit < 0:
                         images_carousel.append(hero_image_url)
                         image_dimensions.append(0)
@@ -2409,6 +2409,14 @@ class WalmartScraper(Scraper):
             return self.product_info_json["buyingOptions"]["seller"]["displayName"]
 
         return None
+
+    def _seller_id(self):
+        self._extract_product_info_json()
+        return self.product_info_json["buyingOptions"]["seller"]["sellerId"]
+
+    def _us_seller_id(self):
+        self._extract_product_info_json()
+        return self.product_info_json["buyingOptions"]["seller"]["catalogSellerId"]
 
     def _site_online(self):
         """Extracts whether the item is sold by the site and delivered directly
@@ -3061,6 +3069,8 @@ class WalmartScraper(Scraper):
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
         "primary_seller": _primary_seller, \
+        "seller_id": _seller_id, \
+        "us_seller_id": _us_seller_id, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "review_count": _review_count, \
