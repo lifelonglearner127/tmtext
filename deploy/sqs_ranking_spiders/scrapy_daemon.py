@@ -1318,10 +1318,12 @@ def main():
             time.sleep(3)
             continue
         task_data, queue = msg
-        if 'url' in task_data and 'searchterms_str' not in task_data:
+        if 'url' in task_data and 'searchterms_str' not in task_data \
+                and not 'checkout' in task_data['site']:
             if MAX_CONCURRENT_TASKS < 70:  # increase num of parallel jobs
                                            # for "light" URL-based jobs
                 MAX_CONCURRENT_TASKS += 1
+
         if task_data['site'] == 'walmart':
             task_quantity = task_data.get('cmd_args', {}).get('quantity', 20)
             with_best_seller_ranking = task_data.get('with_best_seller_ranking', None)
@@ -1347,9 +1349,9 @@ def main():
                     MAX_CONCURRENT_TASKS -= 3 if MAX_CONCURRENT_TASKS > 0 else 0
                     logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
                                 ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
-        elif task_data['site'] in ('dockers', 'nike'):
+        elif (task_data['site'] in ('dockers', 'nike')) or 'checkout' in task_data['site']:
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
-            logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Firefox-based spider in use' % MAX_CONCURRENT_TASKS)
+            logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
 
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))

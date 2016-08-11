@@ -2031,7 +2031,7 @@ class WalmartScraper(Scraper):
 
                 return self.product_info_json
             else:
-                page_raw_text = self.page_raw_text
+                page_raw_text = requests.get(self.product_page_url).content
                 product_info_json = json.loads(re.search('define\("product\/data",\n(.+?)\n', page_raw_text).group(1))
 
                 self.product_info_json = product_info_json
