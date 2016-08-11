@@ -608,10 +608,10 @@ class AmazonScraper(Scraper):
         return 0
 
     def _no_longer_available(self):
-        availability = self.tree_html.xpath('//div[@id="availability"]')
+        availability = self.tree_html.xpath('//*[@id="availability" or @id="pantry-availability"]')
 
         if availability:
-            if 'Currently unavailable' in availability[0].text_content():
+            if re.search('Currently [uU]navailable', availability[0].text_content()):
                 return 1
 
         return 0
