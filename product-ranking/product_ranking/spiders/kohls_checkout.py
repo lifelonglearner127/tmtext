@@ -118,7 +118,7 @@ class KohlsSpider(BaseCheckoutSpider):
                         except WebDriverException as e:
                             clickable_error = True
                             print traceback.print_exc()
-                            print "Exception: %s" % str(e)
+                            self.log("Exception: %s" % str(e))
                             self._open_new_session(url)
 
                         except:
@@ -200,8 +200,9 @@ class KohlsSpider(BaseCheckoutSpider):
 
     def _get_products(self):
         time.sleep(30)
-        return self._find_by_xpath(
-            '//div[contains(@class, "pdp-main-container")]')
+        condition = EC.presence_of_all_elements_located(
+            (By.XPATH, '//div[contains(@class, "pdp-main-container")]'))
+        return self.wait.until(condition)
 
     def _add_to_cart(self):
         time.sleep(10)
