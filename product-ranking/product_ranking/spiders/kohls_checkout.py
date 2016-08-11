@@ -77,7 +77,7 @@ class KohlsSpider(BaseCheckoutSpider):
         return item
 
     def _get_colors_names(self):
-        time.sleep(10)
+        time.sleep(30)
         swatches = self._find_by_xpath(
             '//a[@data-skucolor and '
             'not(contains(@class,"color-unavailable"))]')
@@ -133,6 +133,7 @@ class KohlsSpider(BaseCheckoutSpider):
             self._add_to_cart()
 
     def _set_quantity(self, product, quantity):
+        time.sleep(10)
         self.driver.execute_script(
             "document.getElementsByClassName('pdp-product-quantity')[0]"
             ".setAttribute('value', '%s')" % quantity)
