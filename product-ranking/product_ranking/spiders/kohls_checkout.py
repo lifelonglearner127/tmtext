@@ -119,13 +119,14 @@ class KohlsSpider(BaseCheckoutSpider):
                             clickable_error = True
                             print traceback.print_exc()
                             self.log("Exception: %s" % str(e))
+                            self.driver.close()
                             self._open_new_session(url)
 
                         except:
                             print traceback.print_exc()
                             self.log('Error while parsing color %s of %s'
                                      % (color, url))
-
+                            self.driver.close()
                             self._open_new_session(url)
 
                 self.driver.close()
