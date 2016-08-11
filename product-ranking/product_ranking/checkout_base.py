@@ -56,7 +56,7 @@ class BaseCheckoutSpider(scrapy.Spider):
     retries = 0
     MAX_RETRIES = 3
     SOCKET_WAIT_TIME = 120
-    WEBDRIVER_WAIT_TIME = 40
+    WEBDRIVER_WAIT_TIME = 100
 
     def __init__(self, *args, **kwargs):
         socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
@@ -154,7 +154,7 @@ class BaseCheckoutSpider(scrapy.Spider):
                         except WebDriverException as e:
                             clickable_error = True
                             print traceback.print_exc()
-                            print "Exception: %s" % str(e)
+                            self.log("Exception: %s" % str(e))
                             self._open_new_session(url)
 
                         except:
