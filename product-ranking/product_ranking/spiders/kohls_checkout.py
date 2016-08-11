@@ -126,7 +126,7 @@ class KohlsSpider(BaseCheckoutSpider):
 
     def _add_to_cart(self):
         self._click_on_element_with_id('addtobagID')
-        time.sleep(10)
+        time.sleep(20)
         select_lower = self._find_by_xpath('//*[contains(., "select a lower amount")]')
         if select_lower:
             self._set_quantity(None, 1)
