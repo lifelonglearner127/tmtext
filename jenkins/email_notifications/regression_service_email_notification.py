@@ -33,6 +33,7 @@ msg = MIMEMultipart(
         )
 msg['Subject'] = subject
 msg.preamble = subject
+email_content = ""
 
 #websites = ["walmart", "amazon", "jcpenney", "kohls", "macys", "target", "uniqlo", "levi", "dockers", "nike", "samsclub", "drugstore"]
 websites = ["samsclub", "drugstore"]
@@ -119,7 +120,6 @@ for website in websites:
     cur.execute(sql_changed_products)
     rows = cur.fetchall()
     rows = sorted(rows, key=lambda k: k['changes_in_structure'], reverse=True)
-    email_content = ""
 
     #UPC missing issue
     csv_file_name_upc_missed = "/home/ubuntu/tmtext/special_crawler/jenkins/{0}_upc_missed_{1}.csv".format(website, time.strftime("%Y_%m_%d"))
