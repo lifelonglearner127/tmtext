@@ -1,11 +1,13 @@
 import re
 import socket
 import time
+import traceback
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
 from product_ranking.items import CheckoutProductItem
+from selenium.common.exceptions import WebDriverException
 
 import scrapy
 import random
@@ -50,6 +52,83 @@ class KohlsSpider(BaseCheckoutSpider):
 
     def start_requests(self):
         yield scrapy.Request('http://www.kohls.com/')
+
+    def parse(self, request):
+        is_iterable = isinstance(self.product_data, (list, tuple))
+        self.product_data = (self.product_data
+                             if is_iterable
+                             else list(self.product_data))
+
+        for product in self.product_data:
+            self.log("Product: %r" % product)
+            # Open product URL
+            for qty in self.quantity:
+                self.requested_color = None
+                self.is_requested_color = False
+                url = product.get('url')
+                # Fastest way to empty the cart
+                self._open_new_session(url)
+                if product.get('FetchAllColors'):
+                    # Parse all the products colors
+                    colors = self._get_colors_names()
+
+                else:
+                    # Only parse the selected color
+                    # if None, the first fetched will be selected
+                    colors = product.get('color', None)
+
+                    if colors:
+                        self.is_requested_color = True
+
+                    if isinstance(colors, basestring) or not colors:
+                        colors = [colors]
+
+                self.log('Colors %r' % (colors))
+                for color in colors:
+                    if self.is_requested_color:
+                        self.requested_color = color
+                    self.current_color = color
+                    self.current_quantity = qty
+                    self.log('Color: %s' % (color or 'None'))
+                    clickable_error = True
+                    self.retries = 0
+                    while clickable_error:
+                        if self.retries >= self.MAX_RETRIES:
+                            self.log('Max retries number reach,'
+                                     ' skipping this product')
+                            break
+
+                        else:
+                            self.proxy = _get_random_proxy()
+                            self.retries += 1
+
+                        clickable_error = False
+                        try:
+                            self._parse_product_page(url, qty, color)
+
+                            for item in self._parse_cart_page():
+                                item['url'] = url
+                                yield item
+
+                            # Fastest way to empty the cart
+                            # and clear resources
+                            self.driver.close()
+                            self._open_new_session(url)
+
+                        except WebDriverException as e:
+                            clickable_error = True
+                            print traceback.print_exc()
+                            print "Exception: %s" % str(e)
+                            self._open_new_session(url)
+
+                        except:
+                            print traceback.print_exc()
+                            self.log('Error while parsing color %s of %s'
+                                     % (color, url))
+
+                            self._open_new_session(url)
+
+                self.driver.close()
 
     def _parse_item(self, product):
         item = CheckoutProductItem()
