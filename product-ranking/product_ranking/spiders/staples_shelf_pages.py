@@ -6,6 +6,7 @@ import json
 
 import scrapy
 from scrapy.log import WARNING, ERROR
+from scrapy.conf import settings
 from scrapy.http import Request
 from scrapy import Selector
 
@@ -52,6 +53,8 @@ class StaplesShelfPagesSpider(StaplesProductsSpider):
             scrape_variants_with_extra_requests = kwargs['scrape_variants_with_extra_requests']
             if scrape_variants_with_extra_requests in (1, '1', 'true', 'True', True):
                 self.scrape_variants_with_extra_requests = True
+
+        settings.overrides['CRAWLERA_ENABLED'] = True
 
     @staticmethod
     def valid_url(url):
