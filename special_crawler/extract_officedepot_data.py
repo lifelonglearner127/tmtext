@@ -70,7 +70,7 @@ class OfficeDepotScraper(Scraper):
         return None
 
     def _product_id(self):
-        return re.search('http://www.officedepot.com/a/products/(\d+)/', self.product_page_url).group(1)
+        return re.search('http://www.officedepot.com/a/products/(\d+)', self.product_page_url).group(1)
 
     def _site_id(self):
         return None

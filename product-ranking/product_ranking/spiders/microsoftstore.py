@@ -15,6 +15,7 @@ from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set_value
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.guess_brand import guess_brand_from_first_words
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -64,7 +65,7 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
         cond_set_value(product, 'title', title)
 
         # Parse brand
-        brand = self.parse_brand(response)
+        brand = self.parse_brand(title)
         cond_set_value(product, 'brand', brand)
 
         # Parse price
@@ -152,9 +153,10 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
         if title:
             return title
 
-    def parse_brand(self, response):
-        brand = is_empty(response.xpath(
-            '//div[@class="shell-header-brand"]/a/@title').extract())
+    def parse_brand(self, title):
+        brand = guess_brand_from_first_words(title)
+        # brand = is_empty(response.xpath(
+        #     '//div[@class="shell-header-brand"]/a/@title').extract())
         return brand
 
     def parse_price(self, response):
