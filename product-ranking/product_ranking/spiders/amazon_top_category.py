@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from datetime import datetime
 import re
-from scrapy import Request, FormRequest, Selector
-from lxml import html
-import requests
+from scrapy import Request
 import urlparse
 from scrapy.conf import settings
 from product_ranking.amazon_tests import AmazonTests
@@ -17,7 +14,7 @@ from product_ranking.spiders import BaseProductsSpider,FormatterWithDefaults, \
 from requests.auth import HTTPProxyAuth
 from product_ranking.settings import CRAWLERA_APIKEY
 import json
-
+from scrapy.log import INFO, WARNING
 
 class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
     name = 'amazon_top_categories_products'
@@ -45,7 +42,7 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
 
         # Locale
         self.locale = 'en-US'
-        # settings.overrides['CRAWLERA_ENABLED'] = True
+        settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         if self.product_url:
@@ -95,18 +92,8 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
         cond_set_value(product, 'url', response.url)
         cond_set_value(product, 'ranking', response.meta.get('ranking'))
         req = Request(url=self.ASIN_UPC_URL.format(asin), callback=self.threadsafe_ASIN2UPC, dont_filter=True)
-        # req = Request(url='http://asintoupc.com/', callback=self.threadsafe_ASIN2UPC, dont_filter=True)
-        # req.meta['asin'] = asin
         req.meta['product'] = product
         yield req
-
-        # upc = self.convert_ASIN2UPC(asin)
-        # cond_set_value(product, 'upc', upc)
-        # if upc:
-        #     self._match_walmart(product, upc)
-        #     self._match_target(product, upc)
-        # cond_set_value(product, 'ranking', response.meta.get('ranking'))
-        # yield product
 
     def threadsafe_ASIN2UPC(self, response):
         # TODO rework this using amazon API, and use this external service as backup option
@@ -114,11 +101,11 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
         if 'WSE101: An asynchronous operation raised an exception.' in response.body_as_unicode():
             req = Request(url=response.url, callback=self.threadsafe_ASIN2UPC, dont_filter=True)
             req.meta['product'] = product
-            print"@@ An asynchronous operation raised an exception @@@@@@".format(response.url)
+            self.log("Page error, retrying", level=WARNING)
             yield req
         else:
             upc = response.xpath("//span[@id='MainContent_lblUPC']/text()").extract()
-            print"@@@@@{}@@@@".format(upc)
+            self.log("Got UPC: {}".format(upc), level=INFO)
             upc = upc[0] if upc else None
             if upc:
                 cond_set_value(product, 'upc', upc)
@@ -148,7 +135,6 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
         req = Request(target_url.format(upc), callback=self._match_target_threadsafe)
         req.meta['product'] = product
         yield req
-        # yield product
 
     def _match_target_threadsafe(self, response):
         product = response.meta.get('product')
@@ -165,13 +151,13 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
                 else:
                     target_exists = False
                 cond_set_value(product, 'target_url', target_url)
-                cond_set_value(product, 'target_category', target_category)
+                cond_set_value(product, 'target_category', [target_category])
                 cond_set_value(product, 'target_exists', target_exists)
             else:
                 target_exists = False
-                cond_set_value(product, 'target_url', None)
-                cond_set_value(product, 'target_category', None)
+                cond_set_value(product, 'target_url', [])
+                cond_set_value(product, 'target_category', [])
                 cond_set_value(product, 'target_exists', target_exists)
-                yield product
         except Exception:
-            yield product
+            pass
+        yield product
