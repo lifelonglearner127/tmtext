@@ -203,6 +203,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         tv = TargetVariants()
         tv.setupSC(response, zip_code=self.zip_code, item_info=response.meta['item_info'])
         prod['variants'] = tv._variants()
+        if not prod.get('upc'):
+            selected_upc = [v.get('upc') for v in prod.get('variants') if v.get('selected')]
+            prod['upc'] = selected_upc[0] if selected_upc else None
 
         price = is_empty(response.xpath(
             '//p[contains(@class, "price")]/span/text()').extract())
