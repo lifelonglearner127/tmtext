@@ -783,7 +783,10 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     def _get_json_data(self, response):
         data = re.search('getPlpResponse\((.+)\)', response.body_as_unicode())
         try:
-            data = json.loads(data.group(1))
+            if data is not None:
+                data = json.loads(data.group(1))
+            else:
+                data = json.loads(response.body_as_unicode())
         except (ValueError, TypeError, AttributeError):
             self.log('JSON response expected.')
             return

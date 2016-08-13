@@ -45,8 +45,11 @@ class TargetShelfPagesSpider(TargetProductSpider):
         self._setup_class_compatibility()
 
         self.JSON_SEARCH_URL = "http://tws.target.com/searchservice/item/search_results/v2/by_keyword?" \
-                               "callback=getPlpResponse&category={category}&faceted_value={faceted}" \
-                               "&zone=PLP&pageCount=24&page={page}&start_results={index}"
+                                "alt=json&pageCount=24&response_group=Items&zone=mobile&" \
+                                "offset={index}&category={category}"
+        # self.JSON_SEARCH_URL = "http://tws.target.com/searchservice/item/search_results/v2/by_keyword?" \
+        #                        "callback=getPlpResponse&category={category}&faceted_value={faceted}" \
+        #                        "&zone=PLP&pageCount=24&page={page}&start_results={index}"
 
         if "num_pages" in kwargs:
             self.num_pages = int(kwargs['num_pages'])
@@ -87,14 +90,15 @@ class TargetShelfPagesSpider(TargetProductSpider):
             return Request(
                 self.url_formatter.format(self.JSON_SEARCH_URL,
                                           category=category,
-                                          index=60,
-                                          page=1,
-                                          faceted=faceted),
+                                          index=0),
                 meta=new_meta)
         return list(super(TargetShelfPagesSpider, self).parse(response))
 
     def _scrape_product_links_json(self, response):
-        for item in self._get_json_data(response)['items']['Item']:
+        data = json.loads(response.body_as_unicode())
+        data = data['searchResponse']
+        for item in data['items']['Item']:
+        # for item in self._get_json_data(response)['items']['Item']:
             # Skip Promotions and Ads
             if not item.get('title'):
                 continue
@@ -142,7 +146,5 @@ class TargetShelfPagesSpider(TargetProductSpider):
             new_meta = response.meta.copy()
             url = self.url_formatter.format(self.JSON_SEARCH_URL,
                                             index=per_page * current,
-                                            page=current + 1,
-                                            faceted=response.meta.get('faceted'),
                                             category=response.meta.get('category'))
             return Request(url, meta=new_meta)
