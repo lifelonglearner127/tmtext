@@ -42,7 +42,7 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
 
         # Locale
         self.locale = 'en-US'
-        settings.overrides['CRAWLERA_ENABLED'] = True
+        # settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         if self.product_url:
