@@ -497,6 +497,7 @@ class StaplesScraper(Scraper):
         "feature_count" : _feature_count, \
         "description" : _description, \
         "model" : _model, \
+        "upc" : _upc, \
         "long_description" : _long_description, \
         "variants" : _variants, \
 
