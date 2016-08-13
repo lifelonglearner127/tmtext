@@ -237,6 +237,10 @@ class StaplesScraper(Scraper):
         return None
 
     def _image_urls(self):
+        if not self.product_info_json:
+            image_urls = self.tree_html.xpath('//img[@u="image"]/@src')
+            return map(lambda u: u.split('?')[0], image_urls)
+
         if self.product_info_json["description"]["media"]["images"].get("enlarged"):
             image_urls = self.product_info_json["description"]["media"]["images"]["enlarged"]
             image_urls = [image_url["path"] + "_sc7" for image_url in image_urls]
