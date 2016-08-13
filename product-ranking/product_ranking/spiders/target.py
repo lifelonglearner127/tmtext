@@ -436,6 +436,10 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             if not product['variants']:
                 tv.setupSC(response=response, zip_code=self.zip_code, item_info=item_info)
                 product['variants'] = tv._variants()
+            # Getting upc from variants
+            if not product.get('upc'):
+                selected_upc = [v.get('upc') for v in product.get('variants') if v.get('selected')]
+                product['upc'] = selected_upc[0] if selected_upc else None
 
             # TODO: shipping and store availability? see "purchasingChannel: Sold Online + in Stores" in item_info; http://www.target.com/p/denizen-from-levi-s-women-s-curvy-bootcut-jeans-denim-blue/-/A-50234669
             # http://www.target.com/p/black-decker-2-slice-bread-and-bagel-toaster/-/A-13193088
