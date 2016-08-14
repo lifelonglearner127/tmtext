@@ -301,6 +301,16 @@ class StaplesScraper(Scraper):
 
         return 0
 
+    def _cnet(self):
+        c = requests.get('http://ws.cnetcontent.com/d5eea376/script/522bca68e4?cpn=' + self._product_id() + '&lang=EN&market=US&host=www.staples.com&nld=1').content
+
+        cnet_images = re.findall('ndata-image-url="([^"]+)', c.replace('\\', ''))
+
+        if cnet_images:
+            return 1
+
+        return 0
+
     # extract htags (h1, h2) from its product product page tree
     def _htags(self):
         htags_dict = {}
@@ -512,6 +522,7 @@ class StaplesScraper(Scraper):
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
         "webcollage" : _webcollage, \
+        "cnet" : _cnet, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "mobile_image_same" : _mobile_image_same, \
@@ -527,7 +538,6 @@ class StaplesScraper(Scraper):
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
-
 
          # CONTAINER : REVIEWS
         "review_count" : _review_count, \
