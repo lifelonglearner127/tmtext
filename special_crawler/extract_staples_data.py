@@ -52,7 +52,8 @@ class StaplesScraper(Scraper):
 
     def check_url_format(self):
         # for ex: http://www.staples.com/Epson-WorkForce-Pro-WF-4630-Color-Inkjet-All-in-One-Printer/product_242602?cmArea=home_box1
-        m = re.match(r"^http://www\.staples\.com/([a-zA-Z0-9\-/]+/)?product_([a-zA-Z0-9]+)", self.product_page_url)
+        print self.product_page_url
+        m = re.match(r"^http://www\.staples\.com/([a-zA-Z0-9\-/]+/)?product_([a-zA-Z0-9]+)$", self.product_page_url)
         return not not m
 
     def _extract_product_info_json(self):
