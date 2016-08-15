@@ -33,7 +33,7 @@ msg = MIMEMultipart(
         )
 msg['Subject'] = subject
 msg.preamble = subject
-header_content = " Changed Sites:\n"
+header_content = "Possibly Changed Sites:\n"
 email_content = "\nWeb console:\nhttp://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n\n"
 
 websites = ["walmart", "jcpenney", "kohls", "macys", "target", "levi", "dockers", "samsclub", "drugstore", "amazon"]
@@ -52,6 +52,7 @@ for website in websites:
     walmart_v1_product_list = []
 
     number_of_reported_products = len(rows)
+    number_of_not_a_product = 0
     #> 80% of product titles are < 2 characters long
     count_product_titles_are_less_than_2_character_long = 0
     #> 80% of review counts are 0
@@ -66,7 +67,7 @@ for website in websites:
     for row in rows:
         try:
             sample_json = json.loads(row["json"])
-
+            number_of_not_a_product += int(row["not_a_product"])
             if "sellers" not in sample_json.keys():
                 raise Exception("Invalid product")
 
@@ -286,6 +287,7 @@ for website in websites:
         possibility_of_80_percent_products_are_out_of_stock = "Yes"
 
     website_header = "- " + website + "\n" + "Total tested product numbers: %d\n" \
+                                             "Not a product count: %d\n" \
                                              "Product numbers of content structure changed: %d\n" \
                                              "Product numbers of version changed: %d\n" \
                                              "Percentage of changed products: %f\n" \
@@ -294,8 +296,9 @@ for website in websites:
                                              "80 percent of product descriptions are < 2 words long: %s\n" \
                                              "80 percent of image counts are 0: %s\n" \
                                              "80 percent of products are out of stock: %s\n" \
-                                             "Possibility of overall website changes: %s\n" % (
+                                             "Possibility of overall website changes: %s\n\n" % (
                                                  number_of_reported_products,
+                                                 number_of_not_a_product,
                                                  number_of_changed_products,
                                                  number_of_version_changed_products,
                                                  percentage_of_changed_products,
