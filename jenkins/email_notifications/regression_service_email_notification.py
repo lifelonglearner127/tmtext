@@ -36,7 +36,7 @@ msg.preamble = subject
 header_content = " Changed Sites:\n"
 email_content = "\nWeb console:\nhttp://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n\n"
 
-websites = ["walmart", "jcpenney", "kohls", "macys", "target", "levi", "dockers", "samsclub", "drugstore"]
+websites = ["walmart", "jcpenney", "kohls", "macys", "target", "levi", "dockers", "samsclub", "drugstore", "amazon"]
 
 for website in websites:
     sql_sample_products = "select id, url, website, json, not_a_product from console_urlsample where website='{0}'".format(website)
