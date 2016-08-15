@@ -15,6 +15,7 @@ from lxml import etree
 import time
 import requests
 from extract_data import Scraper
+import pyperclip
 
 
 class StaplesScraper(Scraper):
@@ -49,6 +50,8 @@ class StaplesScraper(Scraper):
         self.is_product_info_json_checked = False
         self.variant_info_jsons = None
         self.is_variant_info_jsons_checked = False
+        self.description = None
+        self.long_description = None
 
     def check_url_format(self):
         # for ex: http://www.staples.com/Epson-WorkForce-Pro-WF-4630-Color-Inkjet-All-in-One-Printer/product_242602?cmArea=home_box1
@@ -175,17 +178,18 @@ class StaplesScraper(Scraper):
         return None
 
     def _description(self):
-        description_block = self.tree_html.xpath("//ul[@class='stp--bulleted-list' and @ng-hide='listDesc']")
+        self._get_long_and_short_description()
 
-        # If the description exists and has some content
-        if description_block and description_block[0].text_content().strip():
-            desc_html = html.tostring(description_block[0]).replace(" class=\"stp--bulleted-list\" ng-hide=\"listDesc\"", "")
-
-            return self._clean_text(self._exclude_javascript_from_description(desc_html))
-
-        return None
+        if self.description:
+            return self.description
 
     def _long_description(self):
+        self._get_long_and_short_description()
+
+        if self.long_description and not self.long_description == self.description:
+            return self.long_description
+
+    def _get_long_and_short_description(self):
         paragraph = ""
         headliner = ""
         bullet_list = ""
@@ -210,12 +214,11 @@ class StaplesScraper(Scraper):
                 for t in description_info["text"]:
                     expanded_descr += (t["value"] + "\n")
 
+        description = headliner + paragraph + bullet_list
         long_description = headliner + paragraph + bullet_list + expanded_descr
 
-        if long_description:
-            return long_description
-
-        return None
+        self.description = description
+        self.long_description = long_description
 
     def _variants(self):
         vrs = []
