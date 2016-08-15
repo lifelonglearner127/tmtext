@@ -34,6 +34,7 @@ msg = MIMEMultipart(
 msg['Subject'] = subject
 msg.preamble = subject
 header_content = "Possibly Changed Sites:\n"
+sites_changed = ""
 email_content = "\nWeb console:\nhttp://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n\n"
 
 websites = ["walmart", "jcpenney", "kohls", "macys", "target", "levi", "dockers", "samsclub", "drugstore", "amazon"]
@@ -261,7 +262,7 @@ for website in websites:
     possibility_of_overall_website_changes = "No"
 
     if percentage_of_changed_products > 80:
-        header_content += "%s\n" % website
+        sites_changed += "%s\n" % website
         possibility_of_overall_website_changes = "Yes"
 
     possibility_of_80_percent_product_titles_are_less_than_2_character_long = "No"
@@ -341,7 +342,9 @@ for website in websites:
         msg.attach(csv_file1)
 
 print "Message length is " + repr(len(email_content))
-msg.attach(MIMEText(header_content + email_content))
+if sites_changed == "":
+    sites_changed = "None\n"
+msg.attach(MIMEText(header_content + sites_changed + email_content))
 
 connection = boto.connect_ses()
 result = connection.send_raw_email(
