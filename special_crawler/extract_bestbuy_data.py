@@ -101,11 +101,7 @@ class BestBuyScraper(Scraper):
 
         return None
 
-    def _features(self):
-        if self.feature_count is not None:
-            return self.features
-        self.feature_count = 0
-
+    def _specs(self):
         # http://www.bestbuy.com/site/sony-65-class-64-1-2-diag--led-2160p-smart-3d-4k-ultra-hd-tv-black/5005015.p;template=_specificationsTab
         feature_urls = []
         data_tabs = self.tree_html.xpath("//div[@id='pdp-model-data']/@data-tabs")
@@ -116,38 +112,52 @@ class BestBuyScraper(Scraper):
                 url = tab["fragmentUrl"]
                 feature_urls.append("http://www.bestbuy.com%s" % url)
 
-        line_txts = []
+        specs = {}
 
         if feature_urls:
             for url in feature_urls:
                 contents = urllib.urlopen(url).read()
-                # document.location.replace('
                 tree = html.fromstring(contents)
 
-                rows = tree.xpath("//div[contains(@class, 'specification-group')]/ul/li")
+                groups = tree.xpath("//div[contains(@class, 'specification-group')]")
 
-                if not rows:
-                    rows = tree.xpath("//div[@class='specifications']/ul/li")
+                if not groups:
+                    groups = tree.xpath("//div[@class='specifications']")
 
-                if rows:
-                    for index, r in enumerate(rows):
-                        feature_text = r.xpath("./div[@class='specification-name']")[0].text_content().strip() + ": " + \
-                                 r.xpath("./div[@class='specification-value']")[0].text_content().strip()
+                for group in groups:
+                    rows = group.xpath("./ul/li")
 
-                        line_txts.append(feature_text)
+                    title = group.xpath("./div[@class='specification-title']/text()")[0]
 
-        if len(line_txts) < 1:
-            return None
+                    if rows:
+                        for index, r in enumerate(rows):
+                            name = r.xpath("./div[@class='specification-name']")[0].text_content().strip()
 
-        self.feature_count = len(line_txts)
-        self.features = line_txts
+                            value = r.xpath("./div[@class='specification-value']")[0].text_content().strip()
 
-        return self.features
+                            specs[name] = value
+
+        if specs:
+            return specs
+
+    def _features(self):
+        features = []
+
+        for f in self.tree_html.xpath('//div[@class="feature"]'):
+            title = f.xpath('./h4/text()')[0]
+            value = f.xpath('./p/text()')[0]
+
+            if title == 'Need more information?':
+                continue
+
+            features.append(title + ': ' + value)
+
+        if features:
+            return features
 
     def _feature_count(self):
-        if self.feature_count is None:
-            self._features()
-        return self.feature_count
+        if self._features():
+            return len(self._features())
 
     def _model_meta(self):
         return None
@@ -616,6 +626,7 @@ class BestBuyScraper(Scraper):
         "max_review" : _max_review, \
         "min_review" : _min_review, \
         "reviews" : _reviews, \
+
         # CONTAINER : SELLERS
         "price" : _price, \
         "price_amount" : _price_amount, \
@@ -643,6 +654,7 @@ class BestBuyScraper(Scraper):
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
         # CONTAINER : PRODUCT_INFO
+        "specs" : _specs, \
         "features" : _features, \
         "feature_count" : _feature_count, \
 
