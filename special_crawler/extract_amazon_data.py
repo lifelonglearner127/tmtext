@@ -279,6 +279,18 @@ class AmazonScraper(Scraper):
             asin = asin.group(1)
             return asin
 
+    def _specs(self):
+        specs = {}
+
+        for r in self.tree_html.xpath('//table[@id="productDetails_techSpec_section_1"]/tr'):
+            key = r.xpath('./th/text()')[0].strip()
+            value = r.xpath('./td/text()')[0].strip()
+
+            specs[key] = value
+
+        if specs:
+            return specs
+
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='content pdClearfix'][1]//tbody//tr")
         if len(rows)==0:
@@ -1510,6 +1522,7 @@ class AmazonScraper(Scraper):
         "asin" : _asin,\
         "features" : _features, \
         "feature_count" : _feature_count, \
+        "specs" : _specs, \
         "model_meta" : _model_meta, \
         "description" : _description, \
         "seller_ranking": _seller_ranking, \

@@ -82,6 +82,7 @@ class Scraper():
             "asin", # Amazon asin
             "features", # features of product, string
             "feature_count", # number of features of product, int
+            "specs", # specifications
             "model_meta", # model from meta, string
             "description", # short description / entire description if no short available, string
             "seller_ranking",
@@ -246,7 +247,8 @@ class Scraper():
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
                         "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "details", "mta", \
                         "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5",
-                        "usage", "directions", "warnings", "indications", "amazon_ingredients"],
+                        "usage", "directions", "warnings", "indications", "amazon_ingredients",
+                            "specs"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags", "meta_tag_count", "meta_description_count", \
