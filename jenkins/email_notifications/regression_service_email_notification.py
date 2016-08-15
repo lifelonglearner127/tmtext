@@ -33,7 +33,8 @@ msg = MIMEMultipart(
         )
 msg['Subject'] = subject
 msg.preamble = subject
-email_content = ""
+header_content = " Changed Sites:\n"
+email_content = "\nWeb console:\nhttp://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n\n"
 
 websites = ["walmart", "jcpenney", "kohls", "macys", "target", "levi", "dockers", "samsclub", "drugstore"]
 
@@ -259,6 +260,7 @@ for website in websites:
     possibility_of_overall_website_changes = "No"
 
     if percentage_of_changed_products > 80:
+        header_content += "%s\n" % website
         possibility_of_overall_website_changes = "Yes"
 
     possibility_of_80_percent_product_titles_are_less_than_2_character_long = "No"
@@ -292,8 +294,7 @@ for website in websites:
                                              "80 percent of product descriptions are < 2 words long: %s\n" \
                                              "80 percent of image counts are 0: %s\n" \
                                              "80 percent of products are out of stock: %s\n" \
-                                             "Possibility of overall website changes: %s\n" \
-                                             "Web console: %s\n" % (
+                                             "Possibility of overall website changes: %s\n" % (
                                                  number_of_reported_products,
                                                  number_of_changed_products,
                                                  number_of_version_changed_products,
@@ -303,8 +304,7 @@ for website in websites:
                                                  possibility_of_80_percent_product_descriptions_are_less_than_2_character_long,
                                                  possibility_of_80_percent_image_counts_are_0,
                                                  possibility_of_80_percent_products_are_out_of_stock,
-                                                 possibility_of_overall_website_changes,
-                                                 "http://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n")
+                                                 possibility_of_overall_website_changes)
     email_content += (website_header)
 
     if os.path.isfile(csv_file_name_product_changes + ".gz"):
@@ -338,7 +338,7 @@ for website in websites:
         msg.attach(csv_file1)
 
 print "Message length is " + repr(len(email_content))
-msg.attach(MIMEText(email_content))
+msg.attach(MIMEText(header_content + email_content))
 
 connection = boto.connect_ses()
 result = connection.send_raw_email(
