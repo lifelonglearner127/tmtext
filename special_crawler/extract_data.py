@@ -141,6 +141,7 @@ class Scraper():
             "pdf_urls", # urls of product pdfs, list of strings
             "webcollage", # whether page contains webcollage content, 1/0
             "sellpoints", # whether page contains sellpoint content, 1/0
+            "cnet", # whether page contains cnet content, 1/0
             "htags", # h1 and h2 tags, dictionary like: {"h1" : [], "h2": ["text in tag"]}
             "loaded_in_seconds", # load time of product page in seconds, float
             "keywords", # keywords for this product, usually from meta tag, string
@@ -252,7 +253,7 @@ class Scraper():
                             "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv", \
                             "best_seller_category", "results_per_page", "total_matches", "lowest_item_price", "highest_item_price",
                             "num_items_price_displayed", "num_items_no_price_displayed",
-                                "body_copy", "meta_description"], \
+                                "body_copy", "meta_description", "cnet"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "seller_id", "us_seller_id", "in_stock", \
