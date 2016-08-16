@@ -97,6 +97,7 @@ class AmazonScraper(Scraper):
 
     def _extract_page_tree(self, captcha_data=None, retries=0):
         self._initialize_browser_settings()
+        self.product_page_url = self.product_page_url + '?showDetailTechData=1'
 
         for i in range(self.MAX_RETRIES):
             self.timeout = False
@@ -287,6 +288,13 @@ class AmazonScraper(Scraper):
             value = r.xpath('./td/text()')[0].strip()
 
             specs[key] = value
+
+        if not specs:
+            for r in self.tree_html.xpath('//div[@id="technicalProductFeatures"]/following-sibling::div/ul/li'):
+                key = r.xpath('./b/text()')[0]
+                value = r.text_content().split(': ')[-1]
+
+                specs[key] = value
 
         if specs:
             return specs
