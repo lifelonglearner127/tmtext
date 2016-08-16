@@ -8,6 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
 from product_ranking.items import CheckoutProductItem
 from selenium.common.exceptions import WebDriverException
+from product_ranking.checkout_base import BaseCheckoutSpider, retry_func
 
 import scrapy
 import random
@@ -121,6 +122,7 @@ class KohlsSpider(BaseCheckoutSpider):
         # Remove focus to avoid hiddend the above element
         # self._find_by_xpath('//h1')[0].click()
 
+    @retry_func(Exception)
     def _get_products(self):
         time.sleep(30)
         condition = EC.presence_of_all_elements_located(
@@ -130,7 +132,7 @@ class KohlsSpider(BaseCheckoutSpider):
     def _add_to_cart(self):
         time.sleep(10)
         self._click_on_element_with_id('addtobagID')
-        time.sleep(20)
+        time.sleep(25)
         select_lower = self._find_by_xpath('//*[contains(., "select a lower amount")]')
         if select_lower:
             self._set_quantity(None, 1)
@@ -144,6 +146,7 @@ class KohlsSpider(BaseCheckoutSpider):
         time.sleep(10)
         self.log('Quantity selected')
 
+    @retry_func(Exception)
     def _get_product_list_cart(self):
         time.sleep(30)
         condition = EC.visibility_of_element_located(
