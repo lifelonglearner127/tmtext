@@ -252,11 +252,12 @@ class TargetVariants(object):
                         else None, # convert price
                     'properties' : {},
                     'image_url' : item['Images'][0]['PrimaryImage'][0]['image'],
-                    'selected' : None,
+                    'selected' : False,
                     'upc':None,
                     'dpci': None,
                 }
                 # Adding UPC, dpci and tcin
+
                 v['upc'] = item.get('UPC')
                 v['dpci'] = item.get('DPCI')
                 img_url = v.get('image_url')
@@ -266,6 +267,12 @@ class TargetVariants(object):
                 for attribute in item.get('VariationAttributes', []):
                     v['properties'][ attribute['name'].lower() ] = attribute['value']
 
+                # Extracting selected color from page html and comaring with current variant color
+                current_color = v['properties'].get('color')
+                selected_color = self.tree_html.xpath('.//*[@aria-checked="true"]/input/@data-key')
+                selected_color = selected_color[0] if selected_color else None
+                if selected_color == current_color and len(v['properties']) == 1:
+                    v['selected'] = True
                 variants.append(v)
 
             if variants:
