@@ -366,6 +366,8 @@ class AmazonBaseClass(BaseProductsSpider):
         # No longer available
         no_longer_avail = self._parse_no_longer_available(response)
         cond_set_value(product, 'no_longer_available', no_longer_avail)
+        if product.get('no_longer_available', None):
+            product['is_out_of_stock'] = True
 
         # Prime & PrimePantry
         if not product.get('prime', None) and self._parse_prime_pantry(response):
@@ -454,11 +456,12 @@ class AmazonBaseClass(BaseProductsSpider):
         _avail = ''.join(_avail)
         _avail_lower = _avail.lower().replace(' ', '')
         # Check if any of the keywords for oos is in the _avail text
-        if any(map((lambda x: x in _avail_lower), ['nichtauflager','currentlyunavailable'])):
+        if any(map((lambda x: x in _avail_lower), ['nichtauflager', 'currentlyunavailable'])):
             product['is_out_of_stock'] = True
-        else:
-            product['is_out_of_stock'] = False
 
+        req  = self._parse_questions(response)
+        if req:
+            reqs.append(req)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -477,6 +480,9 @@ class AmazonBaseClass(BaseProductsSpider):
         if isinstance(prod_id, (list, tuple)):
             prod_id = [s for s in prod_id if s][0]
         return prod_id
+
+    def _parse_questions(self, response):
+        None
 
     def _parse_category(self, response):
         cat = response.xpath(
@@ -626,6 +632,7 @@ class AmazonBaseClass(BaseProductsSpider):
         title = product.get('title', '')
 
         brand = response.xpath(xpathes).extract()
+        brand = self._is_empty([b for b in brand if b.strip()])
 
         if brand and (u'®' in brand):
             brand = brand.replace(u'®', '')
@@ -646,7 +653,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 brand = [brand]
 
         if isinstance(brand, list):
-            brand = [br for br in brand if brand and 'search result' not in br.lower()]
+            brand = [br.strip() for br in brand if brand and 'search result' not in br.lower()]
 
         brand = brand or ['NO BRAND']
 
@@ -660,6 +667,9 @@ class AmazonBaseClass(BaseProductsSpider):
         # remove authors
         if response.xpath('//*[contains(@id, "byline")]//*[contains(@class, "author")]'):
             brand = None
+
+        if isinstance(brand, (str, unicode)):
+            brand = brand.strip()
 
         return brand
 
@@ -1368,7 +1378,7 @@ class AmazonBaseClass(BaseProductsSpider):
             name = name.split('Dispatched from', 1)[0].strip()
             name = name.split('Gift-wrap', 1)[0].strip()
         if ' by ' in name:
-            self.log('Multiple "by" occurrences found at %s' % response.url, ERROR)
+            self.log('Multiple "by" occurrences found', ERROR)
         if 'Inc. ' in name:
             name = name.split(', Inc.', 1)[0] + ', Inc.'
         if 'Guarantee Delivery' in name:
@@ -1496,7 +1506,7 @@ class AmazonBaseClass(BaseProductsSpider):
     def _parse_marketplace_from_static_right_block_more(self, response):
         product = response.meta['product']
         reqs = response.meta.get('reqs')
-        
+
         _prod_price = product.get('price', [])
         _prod_price_currency = None
         if _prod_price:
@@ -1520,6 +1530,11 @@ class AmazonBaseClass(BaseProductsSpider):
                             'currency': _prod_price_currency,
                             'seller_id': _seller_id
                         })
+        if _marketplace:
+            product['marketplace'] = _marketplace
+        else:
+            product['marketplace'] = []
+
         next_page = response.xpath('//*[@class="a-pagination"]/li[@class="a-last"]/a/@href').extract()
         meta = response.meta
         if next_page:
@@ -1540,6 +1555,10 @@ class AmazonBaseClass(BaseProductsSpider):
         product = response.meta['product']
 
         others_sellers = response.xpath('//*[@id="mbc"]//a[contains(@href, "offer-listing")]/@href').extract()
+        if not others_sellers:
+            others_sellers = response.xpath('//span[@id="availability"]/a/@href').extract()
+        if not others_sellers:
+            others_sellers = response.xpath('//div[@id="availability"]/span/a/@href').extract()
         if others_sellers:
             return product, Request(url= urlparse.urljoin(response.url, others_sellers[0]),
                                     callback=self._parse_marketplace_from_static_right_block_more,

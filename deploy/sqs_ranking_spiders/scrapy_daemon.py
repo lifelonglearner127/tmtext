@@ -42,13 +42,13 @@ from sqs_ranking_spiders.task_id_generator import \
 try:
     # try local mode (we're in the deploy dir)
     from sqs_ranking_spiders.remote_instance_starter import REPO_BASE_PATH,\
-        logging, AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+        logging, AMAZON_BUCKET_NAME
     from sqs_ranking_spiders import QUEUES_LIST
     from product_ranking import statistics
 except ImportError:
     # we're in /home/spiders/repo
     from repo.remote_instance_starter import REPO_BASE_PATH, logging, \
-        AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+        AMAZON_BUCKET_NAME
     from repo.remote_instance_starter import QUEUES_LIST
     from product_ranking import statistics
 sys.path.insert(
@@ -70,11 +70,8 @@ FOLDERS_PATH = None
 CONVERT_TO_CSV = True
 
 # Connect to S3
-S3_CONN = boto.connect_s3(
-    aws_access_key_id=AMAZON_ACCESS_KEY,
-    aws_secret_access_key=AMAZON_SECRET_KEY,
-    is_secure=False,  # uncomment if you are not using ssl
-)
+S3_CONN = boto.connect_s3(is_secure=False)  # uncomment if you are not using ssl
+
 # Get current bucket
 S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
 
@@ -113,7 +110,7 @@ CACHE_URL_GET = 'get_cache'  # url to retrieve task cache from
 CACHE_URL_SAVE = 'save_cache'  # to save cached result to
 CACHE_URL_STATS = 'complete_task'  # to have some stats about completed tasks
 CACHE_URL_FAIL = 'fail_task'  # to manage broken tasks
-CACHE_AUTH = 'Basic YWRtaW46Q29udGVudDEyMzQ1'  # auth header value
+CACHE_AUTH = ('admin', 'SD*/#n\%4a')
 CACHE_TIMEOUT = 15  # 15 seconds request timeout
 # key in task data to not retrieve cached result
 # if True, task will be executed even if there is result for it in cache
@@ -373,10 +370,7 @@ def compress_multiple_files(output_fname, *filenames):
     zf.close()
 
 
-def put_file_into_s3(bucket_name, fname,
-                     amazon_public_key=AMAZON_ACCESS_KEY,
-                     amazon_secret_key=AMAZON_SECRET_KEY,
-                     compress=True):
+def put_file_into_s3(bucket_name, fname, compress=True):
     if TEST_MODE:
         print 'Simulate put file to s3, %s' % fname
         return True
@@ -1135,7 +1129,7 @@ def get_task_result_from_cache(task, queue_name):
     data = dict(task=json.dumps(task), queue=queue_name)
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                             headers={'Authorization': CACHE_AUTH})
+                             auth=CACHE_AUTH)
     except Exception as ex:
         logger.warning(ex)
         return None
@@ -1162,7 +1156,7 @@ def save_task_result_to_cache(task, output_path):
     data = dict(task=json.dumps(task), message=message)
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                             headers={'Authorization': CACHE_AUTH})
+                             auth=CACHE_AUTH)
     except Exception as ex:  # timeout passed but no response received
         logger.warning(ex)
         return False
@@ -1186,7 +1180,7 @@ def log_failed_task(task):
     data = dict(task=json.dumps(task))
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                             headers={'Authorization': CACHE_AUTH})
+                             auth=CACHE_AUTH)
     except Exception as ex:
         logger.warning(ex)
         return False
@@ -1209,7 +1203,7 @@ def notify_cache(task, is_from_cache=False):
     data = dict(task=json.dumps(task), is_from_cache=json.dumps(is_from_cache))
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
-                             headers={'Authorization': CACHE_AUTH})
+                             auth=CACHE_AUTH)
         logger.info('Cache: updated task (%s), status %s.',
                     task.get('task_id'), resp.status_code)
     except Exception as ex:
@@ -1324,10 +1318,12 @@ def main():
             time.sleep(3)
             continue
         task_data, queue = msg
-        if 'url' in task_data and 'searchterms_str' not in task_data:
+        if 'url' in task_data and 'searchterms_str' not in task_data \
+                and not 'checkout' in task_data['site']:
             if MAX_CONCURRENT_TASKS < 70:  # increase num of parallel jobs
                                            # for "light" URL-based jobs
                 MAX_CONCURRENT_TASKS += 1
+
         if task_data['site'] == 'walmart':
             task_quantity = task_data.get('cmd_args', {}).get('quantity', 20)
             with_best_seller_ranking = task_data.get('with_best_seller_ranking', None)
@@ -1353,9 +1349,9 @@ def main():
                     MAX_CONCURRENT_TASKS -= 3 if MAX_CONCURRENT_TASKS > 0 else 0
                     logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
                                 ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
-        elif task_data['site'] in ('dockers', 'nike'):
+        elif (task_data['site'] in ('dockers', 'nike')) or 'checkout' in task_data['site']:
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
-            logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Firefox-based spider in use' % MAX_CONCURRENT_TASKS)
+            logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
 
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))

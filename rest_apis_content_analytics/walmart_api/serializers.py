@@ -6,6 +6,7 @@ class StringListField(serializers.ListField):
 
 
 class WalmartApiItemsWithXmlFileRequestSerializer(serializers.Serializer):
+    server_name = serializers.CharField(initial="rest_api_web_interface")
     request_url = serializers.ChoiceField(
         choices=["https://marketplace.walmartapis.com/v2/feeds?feedType=item"])
     request_method = serializers.ChoiceField(
@@ -71,3 +72,12 @@ class WalmartDetectDuplicateContentRequestSerializer(serializers.Serializer):
     product_url_5 = serializers.CharField()
 
     detect_duplication_in_sellers_only = serializers.BooleanField(initial=False, style={'template': 'checkbox_next_to_submit_button.html'})
+
+
+class WalmartDetectDuplicateContentFromCsvFileRequestSerializer(serializers.Serializer):
+    csv_file_to_check = serializers.FileField()
+
+
+class CheckItemStatusByProductIDSerializer(serializers.Serializer):
+    numbers = serializers.CharField(
+        max_length=2000, style={'base_template': 'textarea.html'})

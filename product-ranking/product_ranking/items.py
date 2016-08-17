@@ -165,6 +165,7 @@ class SiteProductItem(Item):
     # Product data.
     title = Field()  # String.
     upc = Field(serializer=scrapy_upc_serializer)  # Integer.
+    asin = Field()
     model = Field()  # String, alphanumeric code.
     sku = Field()  # product SKU, if any
     url = Field()  # String, URL.
@@ -255,14 +256,36 @@ class SiteProductItem(Item):
                                      # only after you put the product in cart
 
     seller_ranking = Field()  # for Walmart
+
     _subitem = Field()
 
     minimum_order_quantity = Field() # Costco.com
 
-
     available_online = Field()
     available_store = Field()
     subscribe_and_save = Field() # Samclub.com
+    walmart_url = Field()  # For amazon_top_categories_products spider, url of product on Walmart, if found
+    walmart_category = Field()  # For amazon_top_categories_products spider, category of product on Walmart, if found
+    walmart_exists = Field()  # For amazon_top_categories_products - True/False
+
+    price_club = Field(serializer=scrapy_price_serializer) # Samclub.com
+    price_club_with_discount = Field(serializer=scrapy_price_serializer) # Samclub.com
+
+    _jcpenney_has_size_range = Field()  # see BZ 9913
+    level1 = Field()
+    level2 = Field()
+    level3 = Field()
+    level4 = Field()
+    level5 = Field()
+    level6 = Field()
+    level7 = Field()
+    level8 = Field()
+    level9 = Field()
+    level10 = Field()
+
+    dpci = Field()  # Target.com unique item identifier, example - 008-09-1171
+    tcin = Field()  # Target.com online item number, for example - Online Item #: 16390220
+    origin = Field()  # Target.com origin field, describes if item is imported or not
 
 
 class DiscountCoupon(Item):
@@ -284,3 +307,19 @@ class DiscountCoupon(Item):
     end_date = Field()  # (10/31/2015)
     discount = Field()  # (Discount value or Percentage (20% OFF)
     conditions = Field()  # (Applies to select items priced $50 or more...)
+
+class CheckoutProductItem(Item):
+    name = Field()
+    id = Field()
+    price = Field()             # In-cart Product Value
+    price_on_page = Field()     # On-Page Product Value
+    quantity = Field()
+    requested_color = Field()
+    requested_color_not_available = Field()
+    requested_quantity_not_available = Field()  # True if quantity not available, else False
+    no_longer_available = Field()  # True if item no longer available, else False
+    not_found = Field()  # True if item not found, else False
+    color = Field()
+    order_subtotal = Field()    # Pre-tax & shipping Cart Value
+    order_total = Field()       # Post-tax & shipping Cart Value
+    url = Field()

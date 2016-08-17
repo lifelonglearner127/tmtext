@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+    <h1>Upload ZIP archive to Amazon</h1>
+
+    <form method='POST' action="/" enctype=multipart/form-data>
+        <p><input type='text' name='username' id='username' placeholder='Amazon login' /></p>
+        <p><input type='password' name='password' id='pw' placeholder='Amazon password' /></p>
+        <input type="radio" name="task" value="image" checked> Upload images<br>
+  	<p><input type="file" name="file" id="file" placeholder="zip file"/> Use it for Upload files ONLY!</p>
+        <input type="radio" name="task" value="report"> Download CSV report
+	<p><input type='submit' name='submit'/></p>
+    </form>
+</body>
+</html>

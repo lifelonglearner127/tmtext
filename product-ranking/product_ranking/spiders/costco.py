@@ -178,6 +178,9 @@ class CostcoProductsSpider(BaseProductsSpider):
         not_available_store = re.search('Not available for purchase on Costco.com', response.body_as_unicode())
         cond_set_value(prod, 'available_online', 0 if not_available_store else 1)
 
+        if str(prod.get('available_online', None)) == '0' and str(prod.get('available_store', None)) == '0':
+            prod['is_out_of_stock'] = True
+
         count_review = response.xpath('//meta[contains(@itemprop, "reviewCount")]/@content').extract()
         product_id = re.findall(r'var bvProductId = \'(.+)\';', response.body_as_unicode())
 
@@ -225,19 +228,21 @@ class CostcoProductsSpider(BaseProductsSpider):
         return False
 
     def _scrape_total_matches(self, response):
-        try:
-            count = response.xpath(
-                '//*[@id="secondary_content_wrapper"]/div/p/span/text()'
-            ).re('(\d+)')[-1]
-            if count:
-                return int(count)
-            return 0
-        except IndexError:
+        count = response.xpath(
+            '//*[@id="secondary_content_wrapper"]/div/p/span/text()'
+        ).re('(\d+)')
+        count = int(count[-1]) if count else None
+        if not count:
             count = response.xpath(
                 '//*[@id="secondary_content_wrapper"]'
                 '//span[contains(text(), "Showing results")]/text()'
             ).extract()
-            return int(count[0].split(' of ')[1].replace('.', '').strip())
+            count = int(count[0].split(' of ')[1].replace('.', '').strip()) if count else None
+        if not count:
+            count = response.css(".table-cell.results.hidden-xs.hidden-sm.hidden-md>span").re(
+                r"Showing\s\d+-\d+\s?of\s?([\d.,]+)")
+            count = int(count[0].replace('.', '').replace(',', '')) if count else None
+        return count
 
     def _scrape_product_links(self, response):
         links = response.xpath(

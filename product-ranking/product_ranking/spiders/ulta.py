@@ -7,6 +7,7 @@ import urllib
 
 import requests
 from scrapy.http import Request
+from scrapy.conf import settings
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
@@ -15,7 +16,9 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FormatterWithDefaults
 from product_ranking.spiders import cond_set_value
 
+
 is_empty = lambda x, y=None: x[0] if x else y
+
 
 class UltaProductSpider(BaseProductsSpider):
     """ ulta.com product ranking spider
@@ -65,6 +68,10 @@ class UltaProductSpider(BaseProductsSpider):
             else:
                 self.SORTING = self.SORT_MODES[sort_mode.lower()]
 
+        # do not hit 404 multiple times
+        #settings.overrides['RETRY_HTTP_CODES'] \
+        #    = [c for c in settings['RETRY_HTTP_CODES'] if c != 404]
+
         super(UltaProductSpider, self).__init__(
             url_formatter=FormatterWithDefaults(
                 sort_mode=self.SORTING or self.SORT_MODES['default']),
@@ -101,7 +108,7 @@ class UltaProductSpider(BaseProductsSpider):
 
         model = response.css('.product-item-no ::text').re('\d{3,20}')[0]
         prod['model'] = model
-        product_id = re.findall('\?productId=(.*)', response.url)
+        product_id = re.findall('\?productId=([a-zA-Z0-9]+)', response.url)
         new_meta = response.meta.copy()
         new_meta['product'] = prod
         new_meta['product_id'] = product_id[0]
@@ -126,6 +133,10 @@ class UltaProductSpider(BaseProductsSpider):
             ).extract(),
             conv=string.strip
         )
+        if not product.get('title', ''):
+            title = response.xpath('//h1[contains(@itemprop, "name")]//text()').extract()
+            if title:
+                product['title'] = title[0].strip()
 
         cond_set(
             product,
@@ -135,6 +146,11 @@ class UltaProductSpider(BaseProductsSpider):
             ).extract(),
             conv=string.strip
         )
+        if not product.get('brand', ""):
+            brand = response.xpath(
+                    '//h2[contains(@itemprop, "brand")]/a/text()').extract()
+            if brand:
+                product['brand'] = brand[0].strip()
 
         cond_set(
             product,
@@ -224,6 +240,7 @@ class UltaProductSpider(BaseProductsSpider):
         new_meta = response.meta.copy()
         new_meta['product'] = product
         new_meta['total_stars'] = total
+        new_meta['handle_httpstatus_list'] = [404]
         code = self._get_product_code(product_id)
         return Request(self.REVIEW_URL.format(code=code,
                                               product_id=product_id),

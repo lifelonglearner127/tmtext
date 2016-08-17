@@ -52,7 +52,8 @@ class StaplesScraper(Scraper):
 
     def check_url_format(self):
         # for ex: http://www.staples.com/Epson-WorkForce-Pro-WF-4630-Color-Inkjet-All-in-One-Printer/product_242602?cmArea=home_box1
-        m = re.match(r"^http://www\.staples\.com/([a-zA-Z0-9\-/]+)/product_([a-zA-Z0-9]+)", self.product_page_url)
+        print self.product_page_url
+        m = re.match(r"^http://www\.staples\.com/([a-zA-Z0-9\-/]+/)?product_([a-zA-Z0-9]+)$", self.product_page_url)
         return not not m
 
     def _extract_product_info_json(self):
@@ -237,6 +238,10 @@ class StaplesScraper(Scraper):
         return None
 
     def _image_urls(self):
+        if not self.product_info_json:
+            image_urls = self.tree_html.xpath('//img[@u="image"]/@src')
+            return map(lambda u: u.split('?')[0], image_urls)
+
         if self.product_info_json["description"]["media"]["images"].get("enlarged"):
             image_urls = self.product_info_json["description"]["media"]["images"]["enlarged"]
             image_urls = [image_url["path"] + "_sc7" for image_url in image_urls]
@@ -293,6 +298,16 @@ class StaplesScraper(Scraper):
         atags = self.tree_html.xpath("//a[contains(@href, 'webcollage.net/')]")
 
         if len(atags) > 0:
+            return 1
+
+        return 0
+
+    def _cnet(self):
+        c = requests.get('http://ws.cnetcontent.com/d5eea376/script/522bca68e4?cpn=' + self._product_id() + '&lang=EN&market=US&host=www.staples.com&nld=1').content
+
+        cnet_images = re.findall('ndata-image-url="([^"]+)', c.replace('\\', ''))
+
+        if cnet_images:
             return 1
 
         return 0
@@ -497,6 +512,7 @@ class StaplesScraper(Scraper):
         "feature_count" : _feature_count, \
         "description" : _description, \
         "model" : _model, \
+        "upc" : _upc, \
         "long_description" : _long_description, \
         "variants" : _variants, \
 
@@ -508,6 +524,7 @@ class StaplesScraper(Scraper):
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
         "webcollage" : _webcollage, \
+        "cnet" : _cnet, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "mobile_image_same" : _mobile_image_same, \
@@ -523,7 +540,6 @@ class StaplesScraper(Scraper):
         "site_online" : _site_online, \
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
-
 
          # CONTAINER : REVIEWS
         "review_count" : _review_count, \

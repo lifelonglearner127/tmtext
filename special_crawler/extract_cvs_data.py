@@ -30,7 +30,6 @@ class CVSScraper(Scraper):
         self.product_json = None
         self.breadcrumb_list = None
         self.product = None
-        self.offer = None
         self.full_description = None
         self.reviews = None
         self.images = None
@@ -110,11 +109,10 @@ class CVSScraper(Scraper):
             # The first 'offer' has the full description
             self.full_description = self._clean_text( self.product['offers'][0]['itemOffered']['description'])
 
-    def _load_offer(self):
-        if not self.offer:
-            for offer in self.product['offers']:
-                if offer['itemOffered']['sku'] == self._product_id():
-                    self.offer = offer
+    def _offer(self):
+        for offer in self.product['offers']:
+            if offer['itemOffered']['sku'] == self._product_id():
+                return offer
 
     def _product_name(self):
         return self._clean_text( self.product['name'])
@@ -184,8 +182,8 @@ class CVSScraper(Scraper):
     def _variants(self):
         variants = []
 
-        for offer in self.product['offers']:
-            if offer['itemOffered']['sku'] != self._product_id():
+        if len( self.product['offers']) > 1:
+            for offer in self.product['offers']:
                 variants.append({
                     'name' : self._clean_text( offer['itemOffered']['name']),
                     'in_stock' : offer['availability'] == 'http://schema.org/InStock',
@@ -195,7 +193,7 @@ class CVSScraper(Scraper):
                         'color' : offer['itemOffered']['color'],
                         'weight' : offer['itemOffered']['weight']['value'] + ' LBS'
                         },
-                    'selected' : False,
+                    'selected' : offer['itemOffered']['sku'] == self._product_id(),
                 })
 
         if variants:
@@ -222,7 +220,7 @@ class CVSScraper(Scraper):
 
                 for i in range(2, num_images):
                     image_url = offer['itemOffered']['image'][:-4] + '_' + str(i) + '.jpg'
-                    if requests.get( image_url):
+                    if requests.head( image_url).status_code == 200:
                         image_urls.append(image_url)
                     elif first_offer:
                         num_images = i
@@ -389,8 +387,7 @@ class CVSScraper(Scraper):
         return '$' + str( self._price_amount())
 
     def _price_amount(self):
-        self._load_offer()
-        return float( self.offer['price'])
+        return float( self._offer()['price'])
 
     def _price_currency(self):
         return self._find_between(html.tostring(self.tree_html), 'currency : "', '"',)
@@ -402,8 +399,7 @@ class CVSScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
-        self._load_offer()
-        if self.offer['availability'] != 'http://schema.org/InStock':
+        if self._offer()['availability'] != 'http://schema.org/InStock':
             return 1
 
         return 0

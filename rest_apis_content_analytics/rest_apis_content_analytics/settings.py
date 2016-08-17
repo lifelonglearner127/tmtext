@@ -39,6 +39,9 @@ INSTALLED_APPS = (
     'rest_framework',
     'walmart_developer_accounts',
     'nutrition_info_images',
+    'statistics',
+    'walmart_api',
+    'mocked_walmart_api',
 )
 
 REST_FRAMEWORK = {
@@ -51,6 +54,7 @@ REST_FRAMEWORK = {
 }
 
 MIDDLEWARE_CLASSES = (
+    'rest_apis_content_analytics.middleware.DisableCSRF',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -101,10 +105,26 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
 
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+
 
 TEMPLATE_LOADERS = ['django.template.loaders.filesystem.Loader',
                     'django.template.loaders.app_directories.Loader']
 TEMPLATE_DIRS = [os.path.join(BASE_DIR, 'templates')]
+
+TEMPLATE_CONTEXT_PROCESSORS = (
+    'django.template.context_processors.debug',
+    'django.template.context_processors.request',
+    'django.contrib.auth.context_processors.auth',
+    'django.contrib.messages.context_processors.messages',
+
+    'statistics.context_processors.stats_walmart_xml_items',
+    'walmart_api.context_processors.get_submission_history_as_json',
+)
+
+
+LOGIN_REDIRECT_URL = '/items_update_with_xml_file_by_walmart_api/'
 
 
 LOGGING = {
@@ -125,6 +145,10 @@ LOGGING = {
             'filename': os.path.join(BASE_DIR, 'django.errors'),
             'filters': []
         },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        },
     },
     'loggers': {
         # Again, default Django configuration to email unhandled exceptions
@@ -144,6 +168,46 @@ LOGGING = {
             'handlers': ['logfile'],
             'level': 'WARNING', # Or maybe INFO or DEBUG
             'propagate': False
-        },
+        }
     },
 }
+
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.path.join(BASE_DIR, '_fs_cache'),
+    }
+}
+
+SUBMISSION_HISTORY_CACHE_KEY = 'get_submission_history_as_json'
+
+
+if DEBUG and os.path.exists('/tmp/_django_log_sql'):
+    LOGGING['loggers']['django.db.backends'] = {
+        'level': 'DEBUG',
+        'handlers': ['console'],
+    }
+
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'APP_DIRS': True,
+        'DIRS': TEMPLATE_DIRS,
+        'OPTIONS': {
+            'context_processors': TEMPLATE_CONTEXT_PROCESSORS
+        }
+    },
+]
+
+
+TEST_TWEAKS = {
+    'item_upload_ajax_ignore': '/tmp/_walmart_api_do_not_test_ajax_on_item_upload'
+}
+
+
+IS_PRODUCTION = os.path.exists(
+    os.path.dirname(__file__) + "/is_walmart_api_production_server")
+
+print "Server production mode? %s" % IS_PRODUCTION
