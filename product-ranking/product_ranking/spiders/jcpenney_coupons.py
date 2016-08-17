@@ -61,7 +61,14 @@ class JCPenneyCouponsSpider(scrapy.Spider):
         return str_discount
 
     def _parse_conditions(self, coupon):
-        return None
+        conditions = coupon.xpath(".//*[contains(@class, 'couponItem_offers')]//span//text()").extract()
+        str_conditions = ",".join([x for x in conditions if len(x.strip()) > 0])
+        return str_conditions
+
+    def _parse_promo_code(self, coupon):
+        return is_empty(
+            coupon.xpath(".//div[@class='couponItem_code']/strong//text()").extract()
+        )
 
     def parse(self, response):
         coupons = self._parse_coupons(response)
@@ -73,4 +80,5 @@ class JCPenneyCouponsSpider(scrapy.Spider):
             item['end_date'] = self._parse_end_date(coupon)
             item['discount'] = self._parse_discount(coupon)
             item['conditions'] = self._parse_conditions(coupon)
+            item['promo_code'] = self._parse_promo_code(coupon)
             yield item

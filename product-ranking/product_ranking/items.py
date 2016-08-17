@@ -299,6 +299,7 @@ class DiscountCoupon(Item):
     end_date = Field()  # (10/31/2015)
     discount = Field()  # (Discount value or Percentage (20% OFF)
     conditions = Field()  # (Applies to select items priced $50 or more...)
+    promo_code = Field()  # (For ex: ALL4KIDS, 3BUYMORE, etc)
 
 class CheckoutProductItem(Item):
     name = Field()
