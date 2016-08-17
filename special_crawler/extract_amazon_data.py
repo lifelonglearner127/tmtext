@@ -98,6 +98,11 @@ class AmazonScraper(Scraper):
     def _extract_page_tree(self, captcha_data=None, retries=0):
         self._initialize_browser_settings()
 
+        if '?' in self.product_page_url:
+            self.product_page_url = self.product_page_url + '&showDetailTechData=1'
+        else:
+            self.product_page_url = self.product_page_url + '?showDetailTechData=1'
+
         for i in range(self.MAX_RETRIES):
             self.timeout = False
 
@@ -278,6 +283,25 @@ class AmazonScraper(Scraper):
         if asin:
             asin = asin.group(1)
             return asin
+
+    def _specs(self):
+        specs = {}
+
+        for r in self.tree_html.xpath('//table[@id="productDetails_techSpec_section_1"]/tr'):
+            key = r.xpath('./th/text()')[0].strip()
+            value = r.xpath('./td/text()')[0].strip()
+
+            specs[key] = value
+
+        if not specs:
+            for r in self.tree_html.xpath('//div[@id="technicalProductFeatures"]/following-sibling::div/ul/li'):
+                key = r.xpath('./b/text()')[0]
+                value = r.text_content().split(': ')[-1]
+
+                specs[key] = value
+
+        if specs:
+            return specs
 
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='content pdClearfix'][1]//tbody//tr")
@@ -1510,6 +1534,7 @@ class AmazonScraper(Scraper):
         "asin" : _asin,\
         "features" : _features, \
         "feature_count" : _feature_count, \
+        "specs" : _specs, \
         "model_meta" : _model_meta, \
         "description" : _description, \
         "seller_ranking": _seller_ranking, \
