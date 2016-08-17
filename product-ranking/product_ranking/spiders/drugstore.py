@@ -127,8 +127,7 @@ class DrugstoreProductsSpider(BaseProductsSpider):
 
         #Buyer reviews
         average_rating = response.xpath(
-            '//span[contains(@class, "average")]/text()'
-        ).re(FLOATING_POINT_RGEX)
+            '//span[@itemprop="ratingValue"]/text()').re(FLOATING_POINT_RGEX)
 
         num_of_reviews = response.xpath(
             '//p[@class="pr-review-count"]/text()').re(FLOATING_POINT_RGEX)
