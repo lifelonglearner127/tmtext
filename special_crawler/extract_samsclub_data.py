@@ -270,6 +270,8 @@ class SamsclubScraper(Scraper):
                 except Exception, e:
                     print "WARNING: ", e.message
 
+            img_urls = map(lambda u: u + '?wid=1500&hei=1500&fmt=jpg&qlt=80', img_urls)
+
             self.image_urls = img_urls
             self.image_count = len(img_urls)
             return img_urls
