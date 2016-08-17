@@ -15,7 +15,6 @@ from lxml import etree
 import time
 import requests
 from extract_data import Scraper
-import pyperclip
 
 
 class StaplesScraper(Scraper):
