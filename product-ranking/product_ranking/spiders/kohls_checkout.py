@@ -1,11 +1,12 @@
-import scrapy
 import json
 import re
-from collections import OrderedDict
-from scrapy.conf import settings
-from scrapy import FormRequest
-from product_ranking.items import CheckoutProductItem
 from HTMLParser import HTMLParser
+from collections import OrderedDict
+import scrapy
+from scrapy import FormRequest
+from scrapy.conf import settings
+from product_ranking.items import CheckoutProductItem
+
 
 class KohlsSpider(scrapy.Spider):
     name = 'kohls_checkout_products'
@@ -34,7 +35,7 @@ class KohlsSpider(scrapy.Spider):
         else:
             self.quantity = [1]
 
-        # settings.overrides['CRAWLERA_ENABLED'] = True
+            # settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         for i, product in enumerate(self.product_data):
@@ -91,14 +92,14 @@ class KohlsSpider(scrapy.Spider):
                 for i, key in enumerate(variants.keys()):
                     formdata['/atg/commerce/order/purchase/CartModifierFormHandler.catalogRefIds'] = variants.get(key)
                     formdata['add_cart_quantity'] = str(quantity)
-                    yield self._request(response, formdata, key, str(y)+str(i), response.url, product=product)
+                    yield self._request(response, formdata, key, str(y) + str(i), response.url, product=product)
 
         elif colors:
             for y, quantity in enumerate(self.quantity):
                 for i, key in enumerate(colors):
                     formdata['/atg/commerce/order/purchase/CartModifierFormHandler.catalogRefIds'] = variants.get(key)
                     formdata['add_cart_quantity'] = str(quantity)
-                    yield self._request(response, formdata, key, str(y)+str(i), response.url, key, product=product)
+                    yield self._request(response, formdata, key, str(y) + str(i), response.url, key, product=product)
 
         else:
             color = variants.keys()[0]
@@ -106,20 +107,21 @@ class KohlsSpider(scrapy.Spider):
             formdata['add_cart_quantity'] = '1'
             yield self._request(response, formdata, color, 1, response.url)
 
-    def _request(self, response, formdata, color, cookie_jar, url, requested_color=None, requested_color_not_available=False, product=None):
+    def _request(self, response, formdata, color, cookie_jar, url, requested_color=None,
+                 requested_color_not_available=False, product=None):
         return FormRequest.from_response(response,
-                                        formname='pdpAddToBag',
-                                        formdata=formdata,
-                                        callback=self.parse_page,
-                                        method='POST',
-                                        dont_filter=True,
-                                        meta={'cookiejar': cookie_jar,
-                                              'color': color,
-                                              'url': url,
-                                              'requested_color': requested_color,
-                                              'requested_color_not_available': requested_color_not_available,
-                                              'product': product}
-                                        )
+                                         formname='pdpAddToBag',
+                                         formdata=formdata,
+                                         callback=self.parse_page,
+                                         method='POST',
+                                         dont_filter=True,
+                                         meta={'cookiejar': cookie_jar,
+                                               'color': color,
+                                               'url': url,
+                                               'requested_color': requested_color,
+                                               'requested_color_not_available': requested_color_not_available,
+                                               'product': product}
+                                         )
 
     def parse_page(self, response):
         if 'You can only purchase' in response.body_as_unicode():
@@ -140,12 +142,15 @@ class KohlsSpider(scrapy.Spider):
                                        'color': response.meta['color'],
                                        'url': response.meta['url'],
                                        'requested_color': response.meta['requested_color'],
-                                       'requested_color_not_available': response.meta.get('requested_color_not_available')}
+                                       'requested_color_not_available': response.meta.get(
+                                           'requested_color_not_available')}
                                  )
 
     def parse_cart(self, response):
         item = CheckoutProductItem()
-        json_data = response.xpath('//script[contains(text(), "var trJsonData = {") and @type="text/javascript"]/text()').extract()[0]
+        json_data = \
+        response.xpath(
+            '//script[contains(text(), "var trJsonData = {") and @type="text/javascript"]/text()').extract()[0]
         JSON = re.compile('trJsonData = ({.*?});', re.DOTALL)
         json_data = JSON.findall(json_data)[0]
         json_data = json.loads(json_data)
@@ -153,15 +158,15 @@ class KohlsSpider(scrapy.Spider):
         h = HTMLParser()
         item['name'] = h.unescape(product.get('displayName'))
         item['id'] = product.get('skuNumber')
-        sale_price = product.get('salePrice').replace('$','')
-        regular_price = product.get('regularPrice').replace('$','')
-        price =  sale_price if sale_price else regular_price
+        sale_price = product.get('salePrice').replace('$', '')
+        regular_price = product.get('regularPrice').replace('$', '')
+        price = sale_price if sale_price else regular_price
         item['price'] = price
         item['price_on_page'] = price
         item['quantity'] = product.get('quantity')
         item['color'] = product.get('color')
-        item['order_subtotal'] = product.get('subtotal').replace('$','')
-        item['order_total'] = json_data.get('orderSummary').get('total').replace('$','')
+        item['order_subtotal'] = product.get('subtotal').replace('$', '')
+        item['order_total'] = json_data.get('orderSummary').get('total').replace('$', '')
         item['url'] = response.meta.get('url')
         item['requested_color'] = response.meta.get('requested_color')
         item['requested_color_not_available'] = (
