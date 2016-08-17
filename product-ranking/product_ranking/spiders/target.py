@@ -41,7 +41,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     settings = TargetValidatorSettings
 
-    user_agent_override = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+    user_agent_override = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36'
+
+    user_agent_googlebot = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
 
     # TODO: support new currencies if you're going to scrape target.canada
     #  or any other target.* different from target.com!
@@ -125,12 +127,13 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     def start_requests(self):
         yield Request(url=self.start_urls[0], callback=self._start_search,
-                      headers={'User-Agent': self.user_agent_override})
+                      headers={'User-Agent': self.user_agent_override},
+                      dont_filter=True)
 
     def _start_search(self, response):
         for request in super(TargetProductSpider, self).start_requests():
             #request.meta['dont_redirect'] = True
-            request.meta['handle_httpstatus_list'] = [302]
+            request.meta['handle_httpstatus_list'] = [302, 301]
             request.meta['search_start'] = True
             request.headers['User-Agent'] = self.user_agent_override
             yield request
@@ -203,7 +206,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         tv = TargetVariants()
         tv.setupSC(response, zip_code=self.zip_code, item_info=response.meta['item_info'])
         prod['variants'] = tv._variants()
-        if not prod.get('upc'):
+        if not prod.get('upc') and prod.get('variants'):
             selected_upc = [v.get('upc') for v in prod.get('variants') if v.get('selected')]
             prod['upc'] = selected_upc[0] if selected_upc else None
 
@@ -339,7 +342,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         response = requests.get(
             'http://tws.target.com/productservice/services/item_service/v1/by_itemid?id='
             + partNumber + '&alt=json&callback=itemInfoCallback&_=1464382778193',
-            headers={'User-Agent': self.user_agent_override}).content
+            headers={'User-Agent': self.user_agent_googlebot}).content
 
         item_info = re.match('itemInfoCallback\((.*)\)$', response, re.DOTALL).group(1)
         return json.loads(item_info)['CatalogEntryView'][0]
