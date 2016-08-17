@@ -97,7 +97,11 @@ class AmazonScraper(Scraper):
 
     def _extract_page_tree(self, captcha_data=None, retries=0):
         self._initialize_browser_settings()
-        self.product_page_url = self.product_page_url + '?showDetailTechData=1'
+
+        if '?' in self.product_page_url:
+            self.product_page_url = self.product_page_url + '&showDetailTechData=1'
+        else:
+            self.product_page_url = self.product_page_url + '?showDetailTechData=1'
 
         for i in range(self.MAX_RETRIES):
             self.timeout = False
