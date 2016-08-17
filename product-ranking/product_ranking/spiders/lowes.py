@@ -144,6 +144,10 @@ class LowesProductsSpider(BaseProductsSpider):
         title = response.xpath('//h1/text()').extract()
         return title[0] if title else None
 
+    def _parse_brand(self, response):
+        brand = response.xpath('//meta[@itemprop="brand"]/@content').extract()
+        return brand[0] if brand else None
+
     def _parse_model(self, response):
         models = response.xpath('//*[@id="ModelNumber"]/text()').extract()
         return models[0] if models else None
@@ -208,6 +212,10 @@ class LowesProductsSpider(BaseProductsSpider):
         # Parse title
         title = self._parse_title(response)
         cond_set_value(product, 'title', title, conv=string.strip)
+
+        # Parse brand
+        brand = self._parse_brand(response)
+        cond_set_value(product, 'brand', brand, conv=string.strip)
 
         # Parse model
         model = self._parse_model(response)
