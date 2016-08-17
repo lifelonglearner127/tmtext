@@ -829,15 +829,14 @@ class SamsclubScraper(Scraper):
     ##########################################
     def _categories(self):
         if self._is_shelf():
-            return None
+            all = self.tree_html.xpath("//ol[@id='breadCrumbs']/li/span/a/text()")
+        else:
+            all = self.tree_html.xpath("//div[@class='breadcrumb-child']/a/span/text()")[1:]
 
-        all = self.tree_html.xpath("//div[contains(@id, 'breadcrumb')]//a/text()")
-        out = [self._clean_text(r) for r in all][1:]
+        out = [self._clean_text(r) for r in all]
 
         if out:
             return out
-
-        return None
 
     def _category_name(self):
         if not self._is_shelf():
