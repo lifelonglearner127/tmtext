@@ -5,6 +5,7 @@ from collections import OrderedDict
 from scrapy.conf import settings
 from scrapy import FormRequest
 from product_ranking.items import CheckoutProductItem
+from HTMLParser import HTMLParser
 
 class KohlsSpider(scrapy.Spider):
     name = 'kohls_checkout_products'
@@ -48,6 +49,8 @@ class KohlsSpider(scrapy.Spider):
         colors = product.get('color')
         if colors:
             is_requested_color = True
+            if isinstance(colors, basestring):
+                colors = [colors]
         json_data = response.xpath('//script[contains(text(), "productJsonData")]/text()').extract()[0]
         JSON = re.compile('productJsonData = ({.*?});', re.DOTALL)
         json_data = JSON.findall(json_data)[0]
@@ -147,7 +150,8 @@ class KohlsSpider(scrapy.Spider):
         json_data = JSON.findall(json_data)[0]
         json_data = json.loads(json_data)
         product = json_data.get('shoppingBag').get('items')[0]
-        item['name'] = product.get('displayName')
+        h = HTMLParser()
+        item['name'] = h.unescape(product.get('displayName'))
         item['id'] = product.get('skuNumber')
         sale_price = product.get('salePrice').replace('$','')
         regular_price = product.get('regularPrice').replace('$','')
