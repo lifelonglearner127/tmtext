@@ -239,7 +239,9 @@ class SamsclubScraper(Scraper):
 
     def _image_urls(self):
         if self._is_shelf():
-            return None
+            images = map(lambda i: i['listImage'][2:], self._items())
+            self.image_count = len(images)
+            return images
 
         if self.image_count == -1:
             self.image_urls = None
@@ -279,9 +281,6 @@ class SamsclubScraper(Scraper):
             return self.image_urls
 
     def _image_count(self):
-        if self._is_shelf():
-            return None
-
         if self.image_count == -1:
             image_urls = self.image_urls()
         return self.image_count
