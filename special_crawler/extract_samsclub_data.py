@@ -450,9 +450,9 @@ class SamsclubScraper(Scraper):
     def _htags(self):
         htags_dict = {}
         # add h1 tags text to the list corresponding to the "h1" key in the dict
-        htags_dict["h1"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']"))
+        htags_dict["h1"] = filter(None, map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']")))
         # add h2 tags text to the list corresponding to the "h2" key in the dict
-        htags_dict["h2"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']"))
+        htags_dict["h2"] = filter(None, map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']")))
         return htags_dict
 
     def _keywords(self):
