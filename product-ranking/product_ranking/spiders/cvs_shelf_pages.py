@@ -100,7 +100,6 @@ class CvsShelfPagesSpider(CvsProductsSpider):
             referer=urllib.quote_plus(self.referer, ':'),
             page_num=self.current_page)
         self.current_page += 1
-        print ajax_search_url
 
         headers = {'Accept': 'application/json, text/plain, */*',
                    'Cache-Control': 'no-cache',
