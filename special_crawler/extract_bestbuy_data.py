@@ -127,8 +127,6 @@ class BestBuyScraper(Scraper):
                 for group in groups:
                     rows = group.xpath("./ul/li")
 
-                    title = group.xpath("./div[@class='specification-title']/text()")[0]
-
                     if rows:
                         for index, r in enumerate(rows):
                             name = r.xpath("./div[@class='specification-name']")[0].text_content().strip()
