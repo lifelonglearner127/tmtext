@@ -91,7 +91,7 @@ class CvsShelfPagesSpider(CvsProductsSpider):
             yield link, item
 
     def _scrape_next_results_page_link(self, response):
-        if self.current_page - 1 >= self.num_pages:
+        if self.current_page > self.num_pages or self.current_page > (self.total_matches_int/self.products_per_page) + 1:
             return
         url_parts = urlparse.urlsplit(response.url)
         query_string = urlparse.parse_qs(url_parts.query)
@@ -101,8 +101,6 @@ class CvsShelfPagesSpider(CvsProductsSpider):
             page_num=self.current_page)
         self.current_page += 1
         print ajax_search_url
-        if self.current_page * self.products_per_page > self.total_matches_int + 30:
-            return
 
         headers = {'Accept': 'application/json, text/plain, */*',
                    'Cache-Control': 'no-cache',
