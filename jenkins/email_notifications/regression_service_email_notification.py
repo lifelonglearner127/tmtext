@@ -40,7 +40,10 @@ email_content = "\nWeb console:\nhttp://regression.contentanalyticsinc.com:8080/
 websites = ["walmart", "jcpenney", "kohls", "macys", "target", "levi", "dockers", "samsclub", "drugstore", "amazon"]
 
 for website in websites:
-    sql_sample_products = "select id, url, website, json, not_a_product from console_urlsample where website='{0}'".format(website)
+    if website == "amazon":
+        sql_sample_products = "select id, url, website, json, not_a_product from console_urlsample where website like '{0}'".format("amazon%")
+    else:
+        sql_sample_products = "select id, url, website, json, not_a_product from console_urlsample where website='{0}'".format(website)
 
     cur.execute(sql_sample_products)
     rows = cur.fetchall()
