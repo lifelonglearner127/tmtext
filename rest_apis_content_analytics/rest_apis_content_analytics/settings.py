@@ -211,3 +211,8 @@ IS_PRODUCTION = os.path.exists(
     os.path.dirname(__file__) + "/is_walmart_api_production_server")
 
 print "Server production mode? %s" % IS_PRODUCTION
+
+try:
+    from local_settings import *
+except ImportError:
+    pass
