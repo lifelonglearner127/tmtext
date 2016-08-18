@@ -264,7 +264,7 @@ class ServiceScraperTest(unittest.TestCase):
             except:
                 pass
 
-    def test_amazon(self):
+    def test_amazon2(self):
         if specified_website and specified_website != "amazon2":
             return
 
