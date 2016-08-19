@@ -484,7 +484,7 @@ class SamsclubScraper(Scraper):
                 c = requests.get('http://www.samsclub.com/sams/redesign/common/model/loadDataModel.jsp?dataModelId=' + id + '&dataModelType=categoryDataModel').content
                 h = html.fromstring(c)
 
-                for item in h.xpath('//div[contains(@class,"sc-product-card")]'):
+                for item in h.xpath('//div[contains(@class,"sc-product-card")]')[:5]:
                     i = {
                         'listImage' : item.xpath('.//img/@src')[0].split('?')[0],
                         'price' : item.xpath('.//span[@data-price]/@data-price')[0]
