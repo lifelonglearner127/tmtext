@@ -473,21 +473,37 @@ class SamsclubScraper(Scraper):
         if self.items:
             return self.items
 
-        cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+        self.items = []
 
-        url = 'http://www.samsclub.com/soa/services/v1/catalogsearch/search?searchCategoryId=' + cat_id
+        subcategories = self.tree_html.xpath('//div[@class="row"]/a/@href')
 
-        headers = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0'}
+        if not subcategories:
+            subcategories = [self._url()]
 
-        j = json.loads(requests.get(url, headers=headers).content)
+        for subcategory in subcategories:
+            cat_id = re.match('.*/(\d+)\.cp', subcategory).group(1)
 
-        self.items = j['payload']['records']
+            url = 'http://www.samsclub.com/soa/services/v1/catalogsearch/search?searchCategoryId=' + cat_id
+
+            headers = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0'}
+
+            j = json.loads(requests.get(url, headers=headers).content)
+
+            records = j['payload']['records']
+
+            if len(subcategories) > 1:
+                records = records[:5]
+
+            self.items += records
 
         return self.items
 
     def _results_per_page(self):
         if self._is_shelf():
-            return int(re.search('\'numberOfRecordsRequested\':\'(\d+)\'', self.page_raw_text).group(1))
+            try:
+                return int(re.search('\'numberOfRecordsRequested\':\'(\d+)\'', self.page_raw_text).group(1))
+            except:
+                return len(self._items())
 
     def _total_matches(self):
         if self._is_shelf():
