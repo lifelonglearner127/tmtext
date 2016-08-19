@@ -475,13 +475,25 @@ class SamsclubScraper(Scraper):
 
         self.items = []
 
-        subcategories = self.tree_html.xpath('//div[@class="row"]/a/@href')
+        subcategories = self.tree_html.xpath('//section[starts-with(@id,"catLowFtrdCrsl")]/@ng-controller')
 
-        if not subcategories:
-            subcategories = [self._url()]
+        if subcategories:
+            for subcategory in subcategories:
+                id = re.search('_(\d+)$', subcategory).group(1)
 
-        for subcategory in subcategories:
-            cat_id = re.match('.*/(\d+)\.cp', subcategory).group(1)
+                c = requests.get('http://www.samsclub.com/sams/redesign/common/model/loadDataModel.jsp?dataModelId=' + id + '&dataModelType=categoryDataModel').content
+                h = html.fromstring(c)
+
+                for item in h.xpath('//div[contains(@class,"sc-product-card")]')[:5]:
+                    i = {
+                        'listImage' : item.xpath('.//img/@src')[0].split('?')[0],
+                        'price' : item.xpath('.//span[@data-price]/@data-price')[0]
+                    }
+
+                    self.items.append(i)
+
+        else:
+            cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
 
             url = 'http://www.samsclub.com/soa/services/v1/catalogsearch/search?searchCategoryId=' + cat_id
 
@@ -514,13 +526,17 @@ class SamsclubScraper(Scraper):
             low_price = None
 
             for item in self._items():
-                if not item.get('onlinePricing'):
-                    continue
+                if item.get('price'):
+                    price = item['price']
 
-                if item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
-                    continue
+                else:
+                    if not item.get('onlinePricing'):
+                        continue
 
-                price = item['onlinePricing']['finalPrice']['currencyAmount']
+                    if item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
+                        continue
+
+                    price = item['onlinePricing']['finalPrice']['currencyAmount']
 
                 if not low_price or price < low_price:
                     low_price = price
@@ -532,13 +548,17 @@ class SamsclubScraper(Scraper):
             high_price = None
 
             for item in self._items():
-                if not item.get('onlinePricing'):
-                    continue
+                if item.get('price'):
+                    price = item['price']
 
-                if item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
-                    continue
+                else:
+                    if not item.get('onlinePricing'):
+                        continue
 
-                price = item['onlinePricing']['finalPrice']['currencyAmount']
+                    if item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
+                        continue
+
+                    price = item['onlinePricing']['finalPrice']['currencyAmount']
 
                 if not high_price or price > high_price:
                     high_price = price
@@ -550,7 +570,7 @@ class SamsclubScraper(Scraper):
             n = 0
 
             for item in self._items():
-                if not item.get('onlinePricing') or item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
+                if item.get('price') or not item.get('onlinePricing') or item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
                     n += 1
 
             return n
