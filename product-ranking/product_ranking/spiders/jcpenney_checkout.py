@@ -236,7 +236,7 @@ class JCpenneySpider(BaseCheckoutSpider):
         promo_field.send_keys(Keys.ENTER)
         time.sleep(8)
 
-    def _get_promo_price(self):
+    def _get_promo_total(self):
         order_total_element = self.wait.until(
             EC.element_to_be_clickable(
                 (By.XPATH, '//div[@class="row order_total"]'
@@ -246,3 +246,11 @@ class JCpenneySpider(BaseCheckoutSpider):
             order_total = order_total_element.text
             return is_empty(re.findall('\$([\d\.]+)', order_total))
 
+    def _get_promo_subtotal(self):
+        order_subtotal_element = self.wait.until(
+            EC.visibility_of_element_located((
+                By.XPATH, '//*[@class="flt_wdt total"]/'
+                          'span[@class="flt_rgt marginlft"]')))
+        if order_subtotal_element:
+            order_subtotal = order_subtotal_element.text
+            return is_empty(re.findall('\$([\d\.]+)', order_subtotal))
