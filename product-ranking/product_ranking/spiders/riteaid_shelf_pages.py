@@ -30,9 +30,10 @@ class RiteAidShelfPagesSpider(RiteAidProductsSpider):
         return {'remaining': 99999, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
+        super(RiteAidShelfPagesSpider, self).__init__(*args, **kwargs)
         self._setup_class_compatibility()
-
-        self.product_url = kwargs['product_url']
+        #
+        # self.product_url = kwargs.get('product_url')
 
         if "num_pages" in kwargs:
             self.num_pages = int(kwargs['num_pages'])
@@ -66,8 +67,8 @@ class RiteAidShelfPagesSpider(RiteAidProductsSpider):
 
         shelf_categories = response.xpath('//div[@class="breadcrumbs"]/ul/li/a/text() | '
                                             '//div[@class="breadcrumbs"]/ul/li/strong/text()').extract()
-        if shelf_categories:
-            shelf_category = shelf_categories[len(shelf_categories) - 1]
+
+        shelf_category = shelf_categories[-1] if shelf_categories else None
 
         for url in urls:
             item = SiteProductItem()
@@ -92,5 +93,3 @@ class RiteAidShelfPagesSpider(RiteAidProductsSpider):
                     nextlink += s + "&"
             return (nextlink + "p=%d" % self.current_page)
 
-    def parse_product(self, response):
-        return super(RiteAidShelfPagesSpider, self).parse_product(response)
