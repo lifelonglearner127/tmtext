@@ -202,7 +202,7 @@ class JCpenneySpider(BaseCheckoutSpider):
 
     def _get_item_name(self, item):
         return is_empty(item.xpath(
-                        '//*[@data-anid="product_Name"]/text()').extract())
+                        '*//*[@data-anid="product_Name"]/text()').extract())
 
     def _get_item_id(self, item):
         return is_empty(item.xpath(
