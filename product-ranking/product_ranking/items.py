@@ -323,4 +323,7 @@ class CheckoutProductItem(Item):
     color = Field()
     order_subtotal = Field()    # Pre-tax & shipping Cart Value
     order_total = Field()       # Post-tax & shipping Cart Value
+    promo_order_subtotal = Field()  # Pre-tax & shipping Cart Value - promo, ticket 10585
+    promo_order_total = Field() # Post-tax & shipping Cart Value - promo, ticket 10585
+    promo_price = Field() # # In-cart Product Value - promo, ticket 10585
     url = Field()

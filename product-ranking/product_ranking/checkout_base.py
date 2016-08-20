@@ -112,6 +112,9 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.requested_color = None
         self.is_requested_color = False
 
+        self.promo_code = kwargs.get('promo_code') # ticket 10585
+        self.promo_price = int(kwargs.get('promo_price', 0))
+
         from pyvirtualdisplay import Display
         display = Display(visible=False, size=(1024, 768))
         display.start()
@@ -279,6 +282,7 @@ class BaseCheckoutSpider(scrapy.Spider):
                 if item:
                     item['order_subtotal'] = self._get_subtotal()
                     item['order_total'] = self._get_total()
+                    self.promo_logic(item)
                     yield item
                 else:
                     self.log('Missing field in product from shopping cart')
@@ -317,6 +321,33 @@ class BaseCheckoutSpider(scrapy.Spider):
             available_attributes[0].click()
         elif selected_attribute:
             selected_attribute[0].click()
+
+    def promo_logic(self, item):
+        if self.promo_code and self.promo_price:
+            self._enter_promo_code(self.promo_code)
+            promo_order_total = self._get_promo_total()
+            promo_order_subtotal = self._get_promo_subtotal()
+            promo_price = round(float(promo_order_subtotal.replace(',', '')) / item['quantity'], 2)
+            if self.promo_price == 1:
+                item['order_total'] = promo_order_total
+                item['order_subtotal'] = promo_order_subtotal
+                item['price'] = promo_price
+            if self.promo_price == 2:
+                item['promo_order_total'] = promo_order_total
+                item['promo_order_subtotal'] = promo_order_subtotal
+                item['promo_price'] = promo_price
+
+    @abstractmethod
+    def _get_promo_subtotal(self):
+        return
+
+    @abstractmethod
+    def _get_promo_total(self):
+        return
+
+    @abstractmethod
+    def _enter_promo_code(self, promo_code):
+        return
 
     @abstractmethod
     def _get_product_list_cart(self):
