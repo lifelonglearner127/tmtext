@@ -63,7 +63,7 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
             )
 
         if self.product_url:
-            pId = is_empty(re.findall("product/(\d+)", self.product_url))
+            pId = is_empty(re.findall("product/.*/(\d+)", self.product_url))
             url = "http://groceries.asda.com/api/items/view?" \
                 "itemid=" + pId + "&responsegroup=extended" \
                 "&cacheable=true&shipdate=currentDate" \
