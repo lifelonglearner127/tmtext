@@ -35,7 +35,10 @@ class KohlsSpider(scrapy.Spider):
         else:
             self.quantity = [1]
 
-            # settings.overrides['CRAWLERA_ENABLED'] = True
+        self.promo_code = kwargs.get('promo_code')  # ticket 10585
+        self.promo_price = int(kwargs.get('promo_price', 0))
+
+        # settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         for i, product in enumerate(self.product_data):
@@ -124,29 +127,23 @@ class KohlsSpider(scrapy.Spider):
                                          )
 
     def parse_page(self, response):
+        meta = response.meta
         if 'You can only purchase' in response.body_as_unicode():
+            meta['retry'] = True
+            meta['quantity'] = 1
             yield scrapy.Request(response.meta.get('url'),
                                  callback=self.parse,
-                                 meta={'retry': True,
-                                       'quantity': 1,
-                                       'cookiejar': response.meta['cookiejar'],
-                                       'color': response.meta['color'],
-                                       'product': response.meta['product']
-                                       },
+                                 meta=meta,
                                  dont_filter=True)
         else:
             yield scrapy.Request(self.SHOPPING_CART_URL,
                                  callback=self.parse_cart,
                                  dont_filter=True,
-                                 meta={'cookiejar': response.meta['cookiejar'],
-                                       'color': response.meta['color'],
-                                       'url': response.meta['url'],
-                                       'requested_color': response.meta['requested_color'],
-                                       'requested_color_not_available': response.meta.get(
-                                           'requested_color_not_available')}
+                                 meta=meta
                                  )
 
     def parse_cart(self, response):
+
         item = CheckoutProductItem()
         json_data = \
         response.xpath(
@@ -173,7 +170,7 @@ class KohlsSpider(scrapy.Spider):
             item['color'] and item['requested_color'] and
             (item['requested_color'] != item['color']))
         item['requested_quantity_not_available'] = response.meta.get('requested_color_not_available')
-        yield item
+        yield self.promo_logic(response, item)
 
     @staticmethod
     def _variants_dict(color_list):
@@ -184,3 +181,44 @@ class KohlsSpider(scrapy.Spider):
                 variant_id = variant.get('skuId')
                 variants_dict[color] = variant_id
         return variants_dict
+
+    def promo_logic(self, response, item):
+        if response.meta.get('promo'):
+            if self.promo_price == 1:
+                return item
+            if self.promo_price == 2:
+                promo_item = response.meta.get('item')
+                promo_item['promo_order_total'] = item['order_total']
+                promo_item['promo_order_subtotal'] = item['order_subtotal']
+                promo_item['promo_price'] = item['price']
+                return promo_item
+        elif self.promo_code and self.promo_price:
+            return self._request_promo_code(response, self.promo_code, item)
+        else:
+            return item
+
+    def _request_promo_code(self, response, promo_code, item):
+        formdata = {"_dyncharset": "UTF-8",
+                    "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": promo_code,
+                    "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": "",
+                    "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoSuccessURL": "applied_discounts_tr_success_url",
+                    "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoSuccessURL": "",
+                    "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoErrorURL": "applied_discounts_tr_success_url",
+                    "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoErrorURL": "+",
+                    "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.useForwards": "true",
+                    "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.useForwards": "+",
+                    "apply_promo_code": "submit",
+                    "_D:apply_promo_code": "+",
+                    "_DARGS": "/checkout/v2/includes/discounts_update_forms.jsp.2"}
+        meta = response.meta
+        meta['item'] = item
+        meta['promo'] = True
+        return FormRequest.from_response(response,
+                                         formxpath='//form[@id="apply_promo_code_form"]',
+                                         formdata=formdata,
+                                         callback=self.parse_page,
+                                         method='POST',
+                                         dont_filter=True,
+                                         meta=meta
+                                         )
+
