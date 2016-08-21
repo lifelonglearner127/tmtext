@@ -2,7 +2,7 @@
 
 from __future__ import division, absolute_import, unicode_literals
 import re
-from scrapy import Request
+from scrapy import Request, FormRequest
 import urlparse
 from scrapy.conf import settings
 from product_ranking.amazon_tests import AmazonTests
@@ -15,6 +15,7 @@ from requests.auth import HTTPProxyAuth
 from product_ranking.settings import CRAWLERA_APIKEY
 import json
 from scrapy.log import INFO, WARNING
+import urllib
 
 class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
     name = 'amazon_top_categories_products'
@@ -29,6 +30,8 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
                   "=CA0B0334&ctl00%24MainContent%24btnSearch=Search&ctl00%24MainContent%24txtASIN={}"
 
     ASIN_UPC_URL_A = "http://psp-gps.info/index.php?i={}"
+
+    handle_httpstatus_list = [429]
 
     def __init__(self, *args, **kwargs):
         super(AmazonBestSellersProductsSpider, self).__init__(*args, **kwargs)
@@ -93,34 +96,14 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
         cond_set_value(product, 'asin', asin)
         cond_set_value(product, 'url', response.url)
         cond_set_value(product, 'ranking', response.meta.get('ranking'))
+
+        req = Request(url='http://asintoupc.com', callback=self.get_payload, dont_filter=True)
         # req = Request(url=self.ASIN_UPC_URL.format(asin), callback=self.threadsafe_ASIN2UPC, dont_filter=True)
-        req = Request(url=self.ASIN_UPC_URL_A.format(product.get('asin')), callback=self.ASIN2UPC_alternative,
-                      dont_filter=True)
+        # req = Request(url=self.ASIN_UPC_URL_A.format(product.get('asin')), callback=self.ASIN2UPC_alternative,
+        #               dont_filter=True)
 
         req.meta['product'] = product
         yield req
-
-    def threadsafe_ASIN2UPC(self, response):
-        # TODO rework this using amazon API, and use this external service as backup option
-        product = response.meta.get('product')
-        if 'WSE101: An asynchronous operation raised an exception.' in response.body_as_unicode():
-            req = Request(url=self.ASIN_UPC_URL_A.format(product.get('asin')), callback=self.ASIN2UPC_alternative, dont_filter=True)
-            req.meta['product'] = product
-            self.log("Page error, trying other service", level=WARNING)
-            yield req
-        else:
-            upc = response.xpath("//span[@id='MainContent_lblUPC']/text()").extract()
-            self.log("Got UPC: {}".format(upc), level=INFO)
-            upc = upc[0] if upc else None
-            if upc:
-                cond_set_value(product, 'upc', upc)
-                req = Request('http://www.walmart.com/search/?query={}'.format(upc),
-                              callback=self._match_walmart_threadsafe)
-                req.meta['product'] = product
-                yield req
-            else:
-                self.log("No UPC for ASIN {} at {}".format(product.get('asin'), response.url), level=INFO)
-                yield product
 
     def ASIN2UPC_alternative(self, response):
         product = response.meta.get('product')
@@ -141,6 +124,57 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
                 self.log("No UPC for ASIN {} at {}".format(product.get('asin'), response.url), level=INFO)
                 yield product
 
+    def get_payload(self, response):
+        product = response.meta.get('product')
+        if response.status == 429:
+            req = Request(url=self.ASIN_UPC_URL_A.format(product.get('asin')),
+                          callback=self.ASIN2UPC_alternative, dont_filter=True)
+            req.meta['product'] = product
+            self.log("Page error, trying other service", level=WARNING)
+            yield req
+        else:
+            payload = {
+                r"ctl00$MainContent$txtASIN": product.get('asin'),
+                r"ctl00$MainContent$btnSearch": "Search",
+            }
+            for input_name in ['__VIEWSTATE', '__VIEWSTATEGENERATOR', '__EVENTVALIDATION']:
+                pl = response.xpath("//input[@name='%s']/@value" % input_name).extract()
+                payload[input_name] = pl[0] if pl else ''
+
+            req = FormRequest(url=self.ASIN_UPC_URL.format(product.get('asin')), callback=self.threadsafe_ASIN2UPC,
+                          dont_filter=True, formdata=payload)
+
+            req.meta['product'] = product
+            yield req
+
+    def threadsafe_ASIN2UPC(self, response):
+        product = response.meta.get('product')
+        if response.status == 429:
+            req = Request(url=self.ASIN_UPC_URL_A.format(product.get('asin')),
+                          callback=self.ASIN2UPC_alternative, dont_filter=True)
+            req.meta['product'] = product
+            self.log("Page error, trying other service", level=WARNING)
+            yield req
+        else:
+            if 'WSE101: An asynchronous operation raised an exception.' in response.body_as_unicode():
+                req = Request(url=self.ASIN_UPC_URL_A.format(product.get('asin')),
+                              callback=self.ASIN2UPC_alternative, dont_filter=True)
+                req.meta['product'] = product
+                self.log("Page error, trying other service", level=WARNING)
+                yield req
+            else:
+                upc = response.xpath("//span[@id='MainContent_lblUPC']/text()").extract()
+                upc = upc[0] if upc else None
+                if upc:
+                    self.log("Got UPC: {}".format(upc), level=INFO)
+                    cond_set_value(product, 'upc', upc)
+                    req = Request('http://www.walmart.com/search/?query={}'.format(upc),
+                                  callback=self._match_walmart_threadsafe)
+                    req.meta['product'] = product
+                    yield req
+                else:
+                    self.log("No UPC for ASIN {} at {}".format(product.get('asin'), response.url), level=INFO)
+                    yield product
 
     def _match_walmart_threadsafe(self, response):
         product = response.meta.get('product')
