@@ -18,7 +18,7 @@ from scrapy.log import INFO, WARNING
 
 class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
     name = 'amazon_top_categories_products'
-    allowed_domains = ["amazon.com", "asintoupc.com", "walmart.com", "target.com"]
+    allowed_domains = ["amazon.com", "asintoupc.com", "walmart.com", "target.com", 'http://psp-gps.info']
 
     settings = AmazoncaValidatorSettings
     ASIN_UPC_URL = "http://asintoupc.com/?__EVENTVALIDATION=%2FwEdAAMFqOzoH1a8XwCofuUjrlmPM0K3g6Ucd7mv%2FKHQcK9QwZ%" \
@@ -27,6 +27,8 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
                   "IAgEPDxYCHgRUZXh0ZWRkAgMPDxYCHwFlZGQCBw8PFgIfAWVkZAIJDw8WAh4ISW1hZ2VVcmxlZGQCBw8" \
                   "PFgIfAWVkZGRL0SMg3%2BJmPP6c%2FkOeHOL0SszKS1HpppYAmGE%2FAgS8rA%3D%3D&__VIEWSTATEGENERATOR" \
                   "=CA0B0334&ctl00%24MainContent%24btnSearch=Search&ctl00%24MainContent%24txtASIN={}"
+
+    ASIN_UPC_URL_A = "http://psp-gps.info/index.php?i={}"
 
     def __init__(self, *args, **kwargs):
         super(AmazonBestSellersProductsSpider, self).__init__(*args, **kwargs)
@@ -91,7 +93,10 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
         cond_set_value(product, 'asin', asin)
         cond_set_value(product, 'url', response.url)
         cond_set_value(product, 'ranking', response.meta.get('ranking'))
-        req = Request(url=self.ASIN_UPC_URL.format(asin), callback=self.threadsafe_ASIN2UPC, dont_filter=True)
+        # req = Request(url=self.ASIN_UPC_URL.format(asin), callback=self.threadsafe_ASIN2UPC, dont_filter=True)
+        req = Request(url=self.ASIN_UPC_URL_A.format(product.get('asin')), callback=self.ASIN2UPC_alternative,
+                      dont_filter=True)
+
         req.meta['product'] = product
         yield req
 
@@ -99,9 +104,9 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
         # TODO rework this using amazon API, and use this external service as backup option
         product = response.meta.get('product')
         if 'WSE101: An asynchronous operation raised an exception.' in response.body_as_unicode():
-            req = Request(url=response.url, callback=self.threadsafe_ASIN2UPC, dont_filter=True)
+            req = Request(url=self.ASIN_UPC_URL_A.format(product.get('asin')), callback=self.ASIN2UPC_alternative, dont_filter=True)
             req.meta['product'] = product
-            self.log("Page error, retrying", level=WARNING)
+            self.log("Page error, trying other service", level=WARNING)
             yield req
         else:
             upc = response.xpath("//span[@id='MainContent_lblUPC']/text()").extract()
@@ -114,7 +119,28 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
                 req.meta['product'] = product
                 yield req
             else:
+                self.log("No UPC for ASIN {} at {}".format(product.get('asin'), response.url), level=INFO)
                 yield product
+
+    def ASIN2UPC_alternative(self, response):
+        product = response.meta.get('product')
+        if response.xpath('.//*[contains(text(), "Please change this value and retry your request")]'):
+            yield product
+        else:
+            upc = response.xpath('.//b[contains(text(), "UPC:")]/following-sibling::text()[1]').extract()
+            upc = upc[0].strip() if upc else None
+
+            if upc:
+                self.log("Got UPC: {}".format(upc), level=INFO)
+                cond_set_value(product, 'upc', upc)
+                req = Request('http://www.walmart.com/search/?query={}'.format(upc),
+                              callback=self._match_walmart_threadsafe)
+                req.meta['product'] = product
+                yield req
+            else:
+                self.log("No UPC for ASIN {} at {}".format(product.get('asin'), response.url), level=INFO)
+                yield product
+
 
     def _match_walmart_threadsafe(self, response):
         product = response.meta.get('product')
