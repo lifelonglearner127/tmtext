@@ -187,11 +187,11 @@
         <table class="stats_big_blue_area">
           <tr>
             <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Total items submitted (all time)
-              <span id="stat_counter_all_time">{{ stats_all_walmart_xml_items|length }}</span></td>
+              <span id="stat_counter_all_time">-</span></td>
             <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Total successful (all time)
-              <span id="stat_counter_success">{{ stats_successful_walmart_xml_items|length }}</span></td>
+              <span id="stat_counter_success">-</span></td>
             <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Today (success/total)
-              <span id="stat_counter_today">{{ stats_today_successful_xml_items|length }} / {{ stats_today_all_xml_items|length }}</span></td>
+              <span id="stat_counter_today">-</span></td>
           </tr>
         </table>
       </div>
