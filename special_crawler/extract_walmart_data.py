@@ -2482,6 +2482,9 @@ class WalmartScraper(Scraper):
                 if "walmart.com" in marketplace.text_content().lower().strip():
                     return 1
 
+        if pinfo_dict.get("buyingOptions", {}).get("allVariantsOutOfStock") == False:
+            return 1
+
         return 0
 
     def _site_online_out_of_stock(self):
