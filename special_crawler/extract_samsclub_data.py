@@ -239,7 +239,9 @@ class SamsclubScraper(Scraper):
 
     def _image_urls(self):
         if self._is_shelf():
-            return None
+            images = map(lambda i: i['listImage'][2:], self._items())
+            self.image_count = len(images)
+            return images
 
         if self.image_count == -1:
             self.image_urls = None
@@ -279,9 +281,6 @@ class SamsclubScraper(Scraper):
             return self.image_urls
 
     def _image_count(self):
-        if self._is_shelf():
-            return None
-
         if self.image_count == -1:
             image_urls = self.image_urls()
         return self.image_count
@@ -450,9 +449,9 @@ class SamsclubScraper(Scraper):
     def _htags(self):
         htags_dict = {}
         # add h1 tags text to the list corresponding to the "h1" key in the dict
-        htags_dict["h1"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']"))
+        htags_dict["h1"] = filter(None, map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']")))
         # add h2 tags text to the list corresponding to the "h2" key in the dict
-        htags_dict["h2"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']"))
+        htags_dict["h2"] = filter(None, map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']")))
         return htags_dict
 
     def _keywords(self):
@@ -474,21 +473,49 @@ class SamsclubScraper(Scraper):
         if self.items:
             return self.items
 
-        cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+        self.items = []
 
-        url = 'http://www.samsclub.com/soa/services/v1/catalogsearch/search?searchCategoryId=' + cat_id
+        subcategories = self.tree_html.xpath('//section[starts-with(@id,"catLowFtrdCrsl")]/@ng-controller')
 
-        headers = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0'}
+        if subcategories:
+            for subcategory in subcategories:
+                id = re.search('_(\d+)$', subcategory).group(1)
 
-        j = json.loads(requests.get(url, headers=headers).content)
+                c = requests.get('http://www.samsclub.com/sams/redesign/common/model/loadDataModel.jsp?dataModelId=' + id + '&dataModelType=categoryDataModel').content
+                h = html.fromstring(c)
 
-        self.items = j['payload']['records']
+                for item in h.xpath('//div[contains(@class,"sc-product-card")]')[:5]:
+                    i = {
+                        'listImage' : item.xpath('.//img/@src')[0].split('?')[0],
+                        'price' : item.xpath('.//span[@data-price]/@data-price')[0]
+                    }
+
+                    self.items.append(i)
+
+        else:
+            cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+
+            url = 'http://www.samsclub.com/soa/services/v1/catalogsearch/search?searchCategoryId=' + cat_id
+
+            headers = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0'}
+
+            j = json.loads(requests.get(url, headers=headers).content)
+
+            records = j['payload']['records']
+
+            if len(subcategories) > 1:
+                records = records[:5]
+
+            self.items += records
 
         return self.items
 
     def _results_per_page(self):
         if self._is_shelf():
-            return int(re.search('\'numberOfRecordsRequested\':\'(\d+)\'', self.page_raw_text).group(1))
+            try:
+                return int(re.search('\'numberOfRecordsRequested\':\'(\d+)\'', self.page_raw_text).group(1))
+            except:
+                return len(self._items())
 
     def _total_matches(self):
         if self._is_shelf():
@@ -499,13 +526,17 @@ class SamsclubScraper(Scraper):
             low_price = None
 
             for item in self._items():
-                if not item.get('onlinePricing'):
-                    continue
+                if item.get('price'):
+                    price = item['price']
 
-                if item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
-                    continue
+                else:
+                    if not item.get('onlinePricing'):
+                        continue
 
-                price = item['onlinePricing']['finalPrice']['currencyAmount']
+                    if item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
+                        continue
+
+                    price = item['onlinePricing']['finalPrice']['currencyAmount']
 
                 if not low_price or price < low_price:
                     low_price = price
@@ -517,13 +548,17 @@ class SamsclubScraper(Scraper):
             high_price = None
 
             for item in self._items():
-                if not item.get('onlinePricing'):
-                    continue
+                if item.get('price'):
+                    price = item['price']
 
-                if item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
-                    continue
+                else:
+                    if not item.get('onlinePricing'):
+                        continue
 
-                price = item['onlinePricing']['finalPrice']['currencyAmount']
+                    if item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
+                        continue
+
+                    price = item['onlinePricing']['finalPrice']['currencyAmount']
 
                 if not high_price or price > high_price:
                     high_price = price
@@ -535,7 +570,7 @@ class SamsclubScraper(Scraper):
             n = 0
 
             for item in self._items():
-                if not item.get('onlinePricing') or item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
+                if item.get('price') or not item.get('onlinePricing') or item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
                     n += 1
 
             return n
@@ -829,15 +864,14 @@ class SamsclubScraper(Scraper):
     ##########################################
     def _categories(self):
         if self._is_shelf():
-            return None
+            all = self.tree_html.xpath("//ol[@id='breadCrumbs']/li/span/a/text()")
+        else:
+            all = self.tree_html.xpath("//div[@class='breadcrumb-child']/a/span/text()")[1:]
 
-        all = self.tree_html.xpath("//div[contains(@id, 'breadcrumb')]//a/text()")
-        out = [self._clean_text(r) for r in all][1:]
+        out = [self._clean_text(r) for r in all]
 
         if out:
             return out
-
-        return None
 
     def _category_name(self):
         if not self._is_shelf():

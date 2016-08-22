@@ -8,6 +8,7 @@ import urllib
 import urlparse
 import datetime
 from scrapy import Request, FormRequest, Selector
+from scrapy.log import ERROR, INFO, WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews, scrapy_price_serializer
@@ -54,6 +55,8 @@ class StaplesProductsSpider(BaseProductsSpider):
         super(StaplesProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
         settings.overrides['CRAWLERA_ENABLED'] = True
+        # This may be useful for debug
+        # settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -71,8 +74,11 @@ class StaplesProductsSpider(BaseProductsSpider):
         if 'Good thing this is not permanent' in response.body_as_unicode():
             product['not_found'] = True
             return product
-
-        sku_url, js_data = self.parse_js_data(response)
+        try:
+            sku_url, js_data = self.parse_js_data(response)
+        except Exception as e:
+            self.log("Error extracting json data from product page, repeating request: {}".format(e), WARNING)
+            return Request(response.url, callback=self.parse_product, meta=meta, dont_filter=True)
 
         # Parse title
         title = self.parse_title(response)
@@ -271,7 +277,7 @@ class StaplesProductsSpider(BaseProductsSpider):
                 callback=self.parse_related_product,
                 meta=meta
             ))
-
+        # Get base product data and child "additionalProductsWarrantyServices" variants, if any
         try:
             reqs.append(
                 Request(
@@ -289,9 +295,11 @@ class StaplesProductsSpider(BaseProductsSpider):
                     callback=self.get_price_and_stockstatus,
                     meta=meta,
                 ))
-        except:
-            pass
-
+        except Exception as e:
+            self.log("Error while forming request for base product data: {}".format(e), WARNING)
+        # Get real variants, if any
+        import pprint
+        pprint.pprint(response.meta['product']['variants'])
         for v in response.meta['product']['variants']:
             try:
                 reqs.append(
@@ -311,8 +319,8 @@ class StaplesProductsSpider(BaseProductsSpider):
                         meta=meta,
                     ))
 
-            except:
-                pass
+            except Exception as e:
+                self.log("Error while forming request for variant: {}".format(e), WARNING)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -329,39 +337,33 @@ class StaplesProductsSpider(BaseProductsSpider):
                 product['is_out_of_stock'] = True
             else:
                 product['is_out_of_stock'] = False
-            try:
-                product['price'] = Price(price=jsonresponse['pricing']['finalPrice'],
-                                         priceCurrency=product['price'].priceCurrency)
-                #import pdb
-                #pdb.set_trace()
-                # additionalProductsWarrantyServices
-                new_variants = []
-                if jsonresponse['additionalProductsWarrantyServices']:
-                    for w in jsonresponse['additionalProductsWarrantyServices']:
-                        # new_price = scrapy_price_serializer(Price(price=jsonresponse['pricing']['finalPrice'] + w['price'],
-                        #                   priceCurrency=product['price'].priceCurrency))
-                        # changed format for variants from price object to simple float
-                        new_price = jsonresponse['pricing']['finalPrice'] + w['price']
-                        new_variants.append({
-                            'price': new_price,
-                            "partnumber": w.get('partnumber',''),
-                            'isWarranty': w.get('isWarranty',''),
-                            'warranty': w.get('name',''),
-                            "prod_doc_key": w.get('prod_doc_key',''),
-                            'properties': {},
-                            # 'properties': {"name": product['title'] if 'title' in product else '',
-                            #                "partnumber": w['partnumber'] if 'partnumber' in w else '',
-                            #                "prod_doc_key": w['prod_doc_key'] if 'prod_doc_key' in w else '',
-                            #                'warranty': w['name'] if 'name' in w else '',
-                            #                'isWarranty': w['isWarranty'] if 'isWarranty' in w else '',
-                            #                },
-                            'selected': False,
-                        })
-                meta['product']['variants'].extend(new_variants)
-            except:
-                pass
-        except ValueError:
-            print "JSON error"
+
+            product['price'] = Price(price=jsonresponse['pricing']['finalPrice'],
+                                     priceCurrency=product['price'].priceCurrency)
+            #import pdb
+            #pdb.set_trace()
+            # additionalProductsWarrantyServices
+            new_variants = []
+            if jsonresponse.get('additionalProductsWarrantyServices'):
+                for warranty_variant in jsonresponse.get('additionalProductsWarrantyServices'):
+                    # changed format for variants from price object to simple float
+                    new_price = float(jsonresponse['pricing']['finalPrice']) + float(warranty_variant['price'])
+                    new_variants.append({
+                        'price': new_price,
+                        "partnumber": warranty_variant.get('partnumber',''),
+                        'isWarranty': warranty_variant.get('isWarranty', False),
+                        'warranty': warranty_variant.get('name',''),
+                        "prod_doc_key": warranty_variant.get('product_key_to',''),
+                        'properties': {"variant_name": warranty_variant.get('name',''),},
+                        'is_out_of_stock':product.get('is_out_of_stock'),
+                        'selected': False,
+                    })
+            meta['product']['variants'].extend(new_variants)
+        except BaseException as e:
+            self.log("Error parsing base product data: {}".format(e), WARNING)
+            if 'No JSON object could be decoded' in e:
+                self.log("Repeating base product data request: {}".format(e), WARNING)
+                reqs.append(Request(response.url, callback=self.get_price_and_stockstatus, meta=meta, dont_filter=True))
         if reqs:
             return self.send_next_request(reqs, response)
         else:
@@ -373,32 +375,42 @@ class StaplesProductsSpider(BaseProductsSpider):
         product = response.meta['product']
         try:
             jsonresponse = json.loads(response.body_as_unicode())
-            id = jsonresponse['pricing']['id']
-            new_variants = []
-            for v in meta['product']['variants']:
-                if v['prod_doc_key'] == id:
-                    v['price'] = jsonresponse['pricing']['finalPrice']
+            id = jsonresponse['pricing'].get('id')
+            # Getting exact variant that is parsed currently
+            v = [x for x in meta['product']['variants'] if x['prod_doc_key'] == id]
+            v = v[0] if v else None
 
-                    # additionalProductsWarrantyServices
-                    if jsonresponse['additionalProductsWarrantyServices']:
-                        for w in jsonresponse['additionalProductsWarrantyServices']:
-
-                            new_price = jsonresponse['pricing']['finalPrice'] + w['price']
-                            new_variants.append({
-                                'price': new_price,
-                                "partnumber": w.get('partnumber', ''),
-                                "prod_doc_key": v.get('prod_doc_key',''),
-                                "variant_image": v.get('variant_image',''),
-                                'warranty': w.get('name',''),
-                                'isWarranty': w.get('isWarranty',''),
-                                'properties':{"variant_name": v['properties'].get('variant_name',''),},
-
-                                'selected': False,
-                            })
-            if new_variants:
-                meta['product']['variants'].extend(new_variants)
-        except:
-            pass
+            if 'currentlyOutOfStock' in jsonresponse.get('cartAction'):
+                is_out_of_stock = True
+            else:
+                is_out_of_stock = False
+            new_price = jsonresponse['pricing'].get('finalPrice')
+            # If variant exists, set parameters
+            if v['prod_doc_key'] == id:
+                v['price'] = new_price
+                v['warranty'] = jsonresponse.get('name','')
+                v['is_out_of_stock'] = is_out_of_stock
+                v['selected'] = False
+            else:
+                # create new variant
+                new_variant = {
+                    'price': new_price,
+                    "partnumber": jsonresponse.get('partnumber', ''),
+                    "prod_doc_key": v.get('prod_doc_key',''),
+                    "variant_image": v.get('variant_image',''),
+                    'warranty': jsonresponse.get('name',''),
+                    'isWarranty': False,
+                    'properties':{"variant_name": v['properties'].get('variant_name',''),},
+                    'is_out_of_stock': is_out_of_stock,
+                    'selected': False,
+                }
+                if new_variant:
+                    meta['product']['variants'].append(new_variant)
+        except Exception as e:
+            self.log("Error parsing variant data: {}".format(e), WARNING)
+            if 'No JSON object could be decoded' in e:
+                self.log("Repeating variant data request: {}".format(e), WARNING)
+                reqs.append(Request(response.url, callback=self.get_variant_price, meta=meta, dont_filter=True))
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -470,12 +482,14 @@ class StaplesProductsSpider(BaseProductsSpider):
 
         meta['product']['variants'] = []
         if 'child_product' in js_data:
-            print(js_data['child_product'])
+            # print(js_data['child_product'])
             for child in js_data['child_product']:
                 swatch_image = child.get('collection')
                 swatch_image = swatch_image.get('collection_image').split('$')[0] if swatch_image else None
                 v_image = swatch_image if not child.get('variant_image', '') else child.get('variant_image', '')
                 meta['product']['variants'].append({
+                                                    'is_out_of_stock':False,
+                                                    'isWarranty': False,
                                                     'price': 0.0,
                                                     "partnumber": child.get('partnumber',''),
                                                     "prod_doc_key": child.get('prod_doc_key',''),
