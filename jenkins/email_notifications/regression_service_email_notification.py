@@ -356,10 +356,9 @@ for row in rows:
     history += row["content"]+"\n"
 sql_move_history = "UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1"
 cur.execute(sql_move_history)
-cur.fetchall()
 sql_update_history = "UPDATE email_history SET content = \'%s\' WHERE day = 1" % email_content
 cur.execute(sql_update_history)
-cur.fetchall()
+con.commit()
 
 msg.attach(MIMEText(header_content + sites_changed + email_content + history))
 connection = boto.connect_ses()
