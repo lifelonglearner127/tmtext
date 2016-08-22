@@ -557,6 +557,27 @@ class SamsclubScraper(Scraper):
             if body_copy:
                 return body_copy
 
+    def _body_copy_links(self):
+        cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+
+        links = self.tree_html.xpath('//div[@class="categoryText"]//a/@href')
+
+        return_links = {'self_links' : {'count': 0},
+                        'broken_links' : {'links' : {}, 'count' : 0}}
+
+        for link in links:
+            if re.search(cat_id + '.cp$', link):
+                return_links['self_links']['count'] += 1
+
+            else:
+                status_code = requests.head(link).status_code
+
+                if not status_code == 200:
+                    return_links['broken_links']['links'][link] = status_code
+                    return_links['broken_links']['count'] += 1
+
+        return return_links
+
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
@@ -895,6 +916,7 @@ class SamsclubScraper(Scraper):
         "num_items_price_displayed" : _num_items_price_displayed, \
         "num_items_no_price_displayed" : _num_items_no_price_displayed, \
         "body_copy" : _body_copy, \
+        "body_copy_links" : _body_copy_links, \
 
         # CONTAINER : SELLERS
         "price" : _price, \
