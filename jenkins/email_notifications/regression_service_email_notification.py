@@ -356,7 +356,7 @@ for row in rows:
     history += row["content"]+"\n"
 sql = "UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1"
 cur.execute(sql)
-sql = "UPDATE email_history SET content = %s WHERE day = 1" % email_content
+sql = "UPDATE email_history SET content = %s WHERE day = 1" % eval(email_content)
 cur.execute(sql)
 
 msg.attach(MIMEText(header_content + sites_changed + email_content + history))
