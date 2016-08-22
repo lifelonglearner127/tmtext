@@ -347,8 +347,19 @@ for website in websites:
 print "Message length is " + repr(len(email_content))
 if sites_changed == "":
     sites_changed = "None\n"
-msg.attach(MIMEText(header_content + sites_changed + email_content))
+# add last 5 days
+sql = "SELECT * FROM email_history"
+cur.execute(sql)
+rows = cur.fetchall()
+history = "History:\n"
+for row in rows:
+    history += row["content"]+"\n"
+sql = "UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1"
+cur.execute(sql)
+sql = "UPDATE email_history SET content = %s WHERE day = 1" % email_content
+cur.execute(sql)
 
+msg.attach(MIMEText(header_content + sites_changed + email_content + history))
 connection = boto.connect_ses()
 result = connection.send_raw_email(
     msg.as_string(),
