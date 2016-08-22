@@ -348,16 +348,16 @@ print "Message length is " + repr(len(email_content))
 if sites_changed == "":
     sites_changed = "None\n"
 # add last 5 days
-sql = "SELECT * FROM email_history"
-cur.execute(sql)
+sql_get_history = "SELECT * FROM email_history"
+cur.execute(sql_get_history)
 rows = cur.fetchall()
 history = "History:\n"
 for row in rows:
     history += row["content"]+"\n"
-sql = "UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1"
-cur.execute(sql)
-sql = "UPDATE email_history SET content = \'%s\' WHERE day = 1" % email_content
-cur.execute(sql)
+sql_move_history = "UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1"
+cur.execute(sql_move_history)
+sql_update_history = "UPDATE email_history SET content = \'%s\' WHERE day = 1" % email_content
+cur.execute(sql_update_history)
 
 msg.attach(MIMEText(header_content + sites_changed + email_content + history))
 connection = boto.connect_ses()
