@@ -24,7 +24,7 @@ class SamsclubScraper(Scraper):
     ############### PREP+
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.samsclub.com/sams/(.+)?/(.+)"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.samsclub.com/sams/(.+/)?prod<prod-id>.ip or http://www.samsclub.com/sams/(.+/)?<cat-id>.cp for shelf pages"
 
     reviews_tree = None
     max_score = None
@@ -46,8 +46,7 @@ class SamsclubScraper(Scraper):
     sv = SamsclubVariants()
 
     def check_url_format(self):
-        # for ex: http://www.samsclub.com/sams/dawson-fireplace-fall-2014/prod14520017.ip?origin=item_page.rr1&campaign=rr&sn=ClickCP&campaign_data=prod14170040
-        m = re.match(r"^http://www\.samsclub\.com/sams/(.+)?/(.+)\.ip", self.product_page_url)
+        m = re.match(r"^http://www\.samsclub\.com/sams/(.+/)?prod\d+\.ip$", self.product_page_url)
         if m or self._is_shelf():
             return True
 
