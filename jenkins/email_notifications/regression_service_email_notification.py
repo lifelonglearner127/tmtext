@@ -363,7 +363,7 @@ for row in rows:
 t = PrettyTable(websites)
 for d in day:
     d.pop(0)
-    t.add_rows(d)
+    t.add_row(d)
 sql_move_history = "UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1"
 cur.execute(sql_move_history)
 sql_update_history = "UPDATE email_history SET content = \'%s\' WHERE day = 1" % email_content
