@@ -9,6 +9,7 @@ import time
 import csv
 import gzip
 import shutil
+from prettytable import PrettyTable
 from datetime import date
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
@@ -344,23 +345,32 @@ for website in websites:
         csv_file1.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_walmart_v1 + ".gz"))
         msg.attach(csv_file1)
 
-print "Message length is " + repr(len(email_content))
 if sites_changed == "":
     sites_changed = "None\n"
-# add last 5 days
+ec = email_content
+for website in websites:
+    ec = ec.replace(website,"")
+day = []
+day.append(ec.split("-"))
 sql_get_history = "SELECT * FROM email_history"
 cur.execute(sql_get_history)
 rows = cur.fetchall()
-history = "History:\n"
 for row in rows:
-    history += row["content"]+"\n"
+    history = row["content"]+"\n"
+    for website in websites:
+        history = history.replace(website."")
+    day.append(history.split("-"))
+t = PrettyTable(websites)
+for d in day:
+    d.pop(0)
+    t.add_rows(d)
 sql_move_history = "UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1"
 cur.execute(sql_move_history)
 sql_update_history = "UPDATE email_history SET content = \'%s\' WHERE day = 1" % email_content
 cur.execute(sql_update_history)
 con.commit()
 
-msg.attach(MIMEText(header_content + sites_changed + email_content + history))
+msg.attach(MIMEText(header_content + sites_changed + "\n" + t))
 connection = boto.connect_ses()
 result = connection.send_raw_email(
     msg.as_string(),
