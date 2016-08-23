@@ -56,7 +56,7 @@ class JCPenneyShelfPagesSpider(JcpenneyProductsSpider):
 
     def _scrape_product_links(self, response):
         urls = response.xpath(
-            '//div[contains(@class, "product_description")]'
+            '//div[@class="product_gallery_holder2"]//div[contains(@class, "product_description")]'
             '//img[contains(@id, "ThumbnailImage")]/../../../a/@href'
         ).extract()
         urls = [urlparse.urljoin(response.url, x) if x.startswith('/') else x
