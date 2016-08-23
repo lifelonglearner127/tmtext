@@ -241,7 +241,8 @@ class SamsclubScraper(Scraper):
         if self._is_shelf():
             images = map(lambda i: i['listImage'][2:], self._items())
             self.image_count = len(images)
-            return images
+            if images:
+                return images
 
         if self.image_count == -1:
             self.image_urls = None
@@ -497,11 +498,11 @@ class SamsclubScraper(Scraper):
 
             url = 'http://www.samsclub.com/soa/services/v1/catalogsearch/search?searchCategoryId=' + cat_id
 
-            headers = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0'}
+            headers = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0', 'Cookie': 'myPreferredClub=6612'}
 
             j = json.loads(requests.get(url, headers=headers).content)
 
-            records = j['payload']['records']
+            records = j['payload'].get('records', [])
 
             if len(subcategories) > 1:
                 records = records[:5]
@@ -512,10 +513,7 @@ class SamsclubScraper(Scraper):
 
     def _results_per_page(self):
         if self._is_shelf():
-            try:
-                return int(re.search('\'numberOfRecordsRequested\':\'(\d+)\'', self.page_raw_text).group(1))
-            except:
-                return len(self._items())
+            return len(self._items())
 
     def _total_matches(self):
         if self._is_shelf():
