@@ -296,7 +296,8 @@ class WalmartScraper(Scraper):
         response_text = self.load_page_from_url_with_number_of_retries(request_url)
         tree = html.fromstring(response_text)
 
-        if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']"):
+        if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']") or \
+            tree.xpath("//div[@id='iframe-video-content']//script[@type='text/javascript']"):
             self.has_video = True
             self.has_sellpoints_media = True
 
