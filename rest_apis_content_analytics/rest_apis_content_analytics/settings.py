@@ -63,6 +63,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'rest_apis_content_analytics.auth_middleware.AuthMiddleware'
 )
 
 ROOT_URLCONF = 'rest_apis_content_analytics.urls'

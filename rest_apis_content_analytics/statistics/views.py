@@ -23,10 +23,7 @@ class StatsView(TemplateView):
 class GetStatsAjax(View):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
-            return JsonResponse({
-                'redirect': str(reverse_lazy(
-                    'login')+'?next='+request.GET.get('next', ''))
-            })
+            return JsonResponse({})
 
         return JsonResponse({
             'stats_all_walmart_xml_items': SubmitXMLItem.objects.filter(
