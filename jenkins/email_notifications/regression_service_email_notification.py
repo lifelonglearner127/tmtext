@@ -370,7 +370,7 @@ sql_update_history = "UPDATE email_history SET content = \'%s\' WHERE day = 1" %
 cur.execute(sql_update_history)
 con.commit()
 
-msg.attach(MIMEText(header_content + sites_changed + "\n" + t))
+msg.attach(MIMEText(header_content + sites_changed + "\n" + t.get_string()))
 connection = boto.connect_ses()
 result = connection.send_raw_email(
     msg.as_string(),
