@@ -572,7 +572,7 @@ class SamsclubScraper(Scraper):
             else:
                 status_code = requests.head(link).status_code
 
-                if status_code == 200:
+                if not status_code == 200:
                     return_links['broken_links']['links'][link] = status_code
                     return_links['broken_links']['count'] += 1
 
