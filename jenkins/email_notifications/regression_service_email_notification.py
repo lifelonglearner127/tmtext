@@ -358,7 +358,7 @@ rows = cur.fetchall()
 for row in rows:
     history = row["content"]+"\n"
     for website in websites:
-        history = history.replace(website."")
+        history = history.replace(website,"")
     day.append(history.split("-"))
 t = PrettyTable(websites)
 for d in day:
