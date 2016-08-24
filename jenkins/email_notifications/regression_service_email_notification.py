@@ -357,9 +357,8 @@ for website in websites:
     sitedata.append(rows)
 t = PrettyTable(websites)
 for i in range(0,3):
-    for x in range(0,len(websites)):
+    for x in range(0,len(websites)-1):
         t.add_row(sitedata[x][i])
-
 
 msg.attach(MIMEText(header_content + sites_changed + "\n" + t.get_string()))
 connection = boto.connect_ses()
