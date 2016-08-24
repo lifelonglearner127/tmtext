@@ -138,35 +138,37 @@ class StaplesProductsSpider(BaseProductsSpider):
         meta = response.meta.copy()
         product = response.meta['product']
         reqs = meta.get('reqs', [])
-
-        jsonresponse = json.loads(response.body_as_unicode())
-        response_selector = Selector(text=self._htmlspecialchars_decode(
-            jsonresponse.get('result')))
         try:
-            num_reviews = response_selector.xpath(
-                '//span[@class="font-color-gray based-on"]/text()').re('\d+')[0]
-        except IndexError:
-            num_reviews = 0
-        try:
-            avg_rating = response_selector.xpath('//span[@class="yotpo-star-digits"]/text()').extract()[0].strip()
-        except IndexError:
-            avg_rating = 0
-        review_stars = response_selector.xpath(
-            '//span[contains(@class, "yotpo-sum-reviews")]/text()').re('\((\d+)\)')[::-1]
-        stars = product['buyer_reviews'].rating_by_star
-        for star_index, star_value in enumerate(review_stars):
-            star_index = str(star_index+1)
-            stars[star_index] = star_value
-        last_date = response_selector.xpath('//label[contains(@class, "yotpo-review-date")]/text()').extract()
+            jsonresponse = json.loads(response.body_as_unicode())
+            response_selector = Selector(text=self._htmlspecialchars_decode(
+                jsonresponse.get('result')))
+            try:
+                num_reviews = response_selector.xpath(
+                    '//span[@class="font-color-gray based-on"]/text()').re('\d+')[0]
+            except IndexError:
+                num_reviews = 0
+            try:
+                avg_rating = response_selector.xpath('//span[@class="yotpo-star-digits"]/text()').extract()[0].strip()
+            except IndexError:
+                avg_rating = 0
+            review_stars = response_selector.xpath(
+                '//span[contains(@class, "yotpo-sum-reviews")]/text()').re('\((\d+)\)')[::-1]
+            stars = product['buyer_reviews'].rating_by_star
+            for star_index, star_value in enumerate(review_stars):
+                star_index = str(star_index+1)
+                stars[star_index] = star_value
+            last_date = response_selector.xpath('//label[contains(@class, "yotpo-review-date")]/text()').extract()
 
-        product['buyer_reviews'] = BuyerReviews(
-            num_of_reviews=num_reviews,
-            average_rating=avg_rating,
-            rating_by_star=stars
-        )
-        if last_date:
-            last_buyer_review_date = datetime.datetime.strptime(last_date[0], '%m/%d/%y')
-            product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d-%m-%Y')
+            product['buyer_reviews'] = BuyerReviews(
+                num_of_reviews=num_reviews,
+                average_rating=avg_rating,
+                rating_by_star=stars
+            )
+            if last_date:
+                last_buyer_review_date = datetime.datetime.strptime(last_date[0], '%m/%d/%y')
+                product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d-%m-%Y')
+        except BaseException as e:
+            self.log("Error extracting buyers reviews - {}".format(e), WARNING)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -348,6 +350,7 @@ class StaplesProductsSpider(BaseProductsSpider):
                 for warranty_variant in jsonresponse.get('additionalProductsWarrantyServices'):
                     # changed format for variants from price object to simple float
                     new_price = float(jsonresponse['pricing']['finalPrice']) + float(warranty_variant['price'])
+                    in_stock = not product.get('is_out_of_stock') if product.get('is_out_of_stock') else None
                     new_variants.append({
                         'price': new_price,
                         "partnumber": warranty_variant.get('partnumber',''),
@@ -355,7 +358,7 @@ class StaplesProductsSpider(BaseProductsSpider):
                         'warranty': warranty_variant.get('name',''),
                         "prod_doc_key": warranty_variant.get('product_key_to',''),
                         'properties': {"variant_name": warranty_variant.get('name',''),},
-                        'is_out_of_stock':product.get('is_out_of_stock'),
+                        'in_stock':in_stock,
                         'selected': False,
                     })
             meta['product']['variants'].extend(new_variants)
