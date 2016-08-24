@@ -232,15 +232,16 @@ class SamsclubScraper(Scraper):
         return None
 
     def _meta_description(self):
-        if self.tree_html.xpath('//meta[@name="description"]/@content')[0]:
+        if self.tree_html.xpath('//meta[@name="description"]/@content'):
             return 1
         return 0
 
     def _image_urls(self):
         if self._is_shelf():
-            images = map(lambda i: i['listImage'][2:], self._items())
+            images = map(lambda i: i['image'], self._items())
             self.image_count = len(images)
-            return images
+            if images:
+                return images
 
         if self.image_count == -1:
             self.image_urls = None
@@ -454,7 +455,10 @@ class SamsclubScraper(Scraper):
         return htags_dict
 
     def _keywords(self):
-        return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
+        try:
+            return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
+        except:
+            pass
 
     # Not used after reviews fix
     @staticmethod
@@ -474,71 +478,84 @@ class SamsclubScraper(Scraper):
 
         self.items = []
 
+        # If the original page displays no product cards (e.g. http://www.samsclub.com/sams/pirelli/5950114.cp or http://www.samsclub.com/sams/shocking-values/13450112.cp), then return no items
+        if not self.tree_html.xpath('//div[contains(@class,"sc-product-card")]'):
+            return self.items
+
+        HEADERS = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0', 'Cookie': 'myPreferredClub=6612'}
+
         subcategories = self.tree_html.xpath('//section[starts-with(@id,"catLowFtrdCrsl")]/@ng-controller')
 
+        # If it is a meta-category page
         if subcategories:
             for subcategory in subcategories:
                 id = re.search('_(\d+)$', subcategory).group(1)
 
-                c = requests.get('http://www.samsclub.com/sams/redesign/common/model/loadDataModel.jsp?dataModelId=' + id + '&dataModelType=categoryDataModel').content
+                url = 'http://www.samsclub.com/sams/redesign/common/model/loadDataModel.jsp?dataModelId=' + id + '&dataModelType=categoryDataModel'
+
+                c = requests.get(url, headers=HEADERS).content
                 h = html.fromstring(c)
 
                 for item in h.xpath('//div[contains(@class,"sc-product-card")]')[:5]:
                     i = {
-                        'listImage' : item.xpath('.//img/@src')[0].split('?')[0],
-                        'price' : item.xpath('.//span[@data-price]/@data-price')[0]
+                        'image' : item.xpath('.//img/@src')[0].split('?')[0][2:],
+                        'price' : float(item.xpath('.//span[@data-price]/@data-price')[0])
                     }
 
                     self.items.append(i)
 
+        # Otherwise it is a normal category page
         else:
             cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
 
             url = 'http://www.samsclub.com/soa/services/v1/catalogsearch/search?searchCategoryId=' + cat_id
 
-            headers = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0'}
+            j = json.loads(requests.get(url, headers=HEADERS).content)
 
-            j = json.loads(requests.get(url, headers=headers).content)
-
-            records = j['payload']['records']
+            records = j['payload'].get('records', [])
 
             if len(subcategories) > 1:
                 records = records[:5]
 
-            self.items += records
+            for record in records:
+                price = None
+
+                if record.get('clubPricing') and not record['clubPricing']['forceLoginRequired']:
+                    price = record['clubPricing']['finalPrice']['currencyAmount']
+
+                elif record.get('onlinePricing') and not record['onlinePricing']['forceLoginRequired']:
+                    price = record['onlinePricing']['finalPrice']['currencyAmount']
+
+                i = {
+                    'image': record['listImage'][2:],
+                    'price': price
+                }
+
+                self.items.append(i)
 
         return self.items
 
     def _results_per_page(self):
         if self._is_shelf():
-            try:
-                return int(re.search('\'numberOfRecordsRequested\':\'(\d+)\'', self.page_raw_text).group(1))
-            except:
-                return len(self._items())
+            return len(self._items())
 
     def _total_matches(self):
         if self._is_shelf():
-            return int(re.search('\'totalRecords\':\'(\d+)\'', self.page_raw_text).group(1))
+            try:
+                return int(re.search('\'totalRecords\':\'(\d+)\'', self.page_raw_text).group(1))
+            except:
+                pass
 
     def _lowest_item_price(self):
         if self._is_shelf():
             low_price = None
 
             for item in self._items():
-                if item.get('price'):
-                    price = item['price']
+                if item['price'] is None:
+                    continue
 
-                else:
-                    if not item.get('onlinePricing'):
-                        continue
-
-                    if item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
-                        continue
-
-                    price = item['onlinePricing']['finalPrice']['currencyAmount']
-
-                if not low_price or price < low_price:
-                    low_price = price
+                if not low_price or item['price'] < low_price:
+                    low_price = item['price']
 
             return low_price
 
@@ -547,49 +564,69 @@ class SamsclubScraper(Scraper):
             high_price = None
 
             for item in self._items():
-                if item.get('price'):
-                    price = item['price']
+                if item['price'] is None:
+                    continue
 
-                else:
-                    if not item.get('onlinePricing'):
-                        continue
-
-                    if item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
-                        continue
-
-                    price = item['onlinePricing']['finalPrice']['currencyAmount']
-
-                if not high_price or price > high_price:
-                    high_price = price
+                if not high_price or item['price'] > high_price:
+                    high_price = item['price']
 
             return high_price
 
-    def _num_items_no_price_displayed(self):
+    def _num_items_price_displayed(self):
         if self._is_shelf():
             n = 0
 
             for item in self._items():
-                if item.get('price') or not item.get('onlinePricing') or item['onlinePricing'].get('mapOptions') == 'see_price_checkout':
+                if item.get('price'):
                     n += 1
 
             return n
 
-    def _num_items_price_displayed(self):
-        if self._is_shelf():
-            return self._results_per_page() - self._num_items_no_price_displayed()
+    def _num_items_no_price_displayed(self):
+        return self._results_per_page() - self._num_items_price_displayed()
 
     def _meta_description_count(self):
-        return len(self.tree_html.xpath('//meta[@name="description"]/@content')[0])
+        try:
+            return len(self.tree_html.xpath('//meta[@name="description"]/@content')[0])
+        except:
+            pass
 
     def _body_copy(self):
         if self._is_shelf():
             body_copy = ''
 
-            for elem in self.tree_html.xpath('//div[@class="categoryText"]/*'):
+            for elem in self.tree_html.xpath('//*[contains(@class,"categoryText")]/*'):
                 body_copy += html.tostring(elem)
 
             if body_copy:
                 return body_copy
+
+    def _body_copy_links(self):
+        cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+
+        if not self.tree_html.xpath('//*[contains(@class,"categoryText")]'):
+            return None
+
+        links = self.tree_html.xpath('//*[contains(@class,"categoryText")]//a/@href')
+
+        return_links = {'self_links' : {'count': 0},
+                        'broken_links' : {'links' : {}, 'count' : 0}}
+
+        for link in links:
+            if not re.match('http://www.samsclub.com', link):
+                link = 'http://www.samsclub.com' + link
+
+            if re.search(cat_id + '.cp$', link):
+                return_links['self_links']['count'] += 1
+
+            else:
+                status_code = requests.head(link).status_code
+
+                if not status_code == 200:
+                    return_links['broken_links']['links'][link] = status_code
+                    return_links['broken_links']['count'] += 1
+
+        return return_links
 
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -928,6 +965,7 @@ class SamsclubScraper(Scraper):
         "num_items_price_displayed" : _num_items_price_displayed, \
         "num_items_no_price_displayed" : _num_items_no_price_displayed, \
         "body_copy" : _body_copy, \
+        "body_copy_links" : _body_copy_links, \
 
         # CONTAINER : SELLERS
         "price" : _price, \
