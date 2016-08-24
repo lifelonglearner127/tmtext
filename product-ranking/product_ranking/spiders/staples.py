@@ -56,7 +56,7 @@ class StaplesProductsSpider(BaseProductsSpider):
             site_name=self.allowed_domains[0], *args, **kwargs)
         settings.overrides['CRAWLERA_ENABLED'] = True
         # This may be useful for debug
-        # settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
+        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
