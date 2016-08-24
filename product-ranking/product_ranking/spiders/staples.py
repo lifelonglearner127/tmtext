@@ -381,15 +381,15 @@ class StaplesProductsSpider(BaseProductsSpider):
             v = v[0] if v else None
 
             if 'currentlyOutOfStock' in jsonresponse.get('cartAction'):
-                is_out_of_stock = True
+                in_stock = False
             else:
-                is_out_of_stock = False
+                in_stock = True
             new_price = jsonresponse['pricing'].get('finalPrice')
             # If variant exists, set parameters
             if v['prod_doc_key'] == id:
                 v['price'] = new_price
                 v['warranty'] = jsonresponse.get('name','')
-                v['is_out_of_stock'] = is_out_of_stock
+                v['in_stock'] = in_stock
                 v['selected'] = False
             else:
                 # create new variant
@@ -401,7 +401,7 @@ class StaplesProductsSpider(BaseProductsSpider):
                     'warranty': jsonresponse.get('name',''),
                     'isWarranty': False,
                     'properties':{"variant_name": v['properties'].get('variant_name',''),},
-                    'is_out_of_stock': is_out_of_stock,
+                    'in_stock': in_stock,
                     'selected': False,
                 }
                 if new_variant:
@@ -488,7 +488,7 @@ class StaplesProductsSpider(BaseProductsSpider):
                 swatch_image = swatch_image.get('collection_image').split('$')[0] if swatch_image else None
                 v_image = swatch_image if not child.get('variant_image', '') else child.get('variant_image', '')
                 meta['product']['variants'].append({
-                                                    'is_out_of_stock':False,
+                                                    'in_stock':True,
                                                     'isWarranty': False,
                                                     'price': 0.0,
                                                     "partnumber": child.get('partnumber',''),

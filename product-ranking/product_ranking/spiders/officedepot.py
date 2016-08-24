@@ -316,7 +316,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         oos = self._parse_is_out_of_stock(response)
         for variant in product['variants']:
             if variant['url'] == response.url:
-                variant['is_out_of_stock'] = oos
+                variant['in_stock'] = not oos
                 break
         if reqs:
             return self.send_next_request(reqs, response)
