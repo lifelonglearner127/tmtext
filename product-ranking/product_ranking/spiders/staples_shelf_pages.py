@@ -34,6 +34,8 @@ class StaplesShelfPagesSpider(StaplesProductsSpider):
         return {'remaining': 99999, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
+        super(StaplesProductsSpider, self).__init__(
+            site_name=self.allowed_domains[0], *args, **kwargs)
         self._setup_class_compatibility()
 
         self.product_url = kwargs['product_url']
