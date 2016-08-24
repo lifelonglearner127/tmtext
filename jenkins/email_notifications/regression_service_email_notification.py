@@ -347,28 +347,19 @@ for website in websites:
 
 if sites_changed == "":
     sites_changed = "None\n"
-ec = email_content
+
+#UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website
+sitedata = []
 for website in websites:
-    ec = ec.replace(website,"")
-day = []
-day.append(ec.split("-"))
-sql_get_history = "SELECT * FROM email_history"
-cur.execute(sql_get_history)
-rows = cur.fetchall()
-for row in rows:
-    history = row["content"]+"\n"
-    for website in websites:
-        history = history.replace(website,"")
-    day.append(history.split("-"))
+    sql = "SELECT * FROM email_history WHERE website = \'%s\' ORDER BY day ASC"
+    cur.execute(sql)
+    rows = cur.fetchall()
+    sitedata.append(rows)
 t = PrettyTable(websites)
-for d in day:
-    d.pop(0)
-    t.add_row(d)
-sql_move_history = "UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1"
-cur.execute(sql_move_history)
-sql_update_history = "UPDATE email_history SET content = \'%s\' WHERE day = 1" % email_content
-cur.execute(sql_update_history)
-con.commit()
+for i in range(0,3):
+    for x in range(0,len(websites)):
+        t.add_row(sitedata[x][i])
+
 
 msg.attach(MIMEText(header_content + sites_changed + "\n" + t.get_string()))
 connection = boto.connect_ses()
