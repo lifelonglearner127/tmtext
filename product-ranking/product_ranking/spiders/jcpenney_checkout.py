@@ -2,6 +2,7 @@ import re
 import socket
 import time
 
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
@@ -226,3 +227,30 @@ class JCpenneySpider(BaseCheckoutSpider):
         return is_empty(item.xpath(
                         '*//select[@name="quantity"]//option'
                         '[@selected="true"]/text()').extract())
+
+    def _enter_promo_code(self, promo_code):
+        self.log('Enter promo code: {}'.format(promo_code))
+        promo_field= self._find_by_xpath('//div[@class="cr-coupon"]/*[@id="cr-code"]')[0]
+        promo_field.send_keys(promo_code)
+        time.sleep(2)
+        promo_field.send_keys(Keys.ENTER)
+        time.sleep(8)
+
+    def _get_promo_total(self):
+        order_total_element = self.wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, '//div[@class="row order_total"]'
+                           '/span[@class="flt_rgt"]')))
+
+        if order_total_element:
+            order_total = order_total_element.text
+            return is_empty(re.findall('\$([\d\.]+)', order_total))
+
+    def _get_promo_subtotal(self):
+        order_subtotal_element = self.wait.until(
+            EC.visibility_of_element_located((
+                By.XPATH, '//*[@class="flt_wdt total"]/'
+                          'span[@class="flt_rgt marginlft"]')))
+        if order_subtotal_element:
+            order_subtotal = order_subtotal_element.text
+            return is_empty(re.findall('\$([\d\.]+)', order_subtotal))

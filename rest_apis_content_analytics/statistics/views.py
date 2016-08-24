@@ -27,6 +27,7 @@ class GetStatsAjax(View):
                 'redirect': str(reverse_lazy(
                     'login')+'?next='+request.GET.get('next', ''))
             })
+
         return JsonResponse({
             'stats_all_walmart_xml_items': SubmitXMLItem.objects.filter(
                 user=request.user).order_by('-when').distinct().count(),

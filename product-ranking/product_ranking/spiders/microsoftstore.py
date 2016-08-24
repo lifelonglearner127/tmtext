@@ -197,24 +197,28 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
         return description
 
     def parse_variant(self, response):
-        # options = {}
-        # color ={}
-        # color_list = response.xpath('//ul[contains(@class, "product-colors")]/li[contains(@class, "selected")]/a/@title').extract()
-        # print '*****************',color_list
-        # color_pid = response.xpath('//ul[contains(@class, "product-colors")]/li/a/@var-pid').extract()
-        # data4 = response.xpath('//ul[contains(@class, "option-list")]/li/a//text()').extract()
-        # data4 = [i for i in data4 if i != u'\n' and i != u'*']
-        # data_pid = response.xpath('//ul[contains(@class, "option-list")]/li/@data-pid').extract()
-        # # print data_pid, data4
-        # if color_list:
-        #     for i, items in enumerate(color_pid):
-        #         color[items] = color_list[i]
-        # if data_pid:
-        #     for i, items in enumerate(data_pid):
-        #         options[items] = data4[i]
-        # print options, color
+        price_blocks = response.xpath('//div[contains(@class, "price-block")]//p[contains(@class,"current-price")]')
+        prices = []
+        for p_block in price_blocks:
+            price = p_block.xpath('.//text()').extract()
+            price = [x for x in price if len(x.strip()) > 0]
+            price = "".join(price)
+            prices.append(price)
 
-        return 'variant'
+        titles = response.xpath('//div[contains(@class,"variation-container")]//li//a/@title').extract()
+        if len(titles) < 1:
+            titles = response.xpath('//div[contains(@class,"variation-container")]//li//a/@data-variation-title').extract()
+
+        variations = []
+        idx = 0
+        for price in prices:
+            if idx >= len(titles):
+                break
+            variation = "%s - %s" % (titles[idx], price)
+            variations.append(variation)
+            idx += 1
+        variation = ", ".join(variations)
+        return variation
 
     def send_next_request(self, reqs, response):
         """
