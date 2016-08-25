@@ -352,7 +352,7 @@ day1 = []
 day2 = []
 day3 = []
 day4 = []
-html = "<table border="1"><tr>"
+html = '<table border="1"><tr>'
 for website in websites:
     html += "<th>%s</th>" % website
     sql = "SELECT * FROM email_history WHERE website = \'%s\' ORDER BY day ASC" % website
