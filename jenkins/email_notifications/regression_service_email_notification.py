@@ -382,10 +382,10 @@ for website in websites:
 html += "</tr>"
 html += "<tr>"
 html += "<td>" + cathtml + "</td>"
-for d in newdata:
+for website in websites:
     html += "<td>"
-    for k in range(0,len(keys)-1):
-        html += "<p>%s</p>" % d[k]
+    for d in newdata:
+        html += "<p>%s</p>" % d
     html += "</td>"
 html += "</tr>"
 html += "<tr>"
