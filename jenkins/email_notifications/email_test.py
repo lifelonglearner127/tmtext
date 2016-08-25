@@ -39,7 +39,7 @@ sites_changed = ""
 email_content = "\nWeb console:\nhttp://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n\n"
 
 websites = ["walmart", "jcpenney", "kohls", "macys", "target", "levi", "dockers", "samsclub", "drugstore", "amazon"]
-
+'''
 for website in websites:
     if website == "amazon":
         sql_sample_products = "select id, url, website, json, not_a_product from console_urlsample where website like '{0}'".format("amazon%")
@@ -347,7 +347,7 @@ for website in websites:
 
 if sites_changed == "":
     sites_changed = "None\n"
-
+'''
 #UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website
 day1 = []
 day2 = []
@@ -366,13 +366,15 @@ t.add_row(day1)
 t.add_row(day2)
 t.add_row(day3)
 t.add_row(day4)
-
+print t
+'''
 msg.attach(MIMEText(header_content + sites_changed + "\n" + t.get_string()))
 connection = boto.connect_ses()
 result = connection.send_raw_email(
     msg.as_string(),
     fromaddr, toaddrs)
 
+'''
 #Change according to your settings
 #smtp_server = 'email-smtp.us-east-1.amazonaws.com'
 #smtp_username = 'AKIAI2XV5DZO5VTJ6LXQ'
