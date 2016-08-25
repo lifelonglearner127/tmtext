@@ -350,7 +350,7 @@ if sites_changed == "":
 #UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website
 categories = ["Total tested product numbers:", "Not a product count:", "Product numbers of content structure changed:", "Product numbers of version changed:", "Percentage of changed products:", "80 percent of product titles are < 2 characters long:", "80 percent of review counts are 0:", "80 percent of product descriptions are < 2 words long:", "80 percent of image counts are 0:", "80 percent of products are out of stock:", "Possibility of overall website changes:"]
 keys = ["totaltested", "notaproduct", "structurechanged", "versionchanged", "changedproducts", "titles", "reviewcounts", "descriptions", "imagecounts", "outofstock", "possibilitychanges"]
-cathml = ""
+cathtml = ""
 for c in categories:
     cathtml += "<p>%s</p>" % c
 day1 = []
