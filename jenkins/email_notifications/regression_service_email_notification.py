@@ -336,7 +336,7 @@ for website in websites:
                                                  possibility_of_overall_website_changes)
     email_content += (website_header)
 
-    newdata = [number_of_reported_products, number_of_not_a_product, number_of_changed_products, number_of_version_changed_products, percentage_of_changed_products, possibility_of_80_percent_product_titles_are_less_than_2_character_long, possibility_of_80_percent_review_counts_are_0, possibility_of_80_percent_product_descriptions_are_less_than_2_character_long, possibility_of_80_percent_image_counts_are_0, possibility_of_80_percent_products_are_out_of_stock, possibility_of_overall_website_changes]
+    newdata = [number_of_reported_products, number_of_not_a_product, number_of_changed_products, number_of_version_changed_products, "%.2f" % percentage_of_changed_products, possibility_of_80_percent_product_titles_are_less_than_2_character_long, possibility_of_80_percent_review_counts_are_0, possibility_of_80_percent_product_descriptions_are_less_than_2_character_long, possibility_of_80_percent_image_counts_are_0, possibility_of_80_percent_products_are_out_of_stock, possibility_of_overall_website_changes]
 
     newdatahtml += "<td>"
     for d in newdata:
