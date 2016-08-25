@@ -421,7 +421,7 @@ for d in day4:
 html += "</tr>"
 html += "</table>"
 for k in keys:
-    sql = "UPDATE email_history t2 SET %s = t1.%s FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website" % k,k
+    sql = "UPDATE email_history t2 SET {0} = t1.{0} FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website".format(k)
 cur.execute(sql)
 for website in websites:
     for i in range(0,len(keys)-1):
