@@ -1,12 +1,8 @@
-import os.path
 import re
 import urlparse
-import requests
-import json
 
 import scrapy
 from scrapy.log import WARNING, ERROR
-from scrapy.conf import settings
 from scrapy.http import Request
 from scrapy import Selector
 
@@ -14,12 +10,12 @@ from product_ranking.items import SiteProductItem
 
 is_empty = lambda x: x[0] if x else None
 
-from .staples import StaplesProductsSpider
+from .riteaid import RiteAidProductsSpider
 
 
-class StaplesShelfPagesSpider(StaplesProductsSpider):
-    name = 'staples_shelf_urls_products'
-    allowed_domains = ["staples.com", "www.staples.com"]  # without this find_spiders() fails
+class RiteAidShelfPagesSpider(RiteAidProductsSpider):
+    name = 'riteaid_shelf_urls_products'
+    allowed_domains = ["riteaid.com", "shop.riteaid.com"]  # without this find_spiders() fails
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
@@ -34,11 +30,10 @@ class StaplesShelfPagesSpider(StaplesProductsSpider):
         return {'remaining': 99999, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
-        super(StaplesProductsSpider, self).__init__(
-            site_name=self.allowed_domains[0], *args, **kwargs)
+        super(RiteAidShelfPagesSpider, self).__init__(*args, **kwargs)
         self._setup_class_compatibility()
-
-        self.product_url = kwargs['product_url']
+        #
+        # self.product_url = kwargs.get('product_url')
 
         if "num_pages" in kwargs:
             self.num_pages = int(kwargs['num_pages'])
@@ -56,8 +51,6 @@ class StaplesShelfPagesSpider(StaplesProductsSpider):
             if scrape_variants_with_extra_requests in (1, '1', 'true', 'True', True):
                 self.scrape_variants_with_extra_requests = True
 
-        settings.overrides['CRAWLERA_ENABLED'] = True
-
     @staticmethod
     def valid_url(url):
         if not re.findall("http(s){0,1}\:\/\/", url):
@@ -69,24 +62,20 @@ class StaplesShelfPagesSpider(StaplesProductsSpider):
                       meta=self._setup_meta_compatibility())  # meta is for SC baseclass compatibility
 
     def _scrape_product_links(self, response):
-        urls = response.xpath('//a[contains(@property, "url")]/@href').extract()
-        if not urls:
-            urls = response.xpath('.//div[@class="product-info"]/a[contains(@class, "product-title")]/@href').extract()
-        if not urls:
-            urls = response.xpath('//a[@class="product-title scTrack pfm"]/@href').extract()
+        urls = response.xpath('//h2[@class="product-name"]/a/@href').extract()
         urls = [urlparse.urljoin(response.url, x) for x in urls]
-        shelf_category = response.xpath('//h1/text()').extract()
-        if shelf_category:
-            shelf_category = shelf_category[0].strip(' \t\n')
-        shelf_path = response.xpath('//div[contains(@class, "stp--breadcrumbs")]/ul/li/a/text()'
-                                    ' | //div[contains(@class, "stp--breadcrumbs")]/ul/li[@class="last"]/text()').extract()
+
+        shelf_categories = response.xpath('//div[@class="breadcrumbs"]/ul/li/a/text() | '
+                                            '//div[@class="breadcrumbs"]/ul/li/strong/text()').extract()
+
+        shelf_category = shelf_categories[-1] if shelf_categories else None
 
         for url in urls:
             item = SiteProductItem()
             if shelf_category:
                 item['shelf_name'] = shelf_category
-            if shelf_path:
-                item['shelf_path'] = shelf_path
+            if shelf_categories:
+                item['shelf_path'] = shelf_categories
             yield url, item
 
     def _scrape_next_results_page_link(self, response):
@@ -96,13 +85,11 @@ class StaplesShelfPagesSpider(StaplesProductsSpider):
         spliturl = self.product_url.split('?')
         nextlink = spliturl[0]
         if len(spliturl) == 1:
-            return (nextlink + "?pn=%d" % self.current_page)
+            return (nextlink + "?p=%d" % self.current_page)
         else:
             nextlink += "?"
             for s in spliturl[1].split('&'):
-                if not "pn=" in s:
+                if not "p=" in s:
                     nextlink += s + "&"
-            return (nextlink + "pn=%d" % self.current_page)
+            return (nextlink + "p=%d" % self.current_page)
 
-    def parse_product(self, response):
-        return super(StaplesShelfPagesSpider, self).parse_product(response)

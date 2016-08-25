@@ -928,6 +928,8 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
             os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', "signature.txt"))
         )
 
+        unirest.timeout(30)
+
         response = unirest.get(request_url.format(feedId=request_feed_id),
             headers={
                 "Accept": "application/json",
@@ -938,7 +940,7 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
                 "WM_SVC.ENV": self.walmart_environment,
                 "WM_SEC.AUTH_SIGNATURE": walmart_api_signature["signature"],
                 "WM_SEC.TIMESTAMP": int(walmart_api_signature["timestamp"])
-            }
+            },
         )
         # load the appropriate SubmissionHistory DB record (if any)
         subm_hist = SubmissionHistory.objects.filter(feed_id=request_feed_id)
