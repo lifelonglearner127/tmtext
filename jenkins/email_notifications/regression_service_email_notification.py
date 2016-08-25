@@ -36,9 +36,69 @@ msg.preamble = subject
 header_content = "Possibly Changed Sites:\n"
 sites_changed = ""
 email_content = "\nWeb console:\nhttp://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n\n"
-
+newdatahtml = ""
 websites = ["walmart", "jcpenney", "kohls", "macys", "target", "levi", "dockers", "samsclub", "drugstore", "amazon"]
-'''
+categories = ["Total tested product numbers:", "Not a product count:", "Product numbers of content structure changed:", "Product numbers of version changed:", "Percentage of changed products:", "80 percent of product titles are < 2 characters long:", "80 percent of review counts are 0:", "80 percent of product descriptions are < 2 words long:", "80 percent of image counts are 0:", "80 percent of products are out of stock:", "Possibility of overall website changes:"]
+keys = ["totaltested", "notaproduct", "structurechanged", "versionchanged", "changedproducts", "titles", "reviewcounts", "descriptions", "imagecounts", "outofstock", "possibilitychanges"]
+cathtml = ""
+for c in categories:
+    cathtml += "<p>%s</p>" % c
+day1 = []
+day2 = []
+day3 = []
+day4 = []
+html = '<table border="1"><tr><th></th>'
+for website in websites:
+    html += "<th>%s</th>" % website
+    sql = "SELECT * FROM email_history WHERE website = \'%s\' ORDER BY day ASC" % website
+    cur.execute(sql)
+    rows = cur.fetchall()
+    day1.append(rows[0])
+    day2.append(rows[1])
+    day3.append(rows[2])
+    day4.append(rows[3])
+html += "</tr>"
+html += "<tr>"
+html += "<td>" + cathtml + "</td>"
+html += newdatahtml
+html += "</tr>"
+html += "<tr>"
+html += "<td>" + cathtml + "</td>"
+for d in day1:
+    html += "<td>"
+    for k in keys:
+        html += "<p>%s</p>" % d[k]
+    html += "</td>"
+html += "</tr>"
+html += "<tr>"
+html += "<td>" + cathtml + "</td>"
+for d in day2:
+    html += "<td>"
+    for k in keys:
+        html += "<p>%s</p>" % d[k]
+    html += "</td>"
+html += "</tr>"
+html += "<tr>"
+html += "<td>" + cathtml + "</td>"
+for d in day3:
+    html += "<td>"
+    for k in keys:
+        html += "<p>%s</p>" % d[k]
+    html += "</td>"
+html += "</tr>"
+html += "<tr>"
+html += "<td>" + cathtml + "</td>"
+for d in day4:
+    html += "<td>"
+    for k in keys:
+        html += "<p>%s</p>" % d[k]
+    html += "</td>"
+html += "</tr>"
+html += "</table>"
+for k in keys:
+    sql = "UPDATE email_history t2 SET {0} = t1.{0} FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website".format(k)
+    cur.execute(sql)
+
 for website in websites:
     if website == "amazon":
         sql_sample_products = "select id, url, website, json, not_a_product from console_urlsample where website like '{0}'".format("amazon%")
@@ -314,6 +374,17 @@ for website in websites:
                                                  possibility_of_overall_website_changes)
     email_content += (website_header)
 
+    newdata = [number_of_reported_products, number_of_not_a_product, number_of_changed_products, number_of_version_changed_products, percentage_of_changed_products, possibility_of_80_percent_product_titles_are_less_than_2_character_long, possibility_of_80_percent_review_counts_are_0, possibility_of_80_percent_product_descriptions_are_less_than_2_character_long, possibility_of_80_percent_image_counts_are_0, possibility_of_80_percent_products_are_out_of_stock, possibility_of_overall_website_changes]
+
+    newdatahtml += "<td>"
+    for d in newdata:
+        newdatahtml += "<p>%s</p>" % d
+    newdatahtml += "</td>"
+
+    for i in range(0,len(keys)-1):
+        sql = "UPDATE email_history SET {0} = \'{1}\' WHERE website = \'{2}\' AND day = 1".format(keys[i],newdata[i],website)
+        cur.execute(sql)
+
     if os.path.isfile(csv_file_name_product_changes + ".gz"):
         csv_file = MIMEApplication(open(csv_file_name_product_changes + ".gz", "rb").read())
         csv_file.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_product_changes + ".gz"))
@@ -343,91 +414,9 @@ for website in websites:
         csv_file1 = MIMEApplication(open(csv_file_name_walmart_v1 + ".gz", "rb").read())
         csv_file1.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_walmart_v1 + ".gz"))
         msg.attach(csv_file1)
-'''
+
 if sites_changed == "":
     sites_changed = "None"
-
-categories = ["Total tested product numbers:", "Not a product count:", "Product numbers of content structure changed:", "Product numbers of version changed:", "Percentage of changed products:", "80 percent of product titles are < 2 characters long:", "80 percent of review counts are 0:", "80 percent of product descriptions are < 2 words long:", "80 percent of image counts are 0:", "80 percent of products are out of stock:", "Possibility of overall website changes:"]
-keys = ["totaltested", "notaproduct", "structurechanged", "versionchanged", "changedproducts", "titles", "reviewcounts", "descriptions", "imagecounts", "outofstock", "possibilitychanges"]
-number_of_reported_products = 1
-number_of_not_a_product = 1
-number_of_changed_products = 1
-number_of_version_changed_products = 1
-percentage_of_changed_products = 1
-possibility_of_80_percent_product_titles_are_less_than_2_character_long = "Yes"
-possibility_of_80_percent_review_counts_are_0 = "Yes"
-possibility_of_80_percent_product_descriptions_are_less_than_2_character_long = "Yes"
-possibility_of_80_percent_image_counts_are_0 = "Yes"
-possibility_of_80_percent_products_are_out_of_stock = "Yes"
-possibility_of_overall_website_changes = "Yes"
-newdata = [number_of_reported_products, number_of_not_a_product, number_of_changed_products, number_of_version_changed_products, percentage_of_changed_products, possibility_of_80_percent_product_titles_are_less_than_2_character_long, possibility_of_80_percent_review_counts_are_0, possibility_of_80_percent_product_descriptions_are_less_than_2_character_long, possibility_of_80_percent_image_counts_are_0, possibility_of_80_percent_products_are_out_of_stock, possibility_of_overall_website_changes]
-cathtml = ""
-for c in categories:
-    cathtml += "<p>%s</p>" % c
-day1 = []
-day2 = []
-day3 = []
-day4 = []
-html = '<table border="1"><tr><th></th>'
-for website in websites:
-    html += "<th>%s</th>" % website
-    sql = "SELECT * FROM email_history WHERE website = \'%s\' ORDER BY day ASC" % website
-    cur.execute(sql)
-    rows = cur.fetchall()
-    day1.append(rows[0])
-    day2.append(rows[1])
-    day3.append(rows[2])
-    day4.append(rows[3])
-html += "</tr>"
-html += "<tr>"
-html += "<td>" + cathtml + "</td>"
-for website in websites:
-    html += "<td>"
-    for d in newdata:
-        html += "<p>%s</p>" % d
-    html += "</td>"
-html += "</tr>"
-html += "<tr>"
-html += "<td>" + cathtml + "</td>"
-for d in day1:
-    html += "<td>"
-    for k in keys:
-        html += "<p>%s</p>" % d[k]
-    html += "</td>"
-html += "</tr>"
-html += "<tr>"
-html += "<td>" + cathtml + "</td>"
-for d in day2:
-    html += "<td>"
-    for k in keys:
-        html += "<p>%s</p>" % d[k]
-    html += "</td>"
-html += "</tr>"
-html += "<tr>"
-html += "<td>" + cathtml + "</td>"
-for d in day3:
-    html += "<td>"
-    for k in keys:
-        html += "<p>%s</p>" % d[k]
-    html += "</td>"
-html += "</tr>"
-html += "<tr>"
-html += "<td>" + cathtml + "</td>"
-for d in day4:
-    html += "<td>"
-    for k in keys:
-        html += "<p>%s</p>" % d[k]
-    html += "</td>"
-html += "</tr>"
-html += "</table>"
-for k in keys:
-    sql = "UPDATE email_history t2 SET {0} = t1.{0} FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website".format(k)
-    cur.execute(sql)
-for website in websites:
-    for i in range(0,len(keys)-1):
-        sql = "UPDATE email_history SET {0} = \'{1}\' WHERE website = \'{2}\' AND day = 1".format(keys[i],newdata[i],website)
-        cur.execute(sql)
-con.commit()
 
 msg.attach(MIMEText(header_content + sites_changed + "\n"))
 msg.attach(MIMEText(html, 'html'))
@@ -435,6 +424,8 @@ connection = boto.connect_ses()
 result = connection.send_raw_email(
     msg.as_string(),
     fromaddr, toaddrs)
+
+con.commit()
 
 #Change according to your settings
 #smtp_server = 'email-smtp.us-east-1.amazonaws.com'
