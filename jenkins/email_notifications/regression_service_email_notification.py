@@ -349,16 +349,23 @@ if sites_changed == "":
     sites_changed = "None\n"
 
 #UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website
-sitedata = []
+day1 = []
+day2 = []
+day3 = []
+day4 = []
 for website in websites:
     sql = "SELECT * FROM email_history WHERE website = \'%s\' ORDER BY day ASC" % website
     cur.execute(sql)
     rows = cur.fetchall()
-    sitedata.append(rows)
+    day1.append(row[0])
+    day2.append(row[1])
+    day3.append(row[2])
+    day4.append(row[3])
 t = PrettyTable(websites)
-for i in range(0,3):
-    for x in range(0,len(websites)-1):
-        t.add_row(sitedata[x][i])
+t.add_row(day1)
+t.add_row(day2)
+t.add_row(day3)
+t.add_row(day4)
 
 msg.attach(MIMEText(header_content + sites_changed + "\n" + t.get_string()))
 connection = boto.connect_ses()
