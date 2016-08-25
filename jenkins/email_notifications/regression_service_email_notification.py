@@ -420,11 +420,14 @@ for d in day4:
     html += "</td>"
 html += "</tr>"
 html += "</table>"
-sql = "UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website"
+for k in keys:
+    sql = "UPDATE email_history t2 SET %s = t1.%s FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website" % k,k
 cur.execute(sql)
 for website in websites:
     for i in range(0,len(keys)-1):
         sql = "UPDATE email_history SET %s = \'%s\' WHERE website = \'%s\' AND day = 1" % k[i],newdata[i],website
+        cur.execute(sql)
+con.commit()
 
 msg.attach(MIMEText(header_content + sites_changed + "\n"))
 msg.attach(MIMEText(html, 'html'))
