@@ -880,6 +880,8 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def generate_walmart_api_signature(self, walmart_api_end_point, consumer_id, private_key, request_method, file_path):
+        start_ = datetime.datetime.now()
+        print '1'
         cmd = ('java -jar "' + os.path.dirname(os.path.realpath(__file__)) +
                '/DigitalSignatureUtil-1.0.0.jar" DigitalSignatureUtil {0} {1} {2} {3} {4}').format(walmart_api_end_point,
                                                                                                    consumer_id,
@@ -894,15 +896,19 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
 
         walmart_api_signature = {"signature": output[0][len("WM_SEC.AUTH_SIGNATURE:"):-1], "timestamp": output[1][len("WM_SEC.TIMESTAMP:"):-1]}
 
+        print 'generate_walmart_api_signature - 2', (datetime.datetime.now() - start_).total_seconds()
+
         return walmart_api_signature
 
     def create(self, request):
+        start_ = datetime.datetime.now()
         output = {}
         request_url_pattern = 'request_url'
         request_feed_id_pattern = "feed_id"
         groupped_fields = group_params(request.POST, request.FILES,
                                        [request_url_pattern, request_feed_id_pattern])
         for group_name, group_data in groupped_fields.items():
+            print 'Create - From start', (datetime.datetime.now() - start_).total_seconds()
             request_url = find_in_list(group_data, request_url_pattern)
             request_feed_id = find_in_list(group_data, request_feed_id_pattern)
             if not any(request_url) or not any(request_feed_id):
@@ -917,6 +923,7 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
                 continue
             output['feed_id'] = request_feed_id
             output[group_name] = result_for_group
+            print 'Create - From start2', (datetime.datetime.now() - start_).total_seconds()
         return Response(output)
 
     def process_one_set(self, request_url, request_feed_id):
