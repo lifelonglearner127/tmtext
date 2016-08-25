@@ -9,7 +9,6 @@ import time
 import csv
 import gzip
 import shutil
-from prettytable import PrettyTable
 from datetime import date
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
@@ -39,7 +38,7 @@ sites_changed = ""
 email_content = "\nWeb console:\nhttp://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n\n"
 
 websites = ["walmart", "jcpenney", "kohls", "macys", "target", "levi", "dockers", "samsclub", "drugstore", "amazon"]
-
+'''
 for website in websites:
     if website == "amazon":
         sql_sample_products = "select id, url, website, json, not_a_product from console_urlsample where website like '{0}'".format("amazon%")
@@ -344,7 +343,7 @@ for website in websites:
         csv_file1 = MIMEApplication(open(csv_file_name_walmart_v1 + ".gz", "rb").read())
         csv_file1.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_walmart_v1 + ".gz"))
         msg.attach(csv_file1)
-
+'''
 if sites_changed == "":
     sites_changed = "None\n"
 
@@ -353,7 +352,9 @@ day1 = []
 day2 = []
 day3 = []
 day4 = []
+html = "<table border="1"><tr>"
 for website in websites:
+    html += "<th>%s</th>" % website
     sql = "SELECT * FROM email_history WHERE website = \'%s\' ORDER BY day ASC" % website
     cur.execute(sql)
     rows = cur.fetchall()
@@ -361,13 +362,27 @@ for website in websites:
     day2.append(rows[1])
     day3.append(rows[2])
     day4.append(rows[3])
-t = PrettyTable(websites)
-t.add_row(day1)
-t.add_row(day2)
-t.add_row(day3)
-t.add_row(day4)
+html += "</tr>"
+html += "<tr>"
+for d in day1:
+    html += "<td>%s</td>" % d["website"]
+html += "</tr>"
+html += "<tr>"
+for d in day2:
+    html += "<td>%s</td>" % d["website"]
+html += "</tr>"
+html += "<tr>"
+for d in day3:
+    html += "<td>%s</td>" % d["website"]
+html += "</tr>"
+html += "<tr>"
+for d in day4:
+    html += "<td>%s</td>" % d["website"]
+html += "</tr>"
+html += "</table>"
 
-msg.attach(MIMEText(header_content + sites_changed + "\n" + t.get_string()))
+msg.attach(MIMEText(header_content + sites_changed + "\n"))
+msg.attach(MIMEText(html, 'html'))
 connection = boto.connect_ses()
 result = connection.send_raw_email(
     msg.as_string(),
