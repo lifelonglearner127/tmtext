@@ -425,7 +425,7 @@ for k in keys:
 cur.execute(sql)
 for website in websites:
     for i in range(0,len(keys)-1):
-        sql = "UPDATE email_history SET %s = \'%s\' WHERE website = \'%s\' AND day = 1" % k[i],newdata[i],website
+        sql = "UPDATE email_history SET {0} = \'{1}\' WHERE website = \'{2}\' AND day = 1".format(k[i],newdata[i],website)
         cur.execute(sql)
 con.commit()
 
