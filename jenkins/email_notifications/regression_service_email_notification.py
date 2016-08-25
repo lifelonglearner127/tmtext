@@ -345,14 +345,19 @@ for website in websites:
         msg.attach(csv_file1)
 '''
 if sites_changed == "":
-    sites_changed = "None\n"
+    sites_changed = "None"
 
 #UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website
+categories = ["Total tested product numbers:", "Not a product count:", "Product numbers of content structure changed:", "Product numbers of version changed:", "Percentage of changed products:", "80 percent of product titles are < 2 characters long:", "80 percent of review counts are 0:", "80 percent of product descriptions are < 2 words long:", "80 percent of image counts are 0:", "80 percent of products are out of stock:", "Possibility of overall website changes:"]
+keys = ["totaltested", "notaproduct", "structurechanged", "versionchanged", "changedproducts", "titles", "reviewcounts", "descriptions", "imagecounts", "outofstock", "possibilitychanges"]
+cathml = ""
+for c in categories:
+    cathtml += "<p>%s</p>" % c
 day1 = []
 day2 = []
 day3 = []
 day4 = []
-html = '<table border="1"><tr>'
+html = '<table border="1"><tr><th></th>'
 for website in websites:
     html += "<th>%s</th>" % website
     sql = "SELECT * FROM email_history WHERE website = \'%s\' ORDER BY day ASC" % website
@@ -364,20 +369,28 @@ for website in websites:
     day4.append(rows[3])
 html += "</tr>"
 html += "<tr>"
+html += "<td>" + cathtml + "</td>"
 for d in day1:
-    html += "<td>%s</td>" % d["website"]
+    for k in keys:
+        html += "<td>%s</td>" % d[k]
 html += "</tr>"
 html += "<tr>"
+html += "<td>" + cathtml + "</td>"
 for d in day2:
-    html += "<td>%s</td>" % d["website"]
+    for k in keys:
+        html += "<td>%s</td>" % d[k]
 html += "</tr>"
 html += "<tr>"
+html += "<td>" + cathtml + "</td>"
 for d in day3:
-    html += "<td>%s</td>" % d["website"]
+    for k in keys:
+        html += "<td>%s</td>" % d[k]
 html += "</tr>"
 html += "<tr>"
+html += "<td>" + cathtml + "</td>"
 for d in day4:
-    html += "<td>%s</td>" % d["website"]
+    for k in keys:
+        html += "<td>%s</td>" % d[k]
 html += "</tr>"
 html += "</table>"
 
