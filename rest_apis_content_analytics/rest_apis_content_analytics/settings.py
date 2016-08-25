@@ -37,6 +37,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_dumpdb',
     'walmart_developer_accounts',
     'nutrition_info_images',
     'statistics',
@@ -62,6 +63,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'rest_apis_content_analytics.auth_middleware.AuthMiddleware'
 )
 
 ROOT_URLCONF = 'rest_apis_content_analytics.urls'
@@ -210,4 +212,9 @@ TEST_TWEAKS = {
 IS_PRODUCTION = os.path.exists(
     os.path.dirname(__file__) + "/is_walmart_api_production_server")
 
-print "Server production mode? %s" % IS_PRODUCTION
+#print "Server production mode? %s" % IS_PRODUCTION
+
+try:
+    from local_settings import *
+except ImportError:
+    pass

@@ -80,16 +80,21 @@ class LowesShelfPagesSpider(LowesProductsSpider):
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1
-        spliturl = self.product_url.split('?')
-        nextlink = spliturl[0]
-        if len(spliturl) == 1:
-            return (nextlink + "?offset=%d" % (self.current_page-1)*36)
-        else:
-            nextlink += "?"
-            for s in spliturl[1].split('&'):
-                if not "offset=" in s:
-                    nextlink += s + "&"
-            return (nextlink + "offset=%d" % (self.current_page-1)*36)
+
+        next_link = response.xpath("//li[contains(@class,'page-next')]/a/@href").extract()
+        if len(next_link) > 0:
+            return "http://www.lowes.com" + next_link[0]
+        return
+        # spliturl = self.product_url.split('?')
+        # nextlink = spliturl[0]
+        # if len(spliturl) == 1:
+        #     return (nextlink + "?offset=%d" % (self.current_page-1)*36)
+        # else:
+        #     nextlink += "?"
+        #     for s in spliturl[1].split('&'):
+        #         if not "offset=" in s:
+        #             nextlink += s + "&"
+        #     return (nextlink + "offset=%d" % (self.current_page-1)*36)
 
     def parse_product(self, response):
         return super(LowesShelfPagesSpider, self).parse_product(response)

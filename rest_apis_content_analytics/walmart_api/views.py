@@ -1935,10 +1935,7 @@ class FeedStatusAjaxView(DjangoView):
         feed_id = kwargs['feed_id']
 
         if not request.user.is_authenticated():
-            return JsonResponse({
-                'redirect': str(reverse_lazy(
-                    'login')+'?next='+request.GET.get('next', ''))
-            })
+            return JsonResponse({})
 
         feed_history = SubmissionHistory.objects.filter(user=request.user,
                                                         feed_id=feed_id)
@@ -1958,10 +1955,7 @@ class XMLFileRedirect(DjangoView):
         feed_id = kwargs['feed_id']
 
         if not request.user.is_authenticated():
-            return JsonResponse({
-                'redirect': str(reverse_lazy(
-                    'login')+'?next='+request.GET.get('next', ''))
-            })
+            return HttpResponse('Error: not logged in')
 
         xml_file = SubmissionXMLFile.objects.filter(feed_id=feed_id)
         if len(xml_file) > 2:

@@ -1,4 +1,5 @@
 import re
+
 import json
 from pprint import pprint
 
@@ -159,7 +160,7 @@ class TargetVariants(object):
             'Origin': 'http://www.target.com',
             'Pragma': 'no-cache',
             'Referer': self.item_info['dynamicKitURL'],
-            'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36'
         }
         try:
             response = requests.post(url, data=json.dumps(payload), headers=headers)
@@ -185,7 +186,7 @@ class TargetVariants(object):
             'Origin': 'http://www.target.com',
             'Pragma': 'no-cache',
             'Referer': self.item_info['dynamicKitURL'],
-            'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36'
         }
 
         response = requests.get(url, headers=headers)
@@ -200,7 +201,7 @@ class TargetVariants(object):
             variants = []
 
             headers = {
-                'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36'
             }
             page_raw_text = requests.get(self.item_info['dynamicKitURL'], headers=headers).content
             # decides if users can see "get it in 4-7 business days"

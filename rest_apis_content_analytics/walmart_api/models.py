@@ -9,7 +9,7 @@ class SubmissionHistory(models.Model):
     user = models.ForeignKey(User, blank=True, null=True)
     feed_id = models.CharField(max_length=50)
     server_name = models.CharField(max_length=100, blank=True, null=True)
-    client_ip = models.IPAddressField(blank=True, null=True)
+    client_ip = models.CharField(blank=True, null=True, max_length=50)
 
     created = models.DateTimeField(auto_now_add=True, blank=True, null=True)
 
