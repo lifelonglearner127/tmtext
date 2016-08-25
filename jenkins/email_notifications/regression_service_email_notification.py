@@ -57,44 +57,6 @@ for website in websites:
     day2.append(rows[1])
     day3.append(rows[2])
     day4.append(rows[3])
-html += "</tr>"
-html += "<tr>"
-html += "<td>" + cathtml + "</td>"
-html += newdatahtml
-html += "</tr>"
-html += "<tr>"
-html += "<td>" + cathtml + "</td>"
-for d in day1:
-    html += "<td>"
-    for k in keys:
-        html += "<p>%s</p>" % d[k]
-    html += "</td>"
-html += "</tr>"
-html += "<tr>"
-html += "<td>" + cathtml + "</td>"
-for d in day2:
-    html += "<td>"
-    for k in keys:
-        html += "<p>%s</p>" % d[k]
-    html += "</td>"
-html += "</tr>"
-html += "<tr>"
-html += "<td>" + cathtml + "</td>"
-for d in day3:
-    html += "<td>"
-    for k in keys:
-        html += "<p>%s</p>" % d[k]
-    html += "</td>"
-html += "</tr>"
-html += "<tr>"
-html += "<td>" + cathtml + "</td>"
-for d in day4:
-    html += "<td>"
-    for k in keys:
-        html += "<p>%s</p>" % d[k]
-    html += "</td>"
-html += "</tr>"
-html += "</table>"
 for k in keys:
     sql = "UPDATE email_history t2 SET {0} = t1.{0} FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website".format(k)
     cur.execute(sql)
@@ -417,6 +379,45 @@ for website in websites:
 
 if sites_changed == "":
     sites_changed = "None"
+
+html += "</tr>"
+html += "<tr>"
+html += "<td>" + cathtml + "</td>"
+html += newdatahtml
+html += "</tr>"
+html += "<tr>"
+html += "<td>" + cathtml + "</td>"
+for d in day1:
+    html += "<td>"
+    for k in keys:
+        html += "<p>%s</p>" % d[k]
+    html += "</td>"
+html += "</tr>"
+html += "<tr>"
+html += "<td>" + cathtml + "</td>"
+for d in day2:
+    html += "<td>"
+    for k in keys:
+        html += "<p>%s</p>" % d[k]
+    html += "</td>"
+html += "</tr>"
+html += "<tr>"
+html += "<td>" + cathtml + "</td>"
+for d in day3:
+    html += "<td>"
+    for k in keys:
+        html += "<p>%s</p>" % d[k]
+    html += "</td>"
+html += "</tr>"
+html += "<tr>"
+html += "<td>" + cathtml + "</td>"
+for d in day4:
+    html += "<td>"
+    for k in keys:
+        html += "<p>%s</p>" % d[k]
+    html += "</td>"
+html += "</tr>"
+html += "</table>"
 
 msg.attach(MIMEText(header_content + sites_changed + "\n"))
 msg.attach(MIMEText(html, 'html'))
