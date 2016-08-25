@@ -350,6 +350,7 @@ if sites_changed == "":
 #UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website
 categories = ["Total tested product numbers:", "Not a product count:", "Product numbers of content structure changed:", "Product numbers of version changed:", "Percentage of changed products:", "80 percent of product titles are < 2 characters long:", "80 percent of review counts are 0:", "80 percent of product descriptions are < 2 words long:", "80 percent of image counts are 0:", "80 percent of products are out of stock:", "Possibility of overall website changes:"]
 keys = ["totaltested", "notaproduct", "structurechanged", "versionchanged", "changedproducts", "titles", "reviewcounts", "descriptions", "imagecounts", "outofstock", "possibilitychanges"]
+newdata = [number_of_reported_products, number_of_not_a_product, number_of_changed_products, number_of_version_changed_products, percentage_of_changed_products, possibility_of_80_percent_product_titles_are_less_than_2_character_long, possibility_of_80_percent_review_counts_are_0, possibility_of_80_percent_product_descriptions_are_less_than_2_character_long, possibility_of_80_percent_image_counts_are_0, possibility_of_80_percent_products_are_out_of_stock, possibility_of_overall_website_changes]
 cathtml = ""
 for c in categories:
     cathtml += "<p>%s</p>" % c
@@ -367,6 +368,14 @@ for website in websites:
     day2.append(rows[1])
     day3.append(rows[2])
     day4.append(rows[3])
+html += "</tr>"
+html += "<tr>"
+html += "<td>" + cathtml + "</td>"
+for d in newdata:
+    html += "<td>"
+    for k in range(0,len(keys)-1):
+        html += "<p>%s</p>" % d[k]
+    html += "</td>"
 html += "</tr>"
 html += "<tr>"
 html += "<td>" + cathtml + "</td>"
