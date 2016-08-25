@@ -371,26 +371,34 @@ html += "</tr>"
 html += "<tr>"
 html += "<td>" + cathtml + "</td>"
 for d in day1:
+    html += "<td>"
     for k in keys:
-        html += "<td>%s</td>" % d[k]
+        html += "<p>%s</p>" % d[k]
+    html += "</td>"
 html += "</tr>"
 html += "<tr>"
 html += "<td>" + cathtml + "</td>"
 for d in day2:
+    html += "<td>"
     for k in keys:
-        html += "<td>%s</td>" % d[k]
+        html += "<p>%s</p>" % d[k]
+    html += "</td>"
 html += "</tr>"
 html += "<tr>"
 html += "<td>" + cathtml + "</td>"
 for d in day3:
+    html += "<td>"
     for k in keys:
-        html += "<td>%s</td>" % d[k]
+        html += "<p>%s</p>" % d[k]
+    html += "</td>"
 html += "</tr>"
 html += "<tr>"
 html += "<td>" + cathtml + "</td>"
 for d in day4:
+    html += "<td>"
     for k in keys:
-        html += "<td>%s</td>" % d[k]
+        html += "<p>%s</p>" % d[k]
+    html += "</td>"
 html += "</tr>"
 html += "</table>"
 
