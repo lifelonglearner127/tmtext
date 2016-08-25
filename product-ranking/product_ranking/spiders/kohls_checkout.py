@@ -158,11 +158,14 @@ class KohlsSpider(scrapy.Spider):
         sale_price = product.get('salePrice').replace('$', '')
         regular_price = product.get('regularPrice').replace('$', '')
         price = sale_price if sale_price else regular_price
-        item['price'] = price
         item['price_on_page'] = price
-        item['quantity'] = product.get('quantity')
+        quantity = product.get('quantity')
+        item['quantity'] = quantity
         item['color'] = product.get('color')
-        item['order_subtotal'] = product.get('subtotal').replace('$', '')
+        order_subtotal = product.get('subtotal').replace('$', '')
+        item['order_subtotal'] = order_subtotal
+        item['price'] = round(
+            float(order_subtotal) / item['quantity'], 2)
         item['order_total'] = json_data.get('orderSummary').get('total').replace('$', '')
         item['url'] = response.meta.get('url')
         item['requested_color'] = response.meta.get('requested_color')
@@ -221,4 +224,4 @@ class KohlsSpider(scrapy.Spider):
                                          dont_filter=True,
                                          meta=meta
                                          )
-
+    
