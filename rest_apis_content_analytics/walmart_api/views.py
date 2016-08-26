@@ -880,6 +880,8 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def generate_walmart_api_signature(self, walmart_api_end_point, consumer_id, private_key, request_method, file_path):
+        start_ = datetime.datetime.now()
+        print '1'
         cmd = ('java -jar "' + os.path.dirname(os.path.realpath(__file__)) +
                '/DigitalSignatureUtil-1.0.0.jar" DigitalSignatureUtil {0} {1} {2} {3} {4}').format(walmart_api_end_point,
                                                                                                    consumer_id,
@@ -894,15 +896,19 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
 
         walmart_api_signature = {"signature": output[0][len("WM_SEC.AUTH_SIGNATURE:"):-1], "timestamp": output[1][len("WM_SEC.TIMESTAMP:"):-1]}
 
+        print 'generate_walmart_api_signature - 2', (datetime.datetime.now() - start_).total_seconds()
+
         return walmart_api_signature
 
     def create(self, request):
+        start_ = datetime.datetime.now()
         output = {}
         request_url_pattern = 'request_url'
         request_feed_id_pattern = "feed_id"
         groupped_fields = group_params(request.POST, request.FILES,
                                        [request_url_pattern, request_feed_id_pattern])
         for group_name, group_data in groupped_fields.items():
+            print 'Create - From start', (datetime.datetime.now() - start_).total_seconds()
             request_url = find_in_list(group_data, request_url_pattern)
             request_feed_id = find_in_list(group_data, request_feed_id_pattern)
             if not any(request_url) or not any(request_feed_id):
@@ -917,9 +923,12 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
                 continue
             output['feed_id'] = request_feed_id
             output[group_name] = result_for_group
+            print 'Create - From start2', (datetime.datetime.now() - start_).total_seconds()
         return Response(output)
 
     def process_one_set(self, request_url, request_feed_id):
+        start_ = datetime.datetime.now()
+        print 'process_one_set - 0', start_
         walmart_api_signature = self.generate_walmart_api_signature(
             request_url.format(feedId=request_feed_id),
             self.walmart_consumer_id,
@@ -927,6 +936,10 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
             "GET",
             os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', "signature.txt"))
         )
+
+        unirest.timeout(30)
+
+        print 'process_one_set - 1', (datetime.datetime.now() - start_).total_seconds()
 
         response = unirest.get(request_url.format(feedId=request_feed_id),
             headers={
@@ -938,10 +951,14 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
                 "WM_SVC.ENV": self.walmart_environment,
                 "WM_SEC.AUTH_SIGNATURE": walmart_api_signature["signature"],
                 "WM_SEC.TIMESTAMP": int(walmart_api_signature["timestamp"])
-            }
+            },
         )
+
+        print 'process_one_set - 2', (datetime.datetime.now() - start_).total_seconds()
+
         # load the appropriate SubmissionHistory DB record (if any)
         subm_hist = SubmissionHistory.objects.filter(feed_id=request_feed_id)
+        print 'process_one_set - 3', (datetime.datetime.now() - start_).total_seconds()
         if (len(subm_hist) == 0) or (len(subm_hist) and not subm_hist[0].client_ip):
             # if there are no DB records, or client_ip is null (not ready yet)
             response.body['server_name'] = 'Not available yet, check later'
@@ -953,6 +970,9 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         xml_file = SubmissionXMLFile.objects.filter(feed_id=request_feed_id)
         if xml_file:
             response.body['submitted_at'] = xml_file[0].created.isoformat()
+
+        print 'process_one_set - 4', (datetime.datetime.now() - start_).total_seconds()
+
         return response.body
 
     def update(self, request, pk=None):

@@ -141,8 +141,8 @@ class ErrorText(models.Model):
 
 class ItemMetadata(models.Model):
     item = models.ForeignKey(SubmitXMLItem, unique=True, related_name='item_metadata')
-    upc = models.CharField(max_length=20, blank=True, null=True)
-    feed_id = models.CharField(max_length=50, blank=True, null=True)
+    upc = models.CharField(max_length=20, blank=True, null=True, db_index=True)
+    feed_id = models.CharField(max_length=50, blank=True, null=True, db_index=True)
 
     def __unicode__(self):
         return u'[%s], upc=>%s, feed_id=>%s' % (self.item, self.upc, self.feed_id)

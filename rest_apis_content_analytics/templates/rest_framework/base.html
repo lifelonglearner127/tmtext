@@ -67,12 +67,17 @@
 
   <script type="text/javascript">
       var replacePattern1 = /([0-9a-zA-Z]{8}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{12})/gim;
+      var replacePattern2 = /([0-9A-Z]{20,40}[0-9A-Z\@a-z\_]{5,20})/gim;
 
       function linkify(inputText) {
           // feed ID example: 5e1bc52a-a9f8-4114-9f50-23d567e02f4d
           var replacedText;
           replacedText = inputText.replace(
               replacePattern1,
+              '<a data-target="$1" href="/feed-redirect/$1" target="_blank" class="prettyprint_replaced_link">$1</a>'
+          );
+          replacedText = replacedText.replace(
+              replacePattern2,
               '<a data-target="$1" href="/feed-redirect/$1" target="_blank" class="prettyprint_replaced_link">$1</a>'
           );
           return replacedText;

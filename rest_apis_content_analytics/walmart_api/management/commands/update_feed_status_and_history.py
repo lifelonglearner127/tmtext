@@ -2,6 +2,7 @@ import random
 import os
 import sys
 import subprocess
+import time
 
 from django.core.management import BaseCommand
 from django.contrib.auth.models import User
@@ -61,7 +62,10 @@ class Command(BaseCommand):
         self.exit_if_multiple_instances_running()
 
         for user in User.objects.all():
-            for log_rec in parse_walmart_api_log(user):  # TODO: parse server name and IP
+            records = list(parse_walmart_api_log(user))
+            records.reverse()
+            for log_rec in records:  # TODO: parse server name and IP
+                time.sleep(1)
                 date = log_rec['datetime']
                 upc = log_rec['upc'].strip()
                 feed_id = log_rec['feed_id'].strip()

@@ -38,7 +38,7 @@ class BestBuyScraper(Scraper):
         Returns:
         True if valid, False otherwise
         """
-        m = re.match(r"^http://www\.bestbuy\.com/site/[a-zA-Z0-9%\-\%\_]+/[a-zA-Z0-9]+\.p\?id=[a-zA-Z0-9]+(&skuId=\d+)?$", self.product_page_url)
+        m = re.match(r"^http://www\.bestbuy\.com/site/[a-zA-Z0-9%\-\%\_]+/[a-zA-Z0-9]+\.p(\?id=[a-zA-Z0-9]+(&skuId=\d+)?)?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
