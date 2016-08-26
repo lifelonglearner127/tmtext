@@ -389,7 +389,7 @@ html += "<tr>"
 html += "<td><p>{0}:</p>".format((date.today() - timedelta(1)).isoformat()) + cathtml + "</td>"
 for d in day1:
     html += "<td>"
-    html += "<p><b>"
+    html += "<br />"
     for k in keys:
         html += "<p>%s</p>" % d[k]
     html += "</td>"
@@ -398,6 +398,7 @@ html += "<tr>"
 html += "<td><p>{0}:</p>".format((date.today() - timedelta(2)).isoformat()) + cathtml + "</td>"
 for d in day2:
     html += "<td>"
+    html += "<br />"
     for k in keys:
         html += "<p>%s</p>" % d[k]
     html += "</td>"
@@ -406,6 +407,7 @@ html += "<tr>"
 html += "<td><p>{0}:</p>".format((date.today() - timedelta(3)).isoformat()) + cathtml + "</td>"
 for d in day3:
     html += "<td>"
+    html += "<br />"
     for k in keys:
         html += "<p>%s</p>" % d[k]
     html += "</td>"
@@ -414,6 +416,7 @@ html += "<tr>"
 html += "<td><p>{0}:</p>".format((date.today() - timedelta(4)).isoformat()) + cathtml + "</td>"
 for d in day4:
     html += "<td>"
+    html += "<br />"
     for k in keys:
         html += "<p>%s</p>" % d[k]
     html += "</td>"
