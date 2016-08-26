@@ -9,7 +9,7 @@ import time
 import csv
 import gzip
 import shutil
-from datetime import date
+from datetime import date, timedelta
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -337,8 +337,8 @@ for website in websites:
     email_content += (website_header)
 
     newdata = [number_of_reported_products, number_of_not_a_product, number_of_changed_products, number_of_version_changed_products, "%.2f" % percentage_of_changed_products, possibility_of_80_percent_product_titles_are_less_than_2_character_long, possibility_of_80_percent_review_counts_are_0, possibility_of_80_percent_product_descriptions_are_less_than_2_character_long, possibility_of_80_percent_image_counts_are_0, possibility_of_80_percent_products_are_out_of_stock, possibility_of_overall_website_changes]
-
     newdatahtml += "<td>"
+    newdatahtml += "<br />"
     for d in newdata:
         newdatahtml += "<p>%s</p>" % d
     newdatahtml += "</td>"
@@ -382,19 +382,20 @@ if sites_changed == "":
 
 html += "</tr>"
 html += "<tr>"
-html += "<td>" + cathtml + "</td>"
+html += "<td><p>{0}:</p>".format(date.today().isoformat()) + cathtml + "</td>"
 html += newdatahtml
 html += "</tr>"
 html += "<tr>"
-html += "<td>" + cathtml + "</td>"
+html += "<td><p>{0}:</p>".format((date.today() - timedelta(1)).isoformat()) + cathtml + "</td>"
 for d in day1:
     html += "<td>"
+    html += "<p><b>"
     for k in keys:
         html += "<p>%s</p>" % d[k]
     html += "</td>"
 html += "</tr>"
 html += "<tr>"
-html += "<td>" + cathtml + "</td>"
+html += "<td><p>{0}:</p>".format((date.today() - timedelta(2)).isoformat()) + cathtml + "</td>"
 for d in day2:
     html += "<td>"
     for k in keys:
@@ -402,7 +403,7 @@ for d in day2:
     html += "</td>"
 html += "</tr>"
 html += "<tr>"
-html += "<td>" + cathtml + "</td>"
+html += "<td><p>{0}:</p>".format((date.today() - timedelta(3)).isoformat()) + cathtml + "</td>"
 for d in day3:
     html += "<td>"
     for k in keys:
@@ -410,7 +411,7 @@ for d in day3:
     html += "</td>"
 html += "</tr>"
 html += "<tr>"
-html += "<td>" + cathtml + "</td>"
+html += "<td><p>{0}:</p>".format((date.today() - timedelta(4)).isoformat()) + cathtml + "</td>"
 for d in day4:
     html += "<td>"
     for k in keys:
