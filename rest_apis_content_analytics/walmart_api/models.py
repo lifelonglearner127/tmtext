@@ -43,3 +43,13 @@ class SubmissionXMLFile(models.Model):
     xml_file = models.FileField(
         help_text="The actual XML file sent to Walmart")
     created = models.DateTimeField(default=datetime.datetime.utcnow)
+
+
+class SubmissionResults(models.Model):
+    """ The result of the Feed submission (full status text from Walmart) """
+    feed_id = models.CharField(max_length=50)
+    response = models.TextField()
+    updated = models.DateTimeField(default=datetime.datetime.utcnow)
+
+    def __unicode__(self):
+        return self.feed_id
