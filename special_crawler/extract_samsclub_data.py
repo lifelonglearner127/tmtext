@@ -45,6 +45,11 @@ class SamsclubScraper(Scraper):
     items = None
     sv = SamsclubVariants()
 
+    def __init__(self, **kwargs):
+        Scraper.__init__(self, **kwargs)
+
+        self.HEADERS = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0', 'Cookie': 'myPreferredClub=6612'}
+
     def check_url_format(self):
         m = re.match(r"^http://www\.samsclub\.com/sams/(.+/)?prod\d+\.ip$", self.product_page_url)
         if m or self._is_shelf():
@@ -66,6 +71,13 @@ class SamsclubScraper(Scraper):
         Currently for Amazon it detects captcha validation forms,
         and returns True if current page is one.
         '''
+
+        redirect = self.tree_html.xpath('//meta[@http-equiv="Refresh"]/@content')
+        if redirect:
+            self.product_page_url = re.search('url=(.*)', redirect[0]).group(1)
+
+        self.page_raw_text = requests.get(self.product_page_url, headers=self.HEADERS).content
+        self.tree_html = html.fromstring(self.page_raw_text)
 
         try:
             self.sv.setupCH(self.tree_html)
@@ -482,8 +494,6 @@ class SamsclubScraper(Scraper):
         if not self.tree_html.xpath('//div[contains(@class,"sc-product-card")]'):
             return self.items
 
-        HEADERS = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0', 'Cookie': 'myPreferredClub=6612'}
-
         subcategories = self.tree_html.xpath('//section[starts-with(@id,"catLowFtrdCrsl")]/@ng-controller')
 
         # If it is a meta-category page
@@ -493,7 +503,7 @@ class SamsclubScraper(Scraper):
 
                 url = 'http://www.samsclub.com/sams/redesign/common/model/loadDataModel.jsp?dataModelId=' + id + '&dataModelType=categoryDataModel'
 
-                c = requests.get(url, headers=HEADERS).content
+                c = requests.get(url, headers=self.HEADERS).content
                 h = html.fromstring(c)
 
                 for item in h.xpath('//div[contains(@class,"sc-product-card")]')[:5]:
@@ -510,7 +520,7 @@ class SamsclubScraper(Scraper):
 
             url = 'http://www.samsclub.com/soa/services/v1/catalogsearch/search?searchCategoryId=' + cat_id
 
-            j = json.loads(requests.get(url, headers=HEADERS).content)
+            j = json.loads(requests.get(url, headers=self.HEADERS).content)
 
             records = j['payload'].get('records', [])
 
