@@ -220,6 +220,7 @@ class BestBuyScraper(Scraper):
 
     def _image_urls(self):
         image_urls = self.tree_html.xpath('//div[contains(@class,"image-wrapper")]/img/@data-src')
+        image_urls += self.tree_html.xpath('//div[contains(@class,"image-wrapper")]//img/@data-img-path')
         image_urls = filter(lambda i: not 'default_movies_l.jpg' in i, image_urls)
         if image_urls:
             return map(lambda u: u.split(';')[0], image_urls)
