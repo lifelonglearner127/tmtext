@@ -38,7 +38,7 @@ from walmart_api.serializers import (WalmartApiFeedRequestSerializer, WalmartApi
                                      WalmartApiValidateXmlFileRequestSerializer, WalmartDetectDuplicateContentRequestSerializer,
                                      WalmartDetectDuplicateContentFromCsvFileRequestSerializer,
                                      CheckItemStatusByProductIDSerializer)
-from walmart_api.models import SubmissionHistory, SubmissionXMLFile
+from walmart_api.models import SubmissionHistory, SubmissionXMLFile, SubmissionResults
 from statistics.models import process_check_feed_response, ItemMetadata
 from rest_apis_content_analytics.image_duplication.views import parse_data
 from lxml import etree
@@ -881,7 +881,6 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
 
     def generate_walmart_api_signature(self, walmart_api_end_point, consumer_id, private_key, request_method, file_path):
         start_ = datetime.datetime.now()
-        print '1'
         cmd = ('java -jar "' + os.path.dirname(os.path.realpath(__file__)) +
                '/DigitalSignatureUtil-1.0.0.jar" DigitalSignatureUtil {0} {1} {2} {3} {4}').format(walmart_api_end_point,
                                                                                                    consumer_id,
@@ -896,8 +895,6 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
 
         walmart_api_signature = {"signature": output[0][len("WM_SEC.AUTH_SIGNATURE:"):-1], "timestamp": output[1][len("WM_SEC.TIMESTAMP:"):-1]}
 
-        print 'generate_walmart_api_signature - 2', (datetime.datetime.now() - start_).total_seconds()
-
         return walmart_api_signature
 
     def create(self, request):
@@ -908,7 +905,6 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         groupped_fields = group_params(request.POST, request.FILES,
                                        [request_url_pattern, request_feed_id_pattern])
         for group_name, group_data in groupped_fields.items():
-            print 'Create - From start', (datetime.datetime.now() - start_).total_seconds()
             request_url = find_in_list(group_data, request_url_pattern)
             request_feed_id = find_in_list(group_data, request_feed_id_pattern)
             if not any(request_url) or not any(request_feed_id):
@@ -923,12 +919,14 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
                 continue
             output['feed_id'] = request_feed_id
             output[group_name] = result_for_group
-            print 'Create - From start2', (datetime.datetime.now() - start_).total_seconds()
         return Response(output)
 
     def process_one_set(self, request_url, request_feed_id):
+        # try to get the response from the DB, if it's available
+        if SubmissionResults.objects.filter(feed_id=request_feed_id):
+            return json.loads(SubmissionResults.objects.filter(feed_id=request_feed_id)[0].response)
+
         start_ = datetime.datetime.now()
-        print 'process_one_set - 0', start_
         walmart_api_signature = self.generate_walmart_api_signature(
             request_url.format(feedId=request_feed_id),
             self.walmart_consumer_id,
@@ -938,8 +936,6 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         )
 
         unirest.timeout(30)
-
-        print 'process_one_set - 1', (datetime.datetime.now() - start_).total_seconds()
 
         response = unirest.get(request_url.format(feedId=request_feed_id),
             headers={
@@ -954,11 +950,8 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
             },
         )
 
-        print 'process_one_set - 2', (datetime.datetime.now() - start_).total_seconds()
-
         # load the appropriate SubmissionHistory DB record (if any)
         subm_hist = SubmissionHistory.objects.filter(feed_id=request_feed_id)
-        print 'process_one_set - 3', (datetime.datetime.now() - start_).total_seconds()
         if (len(subm_hist) == 0) or (len(subm_hist) and not subm_hist[0].client_ip):
             # if there are no DB records, or client_ip is null (not ready yet)
             response.body['server_name'] = 'Not available yet, check later'
@@ -971,7 +964,12 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         if xml_file:
             response.body['submitted_at'] = xml_file[0].created.isoformat()
 
-        print 'process_one_set - 4', (datetime.datetime.now() - start_).total_seconds()
+        # save response in DB if it's successful
+        if isinstance(response.body, dict):
+            if response.body.get('feedStatus', None) == 'PROCESSED':
+                if not SubmissionResults.objects.filter(feed_id=request_feed_id):
+                    SubmissionResults.objects.create(
+                        feed_id=request_feed_id, response=json.dumps(response.body))
 
         return response.body
 

@@ -11,7 +11,7 @@ from django.core.cache import cache
 
 from walmart_api.models import *
 from walmart_api.views import (parse_walmart_api_log, get_walmart_api_invoke_log,
-                               get_feed_status)
+                               get_feed_status, CheckFeedStatusByWalmartApiViewSet)
 from walmart_api.context_processors import get_submission_history_as_json
 from walmart_api.utils import get_cache_key_for_request_or_user
 from statistics.models import *
@@ -52,7 +52,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def exit_if_multiple_instances_running():
-        basename = os.path.basename(__file__).replace('.py', '')
+        basename = os.path.basename(__file__).replace('.pyc', '').replace('.py', '')
         if check_running_instances(basename) > 1:
             print('Multiple instances of this script are running - exit')
             sys.exit(-1)
@@ -73,7 +73,18 @@ class Command(BaseCommand):
                 client_ip = log_rec.get('client_ip', None)
                 print 'Feed ID %s' % feed_id
 
-                # 1. Update old "incomplete" statuses - remove SubmissionHistory records and Statistics
+                # check feed response from walmart
+                response = None
+                check_feed_view = CheckFeedStatusByWalmartApiViewSet()
+                try:
+                    response = check_feed_view.process_one_set(  # this will get the feed ID from DB or will get live response
+                        'https://marketplace.walmartapis.com/v2/feeds/{feedId}?includeDetails=true',
+                        feed_id)
+                except Exception as e:
+                    print str(e)
+                    continue
+
+                # update old "incomplete" statuses - remove SubmissionHistory records and Statistics
                 for sub_history in SubmissionHistory.objects.filter(
                         user=user, feed_id=feed_id):
                     if not sub_history.all_items_ok():
