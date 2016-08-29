@@ -52,7 +52,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def exit_if_multiple_instances_running():
-        basename = os.path.basename(__file__).replace('.py', '')
+        basename = os.path.basename(__file__).replace('.pyc', '').replace('.py', '')
         if check_running_instances(basename) > 1:
             print('Multiple instances of this script are running - exit')
             sys.exit(-1)
