@@ -1287,10 +1287,12 @@ class AmazonBaseClass(BaseProductsSpider):
 
         product['buyer_reviews']['rating_by_star'] = rating_by_star
         if len(product['buyer_reviews']['rating_by_star']) >= 5:
+            r_num = product['buyer_reviews']['num_of_reviews']
             product['buyer_reviews']['num_of_reviews'] \
-                = int(product['buyer_reviews']['num_of_reviews'])
+                = int(r_num) if type(r_num) is unicode or type(r_num) is str else 0
+            arating = product['buyer_reviews']['average_rating']
             product['buyer_reviews']['average_rating'] \
-                = float(product['buyer_reviews']['average_rating'])
+                = float(arating) if type(arating) is unicode or type(arating) is str else 0.0
             # ok we collected all marks for all stars - can return the product
             product['buyer_reviews'] = BuyerReviews(**product['buyer_reviews'])
             if mkt_place_link:
