@@ -82,6 +82,7 @@ class Command(BaseCommand):
                         feed_id)
                 except Exception as e:
                     print str(e)
+                    continue
 
                 # update old "incomplete" statuses - remove SubmissionHistory records and Statistics
                 for sub_history in SubmissionHistory.objects.filter(
