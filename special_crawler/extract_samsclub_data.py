@@ -238,8 +238,20 @@ class SamsclubScraper(Scraper):
 
     def _image_urls(self):
         if self._is_shelf():
-            images = map(lambda i: i['image'], self._items())
+            images = self.tree_html.xpath('//category-carousel[@carousel-type="featured"]//img/@src')
+            images = map(lambda i: i.split('?')[0], images)
+
+            if self.tree_html.xpath('//div[@class="container" and child::nav]//category-carousel[@carousel-type="featured"]'):
+                images = images[:3]
+            else:
+                images = images[:5]
+
+            for image in map(lambda i: i['image'], self._items()):
+                if not image in images:
+                    images.append(image)
+
             self.image_count = len(images)
+
             if images:
                 return images
 
@@ -472,49 +484,41 @@ class SamsclubScraper(Scraper):
                 if sub_group_product == prod_id:
                     return sub_group_product_data
 
-    def _items(self):
-        if self.items:
-            return self.items
-
-        self.items = []
-
-        # If the original page displays no product cards (e.g. http://www.samsclub.com/sams/pirelli/5950114.cp or http://www.samsclub.com/sams/shocking-values/13450112.cp), then return no items
-        if not self.tree_html.xpath('//div[contains(@class,"sc-product-card")]'):
-            return self.items
+    def _get_category_items(self, cat_id, sub=False):
+        items = []
 
         HEADERS = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0', 'Cookie': 'myPreferredClub=6612'}
 
-        subcategories = self.tree_html.xpath('//section[starts-with(@id,"catLowFtrdCrsl")]/@ng-controller')
+        try:
+            url = 'http://www.samsclub.com/sams/redesign/common/model/loadDataModel.jsp?dataModelId=' + cat_id + '&dataModelType=categoryDataModel'
 
-        # If it is a meta-category page
-        if subcategories:
-            for subcategory in subcategories:
-                id = re.search('_(\d+)$', subcategory).group(1)
+            c = requests.get(url, headers=HEADERS).content
+            h = html.fromstring(c)
 
-                url = 'http://www.samsclub.com/sams/redesign/common/model/loadDataModel.jsp?dataModelId=' + id + '&dataModelType=categoryDataModel'
+            price = None
 
-                c = requests.get(url, headers=HEADERS).content
-                h = html.fromstring(c)
+            try:
+                price = float(item.xpath('.//span[@data-price]/@data-price')[0])
+            except:
+                pass
 
-                for item in h.xpath('//div[contains(@class,"sc-product-card")]')[:5]:
-                    i = {
-                        'image' : item.xpath('.//img/@src')[0].split('?')[0][2:],
-                        'price' : float(item.xpath('.//span[@data-price]/@data-price')[0])
-                    }
+            for item in h.xpath('//div[contains(@class,"sc-product-card")]')[:5]:
+                i = {
+                    'image' : 'http:' + item.xpath('.//img/@src')[0].split('?')[0],
+                    'price' : price
+                }
 
-                    self.items.append(i)
+                items.append(i)
 
-        # Otherwise it is a normal category page
-        else:
-            cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
-
+        except Exception as e:
+            #print 'EXCEPT', e
             url = 'http://www.samsclub.com/soa/services/v1/catalogsearch/search?searchCategoryId=' + cat_id
 
             j = json.loads(requests.get(url, headers=HEADERS).content)
 
             records = j['payload'].get('records', [])
 
-            if len(subcategories) > 1:
+            if sub:
                 records = records[:5]
 
             for record in records:
@@ -527,11 +531,38 @@ class SamsclubScraper(Scraper):
                     price = record['onlinePricing']['finalPrice']['currencyAmount']
 
                 i = {
-                    'image': record['listImage'][2:],
+                    'image': 'http:' + record['listImage'],
                     'price': price
                 }
 
-                self.items.append(i)
+                items.append(i)
+
+        return items
+
+    def _items(self):
+        if self.items:
+            return self.items
+
+        self.items = []
+
+        # If the original page displays no product cards (e.g. http://www.samsclub.com/sams/pirelli/5950114.cp or http://www.samsclub.com/sams/shocking-values/13450112.cp), then return no items
+        if not self.tree_html.xpath('//div[contains(@class,"sc-product-card")]'):
+            return self.items
+
+        subcategories = self.tree_html.xpath('//section[starts-with(@id,"catLowFtrdCrsl")]/@ng-controller')
+
+        # If it is a meta-category page
+        if subcategories:
+            for subcategory in subcategories:
+                cat_id = re.search('_(\d+)$', subcategory).group(1)
+
+                self.items += self._get_category_items(cat_id, True)
+
+        # Otherwise it is a normal category page
+        else:
+            cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+
+            self.items += self._get_category_items(cat_id)
 
         return self.items
 
