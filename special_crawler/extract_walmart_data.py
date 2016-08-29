@@ -127,7 +127,7 @@ class WalmartScraper(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
+        m = re.match("https?://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
