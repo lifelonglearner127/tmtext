@@ -101,6 +101,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
 
     _scraped_product_links_count = 0  # TODO: remove and implement another way of controlling the limits
     def _scrape_product_links(self, response):
+        links = []
         # links_xpath = (
         #     '//*[@id="dealHoverContent"]//a[contains(@href, "p/")]'
         #     ' | //div[contains(@class, "imageContainer")]'
@@ -113,6 +114,13 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         # )
         links_xpath = './/*[@id="mainResults" or @id="resultsCol"]//a[@title]'
         links = response.xpath(links_xpath)
+        if not links:
+            links = response.xpath(
+                "//div[@id='resultsCol']/./ul/li//a[@title] |"
+                "//div[@id='mainResults']/.//ul/li [contains(@id, 'result')]//a[@title] |"
+                "//div[@id='atfResults']/.//ul/li[contains(@id, 'result')]//a[@title] |"
+                "//div[@id='mainResults']/.//div[contains(@id, 'result')]//a[@title] |"
+                "//div[@id='btfResults']//ul/li[contains(@id, 'result')]//a[@title]")
 
         # TODO: remove later
         self._scraped_product_links_count += 1
