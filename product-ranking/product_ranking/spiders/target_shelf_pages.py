@@ -128,6 +128,8 @@ class TargetShelfPagesSpider(TargetProductSpider):
                 amount = priceattr.get('price')
                 if amount == 'Too low to display':
                     price = None
+                elif not currency:
+                    price = None
                 else:
                     if amount:
                         price = Price(priceCurrency=currency, price=amount)
