@@ -659,6 +659,16 @@ class SamsclubScraper(Scraper):
 
         return return_links
 
+    def _redirect(self):
+        if self._redirect_url():
+            return 1
+        return 0
+
+    def _redirect_url(self):
+        redirect = self.tree_html.xpath('//meta[@http-equiv="Refresh"]/@content')
+        if redirect:
+            return re.search('url=(.*)', redirect[0]).group(1)
+
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
@@ -997,6 +1007,8 @@ class SamsclubScraper(Scraper):
         "num_items_no_price_displayed" : _num_items_no_price_displayed, \
         "body_copy" : _body_copy, \
         "body_copy_links" : _body_copy_links, \
+        "redirect" : _redirect, \
+        "redirect_url" : _redirect_url, \
 
         # CONTAINER : SELLERS
         "price" : _price, \
