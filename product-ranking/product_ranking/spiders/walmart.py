@@ -356,6 +356,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         #    return Request(url=url, meta=meta, callback=self.get_questions)
 
+        seller_ranking = self._scrape_seller_ranking(response)
+        # if seller_ranking:
+            # product['seller_ranking'] = seller_ranking
+        # seller_ranking = seller_ranking[0].get('ranking') if seller_ranking else None
+        product['bestseller_rank'] = seller_ranking
+
         if 'is_in_store_only' not in product:
             if re.search(
                     "only available .{0,20} Walmart store",
@@ -402,12 +408,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if _na_text:
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
-
-        seller_ranking = self._scrape_seller_ranking(response)
-        # if seller_ranking:
-            # product['seller_ranking'] = seller_ranking
-        # seller_ranking = seller_ranking[0].get('ranking') if seller_ranking else None
-        product['bestseller_rank'] = seller_ranking
 
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
