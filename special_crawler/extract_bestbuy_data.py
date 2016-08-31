@@ -73,9 +73,6 @@ class BestBuyScraper(Scraper):
     def _status(self):
         return "success"
 
-
-
-
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
@@ -92,14 +89,7 @@ class BestBuyScraper(Scraper):
         return self.tree_html.xpath('//span[@id="model-value"]/text()')[0]
 
     def _upc(self):
-        features = self._features()
-
-        if features:
-            for feature in features:
-                if feature.startswith("UPC:"):
-                    return feature[4:].strip()
-
-        return None
+        return self._specs()['UPC']
 
     def _specs(self):
         # http://www.bestbuy.com/site/sony-65-class-64-1-2-diag--led-2160p-smart-3d-4k-ultra-hd-tv-black/5005015.p;template=_specificationsTab
@@ -209,7 +199,6 @@ class BestBuyScraper(Scraper):
                 variants.insert(index,vr)
 
             return variants
-
 
 
     ##########################################
@@ -584,9 +573,6 @@ class BestBuyScraper(Scraper):
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
 
-
-
-
     ##########################################
     ################ RETURN TYPES
     ##########################################
@@ -644,8 +630,6 @@ class BestBuyScraper(Scraper):
         "category_name" : _category_name, \
         "brand" : _brand, \
 
-
-
         "loaded_in_seconds" : None, \
         }
 
@@ -672,6 +656,3 @@ class BestBuyScraper(Scraper):
         "flixmedia" : _flixmedia, \
         "sellpoints": _sellpoints, \
     }
-
-
-
