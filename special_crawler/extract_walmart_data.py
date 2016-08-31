@@ -2407,16 +2407,23 @@ class WalmartScraper(Scraper):
 
         if self._version() == "Walmart v2":
             self._extract_product_info_json()
-            return self.product_info_json["buyingOptions"]["seller"]["displayName"]
+            seller = self.product_info_json["buyingOptions"]["seller"]["displayName"]
+            if not self.product_info_json["buyingOptions"]["onlineOnly"] and seller != "Walmart.com":
+                return "Walmart store"
+            return seller
 
         return None
 
     def _seller_id(self):
         self._extract_product_info_json()
+        if self._primary_seller() == "Walmart store":
+            return None
         return self.product_info_json["buyingOptions"]["seller"]["sellerId"]
 
     def _us_seller_id(self):
         self._extract_product_info_json()
+        if self._primary_seller() == "Walmart store":
+            return None
         return self.product_info_json["buyingOptions"]["seller"]["catalogSellerId"]
 
     def _site_online(self):
