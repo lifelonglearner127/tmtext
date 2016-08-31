@@ -229,7 +229,10 @@ class StaplesScraper(Scraper):
         if vrs:
             return vrs
 
-        return None
+    def _no_longer_available(self):
+        if self.tree_html.xpath('//div[@class="content"]/p/text()'):
+            return 1
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -516,6 +519,7 @@ class StaplesScraper(Scraper):
         "upc" : _upc, \
         "long_description" : _long_description, \
         "variants" : _variants, \
+        "no_longer_available" : _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
@@ -556,7 +560,6 @@ class StaplesScraper(Scraper):
 
         "loaded_in_seconds": None \
         }
-
 
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data
