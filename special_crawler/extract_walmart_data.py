@@ -2642,7 +2642,7 @@ class WalmartScraper(Scraper):
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
-        if canonical_link.startswith("http://www.walmart.com"):
+        if re.match("https?://www.walmart.com", canonical_link):
             return canonical_link
         else:
             return "http://www.walmart.com" + canonical_link
