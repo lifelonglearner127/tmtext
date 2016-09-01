@@ -18,4 +18,3 @@ class SubmissionHistoryAdmin(admin.ModelAdmin):
 @admin.register(SubmissionResults)
 class SubmissionResultsAdmin(admin.ModelAdmin):
     list_filter = ['feed_id', 'updated']
-admin.site.register(SubmissionResultsAdmin)
