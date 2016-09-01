@@ -1,3 +1,8 @@
+# log:
+# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-16981395"
+
+
+
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
 
@@ -82,6 +87,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                          '&apiversion=5.4&resource.q0=products&filter.q0=id%3Aeq%3A{tcin}'
                          '&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_US'
                          '&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US')
+
+    REDSKY_API_URL = 'http://redsky.target.com/v1/pdp/tcin/{}?excludes=taxonomy'
 
     QUESTION_API_URL = "http://api.bazaarvoice.com/data/questions.json" \
                  "?passkey={apipass}&Offset=0&apiversion=5.4" \
@@ -345,7 +352,10 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             headers={'User-Agent': self.user_agent_googlebot}).content
 
         item_info = re.match('itemInfoCallback\((.*)\)$', response, re.DOTALL).group(1)
-        return json.loads(item_info)['CatalogEntryView'][0]
+        try:
+            return json.loads(item_info)['CatalogEntryView'][0]
+        except KeyError:
+            return {}
 
     def _item_info_v2(self, response):
         item_info = self._item_info_helper(self._product_id_v2(response))
@@ -356,6 +366,22 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
         return item_info
 
+    def _item_info_v3_request(self, tcin):
+        content = requests.get(
+            self.REDSKY_API_URL.format(tcin)
+        ).content
+        return content
+
+    def _item_info_v3(self, response, tcin=None):
+        if not tcin:
+            tcin = self._get_tcin(response)
+        content = self._item_info_v3_request(tcin)
+        content_json = json.loads(content)
+        parent_tcin = content_json.get('product').get('item').get('parent_items', None)
+        if parent_tcin:
+            return self._item_info_v3(response, parent_tcin)
+        else:
+            return content_json.get('product').get('item')
     @staticmethod
     def _get_price_v2(item_info):
         """ Returns (price, in cart) """
@@ -418,37 +444,49 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                     '/following-sibling::ul[1]/li[position()=last()]/text()').extract()
                 origin = origin[0].strip() if origin else None
             product['origin'] = origin
-
+        elif True:
+             item_info = self._item_info_v3(response)
+             product['title'] = item_info.get('product_description').get('title')
+             product['tcin'] = item_info.get('tcin')
+             child_items = item_info.get('child_items')
+             first_child_item = child_items[0]
+             product['dpci'] = first_child_item.get('dpci', None)
+             product['upc'] = first_child_item.get('upc', None)
+             image_url = first_child_item.get('base_url')
+             product['image_url'] =
         else:
             item_info = self._item_info_v2(response)
-            product['title'] = item_info['title']
-            product['upc'] = item_info.get('UPC', None)
-            product['dpci'] = item_info.get('DPCI', None)
-            product['tcin'] = item_info.get('partNumber', None)
-            #product['sku'] = ''  # TODO
-            product['image_url'] = item_info.get('Images', [{}])[0].get('PrimaryImage', [{}])[0].get('image')
-            product['description'] = item_info.get('shortDescription', None)
-            product['brand'] = guess_brand_from_first_words(product['title'])
-            product['price'], product['price_details_in_cart'] = self._get_price_v2(item_info)
-            #product['related_products'] = None  # TODO
-            product['is_out_of_stock'] = not item_info.get('inventoryStatus', '') == 'in stock'
-            origin = item_info.get('ItemAttributes')
-            origin = origin[0].get('Attribute') if origin else None
-            if origin:
-                origin = [atr.get('description') for atr in origin if atr.get('identifier') == "IMPORT_DESIGNATION"]
-                origin = origin[0] if origin else None
-                product['origin'] = origin
-            tv = TargetVariants()
-            if not product['variants']:
-                tv.setupSC(response=response, zip_code=self.zip_code, item_info=item_info)
-                product['variants'] = tv._variants()
-            # Getting upc from variants
-            if not product.get('upc'):
-                selected_upc = [v.get('upc') for v in product.get('variants') if v.get('selected')]
-                product['upc'] = selected_upc[0] if selected_upc else None
+            if item_info:
+                product['title'] = item_info['title']
+                product['upc'] = item_info.get('UPC', None)
+                product['dpci'] = item_info.get('DPCI', None)
+                product['tcin'] = item_info.get('partNumber', None)
+                #product['sku'] = ''  # TODO
+                product['image_url'] = item_info.get('Images', [{}])[0].get('PrimaryImage', [{}])[0].get('image')
+                product['description'] = item_info.get('shortDescription', None)
+                product['brand'] = guess_brand_from_first_words(product['title'])
+                product['price'], product['price_details_in_cart'] = self._get_price_v2(item_info)
+                #product['related_products'] = None  # TODO
+                product['is_out_of_stock'] = not item_info.get('inventoryStatus', '') == 'in stock'
+                origin = item_info.get('ItemAttributes')
+                origin = origin[0].get('Attribute') if origin else None
+                if origin:
+                    origin = [atr.get('description') for atr in origin if atr.get('identifier') == "IMPORT_DESIGNATION"]
+                    origin = origin[0] if origin else None
+                    product['origin'] = origin
+                tv = TargetVariants()
+                if not product['variants']:
+                    tv.setupSC(response=response, zip_code=self.zip_code, item_info=item_info)
+                    product['variants'] = tv._variants()
+                # Getting upc from variants
+                if not product.get('upc'):
+                    selected_upc = [v.get('upc') for v in product.get('variants') if v.get('selected')]
+                    product['upc'] = selected_upc[0] if selected_upc else None
 
-            # TODO: shipping and store availability? see "purchasingChannel: Sold Online + in Stores" in item_info; http://www.target.com/p/denizen-from-levi-s-women-s-curvy-bootcut-jeans-denim-blue/-/A-50234669
-            # http://www.target.com/p/black-decker-2-slice-bread-and-bagel-toaster/-/A-13193088
+                # TODO: shipping and store availability? see "purchasingChannel: Sold Online + in Stores" in item_info; http://www.target.com/p/denizen-from-levi-s-women-s-curvy-bootcut-jeans-denim-blue/-/A-50234669
+                # http://www.target.com/p/black-decker-2-slice-bread-and-bagel-toaster/-/A-13193088
+            else:
+                product['no_longer_available'] = True
 
 
     def _extract_recomm_urls(self, response):
