@@ -7,7 +7,6 @@ from models import SubmissionStatus, SubmissionHistory, SubmissionXMLFile, \
 
 admin.site.register(SubmissionStatus)
 admin.site.register(SubmissionXMLFile)
-admin.site.register(SubmissionResults)
 
 
 @admin.register(SubmissionHistory)
