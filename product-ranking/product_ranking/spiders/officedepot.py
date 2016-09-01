@@ -235,6 +235,11 @@ class OfficedepotProductsSpider(BaseProductsSpider):
             return self.send_next_request(reqs, response)
         return product
 
+    def _parse_questions(self, response):
+        questions_regex = r"""BVQAQuestionSummary\\["']>\s?<a\shref=\\["']javascript:void\(0\);\\["']>([^<]+)"""
+
+        pass
+
     def clear_text(self, str_result):
         return str_result.replace("\t", "").replace("\n", "").replace("\r", "").replace(u'\xa0', ' ').strip()
 
