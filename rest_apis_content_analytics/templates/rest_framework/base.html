@@ -84,7 +84,8 @@
       }
 
       function get_feed_id_from_response(inputText) {
-        return inputText.match(replacePattern1)[0];
+          if(inputText.match(replacePattern1)) return inputText.match(replacePattern1)[0];
+          else return inputText.match(replacePattern2)[0];
       }
 
       document.addEventListener("DOMContentLoaded", function() {
