@@ -1337,8 +1337,10 @@ class AmazonBaseClass(BaseProductsSpider):
         # DEBUG
         # is_captcha = True
         if is_captcha:
-            self.log("Detected captcha, turning on crawlera for all requests", level=WARNING)
-            self.dont_proxy = False
+            # This may turn on crawlera for all requests
+            # self.log("Detected captcha, turning on crawlera for all requests", level=WARNING)
+            # self.dont_proxy = False
+            self.log("Detected captcha, using captchabreaker", level=WARNING)
             return True
         return False
 
@@ -1349,7 +1351,7 @@ class AmazonBaseClass(BaseProductsSpider):
         captcha_img = forms[0].xpath(
             '//img[contains(@src, "/captcha/")]/@src').extract()[0]
 
-        self.log("Extracted capcha url: %s" % captcha_img, level=DEBUG)
+        self.log("Extracted captcha url: %s" % captcha_img, level=DEBUG)
         return self._cbw.solve_captcha(captcha_img)
 
     def _handle_captcha(self, response, callback):

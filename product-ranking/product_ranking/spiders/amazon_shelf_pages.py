@@ -83,13 +83,12 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         #
         # #backup when total matches cannot be scraped
         # self.total_items_scraped = 0
-        self.remaining = self.quantity
         # # self.ranking_override = 0
         self.total_matches_re = r'of\s([\d\,]+)\s'
         super(AmazonShelfPagesSpider, self).__init__(*args, **kwargs)
-        self.remaining = self.quantity
-        # settings.overrides['CRAWLERA_ENABLED'] = True
         self._setup_class_compatibility()
+        # self.remaining = self.quantity
+        # settings.overrides['CRAWLERA_ENABLED'] = True
 
 
     @staticmethod
