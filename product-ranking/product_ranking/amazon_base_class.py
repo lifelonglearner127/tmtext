@@ -392,6 +392,14 @@ class AmazonBaseClass(BaseProductsSpider):
                                 meta=meta, callback=self._amazon_prime_check)
                     )
 
+        # Parse ASIN
+        asin = response.xpath(
+            './/*[contains(text(), "ASIN")]/following-sibling::td/text()|.//*[contains(text(), "ASIN")]'
+            '/following-sibling::text()[1]').extract()
+        asin = [a.strip() for a in asin if a.strip()]
+        asin = asin[0] if asin else None
+        cond_set_value(product, 'asin', asin)
+
         # Parse variants
         if not self.ignore_variant_data:
             variants = self._parse_variants(response)
