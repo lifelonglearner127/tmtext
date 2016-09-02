@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 
 class SubmissionHistory(models.Model):
     """ Tracks the history of items uploaded to Walmart """
-    user = models.ForeignKey(User, blank=True, null=True)
+    user = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL)
     feed_id = models.CharField(max_length=50)
     server_name = models.CharField(max_length=100, blank=True, null=True)
     client_ip = models.CharField(blank=True, null=True, max_length=50)
