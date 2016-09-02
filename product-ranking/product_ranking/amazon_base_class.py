@@ -1333,13 +1333,14 @@ class AmazonBaseClass(BaseProductsSpider):
 
     # Captcha handling functions.
     def _has_captcha(self, response):
-        is_captcha = True
+        is_captcha = response.xpath('.//*[contains(text(), "Enter the characters you see below")]')
+        # DEBUG
+        # is_captcha = True
         if is_captcha:
             self.log("Detected captcha, turning on crawlera for all requests", level=WARNING)
             self.dont_proxy = False
             return True
         return False
-        # return '.images-amazon.com/captcha/' in response.body_as_unicode()
 
     def _solve_captcha(self, response):
         forms = response.xpath('//form')
