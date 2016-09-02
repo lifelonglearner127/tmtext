@@ -47,13 +47,12 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         self.current_page = 1
         self.captcha_retries = 12
 
+
     def _setup_meta_compatibility(self):
         """ Needed to prepare first request.meta vars to use """
-        return {'remaining': 99999, 'search_term': ''}.copy()
+        return {'remaining': 99999, 'search_term': '', 'dont_proxy':self.dont_proxy}.copy()
 
     def __init__(self, *args, **kwargs):
-        self._setup_class_compatibility()
-
         self.product_url = kwargs['product_url']
 
         if "num_pages" in kwargs:
@@ -88,6 +87,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         # self.ranking_override = 0
         self.total_matches_re = r'of\s([\d\,]+)\s'
         super(AmazonShelfPagesSpider, self).__init__(*args, **kwargs)
+        self._setup_class_compatibility()
 
     @staticmethod
     def valid_url(url):
@@ -262,7 +262,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                 yield Request(
                     url,
                     callback=self.parse_product,
-                    meta={'product': prod_item},
+                    meta={'product': prod_item, 'dont_proxy':self.dont_proxy},
                 )
 
         self.total_items_scraped += prods_per_page
