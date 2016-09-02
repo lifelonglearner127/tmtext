@@ -24,7 +24,7 @@ from spiders_shared_code.amazon_variants import AmazonVariants
 from product_ranking.amazon_bestsellers import amazon_parse_department
 from product_ranking.amazon_modules import build_categories
 from product_ranking.settings import ZERO_REVIEWS_VALUE
-
+from scrapy.conf import settings
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -83,6 +83,9 @@ class AmazonBaseClass(BaseProductsSpider):
     ]
 
     def __init__(self, captcha_retries='10', *args, **kwargs):
+        # this turns off crawlera per-request
+        settings.overrides['CRAWLERA_ENABLED'] = True
+        self.dont_proxy = True
         super(AmazonBaseClass, self).__init__(
             site_name=self.allowed_domains[0],
             url_formatter=FormatterWithDefaults(
@@ -260,7 +263,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 prod = SiteProductItem(prime=prime)
                 yield Request(link, callback=self.parse_product,
                               headers={'Referer': None},
-                              meta={'product': prod}), prod
+                              meta={'product': prod, 'dont_proxy':self.dont_proxy}), prod
 
     def _parse_single_product(self, response):
         """
@@ -383,6 +386,7 @@ class AmazonBaseClass(BaseProductsSpider):
                                                  data_body[0]), None)
 
                 if asin and merchantID:
+                    meta['dont_proxy'] = self.dont_proxy
                     reqs.append(
                         Request(url=self.AMAZON_PRIME_URL.format(asin, merchantID),
                                 meta=meta, callback=self._amazon_prime_check)
@@ -401,7 +405,7 @@ class AmazonBaseClass(BaseProductsSpider):
             )
         else:
             product['buyer_reviews'] = buyer_reviews
-
+        meta['dont_proxy'] = self.dont_proxy
         reqs.append(
             Request(
                 url=self.REVIEW_DATE_URL.format(
@@ -745,6 +749,7 @@ class AmazonBaseClass(BaseProductsSpider):
             new_meta = response.meta.copy()
             new_meta['product'] = product
             new_meta["mkt_place_link"] = mkt_place_link
+            new_meta['dont_proxy'] = self.dont_proxy
             return Request(
                 url=mkt_place_link,
                 callback=self._parse_mkt,
@@ -1137,9 +1142,11 @@ class AmazonBaseClass(BaseProductsSpider):
                                            buyer_rev_link)
                 if buyer_rev_link:
                     buyer_rev_link = buyer_rev_link.group(0)
+            meta={'dont_proxy':self.dont_proxy}
             buyer_rev_req = Request(
                 url=buyer_rev_link,
-                callback=self.get_buyer_reviews_from_2nd_page
+                callback=self.get_buyer_reviews_from_2nd_page,
+                meta=meta
             )
             # now we can safely return Request
             #  because it'll be re-crawled in the `parse_product` method
@@ -1183,6 +1190,7 @@ class AmazonBaseClass(BaseProductsSpider):
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
 
         meta = {"product": product}
+        meta['dont_proxy'] = self.dont_proxy
         mkt_place_link = response.meta.get("mkt_place_link", None)
         if mkt_place_link:
             return Request(
@@ -1248,7 +1256,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 'scope': 'reviewsAjax0',
             }
             meta['_current_star'] = star
-
+            meta['dont_proxy'] = self.dont_proxy
             yield FormRequest(
                 url=self.REVIEW_URL_1.format(domain=self.allowed_domains[0]),
                 formdata=args, meta=meta,
@@ -1286,23 +1294,29 @@ class AmazonBaseClass(BaseProductsSpider):
             rating_by_star[str(current_star_int)] = 0
 
         product['buyer_reviews']['rating_by_star'] = rating_by_star
+        # If spider was unable to scrape average rating and num_of reviews, calculate them from rating_by_star
         if len(product['buyer_reviews']['rating_by_star']) >= 5:
             try:
                 r_num = product['buyer_reviews']['num_of_reviews']
                 product['buyer_reviews']['num_of_reviews'] \
-                    = int(r_num) if type(r_num) is unicode or type(r_num) is str else 0
+                    = int(r_num) if type(r_num) is unicode or type(r_num) is str else sum(rating_by_star.values())
             except BaseException:
                 self.log("Unable to convert num_of_reviews value to int: #%s#"
                          % product['buyer_reviews']['num_of_reviews'], level=WARNING)
-                product['buyer_reviews']['num_of_reviews'] = 0
+                product['buyer_reviews']['num_of_reviews'] = sum(rating_by_star.values())
             try:
                 arating = product['buyer_reviews']['average_rating']
                 product['buyer_reviews']['average_rating'] \
-                    = float(arating) if type(arating) is unicode or type(arating) is str else 0.0
+                    = float(arating) if type(arating) is unicode or type(arating) is str else None
             except BaseException:
                 self.log("Unable to convert average_rating value to float: #%s#"
                          % product['buyer_reviews']['average_rating'], level=WARNING)
-                product['buyer_reviews']['average_rating'] = 0.0
+                product['buyer_reviews']['average_rating'] = None
+            if not product['buyer_reviews']['average_rating']:
+                total = 0
+                for key, value in rating_by_star.iteritems():
+                    total += int(key) * int(value)
+                product['buyer_reviews']['average_rating'] = round(float(total) / sum(rating_by_star.values()), 2)
             # ok we collected all marks for all stars - can return the product
             product['buyer_reviews'] = BuyerReviews(**product['buyer_reviews'])
             if mkt_place_link:
@@ -1325,7 +1339,16 @@ class AmazonBaseClass(BaseProductsSpider):
 
     # Captcha handling functions.
     def _has_captcha(self, response):
-        return '.images-amazon.com/captcha/' in response.body_as_unicode()
+        is_captcha = response.xpath('.//*[contains(text(), "Enter the characters you see below")]')
+        # DEBUG
+        # is_captcha = True
+        if is_captcha:
+            # This may turn on crawlera for all requests
+            # self.log("Detected captcha, turning on crawlera for all requests", level=WARNING)
+            # self.dont_proxy = False
+            self.log("Detected captcha, using captchabreaker", level=WARNING)
+            return True
+        return False
 
     def _solve_captcha(self, response):
         forms = response.xpath('//form')
@@ -1334,7 +1357,7 @@ class AmazonBaseClass(BaseProductsSpider):
         captcha_img = forms[0].xpath(
             '//img[contains(@src, "/captcha/")]/@src').extract()[0]
 
-        self.log("Extracted capcha url: %s" % captcha_img, level=DEBUG)
+        self.log("Extracted captcha url: %s" % captcha_img, level=DEBUG)
         return self._cbw.solve_captcha(captcha_img)
 
     def _handle_captcha(self, response, callback):
@@ -1363,7 +1386,7 @@ class AmazonBaseClass(BaseProductsSpider):
 
             meta = response.meta.copy()
             meta['captcha_solve_try'] = captcha_solve_try + 1
-
+            meta['dont_proxy'] = self.dont_proxy
             result = FormRequest.from_response(
                 response,
                 formname='',
@@ -1549,11 +1572,12 @@ class AmazonBaseClass(BaseProductsSpider):
 
         next_page = response.xpath('//*[@class="a-pagination"]/li[@class="a-last"]/a/@href').extract()
         meta = response.meta
+        meta['dont_proxy'] = self.dont_proxy
         if next_page:
             return Request(
                 url=urlparse.urljoin(response.url, next_page[0]),
                 callback=self._parse_marketplace_from_static_right_block_more,
-                meta=response.meta,
+                meta=meta,
                 dont_filter=True
             )
 
@@ -1572,9 +1596,11 @@ class AmazonBaseClass(BaseProductsSpider):
         if not others_sellers:
             others_sellers = response.xpath('//div[@id="availability"]/span/a/@href').extract()
         if others_sellers:
+            meta=response.meta
+            meta['dont_proxy'] = self.dont_proxy
             return product, Request(url= urlparse.urljoin(response.url, others_sellers[0]),
                                     callback=self._parse_marketplace_from_static_right_block_more,
-                                    meta=response.meta,
+                                    meta=meta,
                                     dont_filter=True,
                             )
 
