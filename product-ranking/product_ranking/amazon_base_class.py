@@ -1294,23 +1294,29 @@ class AmazonBaseClass(BaseProductsSpider):
             rating_by_star[str(current_star_int)] = 0
 
         product['buyer_reviews']['rating_by_star'] = rating_by_star
+        # If spider was unable to scrape average rating and num_of reviews, calculate them from rating_by_star
         if len(product['buyer_reviews']['rating_by_star']) >= 5:
             try:
                 r_num = product['buyer_reviews']['num_of_reviews']
                 product['buyer_reviews']['num_of_reviews'] \
-                    = int(r_num) if type(r_num) is unicode or type(r_num) is str else 0
+                    = int(r_num) if type(r_num) is unicode or type(r_num) is str else sum(rating_by_star.values())
             except BaseException:
                 self.log("Unable to convert num_of_reviews value to int: #%s#"
                          % product['buyer_reviews']['num_of_reviews'], level=WARNING)
-                product['buyer_reviews']['num_of_reviews'] = 0
+                product['buyer_reviews']['num_of_reviews'] = sum(rating_by_star.values())
             try:
                 arating = product['buyer_reviews']['average_rating']
                 product['buyer_reviews']['average_rating'] \
-                    = float(arating) if type(arating) is unicode or type(arating) is str else 0.0
+                    = float(arating) if type(arating) is unicode or type(arating) is str else None
             except BaseException:
                 self.log("Unable to convert average_rating value to float: #%s#"
                          % product['buyer_reviews']['average_rating'], level=WARNING)
-                product['buyer_reviews']['average_rating'] = 0.0
+                product['buyer_reviews']['average_rating'] = None
+            if not product['buyer_reviews']['average_rating']:
+                total = 0
+                for key, value in rating_by_star.iteritems():
+                    total += int(key) * int(value)
+                product['buyer_reviews']['average_rating'] = round(float(total) / sum(rating_by_star.values()), 2)
             # ok we collected all marks for all stars - can return the product
             product['buyer_reviews'] = BuyerReviews(**product['buyer_reviews'])
             if mkt_place_link:
