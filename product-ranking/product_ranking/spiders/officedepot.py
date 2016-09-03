@@ -93,9 +93,9 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         driver.set_window_size(int(self.width), int(self.height))
 
     def _get_selenium_cookies_for_main_page(self):
-        # from pyvirtualdisplay import Display
-        # display = Display(visible=False)
-        # display.start()
+        from pyvirtualdisplay import Display
+        display = Display(visible=False)
+        display.start()
         driver = self._init_chromium()
         self._prepare_driver(driver)
         try:
