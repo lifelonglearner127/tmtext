@@ -84,8 +84,7 @@ class AmazonBaseClass(BaseProductsSpider):
 
     def __init__(self, captcha_retries='10', *args, **kwargs):
         # this turns off crawlera per-request
-        settings.overrides['CRAWLERA_ENABLED'] = True
-        self.dont_proxy = True
+        #settings.overrides['CRAWLERA_ENABLED'] = True
         super(AmazonBaseClass, self).__init__(
             site_name=self.allowed_domains[0],
             url_formatter=FormatterWithDefaults(
@@ -263,7 +262,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 prod = SiteProductItem(prime=prime)
                 yield Request(link, callback=self.parse_product,
                               headers={'Referer': None},
-                              meta={'product': prod, 'dont_proxy':self.dont_proxy}), prod
+                              meta={'product': prod}), prod
 
     def _parse_single_product(self, response):
         """
@@ -386,7 +385,6 @@ class AmazonBaseClass(BaseProductsSpider):
                                                  data_body[0]), None)
 
                 if asin and merchantID:
-                    meta['dont_proxy'] = self.dont_proxy
                     reqs.append(
                         Request(url=self.AMAZON_PRIME_URL.format(asin, merchantID),
                                 meta=meta, callback=self._amazon_prime_check)
@@ -413,7 +411,6 @@ class AmazonBaseClass(BaseProductsSpider):
             )
         else:
             product['buyer_reviews'] = buyer_reviews
-        meta['dont_proxy'] = self.dont_proxy
         reqs.append(
             Request(
                 url=self.REVIEW_DATE_URL.format(
@@ -757,7 +754,6 @@ class AmazonBaseClass(BaseProductsSpider):
             new_meta = response.meta.copy()
             new_meta['product'] = product
             new_meta["mkt_place_link"] = mkt_place_link
-            new_meta['dont_proxy'] = self.dont_proxy
             return Request(
                 url=mkt_place_link,
                 callback=self._parse_mkt,
@@ -1150,11 +1146,9 @@ class AmazonBaseClass(BaseProductsSpider):
                                            buyer_rev_link)
                 if buyer_rev_link:
                     buyer_rev_link = buyer_rev_link.group(0)
-            meta={'dont_proxy':self.dont_proxy}
             buyer_rev_req = Request(
                 url=buyer_rev_link,
-                callback=self.get_buyer_reviews_from_2nd_page,
-                meta=meta
+                callback=self.get_buyer_reviews_from_2nd_page
             )
             # now we can safely return Request
             #  because it'll be re-crawled in the `parse_product` method
@@ -1198,7 +1192,6 @@ class AmazonBaseClass(BaseProductsSpider):
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
 
         meta = {"product": product}
-        meta['dont_proxy'] = self.dont_proxy
         mkt_place_link = response.meta.get("mkt_place_link", None)
         if mkt_place_link:
             return Request(
@@ -1264,7 +1257,6 @@ class AmazonBaseClass(BaseProductsSpider):
                 'scope': 'reviewsAjax0',
             }
             meta['_current_star'] = star
-            meta['dont_proxy'] = self.dont_proxy
             yield FormRequest(
                 url=self.REVIEW_URL_1.format(domain=self.allowed_domains[0]),
                 formdata=args, meta=meta,
@@ -1369,6 +1361,7 @@ class AmazonBaseClass(BaseProductsSpider):
         return self._cbw.solve_captcha(captcha_img)
 
     def _handle_captcha(self, response, callback):
+        #import pdb; pdb.set_trace()
         # FIXME This is untested and wrong.
         captcha_solve_try = response.meta.get('captcha_solve_try', 0)
         url = response.url
@@ -1394,7 +1387,6 @@ class AmazonBaseClass(BaseProductsSpider):
 
             meta = response.meta.copy()
             meta['captcha_solve_try'] = captcha_solve_try + 1
-            meta['dont_proxy'] = self.dont_proxy
             result = FormRequest.from_response(
                 response,
                 formname='',
@@ -1580,7 +1572,6 @@ class AmazonBaseClass(BaseProductsSpider):
 
         next_page = response.xpath('//*[@class="a-pagination"]/li[@class="a-last"]/a/@href').extract()
         meta = response.meta
-        meta['dont_proxy'] = self.dont_proxy
         if next_page:
             return Request(
                 url=urlparse.urljoin(response.url, next_page[0]),
@@ -1605,7 +1596,6 @@ class AmazonBaseClass(BaseProductsSpider):
             others_sellers = response.xpath('//div[@id="availability"]/span/a/@href').extract()
         if others_sellers:
             meta=response.meta
-            meta['dont_proxy'] = self.dont_proxy
             return product, Request(url= urlparse.urljoin(response.url, others_sellers[0]),
                                     callback=self._parse_marketplace_from_static_right_block_more,
                                     meta=meta,

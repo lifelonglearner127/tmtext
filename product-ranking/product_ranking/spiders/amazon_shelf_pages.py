@@ -51,7 +51,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
 
     def _setup_meta_compatibility(self):
         """ Needed to prepare first request.meta vars to use """
-        return {'remaining': 99999, 'search_term': '', 'dont_proxy':self.dont_proxy}.copy()
+        return {'remaining': 99999, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
 
@@ -99,7 +99,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
 
     def start_requests(self):
         yield Request(url=self.valid_url(self.product_url),
-                meta={'search_term': '', 'remaining': self.quantity,'dont_proxy':self.dont_proxy},
+                meta={'search_term': '', 'remaining': self.quantity},
             )
 
     def _scrape_product_links(self, response):
@@ -175,7 +175,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                 prod = SiteProductItem(prime=prime, shelf_path=shelf_categories, shelf_name=shelf_category)
                 yield Request(link, callback=self.parse_product,
                               headers={'Referer': None},
-                              meta={'product': prod, 'dont_proxy':self.dont_proxy}), prod
+                              meta={'product': prod}), prod
 
     # TODO This was done to to make ranking work again with self.num_pages>1
     # TODO fix this
