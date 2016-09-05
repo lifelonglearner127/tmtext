@@ -130,6 +130,11 @@ class WalmartScraper(Scraper):
         m = re.match("https?://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
         return not not m
 
+    def _is_collection_url(self):
+        if re.search('www.walmart.com/collection', self.product_page_url):
+            return True
+        return False
+
     def not_a_product(self):
         """Checks if current page is not a valid product page
         (an unavailable product page or other type of method)
@@ -645,6 +650,9 @@ class WalmartScraper(Scraper):
             string containing product name, or None
         """
 
+        if self._is_collection_url():
+            return re.search('"productName":"(.+?)"', self.page_raw_text).group(1)
+
         # assume new design
         product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
 
@@ -710,7 +718,6 @@ class WalmartScraper(Scraper):
                 return self.tree_html.xpath("//span[@itemprop='brand']/text()")[0]
 
         return None
-
 
     def _get_description_separator_index(self, description):
         product_name = self._product_name_from_tree().split(',')[0]
@@ -786,7 +793,10 @@ class WalmartScraper(Scraper):
                 except:
                     return None
 
-        description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]/div[contains(@class, 'js-ellipsis')]")
+        if self._is_collection_url():
+            description_elements = self.tree_html.xpath('//div[@data-tl-id="AboutThis-ShortDescription"]')
+        else:
+            description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]/div[contains(@class, 'js-ellipsis')]")
 
         if description_elements:
             description = description_elements[0]
@@ -909,8 +919,11 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]"
-                                                    "/div[contains(@class, 'js-ellipsis')]")
+        if self._is_collection_url():
+            description_elements = self.tree_html.xpath('//div[@data-tl-id="AboutThis-ShortDescription"]')
+        else:
+            description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]/div[contains(@class, 'js-ellipsis')]")
+
         full_description = ""
 
         if description_elements:
@@ -1286,6 +1299,11 @@ class WalmartScraper(Scraper):
             or None if list is empty of not found
         """
 
+        if self._is_collection_url():
+            categories_list = self.tree_html.xpath("//li[contains(@class,'breadcrumb')]/a/text()")
+            if categories_list:
+                return categories_list
+
         # assume new page design
         if self._version() == "Walmart v2":
             if self.is_bundle_product:
@@ -1351,6 +1369,8 @@ class WalmartScraper(Scraper):
         """
 
         # return last element of the categories list
+        if self._is_collection_url():
+            return self._categories_hierarchy()[-1]
 
         # assume new design
         if self._version() == "Walmart v2":
@@ -1940,6 +1960,11 @@ class WalmartScraper(Scraper):
             return self.image_urls
 
         self.extracted_image_urls = True
+
+        if self._is_collection_url():
+            image_urls = self.tree_html.xpath('//div[@class="prod-ProductCard"]//img/@src')
+            self.image_urls = map(lambda i: i[2:].split('?')[0], image_urls)
+            return self.image_urls
 
         if self._version() == "Walmart v1":
             self.image_urls = self.remove_duplication_keeping_order_in_list(self._image_urls_old())
@@ -3119,39 +3144,9 @@ class WalmartScraper(Scraper):
         "pdf_urls" : _pdf_urls, \
         "pdf_count" : _pdf_count, \
         "mobile_image_same" : _mobile_image_same \
-
-    #    "reviews" : reviews_for_url \
     }
 
 
 if __name__=="__main__":
     WD = WalmartScraper()
     print WD.main(sys.argv)
-
-## TODO:
-## Implemented:
-##     - name
-##  - meta keywords
-##  - short description
-##  - long description
-##  - price
-##  - url of video
-##  - url of pdf
-##  - anchors (?)
-##  - H tags
-##  - page load time (?)
-##  - number of reviews
-##  - model
-##  - list of features
-##  - meta brand tag
-##  - page title
-##  - number of features
-##  - sold by walmart / sold by marketplace sellers
-
-##
-## To implement:
-##     - number of images, URLs of images
-##  - number of videos, URLs of videos if more than 1
-##  - number of pdfs
-##  - category info (name, code, parents)
-##  - minimum review value, maximum review value
