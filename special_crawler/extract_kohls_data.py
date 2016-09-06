@@ -220,7 +220,8 @@ class KohlsScraper(Scraper):
                 if inner_text in features_title_list:
                     break
 
-                short_description += html.tostring(element_block)
+                if not element_block.xpath('./a'):
+                    short_description += html.tostring(element_block)
         else:
             for element_block in description_block:
                 if element_block.tag == "ul":
@@ -265,7 +266,8 @@ class KohlsScraper(Scraper):
                     continue
 
                 if features_ul == 2:
-                    long_description += html.tostring(element_block)
+                    if not element_block.xpath('./em'):
+                        long_description += html.tostring(element_block)
         else:
             is_long_description = False
 
