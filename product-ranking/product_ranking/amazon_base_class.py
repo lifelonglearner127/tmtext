@@ -266,7 +266,6 @@ class AmazonBaseClass(BaseProductsSpider):
                               headers={'Referer': None},
                               meta={'product': prod}), prod
                 print(link)
-        assert False
 
     def _parse_single_product(self, response):
         """
