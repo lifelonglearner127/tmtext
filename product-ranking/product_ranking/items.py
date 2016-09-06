@@ -181,6 +181,8 @@ class SiteProductItem(Item):
     related_products = Field()
     # Dict of SponsoredLinks. The key is the relation name.
     sponsored_links = Field()
+    # whether or not this product has been scraped coming from a sponsored link
+    is_sponsored_product = Field()
     # Available in-store only
     is_in_store_only = Field()
     # Out of stock
