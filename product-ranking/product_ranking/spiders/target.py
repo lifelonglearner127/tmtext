@@ -1,15 +1,3 @@
-# log:
-# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-16981395" variants+ rating+
-# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-14151598" variants+ rating+
-# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-17257438" variants+ rating+
-# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-17220835" variants+ rating+
-# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-11111131" variants+ rating+
-# http://www.target.com/p/-/A-50918286
-# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-50576772"
-# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-49120681"
-# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-50558222"
-# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-51366179"
-# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-51359665"
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
 
@@ -394,6 +382,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         image_id = image_info.get('primary')
         return base_url + image_id
 
+    def _item_info_v3_price(self, amount, currency='USD'):
+        return Price(priceCurrency=currency, price=amount)
+
     def _item_info_v3_reviews(self, item_info):
         tcin = item_info.get('item').get('tcin')
         rating_review = item_info.get(
@@ -445,18 +436,16 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             try:
                 selected_variant = product.get('variants')[0]
                 product['image_url'] = selected_variant.get('image_url')
-                currency = 'USD'
                 amount = float(selected_variant.get('price'))
-                product['price'] = Price(priceCurrency=currency, price=amount)
+                product['price'] = self._item_info_v3_price(amount)
                 product['dpci'] = selected_variant.get('dpci')
                 product['upc'] = selected_variant.get('upc')
                 product['image_url'] = selected_variant.get('image_url')
                 product['no_longer_available'] = False if selected_variant.get('in_stock') else True
             except IndexError:
-                currency = 'USD'
                 amount = float(item_info.get(
                     'price').get('offerPrice').get('formattedPrice').replace('$', ''))
-                product['price'] = Price(priceCurrency=currency, price=amount)
+                product['price'] = self._item_info_v3_price(amount)
                 product['dpci'] = item.get('dpci')
                 product['upc'] = item.get('upc')
                 image_info = item.get('enrichment').get('images')[0]
