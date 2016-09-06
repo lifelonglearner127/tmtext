@@ -432,7 +432,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             product['brand'] = item.get('product_brand').get('manufacturer_brand')
             product['buyer_reviews'] = self._item_info_v3_reviews(item_info)
             product['variants'] = self._item_info_v3_variants(item_info)
-            product['origin'] = 'Imported'
+            product['origin'] = item.get('country_of_origin')
             try:
                 selected_variant = product.get('variants')[0]
                 product['image_url'] = selected_variant.get('image_url')
