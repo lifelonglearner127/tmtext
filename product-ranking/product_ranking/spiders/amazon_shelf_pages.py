@@ -133,6 +133,8 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                 li.xpath('@id').extract()
             )
 
+            is_sponsored = bool(li.xpath('.//h5[contains(text(), "ponsored")]').extract())
+
             try:
                 idx = int(self._is_empty(
                     re.findall(r'\d+', data_asin)
@@ -154,7 +156,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
 
                     link = 'http://' + self.allowed_domains[0] + '/' + link
 
-                links.append((link, is_prime, is_prime_pantry))
+                links.append((link, is_prime, is_prime_pantry, is_sponsored))
             else:
                 break
 
@@ -166,13 +168,15 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             # inspect_response(response, self)
 
         if links:
-            for link, is_prime, is_prime_pantry in links:
+            for link, is_prime, is_prime_pantry, is_sponsored in links:
                 prime = None
                 if is_prime:
                     prime = 'Prime'
                 if is_prime_pantry:
                     prime = 'PrimePantry'
-                prod = SiteProductItem(prime=prime, shelf_path=shelf_categories, shelf_name=shelf_category)
+                prod = SiteProductItem(
+                    prime=prime, shelf_path=shelf_categories,
+                    shelf_name=shelf_category, is_sponsored_product=is_sponsored)
                 yield Request(link, callback=self.parse_product,
                               headers={'Referer': None},
                               meta={'product': prod}), prod
