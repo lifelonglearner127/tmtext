@@ -265,7 +265,6 @@ class AmazonBaseClass(BaseProductsSpider):
                 yield Request(link, callback=self.parse_product,
                               headers={'Referer': None},
                               meta={'product': prod}), prod
-                print(link)
 
     def _parse_single_product(self, response):
         """
