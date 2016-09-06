@@ -1,8 +1,15 @@
 # log:
-# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-16981395"
-
-
-
+# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-16981395" variants+ rating+
+# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-14151598" variants+ rating+
+# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-17257438" variants+ rating+
+# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-17220835" variants+ rating+
+# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-11111131" variants+ rating+
+# http://www.target.com/p/-/A-50918286
+# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-50576772"
+# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-49120681"
+# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-50558222"
+# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-51366179"
+# scrapy crawl target_products -a product_url="http://www.target.com/p/-/A-51359665"
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
 
@@ -24,13 +31,12 @@ from scrapy.log import DEBUG, INFO
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.spiders import BaseProductsSpider, cond_set, FLOATING_POINT_RGEX
+from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 from spiders_shared_code.target_variants import TargetVariants
 from product_ranking.validation import BaseValidator
 from product_ranking.validators.target_validator import TargetValidatorSettings
 from product_ranking.guess_brand import guess_brand_from_first_words
-
 
 # TODO: invalid buyer reviews and stock status for http://www.target.com/p/black-decker-2-slice-bread-and-bagel-toaster/-/A-13193088
 
@@ -91,9 +97,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     REDSKY_API_URL = 'http://redsky.target.com/v1/pdp/tcin/{}?excludes=taxonomy'
 
     QUESTION_API_URL = "http://api.bazaarvoice.com/data/questions.json" \
-                 "?passkey={apipass}&Offset=0&apiversion=5.4" \
-                 "&Filter=Productid:{product_id}" \
-                 "&Sort=TotalAnswerCount:desc,HasStaffAnswers:desc"
+                       "?passkey={apipass}&Offset=0&apiversion=5.4" \
+                       "&Filter=Productid:{product_id}" \
+                       "&Sort=TotalAnswerCount:desc,HasStaffAnswers:desc"
 
     ANSWER_API_URL = "http://api.bazaarvoice.com/data/answers.json" \
                      "?passkey={apipass}&apiversion=5.4" \
@@ -139,7 +145,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     def _start_search(self, response):
         for request in super(TargetProductSpider, self).start_requests():
-            #request.meta['dont_redirect'] = True
+            # request.meta['dont_redirect'] = True
             request.meta['handle_httpstatus_list'] = [302, 301]
             request.meta['search_start'] = True
             request.headers['User-Agent'] = self.user_agent_override
@@ -247,7 +253,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         populate_from_open_graph(response, prod)
 
         prod['url'] = old_url
-        #cond_set_value(prod, 'url', old_url)
+        # cond_set_value(prod, 'url', old_url)
 
         self._populate_from_html(response, prod)
 
@@ -360,8 +366,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     def _item_info_v2(self, response):
         item_info = self._item_info_helper(self._product_id_v2(response))
 
-        if (item_info.get('parentPartNumber') and item_info['parentPartNumber']
-                != self._product_id_v2(response)):
+        if item_info.get('parentPartNumber') \
+                and item_info['parentPartNumber'] != self._product_id_v2(response):
             item_info = self._item_info_helper(item_info['parentPartNumber'])
 
         return item_info
@@ -378,10 +384,86 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         content = self._item_info_v3_request(tcin)
         content_json = json.loads(content)
         parent_tcin = content_json.get('product').get('item').get('parent_items', None)
-        if parent_tcin:
+        if isinstance(parent_tcin, unicode):
             return self._item_info_v3(response, parent_tcin)
         else:
-            return content_json.get('product').get('item')
+            return content_json.get('product', None)
+
+    def _item_info_v3_image(self, image_info):
+        base_url = image_info.get('base_url')
+        image_id = image_info.get('primary')
+        return base_url + image_id
+
+    def _item_info_v3_reviews(self, item_info):
+        tcin = item_info.get('item').get('tcin')
+        rating_review = item_info.get(
+            'rating_and_review_statistics', {}).get('result', {}).get(tcin, {}).get('coreStats', {})
+        average_rating = rating_review.get('AverageOverallRating', 0)
+        num_of_reviews = rating_review.get('TotalReviewCount', 0)
+        rating_distribution = rating_review.get('RatingDistribution', [])
+        rating_by_star = {i: 0 for i in range(1, 6)}
+        rating_new = {i.get('RatingValue'): i.get('Count') for i in rating_distribution}
+        rating_by_star.update(rating_new)
+        reviews = BuyerReviews(int(num_of_reviews), float(average_rating), rating_by_star)
+        return reviews
+
+    def _item_info_v3_variants(self, item_info):
+        items = item_info.get('item').get('child_items', [])
+        variants = []
+        for number, item in enumerate(items):
+            selected = True if not number else False
+            variant = self._item_info_v3_variant(item, selected)
+            variants.append(variant)
+        return variants
+
+    def _item_info_v3_variant(self, item, selected):
+        variant = {}
+        variant['selected'] = selected
+        variant['dpci'] = item.get('dpci')
+        variant['tcin'] = item.get('tcin')
+        variant['upc'] = item.get('upc')
+        variant['properties'] = {}
+        variant['properties']['color'] = item.get('variation').get('color')
+        variant['price'] = item.get('price').get('offerPrice').get('formattedPrice', '').replace('$', '')
+        image_info = item.get('enrichment').get('images')[0]
+        variant['image_url'] = self._item_info_v3_image(image_info)
+        in_stock = item.get('available_to_promise_network').get(
+            'availability') != 'UNAVAILABLE'
+        variant['in_stock'] = in_stock
+        return variant
+
+    def _populate_from_v3(self, product, item_info):
+        item = item_info.get('item')
+        if not 'Unauthorized' in item.get('message', ''):
+            product['title'] = item.get('product_description').get('title')
+            product['tcin'] = item.get('tcin')
+            product['description'] = item.get('product_description').get('downstream_description')
+            product['brand'] = item.get('product_brand').get('manufacturer_brand')
+            product['buyer_reviews'] = self._item_info_v3_reviews(item_info)
+            product['variants'] = self._item_info_v3_variants(item_info)
+            product['origin'] = 'Imported'
+            try:
+                selected_variant = product.get('variants')[0]
+                product['image_url'] = selected_variant.get('image_url')
+                currency = 'USD'
+                amount = float(selected_variant.get('price'))
+                product['price'] = Price(priceCurrency=currency, price=amount)
+                product['dpci'] = selected_variant.get('dpci')
+                product['upc'] = selected_variant.get('upc')
+                product['image_url'] = selected_variant.get('image_url')
+                product['no_longer_available'] = False if selected_variant.get('in_stock') else True
+            except IndexError:
+                currency = 'USD'
+                amount = float(item_info.get(
+                    'price').get('offerPrice').get('formattedPrice').replace('$', ''))
+                product['price'] = Price(priceCurrency=currency, price=amount)
+                product['dpci'] = item.get('dpci')
+                product['upc'] = item.get('upc')
+                image_info = item.get('enrichment').get('images')[0]
+                product['image_url'] = self._item_info_v3_image(image_info)
+        else:
+            product['not_found'] = True
+
     @staticmethod
     def _get_price_v2(item_info):
         """ Returns (price, in cart) """
@@ -392,8 +474,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             offer = item_info.get('Offers', [{}])[0].get('OriginalPrice', [{}])[0]
             in_cart = True
         price = Price(
-                priceCurrency=offer['currencyCode'],
-                price=offer['formattedPriceValue'].split(' -', 1)[0].replace('$', ''))
+            priceCurrency=offer['currencyCode'],
+            price=offer['formattedPriceValue'].split(' -', 1)[0].replace('$', ''))
         return price, in_cart
 
     def _populate_from_html(self, response, product):
@@ -444,50 +526,42 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                     '/following-sibling::ul[1]/li[position()=last()]/text()').extract()
                 origin = origin[0].strip() if origin else None
             product['origin'] = origin
-        elif True:
-             item_info = self._item_info_v3(response)
-             product['title'] = item_info.get('product_description').get('title')
-             product['tcin'] = item_info.get('tcin')
-             child_items = item_info.get('child_items')
-             first_child_item = child_items[0]
-             product['dpci'] = first_child_item.get('dpci', None)
-             product['upc'] = first_child_item.get('upc', None)
-             image_url = first_child_item.get('base_url')
-             product['image_url'] =
         else:
-            item_info = self._item_info_v2(response)
-            if item_info:
-                product['title'] = item_info['title']
-                product['upc'] = item_info.get('UPC', None)
-                product['dpci'] = item_info.get('DPCI', None)
-                product['tcin'] = item_info.get('partNumber', None)
-                #product['sku'] = ''  # TODO
-                product['image_url'] = item_info.get('Images', [{}])[0].get('PrimaryImage', [{}])[0].get('image')
-                product['description'] = item_info.get('shortDescription', None)
-                product['brand'] = guess_brand_from_first_words(product['title'])
-                product['price'], product['price_details_in_cart'] = self._get_price_v2(item_info)
-                #product['related_products'] = None  # TODO
-                product['is_out_of_stock'] = not item_info.get('inventoryStatus', '') == 'in stock'
-                origin = item_info.get('ItemAttributes')
-                origin = origin[0].get('Attribute') if origin else None
-                if origin:
-                    origin = [atr.get('description') for atr in origin if atr.get('identifier') == "IMPORT_DESIGNATION"]
-                    origin = origin[0] if origin else None
-                    product['origin'] = origin
-                tv = TargetVariants()
-                if not product['variants']:
-                    tv.setupSC(response=response, zip_code=self.zip_code, item_info=item_info)
-                    product['variants'] = tv._variants()
-                # Getting upc from variants
-                if not product.get('upc'):
-                    selected_upc = [v.get('upc') for v in product.get('variants') if v.get('selected')]
-                    product['upc'] = selected_upc[0] if selected_upc else None
-
-                # TODO: shipping and store availability? see "purchasingChannel: Sold Online + in Stores" in item_info; http://www.target.com/p/denizen-from-levi-s-women-s-curvy-bootcut-jeans-denim-blue/-/A-50234669
-                # http://www.target.com/p/black-decker-2-slice-bread-and-bagel-toaster/-/A-13193088
-            else:
-                product['no_longer_available'] = True
-
+            item_info = self._item_info_v3(response)
+            self._populate_from_v3(product, item_info)
+            # else:
+            #     item_info = self._item_info_v2(response)
+            #     if item_info:
+            #         product['title'] = item_info['title']
+            #         product['upc'] = item_info.get('UPC', None)
+            #         product['dpci'] = item_info.get('DPCI', None)
+            #         product['tcin'] = item_info.get('partNumber', None)
+            #         # product['sku'] = ''  # TODO
+            #         product['image_url'] = item_info.get('Images', [{}])[0].get('PrimaryImage', [{}])[0].get('image')
+            #         product['description'] = item_info.get('shortDescription', None)
+            #         product['brand'] = guess_brand_from_first_words(product['title'])
+            #         product['price'], product['price_details_in_cart'] = self._get_price_v2(item_info)
+            #         # product['related_products'] = None  # TODO
+            #         product['is_out_of_stock'] = not item_info.get('inventoryStatus', '') == 'in stock'
+            #         origin = item_info.get('ItemAttributes')
+            #         origin = origin[0].get('Attribute') if origin else None
+            #         if origin:
+            #             origin = [atr.get('description') for atr in origin if atr.get('identifier') == "IMPORT_DESIGNATION"]
+            #             origin = origin[0] if origin else None
+            #             product['origin'] = origin
+            #         tv = TargetVariants()
+            #         if not product['variants']:
+            #             tv.setupSC(response=response, zip_code=self.zip_code, item_info=item_info)
+            #             product['variants'] = tv._variants()
+            #         # Getting upc from variants
+            #         if not product.get('upc'):
+            #             selected_upc = [v.get('upc') for v in product.get('variants') if v.get('selected')]
+            #             product['upc'] = selected_upc[0] if selected_upc else None
+            #
+            #             # TODO: shipping and store availability? see "purchasingChannel: Sold Online + in Stores" in item_info; http://www.target.com/p/denizen-from-levi-s-women-s-curvy-bootcut-jeans-denim-blue/-/A-50234669
+            #             # http://www.target.com/p/black-decker-2-slice-bread-and-bagel-toaster/-/A-13193088
+            #     else:
+            #         product['no_longer_available'] = True
 
     def _extract_recomm_urls(self, response):
         script = response.xpath(
@@ -712,7 +786,6 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             if isonline:
                 isonline = isonline[0].strip()
 
-
             # TODO: isonline: u'out of stock online'
             # ==  'out of stock' & 'online'
             price = ci.xpath(
@@ -721,7 +794,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 price = price[0]
             else:
                 price = ci.xpath(
-                    './div[@class="pricecontainer"]/span[@class="map"]/following::p/span/text()')\
+                    './div[@class="pricecontainer"]/span[@class="map"]/following::p/span/text()') \
                     .re(FLOATING_POINT_RGEX)
                 if price:
                     price = price[0]
@@ -920,30 +993,30 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         return None
 
     def _gen_next_request(self, response, next_page, remaining=None):
-            next_page = urllib.unquote(next_page)
-            data = {'formData': next_page,
-                    'stateData': "",
-                    'isDLP': 'false',
-                    'response_group': 'Items'
-                    }
+        next_page = urllib.unquote(next_page)
+        data = {'formData': next_page,
+                'stateData': "",
+                'isDLP': 'false',
+                'response_group': 'Items'
+                }
 
-            new_meta = response.meta.copy()
-            if 'total_matches' not in new_meta:
-                new_meta['total_matches'] = self._scrape_total_matches(response)
-            if remaining and remaining > 0:
-                new_meta['remaining'] = remaining
-            post_url = "http://www.target.com/SoftRefreshProductListView"
-            # new_meta['json'] = True
+        new_meta = response.meta.copy()
+        if 'total_matches' not in new_meta:
+            new_meta['total_matches'] = self._scrape_total_matches(response)
+        if remaining and remaining > 0:
+            new_meta['remaining'] = remaining
+        post_url = "http://www.target.com/SoftRefreshProductListView"
+        # new_meta['json'] = True
 
-            return FormRequest(
-                #return FormRequest.from_response(
-                #response=response,
-                url=post_url,
-                method='POST',
-                formdata=data,
-                callback=self._parse_link_post,
-                meta=new_meta,
-                headers={'User-Agent': self.user_agent_override})
+        return FormRequest(
+            # return FormRequest.from_response(
+            # response=response,
+            url=post_url,
+            method='POST',
+            formdata=data,
+            callback=self._parse_link_post,
+            meta=new_meta,
+            headers={'User-Agent': self.user_agent_override})
 
     def _parse_link_post(self, response):
         jsdata = json.loads(response.body)
@@ -991,7 +1064,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 url,
                 callback=self.parse_product,
                 meta=new_meta, dont_filter=True,
-                headers={'User-Agent': self.user_agent_override}),)
+                headers={'User-Agent': self.user_agent_override}), )
         return requests
 
     def _scrape_next_results_page_link(self, response):
@@ -1014,7 +1087,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         return Request(url, meta=response.meta, headers={'User-Agent': self.user_agent_override})
 
     def _scrape_next_results_page_link_json(self, response):
-        #raw_input(len(list(self._scrape_product_links_json(response))))
+        # raw_input(len(list(self._scrape_product_links_json(response))))
         args = self._json_get_args(self._get_json_data(response))
         current = int(args['currentPage'])
         total = int(args['totalPages'])
@@ -1072,7 +1145,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         data = data.get('FilteredReviewStatistics', {})
         average = data.get('AverageOverallRating')
         total = data.get('TotalReviewCount')
-        #import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         if not average:
             average = response.meta['average']
             total = response.meta['total']
@@ -1081,7 +1154,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             else:
                 fdist = ZERO_REVIEWS_VALUE[-1]
                 if total is None or average is None:
-                    product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+                    # product['buyer_reviews'] = ZERO_REVIEWS_VALUE
                     return product
                 reviews = BuyerReviews(int(total), int(average), fdist)
                 cond_set_value(product, 'buyer_reviews', reviews)
@@ -1130,7 +1203,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         reqs = []
         if data and data['Results']:
             for question in data['Results']:
-                q={}
+                q = {}
                 q['questionSummary'] = question['QuestionSummary']
                 time = question['SubmissionTime']
                 date = is_empty(time.split('T'))
@@ -1144,7 +1217,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                                                      question_id=q['questionId'])
                     meta = response.meta
                     meta['q'] = q
-                    reqs.append(Request(url, self._parse_answer, meta = meta, dont_filter=True,
+                    reqs.append(Request(url, self._parse_answer, meta=meta, dont_filter=True,
                                         headers={'User-Agent': self.user_agent_override}))
             if reqs:
                 return self.send_next_request(reqs, response)
@@ -1158,14 +1231,14 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     def _parse_answer(self, response):
         product = response.meta['product']
-        reqs = response.meta.get('reqs',[])
+        reqs = response.meta.get('reqs', [])
         all_questions = product.get('all_questions', [])
         q = response.meta['q']
         q['answers'] = []
         data = json.loads(response.body_as_unicode())
         if data['Results']:
             for answer in data['Results']:
-                a={}
+                a = {}
                 a['userNickname'] = answer['UserNickname']
                 a['answerSummary'] = a['answerText'] = answer['AnswerText'].replace('\xa0', '')
                 time = answer['SubmissionTime']
