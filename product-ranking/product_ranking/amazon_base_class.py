@@ -222,6 +222,8 @@ class AmazonBaseClass(BaseProductsSpider):
                 li.xpath('@id').extract()
             )
 
+            is_sponsored = bool(li.xpath('.//h5[contains(text(), "ponsored")]').extract())
+
             try:
                 idx = int(self._is_empty(
                     re.findall(r'\d+', data_asin)
@@ -243,7 +245,7 @@ class AmazonBaseClass(BaseProductsSpider):
 
                     link = 'http://' + self.allowed_domains[0] + '/' + link
 
-                links.append((link, is_prime, is_prime_pantry))
+                links.append((link, is_prime, is_prime_pantry, is_sponsored))
             else:
                 break
 
@@ -253,16 +255,18 @@ class AmazonBaseClass(BaseProductsSpider):
             self.log("Found no product links.", WARNING)
 
         if links:
-            for link, is_prime, is_prime_pantry in links:
+            for link, is_prime, is_prime_pantry, is_sponsored in links:
                 prime = None
                 if is_prime:
                     prime = 'Prime'
                 if is_prime_pantry:
                     prime = 'PrimePantry'
-                prod = SiteProductItem(prime=prime)
+                prod = SiteProductItem(prime=prime, is_sponsored_product=is_sponsored)
                 yield Request(link, callback=self.parse_product,
                               headers={'Referer': None},
                               meta={'product': prod}), prod
+                print(link)
+        assert False
 
     def _parse_single_product(self, response):
         """
