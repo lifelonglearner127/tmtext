@@ -201,11 +201,13 @@ class KohlsSpider(scrapy.Spider):
             return item
 
     def _request_promo_code(self, response, promo_code, item):
+        dynSessConf =  response.xpath('//input[@name="_dynSessConf"]/@value').extract()[0]
         formdata = {"_dyncharset": "UTF-8",
+                    "_dynSessConf": dynSessConf,
                     "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": promo_code,
-                    "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": "",
+                    "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": "+",
                     "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoSuccessURL": "applied_discounts_tr_success_url",
-                    "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoSuccessURL": "",
+                    "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoSuccessURL": "+",
                     "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoErrorURL": "applied_discounts_tr_success_url",
                     "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoErrorURL": "+",
                     "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.useForwards": "true",
