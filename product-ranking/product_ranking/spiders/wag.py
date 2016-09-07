@@ -122,17 +122,15 @@ class WagProductsSpider(ProductsSpider):
 
     def _parse_variants(self, response):
         variants = []
-        for item in response.xpath('//*[@class="diaperItemTR"]'):
+        for item in response.xpath('//*[contains(@class, "diaperItemTR")]'):
             vr = {}
             vr['in_stock'] = not bool(
                 item.xpath('./td[@class="outOfStockQty"]'))
-            price = item.xpath(
-                './/*[@class="autoShipNormal"]'
-                '/*[@class="normalPrice"]').re('[\d\.]+')
+            price = item.xpath('*//input[@class="skuHidden"]/@displayprice').re('[\d\.]+')
             cond_set(vr, 'price', price)
             images = ['http:' + x for x in item.xpath('.//img/@src').extract()]
             cond_set(vr, 'image_url', images)
-            sku = item.xpath('td/@sku').extract()
+            sku = item.xpath('*//input[@class="skuHidden"]/@value').extract()
             cond_set(vr, 'skuId', sku)
             selected = bool(item.xpath('@isprimarysku').re('Y'))
             cond_set_value(vr, 'selected', selected)
@@ -240,7 +238,15 @@ class WagProductsSpider(ProductsSpider):
 
         return product
 
-    def send_next_request(self, reqs, response):
+    @staticmethod
+    def _parse_availability(response):
+        if response.xpath('//div[@class="discontinuedBanner"]'):
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def send_next_request( reqs, response):
         """
         Helps to handle several requests
         """
@@ -257,6 +263,13 @@ class WagProductsSpider(ProductsSpider):
         response.meta['product_response'] = response
         # Set locale
         product['locale'] = 'en_US'
+
+        # Parse availability
+        if self._parse_availability(response):
+            cond_set_value(product, 'no_longer_available', True)
+            return product
+
+        cond_set_value(product, 'no_longer_available', False)
 
         # Parse title
         title = self._parse_title(response)
