@@ -385,6 +385,13 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     def _item_info_v3_price(self, amount, currency='USD'):
         return Price(priceCurrency=currency, price=amount)
 
+    @staticmethod
+    def _item_info_v3_store_only(amount):
+        if amount == "see store for price":
+            return True
+        else:
+            return False
+
     def _item_info_v3_reviews(self, item_info):
         tcin = item_info.get('item').get('tcin')
         rating_review = item_info.get(
@@ -441,10 +448,13 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 product['dpci'] = selected_variant.get('dpci')
                 product['upc'] = selected_variant.get('upc')
                 product['image_url'] = selected_variant.get('image_url')
-                product['no_longer_available'] = False if selected_variant.get('in_stock') else True
+                product['is_out_of_stock'] = False if selected_variant.get('in_stock') else True
             except IndexError:
-                amount = float(item_info.get(
-                    'price').get('offerPrice').get('formattedPrice').replace('$', ''))
+                amount = item_info.get(
+                    'price').get('offerPrice').get('formattedPrice')
+                if self._item_info_v3_store_only(amount):
+                    product['is_in_store_only'] = True
+                    amount = 0
                 product['price'] = self._item_info_v3_price(amount)
                 product['dpci'] = item.get('dpci')
                 product['upc'] = item.get('upc')
