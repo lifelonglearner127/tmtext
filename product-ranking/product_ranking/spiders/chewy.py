@@ -1,6 +1,7 @@
 import re
 import string
 import urlparse
+import socket
 
 from itertools import islice
 from scrapy import Request
@@ -12,6 +13,8 @@ from product_ranking.spiders import cond_set_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
+
+socket.setdefaulttimeout(60)
 
 
 class ChewyProductsSpider(ProductsSpider):
@@ -60,9 +63,13 @@ class ChewyProductsSpider(ProductsSpider):
         return categories[-1] if categories else None
 
     def _parse_price(self, response):
-        price = response.css('.our-price::text').re('[\d\.]+')
+        # price = response.css('.our-price::text').re('[\d\.]+')
+        arr = response.xpath('//li[@class="our-price"]//text()').extract()
+        price = [x for x in arr if len(x.strip())>0]
+        price = " ".join(price)
+        price = re.findall('\$([\d\.]+)', price)
 
-        if not price:
+        if len(price) == 0:
             return None
 
         return Price(price=price[0], priceCurrency='USD')
@@ -111,10 +118,13 @@ class ChewyProductsSpider(ProductsSpider):
         return variants if variants and len(variants) > 1 else None
 
     def _parse_is_out_of_stock(self, response):
-        status = response.xpath(
-            '//*[@id="availability"]/span[text()="In Stock"]')
+        arr = response.xpath('//*[@id="availability"]/span//text()').extract()
+        arr = [x.lower() for x in arr]
+        status = True
+        if "in stock" in arr:
+            status = False
 
-        return not bool(status)
+        return not status
 
     def _parse_shipping_included(self, response):
         shipping_text = ''.join(
@@ -124,7 +134,7 @@ class ChewyProductsSpider(ProductsSpider):
 
     def _parse_description(self, response):
         description = response.xpath(
-            '//*[@class="longDescription"]').extract()
+            '//*[@class="descriptions-left"]//text()').extract()
 
         return ''.join(description).strip() if description else None
 
@@ -146,7 +156,14 @@ class ChewyProductsSpider(ProductsSpider):
         # Set locale
         product['locale'] = 'en_US'
 
+        arr = response.xpath('//li[contains(@class,"message")]//text()').extract()
+        for item in arr:
+            if "is not currently available." in item.lower():
+                cond_set_value(product, 'no_longer_available', True)
+                break
+
         # Parse title
+
         title = self._parse_title(response)
         cond_set_value(product, 'title', title, conv=string.strip)
 
