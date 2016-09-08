@@ -72,14 +72,17 @@ class WagProductsSpider(ProductsSpider):
         total = response.css('.searched-stats::text').re('of ([\d\,]+)')
         return int(total[0].replace(',', '')) if total else 0
 
-    def _scrape_results_per_page(self, response):
+    @staticmethod
+    def _scrape_results_per_page(response):
         return 60
 
-    def _scrape_next_results_page_link(self, response):
+    @staticmethod
+    def _scrape_next_results_page_link(response):
         link = response.xpath('//a[@class="next"]/@href').extract()
         return link[0] if link else None
 
-    def _scrape_product_links(self, response):
+    @staticmethod
+    def _scrape_product_links(response):
         item_urls = response.xpath(
             '//a[@class="product-box-link"]/@href').extract()
         for item_url in item_urls:
@@ -88,11 +91,13 @@ class WagProductsSpider(ProductsSpider):
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
-    def _parse_title(self, response):
+    @staticmethod
+    def _parse_title(response):
         title = response.xpath('//h1[@itemprop="name"]/text()').extract()
         return title[0] if title else None
 
-    def _parse_categories(self, response):
+    @staticmethod
+    def _parse_categories(response):
         categories = response.xpath(
             '//*[@class="positionNav "]/a/text()').extract()
         return categories if categories else None
@@ -101,7 +106,8 @@ class WagProductsSpider(ProductsSpider):
         categories = self._parse_categories(response)
         return categories[-1] if categories else None
 
-    def _parse_price(self, response):
+    @staticmethod
+    def _parse_price(response):
         price = response.xpath('//*[@itemprop="price"]/@content').re('[\d\.]+')
         currency = response.xpath(
             '//*[@itemprop="priceCurrency"]/@content').re('\w{2,3}') or ['USD']
@@ -111,16 +117,19 @@ class WagProductsSpider(ProductsSpider):
 
         return Price(price=price[0], priceCurrency=currency[0])
 
-    def _parse_image_url(self, response):
+    @staticmethod
+    def _parse_image_url(response):
         image_url = response.xpath(
             '//a[@class="MagicZoomPlus"]/@href').extract()
         return 'http:' + image_url[0] if image_url else None
 
-    def _parse_sku(self, response):
+    @staticmethod
+    def _parse_sku(response):
         sku = response.xpath('//*[@itemprop="sku"]/@content').extract()
         return sku[0] if sku else None
 
-    def _parse_variants(self, response):
+    @staticmethod
+    def _parse_variants(response):
         variants = []
         for item in response.xpath('//*[contains(@class, "diaperItemTR")]'):
             vr = {}
@@ -142,7 +151,8 @@ class WagProductsSpider(ProductsSpider):
 
         return variants if variants and len(variants) > 1 else None
 
-    def _parse_is_out_of_stock(self, response):
+    @staticmethod
+    def _parse_is_out_of_stock(response):
         status = response.xpath(
             '//*[@itemprop="offers"]/meta[@itemprop="availability" '
             'and @content="OutOfStock"]').extract()
@@ -159,7 +169,8 @@ class WagProductsSpider(ProductsSpider):
 
         return ''.join(description).strip() if description else None
 
-    def _parse_buyer_review(self, response, product_response):
+    @staticmethod
+    def _parse_buyer_review(response, product_response):
         num_reviews = product_response.xpath(
             '//*[@itemprop="reviewCount"]/@content').extract()[0]
         average_rating = product_response.xpath(
@@ -194,7 +205,8 @@ class WagProductsSpider(ProductsSpider):
 
         return buyer_reviews or None
 
-    def _parse_last_buyer_date(self, response, product_response):
+    @staticmethod
+    def _parse_last_buyer_date(response, product_response):
         last_comment_date_amazon = response.xpath(
             '//*[@class="pr-review-author-date'
             ' pr-rounded"]/text()').extract()
@@ -240,13 +252,10 @@ class WagProductsSpider(ProductsSpider):
 
     @staticmethod
     def _parse_availability(response):
-        if response.xpath('//div[@class="discontinuedBanner"]'):
-            return True
-        else:
-            return False
+        return bool(response.xpath('//div[@class="discontinuedBanner"]'))
 
     @staticmethod
-    def send_next_request( reqs, response):
+    def send_next_request(reqs, response):
         """
         Helps to handle several requests
         """
