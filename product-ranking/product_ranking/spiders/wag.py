@@ -252,7 +252,7 @@ class WagProductsSpider(ProductsSpider):
 
     @staticmethod
     def _parse_availability(response):
-        return bool(response.xpath('//div[@class="discontinuedBanner"]'))
+        return not bool(response.xpath('//div[@class="discontinuedBanner"]'))
 
     @staticmethod
     def send_next_request(reqs, response):
@@ -274,7 +274,7 @@ class WagProductsSpider(ProductsSpider):
         product['locale'] = 'en_US'
 
         # Parse availability
-        if self._parse_availability(response):
+        if not self._parse_availability(response):
             cond_set_value(product, 'no_longer_available', True)
             return product
 
