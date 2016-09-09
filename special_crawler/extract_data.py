@@ -483,6 +483,7 @@ class Scraper():
             costco_url = re.match('http://www.costco.com/(.*)', self.product_page_url)
             wag_url = re.match('https?://www.wag.com/(.*)', self.product_page_url)
             jcpenney_url = re.match('http://www.jcpenney.com/(.*)', self.product_page_url)
+            walmart_ca_url = re.match('http://www.walmart.ca/(.*)', self.product_page_url)
 
             if costco_url:
                 self.product_page_url = 'http://www.costco.com/' + urllib2.quote(costco_url.group(1).encode('utf8'))
@@ -495,6 +496,9 @@ class Scraper():
             else:
                 agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
             request.add_header('User-Agent', agent)
+
+            if walmart_ca_url:
+                request.add_header('Cookie', 'cookieLanguageType=en; deliveryCatchment=2000; marketCatchment=2001; walmart.shippingPostalCode=V5M2G7')
 
             for i in range(self.MAX_RETRIES):
                 try:
