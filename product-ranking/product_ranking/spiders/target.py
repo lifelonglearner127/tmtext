@@ -110,7 +110,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                       "&isLeaf=true" \
                       "&parent_category_id={category}"
 
-    RELATED_URL = "{path}?productId={pid}&userId=-1002&min={min}&max={max}&context=placementId,{plid};categoryId,{cid}&callback=jsonCallback"
+    RELATED_URL = "{path}?productId={pid}&userId=-1002&min={min}&max={max}&context=placementId," \
+                  "{plid};categoryId,{cid}&callback=jsonCallback"
 
     def __init__(self, sort_mode=None, zip_code='94117', *args, **kwargs):
         if sort_mode:
@@ -194,8 +195,10 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
         response.meta['item_info'] = self._item_info_v2(response)
 
-        response.meta['average'] = is_empty(re.findall(r'var averageRating=  (\d+)', response.body_as_unicode()))
-        response.meta['total'] = is_empty(re.findall(r'var totalReviewsValue=(\d+)', response.body_as_unicode()))
+        response.meta['average'] = is_empty(
+            re.findall(r'var averageRating=  (\d+)', response.body_as_unicode()))
+        response.meta['total'] = is_empty(
+            re.findall(r'var totalReviewsValue=(\d+)', response.body_as_unicode()))
 
         if 'sorry, that item is no longer available' \
                 in response.body_as_unicode().lower():
@@ -243,7 +246,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         prod['url'] = old_url
         # cond_set_value(prod, 'url', old_url)
 
-        self._populate_from_html(response, prod)
+        item_info = self._item_info_v3(response)
+        self._populate_from_v3(prod, item_info)
 
         if not self._is_v1(response):
             # scrape v2 reviews
@@ -377,22 +381,22 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         else:
             return content_json.get('product', None)
 
-    def _item_info_v3_image(self, image_info):
+    @staticmethod
+    def _item_info_v3_image(image_info):
         base_url = image_info.get('base_url')
         image_id = image_info.get('primary')
         return base_url + image_id
 
-    def _item_info_v3_price(self, amount, currency='USD'):
+    @staticmethod
+    def _item_info_v3_price(amount, currency='USD'):
         return Price(priceCurrency=currency, price=amount)
 
     @staticmethod
     def _item_info_v3_store_only(amount):
-        if amount == "see store for price":
-            return True
-        else:
-            return False
+        return amount == "see store for price"
 
-    def _item_info_v3_reviews(self, item_info):
+    @staticmethod
+    def _item_info_v3_reviews(item_info):
         tcin = item_info.get('item').get('tcin')
         rating_review = item_info.get(
             'rating_and_review_statistics', {}).get('result', {}).get(tcin, {}).get('coreStats', {})
@@ -409,7 +413,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         items = item_info.get('item').get('child_items', [])
         variants = []
         for number, item in enumerate(items):
-            selected = True if not number else False
+            selected = not bool(number)
             variant = self._item_info_v3_variant(item, selected)
             variants.append(variant)
         return variants
@@ -422,7 +426,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         variant['upc'] = item.get('upc')
         variant['properties'] = {}
         variant['properties']['color'] = item.get('variation').get('color')
-        variant['price'] = item.get('price').get('offerPrice').get('formattedPrice', '').replace('$', '')
+        variant['price'] = item.get(
+            'price').get('offerPrice').get('formattedPrice', '').replace('$', '')
         image_info = item.get('enrichment').get('images')[0]
         variant['image_url'] = self._item_info_v3_image(image_info)
         in_stock = item.get('available_to_promise_network').get(
@@ -476,91 +481,6 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             priceCurrency=offer['currencyCode'],
             price=offer['formattedPriceValue'].split(' -', 1)[0].replace('$', ''))
         return price, in_cart
-
-    def _populate_from_html(self, response, product):
-        if self._is_v1(response):
-            if 'title' in product and product['title'] == '':
-                del product['title']
-            product['title'] = response.xpath(
-                "//h2[contains(@class,'product-name')]"
-                "/span[@itemprop='name']/text()"
-                "|//h2[contains(@class,'collection-name')]"
-                "/span[@itemprop='name']/text()"
-            ).extract()
-
-            desc = product.get('description')
-            if desc:
-                desc = desc.replace("\n", "")
-                product['description'] = desc
-            desc = response.css(
-                '#item-overview > div > div:nth-child(1)').extract()
-            if desc:
-                desc = desc[0]
-                desc = desc.replace("\n", "")
-                product['description'] = desc
-
-            image = response.xpath(
-                "//img[@itemprop='image']/@src").extract()
-            if image:
-                image = image[0].replace("_100x100.", ".")
-                product['image_url'] = image
-            dpci = response.xpath(
-                './/*[contains(text(), "Store Item Number (DPCI)")]/following-sibling::text()[1]').extract()
-            dpci = dpci[0].strip() if dpci else None
-            product['dpci'] = dpci
-            tcin = response.xpath(
-                './/*[contains(text(), "Online Item #")]/following-sibling::text()[1]').extract()
-            tcin = tcin[0].strip() if tcin else None
-            if not tcin:
-                tcin = response.xpath(
-                    './/*[contains(text(), "TCIN:")]/span/text()').extract()
-                tcin = tcin[0].strip() if tcin else None
-            product['tcin'] = tcin
-            origin = response.xpath(
-                './/*[contains(text(), "Origin:")]/span/text()').extract()
-            origin = origin[0].strip() if origin else None
-            if not origin:
-                origin = response.xpath(
-                    './/h3[@class="heading-small" and contains (text(), "other Info.")]'
-                    '/following-sibling::ul[1]/li[position()=last()]/text()').extract()
-                origin = origin[0].strip() if origin else None
-            product['origin'] = origin
-        else:
-            item_info = self._item_info_v3(response)
-            self._populate_from_v3(product, item_info)
-            # else:
-            #     item_info = self._item_info_v2(response)
-            #     if item_info:
-            #         product['title'] = item_info['title']
-            #         product['upc'] = item_info.get('UPC', None)
-            #         product['dpci'] = item_info.get('DPCI', None)
-            #         product['tcin'] = item_info.get('partNumber', None)
-            #         # product['sku'] = ''  # TODO
-            #         product['image_url'] = item_info.get('Images', [{}])[0].get('PrimaryImage', [{}])[0].get('image')
-            #         product['description'] = item_info.get('shortDescription', None)
-            #         product['brand'] = guess_brand_from_first_words(product['title'])
-            #         product['price'], product['price_details_in_cart'] = self._get_price_v2(item_info)
-            #         # product['related_products'] = None  # TODO
-            #         product['is_out_of_stock'] = not item_info.get('inventoryStatus', '') == 'in stock'
-            #         origin = item_info.get('ItemAttributes')
-            #         origin = origin[0].get('Attribute') if origin else None
-            #         if origin:
-            #             origin = [atr.get('description') for atr in origin if atr.get('identifier') == "IMPORT_DESIGNATION"]
-            #             origin = origin[0] if origin else None
-            #             product['origin'] = origin
-            #         tv = TargetVariants()
-            #         if not product['variants']:
-            #             tv.setupSC(response=response, zip_code=self.zip_code, item_info=item_info)
-            #             product['variants'] = tv._variants()
-            #         # Getting upc from variants
-            #         if not product.get('upc'):
-            #             selected_upc = [v.get('upc') for v in product.get('variants') if v.get('selected')]
-            #             product['upc'] = selected_upc[0] if selected_upc else None
-            #
-            #             # TODO: shipping and store availability? see "purchasingChannel: Sold Online + in Stores" in item_info; http://www.target.com/p/denizen-from-levi-s-women-s-curvy-bootcut-jeans-denim-blue/-/A-50234669
-            #             # http://www.target.com/p/black-decker-2-slice-bread-and-bagel-toaster/-/A-13193088
-            #     else:
-            #         product['no_longer_available'] = True
 
     def _extract_recomm_urls(self, response):
         script = response.xpath(
@@ -1252,7 +1172,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             product['all_questions'] = all_questions
             product['recent_questions'] = product['all_questions']
             # get date_of_last_question
-            product['date_of_last_question'] = self._get_latest_questions_date(product['all_questions'])
+            product['date_of_last_question'] = self._get_latest_questions_date(
+                product['all_questions'])
             for req in reqs:
                 req.meta['product'] = product
             if reqs:
