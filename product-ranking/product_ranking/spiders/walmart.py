@@ -177,7 +177,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                               meta={'handle_httpstatus_list': [404, 502, 520],
                                     'remaining': self.quantity, 'search_term': st},
                               dont_filter=True)
-            #yield super(WalmartProductsSpider, self).start_requests()
 
     def get_sponsored_links(self, response):
         self.reql = []
