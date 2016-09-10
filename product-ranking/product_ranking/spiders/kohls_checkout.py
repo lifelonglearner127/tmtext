@@ -13,7 +13,6 @@ class KohlsSpider(scrapy.Spider):
     allowed_domains = ['kohls.com']  # do not remove comment - used in find_spiders()
 
     SHOPPING_CART_URL = 'http://www.kohls.com/checkout/shopping_cart.jsp'
-    ADD_TO_BAG_URL = 'http://www.kohls.com/catalog/navigation.jsp?_DARGS=/catalog/v2/fragments/pdp_addToBag_Form.jsp'
 
     def __init__(self, *args, **kwargs):
         settings.overrides['ITEM_PIPELINES'] = {}
@@ -49,82 +48,107 @@ class KohlsSpider(scrapy.Spider):
 
     def parse(self, response):
         product = response.meta.get('product')
-        parse_all = True if product.get('FetchAllColors') else None
+        parse_all = bool(product.get('FetchAllColors'))
         colors = product.get('color')
         if colors:
-            is_requested_color = True
             if isinstance(colors, basestring):
                 colors = [colors]
-        json_data = response.xpath('//script[contains(text(), "productJsonData")]/text()').extract()[0]
-        JSON = re.compile('productJsonData = ({.*?});', re.DOTALL)
-        json_data = JSON.findall(json_data)[0]
-        json_data = json.loads(json_data)
+        json_data = response.xpath(
+            '//script[contains(text(), "productJsonData")]/text()').extract()[0]
+        json_regex = re.compile('productJsonData = ({.*?});', re.DOTALL)
+        json_data = json.loads(
+            json_regex.findall(json_data)[0])
         variants = json_data.get('productItem').get('skuDetails')
         product_id = str(json_data.get('productItem').get('productDetails').get('productId'))
         variants = self._variants_dict(variants)
         formdata = {'_D:add_cart_quantity': '+',
                     'isRedirectToJsonUrl': 'true',
-                    '_D:/atg/commerce/order/purchase/CartModifierFormHandler.productId': '+',
-                    '/atg/commerce/order/purchase/CartModifierFormHandler.useForwards': 'true',
-                    '/atg/commerce/order/purchase/CartModifierFormHandler.addItemToOrderSuccessURL': 'shopping_cart_add_to_cart_success_url',
-                    '_D:/atg/commerce/order/purchase/CartModifierFormHandler.useForwards': '+',
-                    '_D:/atg/commerce/order/purchase/CartModifierFormHandler.addItemToOrderSuccessURL': '+',
+                    '_D:/atg/commerce/order/purchase/'
+                    'CartModifierFormHandler.productId': '+',
+                    '/atg/commerce/order/purchase/'
+                    'CartModifierFormHandler.useForwards': 'true',
+                    '/atg/commerce/order/purchase/'
+                    'CartModifierFormHandler.'
+                    'addItemToOrderSuccessURL': 'shopping_cart_add_to_cart_success_url',
+                    '_D:/atg/commerce/order/purchase/'
+                    'CartModifierFormHandler.useForwards': '+',
+                    '_D:/atg/commerce/order/purchase/'
+                    'CartModifierFormHandler.addItemToOrderSuccessURL': '+',
                     '_DARGS': '/catalog/v2/fragments/pdp_addToBag_Form.jsp',
-                    '_D:/atg/commerce/order/purchase/CartModifierFormHandler.addItemToOrder': '+',
-                    '_D:/atg/commerce/order/purchase/CartModifierFormHandler.addItemToOrderErrorURL': '+',
-                    '/atg/commerce/order/purchase/CartModifierFormHandler.catalogRefIds': '34000344',
+                    '_D:/atg/commerce/order/purchase/'
+                    'CartModifierFormHandler.addItemToOrder': '+',
+                    '_D:/atg/commerce/order/purchase/'
+                    'CartModifierFormHandler.addItemToOrderErrorURL': '+',
+                    '/atg/commerce/order/purchase/'
+                    'CartModifierFormHandler.catalogRefIds': '34000344',
                     '_dyncharset': 'UTF-8',
                     'addItemToOrderSuccessURL': 'shopping_cart_add_to_cart_json_success_url',
                     '/atg/commerce/order/purchase/CartModifierFormHandler.addItemToOrder': '+',
                     'addItemToOrderErrorURL': 'shopping_cart_add_to_cart_json_error_url',
                     'add_cart_quantity': '1',
                     '_D:/atg/commerce/order/purchase/CartModifierFormHandler.catalogRefIds': '+',
-                    '/atg/commerce/order/purchase/CartModifierFormHandler.addItemToOrderErrorURL': 'shopping_cart_add_to_cart_error_url',
+                    '/atg/commerce/order/purchase/'
+                    'CartModifierFormHandler.'
+                    'addItemToOrderErrorURL': 'shopping_cart_add_to_cart_error_url',
                     '/atg/commerce/order/purchase/CartModifierFormHandler.productId': product_id}
-
-        if response.meta.get('retry'):
+        retry = response.meta.get('retry')
+        meta = {}
+        if retry:
             self.log('RETRY WITH QUANTITY 1')
-            key = response.meta.get('color')
-            i = response.meta.get('cookiejar')
-            formdata['/atg/commerce/order/purchase/CartModifierFormHandler.catalogRefIds'] = variants.get(key)
+            color = response.meta.get('color')
+            formdata['/atg/commerce/order/purchase/' \
+                     'CartModifierFormHandler.catalogRefIds'] = variants.get(color)
             formdata['add_cart_quantity'] = '1'
-            yield self._request(response, formdata, key, i, response.url, requested_color_not_available=True)
+            meta['color'] = color
+            meta['cookie_jar'] = response.meta.get('cookiejar')
+            meta['requested_color_not_available'] = True
+            yield self._request(response, formdata, meta)
 
         elif parse_all:
             for y, quantity in enumerate(self.quantity):
-                for i, key in enumerate(variants.keys()):
-                    formdata['/atg/commerce/order/purchase/CartModifierFormHandler.catalogRefIds'] = variants.get(key)
+                for i, color in enumerate(variants):
+                    formdata['/atg/commerce/order/purchase/' \
+                             'CartModifierFormHandler.catalogRefIds'] = variants.get(color)
                     formdata['add_cart_quantity'] = str(quantity)
-                    yield self._request(response, formdata, key, str(y) + str(i), response.url, product=product)
+                    meta['color'] = color
+                    meta['cookie_jar'] = str(y) + str(i)
+                    meta['product'] = product
+                    yield self._request(response, formdata, meta)
 
         elif colors:
             for y, quantity in enumerate(self.quantity):
-                for i, key in enumerate(colors):
-                    formdata['/atg/commerce/order/purchase/CartModifierFormHandler.catalogRefIds'] = variants.get(key)
+                for i, color in enumerate(colors):
+                    formdata['/atg/commerce/order/purchase/' \
+                             'CartModifierFormHandler.catalogRefIds'] = variants.get(color)
                     formdata['add_cart_quantity'] = str(quantity)
-                    yield self._request(response, formdata, key, str(y) + str(i), response.url, key, product=product)
+                    meta['color'] = color
+                    meta['cookie_jar'] = str(y) + str(i)
+                    meta['requested_color'] = color
+                    meta['product'] = product
+                    yield self._request(response, formdata, meta)
 
         else:
             color = variants.keys()[0]
-            formdata['/atg/commerce/order/purchase/CartModifierFormHandler.catalogRefIds'] = variants.get(color)
+            formdata['/atg/commerce/order/purchase/' \
+                     'CartModifierFormHandler.catalogRefIds'] = variants.get(color)
             formdata['add_cart_quantity'] = '1'
-            yield self._request(response, formdata, color, 1, response.url)
+            meta['color'] = color
+            meta['cookie_jar'] = 1
+            meta['requested_color_not_available'] = False
+            yield self._request(response, formdata, meta)
 
-    def _request(self, response, formdata, color, cookie_jar, url, requested_color=None,
-                 requested_color_not_available=False, product=None):
+    def _request(self, response, formdata, meta):
+        meta['url'] = response.url
+        if not meta.get('requested_color_not_available'):
+            meta['requested_color_not_available'] = False
         return FormRequest.from_response(response,
                                          formname='pdpAddToBag',
                                          formdata=formdata,
                                          callback=self.parse_page,
                                          method='POST',
                                          dont_filter=True,
-                                         meta={'cookiejar': cookie_jar,
-                                               'color': color,
-                                               'url': url,
-                                               'requested_color': requested_color,
-                                               'requested_color_not_available': requested_color_not_available,
-                                               'product': product}
-                                         )
+                                         meta=meta
+                                        )
 
     def parse_page(self, response):
         meta = response.meta
@@ -140,20 +164,20 @@ class KohlsSpider(scrapy.Spider):
                                  callback=self.parse_cart,
                                  dont_filter=True,
                                  meta=meta
-                                 )
+                                )
 
     def parse_cart(self, response):
-
         item = CheckoutProductItem()
         json_data = \
         response.xpath(
-            '//script[contains(text(), "var trJsonData = {") and @type="text/javascript"]/text()').extract()[0]
-        JSON = re.compile('trJsonData = ({.*?});', re.DOTALL)
-        json_data = JSON.findall(json_data)[0]
+            '//script[contains(text(), "var trJsonData = {")'
+            ' and @type="text/javascript"]/text()').extract()[0]
+        json_regex = re.compile('trJsonData = ({.*?});', re.DOTALL)
+        json_data = json_regex.findall(json_data)[0]
         json_data = json.loads(json_data)
         product = json_data.get('shoppingBag').get('items')[0]
-        h = HTMLParser()
-        item['name'] = h.unescape(product.get('displayName'))
+        html_parser = HTMLParser()
+        item['name'] = html_parser.unescape(product.get('displayName'))
         item['id'] = product.get('skuNumber')
         sale_price = product.get('salePrice').replace('$', '')
         regular_price = product.get('regularPrice').replace('$', '')
@@ -172,7 +196,8 @@ class KohlsSpider(scrapy.Spider):
         item['requested_color_not_available'] = (
             item['color'] and item['requested_color'] and
             (item['requested_color'] != item['color']))
-        item['requested_quantity_not_available'] = response.meta.get('requested_color_not_available')
+        item['requested_quantity_not_available'] = response.meta.get(
+            'requested_color_not_available')
         yield self.promo_logic(response, item)
 
     @staticmethod
@@ -201,20 +226,7 @@ class KohlsSpider(scrapy.Spider):
             return item
 
     def _request_promo_code(self, response, promo_code, item):
-        dynSessConf =  response.xpath('//input[@name="_dynSessConf"]/@value').extract()[0]
-        formdata = {"_dyncharset": "UTF-8",
-                    "_dynSessConf": dynSessConf,
-                    "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": promo_code,
-                    "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": "+",
-                    "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoSuccessURL": "applied_discounts_tr_success_url",
-                    "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoSuccessURL": "+",
-                    "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoErrorURL": "applied_discounts_tr_success_url",
-                    "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoErrorURL": "+",
-                    "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.useForwards": "true",
-                    "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.useForwards": "+",
-                    "apply_promo_code": "submit",
-                    "_D:apply_promo_code": "+",
-                    "_DARGS": "/checkout/v2/includes/discounts_update_forms.jsp.2"}
+        formdata = {"/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": promo_code}
         meta = response.meta
         meta['item'] = item
         meta['promo'] = True
@@ -225,5 +237,4 @@ class KohlsSpider(scrapy.Spider):
                                          method='POST',
                                          dont_filter=True,
                                          meta=meta
-                                         )
-    
+                                        )
