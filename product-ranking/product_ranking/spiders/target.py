@@ -420,6 +420,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     def _item_info_v3_variant(self, item, selected):
         variant = {}
+        import pprint
+        pprint.pprint(item)
         variant['selected'] = selected
         variant['dpci'] = item.get('dpci')
         variant['tcin'] = item.get('tcin')
@@ -428,6 +430,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         variant['properties']['color'] = item.get('variation').get('color')
         variant['price'] = item.get(
             'price').get('offerPrice').get('formattedPrice', '').replace('$', '')
+        if 'see low price in cart' in variant['price']:
+            variant['price'] = item.get(
+                'price').get('offerPrice').get('price')
         image_info = item.get('enrichment').get('images')[0]
         variant['image_url'] = self._item_info_v3_image(image_info)
         in_stock = item.get('available_to_promise_network').get(
@@ -448,7 +453,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             try:
                 selected_variant = product.get('variants')[0]
                 product['image_url'] = selected_variant.get('image_url')
-                amount = float(selected_variant.get('price'))
+                amount = selected_variant.get('price')
+
+                amount = float(amount)
                 product['price'] = self._item_info_v3_price(amount)
                 product['dpci'] = selected_variant.get('dpci')
                 product['upc'] = selected_variant.get('upc')
@@ -457,6 +464,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             except IndexError:
                 amount = item_info.get(
                     'price').get('offerPrice').get('formattedPrice')
+                if not amount or 'see low price in cart' in amount:
+                    amount = item_info.get(
+                        'price').get('offerPrice').get('price')
                 if self._item_info_v3_store_only(amount):
                     product['is_in_store_only'] = True
                     amount = 0
