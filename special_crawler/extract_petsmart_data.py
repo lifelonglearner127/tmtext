@@ -29,8 +29,6 @@ class PetsmartScraper(Scraper):
         return False
 
     def not_a_product(self):
-        if not self.tree_html.xpath('//body[@id="ws-product"]'):
-            return True
         return False
 
     ##########################################
