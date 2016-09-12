@@ -91,6 +91,7 @@ from extract_wag_data import WagScraper
 from extract_chewy_data import ChewyScraper
 from extract_petfooddirect_data import PetFoodDirectScraper
 from extract_pet360_data import Pet360Scraper
+from extract_petsmart_data import PetsmartScraper
 from extract_walmartgrocery_data import WalmartGroceryScraper
 
 from urllib2 import HTTPError
@@ -195,6 +196,7 @@ SUPPORTED_SITES = {
                     "chewy" : ChewyScraper,
                     "petfooddirect": PetFoodDirectScraper,
                     "pet360" : Pet360Scraper,
+                    "petsmart" : PetsmartScraper,
                     "walmartgrocery" : WalmartGroceryScraper,
                     }
 
