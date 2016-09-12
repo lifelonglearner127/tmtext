@@ -361,10 +361,13 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         """ Returns (price, in cart) """
         in_cart = False
         offer = item_info.get('Offers', [{}])[0].get('OfferPrice', [{}])[0]
-        if 'low to display' in offer['formattedPriceValue'].lower():
-            # in-cart pricing
-            offer = item_info.get('Offers', [{}])[0].get('OriginalPrice', [{}])[0]
-            in_cart = True
+        try:
+            if 'low to display' in offer['formattedPriceValue'].lower():
+                # in-cart pricing
+                offer = item_info.get('Offers', [{}])[0].get('OriginalPrice', [{}])[0]
+                in_cart = True
+        except:
+            pass
         price = Price(
                 priceCurrency=offer['currencyCode'],
                 price=offer['formattedPriceValue'].split(' -', 1)[0].replace('$', ''))
