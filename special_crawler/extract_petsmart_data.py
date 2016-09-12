@@ -56,15 +56,11 @@ class PetsmartScraper(Scraper):
     def _descriptions(self):
         description_html = ''.join(map(lambda e: self._clean_html(html.tostring(e)), self.tree_html.xpath('//div[@data-dynamic-block-name="LongDescription"]/*')))
 
-        split_index = description_html.find('<p><b>')
-
-        if split_index == -1:
-            split_index = description_html.find('<b>')
-
-        if split_index != -1:
+        try:
+            split_index = re.search('(<p>)?((<b>)|(<strong>))', description_html).start()
             return (description_html[:split_index], description_html[split_index:])
-
-        return (description_html, None)
+        except:
+            return (description_html, None)
 
     def _description(self):
         return self._descriptions()[0]
@@ -75,13 +71,13 @@ class PetsmartScraper(Scraper):
     def _features(self):
         long_description = self._long_description()
 
-        label_index = long_description.find('<b>Features')
-
-        # There are no features
-        if label_index == -1:
+        try:
+            label_index = re.search('((<b>)|(<strong>))Features', long_description).start()
+            label_index = long_description.find('Features', label_index)
+        except:
             return None
 
-        features_start_index = re.search('>\s*\w', long_description[label_index+3:]).start() + label_index + 4
+        features_start_index = re.search('>\s*\w', long_description[label_index:]).start() + label_index + 1
 
         features_end_index = long_description.find('<', features_start_index)
 
@@ -98,13 +94,13 @@ class PetsmartScraper(Scraper):
     def _ingredients(self):
         long_description = self._long_description()
 
-        label_index = long_description.find('<b>Ingredients')
-
-        # There are no ingredients
-        if label_index == -1:
+        try:
+            label_index = re.search('((<b>)|(<strong>))Ingredients', long_description).start()
+            label_index = long_description.find('Ingredients', label_index)
+        except:
             return None
 
-        ingredients_start_index = re.search('>\s*\w', long_description[label_index+3:]).start() + label_index + 4
+        ingredients_start_index = re.search('>\s*\w', long_description[label_index:]).start() + label_index + 1
 
         ingredients_end_index = long_description.find('<', ingredients_start_index)
 
@@ -121,15 +117,15 @@ class PetsmartScraper(Scraper):
     def _directions(self):
         long_description = self._long_description()
 
-        label_index = long_description.find('<b>Directions')
-
-        # There are no directions
-        if label_index == -1:
+        try:
+            label_index = re.search('((<b>)|(<strong>))Directions', long_description).start()
+            label_index = long_description.find('Directions', label_index)
+        except:
             return None
 
-        directions_start_index = re.search('>\s*\w', long_description[label_index+3:]).start() + label_index + 4
+        directions_start_index = re.search('>\s*\w', long_description[label_index:]).start() + label_index + 1
 
-        directions_end_index = re.search('(<b>)|(<p>)', long_description[directions_start_index:]).start() + directions_start_index
+        directions_end_index = re.search('(<b>)|(<p>)|(<strong>)', long_description[directions_start_index:]).start() + directions_start_index
 
         return long_description[directions_start_index:directions_end_index]
 
@@ -344,9 +340,13 @@ class PetsmartScraper(Scraper):
             return 0
 
     def _in_stores(self):
+        if re.search('Not Sold In Stores', self.page_raw_text):
+            return 0
         return 1
 
     def _web_only(self):
+        if not self._in_stores():
+            return 1
         return 0
 
     def _home_delivery(self):
