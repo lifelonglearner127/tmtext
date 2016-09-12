@@ -24,7 +24,7 @@ class SamsclubScraper(Scraper):
     ############### PREP+
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.samsclub.com/sams/(.+/)?prod<prod-id>.ip or http://www.samsclub.com/sams/(.+/)?<cat-id>.cp for shelf pages"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.samsclub.com/sams/(.+/)?prod<prod-id>.ip or http://www.samsclub.com/sams/(.+/)?<cat-id>.cp or http://www.samsclub.com/sams/pagedetails/content.jsp?pageName=<page-name> for shelf pages"
 
     reviews_tree = None
     max_score = None
@@ -62,7 +62,8 @@ class SamsclubScraper(Scraper):
         return self.failure_type
 
     def _is_shelf(self):
-        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?\d+\.cp$", self.product_page_url):
+        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?\d+\.cp$", self.product_page_url) or \
+            re.match(r"^http://www\.samsclub\.com/sams/pagedetails/content.jsp\?pageName=.+$", self.product_page_url):
             return True
 
     def not_a_product(self):
@@ -250,13 +251,27 @@ class SamsclubScraper(Scraper):
 
     def _image_urls(self):
         if self._is_shelf():
-            images = self.tree_html.xpath('//category-carousel[@carousel-type="featured"]//img/@src')
-            images = map(lambda i: i.split('?')[0], images)
+            images = []
+
+            background_images = re.findall('background: url\(http://.+\)', self.page_raw_text)
+            background_images = map(lambda i: re.search('\((http://.+)\)', i).group(1), background_images)
+
+            images += background_images
+
+            other_images = self.tree_html.xpath('//img[not(parent::figure)]/@src')
+            images += other_images
+
+            images = filter(lambda i: re.match('^http://', i), images)
+
+            featured_images = self.tree_html.xpath('//category-carousel[@carousel-type="featured"]//img/@src')
 
             if self.tree_html.xpath('//div[@class="container" and child::nav]//category-carousel[@carousel-type="featured"]'):
-                images = images[:3]
+                featured_images = featured_images[:3]
             else:
-                images = images[:5]
+                featured_images = featured_images[:5]
+
+            featured_images = map(lambda i: i.split('?')[0], featured_images)
+            images += featured_images
 
             for image in map(lambda i: i['image'], self._items()):
                 if not image in images:
