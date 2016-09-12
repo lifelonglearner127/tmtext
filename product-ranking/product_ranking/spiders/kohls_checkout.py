@@ -152,6 +152,8 @@ class KohlsSpider(scrapy.Spider):
 
     def parse_page(self, response):
         meta = response.meta
+        if meta.get('promo'):
+            self.log(response.body_as_unicode())
         if 'You can only purchase' in response.body_as_unicode():
             meta['retry'] = True
             meta['quantity'] = 1
