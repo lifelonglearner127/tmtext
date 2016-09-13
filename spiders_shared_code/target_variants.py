@@ -1,4 +1,5 @@
 import re
+
 import json
 from pprint import pprint
 
@@ -159,15 +160,15 @@ class TargetVariants(object):
             'Origin': 'http://www.target.com',
             'Pragma': 'no-cache',
             'Referer': self.item_info['dynamicKitURL'],
-            'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36'
         }
-
-        response = requests.post(url, data=json.dumps(payload), headers=headers)
-        # TODO: url http://www.target.com/p/mid-rise-straight-leg-jeans-curvy-fit-black-mossimo/-/A-15545812 fails
         try:
+            response = requests.post(url, data=json.dumps(payload), headers=headers)
+            # TODO: url http://www.target.com/p/mid-rise-straight-leg-jeans-curvy-fit-black-mossimo/-/A-15545812 fails
+
             return response.json()['products']
         except:
-            print 'ERROR! ' + response.text
+            print 'ERROR getting avilability info! '# + response.text
 
     def _extract_location_id(self, product_id):
         " extract location id to use it in stock status checking "
@@ -185,7 +186,7 @@ class TargetVariants(object):
             'Origin': 'http://www.target.com',
             'Pragma': 'no-cache',
             'Referer': self.item_info['dynamicKitURL'],
-            'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36'
         }
 
         response = requests.get(url, headers=headers)
@@ -200,7 +201,7 @@ class TargetVariants(object):
             variants = []
 
             headers = {
-                'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36'
             }
             page_raw_text = requests.get(self.item_info['dynamicKitURL'], headers=headers).content
             # decides if users can see "get it in 4-7 business days"
@@ -228,10 +229,12 @@ class TargetVariants(object):
                     continue
 
                 if 'locations' in item['products'][0]:
-                    status = True if item['products'][0]['locations'][0]['availability_status'] == 'IN_STOCK' else False
+                    status = False
                     try:
+                        status = True if item['products'][0]['locations'][0][
+                                             'availability_status'] == 'IN_STOCK' else False
                         availability_info[product_id].append(status)
-                    except KeyError:
+                    except (KeyError, IndexError):
                         availability_info[product_id] = [status]
 
             for item in self.item_info['SKUs']:
@@ -250,14 +253,27 @@ class TargetVariants(object):
                         else None, # convert price
                     'properties' : {},
                     'image_url' : item['Images'][0]['PrimaryImage'][0]['image'],
-                    'selected' : None,
+                    'selected' : False,
+                    'upc':None,
+                    'dpci': None,
                 }
+                # Adding UPC, dpci and tcin
 
+                v['upc'] = item.get('UPC')
+                v['dpci'] = item.get('DPCI')
+                img_url = v.get('image_url')
+                v['tcin'] = img_url.split('/')[-1] if img_url else None
                 v['in_stock'] = any(availability_info.get(item.get('partNumber', True), [True]))  # TODO: this fails if written as indexes ([]), not get()
 
                 for attribute in item.get('VariationAttributes', []):
                     v['properties'][ attribute['name'].lower() ] = attribute['value']
 
+                # Extracting selected color from page html and comaring with current variant color
+                current_color = v['properties'].get('color')
+                selected_color = self.tree_html.xpath('.//*[@aria-checked="true"]/input/@data-key')
+                selected_color = selected_color[0] if selected_color else None
+                if selected_color == current_color and len(v['properties']) == 1:
+                    v['selected'] = True
                 variants.append(v)
 
             if variants:

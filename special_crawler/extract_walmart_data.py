@@ -127,7 +127,7 @@ class WalmartScraper(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
+        m = re.match("https?://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -296,7 +296,8 @@ class WalmartScraper(Scraper):
         response_text = self.load_page_from_url_with_number_of_retries(request_url)
         tree = html.fromstring(response_text)
 
-        if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']"):
+        if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']") or \
+            tree.xpath("//div[@id='iframe-video-content']//script[@type='text/javascript']"):
             self.has_video = True
             self.has_sellpoints_media = True
 
@@ -922,6 +923,9 @@ class WalmartScraper(Scraper):
 
             start_index = self._get_description_separator_index(description)
 
+            if start_index == None:
+                return
+
             long_description = description[start_index:]
 
             possible_end_indexes = []
@@ -936,7 +940,7 @@ class WalmartScraper(Scraper):
                     possible_end_indexes.append(index)
 
             index = long_description.find('<h3>')
-            if index > -1:
+            if index > -1 and not index == long_description.find('<h3>About'):
                 possible_end_indexes.append(index)
 
             if possible_end_indexes:
@@ -1826,15 +1830,17 @@ class WalmartScraper(Scraper):
 
         if self.is_bundle_product:
             image_list = self.tree_html.xpath("//div[contains(@class, 'choice-hero-non-carousel')]//img/@src")
-
+            image_dimensions = []
             for index, url in enumerate(image_list):
                 if ".jpg?" in url:
                     image_list[index] = url[:url.rfind(".jpg?") + 4]
                 elif ".png" in url:
                     image_list[index] = url[:url.rfind(".png?") + 4]
+                image_dimensions.append(1)
 
             image_list = [url for index, url in enumerate(image_list) if index > 4 or not self._no_image(url)]
 
+            self.image_dimensions = image_dimensions
             if image_list:
                 return image_list
 
@@ -1867,7 +1873,7 @@ class WalmartScraper(Scraper):
                 zoom_image_url = item.get('versions', {}).get('zoom', None)
                 is_image_selected = False
 
-                if zoom_image_url and zoom_image_url.startswith("http://i5.walmartimages.com"):
+                if zoom_image_url and re.match("https?://i5.walmartimages.com", zoom_image_url):
                     if no_image_check_count_limit < 0:
                         images_carousel.append(zoom_image_url)
                         image_dimensions.append(1)
@@ -1878,7 +1884,7 @@ class WalmartScraper(Scraper):
                         image_dimensions.append(1)
                         no_image_check_count_limit -= 1
 
-                if not is_image_selected and hero_image_url and hero_image_url.startswith("http://i5.walmartimages.com"):
+                if not is_image_selected and hero_image_url and re.match("https?://i5.walmartimages.com", hero_image_url):
                     if no_image_check_count_limit < 0:
                         images_carousel.append(hero_image_url)
                         image_dimensions.append(0)
@@ -2026,7 +2032,7 @@ class WalmartScraper(Scraper):
 
                 return self.product_info_json
             else:
-                page_raw_text = self.page_raw_text
+                page_raw_text = requests.get(self.product_page_url).content
                 product_info_json = json.loads(re.search('define\("product\/data",\n(.+?)\n', page_raw_text).group(1))
 
                 self.product_info_json = product_info_json
@@ -2401,9 +2407,24 @@ class WalmartScraper(Scraper):
 
         if self._version() == "Walmart v2":
             self._extract_product_info_json()
-            return self.product_info_json["buyingOptions"]["seller"]["displayName"]
+            seller = self.product_info_json["buyingOptions"]["seller"]["displayName"]
+            if not self.product_info_json["buyingOptions"]["onlineOnly"] and seller != "Walmart.com":
+                return "Walmart store"
+            return seller
 
         return None
+
+    def _seller_id(self):
+        self._extract_product_info_json()
+        if self._primary_seller() == "Walmart store":
+            return None
+        return self.product_info_json["buyingOptions"]["seller"]["sellerId"]
+
+    def _us_seller_id(self):
+        self._extract_product_info_json()
+        if self._primary_seller() == "Walmart store":
+            return None
+        return self.product_info_json["buyingOptions"]["seller"]["catalogSellerId"]
 
     def _site_online(self):
         """Extracts whether the item is sold by the site and delivered directly
@@ -2468,6 +2489,9 @@ class WalmartScraper(Scraper):
             for marketplace in marketplace_seller_names:
                 if "walmart.com" in marketplace.text_content().lower().strip():
                     return 1
+
+        if pinfo_dict.get("buyingOptions", {}).get("allVariantsOutOfStock") == False:
+            return 1
 
         return 0
 
@@ -3056,6 +3080,8 @@ class WalmartScraper(Scraper):
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
         "primary_seller": _primary_seller, \
+        "seller_id": _seller_id, \
+        "us_seller_id": _us_seller_id, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "review_count": _review_count, \

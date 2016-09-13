@@ -136,9 +136,15 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod})
+                          meta={'product': prod, 'handle_httpstatus_list': [404]})
 
     def _parse_single_product(self, response):
+        if response.status == 404:
+            product = response.meta.get('product', SiteProductItem())
+            product['url'] = response.url
+            product['not_found'] = True
+            product['response_code'] = 404
+            return product
         return self.parse_product(response)
 
     dynamic_props = {}
@@ -421,6 +427,9 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             prod['not_found'] = True
             yield prod
             return
+
+        prod['_jcpenney_has_size_range'] = bool(response.xpath(
+            '//*[contains(@class, "skuOptions") and contains(text(), "size range")]'))  # a temporary hack, see BZ #9913
 
         product_id = is_empty(re.findall('ppId=([a-zA-Z0-9]+)&{0,1}', response.url))
 

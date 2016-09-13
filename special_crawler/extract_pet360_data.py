@@ -122,6 +122,9 @@ class Pet360Scraper(Scraper):
         if len(variants) > 1:
             return variants
 
+    def _no_longer_available(self):
+        return 0
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -306,6 +309,7 @@ class Pet360Scraper(Scraper):
         "ingredients" : _ingredients, \
         "ingredient_count" : _ingredient_count, \
         "variants" : _variants, \
+        "no_longer_available" : _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "htags" : _htags, \

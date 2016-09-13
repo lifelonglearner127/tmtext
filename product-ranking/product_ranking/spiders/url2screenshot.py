@@ -12,6 +12,7 @@ import random
 import re
 import urlparse
 import shutil
+import datetime
 
 import scrapy
 from scrapy.conf import settings
@@ -102,7 +103,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.product_url = kwargs['product_url']
         self.width = kwargs.get('width', 1280)
         self.height = kwargs.get('height', 1024)
-        self.timeout = kwargs.get('timeout', 30)
+        self.timeout = kwargs.get('timeout', 60)
         self.image_copy = kwargs.get('image_copy', None)
         self.user_agent = kwargs.get(
             'user_agent',
@@ -147,12 +148,27 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self.check_bad_results_function = _check_bad_results_macys
 
     def make_screenshot_for_macys(self, driver, output_fname):
+        #time.sleep(7*60)  # delay for PhantomJS2 unpacking?
         rasterize_script = os.path.join(CWD, 'rasterize.js')
-        # TODO: phantomjs2
-        cmd = 'phantomjs --ssl-protocol=any {script} "{url}" {output_fname} {width}px*{height}px'.format(
+        phantomjs_binary = 'phantomjs' if not os.path.exists('/usr/sbin/phantomjs2') else '/usr/sbin/phantomjs2'
+        # cmd = 'phantomjs --ssl-protocol=any {script} "{url}" {output_fname} {width}px*{height}px'.format(
+        #     script=rasterize_script, url=self.product_url, output_fname=output_fname,
+        #     width=self.width)#, height=self.height
+        cmd = '{phantomjs_binary} --ssl-protocol=any {script} "{url}" {output_fname} {width}px'.format(
             script=rasterize_script, url=self.product_url, output_fname=output_fname,
-            width=self.width, height=self.height)
+            width=self.width, phantomjs_binary=phantomjs_binary)#, height=self.height
+        self.log('Using %s' % phantomjs_binary)
+        self.log(cmd)
+        # extra debug data
+        version_file = '/tmp/phantomjs_version.txt'
+        if not os.path.exists(version_file):
+            os.system('{phantomjs_binary} -v > {version_file} 2>&1'.format(
+                phantomjs_binary=phantomjs_binary, version_file=version_file))
+        if os.path.exists(version_file):
+            self.log('PhantomJS real version: %s' % open(version_file, 'r').read())
+        _start = datetime.datetime.now()
         os.system(cmd)
+        self.log('Command finished in %s second(s)' % ((datetime.datetime.now() - _start).total_seconds()))
         assert os.path.exists(output_fname), 'Output file does not exist'
         if self.image_copy:  # save a copy of the file if needed
             shutil.copyfile(output_fname, self.image_copy)
@@ -415,6 +431,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         try:
             self.prepare_driver(driver)
             self.make_screenshot(driver, t_file.name)
+            self.log('Screenshot was made for file %s' % t_file.name)
         except Exception as e:
             self.log('Exception while getting response using selenium! %s' % str(e))
             # lets try with another driver
@@ -427,6 +444,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
             driver = self.init_driver(name=another_driver_name)
             self.prepare_driver(driver)
             self.make_screenshot(driver, t_file.name)
+            self.log('Screenshot was made for file %s (2nd attempt)' % t_file.name)
             try:
                 if not DEBUG_MODE:
                     driver.quit()
@@ -446,14 +464,17 @@ class URL2ScreenshotSpider(scrapy.Spider):
                    self.crop_top+self.crop_height)
             area = img.crop(box)
             area.save(t_file.name, 'png')
+            self.log('Screenshot was cropped and saved to %s' % t_file.name)
             if self.image_copy:  # save a copy of the file if needed
                 area.save(self.image_copy, 'png')
 
         with open(t_file.name, 'rb') as fh:
             img_content = fh.read()
+            self.log('Screenshot content was read, size: %s bytes' % len(img_content))
 
         if self.remove_img is True:
             os.unlink(t_file.name)  # remove old output file
+            self.log('Screenshot file was removed: %s' % t_file.name)
 
         # yield the item
         item['url'] = response.url
@@ -462,6 +483,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         if not DEBUG_MODE:
             display.stop()
+
+        self.log('Item image key length: %s' % len(item.get('image', '')))
 
         if img_content:
             yield item

@@ -62,6 +62,9 @@ class LeviScraper(Scraper):
             pass
 
         try:
+            if self._no_longer_available():
+                return False
+
             itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
 
             if itemtype != "product":
@@ -181,6 +184,13 @@ class LeviScraper(Scraper):
 
     def _swatches(self):
         return self.lv._swatches()
+
+    def _no_longer_available(self):
+        nla = self.tree_html.xpath('//div[@class="rich-media-para"]/h2/text()')
+
+        if nla and nla[0] == 'This product is no longer available.':
+            return 1
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -436,6 +446,7 @@ class LeviScraper(Scraper):
         "long_description" : _long_description, \
         "variants": _variants, \
         "swatches": _swatches, \
+        "no_longer_available": _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
@@ -456,6 +467,7 @@ class LeviScraper(Scraper):
         "max_review" : _max_review, \
         "min_review" : _min_review, \
         "reviews" : _reviews, \
+
         # CONTAINER : SELLERS
         "price" : _price, \
         "price_amount" : _price_amount, \
@@ -472,8 +484,6 @@ class LeviScraper(Scraper):
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
-
-
 
         "loaded_in_seconds" : None, \
         }

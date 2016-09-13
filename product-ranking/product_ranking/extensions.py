@@ -32,8 +32,6 @@ except ImportError:
             print 'ERROR: CAN NOT IMPORT MONITORING PACKAGE!'
 
 
-amazon_public_key = 'AKIAIKTYYIQIZF3RWNRA'
-amazon_secret_key = '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'
 bucket_name = 'spiders-cache'
 
 
@@ -142,8 +140,7 @@ class StatsCollector(object):
 def _s3_cache_on_spider_close(spider, reason):
     utcnow = datetime.datetime.utcnow()
     # upload cache
-    bucket = S3Bucket(bucket_name, amazon_public_key, amazon_secret_key,
-                      public=False)
+    bucket = S3Bucket(bucket_name, public=False)
     folder_path = cache.get_partial_request_path(
         settings.HTTPCACHE_DIR, spider, utcnow)
     if not os.path.exists(folder_path):
@@ -222,7 +219,7 @@ class S3CacheDownloader(object):
                                 _load_from)
         # download s3 cache
         # TODO: speed up by using cache_map from DB!
-        conn = S3Connection(amazon_public_key, amazon_secret_key)
+        conn = S3Connection()
         bucket = conn.get_bucket(bucket_name)
         partial_path = cache.get_partial_request_path(
             settings.HTTPCACHE_DIR, crawler._spider, _load_from)
@@ -333,7 +330,7 @@ class IPCollector(object):
 if __name__ == '__main__':
     from pprint import pprint
     from boto.s3.connection import S3Connection
-    conn = S3Connection(amazon_public_key, amazon_secret_key)
+    conn = S3Connection()
     bucket = conn.get_bucket(bucket_name)
     if 'clear_bucket' in sys.argv:  # be careful!
         if raw_input('Delete all files? y/n: ').lower() == 'y':
@@ -357,6 +354,5 @@ if __name__ == '__main__':
         sys.path.append(os.path.join(CWD, '..', '..', 'deploy',
                                      'sqs_ranking_spiders'))
         from list_all_files_in_s3_bucket import list_files_in_bucket
-        for f in (list_files_in_bucket(
-                amazon_public_key, amazon_secret_key, bucket_name)):
+        for f in (list_files_in_bucket(bucket_name)):
             print f.key

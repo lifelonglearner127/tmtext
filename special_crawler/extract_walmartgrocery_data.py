@@ -81,6 +81,11 @@ class WalmartGroceryScraper(Scraper):
     def _price_currency(self):
         return 'USD'
 
+    def _in_stock(self):
+        if self._product_data()['data']['isOutOfStock']:
+            return 0
+        return 1
+
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################

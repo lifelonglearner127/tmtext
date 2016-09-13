@@ -116,8 +116,10 @@ class PetcoProductsSpider(ProductsSpider):
         return brand[0].strip() if brand else None
 
     def _parse_sku(self, response):
-        sku = response.css(
-            '.product-sku::text').re(u'SKU:.(\d+)')
+        sku = response.xpath("//input[@id='primarySku']/@value").extract()
+        if len(sku[0]) < 1:
+            sku = response.css(
+                '.product-sku::text').re(u'SKU:.(\d+)')
 
         return sku[0] if sku else None
 

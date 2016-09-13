@@ -98,6 +98,11 @@ class AmazonScraper(Scraper):
     def _extract_page_tree(self, captcha_data=None, retries=0):
         self._initialize_browser_settings()
 
+        if '?' in self.product_page_url:
+            self.product_page_url = self.product_page_url + '&showDetailTechData=1'
+        else:
+            self.product_page_url = self.product_page_url + '?showDetailTechData=1'
+
         for i in range(self.MAX_RETRIES):
             self.timeout = False
 
@@ -279,6 +284,25 @@ class AmazonScraper(Scraper):
             asin = asin.group(1)
             return asin
 
+    def _specs(self):
+        specs = {}
+
+        for r in self.tree_html.xpath('//table[@id="productDetails_techSpec_section_1"]/tr'):
+            key = r.xpath('./th/text()')[0].strip()
+            value = r.xpath('./td/text()')[0].strip()
+
+            specs[key] = value
+
+        if not specs:
+            for r in self.tree_html.xpath('//div[@id="technicalProductFeatures"]/following-sibling::div/ul/li'):
+                key = r.xpath('./b/text()')[0]
+                value = r.text_content().split(': ')[-1]
+
+                specs[key] = value
+
+        if specs:
+            return specs
+
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='content pdClearfix'][1]//tbody//tr")
         if len(rows)==0:
@@ -325,10 +349,15 @@ class AmazonScraper(Scraper):
         description = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
         if description:
             description = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")[0]
+
+            hidden = description.xpath('//*[@class="aok-hidden"]')
             more_button = description.xpath('//div[@id="fbExpanderMoreButtonSection"]')
+
             description = html.tostring(description)
-            if more_button:
-                description = re.sub(html.tostring(more_button[0]), '', description)
+
+            for exclude in hidden + more_button:
+                description = re.sub(html.tostring(exclude), '', description)
+
             return self._clean_text(self._exclude_javascript_from_description(description))
 
         short_description = " " . join(self.tree_html.xpath("//div[@class='dv-simple-synopsis dv-extender']//text()")).strip()
@@ -603,10 +632,10 @@ class AmazonScraper(Scraper):
         return 0
 
     def _no_longer_available(self):
-        availability = self.tree_html.xpath('//div[@id="availability"]')
+        availability = self.tree_html.xpath('//*[@id="availability" or @id="pantry-availability"]')
 
         if availability:
-            if 'Currently unavailable' in availability[0].text_content():
+            if re.search('Currently [uU]navailable', availability[0].text_content()):
                 return 1
 
         return 0
@@ -755,7 +784,14 @@ class AmazonScraper(Scraper):
             swatch_image_json = json.loads(self._find_between(html.tostring(self.tree_html), 'data["colorImages"] = ', ';\n'))
 
             if swatch_image_json:
-                selected_color = self.tree_html.xpath('//span[@class="selection"]/text()')[0]
+                try:
+                    selected_color = self.tree_html.xpath('//span[@class="selection"]/text()')[0].strip()
+                except:
+                    try:
+                        selected_variations = json.loads( re.search('selected_variations":({.*?})', html.tostring(self.tree_html)).group(1))
+                        selected_color = ' '.join(reversed(selected_variations.values()))
+                    except:
+                        selected_color = None
 
                 for color in swatch_image_json:
                     if color == selected_color:
@@ -999,6 +1035,12 @@ class AmazonScraper(Scraper):
             return related_product_url_list
 
         return None
+
+    def _best_seller_category(self):
+        try:
+            return re.search('#[\d,]+ in ([^\(]+) \(', html.tostring(self.tree_html)).group(1)
+        except:
+            return re.search('#[\d,]+ in ([^<]+)</span>', html.tostring(self.tree_html)).group(1)
 
     ##########################################
     ################ CONTAINER : REVIEWS
@@ -1423,23 +1465,23 @@ class AmazonScraper(Scraper):
 
     def _brand(self):
         bn=self.tree_html.xpath('//div[@id="mbc"]/@data-brand')
-        if len(bn)>0 and bn[0]!="":
-            return bn[0]
+        if bn and bn[0].strip():
+            return bn[0].strip()
         bn=self.tree_html.xpath('//a[@id="brand"]//text()')
-        if len(bn)>0 and bn[0]!="":
-            return bn[0]
+        if bn and bn[0].strip():
+            return bn[0].strip()
         bn=self.tree_html.xpath('//div[@class="buying"]//span[contains(text(),"by")]/a//text()')
-        if len(bn)>0  and bn[0]!="":
-            return bn[0]
+        if bn and bn[0].strip():
+            return bn[0].strip()
         bn=self.tree_html.xpath('//a[contains(@class,"contributorName")]//text()')
-        if len(bn)>0  and bn[0]!="":
-            return bn[0]
+        if bn and bn[0].strip():
+            return bn[0].strip()
         bn=self.tree_html.xpath('//a[contains(@id,"contributorName")]//text()')
-        if len(bn)>0  and bn[0]!="":
-            return bn[0]
+        if bn and bn[0].strip():
+            return bn[0].strip()
         bn=self.tree_html.xpath('//span[contains(@class,"author")]//a//text()')
-        if len(bn)>0  and bn[0]!="":
-            return bn[0]
+        if bn and bn[0].strip():
+            return bn[0].strip()
         fts = self._features()
         if fts:
             for f in fts:
@@ -1492,6 +1534,7 @@ class AmazonScraper(Scraper):
         "asin" : _asin,\
         "features" : _features, \
         "feature_count" : _feature_count, \
+        "specs" : _specs, \
         "model_meta" : _model_meta, \
         "description" : _description, \
         "seller_ranking": _seller_ranking, \
@@ -1531,6 +1574,7 @@ class AmazonScraper(Scraper):
         "meta_tags": _meta_tags,\
         "meta_tag_count": _meta_tag_count,\
         "canonical_link": _canonical_link,
+        "best_seller_category" : _best_seller_category, \
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \

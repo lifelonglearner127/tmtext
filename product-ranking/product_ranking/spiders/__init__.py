@@ -361,7 +361,7 @@ class BaseProductsSpider(Spider):
                 if hasattr(self, 'is_nothing_found'):
                     if not self.is_nothing_found(response):
                         self.log(
-                            "Failed to scrape number of products per page", ERROR)
+                            "Failed to scrape number of products per page", WARNING)
             response.meta['scraped_results_per_page'] = scraped_results_per_page
 
         if total_matches is None:

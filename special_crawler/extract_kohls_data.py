@@ -220,7 +220,8 @@ class KohlsScraper(Scraper):
                 if inner_text in features_title_list:
                     break
 
-                short_description += html.tostring(element_block)
+                if not element_block.xpath('./a'):
+                    short_description += html.tostring(element_block)
         else:
             for element_block in description_block:
                 if element_block.tag == "ul":
@@ -265,7 +266,8 @@ class KohlsScraper(Scraper):
                     continue
 
                 if features_ul == 2:
-                    long_description += html.tostring(element_block)
+                    if not element_block.xpath('./em'):
+                        long_description += html.tostring(element_block)
         else:
             is_long_description = False
 
@@ -300,6 +302,11 @@ class KohlsScraper(Scraper):
     def _swatches(self):
         return self.kv.swatches()
 
+    def _no_longer_available(self):
+        if self._is_out_of_stock():
+            return 1
+        return 0
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -313,13 +320,6 @@ class KohlsScraper(Scraper):
             for alt_image in self.product_info_json["productItem"]["media"]["alternateImages"]:
                 if not alt_image["largeImage"] in image_urls:
                     image_urls.append(alt_image["largeImage"])
-
-        if self.product_info_json["productItem"]["variants"].get('preSelectedColor',None):                
-            color_swatch_images = self.tree_html.xpath("//div[@itemtype='http://schema.org/Product']/meta[@itemprop='image']/@content")
-            color_swatch_images = [url[:url.find("?")] + "?wid=1000&amp;hei=1000&amp;op_sharpen=1" if url.find("?") > 0 else url for url in color_swatch_images]
-            for img in color_swatch_images:
-                if not img in image_urls:
-                    image_urls.append(img)
 
         if image_urls:
             return image_urls
@@ -640,6 +640,8 @@ class KohlsScraper(Scraper):
         "ingredient_count": _ingredients_count,
         "variants": _variants,
         "swatches": _swatches,
+        "no_longer_available": _no_longer_available,
+
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \

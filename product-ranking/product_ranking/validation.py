@@ -23,6 +23,7 @@ from twisted.python import log
 from product_ranking.items import SiteProductItem
 from product_ranking import settings
 
+
 class bcolors:  # constants to avoid using any 3rd-party lib
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -709,6 +710,90 @@ class BaseValidator(object):
 
     def _validate__subitem(self, val):
         return val in (True, False, None, '')
+    
+    def _validate__jcpenney_has_size_range(self, val):
+        return val in (True, False, None, '')
+    
+    def _validate_level1(self, val):
+        return val in (True, False, None, '')
+    
+    def _validate_level2(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_level3(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_level4(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_level5(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_level6(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_level7(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_level8(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_level9(self, val):
+        return val in (True, False, None, '')
+    
+    def _validate_level10(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_dpci(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_tcin(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_origin(self, val):
+        return val in (True, False, None, '')
+
+    def _validate_asin(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_available_online(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_available_store(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_is_sponsored_product(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_minimum_order_quantity(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_price_club(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_price_club_with_discount(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_price_with_discount(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_shipping_cost(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_shipping_included(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_subscribe_and_save(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_walmart_category(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_walmart_exists(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_walmart_url(self, val):
+        return True  # TODO: better validation!
 
     def _get_failed_fields(self, data, add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)

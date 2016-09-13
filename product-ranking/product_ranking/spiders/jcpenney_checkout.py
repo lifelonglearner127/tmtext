@@ -1,7 +1,9 @@
 import re
 import socket
 import time
+import json
 
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
@@ -53,10 +55,9 @@ class JCpenneySpider(BaseCheckoutSpider):
         self._click_attribute(color_attribute_xpath,
                               color_attributes_xpath,
                               element)
-
+        time.sleep(10)
         # Remove focus to avoid hiddend the above element
         self._find_by_xpath('//h1')[0].click()
-        time.sleep(4)
 
     def select_width(self, element=None):
         width_attribute_xpath = '*//div[@id="skuOptions_width"]//' \
@@ -202,8 +203,14 @@ class JCpenneySpider(BaseCheckoutSpider):
             return is_empty(re.findall('\$([\d\.]+)', order_total))
 
     def _get_item_name(self, item):
-        return is_empty(item.xpath(
-                        '*//*[contains(@class,"brand_name")]/a/text()').extract())
+        page_source = self.driver.page_source
+        try:
+            item_info = re.findall(
+                'var jcpORDERJSONjcp = (\{.+?\});', page_source, re.MULTILINE)[0]
+            name = json.loads(item_info).get('purchasedItems')[0].get('displayName')
+        except IndexError:
+            name = ''
+        return name
 
     def _get_item_id(self, item):
         return is_empty(item.xpath(
@@ -227,3 +234,30 @@ class JCpenneySpider(BaseCheckoutSpider):
         return is_empty(item.xpath(
                         '*//select[@name="quantity"]//option'
                         '[@selected="true"]/text()').extract())
+
+    def _enter_promo_code(self, promo_code):
+        self.log('Enter promo code: {}'.format(promo_code))
+        promo_field= self._find_by_xpath('//div[@class="cr-coupon"]/*[@id="cr-code"]')[0]
+        promo_field.send_keys(promo_code)
+        time.sleep(2)
+        promo_field.send_keys(Keys.ENTER)
+        time.sleep(8)
+
+    def _get_promo_total(self):
+        order_total_element = self.wait.until(
+            EC.element_to_be_clickable(
+                (By.XPATH, '//div[@class="row order_total"]'
+                           '/span[@class="flt_rgt"]')))
+
+        if order_total_element:
+            order_total = order_total_element.text
+            return is_empty(re.findall('\$([\d\.]+)', order_total))
+
+    def _get_promo_subtotal(self):
+        order_subtotal_element = self.wait.until(
+            EC.visibility_of_element_located((
+                By.XPATH, '//*[@class="flt_wdt total"]/'
+                          'span[@class="flt_rgt marginlft"]')))
+        if order_subtotal_element:
+            order_subtotal = order_subtotal_element.text
+            return is_empty(re.findall('\$([\d\.]+)', order_subtotal))

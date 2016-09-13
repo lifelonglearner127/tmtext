@@ -64,9 +64,19 @@ class MacysVariants(object):
         # Single Color Product
         else:
             selected_color = product_info_json.get('selectedColor', None)
+            if not selected_color:
+                # Sometimes selectedColor is empty, getting color from upcMap
+                prod_id = product_info_json.get('id', None)
+                try:
+                    color_list = product_info_json.get('upcMap', None).get(prod_id, None)
+                    selected_color = list(set([l.get('color') for l in color_list]))
+                    selected_color = selected_color[0] if len(selected_color)==1 else None
+                except BaseException:
+                    print "Unable to get single color for product id {}".format(prod_id)
+                    selected_color = None
             colors_information[selected_color] = {}
-            price = self.tree_html.xpath('//*[@id="productHeader"]//meta[@itemprop="price"]/@content')[0]
-            colors_information[selected_color]['price'] = float(price.replace("$",""))
+            price = self.tree_html.xpath('//*[@id="productHeader"]//meta[@itemprop="price"]/@content')
+            colors_information[selected_color]['price'] = float(price[0].replace("$","")) if price else None
         return colors_information
 
     def __fill_variant(self, variant, colors_information):
@@ -82,7 +92,6 @@ class MacysVariants(object):
                 vr['price'] = colors_information[variant_color]['price']
             except KeyError:
                 return  # no such variant?
-            
             if variant.get('upc',None):
                 vr['upc'] = variant['upc']
             if colors_information[variant_color].get('img_urls', None):
@@ -177,7 +186,7 @@ class MacysVariants(object):
 
             # Get dict of key:color, value: {price, img_urls}
             colors_information = self._get_color_to_price_and_url(product_info_json)
-            
+
             # Calculate all variants crossing sizes with colors
             variation_values_list = [sizes, colors_information.keys()]
             variation_values_crossed = set(itertools.product(*variation_values_list))
