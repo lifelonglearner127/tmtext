@@ -445,12 +445,15 @@ class AmazonBaseClass(BaseProductsSpider):
         #    reqs.append(marketplace_req)
 
         # Parse category
-        categories = self._parse_category(response)
+        categories_full_info = self._parse_category(response)
         # cond_set_value(product, 'category', category)
+        cond_set_value(product, 'categories_full_info', categories_full_info)
+        # Left old simple format just in case
+        categories = [c.get('name') for c in categories_full_info]
+        cond_set_value(product, 'categories', categories)
 
         # build_categories(product)
         category_rank = self._parse_category_rank(response)
-        cond_set_value(product, 'categories', categories)
         if category_rank:
             # Parse departments and bestseller rank
             department = amazon_parse_department(category_rank)
@@ -498,16 +501,21 @@ class AmazonBaseClass(BaseProductsSpider):
     def _parse_category(self, response):
         cat = response.xpath(
             '//span[@class="a-list-item"]/'
-            'a[@class="a-link-normal a-color-tertiary"]/text()')
+            'a[@class="a-link-normal a-color-tertiary"]')
         if not cat:
-            cat = response.xpath('//li[@class="breadcrumb"]/a[@class="breadcrumb-link"]/text()')
+            cat = response.xpath('//li[@class="breadcrumb"]/a[@class="breadcrumb-link"]')
 
-        category = []
+        categories_full_info = []
         for cat_sel in cat:
-            category.append(cat_sel.extract().strip())
+            c_url = cat_sel.xpath("./@href").extract()
+            c_url = urlparse.urljoin(response.url, c_url[0]) if c_url else None
+            c_text = cat_sel.xpath("./text()").extract()
+            c_text = c_text[0].strip() if c_text else None
+            categories_full_info.append({"url":c_url,
+                                         "name":c_text})
 
-        if category:
-            return category
+        if categories_full_info:
+            return categories_full_info
 
 
     def _parse_title(self, response, add_xpath=None):
