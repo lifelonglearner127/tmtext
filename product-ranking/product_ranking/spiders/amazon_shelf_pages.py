@@ -115,9 +115,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             "//div[@id='mainResults']/.//ul/li [contains(@id, 'result')] |"
             "//div[@id='atfResults']/.//ul/li[contains(@id, 'result')] |"
             "//div[@id='mainResults']/.//div[contains(@id, 'result')] |"
-            "//div[@id='btfResults']//ul/li[contains(@id, 'result')] |"
-            "//div[@id='btfResults']//ul/li[contains(@id, 'result')]"
-        )
+            "//div[@id='btfResults']//ul/li[contains(@id, 'result')]")
         links = []
         last_idx = -1
 
@@ -183,7 +181,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         if not links:
             self.log("Found no product links.", WARNING)
             # from scrapy.shell import inspect_response
-            # inspect_response(response, self)
+            # inspect_response(resp        onse, self)
 
         if links:
             for link, is_prime, is_prime_pantry, is_sponsored in links:
