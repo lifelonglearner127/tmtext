@@ -449,7 +449,7 @@ class AmazonBaseClass(BaseProductsSpider):
         # cond_set_value(product, 'category', category)
         cond_set_value(product, 'categories_full_info', categories_full_info)
         # Left old simple format just in case
-        categories = [c.get('name') for c in categories_full_info]
+        categories = [c.get('name') for c in categories_full_info] if categories_full_info else None
         cond_set_value(product, 'categories', categories)
 
         # build_categories(product)
@@ -504,12 +504,14 @@ class AmazonBaseClass(BaseProductsSpider):
             'a[@class="a-link-normal a-color-tertiary"]')
         if not cat:
             cat = response.xpath('//li[@class="breadcrumb"]/a[@class="breadcrumb-link"]')
+        if not cat:
+            cat = response.xpath('.//*[@id="nav-subnav"]/a[@class="nav-a nav-b"]')
 
         categories_full_info = []
         for cat_sel in cat:
             c_url = cat_sel.xpath("./@href").extract()
             c_url = urlparse.urljoin(response.url, c_url[0]) if c_url else None
-            c_text = cat_sel.xpath("./text()").extract()
+            c_text = cat_sel.xpath(".//text()").extract()
             c_text = c_text[0].strip() if c_text else None
             categories_full_info.append({"url":c_url,
                                          "name":c_text})
