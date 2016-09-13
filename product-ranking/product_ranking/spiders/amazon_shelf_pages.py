@@ -115,7 +115,9 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             "//div[@id='mainResults']/.//ul/li [contains(@id, 'result')] |"
             "//div[@id='atfResults']/.//ul/li[contains(@id, 'result')] |"
             "//div[@id='mainResults']/.//div[contains(@id, 'result')] |"
-            "//div[@id='btfResults']//ul/li[contains(@id, 'result')]")
+            "//div[@id='btfResults']//ul/li[contains(@id, 'result')] |"
+            "//div[@id='btfResults']//ul/li[contains(@id, 'result')]"
+        )
         links = []
         last_idx = -1
 
@@ -162,6 +164,22 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
 
             last_idx = idx
 
+        links2 = []
+        if not links:
+            #added for New fall toys
+            lis = response.xpath(
+                '//div[contains(@class,"a-carousel-viewport")]'
+                '//li[contains(@class,"a-carousel-card")]')
+            for li in lis:
+                is_prime = bool(li.xpath('.//i[contains(@class,"a-icon-prime")]'))
+                is_prime_pantry = False
+                is_sponsored = False
+                link = li.xpath('./a[contains(@class,"acs_product-image")]/@href').extract()
+                if len(link):
+                    link = 'http://' + self.allowed_domains[0] + '/' + link[0]
+                    links2.append((link, is_prime, is_prime_pantry, is_sponsored))
+
+        links = links + links2
         if not links:
             self.log("Found no product links.", WARNING)
             # from scrapy.shell import inspect_response
