@@ -209,7 +209,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
         tv = TargetVariants()
         tv.setupSC(response, zip_code=self.zip_code, item_info=response.meta['item_info'])
-        prod['variants'] = tv._variants()
+        # prod['variants'] = tv._variants()
         if not prod.get('upc') and prod.get('variants'):
             selected_upc = [v.get('upc') for v in prod.get('variants') if v.get('selected')]
             prod['upc'] = selected_upc[0] if selected_upc else None
@@ -425,7 +425,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         variant['tcin'] = item.get('tcin')
         variant['upc'] = item.get('upc')
         variant['properties'] = {}
-        variant['properties']['color'] = item.get('variation').get('color')
+        properties = item.get('variation', [])
+        for attribute in properties:
+            variant['properties'][attribute] = properties.get(attribute)
         variant['price'] = item.get(
             'price').get('offerPrice').get('formattedPrice', '').replace('$', '')
         image_info = item.get('enrichment').get('images')[0]
@@ -443,10 +445,12 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             product['description'] = item.get('product_description').get('downstream_description')
             product['brand'] = item.get('product_brand').get('manufacturer_brand')
             product['buyer_reviews'] = self._item_info_v3_reviews(item_info)
-            product['variants'] = self._item_info_v3_variants(item_info)
+            variants = self._item_info_v3_variants(item_info)
+            if variants:
+                product['variants'] = variants
             product['origin'] = item.get('country_of_origin')
             try:
-                selected_variant = product.get('variants')[0]
+                selected_variant = product.get('variants', [])[0]
                 product['image_url'] = selected_variant.get('image_url')
                 amount = float(selected_variant.get('price'))
                 product['price'] = self._item_info_v3_price(amount)
