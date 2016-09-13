@@ -420,8 +420,6 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     def _item_info_v3_variant(self, item, selected):
         variant = {}
-        import pprint
-        pprint.pprint(item)
         variant['selected'] = selected
         variant['dpci'] = item.get('dpci')
         variant['tcin'] = item.get('tcin')
@@ -454,8 +452,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 selected_variant = product.get('variants')[0]
                 product['image_url'] = selected_variant.get('image_url')
                 amount = selected_variant.get('price')
-
-                amount = float(amount)
+                amount = float(amount) if amount else None
                 product['price'] = self._item_info_v3_price(amount)
                 product['dpci'] = selected_variant.get('dpci')
                 product['upc'] = selected_variant.get('upc')
