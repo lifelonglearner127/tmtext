@@ -26,9 +26,6 @@ from product_ranking.validation import BaseValidator
 from product_ranking.validators.target_validator import TargetValidatorSettings
 from product_ranking.guess_brand import guess_brand_from_first_words
 
-# TODO: invalid buyer reviews and stock status for http://www.target.com/p/black-decker-2-slice-bread-and-bagel-toaster/-/A-13193088
-
-
 is_empty = lambda x, y=None: x[0] if x else y
 
 
@@ -409,6 +406,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         reviews = BuyerReviews(int(num_of_reviews), float(average_rating), rating_by_star)
         return reviews
 
+    @staticmethod
+    def _item_info_v3_availability(item):
+        return item.get('available_to_promise_network').get(
+            'availability') != 'UNAVAILABLE'
+
     def _item_info_v3_variants(self, item_info):
         items = item_info.get('item').get('child_items', [])
         variants = []
@@ -433,9 +435,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 'price').get('offerPrice').get('price')
         image_info = item.get('enrichment').get('images')[0]
         variant['image_url'] = self._item_info_v3_image(image_info)
-        in_stock = item.get('available_to_promise_network').get(
-            'availability') != 'UNAVAILABLE'
-        variant['in_stock'] = in_stock
+        variant['in_stock'] = self._item_info_v3_availability(item)
         return variant
 
     def _populate_from_v3(self, product, item_info):
@@ -458,6 +458,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 product['upc'] = selected_variant.get('upc')
                 product['image_url'] = selected_variant.get('image_url')
                 product['is_out_of_stock'] = False if selected_variant.get('in_stock') else True
+                product['no_longer_available'] = product['is_out_of_stock']
             except IndexError:
                 amount = item_info.get(
                     'price').get('offerPrice').get('formattedPrice')
@@ -472,6 +473,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 product['upc'] = item.get('upc')
                 image_info = item.get('enrichment').get('images')[0]
                 product['image_url'] = self._item_info_v3_image(image_info)
+                product['is_out_of_stock'] = False if self._item_info_v3_availability(
+                    item_info) else True
+                product['no_longer_available'] = product['is_out_of_stock']
         else:
             product['not_found'] = True
 
