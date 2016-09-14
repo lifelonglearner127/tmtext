@@ -71,11 +71,10 @@ class SubmitXMLItem(models.Model):
         'basic'  # user used some code to submit item and used Basic authentication
     )
 
-    user = models.ForeignKey(User, db_index=True)
+    user = models.ForeignKey(User)
     auth = models.CharField(max_length=15, choices=[(a, a) for a in _auth_types])
-    status = models.CharField(max_length=20, choices=[(c, c) for c in _status],
-                              db_index=True)
-    when = models.DateTimeField(default=datetime.datetime.now, db_index=True)
+    status = models.CharField(max_length=20, choices=[(c, c) for c in _status])  #, db_index=True)
+    when = models.DateTimeField(default=datetime.datetime.now)  #, db_index=True)
     multi_item = models.BooleanField(default=False)  # if multiple items have been merged into one
 
     def __unicode__(self):
