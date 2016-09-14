@@ -89,10 +89,11 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
             request.meta['shelf_name'] = response.meta.get('shelf_name')
             request.meta['shelf_path'] = response.meta.get('shelf_path')
             request.meta['ranking'] = product.xpath('.//span[@class="zg_rankNumber"]/text()').re('\d+')[0]
+            request.meta['product'] = SiteProductItem()
             yield request
 
     def parse_product(self, response):
-        product = SiteProductItem()
+        product = response.meta.get('product') if response.meta.get('product') else SiteProductItem()
         cond_set_value(product, 'shelf_path', response.meta.get('shelf_path'))
         cond_set_value(product, 'shelf_name', response.meta.get('shelf_name'))
         title = response.xpath('//h1/span/text()').extract()[0].strip()
@@ -106,6 +107,8 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
         cond_set_value(product, 'asin', asin)
         cond_set_value(product, 'url', response.url)
         cond_set_value(product, 'ranking', response.meta.get('ranking'))
+        brand = self._parse_brand(response)
+        cond_set_value(product, 'brand', brand)
 
         if self.match_target or self.match_walmart:
             req = Request(url='http://asintoupc.com', callback=self.get_payload, dont_filter=True)
