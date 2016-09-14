@@ -183,6 +183,7 @@ CACHES = {
 }
 
 SUBMISSION_HISTORY_CACHE_KEY = 'get_submission_history_as_json'
+STATISTICS_CACHE_KEY = 'get_statistics_as_json'
 
 
 if DEBUG and os.path.exists('/tmp/_django_log_sql'):
