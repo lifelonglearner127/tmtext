@@ -401,8 +401,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         return amount if amount else 0
 
     @staticmethod
-    def _item_info_v3_store_only(amount):
-        return amount == "see store for price"
+    def _item_info_v3_store_only(item):
+        return item.get('price').get('channelAvailability') == '0'
 
     @staticmethod
     def _item_info_v3_reviews(item_info):
@@ -443,6 +443,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         in_stock = item.get('available_to_promise_network').get(
             'availability') != 'UNAVAILABLE'
         variant['in_stock'] = in_stock
+        variant['is_in_store_only'] = self._item_info_v3_store_only(item) \
+                                      and not in_stock
         return variant
 
     def _populate_from_v3(self, product, item_info):
@@ -467,11 +469,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 product['image_url'] = selected_variant.get('image_url')
                 product['is_out_of_stock'] = False if selected_variant.get('in_stock') else True
             except IndexError:
-                amount = item_info.get(
-                    'price').get('offerPrice').get('formattedPrice')
-                if self._item_info_v3_store_only(amount):
-                    product['is_in_store_only'] = True
-                amount = self._item_info_v3_price_helper(item)
+                product['is_in_store_only'] = self._item_info_v3_store_only(item_info)
+                amount = self._item_info_v3_price_helper(item_info)
                 product['price'] = self._item_info_v3_price(amount)
                 product['dpci'] = item.get('dpci')
                 product['upc'] = item.get('upc')
