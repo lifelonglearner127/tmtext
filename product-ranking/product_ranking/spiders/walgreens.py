@@ -184,7 +184,7 @@ class WalGreensProductsSpider(BaseProductsSpider):
         cond_set_value(prod, 'no_longer_available', no_longer_available)
 
         img_url = response.xpath(
-            '//img[@id="main-product-image"]/@src').extract()
+            '//img[@id="main-product-image"]/@data-src').extract()
         if img_url:
             img_url = urlparse.urljoin(self.site, img_url[0])
             prod['image_url'] = img_url
