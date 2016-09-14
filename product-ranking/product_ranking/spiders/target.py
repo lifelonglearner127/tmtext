@@ -392,6 +392,15 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         return Price(priceCurrency=currency, price=amount)
 
     @staticmethod
+    def _item_info_v3_price_helper(item):
+        amount = item.get(
+            'price').get('offerPrice').get('formattedPrice', '').replace('$', '')
+        if not amount or 'see low price in cart' in amount:
+            amount = item.get(
+                'price').get('offerPrice').get('price')
+        return amount if amount else 0
+
+    @staticmethod
     def _item_info_v3_store_only(amount):
         return amount == "see store for price"
 
@@ -428,8 +437,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         properties = item.get('variation', [])
         for attribute in properties:
             variant['properties'][attribute] = properties.get(attribute)
-        variant['price'] = item.get(
-            'price').get('offerPrice').get('formattedPrice', '').replace('$', '')
+        variant['price'] = self._item_info_v3_price_helper(item)
         image_info = item.get('enrichment').get('images')[0]
         variant['image_url'] = self._item_info_v3_image(image_info)
         in_stock = item.get('available_to_promise_network').get(
@@ -463,7 +471,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                     'price').get('offerPrice').get('formattedPrice')
                 if self._item_info_v3_store_only(amount):
                     product['is_in_store_only'] = True
-                    amount = 0
+                amount = self._item_info_v3_price_helper(item)
                 product['price'] = self._item_info_v3_price(amount)
                 product['dpci'] = item.get('dpci')
                 product['upc'] = item.get('upc')
