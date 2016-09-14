@@ -26,9 +26,6 @@ from product_ranking.validation import BaseValidator
 from product_ranking.validators.target_validator import TargetValidatorSettings
 from product_ranking.guess_brand import guess_brand_from_first_words
 
-# TODO: invalid buyer reviews and stock status for http://www.target.com/p/black-decker-2-slice-bread-and-bagel-toaster/-/A-13193088
-
-
 is_empty = lambda x, y=None: x[0] if x else y
 
 
@@ -398,7 +395,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         if not amount or 'see low price in cart' in amount:
             amount = item.get(
                 'price').get('offerPrice').get('price')
-        return amount if amount else 0
+        return float(amount) if amount else 0
 
     @staticmethod
     def _item_info_v3_store_only(item):
@@ -417,6 +414,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         rating_by_star.update(rating_new)
         reviews = BuyerReviews(int(num_of_reviews), float(average_rating), rating_by_star)
         return reviews
+
+    @staticmethod
+    def _item_info_v3_availability(item):
+        return item.get('available_to_promise_network').get(
+            'availability') != 'UNAVAILABLE'
 
     def _item_info_v3_variants(self, item_info):
         items = item_info.get('item').get('child_items', [])
@@ -462,20 +464,26 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             try:
                 selected_variant = product.get('variants', [])[0]
                 product['image_url'] = selected_variant.get('image_url')
-                amount = float(selected_variant.get('price'))
+                amount = selected_variant.get('price')
+                amount = float(amount) if amount else None
                 product['price'] = self._item_info_v3_price(amount)
                 product['dpci'] = selected_variant.get('dpci')
                 product['upc'] = selected_variant.get('upc')
                 product['image_url'] = selected_variant.get('image_url')
                 product['is_out_of_stock'] = False if selected_variant.get('in_stock') else True
+                product['no_longer_available'] = product['is_out_of_stock']
+                product['is_in_store_only'] = selected_variant.get('is_in_store_only')
             except IndexError:
-                product['is_in_store_only'] = self._item_info_v3_store_only(item_info)
                 amount = self._item_info_v3_price_helper(item_info)
                 product['price'] = self._item_info_v3_price(amount)
                 product['dpci'] = item.get('dpci')
                 product['upc'] = item.get('upc')
                 image_info = item.get('enrichment').get('images')[0]
                 product['image_url'] = self._item_info_v3_image(image_info)
+                product['is_out_of_stock'] = False if self._item_info_v3_availability(
+                    item_info) else True
+                product['no_longer_available'] = product['is_out_of_stock']
+                product['is_in_store_only'] = self._item_info_v3_store_only(item_info) and product['is_out_of_stock']
         else:
             product['not_found'] = True
 

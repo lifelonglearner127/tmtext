@@ -196,6 +196,11 @@ class AmazonVariants(object):
 
             stockstatus_for_variants_list = [v for v in stockstatus_for_variants_list
                                              if v not in vars2remove]
+            xpath = './/script[contains(text(),"immutableURLPrefix")]/text()'
+            url_regex = """immutableURLPrefix['"]:['"](.+?)['"]"""
+            price_url = """https://www.amazon.com/gp/twister/ajaxv2?sid=161-9270754-5469207&ptd=PANTS&sCac=1&twisterView=glance&pgid=apparel_display_on_website&rid=R7YSNTPE9WG17SVNWRMD&dStr=size_name%2Ccolor_name&auiAjax=1&json=1&dpxAjaxFlag=1&isUDPFlag=1&ee=2&nodeID=1036592&parentAsin=B00CSJFB8M&enPre=1&storeID=apparel&psc=1&asinList=B00DKT0DKA&isFlushing=2&dpEnvironment=softlines&id=B00DKT0DKA&mType=full"""
+            price_url = """https://www.amazon.com/gp/twister/ajaxv2?sid=161-9270754-5469207&ptd=PANTS&sCac=1&twisterView=glance&pgid=apparel_display_on_website&rid=R7YSNTPE9WG17SVNWRMD&dStr=size_name%2Ccolor_name&auiAjax=1&json=1&dpxAjaxFlag=1&isUDPFlag=1&ee=2&nodeID=1036592&parentAsin=B00CSJFB8M&enPre=1&storeID=apparel&psc=1&asinList=B00C512YAQ&isFlushing=2&dpEnvironment=softlines&id=B00C512YAQ&mType=full"""
+            prive_regex = """-price\\["']>([^<]+)<"""
             if not stockstatus_for_variants_list:
                 return None
             else:
