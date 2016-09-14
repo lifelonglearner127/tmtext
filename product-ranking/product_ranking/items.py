@@ -266,9 +266,14 @@ class SiteProductItem(Item):
     available_online = Field()
     available_store = Field()
     subscribe_and_save = Field() # Samclub.com
+
     walmart_url = Field()  # For amazon_top_categories_products spider, url of product on Walmart, if found
     walmart_category = Field()  # For amazon_top_categories_products spider, category of product on Walmart, if found
     walmart_exists = Field()  # For amazon_top_categories_products - True/False
+
+    target_url = Field()  # For amazon_top_categories_products spider, url of product on Target, if found
+    target_category = Field()  # For amazon_top_categories_products spider, category of product on Target, if found
+    target_exists = Field()  # For amazon_top_categories_products - True/False
 
     price_club = Field(serializer=scrapy_price_serializer) # Samclub.com
     price_club_with_discount = Field(serializer=scrapy_price_serializer) # Samclub.com
