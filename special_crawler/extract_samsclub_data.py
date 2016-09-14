@@ -24,7 +24,7 @@ class SamsclubScraper(Scraper):
     ############### PREP+
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.samsclub.com/sams/(.+/)?prod<prod-id>.ip or http://www.samsclub.com/sams/(.+/)?<cat-id>.cp or http://www.samsclub.com/sams/pagedetails/content.jsp?pageName=<page-name> for shelf pages"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.samsclub.com/sams/(.+/)?(prod)?<prod-id>.ip or http://www.samsclub.com/sams/(.+/)?<cat-id>.cp or http://www.samsclub.com/sams/pagedetails/content.jsp?pageName=<page-name> for shelf pages"
 
     reviews_tree = None
     max_score = None
@@ -51,19 +51,15 @@ class SamsclubScraper(Scraper):
         self.HEADERS = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0', 'Cookie': 'myPreferredClub=6612'}
 
     def check_url_format(self):
-        m = re.match(r"^http://www\.samsclub\.com/sams/(.+/)?prod\d+\.ip$", self.product_page_url)
-        if m or self._is_shelf():
+        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?(prod)?\d+\.ip$", self.product_page_url):
             return True
-
-    def _failure_type(self):
-        if not self.tree_html.xpath("//div[@class='container' and @itemtype='http://schema.org/Product']"):
-            self.failure_type = "Invalid url"
-
-        return self.failure_type
-
-    def _is_shelf(self):
         if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?\d+\.cp$", self.product_page_url) or \
             re.match(r"^http://www\.samsclub\.com/sams/pagedetails/content.jsp\?pageName=.+$", self.product_page_url):
+            return True
+
+    def _is_shelf(self):
+        # default is shelf page
+        if not self.tree_html.xpath("//div[@class='container' and @itemtype='http://schema.org/Product']"):
             return True
 
     def not_a_product(self):
@@ -73,9 +69,22 @@ class SamsclubScraper(Scraper):
         and returns True if current page is one.
         '''
 
-        redirect = self.tree_html.xpath('//meta[@http-equiv="Refresh"]/@content')
+        redirect = self.tree_html.xpath('//meta[@http-equiv="Refresh" or @http-equiv="refresh"]/@content')
         if redirect:
-            self.product_page_url = re.search('url=(.*)', redirect[0]).group(1)
+            redirect_url = re.search('URL=(.*)', redirect[0], re.I).group(1)
+
+        if not redirect:
+            for javascript in self.tree_html.xpath('//script[@type="text/javascript"]/text()'):
+                javascript = re.sub('[\s\'"\+\;]','',javascript)
+                redirect = re.match('location.href=(.*)', javascript)
+
+                if redirect:
+                    redirect_url = redirect.group(1)
+                    if not re.match('https?://.+\.samsclub.com', redirect_url):
+                        redirect_url = 'http://www.samsclub.com' + redirect_url
+
+        if redirect:
+            self.product_page_url = redirect_url
 
         self.page_raw_text = requests.get(self.product_page_url, headers=self.HEADERS).content
         self.tree_html = html.fromstring(self.page_raw_text)
@@ -84,16 +93,6 @@ class SamsclubScraper(Scraper):
             self.sv.setupCH(self.tree_html)
         except:
             pass
-
-        if self._is_shelf():
-            return False
-
-        self._failure_type()
-
-        if self.failure_type:
-            self.ERROR_RESPONSE["failure_type"] = self.failure_type
-
-            return True
 
         return False
 
@@ -639,7 +638,8 @@ class SamsclubScraper(Scraper):
             return n
 
     def _num_items_no_price_displayed(self):
-        return self._results_per_page() - self._num_items_price_displayed()
+        if self._is_shelf():
+            return self._results_per_page() - self._num_items_price_displayed()
 
     def _meta_description_count(self):
         try:
