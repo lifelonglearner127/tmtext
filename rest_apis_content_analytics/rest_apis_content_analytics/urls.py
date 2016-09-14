@@ -60,6 +60,11 @@ urlpatterns += [
     url(r'^stats/$', StatsView.as_view(), name='stats_view')
 ]
 
+if 'fcgi' in settings.INSTALLED_APPS:
+    urlpatterns += [
+        url(r'^fcgi/', include('fcgi.urls')),
+    ]
+
 router = routers.SimpleRouter()
 router.register(r'comparetwoimages', CompareTwoImageViewSet, 'comparetwoimages')
 router.register(r'classifyimagesbysimilarity', ClassifyImagesBySimilarity, 'classifyimagesbysimilarity')

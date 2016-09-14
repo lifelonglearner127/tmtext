@@ -43,6 +43,7 @@ INSTALLED_APPS = (
     'statistics',
     'walmart_api',
     'mocked_walmart_api',
+    'fcgi',
 )
 
 REST_FRAMEWORK = {
