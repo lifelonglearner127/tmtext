@@ -43,9 +43,9 @@
       <div>
         <table class="stats_big_blue_area">
           <tr>
-            <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Total items submitted (all time) <span>{{ stats_all_walmart_xml_items|length }}</span></td>
-            <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Total successful (all time) <span>{{ stats_successful_walmart_xml_items|length }}</span></td>
-            <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Today (success/total) <span>{{ stats_today_successful_xml_items|length }} / {{ stats_today_all_xml_items|length }}</span></td>
+            <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Total items submitted (all time) <span>{{ stats_all_walmart_xml_items }}</span></td>
+            <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Total successful (all time) <span>{{ stats_successful_walmart_xml_items }}</span></td>
+            <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Today (success/total) <span>{{ stats_today_successful_xml_items }} / {{ stats_today_all_xml_items }}</span></td>
           </tr>
         </table>
       </div>

@@ -506,14 +506,22 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         return context
 
     def list(self, request):
+        start_ = datetime.datetime.now()
+        print 'START!!!', start_
         with open(get_walmart_api_invoke_log(request), "a+") as myfile:
             log_history = myfile.read().splitlines()
+
+        print '2!!!', (datetime.datetime.now() - start_).total_seconds()
 
         if isinstance(log_history, list):
             log_history.reverse()
 
+        print '3!!!', (datetime.datetime.now() - start_).total_seconds()
+
         pagination = self._paginate_log_file_results(request, log_history)
         pagination['log'] = pagination.pop('paginated_list')
+
+        print '4!!!', (datetime.datetime.now() - start_).total_seconds()
 
         return Response(pagination)
 
@@ -921,10 +929,39 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
             output[group_name] = result_for_group
         return Response(output)
 
-    def process_one_set(self, request_url, request_feed_id):
+    def process_one_set(self, request_url, request_feed_id, db_only=True):
+        """ Get feed status.
+            db_only - if True, then only DB results will be returned.
+                      if False, then a real HTTP request to Walmart will be created.
+        """
         # try to get the response from the DB, if it's available
         if SubmissionResults.objects.filter(feed_id=request_feed_id):
             return json.loads(SubmissionResults.objects.filter(feed_id=request_feed_id)[0].response)
+
+        if db_only:
+            # return that item is in progress
+            return {
+                "default": {
+                    "itemsReceived": 0,
+                    "itemsProcessing": 0,
+                    "server_name": "Not available yet, check later",
+                    "itemDetails": {
+                        "itemIngestionStatus": []
+                    },
+                    "feedStatus": "RECEIVED",
+                    "feedId": request_feed_id,
+                    "itemsFailed": 0,
+                    "ingestionErrors": {
+                        "ingestionError": None
+                    },
+                    "offset": 0,
+                    "limit": 50,
+                    "client_ip": "Not available yet, check later",
+                    "itemsSucceeded": 0,
+                    "submitted_at": str(datetime.datetime.now().isoformat())
+                },
+                "feed_id": request_feed_id
+            }
 
         start_ = datetime.datetime.now()
         walmart_api_signature = self.generate_walmart_api_signature(

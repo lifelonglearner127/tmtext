@@ -13,8 +13,10 @@ from walmart_api.models import *
 from walmart_api.views import (parse_walmart_api_log, get_walmart_api_invoke_log,
                                get_feed_status, CheckFeedStatusByWalmartApiViewSet)
 from walmart_api.context_processors import get_submission_history_as_json
-from walmart_api.utils import get_cache_key_for_request_or_user
+from walmart_api.utils import get_submission_history_cache_key_for_request_or_user,\
+    get_stats_cache_key_for_request_or_user
 from statistics.models import *
+from statistics.context_processors import stats_walmart_xml_items
 
 
 def run(command, shell=None):
@@ -79,7 +81,8 @@ class Command(BaseCommand):
                 try:
                     response = check_feed_view.process_one_set(  # this will get the feed ID from DB or will get live response
                         'https://marketplace.walmartapis.com/v2/feeds/{feedId}?includeDetails=true',
-                        feed_id)
+                        feed_id,
+                        db_only=False)
                 except Exception as e:
                     print str(e)
                     continue
@@ -101,6 +104,10 @@ class Command(BaseCommand):
                                       server_name=server_name, client_ip=client_ip)
 
             # re-create cache for each user
-            cache_key = get_cache_key_for_request_or_user(user)
+            cache_key = get_submission_history_cache_key_for_request_or_user(user)
             cache.delete(cache_key)
             get_submission_history_as_json(user)  # this will generate cache
+
+            cache_key = get_stats_cache_key_for_request_or_user(user)
+            cache.delete(cache_key)
+            stats_walmart_xml_items(user, generate_cache=True)  # this will generate cache
