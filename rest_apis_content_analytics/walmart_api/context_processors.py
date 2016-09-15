@@ -15,12 +15,15 @@ def _get_submission_history(request_or_user):
         return SubmissionHistory.objects.filter(user=request_or_user)
 
 
-def get_submission_history_as_json(request_or_user):
+def get_submission_history_as_json(request_or_user, generate_cache=False):
     cache_key = get_submission_history_cache_key_for_request_or_user(request_or_user)
 
     cached_data = cache.get(cache_key) if cache_key else None
     if cached_data and cache_key:
         return {'submission_history_as_json': cached_data}
+
+    if not generate_cache:
+        return {'submission_history_as_json': None}
 
     subm_history = _get_submission_history(request_or_user)
     if not subm_history:

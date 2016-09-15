@@ -105,7 +105,7 @@ class Command(BaseCommand):
             # re-create cache for each user
             cache_key = get_submission_history_cache_key_for_request_or_user(user)
             cache.delete(cache_key)
-            get_submission_history_as_json(user)  # this will generate cache
+            get_submission_history_as_json(user, generate_cache=True)  # this will generate cache
 
             cache_key = get_stats_cache_key_for_request_or_user(user)
             cache.delete(cache_key)
