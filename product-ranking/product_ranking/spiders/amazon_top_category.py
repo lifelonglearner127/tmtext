@@ -109,6 +109,8 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
         cond_set_value(product, 'ranking', response.meta.get('ranking'))
         brand = self._parse_brand(response)
         cond_set_value(product, 'brand', brand)
+        price = self._parse_price(response)
+        cond_set_value(product, 'price', price)
 
         if self.match_target or self.match_walmart:
             req = Request(url='http://asintoupc.com', callback=self.get_payload, dont_filter=True)
