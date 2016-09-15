@@ -193,6 +193,8 @@ if DEBUG and os.path.exists('/tmp/_django_log_sql'):
         'handlers': ['console'],
     }
 
+FORCE_SCRIPT_NAME = "/"
+
 
 TEMPLATES = [
     {
