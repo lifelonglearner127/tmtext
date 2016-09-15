@@ -67,7 +67,6 @@ class Command(BaseCommand):
             records = list(parse_walmart_api_log(user))
             records.reverse()
             for log_rec in records:  # TODO: parse server name and IP
-                time.sleep(1)
                 date = log_rec['datetime']
                 upc = log_rec['upc'].strip()
                 feed_id = log_rec['feed_id'].strip()
