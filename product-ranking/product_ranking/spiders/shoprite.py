@@ -2,32 +2,96 @@
 # -*- coding: utf-8 -*-
 import re
 import json
+import urllib
 from scrapy import Request
-from product_ranking.items import SiteProductItem, BuyerReviews, Price
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set_value, FLOATING_POINT_RGEX
 
 
 class ShopriteProductsSpider(BaseProductsSpider):
+    """This is a base shoprite.com class"""
     name = "shoprite_products"
     allowed_domains = ["shoprite.com"]
 
     PRODUCT_URL = "https://shop.shoprite.com/api/product/v5/product/store/{store}/sku/{sku}"
     SCREEN_URL = "https://shop.shoprite.com/store/{store}/browser/screen?width=1920&height=1080"
-    def __init__(self, *args, **kwargs):
+    SEARCH_URL = "https://shop.shoprite.com/store/{store}#/search/{search_term}" \
+                 "/1?queries=sort=Relevance"
+    PRODUCTS_URL = "https://shop.shoprite.com/api/product/v5/products/store/{store}" \
+                   "/search?sort=Relevance&skip={skip}&take=20&userId={user_id}&q={search_term}"
+
+    def __init__(self, store='59064008', *args, **kwargs):
         """Initiate input variables and etc."""
         super(ShopriteProductsSpider, self).__init__(*args, **kwargs)
+        self.store = kwargs.get('store', store)
+
+    def start_requests(self):
+        """Generate Requests from the SEARCH_URL and the search terms."""
+        for search_term in self.searchterms:
+            yield Request(
+                self.url_formatter.format(
+                    self.SEARCH_URL,
+                    store=self.store,
+                    search_term=urllib.quote_plus(search_term.encode('utf-8')),
+                ),
+                meta={'search_term': search_term, 'remaining': self.quantity},
+                callback=self._parse_helper
+            )
+
+        if self.product_url:
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            prod['url'] = self.product_url
+            prod['search_term'] = ''
+            yield Request(self.product_url,
+                          self._parse_single_product,
+                          meta={'product': prod})
+
+        if self.products_url:
+            urls = self.products_url.split('||||')
+            for url in urls:
+                prod = SiteProductItem()
+                prod['url'] = url
+                prod['search_term'] = ''
+                yield Request(url,
+                              self._parse_single_product,
+                              meta={'product': prod})
+
+    def _parse_helper(self, response):
+        meta = response.meta
+        meta['configuration'] = self._parse_info(
+            response) if not meta.get('configuration') else meta.get('configuration')
+        meta['token'] = self._parse_token(
+            meta.get('configuration')) if not meta.get('token') else meta.get('token')
+        meta['user_id'] = self._parse_user_id(
+            meta.get('configuration')) if not meta.get('user_id') else meta.get('user_id')
+        headers = {}
+        headers['Authorization'] = meta.get('token')
+        headers['Referer'] = response.url
+        headers['Accept'] = 'application/vnd.mywebgrocer.grocery-list+json'
+        return Request(self.PRODUCTS_URL.format(user_id=meta.get('user_id'),
+                                                store=self.store,
+                                                search_term=response.meta.get('search_term'),
+                                                skip=response.meta.get('skip', 0)),
+                       headers=headers,
+                       meta=meta)
 
     @staticmethod
     def _scrape_total_matches(response):
-        pass
+        return json.loads(response.body).get('TotalQuantity')
 
-    @staticmethod
-    def _scrape_product_links(response):
-        pass
+    def _scrape_product_links(self, response):
+        products = json.loads(response.body).get('Items')
+        for product_info in products:
+            yield None, self.parse_product(response, product_info)
 
-    @staticmethod
-    def _scrape_next_results_page_link(response):
-        pass
+    def _scrape_next_results_page_link(self, response):
+        info = json.loads(response.body)
+        page = info.get('PageLinks')[-1]
+        skip = info.get('Skip') + 20
+        if page.get('Rel') == 'next':
+            response.meta['skip'] = skip
+            return self._parse_helper(response)
 
     @staticmethod
     def _scrape_results_per_page(response):
@@ -39,21 +103,26 @@ class ShopriteProductsSpider(BaseProductsSpider):
 
     @staticmethod
     def _parse_price(product_info):
-        price_raw = product_info.get('CurrentPrice')
-        price = re.findall(FLOATING_POINT_RGEX, price_raw)
         currency = 'USD'
-        if price:
-            return Price(price=price[0], priceCurrency=currency)
-        else:
-            None
+        price = FLOATING_POINT_RGEX.findall(
+            product_info.get('CurrentPrice', ''))
+        if not price:
+            price = FLOATING_POINT_RGEX.findall(
+                product_info.get('RegularPrice', ''))
+        price = float(price[0]) if price else 0.0
+        return Price(price=price, priceCurrency=currency)
 
     @staticmethod
     def _parse_description(product_info):
         return product_info.get('Description')
 
     @staticmethod
-    def _parse_image_url(response):
-        pass
+    def _parse_image_url(product_info):
+        try:
+            image_url = product_info.get('ImageLinks')[1].get('Uri')
+        except IndexError:
+            image_url = None
+        return image_url
 
     @staticmethod
     def _parse_categories(response):
@@ -87,14 +156,18 @@ class ShopriteProductsSpider(BaseProductsSpider):
 
     @staticmethod
     def _parse_info(response):
-        token = response.xpath(
+        info = response.xpath(
             '//script[contains(text(), "var configuration =")]/text()'
         ).re(r'var configuration = (\{.+?\});')
-        return json.loads(token[0]) if token else {}
+        return json.loads(info[0]) if info else {}
 
     @staticmethod
     def _parse_token(configuration):
         return configuration.get('Token')
+
+    @staticmethod
+    def _parse_user_id(configuration):
+        return configuration.get('CurrentUser').get('UserId')
 
     @staticmethod
     def _parse_entry_url(configuration):
@@ -112,32 +185,38 @@ class ShopriteProductsSpider(BaseProductsSpider):
     def _parse_no_longer_available(product_info):
         return not product_info.get('IsAvailable')
 
+    @staticmethod
+    def _parse_url(store, sku):
+        return 'https://shop.shoprite.com' \
+               '/store/{store}#/product/sku/{sku}'.format(store=store, sku=sku)
+
     def _parse_single_product(self, response):
         """Same to parse_product."""
-        meta = response.meta
-        url = meta.get('product').get('url')
-        meta['store'] = self._parse_store(url)
-        meta['sku'] = self._parse_sku_url(url)
+        url = response.meta.get('product').get('url')
+        store = self._parse_store(url)
+        sku = self._parse_sku_url(url)
         configuration = self._parse_info(response)
-        meta['token'] = self._parse_token(configuration)
-        meta['entry_url'] = self._parse_entry_url(configuration)
+        token = self._parse_token(configuration)
         headers = {}
-        headers['Authorization'] = meta['token']
+        headers['Authorization'] = token
         headers['Referer'] = response.url
         headers['Accept'] = 'application/vnd.mywebgrocer.shop-entry+json'
-        return Request(self.PRODUCT_URL.format(store=meta['store'], sku=meta['sku']),
+        return Request(self.PRODUCT_URL.format(store=store, sku=sku),
                        headers=headers,
                        callback=self.parse_product,
-                       meta=meta)
+                       meta=response.meta)
 
-    def parse_product(self, response):
+    def parse_product(self, response, product_info=None):
         """Handles parsing of a product page."""
-        product = response.meta['product']
+        product = response.meta['product'] if response.meta.get('product') else SiteProductItem()
         # Set locale
         product['locale'] = 'en_US'
 
         # Parse json
-        product_info = json.loads(response.body)
+        if product_info:
+            product_info = product_info
+        else:
+            product_info = json.loads(response.body)
 
         # Parse title
         title = self._parse_title(product_info)
@@ -163,14 +242,22 @@ class ShopriteProductsSpider(BaseProductsSpider):
         no_longer_available = self._parse_no_longer_available(product_info)
         cond_set_value(product, 'no_longer_available', no_longer_available)
 
-        # Parse category
-        category = self._parse_category(product_info)
-        cond_set_value(product, 'category', category)
+        # # Parse category
+        # category = self._parse_category(product_info)
+        # cond_set_value(product, 'category', category)
 
         # Parse price
         price = self._parse_price(product_info)
         cond_set_value(product, 'price', price)
 
+        #Parse img_url
+        image_url = self._parse_image_url(product_info)
+        cond_set_value(product, 'image_url', image_url)
+
+        # Parse url
+        if not product.get('url'):
+            url = self._parse_url(self.store, sku)
+            cond_set_value(product, 'url', url)
 
         return product
 
