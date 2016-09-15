@@ -3,7 +3,6 @@ import re
 from HTMLParser import HTMLParser
 from collections import OrderedDict
 import scrapy
-from scrapy import FormRequest
 from scrapy.conf import settings
 from product_ranking.items import CheckoutProductItem
 
@@ -13,6 +12,8 @@ class KohlsSpider(scrapy.Spider):
     allowed_domains = ['kohls.com']  # do not remove comment - used in find_spiders()
 
     SHOPPING_CART_URL = 'http://www.kohls.com/checkout/shopping_cart.jsp'
+    PROMO_CODE_URL = "http://www.kohls.com/checkout/v2/json/wallet_applied_discount_json.jsp" \
+                     "?_DARGS=/checkout/v2/includes/wallet_discounts_update_forms.jsp.2"
 
     def __init__(self, *args, **kwargs):
         settings.overrides['ITEM_PIPELINES'] = {}
@@ -25,7 +26,7 @@ class KohlsSpider(scrapy.Spider):
              ' Gecko/20100101 Firefox/32.0')
         )
 
-        product_data = kwargs.get('product_data', "[]")
+        self.product_data = kwargs.get('product_data', "[]")
         self.product_data = json.loads(self.product_data)
         self.quantity = kwargs.get('quantity')
         if self.quantity:
@@ -141,14 +142,14 @@ class KohlsSpider(scrapy.Spider):
         meta['url'] = response.url
         if not meta.get('requested_color_not_available'):
             meta['requested_color_not_available'] = False
-        return FormRequest.from_response(response,
-                                         formname='pdpAddToBag',
-                                         formdata=formdata,
-                                         callback=self.parse_page,
-                                         method='POST',
-                                         dont_filter=True,
-                                         meta=meta
-                                        )
+        return scrapy.FormRequest.from_response(response,
+                                                formname='pdpAddToBag',
+                                                formdata=formdata,
+                                                callback=self.parse_page,
+                                                method='POST',
+                                                dont_filter=True,
+                                                meta=meta
+                                               )
 
     def parse_page(self, response):
         meta = response.meta
@@ -228,15 +229,35 @@ class KohlsSpider(scrapy.Spider):
             return item
 
     def _request_promo_code(self, response, promo_code, item):
-        formdata = {"/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": promo_code}
+        dyn_sess_conf = response.xpath('//form[@id="apply_promo_code_form"]'
+                                       '//input[@name="_dynSessConf"]/@value').extract()[0]
+        formdata = {"_dyncharset": "UTF-8",
+                    "_dynSessConf": dyn_sess_conf,
+                    "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": promo_code,
+                    "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": "+",
+                    "/atg/commerce/order/purchase"
+                    "/KLSPaymentInfoFormHandler"
+                    ".paymentInfoSuccessURL": "wallet_applied_discounts_tr_success_url",
+                    "_D:/atg/commerce/order/purchase"
+                    "/KLSPaymentInfoFormHandler.paymentInfoSuccessURL": "+",
+                    "/atg/commerce/order/purchase"
+                    "/KLSPaymentInfoFormHandler"
+                    ".paymentInfoErrorURL": "wallet_applied_discounts_tr_success_url",
+                    "_D:/atg/commerce/order/purchase"
+                    "/KLSPaymentInfoFormHandler.paymentInfoErrorURL": "+",
+                    "/atg/commerce/order/purchase"
+                    "/KLSPaymentInfoFormHandler.useForwards": "true",
+                    "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.useForwards": "+",
+                    "apply_promo_code": "submit",
+                    "_D:apply_promo_code": "+",
+                    "_DARGS": "/checkout/v2/includes/discounts_update_forms.jsp.2"}
         meta = response.meta
         meta['item'] = item
         meta['promo'] = True
-        return FormRequest.from_response(response,
-                                         formxpath='//form[@id="apply_promo_code_form"]',
-                                         formdata=formdata,
-                                         callback=self.parse_page,
-                                         method='POST',
-                                         dont_filter=True,
-                                         meta=meta
-                                        )
+        return scrapy.FormRequest(self.PROMO_CODE_URL,
+                                  formdata=formdata,
+                                  callback=self.parse_page,
+                                  method='POST',
+                                  dont_filter=True,
+                                  meta=meta
+                                 )
