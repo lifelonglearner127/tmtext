@@ -196,6 +196,22 @@ class AmazonVariants(object):
 
             stockstatus_for_variants_list = [v for v in stockstatus_for_variants_list
                                              if v not in vars2remove]
+            
+            if stockstatus_for_variants_list:
+                # Variant's price extraction block
+                # Extract parent asin and child asins to build url later
+                parent_asin = [v.get('asin') for v in stockstatus_for_variants_list if v.get('asin') and v.get('selected')]
+                print parent_asin
+                child_asins = [v.get('asin') for v in stockstatus_for_variants_list if v.get('asin') and not v.get('selected')]
+                print child_asins
+                # Extract url with price data
+                xpath = './/script[contains(text(),"immutableURLPrefix")]/text()'
+                url_regex = """immutableURLPrefix['"]:['"](.+?)['"]"""
+                # Build child variants urls based on parent url
+                price_url = """https://www.amazon.com/gp/twister/ajaxv2?sid=161-9270754-5469207&ptd=PANTS&sCac=1&twisterView=glance&pgid=apparel_display_on_website&rid=R7YSNTPE9WG17SVNWRMD&dStr=size_name%2Ccolor_name&auiAjax=1&json=1&dpxAjaxFlag=1&isUDPFlag=1&ee=2&nodeID=1036592&parentAsin=B00CSJFB8M&enPre=1&storeID=apparel&psc=1&asinList=B00DKT0DKA&isFlushing=2&dpEnvironment=softlines&id=B00DKT0DKA&mType=full"""
+                price_url = """https://www.amazon.com/gp/twister/ajaxv2?sid=161-9270754-5469207&ptd=PANTS&sCac=1&twisterView=glance&pgid=apparel_display_on_website&rid=R7YSNTPE9WG17SVNWRMD&dStr=size_name%2Ccolor_name&auiAjax=1&json=1&dpxAjaxFlag=1&isUDPFlag=1&ee=2&nodeID=1036592&parentAsin=B00CSJFB8M&enPre=1&storeID=apparel&psc=1&asinList=B00C512YAQ&isFlushing=2&dpEnvironment=softlines&id=B00C512YAQ&mType=full"""
+                # Get response and extract price for each variant
+                prive_regex = """price_feature_div.+-price\\["']>([^<]+)<"""
             if not stockstatus_for_variants_list:
                 return None
             else:
