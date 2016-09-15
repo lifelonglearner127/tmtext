@@ -81,8 +81,7 @@ class Command(BaseCommand):
                 try:
                     response = check_feed_view.process_one_set(  # this will get the feed ID from DB or will get live response
                         'https://marketplace.walmartapis.com/v2/feeds/{feedId}?includeDetails=true',
-                        feed_id,
-                        db_only=False)
+                        feed_id)
                 except Exception as e:
                     print str(e)
                     continue
