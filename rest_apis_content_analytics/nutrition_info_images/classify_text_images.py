@@ -348,11 +348,11 @@ def predict(test_set, clf=None, from_serialized_file=None):
     return predicted_examples
 
 
-def load_classifier(path=CWD + "/nutrition_info_images/serialized_classifier/nutrition_image_classifier.pkl"):
+def load_classifier(path=CWD + "/serialized_classifier/nutrition_image_classifier.pkl"):
     return joblib.load(path)
 
 
-def predict_one(image, clf=None, from_serialized_file=CWD + "nutrition_info_images/serialized_classifier/nutrition_image_classifier.pkl", is_url=False):
+def predict_one(image, clf=None, from_serialized_file=CWD + "/serialized_classifier/nutrition_image_classifier.pkl", is_url=False):
     '''Predicts label (text image/not) for an input image.
     :param image: image url or path
     :param clf: the classifier object, if passed directly
@@ -383,7 +383,7 @@ def classifier_main():
 
     training_set = [l[0]+l[1] for l in zip(training_set1,training_set4)]
 
-    trained, clf = train(training_set, serialize_file=CWD + "nutrition_info_images/serialized_classifier/nutrition_image_classifier.pkl")
+    trained, clf = train(training_set, serialize_file=CWD + "/serialized_classifier/nutrition_image_classifier.pkl")
 
     test_set1 = read_images_set("nutrition_images_test.csv")
     test_set2 = [l[100:] for l in screenshots_set]
@@ -393,7 +393,7 @@ def classifier_main():
 
     imgs, examples, labels = test_set
     nr_predicted = 0
-    predicted = predict(test_set, clf, from_serialized_file=CWD + "nutrition_info_images/serialized_classifier/nutrition_image_classifier.pkl")
+    predicted = predict(test_set, clf, from_serialized_file=CWD + "/serialized_classifier/nutrition_image_classifier.pkl")
     # predicted = predict(test_set, clf)
     accurate = 0
     with open('nutrition_images_predicted.csv', 'w+') as out:
@@ -430,7 +430,7 @@ def classifier_predict_one(image_url, clf=None):
         is_url = True
     else:
         is_url = False
-    predicted = predict_one(image_url, clf, from_serialized_file=CWD + "nutrition_info_images/serialized_classifier/nutrition_image_classifier.pkl", is_url=is_url)
+    predicted = predict_one(image_url, clf, from_serialized_file=CWD + "/serialized_classifier/nutrition_image_classifier.pkl", is_url=is_url)
     return predicted[0]
 
 
