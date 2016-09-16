@@ -38,7 +38,7 @@ def _today_successful_xml_items(user):
     ).order_by('-when').distinct()
 
 
-def stats_walmart_xml_items(request_or_user, generate_cache=False):
+def stats_walmart_xml_items(request_or_user, delete_old_cache=False, generate_cache=False):
     if hasattr(request_or_user, 'user') and hasattr(request_or_user.user, 'is_authenticated'):
         user = request_or_user.user
     else:
@@ -63,6 +63,9 @@ def stats_walmart_xml_items(request_or_user, generate_cache=False):
         'stats_today_all_xml_items': _today_all_xml_items(user).count(),
         'stats_today_successful_xml_items': _today_successful_xml_items(user).count(),
     }
+
+    if delete_old_cache:
+        cache.delete(cache_key)
 
     cache.set(cache_key, result, timeout=60*10)
 

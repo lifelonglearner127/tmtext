@@ -86,7 +86,11 @@ class SamsclubScraper(Scraper):
         if redirect:
             self.product_page_url = redirect_url
 
-        self.page_raw_text = requests.get(self.product_page_url, headers=self.HEADERS).content
+        r = requests.get(self.product_page_url, headers=self.HEADERS)
+        if r.url == 'http://www.samsclub.com/sams/':
+            return True
+
+        self.page_raw_text = r.content
         self.tree_html = html.fromstring(self.page_raw_text)
 
         try:
