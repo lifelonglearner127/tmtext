@@ -37,7 +37,7 @@ class KohlsSpider(scrapy.Spider):
         self.promo_code = kwargs.get('promo_code')  # ticket 10585
         self.promo_price = int(kwargs.get('promo_price', 0))
 
-        # settings.overrides['CRAWLERA_ENABLED'] = True
+        settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         for i, product in enumerate(self.product_data):
@@ -141,17 +141,22 @@ class KohlsSpider(scrapy.Spider):
         meta['url'] = response.url
         if not meta.get('requested_color_not_available'):
             meta['requested_color_not_available'] = False
+        headers = {}
+        headers['X-Crawlera-Session'] = 'create'
         return scrapy.FormRequest.from_response(response,
                                                 formname='pdpAddToBag',
                                                 formdata=formdata,
                                                 callback=self.parse_page,
                                                 method='POST',
                                                 dont_filter=True,
-                                                meta=meta
+                                                meta=meta,
+                                                headers=headers
                                                )
 
     def parse_page(self, response):
         meta = response.meta
+        headers = {}
+        headers['X-Crawlera-Session'] = response.headers.get('X-Crawlera-Session')
         if meta.get('promo'):
             self.log(response.body_as_unicode())
         if 'You can only purchase' in response.body_as_unicode():
@@ -160,10 +165,9 @@ class KohlsSpider(scrapy.Spider):
             yield scrapy.Request(response.meta.get('url'),
                                  callback=self.parse,
                                  meta=meta,
-                                 dont_filter=True)
+                                 dont_filter=True,
+                                 headers=headers)
         else:
-            headers = {}
-            headers['Referer'] = response.meta.get('url')
             yield scrapy.Request(self.SHOPPING_CART_URL,
                                  callback=self.parse_cart,
                                  dont_filter=True,
@@ -217,6 +221,8 @@ class KohlsSpider(scrapy.Spider):
 
     def promo_logic(self, response, item):
         meta = response.meta
+        headers = {}
+        headers['X-Crawlera-Session'] = response.headers.get('X-Crawlera-Session')
         if response.meta.get('promo'):
             if self.promo_price == 1:
                 return item
@@ -231,13 +237,17 @@ class KohlsSpider(scrapy.Spider):
             meta['item'] = item
             return scrapy.Request(self.PROMO_CODE_URL,
                                   meta=meta,
-                                  callback=self._request_promo_code
+                                  callback=self._request_promo_code,
+                                  headers=headers,
+                                  dont_filter=True
                                  )
         else:
             return item
 
     def _request_promo_code(self, response):
         meta = response.meta
+        headers = {}
+        headers['X-Crawlera-Session'] = response.headers.get('X-Crawlera-Session')
         formdata = {"/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": meta.get('promo_code')}
         meta['promo'] = True
         return scrapy.FormRequest.from_response(response,
@@ -246,5 +256,6 @@ class KohlsSpider(scrapy.Spider):
                                                 callback=self.parse_page,
                                                 method='POST',
                                                 dont_filter=True,
-                                                meta=meta
+                                                meta=meta,
+                                                headers=headers
                                                )
