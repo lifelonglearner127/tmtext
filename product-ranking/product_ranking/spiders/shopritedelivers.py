@@ -3,6 +3,7 @@
 import string
 import urlparse
 from collections import namedtuple
+from scrapy.conf import settings
 from product_ranking.spiders import (BaseProductsSpider, SiteProductItem, cond_set_value,
                                      FLOATING_POINT_RGEX)
 from product_ranking.items import Price
@@ -17,6 +18,7 @@ class ShopritedeliversProductsSpider(BaseProductsSpider):
     def __init__(self, *args, **kwargs):
         """Initiate input variables and etc."""
         super(ShopritedeliversProductsSpider, self).__init__(*args, **kwargs)
+        settings.overrides['CRAWLERA_ENABLED'] = True
 
     @staticmethod
     def _scrape_total_matches(response):
