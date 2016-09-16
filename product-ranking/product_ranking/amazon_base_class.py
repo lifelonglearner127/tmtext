@@ -556,6 +556,9 @@ class AmazonBaseClass(BaseProductsSpider):
                     title += part
                 title = [title]
 
+        if not title:
+            title = self._is_empty(response.css('#ebooksProductTitle ::text').extract(), '').strip()
+
         return title
 
     def _parse_image_url(self, response, add_xpath=None):
@@ -609,7 +612,14 @@ class AmazonBaseClass(BaseProductsSpider):
                 img_data = json.loads(img_jsons[0])
                 image = max(img_data.items(), key=lambda (_, size): size[0])
 
-        if 'base64' in image:
+        if not image:
+            image = response.xpath('//*[contains(@id, "ebooks-img-canvas")]//@src').extract()
+            if image:
+                image = image[0]
+            else:
+                image = None
+
+        if image and 'base64' in image:
             img_jsons = response.xpath(
                 '//*[@id="imgBlkFront"]/@data-a-dynamic-image | '
                 '//*[@id="landingImage"]/@data-a-dynamic-image'
