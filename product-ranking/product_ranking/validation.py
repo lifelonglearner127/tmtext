@@ -796,6 +796,15 @@ class BaseValidator(object):
     def _validate_walmart_url(self, val):
         return True  # TODO: better validation!
 
+    def _validate_target_category(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_target_exists(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_target_url(self, val):
+        return True  # TODO: better validation!
+
     def _get_failed_fields(self, data, add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)
         :param data: 2-dimensions list or str
