@@ -131,7 +131,7 @@ class WalmartScraper(Scraper):
         return not not m
 
     def _is_collection_url(self):
-        if re.search('www.walmart.com/collection', self.product_page_url):
+        if re.search('www.walmart.com/col', self.product_page_url):
             return True
         return False
 
@@ -651,7 +651,10 @@ class WalmartScraper(Scraper):
         """
 
         if self._is_collection_url():
-            return re.search('"productName":"(.+?)"', self.page_raw_text).group(1)
+            try:
+                return re.search('"productName":"(.+?)"', self.page_raw_text).group(1)
+            except:
+                return self.tree_html.xpath('//*[contains(@class,"prod-ProductTitle")]/div/text()')[0]
 
         # assume new design
         product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
@@ -2596,9 +2599,8 @@ class WalmartScraper(Scraper):
         if "We can't find the product you are looking for, but we have similar items for you to consider." in text_contents:
             self.failure_type = "404 Error"
 
-        # TODO: Temporary fix
         # If there is no product name, return failure
-        if not self._product_name_from_tree():
+        if not self._is_collection_url() and not self._product_name_from_tree():
             self.failure_type = "No product name"
 
         return self.failure_type
