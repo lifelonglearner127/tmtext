@@ -22,8 +22,8 @@ class KohlsSpider(scrapy.Spider):
         super(KohlsSpider, self).__init__(*args, **kwargs)
         self.user_agent = kwargs.get(
             'user_agent',
-            ('Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0)'
-             ' Gecko/20100101 Firefox/32.0')
+            ('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
+             'Chrome/51.0.2704.79 Safari/537.36')
         )
 
         self.product_data = kwargs.get('product_data', "[]")
@@ -163,10 +163,13 @@ class KohlsSpider(scrapy.Spider):
                                  meta=meta,
                                  dont_filter=True)
         else:
+            headers = {}
+            headers['Referer'] = response.meta.get('url')
             yield scrapy.Request(self.SHOPPING_CART_URL,
                                  callback=self.parse_cart,
                                  dont_filter=True,
-                                 meta=meta
+                                 meta=meta,
+                                 headers=headers
                                 )
 
     def parse_cart(self, response):
@@ -254,10 +257,17 @@ class KohlsSpider(scrapy.Spider):
         meta = response.meta
         meta['item'] = item
         meta['promo'] = True
+        headers = {}
+        headers['Accept'] = 'application/json, text/javascript, */*; q=0.01'
+        headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
+        headers['X-Requested-With'] = 'XMLHttpRequest'
+        headers['Origin'] = 'http://www.kohls.com'
+        headers['Referer'] = 'http://www.kohls.com/checkout/shopping_cart.jsp'
         return scrapy.FormRequest(self.PROMO_CODE_URL,
                                   formdata=formdata,
                                   callback=self.parse_page,
                                   method='POST',
                                   dont_filter=True,
-                                  meta=meta
+                                  meta=meta,
+                                  headers=headers
                                  )
