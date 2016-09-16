@@ -206,7 +206,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
         tv = TargetVariants()
         tv.setupSC(response, zip_code=self.zip_code, item_info=response.meta['item_info'])
-        prod['variants'] = tv._variants()
+        # prod['variants'] = tv._variants()
         if not prod.get('upc') and prod.get('variants'):
             selected_upc = [v.get('upc') for v in prod.get('variants') if v.get('selected')]
             prod['upc'] = selected_upc[0] if selected_upc else None
@@ -389,8 +389,17 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         return Price(priceCurrency=currency, price=amount)
 
     @staticmethod
-    def _item_info_v3_store_only(amount):
-        return amount == "see store for price"
+    def _item_info_v3_price_helper(item):
+        amount = item.get(
+            'price').get('offerPrice').get('formattedPrice', '').replace('$', '')
+        if not amount or 'see low price in cart' in amount:
+            amount = item.get(
+                'price').get('offerPrice').get('price')
+        return float(amount) if amount else 0
+
+    @staticmethod
+    def _item_info_v3_store_only(item):
+        return item.get('price').get('channelAvailability') == '0'
 
     @staticmethod
     def _item_info_v3_reviews(item_info):
@@ -427,15 +436,17 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         variant['tcin'] = item.get('tcin')
         variant['upc'] = item.get('upc')
         variant['properties'] = {}
-        variant['properties']['color'] = item.get('variation').get('color')
-        variant['price'] = item.get(
-            'price').get('offerPrice').get('formattedPrice', '').replace('$', '')
-        if 'see low price in cart' in variant['price']:
-            variant['price'] = item.get(
-                'price').get('offerPrice').get('price')
+        properties = item.get('variation', [])
+        for attribute in properties:
+            variant['properties'][attribute] = properties.get(attribute)
+        variant['price'] = self._item_info_v3_price_helper(item)
         image_info = item.get('enrichment').get('images')[0]
         variant['image_url'] = self._item_info_v3_image(image_info)
-        variant['in_stock'] = self._item_info_v3_availability(item)
+        in_stock = item.get('available_to_promise_network').get(
+            'availability') != 'UNAVAILABLE'
+        variant['in_stock'] = in_stock
+        variant['is_in_store_only'] = self._item_info_v3_store_only(item) \
+                                      and not in_stock
         return variant
 
     def _populate_from_v3(self, product, item_info):
@@ -446,10 +457,12 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             product['description'] = item.get('product_description').get('downstream_description')
             product['brand'] = item.get('product_brand').get('manufacturer_brand')
             product['buyer_reviews'] = self._item_info_v3_reviews(item_info)
-            product['variants'] = self._item_info_v3_variants(item_info)
+            variants = self._item_info_v3_variants(item_info)
+            if variants:
+                product['variants'] = variants
             product['origin'] = item.get('country_of_origin')
             try:
-                selected_variant = product.get('variants')[0]
+                selected_variant = product.get('variants', [])[0]
                 product['image_url'] = selected_variant.get('image_url')
                 amount = selected_variant.get('price')
                 amount = float(amount) if amount else None
@@ -459,15 +472,9 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 product['image_url'] = selected_variant.get('image_url')
                 product['is_out_of_stock'] = False if selected_variant.get('in_stock') else True
                 product['no_longer_available'] = product['is_out_of_stock']
+                product['is_in_store_only'] = selected_variant.get('is_in_store_only')
             except IndexError:
-                amount = item_info.get(
-                    'price').get('offerPrice').get('formattedPrice')
-                if not amount or 'see low price in cart' in amount:
-                    amount = item_info.get(
-                        'price').get('offerPrice').get('price')
-                if self._item_info_v3_store_only(amount):
-                    product['is_in_store_only'] = True
-                    amount = 0
+                amount = self._item_info_v3_price_helper(item_info)
                 product['price'] = self._item_info_v3_price(amount)
                 product['dpci'] = item.get('dpci')
                 product['upc'] = item.get('upc')
@@ -476,6 +483,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 product['is_out_of_stock'] = False if self._item_info_v3_availability(
                     item_info) else True
                 product['no_longer_available'] = product['is_out_of_stock']
+                product['is_in_store_only'] = self._item_info_v3_store_only(item_info) and product['is_out_of_stock']
         else:
             product['not_found'] = True
 
