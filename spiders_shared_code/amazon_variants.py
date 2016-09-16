@@ -4,7 +4,7 @@ import ast
 import itertools
 import re
 import copy
-
+import requests
 import lxml.html
 
 
@@ -196,25 +196,49 @@ class AmazonVariants(object):
 
             stockstatus_for_variants_list = [v for v in stockstatus_for_variants_list
                                              if v not in vars2remove]
-            
+
             if stockstatus_for_variants_list:
                 # Variant's price extraction block
                 # Extract parent asin and child asins to build url later
-                parent_asin = [v.get('asin') for v in stockstatus_for_variants_list if v.get('asin') and v.get('selected')]
-                print parent_asin
-                child_asins = [v.get('asin') for v in stockstatus_for_variants_list if v.get('asin') and not v.get('selected')]
-                print child_asins
+                # parent_asin = [v.get('asin') for v in stockstatus_for_variants_list if v.get('asin') and v.get('selected')]
+                # print parent_asin
+                child_asins = [v.get('asin') for v in stockstatus_for_variants_list if v.get('asin')]
+                # print child_asins
                 # Extract url with price data
-                xpath = './/script[contains(text(),"immutableURLPrefix")]/text()'
-                url_regex = """immutableURLPrefix['"]:['"](.+?)['"]"""
-                # Build child variants urls based on parent url
-                price_url = """https://www.amazon.com/gp/twister/ajaxv2?sid=161-9270754-5469207&ptd=PANTS&sCac=1&twisterView=glance&pgid=apparel_display_on_website&rid=R7YSNTPE9WG17SVNWRMD&dStr=size_name%2Ccolor_name&auiAjax=1&json=1&dpxAjaxFlag=1&isUDPFlag=1&ee=2&nodeID=1036592&parentAsin=B00CSJFB8M&enPre=1&storeID=apparel&psc=1&asinList=B00DKT0DKA&isFlushing=2&dpEnvironment=softlines&id=B00DKT0DKA&mType=full"""
-                price_url = """https://www.amazon.com/gp/twister/ajaxv2?sid=161-9270754-5469207&ptd=PANTS&sCac=1&twisterView=glance&pgid=apparel_display_on_website&rid=R7YSNTPE9WG17SVNWRMD&dStr=size_name%2Ccolor_name&auiAjax=1&json=1&dpxAjaxFlag=1&isUDPFlag=1&ee=2&nodeID=1036592&parentAsin=B00CSJFB8M&enPre=1&storeID=apparel&psc=1&asinList=B00C512YAQ&isFlushing=2&dpEnvironment=softlines&id=B00C512YAQ&mType=full"""
-                # Get response and extract price for each variant
-                prive_regex = """price_feature_div.+-price\\["']>([^<]+)<"""
+                js_text = self.response.xpath('.//script[contains(text(),"immutableURLPrefix")]/text()').extract()
+                js_text = js_text[0] if js_text else None
+                if js_text:
+                    url_regex = """immutableURLPrefix['"]:['"](.+?)['"]"""
+                    base_url = re.findall(url_regex, js_text)
+                    # print base_url
+                    base_url = "https://www.amazon.com" + base_url[0] if base_url else None
+                    if base_url:
+                        for variant in stockstatus_for_variants_list:
+                            child_asin = variant.get('asin')
+                            if child_asin:
+                                # Build child variants urls based on parent url
+                                child_url = base_url + "&psc=1&asinList={}&isFlushing=2&dpEnvironment=softlines&id={}&mType=full".format(
+                                    child_asin, child_asin)
+                                # print child_url
+                                # price_url = """https://www.amazon.com/gp/twister/ajaxv2?sid=161-9270754-5469207&ptd=PANTS&sCac=1&twisterView=glance&pgid=apparel_display_on_website&rid=R7YSNTPE9WG17SVNWRMD&dStr=size_name%2Ccolor_name&auiAjax=1&json=1&dpxAjaxFlag=1&isUDPFlag=1&ee=2&nodeID=1036592&parentAsin=B00CSJFB8M&enPre=1&storeID=apparel&psc=1&asinList=B00DKT0DKA&isFlushing=2&dpEnvironment=softlines&id=B00DKT0DKA&mType=full"""
+                                # price_url = """https://www.amazon.com/gp/twister/ajaxv2?sid=161-9270754-5469207&ptd=PANTS&sCac=1&twisterView=glance&pgid=apparel_display_on_website&rid=R7YSNTPE9WG17SVNWRMD&dStr=size_name%2Ccolor_name&auiAjax=1&json=1&dpxAjaxFlag=1&isUDPFlag=1&ee=2&nodeID=1036592&parentAsin=B00CSJFB8M&enPre=1&storeID=apparel&psc=1&asinList=B00C512YAQ&isFlushing=2&dpEnvironment=softlines&id=B00C512YAQ&mType=full"""
+                                # price_url = """https://www.amazon.com/gp/twister/ajaxv2?sid=163-3470728-1038141&ptd=PANTS&sCac=1&twisterView=glance&pgid=apparel_display_on_website&rid=MB8HXTTDHDPRD8XW0972&dStr=size_name%2Ccolor_name&auiAjax=1&json=1&dpxAjaxFlag=1&isUDPFlag=1&ee=2&nodeID=1036592&parentAsin=B007U1YRO2&enPre=1&storeID=apparel"""
+                                # Get response and extract price for each variant
+                                r = requests.get(child_url)
+                                # price_regex = """price_feature_div.+-price\\["']>([^<]+)<"""
+                                price_regex = """price_feature_div.+?priceblock_ourprice[^_].+?">\$([\d\.]+)"""
+                                price = re.findall(price_regex, r.text)
+                                price = price[0] if price else None
+                                # print price
+                                variant['price'] = float(price) if price else None
+
+
+                else:
+                    print "No js text"
             if not stockstatus_for_variants_list:
                 return None
             else:
                 return stockstatus_for_variants_list
-        except:
+        except Exception as e:
+            print e
             return None
