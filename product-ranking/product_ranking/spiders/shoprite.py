@@ -104,11 +104,11 @@ class ShopriteProductsSpider(BaseProductsSpider):
     @staticmethod
     def _parse_price(product_info):
         currency = 'USD'
-        price = FLOATING_POINT_RGEX.findall(
-            product_info.get('CurrentPrice', ''))
-        if not price:
-            price = FLOATING_POINT_RGEX.findall(
-                product_info.get('RegularPrice', ''))
+        price_raw = product_info.get('CurrentPrice', '')
+        price = FLOATING_POINT_RGEX.findall(price_raw)
+        if not price or 'for' in price_raw:
+            price_raw = product_info.get('RegularPrice', '')
+            price = FLOATING_POINT_RGEX.findall(price_raw)
         price = float(price[0]) if price else 0.0
         return Price(price=price, priceCurrency=currency)
 
@@ -190,6 +190,11 @@ class ShopriteProductsSpider(BaseProductsSpider):
         return 'https://shop.shoprite.com' \
                '/store/{store}#/product/sku/{sku}'.format(store=store, sku=sku)
 
+    @staticmethod
+    def _parse_variants(product_info):
+        sizes = product_info.get('Sizes')
+
+
     def _parse_single_product(self, response):
         """Same to parse_product."""
         url = response.meta.get('product').get('url')
@@ -250,9 +255,13 @@ class ShopriteProductsSpider(BaseProductsSpider):
         price = self._parse_price(product_info)
         cond_set_value(product, 'price', price)
 
-        #Parse img_url
+        # Parse img_url
         image_url = self._parse_image_url(product_info)
         cond_set_value(product, 'image_url', image_url)
+
+        # Parse variants
+        variants = self._parse_variants(product_info)
+        cond_set_value(product, 'variants', variants)
 
         # Parse url
         if not product.get('url'):
