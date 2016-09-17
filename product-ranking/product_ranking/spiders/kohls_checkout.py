@@ -153,7 +153,8 @@ class KohlsSpider(scrapy.Spider):
                                                )
 
     def parse_page(self, response):
-        print response.headers
+        self.log(str(response.headers.getlist('Set-Cookie')))
+        self.log('HEADERS ^^^^^^^^')
         meta = response.meta
         headers = {}
         headers['X-Crawlera-Session'] = response.headers.get('X-Crawlera-Session')
@@ -252,7 +253,8 @@ class KohlsSpider(scrapy.Spider):
             return item
 
     def _request_promo_code(self, response):
-        print response.headers
+        self.log(response.headers.getlist('Set-Cookie'))
+        self.log('HEADERS ^^^^^^^^')
         meta = response.meta
         headers = {}
         headers['X-Crawlera-Session'] = response.headers.get('X-Crawlera-Session')
