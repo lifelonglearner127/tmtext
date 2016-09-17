@@ -17,8 +17,6 @@ class KohlsSpider(scrapy.Spider):
 
     def __init__(self, *args, **kwargs):
         settings.overrides['ITEM_PIPELINES'] = {}
-        settings.overrides['EXTENSIONS'] = {}
-        settings.overrides['DOWNLOADER_MIDDLEWARES'] = {}
 
         self.user_agent = kwargs.get(
             'user_agent',
