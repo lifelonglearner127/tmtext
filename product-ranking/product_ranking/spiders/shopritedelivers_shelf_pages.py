@@ -3,6 +3,7 @@ from scrapy import Request
 from .shopritedelivers import ShopritedeliversProductsSpider
 from product_ranking.items import SiteProductItem
 
+
 class ShopritedeliversShelfPagesSpider(ShopritedeliversProductsSpider):
     name = "shopritedelivers_shelf_urls_products"
 

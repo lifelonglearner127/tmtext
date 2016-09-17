@@ -18,7 +18,7 @@ class ShopritedeliversProductsSpider(BaseProductsSpider):
     def __init__(self, *args, **kwargs):
         """Initiate input variables and etc."""
         super(ShopritedeliversProductsSpider, self).__init__(*args, **kwargs)
-        settings.overrides['CRAWLERA_ENABLED'] = True
+        self.use_proxies = True
 
     @staticmethod
     def _scrape_total_matches(response):
