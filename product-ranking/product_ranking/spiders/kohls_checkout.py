@@ -1,3 +1,16 @@
+# TODO: parse promo price from cart
+# 1) get tax percent
+# 2) calculate tax
+# 3) we have: subtotal price -- (S), final price -- (F), delivery price -- (D), tax percent -- (B)
+# 4) we need to find: promo price -- (P), tax price -- (T)
+# 5) T = (S - P + D) * B/100
+# 6) S - P + D + T = F
+# 7) find S - P, S - P = x
+# 8) x + D + (x + D) * B/100 = F
+# 9) x + D + x * B/100 + D * B/100 = F
+# 10) x(1 + B/100) = F - D * B/100 - D
+# 11) x = (F - D * B/100 - D)/(1 + B/100)
+# scrapy crawl kohls_checkout_products -a product_data='[{"url": "http://www.kohls.com/product/prd-2461245/mens-dockers-signature-khaki-d1-slim-fit-pants.jsp"}]' -a promo_price=2 -a promo_code="BIGSAVER"
 import json
 import re
 import time
@@ -14,6 +27,7 @@ class KohlsSpider(scrapy.Spider):
 
     SHOPPING_CART_URL = 'http://www.kohls.com/checkout/shopping_cart.jsp'
     PROMO_CODE_URL = "https://www.kohls.com/checkout/v2/includes/kohlsCash.jsp?shouldIncludeForms=true"
+    TAX_URL = "http://www.kohls.com/checkout/v2/json/shipping_surcharges_gift_tax_json.jsp"
 
     def __init__(self, *args, **kwargs):
         settings.overrides['ITEM_PIPELINES'] = {}
@@ -130,7 +144,7 @@ class KohlsSpider(scrapy.Spider):
             color = variants.keys()[0]
             formdata['/atg/commerce/order/purchase/' \
                      'CartModifierFormHandler.catalogRefIds'] = variants.get(color)
-            formdata['add_cart_quantity'] = '1'
+            formdata['add_cart_quantity'] = str(self.quantity[0])
             meta['color'] = color
             meta['cookie_jar'] = 1
             meta['requested_color_not_available'] = False
@@ -153,8 +167,6 @@ class KohlsSpider(scrapy.Spider):
                                                )
 
     def parse_page(self, response):
-        self.log(str(response.headers.getlist('Set-Cookie')))
-        self.log('HEADERS ^^^^^^^^')
         meta = response.meta
         headers = {}
         headers['X-Crawlera-Session'] = response.headers.get('X-Crawlera-Session')
@@ -227,19 +239,48 @@ class KohlsSpider(scrapy.Spider):
                 variants_dict[color] = variant_id
         return variants_dict
 
-    def promo_logic(self, response, item):
+    def promo_logic(self, response, item=None):
         meta = response.meta
         headers = {}
         headers['X-Crawlera-Session'] = response.headers.get('X-Crawlera-Session')
         if response.meta.get('promo'):
+            tax_rate = int(json.loads(response.body_as_unicode()).get('taxDetails').get('rate'))
+            promo_order_total = response.meta.get('promo_order_total')
+            delivery = response.meta.get('delivery')
+            # x = (F - D * B / 100 - D) / (1 + B / 100)
+            print delivery
+            print tax_rate
+            promo_order_subtotal = round((promo_order_total - delivery * (tax_rate / 100.0) - delivery) / (1 + (tax_rate / 100.0)), 2)
             if self.promo_price == 1:
                 return item
             if self.promo_price == 2:
                 promo_item = response.meta.get('item')
-                promo_item['promo_order_total'] = item['order_total']
-                promo_item['promo_order_subtotal'] = item['order_subtotal']
-                promo_item['promo_price'] = item['price']
+                promo_item['promo_order_total'] = promo_order_total
+                promo_item['promo_order_subtotal'] = promo_order_subtotal
+                promo_item['promo_price'] = ''
                 return promo_item
+        elif response.meta.get('tax'):
+
+            y = lambda x: x.split(';')[0].split('=')
+            cookies = response.headers.getlist('Set-Cookie')
+            prices_raw = [y(b)[1].replace('$', '') for b in cookies if y(b)[0]=='VisitorBagTotals']
+            prices = [float(price.split('|')[0]) for price in prices_raw]
+            promo_order_total = min(prices)
+            delivery = float([delivery.split('|')[-1] for delivery in prices_raw if float(delivery.split('|')[0])==promo_order_total][0].replace('$', ''))
+            print promo_order_total
+            meta['promo'] = True
+            meta['delivery'] = delivery
+            meta['promo_order_total'] = promo_order_total
+            self.log(str(response.headers.getlist('Set-Cookie')))
+            self.log('HEADERS ^^^^^^^^')
+            return scrapy.Request(self.TAX_URL,
+                                  meta=meta,
+                                  callback=self.promo_logic,
+                                  headers=headers,
+                                  dont_filter=True
+                                  )
+
+
         elif self.promo_code and self.promo_price:
             meta['promo_code'] = self.promo_code
             meta['item'] = item
@@ -253,8 +294,6 @@ class KohlsSpider(scrapy.Spider):
             return item
 
     def _request_promo_code(self, response):
-        self.log(response.headers.getlist('Set-Cookie'))
-        self.log('HEADERS ^^^^^^^^')
         meta = response.meta
         headers = {}
         headers['X-Crawlera-Session'] = response.headers.get('X-Crawlera-Session')
@@ -266,11 +305,11 @@ class KohlsSpider(scrapy.Spider):
         headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
         headers['Accept-Language'] = 'ru-RU,ru;q=0.8,en-US;q=0.6,en;q=0.4'
         headers['User-Agent'] = self.user_agent
-        meta['promo'] = True
+        meta['tax'] = True
         return scrapy.FormRequest.from_response(response,
                                                 formxpath='//form[@id="wallet_apply_promo_code_form"]',
                                                 formdata=formdata,
-                                                callback=self.parse_page,
+                                                callback=self.promo_logic,
                                                 method='POST',
                                                 dont_filter=True,
                                                 meta=meta,
