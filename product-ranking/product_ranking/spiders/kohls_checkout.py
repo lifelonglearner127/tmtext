@@ -96,7 +96,8 @@ class KohlsSpider(scrapy.Spider):
         meta = {}
         if response.meta.get('retry'):
             quantity = ["1"]
-            colors = [response.meta.get('color')]
+            colors = [response.meta.get(
+                'item').get('color')]
         elif product.get('FetchAllColors'):
             colors = variants.keys()
         elif not colors:
@@ -112,14 +113,20 @@ class KohlsSpider(scrapy.Spider):
             formdata['/atg/commerce/order/purchase/' \
                      'CartModifierFormHandler.catalogRefIds'] = variants.get(color)
             formdata['add_cart_quantity'] = quantity
-            meta['cookiejar'] = response.meta.get(
-                'cookiejar') if response.meta.get('retry') else str(i)
+
+            if response.meta.get('retry'):
+                item['requested_quantity_not_available'] = True
+                meta['cookiejar'] = response.meta.get('cookiejar')
+            else:
+                item['requested_quantity_not_available'] = False
+                meta['cookiejar'] = str(i)
+
             meta['product'] = product
             if color not in variants.keys():
-                item['requested_color_not_available'] = False
+                item['requested_color_not_available'] = True
                 yield item
             else:
-                item['requested_color_not_available'] = True
+                item['requested_color_not_available'] = False
                 yield scrapy.FormRequest.from_response(response,
                                                        formname='pdpAddToBag',
                                                        formdata=formdata,
@@ -133,7 +140,7 @@ class KohlsSpider(scrapy.Spider):
         meta = response.meta
         if 'You can only purchase' in response.body_as_unicode():
             meta['retry'] = True
-            yield scrapy.Request(response.meta.get('url'),
+            yield scrapy.Request(response.meta.get('item').get('url'),
                                  callback=self.parse,
                                  meta=meta,
                                  dont_filter=True)
