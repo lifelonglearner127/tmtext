@@ -418,9 +418,17 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         return ('varisSephora=true'
                 in response.body_as_unicode().replace(' ', '').replace("'", ''))
 
+    @staticmethod
+    def _parse_reseller_id(url):
+        regex = "ppId=(p?p?\d+)"
+        reseller_id = re.findall(regex, url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        return reseller_id
+
     def parse_product(self, response):
         prod = response.meta['product']
         prod['url'] = response.url
+        prod['reseller_id'] = self._parse_reseller_id(response.url)
         prod['_subitem'] = True
 
         if "what you are looking for is currently unavailable" in response.body_as_unicode().lower():
