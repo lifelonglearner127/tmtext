@@ -91,9 +91,16 @@ class AhProductsSpider(BaseProductsSpider):
         self.total_results = total  # remember num of results
         return total
 
+    @staticmethod
+    def _parse_reseller_id(url):
+        regex = "(wi\d+)"
+        reseller_id = re.findall(regex, url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        return reseller_id
+
     def parse_product(self, response):
         product = response.meta['product']
-
+        product['reseller_id'] = self._parse_reseller_id(response.url)
         title = response.xpath('//h1[@class="h1"]/text()[normalize-space()]').extract()
         cond_set(product, 'title', title)
         if product.get('title'):
