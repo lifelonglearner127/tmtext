@@ -104,7 +104,7 @@ class AmazonScraper(Scraper):
             self.product_page_url = self.product_page_url + '?showDetailTechData=1'
 
         for i in range(self.MAX_RETRIES):
-            self.timeout = False
+            self.is_timeout = False
 
             try:
                 if captcha_data:
@@ -127,6 +127,10 @@ class AmazonScraper(Scraper):
                 self.proxies_enabled = True
                 self._initialize_browser_settings()
                 continue
+            except mechanize.URLError as e:
+                self.is_timeout = True # set self.is_timeout so we will return an error response
+                self.ERROR_RESPONSE["failure_type"] = str(e)
+                continue # continue to try again up to MAX_RETRIES
 
             try:
                 # replace NULL characters
