@@ -515,8 +515,14 @@ class AmazonBaseClass(BaseProductsSpider):
         child_asin = child_asin[0] if child_asin else None
         price_regex = """price_feature_div.+?priceblock_ourprice[^_].+?">\$([\d\.]+)"""
         price = re.findall(price_regex, response.body)
+        # Trying alternative regex
         if not price:
-            self.log('Unable to find price for variant: {}'.format(response.url), WARNING)
+            price_regex = """buybox_feature_div.+?a-color-price['"]>\s?.+?([\d\.]+)"""
+            price = re.findall(price_regex, response.body)
+        if not price:
+            fail_var_url = [v.get('url') for v in product["variants"] if v.get('asin')==child_asin]
+            self.log('Unable to find price for variant: {} ASIN {} url {}'.format(
+                response.url, child_asin, fail_var_url), WARNING)
         else:
             try:
                 price = float(price[0]) if price else None
