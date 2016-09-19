@@ -221,7 +221,14 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
     #     else:
     #         yield super(MacysProductsSpider, self).parse_product(response)
 
+    @staticmethod
+    def _parse_reseller_id(url):
+        regex = "ID=(\d+)"
+        reseller_id = re.findall(regex, url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        return reseller_id
 
+    # TODO Maybe refactor this to be thread-safe?
     def _populate_from_html(self, response, product):
         """
         @returns items 1 1
@@ -229,6 +236,7 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         """
 
         product = response.meta.get('product', SiteProductItem())
+        product['reseller_id'] = self._parse_reseller_id(response.url)
 
         if u'>this product is currently unavailable' in response.body_as_unicode().lower():
             product['no_longer_available'] = True
