@@ -1,4 +1,5 @@
 # TODO: parse promo price from cart
+# TODO: refactor everything
 # 1) get tax percent
 # 2) calculate tax
 # 3) we have: subtotal price -- (S), final price -- (F), delivery price -- (D), tax percent -- (B)
@@ -13,6 +14,7 @@
 # scrapy crawl kohls_checkout_products -a product_data='[{"url": "http://www.kohls.com/product/prd-2461245/mens-dockers-signature-khaki-d1-slim-fit-pants.jsp"}]' -a promo_price=2 -a promo_code="BIGSAVER"
 import json
 import re
+import itertools
 import time
 from HTMLParser import HTMLParser
 from collections import OrderedDict
@@ -50,22 +52,23 @@ class KohlsSpider(scrapy.Spider):
         self.promo_code = kwargs.get('promo_code')  # ticket 10585
         self.promo_price = int(kwargs.get('promo_price', 0))
 
-        settings.overrides['CRAWLERA_ENABLED'] = False
-
     def start_requests(self):
         for i, product in enumerate(self.product_data):
             url = product.get('url')
             yield scrapy.Request(url,
                                  meta={'product': product,
-                                       'cookiejar': i})
+                                       'cookiejar': url})
 
     def parse(self, response):
+        quantity = self.quantity
         product = response.meta.get('product')
         parse_all = bool(product.get('FetchAllColors'))
-        colors = product.get('color')
-        if colors:
-            if isinstance(colors, basestring):
-                colors = [colors]
+        colors_input = product.get('color', [])
+        colors = []
+        if colors_input:
+            colors = colors_input[:]
+            if isinstance(colors_input, basestring):
+                colors = [colors_input]
         json_data = response.xpath(
             '//script[contains(text(), "productJsonData")]/text()').extract()[0]
         json_regex = re.compile('productJsonData = ({.*?});', re.DOTALL)
@@ -104,103 +107,63 @@ class KohlsSpider(scrapy.Spider):
                     'CartModifierFormHandler.'
                     'addItemToOrderErrorURL': 'shopping_cart_add_to_cart_error_url',
                     '/atg/commerce/order/purchase/CartModifierFormHandler.productId': product_id}
-        retry = response.meta.get('retry')
         meta = {}
-        if retry:
-            self.log('RETRY WITH QUANTITY 1')
-            color = response.meta.get('color')
-            formdata['/atg/commerce/order/purchase/' \
-                     'CartModifierFormHandler.catalogRefIds'] = variants.get(color)
-            formdata['add_cart_quantity'] = '1'
-            meta['color'] = color
-            meta['cookie_jar'] = response.meta.get('cookiejar')
-            meta['requested_color_not_available'] = True
-            yield self._request(response, formdata, meta)
-
+        if response.meta.get('retry'):
+            quantity = [1]
+            colors = [response.meta.get('color')]
         elif parse_all:
-            for y, quantity in enumerate(self.quantity):
-                for i, color in enumerate(variants):
-                    formdata['/atg/commerce/order/purchase/' \
-                             'CartModifierFormHandler.catalogRefIds'] = variants.get(color)
-                    formdata['add_cart_quantity'] = str(quantity)
-                    meta['color'] = color
-                    meta['cookie_jar'] = str(y) + str(i)
-                    meta['product'] = product
-                    yield self._request(response, formdata, meta)
-
-        elif colors:
-            for y, quantity in enumerate(self.quantity):
-                for i, color in enumerate(colors):
-                    formdata['/atg/commerce/order/purchase/' \
-                             'CartModifierFormHandler.catalogRefIds'] = variants.get(color)
-                    formdata['add_cart_quantity'] = str(quantity)
-                    meta['color'] = color
-                    meta['cookie_jar'] = str(y) + str(i)
-                    meta['requested_color'] = color
-                    meta['product'] = product
-                    yield self._request(response, formdata, meta)
-
+            colors = variants.keys()
         else:
-            color = variants.keys()[0]
+            colors.append(variants.keys()[0])
+            meta['requested_color_not_available'] = False
+        for i, option in enumerate(itertools.product(quantity, colors)):
+            quantity = option[0]
+            color = option[1]
+            if colors_input:
+                meta['requested_color'] = color
             formdata['/atg/commerce/order/purchase/' \
                      'CartModifierFormHandler.catalogRefIds'] = variants.get(color)
-            formdata['add_cart_quantity'] = str(self.quantity[0])
+            formdata['add_cart_quantity'] = str(quantity)
             meta['color'] = color
-            meta['cookie_jar'] = 1
-            meta['requested_color_not_available'] = False
+            meta['cookiejar'] = response.meta.get('cookiejar') if response.meta.get('retry') else str(i)
+            meta['product'] = product
             yield self._request(response, formdata, meta)
 
     def _request(self, response, formdata, meta):
         meta['url'] = response.url
         if not meta.get('requested_color_not_available'):
             meta['requested_color_not_available'] = False
-        headers = {}
-        headers['X-Crawlera-Session'] = 'create'
         return scrapy.FormRequest.from_response(response,
                                                 formname='pdpAddToBag',
                                                 formdata=formdata,
                                                 callback=self.parse_page,
                                                 method='POST',
                                                 dont_filter=True,
-                                                meta=meta,
-                                                headers=headers
+                                                meta=meta
                                                )
 
     def parse_page(self, response):
         meta = response.meta
-        headers = {}
-        headers['X-Crawlera-Session'] = response.headers.get('X-Crawlera-Session')
-
-            # if u'Session Expired' in response.body_as_unicode():
-            #     yield scrapy.Request(self.PROMO_CODE_URL,
-            #                           meta=meta,
-            #                           callback=self._request_promo_code,
-            #                           headers=headers,
-            #                           dont_filter=True
-            #                           )
-
         if 'You can only purchase' in response.body_as_unicode():
             meta['retry'] = True
             meta['quantity'] = 1
             yield scrapy.Request(response.meta.get('url'),
                                  callback=self.parse,
                                  meta=meta,
-                                 dont_filter=True,
-                                 headers=headers)
+                                 dont_filter=True)
         else:
             yield scrapy.Request(self.SHOPPING_CART_URL,
                                  callback=self.parse_cart,
                                  dont_filter=True,
-                                 meta=meta,
-                                 headers=headers
-                                )
+                                 meta=meta
+                                 )
 
     def parse_cart(self, response):
         item = CheckoutProductItem()
         json_data = \
-        response.xpath(
-            '//script[contains(text(), "var trJsonData = {")'
-            ' and @type="text/javascript"]/text()').extract()[0]
+            response.xpath(
+                '//script[contains(text(), "var trJsonData = {")'
+                ' and @type="text/javascript"]/text()').extract()[0]
         json_regex = re.compile('trJsonData = ({.*?});', re.DOTALL)
         json_data = json_regex.findall(json_data)[0]
         json_data = json.loads(json_data)
@@ -239,79 +202,37 @@ class KohlsSpider(scrapy.Spider):
                 variants_dict[color] = variant_id
         return variants_dict
 
-    def promo_logic(self, response, item=None):
+    def promo_logic(self, response, item):
         meta = response.meta
-        headers = {}
-        headers['X-Crawlera-Session'] = response.headers.get('X-Crawlera-Session')
         if response.meta.get('promo'):
-            tax_rate = int(json.loads(response.body_as_unicode()).get('taxDetails').get('rate'))
-            promo_order_total = response.meta.get('promo_order_total')
-            delivery = response.meta.get('delivery')
-            # x = (F - D * B / 100 - D) / (1 + B / 100)
-            print delivery
-            print tax_rate
-            promo_order_subtotal = round((promo_order_total - delivery * (tax_rate / 100.0) - delivery) / (1 + (tax_rate / 100.0)), 2)
             if self.promo_price == 1:
                 return item
             if self.promo_price == 2:
                 promo_item = response.meta.get('item')
-                promo_item['promo_order_total'] = promo_order_total
-                promo_item['promo_order_subtotal'] = promo_order_subtotal
-                promo_item['promo_price'] = ''
+                promo_item['promo_order_total'] = item['order_total']
+                promo_item['promo_order_subtotal'] = item['order_subtotal']
+                promo_item['promo_price'] = item['price']
                 return promo_item
-        elif response.meta.get('tax'):
-
-            y = lambda x: x.split(';')[0].split('=')
-            cookies = response.headers.getlist('Set-Cookie')
-            prices_raw = [y(b)[1].replace('$', '') for b in cookies if y(b)[0]=='VisitorBagTotals']
-            prices = [float(price.split('|')[0]) for price in prices_raw]
-            promo_order_total = min(prices)
-            delivery = float([delivery.split('|')[-1] for delivery in prices_raw if float(delivery.split('|')[0])==promo_order_total][0].replace('$', ''))
-            print promo_order_total
-            meta['promo'] = True
-            meta['delivery'] = delivery
-            meta['promo_order_total'] = promo_order_total
-            self.log(str(response.headers.getlist('Set-Cookie')))
-            self.log('HEADERS ^^^^^^^^')
-            return scrapy.Request(self.TAX_URL,
-                                  meta=meta,
-                                  callback=self.promo_logic,
-                                  headers=headers,
-                                  dont_filter=True
-                                  )
-
-
         elif self.promo_code and self.promo_price:
             meta['promo_code'] = self.promo_code
             meta['item'] = item
             return scrapy.Request(self.PROMO_CODE_URL,
                                   meta=meta,
                                   callback=self._request_promo_code,
-                                  headers=headers,
                                   dont_filter=True
-                                 )
+                                  )
         else:
             return item
 
     def _request_promo_code(self, response):
         meta = response.meta
-        headers = {}
-        headers['X-Crawlera-Session'] = response.headers.get('X-Crawlera-Session')
         formdata = {"/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": meta.get('promo_code')}
-        headers['Accept'] = 'application/json, text/javascript, */*; q=0.01'
-        headers['Origin'] = 'http://www.kohls.com'
-        headers['Host'] = 'www.kohls.com'
-        headers['X-Requested-With'] = 'XMLHttpRequest'
-        headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
-        headers['Accept-Language'] = 'ru-RU,ru;q=0.8,en-US;q=0.6,en;q=0.4'
-        headers['User-Agent'] = self.user_agent
-        meta['tax'] = True
+        meta['promo'] = True
         return scrapy.FormRequest.from_response(response,
                                                 formxpath='//form[@id="wallet_apply_promo_code_form"]',
                                                 formdata=formdata,
-                                                callback=self.promo_logic,
+                                                callback=self.parse_page,
                                                 method='POST',
                                                 dont_filter=True,
-                                                meta=meta,
-                                                headers=headers
-                                               )
+                                                meta=meta
+                                                )
