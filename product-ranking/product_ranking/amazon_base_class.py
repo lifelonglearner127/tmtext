@@ -404,10 +404,13 @@ class AmazonBaseClass(BaseProductsSpider):
         if not self.ignore_variant_data:
             variants = self._parse_variants(response)
             product['variants'] = variants
+            # Parse variants prices
             if variants:
                 js_text = response.xpath('.//script[contains(text(),"immutableURLPrefix")]/text()').extract()
                 js_text = js_text[0] if js_text else None
-                if js_text:
+                if not js_text:
+                    self.log('js block not found for url'.format(response.url), WARNING)
+                else:
                     url_regex = """immutableURLPrefix['"]:['"](.+?)['"]"""
                     base_url = re.findall(url_regex, js_text)
                     # print base_url
@@ -425,6 +428,7 @@ class AmazonBaseClass(BaseProductsSpider):
                             if req_url:
                                 req = Request(req_url, meta=meta, callback=self._parse_variants_price)
                                 reqs.append(req)
+
 
         # Parse buyer reviews
         buyer_reviews = self._parse_buyer_reviews(response)
