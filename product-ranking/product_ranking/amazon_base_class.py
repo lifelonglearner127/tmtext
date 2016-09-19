@@ -404,6 +404,27 @@ class AmazonBaseClass(BaseProductsSpider):
         if not self.ignore_variant_data:
             variants = self._parse_variants(response)
             product['variants'] = variants
+            if variants:
+                js_text = response.xpath('.//script[contains(text(),"immutableURLPrefix")]/text()').extract()
+                js_text = js_text[0] if js_text else None
+                if js_text:
+                    url_regex = """immutableURLPrefix['"]:['"](.+?)['"]"""
+                    base_url = re.findall(url_regex, js_text)
+                    # print base_url
+                    base_url = base_url[0] if base_url else None
+                    for variant in variants:
+                        # Set default price value
+                        variant['price'] = None
+                        # print(variant)
+                        child_asin = variant.get('asin')
+                        if child_asin:
+                            # Build child variants urls based on parent url
+                            child_url = base_url + "&psc=1&asinList={}&isFlushing=2&dpEnvironment=softlines&id={}&mType=full".format(
+                                child_asin, child_asin)
+                            req_url = urlparse.urljoin(response.url, child_url)
+                            if req_url:
+                                req = Request(req_url, meta=meta, callback=self._parse_variants_price)
+                                reqs.append(req)
 
         # Parse buyer reviews
         buyer_reviews = self._parse_buyer_reviews(response)
@@ -476,6 +497,33 @@ class AmazonBaseClass(BaseProductsSpider):
         req  = self._parse_questions(response)
         if req:
             reqs.append(req)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def _parse_variants_price(self, response):
+        meta = response.meta
+        reqs = meta.get('reqs')
+        product = meta['product']
+        child_asin = re.findall(r'asinList=(.+?)&', response.url)
+        child_asin = child_asin[0] if child_asin else None
+        price_regex = """price_feature_div.+?priceblock_ourprice[^_].+?">\$([\d\.]+)"""
+        price = re.findall(price_regex, response.body)
+        if not price:
+            self.log('Unable to find price for variant: {}'.format(response.url), WARNING)
+        else:
+            try:
+                price = float(price[0]) if price else None
+                for variant in product["variants"]:
+                    var_asin = variant.get('asin')
+                    # print(var_asin, child_asin)
+                    if var_asin and var_asin == child_asin:
+                        variant['price'] = price
+                        break
+            except BaseException as e:
+                self.log('Unable to convert price for variant: {}, {}'.format(response.url, e), WARNING)
 
         if reqs:
             return self.send_next_request(reqs, response)
