@@ -1,4 +1,3 @@
-# scrapy crawl macys_checkout_products -a product_data='[{"url": "http://www1.macys.com/shop/product/sofft-montara-crisscross-strap-pumps?ID=2921428"}]' -a promo_code="TWODAY" -a promo_price=2
 import re
 import time
 

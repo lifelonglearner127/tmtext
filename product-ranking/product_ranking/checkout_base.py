@@ -1,4 +1,3 @@
-# scrapy crawl jcpenney_checkout_products -a product_data='[{"url": "http://www.jcpenney.com/dotcom/jsp/browse/product.jsp?fromBag=true&selectedSKUId=29344350018&commerceId=ci61181005302&selectedLotId=2934435&fromName=false&catId=Bag&quantity=1&ppId=pp5007070811"}]' -a promo_code="FUNDEAL" -a promo_price=2
 import json
 import os
 import random
