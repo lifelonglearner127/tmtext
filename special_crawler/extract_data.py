@@ -167,6 +167,7 @@ class Scraper():
             "num_items_price_displayed",
             "num_items_no_price_displayed",
             "body_copy",
+            "body_copy_links",
 
             # reviews
             "review_count", # total number of reviews, int
@@ -256,7 +257,7 @@ class Scraper():
                             "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv", \
                             "best_seller_category", "results_per_page", "total_matches", "lowest_item_price", "highest_item_price",
                             "num_items_price_displayed", "num_items_no_price_displayed",
-                                "body_copy", "meta_description", "cnet"], \
+                                "body_copy", "body_copy_links", "meta_description", "cnet"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "seller_id", "us_seller_id", "in_stock", \
@@ -482,6 +483,7 @@ class Scraper():
             costco_url = re.match('http://www.costco.com/(.*)', self.product_page_url)
             wag_url = re.match('https?://www.wag.com/(.*)', self.product_page_url)
             jcpenney_url = re.match('http://www.jcpenney.com/(.*)', self.product_page_url)
+            walmart_ca_url = re.match('http://www.walmart.ca/(.*)', self.product_page_url)
 
             if costco_url:
                 self.product_page_url = 'http://www.costco.com/' + urllib2.quote(costco_url.group(1).encode('utf8'))
@@ -494,6 +496,9 @@ class Scraper():
             else:
                 agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
             request.add_header('User-Agent', agent)
+
+            if walmart_ca_url:
+                request.add_header('Cookie', 'cookieLanguageType=en; deliveryCatchment=2000; marketCatchment=2001; walmart.shippingPostalCode=V5M2G7')
 
             for i in range(self.MAX_RETRIES):
                 try:

@@ -127,7 +127,7 @@ class WalmartScraper(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
+        m = re.match("https?://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -296,7 +296,8 @@ class WalmartScraper(Scraper):
         response_text = self.load_page_from_url_with_number_of_retries(request_url)
         tree = html.fromstring(response_text)
 
-        if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']"):
+        if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']") or \
+            tree.xpath("//div[@id='iframe-video-content']//script[@type='text/javascript']"):
             self.has_video = True
             self.has_sellpoints_media = True
 
@@ -2406,16 +2407,23 @@ class WalmartScraper(Scraper):
 
         if self._version() == "Walmart v2":
             self._extract_product_info_json()
-            return self.product_info_json["buyingOptions"]["seller"]["displayName"]
+            seller = self.product_info_json["buyingOptions"]["seller"]["displayName"]
+            if not self.product_info_json["buyingOptions"]["onlineOnly"] and seller != "Walmart.com":
+                return "Walmart store"
+            return seller
 
         return None
 
     def _seller_id(self):
         self._extract_product_info_json()
+        if self._primary_seller() == "Walmart store":
+            return None
         return self.product_info_json["buyingOptions"]["seller"]["sellerId"]
 
     def _us_seller_id(self):
         self._extract_product_info_json()
+        if self._primary_seller() == "Walmart store":
+            return None
         return self.product_info_json["buyingOptions"]["seller"]["catalogSellerId"]
 
     def _site_online(self):
@@ -2481,6 +2489,9 @@ class WalmartScraper(Scraper):
             for marketplace in marketplace_seller_names:
                 if "walmart.com" in marketplace.text_content().lower().strip():
                     return 1
+
+        if pinfo_dict.get("buyingOptions", {}).get("allVariantsOutOfStock") == False:
+            return 1
 
         return 0
 

@@ -1,6 +1,7 @@
 import re
 import socket
 import time
+import json
 
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -202,8 +203,14 @@ class JCpenneySpider(BaseCheckoutSpider):
             return is_empty(re.findall('\$([\d\.]+)', order_total))
 
     def _get_item_name(self, item):
-        return is_empty(item.xpath(
-                        '*//*[contains(@class,"brand_name")]/a/text()').extract())
+        page_source = self.driver.page_source
+        try:
+            item_info = re.findall(
+                'var jcpORDERJSONjcp = (\{.+?\});', page_source, re.MULTILINE)[0]
+            name = json.loads(item_info).get('purchasedItems')[0].get('displayName')
+        except IndexError:
+            name = ''
+        return name
 
     def _get_item_id(self, item):
         return is_empty(item.xpath(

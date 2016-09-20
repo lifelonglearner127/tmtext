@@ -3,7 +3,11 @@ import string
 from product_ranking.items import SiteProductItem, BuyerReviews, Price
 from product_ranking.spiders import cond_set_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
-
+from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
+from scrapy import Request
+import json
+from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.guess_brand import guess_brand_from_first_words
 
 class RiteAidProductsSpider(ProductsSpider):
     name = 'riteaid_products'
@@ -12,6 +16,14 @@ class RiteAidProductsSpider(ProductsSpider):
 
     SEARCH_URL = "https://shop.riteaid.com/catalogsearch/result/"\
                  "?limit=72&q={search_term}"
+
+    _REVIEWS_URL='http://api.bazaarvoice.com/data/reviews.json?apiversion=5.5&passkey=tezax0lg4cxakub5hhurfey5o&' \
+                 'Filter=ProductId:{sku}&Include=Products&Stats=Reviews'
+
+    def __init__(self, *args, **kwargs):
+        self.br = BuyerReviewsBazaarApi(called_class=self)
+        super(RiteAidProductsSpider, self).__init__(
+            site_name=self.allowed_domains[0], *args, **kwargs)
 
     def _total_matches_from_html(self, response):
         total = response.xpath(
@@ -79,42 +91,75 @@ class RiteAidProductsSpider(ProductsSpider):
         return ''.join(description).strip() if description else None
 
     def _parse_buyer_reviews(self, response):
-        num_reviews = response.xpath(
-            '//*[@itemprop="reviewCount"]/text()').extract()
-        average_rating = response.xpath(
-            '//*[@itemprop="ratingValue"]/text()').extract()
+        meta = response.meta.copy()
+        product = response.meta['product']
+        reqs = meta.get('reqs', [])
 
-        value_rating = response.xpath(
-            '//*[contains(@class,"review-summary-table")]//'
-            'th[@class="label" and text()="Value"]/'
-            'following-sibling::td//*[@class="rating"]/@style').re('\d+')
+        product['buyer_reviews'] = self.br.parse_buyer_reviews_per_page(response)
 
-        quality_rating = response.xpath(
-            '//*[contains(@class,"review-summary-table")]//'
-            'th[@class="label" and text()="Quality"]/'
-            'following-sibling::td//*[@class="rating"]/@style').re('\d+')
+        if reqs:
+            return self.send_next_request(reqs, response)
+        else:
+            return product
 
-        if num_reviews and average_rating:
-            average_rating = float(average_rating[0]) / 20
-            num_reviews = int(num_reviews[0])
-            if value_rating and quality_rating:
-                rating_by_star = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
-                for (a, b) in zip(value_rating, quality_rating):
-                    average_vote = (int(a) + int(b)) / 2
-                    over_five = average_vote / 20
-                    rating_by_star[str(over_five)] += 1
+    def _parse_buyer_reviews(self, response):
+        contents = response.body_as_unicode()
+        meta = response.meta.copy()
+        product = response.meta['product']
+        reqs = meta.get('reqs', [])
+        buyer_reviews = {}
+        sku = product.get('sku')
+        if not product.get('buyer_reviews'):
+            contents = json.loads(contents)
+            incl = contents.get('Includes')
+            brs = incl.get('Products').get(sku) if incl else None
+            if brs:
+                by_star = {}
+                for d in brs['ReviewStatistics']['RatingDistribution']:
+                    by_star[str(d['RatingValue'])] = d['Count']
+                for sc in range(1, 6):
+                    if str(sc) not in by_star:
+                        by_star[str(sc)] = 0
+                buyer_reviews['rating_by_star'] = by_star
+                review_count = brs['ReviewStatistics']['TotalReviewCount']
 
-            return BuyerReviews(num_of_reviews=num_reviews,
-                                average_rating=average_rating,
-                                rating_by_star=rating_by_star or None)
+                if review_count == 0:
+                    product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+                    return product
 
-        return None
+                buyer_reviews['num_of_reviews'] = review_count
+                average_review = brs['ReviewStatistics']['AverageOverallRating']
+                average_review = float(format(average_review, '.2f'))
+                buyer_reviews['average_rating'] = average_review
+
+                product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
+            else:
+                product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+
+        if not product.get('buyer_reviews'):
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
 
     def _parse_last_buyer_date(self, response):
         last_review_date = response.xpath(
             '//*[contains(@class,"box-reviews")]'
             '//*[@class="date"]/text()').re('Posted on (.*)\)')
         return last_review_date[0] if last_review_date else None
+
+    def _parse_sku(self, response):
+        sku = response.xpath('.//*[@itemprop="sku"]/@content').extract()
+        return sku[0] if sku else None
+
+    def _parse_brand(self, response, title):
+        brand = response.xpath('.//*[contains(text(), "Shop all")]/text()').re(r'Shop\sall\s+(\S+)\s?')
+        brand = brand[0].strip() if brand else None
+        if not brand:
+            brand = guess_brand_from_first_words(title)
+        return brand
 
     def parse_product(self, response):
         reqs = []
@@ -140,6 +185,10 @@ class RiteAidProductsSpider(ProductsSpider):
         price = self._parse_price(response)
         cond_set_value(product, 'price', price)
 
+        # Parse sku
+        sku = self._parse_sku(response)
+        cond_set_value(product, 'sku', sku)
+
         # Parse image url
         image_url = self._parse_image_url(response)
         cond_set_value(product, 'image_url', image_url)
@@ -152,15 +201,34 @@ class RiteAidProductsSpider(ProductsSpider):
         out_of_stock = self._parse_is_out_of_stock(response)
         cond_set_value(product, 'is_out_of_stock', out_of_stock)
 
-        # Parse buyer reviews
-        buyer_reviews = self._parse_buyer_reviews(response)
-        cond_set_value(product, 'buyer_reviews', buyer_reviews)
+        # Parse brand
+        brand = self._parse_brand(response, product.get('title'))
+        cond_set_value(product, 'brand', brand)
 
         # Parse last buyer review date
         last_buyer_date = self._parse_last_buyer_date(response)
         cond_set_value(product, 'last_buyer_review_date', last_buyer_date)
 
+        # Parse reviews
+        reqs.append(
+            Request(
+                url=self._REVIEWS_URL.format(sku=product['sku']),
+                dont_filter=True,
+                callback=self._parse_buyer_reviews,
+                meta=meta
+            ))
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
+
+    def send_next_request(self, reqs, response):
+        """
+        Helps to handle several requests
+        """
+        req = reqs.pop(0)
+        new_meta = response.meta.copy()
+        if reqs:
+            new_meta["reqs"] = reqs
+
+        return req.replace(meta=new_meta)

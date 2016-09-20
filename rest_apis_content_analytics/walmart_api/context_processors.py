@@ -3,7 +3,7 @@ import json
 from django.core.cache import cache
 from django.conf import settings
 
-from walmart_api.utils import get_cache_key_for_request_or_user
+from walmart_api.utils import get_submission_history_cache_key_for_request_or_user
 from .models import SubmissionHistory
 
 
@@ -16,7 +16,7 @@ def _get_submission_history(request_or_user):
 
 
 def get_submission_history_as_json(request_or_user):
-    cache_key = get_cache_key_for_request_or_user(request_or_user)
+    cache_key = get_submission_history_cache_key_for_request_or_user(request_or_user)
 
     cached_data = cache.get(cache_key) if cache_key else None
     if cached_data and cache_key:
