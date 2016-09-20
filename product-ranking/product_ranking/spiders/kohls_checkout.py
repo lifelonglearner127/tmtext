@@ -28,6 +28,7 @@ class KohlsSpider(scrapy.Spider):
 
         self.product_data = kwargs.get('product_data', "[]")
         self.product_data = json.loads(self.product_data)
+
         self.quantity = kwargs.get('quantity')
         if self.quantity:
             self.quantity = [x for x in self.quantity.split(',')]
@@ -35,11 +36,14 @@ class KohlsSpider(scrapy.Spider):
         else:
             self.quantity = ["1"]
 
-        self.promo_code = kwargs.get('promo_code')  # ticket 10585
+        self.promo_code = kwargs.get('promo_code', '')  # ticket 10585
+        self.promo_code = [promo_code.strip() for promo_code in self.promo_code.split(',')]
         self.promo_price = int(kwargs.get('promo_price', 0))
+        self.promo_mode = self.promo_code and self.promo_price
+        self.promo_code = self.promo_code if self.promo_code else [None]
 
     def start_requests(self):
-        for i, product in enumerate(self.product_data):
+        for product in self.product_data:
             url = product.get('url')
             yield scrapy.Request(url,
                                  meta={'product': product,
@@ -48,18 +52,14 @@ class KohlsSpider(scrapy.Spider):
     def parse(self, response):
         quantity = self.quantity
         product = response.meta.get('product')
-        colors_input = product.get('color', [])
-        colors = []
-        if colors_input:
-            if isinstance(colors_input, basestring):
-                colors = [colors_input]
-            else:
-                colors = colors_input[:]
-        json_data = response.xpath(
-            '//script[contains(text(), "productJsonData")]/text()').extract()[0]
-        json_regex = re.compile('productJsonData = ({.*?});', re.DOTALL)
-        json_data = json.loads(
-            json_regex.findall(json_data)[0])
+        colors = product.get('color', [])
+        if colors:
+            is_colors_input = True
+            if isinstance(colors, basestring):
+                colors = [colors]
+        else:
+            is_colors_input = False
+        json_data = self._parse_product_json_data(response)
         variants = json_data.get('productItem').get('skuDetails')
         product_id = str(json_data.get('productItem').get('productDetails').get('productId'))
         variants = self._variants_dict(variants)
@@ -94,22 +94,28 @@ class KohlsSpider(scrapy.Spider):
                     'addItemToOrderErrorURL': 'shopping_cart_add_to_cart_error_url',
                     '/atg/commerce/order/purchase/CartModifierFormHandler.productId': product_id}
         meta = {}
+
         if response.meta.get('retry'):
             quantity = ["1"]
             colors = [response.meta.get(
                 'item').get('color')]
         elif product.get('FetchAllColors'):
             colors = variants.keys()
-        elif not colors:
+        elif not is_colors_input:
             colors.append(variants.keys()[0])
-        for i, (quantity, color) in enumerate(itertools.product(quantity, colors)):
-            item = CheckoutProductItem()
-            meta['item'] = item
 
-            if colors_input:
-                item['requested_color'] = color
+        for i, (quantity, color) in enumerate(itertools.product(quantity, colors)):
+
+            item = CheckoutProductItem()
             item['color'] = color
             item['url'] = response.url
+
+            meta['item'] = item
+            meta['product'] = product
+
+            if is_colors_input:
+                item['requested_color'] = color
+
             formdata['/atg/commerce/order/purchase/' \
                      'CartModifierFormHandler.catalogRefIds'] = variants.get(color)
             formdata['add_cart_quantity'] = quantity
@@ -121,27 +127,35 @@ class KohlsSpider(scrapy.Spider):
                 item['requested_quantity_not_available'] = False
                 meta['cookiejar'] = str(i)
 
-            meta['product'] = product
+
             if color not in variants.keys():
                 item['requested_color_not_available'] = True
                 yield item
             else:
-                item['requested_color_not_available'] = False
-                yield scrapy.FormRequest.from_response(response,
-                                                       formname='pdpAddToBag',
-                                                       formdata=formdata,
-                                                       callback=self.parse_page,
-                                                       method='POST',
-                                                       dont_filter=True,
-                                                       meta=meta
-                                                      )
+                for b, promo_code in enumerate(self.promo_code):
+                    meta['promo_code'] = promo_code
+                    if response.meta.get('retry'):
+                        item['requested_quantity_not_available'] = True
+                        meta['cookiejar'] = response.meta.get('cookiejar')
+                    else:
+                        item['requested_quantity_not_available'] = False
+                        meta['cookiejar'] = str(i) if not self.promo_mode else str(i) + promo_code + str(b)
 
-    def parse_page(self, response):
+                    item['requested_color_not_available'] = False
+                    yield scrapy.FormRequest.from_response(response,
+                                                           formname='pdpAddToBag',
+                                                           formdata=formdata,
+                                                           callback=self.parse_availability,
+                                                           method='POST',
+                                                           dont_filter=True,
+                                                           meta=meta
+                                                           )
+
+    def parse_availability(self, response):
         meta = response.meta
         if 'You can only purchase' in response.body_as_unicode():
             meta['retry'] = True
             yield scrapy.Request(response.meta.get('item').get('url'),
-                                 callback=self.parse,
                                  meta=meta,
                                  dont_filter=True)
         else:
@@ -153,13 +167,7 @@ class KohlsSpider(scrapy.Spider):
 
     def parse_cart(self, response):
         item = response.meta.get('item')
-        json_data = \
-            response.xpath(
-                '//script[contains(text(), "var trJsonData = {")'
-                ' and @type="text/javascript"]/text()').extract()[0]
-        json_regex = re.compile('trJsonData = ({.*?});', re.DOTALL)
-        json_data = json_regex.findall(json_data)[0]
-        json_data = json.loads(json_data)
+        json_data = self._parse_cart_json_data(response)
         product = json_data.get('shoppingBag').get('items')[0]
         html_parser = HTMLParser()
         item['name'] = html_parser.unescape(product.get('displayName'))
@@ -174,8 +182,29 @@ class KohlsSpider(scrapy.Spider):
         item['order_subtotal'] = order_subtotal
         item['price'] = round(
             float(order_subtotal) / item['quantity'], 2)
-        item['order_total'] = json_data.get('orderSummary').get('total').replace('$', '')
-        yield self.promo_logic(response)
+        item['order_total'] = float(json_data.get('orderSummary').get('total').replace('$', ''))
+        if self.promo_mode:
+            yield self.promo_logic(response, response.meta.get('promo_code'))
+        else:
+            yield item
+
+    @staticmethod
+    def _parse_product_json_data(response):
+        json_data = response.xpath(
+            '//script[contains(text(), "productJsonData")]/text()').extract()[0]
+        json_regex = re.compile('productJsonData = ({.*?});', re.DOTALL)
+        json_data = json.loads(
+            json_regex.findall(json_data)[0])
+        return json_data
+
+    @staticmethod
+    def _parse_cart_json_data(response):
+        json_data = response.xpath("//script[contains(text(), \"var trJsonData = {\")"
+                                   " and @type=\"text/javascript\"]/text()").extract()[0]
+        json_regex = re.compile('trJsonData = ({.*?});', re.DOTALL)
+        json_data = json_regex.findall(json_data)[0]
+        json_data = json.loads(json_data)
+        return json_data
 
     @staticmethod
     def _variants_dict(color_list):
@@ -187,39 +216,26 @@ class KohlsSpider(scrapy.Spider):
                 variants_dict[color] = variant_id
         return variants_dict
 
-    def promo_logic(self, response):
+    def promo_logic(self, response, promo_code=None):
         meta = response.meta
         item = meta.get('item')
+        item['promo_code'] = meta.get('promo_code')
         if response.meta.get('promo'):
             promo_order_total = response.meta.get('promo_order_total')
             promo_order_subtotal = self._calculate_promo_subtotal(response, promo_order_total)
+            promo_price = promo_order_subtotal / meta.get('item').get('quantity')
+            is_promo_code_valid = not (promo_order_total == item['order_total'])
+            item['is_promo_code_valid'] = is_promo_code_valid
             if self.promo_price == 1:
                 item['order_total'] = promo_order_total
                 item['order_subtotal'] = promo_order_subtotal
-                item['price'] = promo_order_subtotal / meta.get('item').get('quantity')
+                item['price'] = promo_price
             if self.promo_price == 2:
                 item['promo_order_total'] = promo_order_total
                 item['promo_order_subtotal'] = promo_order_subtotal
-                item['promo_price'] = promo_order_subtotal / meta.get('item').get('quantity')
-        elif response.meta.get('tax'):
-            y = lambda x: x.split(';')[0].split('=')
-            cookies = response.headers.getlist('Set-Cookie')
-            prices_raw = [y(b)[1].replace('$', '') for b in cookies if y(b)[0] == 'VisitorBagTotals']
-            prices = [float(price.split('|')[0]) for price in prices_raw]
-            promo_order_total = min(prices)
-            delivery = float([delivery.split('|')[-1] for delivery in prices_raw if
-                              float(delivery.split('|')[0]) == promo_order_total][0].replace('$', ''))
-            meta['promo'] = True
-            meta['delivery'] = delivery
-            meta['promo_order_total'] = promo_order_total
-            return scrapy.Request(self.TAX_URL,
-                                  meta=meta,
-                                  callback=self.promo_logic,
-                                  dont_filter=True
-                                )
-        elif self.promo_code and self.promo_price:
-            return self._request_promo_code(response, self.promo_code, item)
-        return item
+                item['promo_price'] = promo_price
+            return item
+        return self._enter_promo_code(response, promo_code, item)
 
     @staticmethod
     def _calculate_promo_subtotal(response, promo_order_total):
@@ -230,7 +246,25 @@ class KohlsSpider(scrapy.Spider):
              (tax_rate / 100.0) - delivery) / (1 + (tax_rate / 100.0)), 2)
         return promo_order_subtotal
 
-    def _request_promo_code(self, response, promo_code, item):
+    def _parse_cart_tax(self, response):
+        meta = response.meta
+        y = lambda x: x.split(';')[0].split('=')
+        cookies = response.headers.getlist('Set-Cookie')
+        prices_raw = [y(b)[1].replace('$', '') for b in cookies if y(b)[0] == 'VisitorBagTotals']
+        prices = [float(price.split('|')[0]) for price in prices_raw]
+        promo_order_total = min(prices)
+        delivery = float([delivery.split('|')[-1] for delivery in prices_raw if
+                          float(delivery.split('|')[0]) == promo_order_total][0].replace('$', ''))
+        meta['promo'] = True
+        meta['delivery'] = delivery
+        meta['promo_order_total'] = promo_order_total
+        return scrapy.Request(self.TAX_URL,
+                              meta=meta,
+                              callback=self.promo_logic,
+                              dont_filter=True
+                              )
+
+    def _enter_promo_code(self, response, promo_code, item):
         formdata = {"_dyncharset": "UTF-8",
                     "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": promo_code,
                     "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": "+",
@@ -243,13 +277,11 @@ class KohlsSpider(scrapy.Spider):
                     "apply_promo_code": "submit",
                     "_D:apply_promo_code": "+",
                     "_DARGS": "/checkout/v2/includes/discounts_update_forms.jsp.2"}
-        meta = response.meta
-        meta['tax'] = True
         return scrapy.FormRequest.from_response(response,
                                                 formxpath='//form[@id="apply_promo_code_form"]',
                                                 formdata=formdata,
-                                                callback=self.promo_logic,
+                                                callback=self._parse_cart_tax,
                                                 method='POST',
                                                 dont_filter=True,
-                                                meta=meta
+                                                meta=response.meta
                                                )
