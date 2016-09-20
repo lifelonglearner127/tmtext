@@ -603,7 +603,11 @@ class Scraper():
         results_dict = {}
 
         # if it's not a valid product page, abort
-        if self.is_timeout or self.not_a_product():
+        try:
+            if self.is_timeout or self.not_a_product():
+                return self.ERROR_RESPONSE
+        except:
+            self.ERROR_RESPONSE["failure_type"] = 'Not a product'
             return self.ERROR_RESPONSE
 
         for info in info_type_list:

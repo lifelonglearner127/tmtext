@@ -1,10 +1,17 @@
 class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as parent
     optional_fields = ['model', 'brand', 'price', 'bestseller_rank',
                        'buyer_reviews']
+
     ignore_fields = [
         'is_in_store_only', 'is_out_of_stock', 'related_products', 'upc',
         'google_source_site', 'description', 'special_pricing'
     ]
+    # these fields will be ignored (in addition) when the scraper runs
+    # in the product url mode
+    extra_ignore_fields_for_product_urls = [
+        'model', 'bestseller_rank'
+    ]
+
     ignore_log_errors = False  # don't check logs for errors?
     ignore_log_duplications = True  # ... duplicated requests?
     ignore_log_filtered = True  # ... filtered requests?
@@ -33,3 +40,9 @@ class AmazonValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
         'http://www.amazon.com/gp/product/B00BXKET7Q/',
         'https://www.amazon.com/dp/B00MJMV0GU/'
     ]
+
+    def __init__(self, *args, **kwargs):
+        # if we're in "product_url" mode - exclude "model" and "bestseller_rank" from
+        product_url = getattr(kwargs['spider_class'], 'product_url', None)
+        if product_url:
+            self.ignore_fields.extend(self.extra_ignore_fields_for_product_urls)
