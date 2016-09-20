@@ -12,6 +12,7 @@ def collect_data(cache):
     context = dict()
     context['executed_tasks'] = cache.get_executed_tasks_count()
     context['total_instances'] = cache.get_today_instances()
+    context['today_jobs'] = cache.get_today_jobs()
     context['total_cached_items'] = cache.get_cached_tasks_count()
     context['cache_most_popular_url'] = \
         cache.get_most_popular_cached_items(5, False)
@@ -59,6 +60,11 @@ def save_instances_number(cache, context):
     return cache.save_today_instances_count(data)
 
 
+def save_jobs_number(cache, context):
+    data = context.get('today_jobs', 0)
+    return cache.save_today_jobs_count(data)
+
+
 def main():
     cache = SqsCache()
     with open('settings') as f:
@@ -72,6 +78,7 @@ def main():
     content = generate_mail_message(context)
     send_mail(sender, receivers, subject, content)
     save_instances_number(cache, context)
+    save_jobs_number(cache, context)
     res = delete_old_cache_data(cache)
     print 'Deleted %s total records from cache.' % res
 

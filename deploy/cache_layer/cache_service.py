@@ -30,6 +30,8 @@ class SqsCache(object):
     REDIS_COMPLETED_TASKS = 'completed_tasks'  # zset, count completed tasks
     REDIS_INSTANCES_COUNTER = 'daily_sqs_instances_counter'  # int
     REDIS_INSTANCES_HISTORY = 'sqs_instances_history'  # zset
+    REDIS_JOBS_COUNTER = 'daily_sqs_jobs_counter'  # int
+    REDIS_JOBS_HISTORY = 'sqs_jobs_history'  # zset
     REDIS_URGENT_STATS = 'urgent_stats'  # zset
     REDIS_FAILED_TASKS = 'failed_tasks'  # set, store failed tasks here
     MAX_FAILED_TRIES = 3
@@ -46,7 +48,8 @@ class SqsCache(object):
                                             socket_timeout=timeout)
         # self.db = db if db else StrictRedis()  # for local
 
-    def _task_to_key(self, task):
+    @staticmethod
+    def _task_to_key(task):
         """
         generate unique key-string for the task, from server_name and task_id
         task should be dict
@@ -70,7 +73,8 @@ class SqsCache(object):
         res = ':'.join(res)
         return is_term, res
 
-    def _parse_freshness(self, task):
+    @staticmethod
+    def _parse_freshness(task):
         allowed_values = ['day', 'hour', '30 minutes', '15 minutes']
         limit = task.get('sqs_cache_time_limit', 'day')
         if limit not in allowed_values:  # validate field
@@ -178,6 +182,7 @@ class SqsCache(object):
         """
         self.db.delete(self.REDIS_INSTANCES_COUNTER,
                        self.REDIS_COMPLETED_COUNTER,
+                       self.REDIS_JOBS_COUNTER,
                        self.REDIS_FAILED_TASKS)
 
         return \
@@ -216,6 +221,12 @@ class SqsCache(object):
         get count of started instances for current day
         """
         return self.db.get(self.REDIS_INSTANCES_COUNTER)
+
+    def get_today_jobs(self):
+        """
+            get count of started jobs for current day
+            """
+        return self.db.get(self.REDIS_JOBS_COUNTER)
 
     def get_executed_tasks_count(self, hours_from=None, hours_to=None,
                                  for_last_hour=False):
@@ -307,7 +318,8 @@ class SqsCache(object):
         """
         returns dict with current settings
         """
-        path = '%s/%s' % (dirname(realpath(__file__)), self.CACHE_SETTINGS_PATH)
+        path = '%s/%s' % (dirname(realpath(__file__)),
+                          self.CACHE_SETTINGS_PATH)
         with open(path, 'r') as f:
             s = f.read()
         data = json.loads(s or '{}')
@@ -319,7 +331,8 @@ class SqsCache(object):
         """
         if not data:
             return
-        path = '%s/%s' % (dirname(realpath(__file__)), self.CACHE_SETTINGS_PATH)
+        path = '%s/%s' % (dirname(realpath(__file__)),
+                          self.CACHE_SETTINGS_PATH)
         with open(path, 'w') as f:
             s = json.dumps(data)
             f.write(s)
@@ -340,6 +353,25 @@ class SqsCache(object):
         date_offset = date.today() - timedelta(days=days+1)
         offset = int(mktime(date_offset.timetuple()))
         data = self.db.zrevrangebyscore(self.REDIS_INSTANCES_HISTORY,
+                                        9999999999, offset,
+                                        withscores=True, score_cast_func=int)
+        res = [(d[1], d[0].split(':')[-1]) for d in data]
+        res = OrderedDict(res)
+        return res
+
+    def save_today_jobs_count(self, jobs_num=None):
+        cnt = jobs_num or self.db.get(self.REDIS_JOBS_COUNTER)
+        cnt = int(cnt or '0')
+        today = date.today() - timedelta(days=1)
+        today = int(mktime(today.timetuple()))  # get today's timestamp
+        # score is current day timestamp, name is jobs count
+        return self.db.zadd(self.REDIS_JOBS_HISTORY, today,
+                            '%s:%s' % (today, cnt))
+
+    def get_jobs_history(self, days):
+        date_offset = date.today() - timedelta(days=days + 1)
+        offset = int(mktime(date_offset.timetuple()))
+        data = self.db.zrevrangebyscore(self.REDIS_JOBS_HISTORY,
                                         9999999999, offset,
                                         withscores=True, score_cast_func=int)
         res = [(d[1], d[0].split(':')[-1]) for d in data]

@@ -142,6 +142,7 @@ def stats():
         context['running_instances'] = sum(instances.itervalues())
         context['running_instances_info'] = instances
         context['today_instances'] = cache.get_today_instances()
+        context['today_jobs'] = cache.get_today_jobs()
         context['today_executed_tasks'] = cache.get_executed_tasks_count()
         context['last_hour_executed_tasks'] = cache.get_executed_tasks_count(
             for_last_hour=True)
@@ -241,6 +242,19 @@ def complete_task():
     is_from_cache_str = request.form['is_from_cache']
     cache.complete_task(task, is_from_cache_str)
     return make_response('', 200)
+
+
+@app.route('/jobs_history', methods=['GET', 'POST'])
+def jobs_history():
+    """
+    Total number of jobs.
+    """
+    if request.method == 'GET':
+        return render_template('jobs_history.html')
+    data = {}
+    resp = make_response(json.dumps(data))
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
 
 
 @app.route('/fail_task', methods=['POST'])

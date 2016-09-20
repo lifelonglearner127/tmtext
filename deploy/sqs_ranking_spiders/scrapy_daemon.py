@@ -56,7 +56,7 @@ sys.path.insert(
 from sqs_queue import SQS_Queue
 from libs import convert_json_to_csv
 from cache_layer import REDIS_HOST, REDIS_PORT, INSTANCES_COUNTER_REDIS_KEY, \
-    TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET
+    TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET, JOBS_COUNTER_REDIS_KEY
 
 
 TEST_MODE = False  # if we should perform local file tests
@@ -1381,6 +1381,8 @@ def main():
             notify_cache(task_data, is_from_cache=True)
             del task
             continue
+        # increment quantity of tasks spinned up during the day.
+        increment_metric_counter(JOBS_COUNTER_REDIS_KEY, redis_db)
         if task.start():
             tasks_taken.append(task)
             task.run()

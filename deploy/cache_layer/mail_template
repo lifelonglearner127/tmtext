@@ -23,6 +23,7 @@ Sqs
 
 Executed tasks: {{ executed_tasks }}.
 Used autoscale instances: {{ total_instances }}.
+Today jobs: {{ today_jobs }}.
 
 
 Urgent queue statistics:

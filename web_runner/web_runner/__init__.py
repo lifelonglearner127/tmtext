@@ -50,6 +50,7 @@ def main(global_config, **settings):
     config = Configurator(settings=settings)
 
     config.add_route("spider pending jobs",
+
                      '/crawl/project/{project}/spider/{spider}/job/{jobid}/')
     config.add_route("spider job results",
                      '/result/project/{project}/spider/{spider}/job/{jobid}/')
