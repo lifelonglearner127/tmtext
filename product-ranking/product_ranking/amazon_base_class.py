@@ -1134,9 +1134,16 @@ class AmazonBaseClass(BaseProductsSpider):
                 'string(//div[@id="acr"]/div[@class="txtsmall"]'
                 '/div[contains(@class, "acrCount")])'
             ).re(FLOATING_POINT_RGEX)
+        if not total:
+            total = response.xpath('.//*[contains(@class, "totalReviewCount")]/text()').re(FLOATING_POINT_RGEX)
             if not total:
                 return ZERO_REVIEWS_VALUE
-        buyer_reviews['num_of_reviews'] = int(total[0].replace(',', '').
+        # For cases when total looks like: [u'4.2', u'5', u'51']
+        if len(total) == 3:
+            buyer_reviews['num_of_reviews'] = int(total[-1].replace(',', '').
+                                                  replace('.', ''))
+        else:
+            buyer_reviews['num_of_reviews'] = int(total[0].replace(',', '').
                                               replace('.', ''))
 
         average = response.xpath(
@@ -1146,7 +1153,11 @@ class AmazonBaseClass(BaseProductsSpider):
                 '//div[@id="acr"]/div[@class="txtsmall"]'
                 '/div[contains(@class, "acrRating")]/text()'
             )
-        average = average.extract()[0].replace('out of 5 stars','')
+        if not average:
+            average = response.xpath(
+                ".//*[@id='reviewStarsLinkedCustomerReviews']//span/text()"
+            )
+        average = average.extract()[0].replace('out of 5 stars','') if average else 0.0
         average = average.replace('von 5 Sternen', '').replace('5つ星のうち','')\
             .replace('平均','').replace(' 星','').replace('étoiles sur 5', '')\
             .strip()
@@ -1158,7 +1169,7 @@ class AmazonBaseClass(BaseProductsSpider):
         if not buyer_reviews.get('rating_by_star'):
             # scrape new buyer reviews request (that will lead to a new page)
             buyer_rev_link = is_empty(response.xpath(
-                '//div[@id="revSum"]//a[contains(text(), "See all")' \
+                '//div[@id="revSum" or @id="reviewSummary"]//a[contains(text(), "See all")' \
                 ' or contains(text(), "See the customer review")' \
                 ' or contains(text(), "See both customer reviews")]/@href'
             ).extract())
