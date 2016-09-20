@@ -332,6 +332,8 @@ class BaseCheckoutSpider(scrapy.Spider):
             promo_order_total = float(self._get_promo_total())
             promo_order_subtotal = float(self._get_promo_subtotal().replace(',', ''))
             promo_price = round(promo_order_subtotal / item['quantity'], 2)
+            is_promo_code_valid = not (promo_order_total == item['order_total'])
+            item['is_promo_code_valid'] = is_promo_code_valid
             if self.promo_price == 1:
                 item['order_total'] = promo_order_total
                 item['order_subtotal'] = promo_order_subtotal
@@ -340,8 +342,6 @@ class BaseCheckoutSpider(scrapy.Spider):
                 item['promo_order_total'] = promo_order_total
                 item['promo_order_subtotal'] = promo_order_subtotal
                 item['promo_price'] = promo_price
-            is_promo_code_valid = not (promo_order_total == item['order_total'])
-            item['is_promo_code_valid'] = is_promo_code_valid
             self._remove_promo_code()
             yield item
 
