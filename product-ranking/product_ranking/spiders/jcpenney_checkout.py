@@ -166,98 +166,56 @@ class JCpenneySpider(BaseCheckoutSpider):
         time.sleep(4)
 
     def _get_product_list_cart(self):
-        condition = EC.visibility_of_element_located(
-            (By.ID, 'shoppingBagContentID'))
-        return self.wait.until(condition)
-
-    def _get_products_in_cart(self, product_list):
-        html_text = product_list.get_attribute('outerHTML')
-        selector = scrapy.Selector(text=html_text)
-        return selector.xpath('//fieldset')
-
-    def _get_subtotal(self):
-        order_subtotal_element = self.wait.until(
-            EC.visibility_of_element_located((
-                By.XPATH, '//*[@class="flt_wdt merch_subtotal"]/span/'
-                          'span[@class="flt_rgt"]')))
-        if order_subtotal_element:
-            order_subtotal = order_subtotal_element.text
-            return is_empty(re.findall('\$([\d\.]+)', order_subtotal))
-
-    def _get_total(self):
-        socket.setdefaulttimeout(60)
-        self._click_on_element_with_id('Checkout')
-        continue_as_guest_button = self.wait.until(
-            EC.element_to_be_clickable(
-                (By.XPATH, '//input[@class="blue-Button'
-                           ' btn_continue_as_guest"]')))
-        continue_as_guest_button.click()
-
-        order_total_element = self.wait.until(
-            EC.element_to_be_clickable(
-                (By.XPATH, '//div[@class="row order_total"]'
-                           '/span[@class="flt_rgt"]')))
-
-        if order_total_element:
-            order_total = order_total_element.text
-            return is_empty(re.findall('\$([\d\.]+)', order_total))
-
-    def _get_item_name(self, item):
-        page_source = self.driver.page_source
+        self.page_source = self.driver.page_source
         try:
             item_info = re.findall(
-                'var jcpORDERJSONjcp = (\{.+?\});', page_source, re.MULTILINE)[0]
-            name = json.loads(item_info).get('purchasedItems')[0].get('displayName')
+                'var jcpORDERJSONjcp = (\{.+?\});', self.page_source, re.MULTILINE)[0]
+            self.item_info = json.loads(item_info)
+            print self.item_info
+            return self.item_info
         except IndexError:
-            name = ''
-        return name
+            return None
+
+    def _get_products_in_cart(self, product_list):
+        return product_list.get('purchasedItems')
+
+    def _get_subtotal(self):
+        return self.item_info.get('merchantTotalWithSavings')
+
+    def _get_total(self):
+        return self.item_info.get('orderTotal')
+
+    def _get_item_name(self, item):
+        return item.get('displayName')
 
     def _get_item_id(self, item):
-        return is_empty(item.xpath(
-                        '*//*[contains(@class,"item_number")]/text()').re('#(.*)'))
+        return item.get('itemNumber')[2:]
 
     def _get_item_price(self, item):
-        return is_empty(item.xpath(
-                        '*//*[contains(@class,"flt_wdt total")]//'
-                        'span[@class="flt_rgt"]/text()').re('\$(.*)'))
+        return str(item.get('lineTotalPrice'))
 
     def _get_item_price_on_page(self, item):
-        return is_empty(item.css(
-                        '.gallery_page_price  .priceValueSpacer::text').re('\$(.*)'))
+        return item.get('discountedLineUnitPrice')
 
     def _get_item_color(self, item):
-        return is_empty(item.xpath(
-                        '*//span[@class="size" and contains(text(),"color:")]'
-                        '/strong/text()').extract())
+        selector = scrapy.Selector(text=self.page_source)
+        return is_empty(selector.xpath('//span[@class="size" and '
+                              'contains(text(),"color:")]/text()').re('color\:\n(.+)'))
 
     def _get_item_quantity(self, item):
-        return is_empty(item.xpath(
-                        '*//select[@name="quantity"]//option'
-                        '[@selected="true"]/text()').extract())
+        return item.get('quantity')
 
     def _enter_promo_code(self, promo_code):
         self.log('Enter promo code: {}'.format(promo_code))
-        promo_field= self._find_by_xpath('//div[@class="cr-coupon"]/*[@id="cr-code"]')[0]
+        promo_field = self._find_by_xpath('//*[@id="cr-code"]')[0]
         promo_field.send_keys(promo_code)
         time.sleep(2)
         promo_field.send_keys(Keys.ENTER)
         time.sleep(8)
+        self.item_info = self._get_product_list_cart()
 
     def _get_promo_total(self):
-        order_total_element = self.wait.until(
-            EC.element_to_be_clickable(
-                (By.XPATH, '//div[@class="row order_total"]'
-                           '/span[@class="flt_rgt"]')))
-
-        if order_total_element:
-            order_total = order_total_element.text
-            return is_empty(re.findall('\$([\d\.]+)', order_total))
+        return self._get_total()
 
     def _get_promo_subtotal(self):
-        order_subtotal_element = self.wait.until(
-            EC.visibility_of_element_located((
-                By.XPATH, '//*[@class="flt_wdt total"]/'
-                          'span[@class="flt_rgt marginlft"]')))
-        if order_subtotal_element:
-            order_subtotal = order_subtotal_element.text
-            return is_empty(re.findall('\$([\d\.]+)', order_subtotal))
+        return str(self._get_subtotal())
