@@ -190,11 +190,6 @@ class ShopriteProductsSpider(BaseProductsSpider):
         return 'https://shop.shoprite.com' \
                '/store/{store}#/product/sku/{sku}'.format(store=store, sku=sku)
 
-    @staticmethod
-    def _parse_variants(product_info):
-        sizes = product_info.get('Sizes')
-
-
     def _parse_single_product(self, response):
         """Same to parse_product."""
         url = response.meta.get('product').get('url')
@@ -258,10 +253,6 @@ class ShopriteProductsSpider(BaseProductsSpider):
         # Parse img_url
         image_url = self._parse_image_url(product_info)
         cond_set_value(product, 'image_url', image_url)
-
-        # Parse variants
-        variants = self._parse_variants(product_info)
-        cond_set_value(product, 'variants', variants)
 
         # Parse url
         if not product.get('url'):
