@@ -1,4 +1,4 @@
-#!/home/konokrad/.virtualenvs/TMText/bin/python
+#!/usr/bin/python
 import os
 import sys
 

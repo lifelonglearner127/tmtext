@@ -33,6 +33,10 @@ class SamsclubScraper(Scraper):
     average_review = None
     reviews = None
     image_urls = None
+    image_alt = []
+    # This is needed to extract alt-text for images of products
+    # from second half of shelf page, loaded via ajax
+    ajax_alt_text = {}
     image_count = -1
     price = None
     price_amount = None
@@ -276,13 +280,27 @@ class SamsclubScraper(Scraper):
 
             featured_images = map(lambda i: i.split('?')[0], featured_images)
             images += featured_images
-
             for image in map(lambda i: i['image'], self._items()):
                 if not image in images:
                     images.append(image)
 
             self.image_count = len(images)
-
+            image_alts = []
+            for im in images:
+                image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@alt'.format(im))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@title'.format(im))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains("{}", @src)]/@alt'.format(im))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@alt'.format(im.replace("http:",'')))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@ng-src, "{}")]/@alt'.format(im.replace("http:",'')))
+                image_alt = image_alt[0] if image_alt else ''
+                if not image_alt:
+                    image_alt = self.ajax_alt_text.get(im.replace("http:",''), '')
+                image_alts.append(image_alt)
+            self.image_alt = image_alts
             if images:
                 return images
 
@@ -319,15 +337,20 @@ class SamsclubScraper(Scraper):
 
             self.image_urls = img_urls
             self.image_count = len(img_urls)
+            # TODO add image alt extraction for single items as well
             return img_urls
         else:
             return self.image_urls
 
     def _image_alt_text(self):
-        return ['ALT_TEXT', 'ALT_TEXT_2']
+        if not self.image_count == -1 or not self.image_alt:
+            image_urls = self._image_urls()
+        return self.image_alt
 
     def _image_alt_text_len(self):
-        return ['ALT_TEXT_LEN', 'ALT_TEXT_2_LEN']
+        if not self.image_alt:
+            image_urls = self._image_urls()
+        return [len(i) if i else 0 for i in self.image_alt] if self.image_alt else None
 
     def _image_count(self):
         if self.image_count == -1:
@@ -558,7 +581,9 @@ class SamsclubScraper(Scraper):
 
             for record in records:
                 price = None
-
+                # This is needed to extract alt-text for images of products
+                # from second half of shelf page, loaded via ajax
+                self.ajax_alt_text[record.get('listImage')] = record.get('productName')
                 if record.get('clubPricing') and not record['clubPricing']['forceLoginRequired']:
                     price = record['clubPricing']['finalPrice']['currencyAmount']
 
@@ -1033,6 +1058,8 @@ class SamsclubScraper(Scraper):
         "num_items_no_price_displayed" : _num_items_no_price_displayed, \
         "body_copy" : _body_copy, \
         "body_copy_links" : _body_copy_links, \
+        "image_alt_text": _image_alt_text, \
+        "image_alt_text_len": _image_alt_text_len, \
 
         # CONTAINER : SELLERS
         "price" : _price, \
@@ -1062,8 +1089,6 @@ class SamsclubScraper(Scraper):
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \
-        "image_alt_text" : _image_alt_text, # alt text for images, list of strings
-        "image_alt_text_len" : _image_alt_text_len,
 
          # CONTAINER : REVIEWS
         "review_count" : _review_count, \
