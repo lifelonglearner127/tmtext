@@ -3,7 +3,6 @@
 import string
 import urlparse
 from collections import namedtuple
-from scrapy.conf import settings
 from product_ranking.spiders import (BaseProductsSpider, SiteProductItem, cond_set_value,
                                      FLOATING_POINT_RGEX)
 from product_ranking.items import Price
