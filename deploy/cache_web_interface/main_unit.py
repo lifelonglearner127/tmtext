@@ -60,7 +60,7 @@ def clear_cache():
             cache.REDIS_CACHE_STATS_URL, cache.REDIS_CACHE_STATS_TERM,
             cache.REDIS_COMPLETED_COUNTER]),
         'sqs_stats': ('Stats of the sqs: count of tasks, jobs and instances', [
-            cache.REDIS_COMPLETED_TASKS, cache.REDIS_INSTANCES_COUNTERб
+            cache.REDIS_COMPLETED_TASKS, cache.REDIS_INSTANCES_COUNTER,
             cache.REDIS_JOBS_COUNTER]),
         'urgent_stats': ('Stats of the urgent queue', [
             cache.REDIS_URGENT_STATS])
