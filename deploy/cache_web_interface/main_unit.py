@@ -143,7 +143,7 @@ def stats():
         context['running_instances'] = sum(instances.itervalues())
         context['running_instances_info'] = instances
         context['today_instances'] = cache.get_today_instances()
-        context['today_jobs'] = cache.get_today_jobs()
+        context['today_jobs'] = cache.get_jobs_stats()
         context['today_executed_tasks'] = cache.get_executed_tasks_count()
         context['last_hour_executed_tasks'] = cache.get_executed_tasks_count(
             for_last_hour=True)

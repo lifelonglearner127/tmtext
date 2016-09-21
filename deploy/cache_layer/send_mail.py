@@ -13,6 +13,7 @@ def collect_data(cache):
     context['executed_tasks'] = cache.get_executed_tasks_count()
     context['total_instances'] = cache.get_today_instances()
     context['today_jobs'] = cache.get_today_jobs()
+    context['jobs_stats'] = cache.get_jobs_stats()
     context['total_cached_items'] = cache.get_cached_tasks_count()
     context['cache_most_popular_url'] = \
         cache.get_most_popular_cached_items(5, False)
@@ -56,8 +57,7 @@ def delete_old_cache_data(cache):
 
 
 def save_instances_number(cache, context):
-    data = context.get('total_instances', 0)
-    return cache.save_today_instances_count(data)
+    return cache.save_today_instances_count(cache.get_today_jobs())
 
 
 def save_jobs_number(cache, context):

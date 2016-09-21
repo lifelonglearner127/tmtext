@@ -38,7 +38,21 @@
             </ul>
         </li>
         <li>Today started instances: {{ today_instances }}</li>
-        <li>Today jobs: {{ today_jobs }}</li>
+        <li>
+            Today jobs: {{ today_jobs.term + today_jobs.url }} jobs ({{ today_jobs.term }} search terms, {{ today_jobs.url }} product URLs)
+            <ul>
+                {% for server, server_metrics in today_jobs.servers.items() %}
+                    <li>
+                        {{ server }}: {{ server_metrics.url + server_metrics.term }} jobs ({{ server_metrics.term }} search terms, {{ server_metrics.url }} product URLs)
+                        <ul>
+                            {% for scrapper, scrapper_metrics in server_metrics.scrappers.items() %}
+                                <li>{{ scrapper }}: {{ scrapper_metrics.term + scrapper_metrics.url }} jobs ({{ scrapper_metrics.term }} search terms, {{ scrapper_metrics.url }} product URLs)</li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% endfor %}
+            </ul>
+        </li>
         <li>
             Today executed tasks: {{ today_executed_tasks }}
             <ul>

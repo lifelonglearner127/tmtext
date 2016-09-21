@@ -56,7 +56,8 @@ sys.path.insert(
 from sqs_queue import SQS_Queue
 from libs import convert_json_to_csv
 from cache_layer import REDIS_HOST, REDIS_PORT, INSTANCES_COUNTER_REDIS_KEY, \
-    TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET, JOBS_COUNTER_REDIS_KEY
+    TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET, \
+    JOBS_COUNTER_REDIS_KEY, JOBS_STATS_REDIS_KEY
 
 
 TEST_MODE = False  # if we should perform local file tests
@@ -1290,6 +1291,33 @@ def main():
         [logger.info(_.report()) for _ in tasks]
         logger.info('#'*10 + 'FINISH TASKS REPORT' + '#'*10)
 
+    def store_tasks_metrics(task, redis_db):
+        """This method will just increment reuired key in redis database
+            if connection to the database exist."""
+        if TEST_MODE:
+            print 'Simulate redis incremet, key is %s' % JOBS_COUNTER_REDIS_KEY
+            print 'Simulate redis incremet, key is %s' % JOBS_STATS_REDIS_KEY
+            return
+        if redis_db:
+            try:
+                # increment quantity of tasks spinned up during the day.
+                redis_db.incr(JOBS_COUNTER_REDIS_KEY)
+            except Exception as e:
+                logger.warning("Failed to increment redis metric '%s' "
+                               "with exception '%s'", JOBS_COUNTER_REDIS_KEY,
+                               e)
+            try:
+                generated_key = '%s:%s:%s' % (
+                    task.get('server', 'UnknownServer'),
+                    task.get('site', 'UnknownSite'),
+                    'term' if 'term' in task and task['term'] else 'url'
+                )
+                redis_db.hincrby(JOBS_STATS_REDIS_KEY, generated_key, 1)
+            except Exception as e:
+                logger.warning("Failed to increment redis key '%s' and"
+                               "redis metric '%s' with exception '%s'",
+                               JOBS_STATS_REDIS_KEY, generated_key, e)
+
     attributes = 'SentTimestamp'  # additional data to get with sqs messages
     add_timeout = 30  # add to visibility timeout
     # names of the queues in SQS, ordered by priority
@@ -1381,8 +1409,8 @@ def main():
             notify_cache(task_data, is_from_cache=True)
             del task
             continue
-        # increment quantity of tasks spinned up during the day.
-        increment_metric_counter(JOBS_COUNTER_REDIS_KEY, redis_db)
+        # Store jobs metrics
+        store_tasks_metrics(task_data, redis_db)
         if task.start():
             tasks_taken.append(task)
             task.run()

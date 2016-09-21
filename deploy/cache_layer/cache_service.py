@@ -3,7 +3,7 @@ from time import time, mktime
 from redis import StrictRedis
 from zlib import compress, decompress
 from datetime import date, datetime, timedelta
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from os.path import realpath, dirname
 
 try:
@@ -32,6 +32,7 @@ class SqsCache(object):
     REDIS_INSTANCES_HISTORY = 'sqs_instances_history'  # zset
     REDIS_JOBS_COUNTER = 'daily_sqs_jobs_counter'  # int
     REDIS_JOBS_HISTORY = 'sqs_jobs_history'  # zset
+    REDIS_JOBS_STATS = 'sqs_jobs_stats'  # hash
     REDIS_URGENT_STATS = 'urgent_stats'  # zset
     REDIS_FAILED_TASKS = 'failed_tasks'  # set, store failed tasks here
     MAX_FAILED_TRIES = 3
@@ -183,6 +184,7 @@ class SqsCache(object):
         self.db.delete(self.REDIS_INSTANCES_COUNTER,
                        self.REDIS_COMPLETED_COUNTER,
                        self.REDIS_JOBS_COUNTER,
+                       self.REDIS_JOBS_STATS,
                        self.REDIS_FAILED_TASKS)
 
         return \
@@ -377,3 +379,46 @@ class SqsCache(object):
         res = [(d[1], d[0].split(':')[-1]) for d in data]
         res = OrderedDict(res)
         return res
+
+    def add_task_to_jobs_stats(self, task):
+        server = task.get('server', 'UnknownServer')
+        site = task.get('site', 'UnknownSite')
+        search_type = 'term' if 'term' in task and task['term'] else 'url'
+        metric_field = '%s:%s:%s' % (server, site, search_type)
+        return self.db.hincrby(self.REDIS_JOBS_STATS, metric_field, 1)
+
+    def get_jobs_stats(self, match=None):
+        data = ()
+        page = 0
+        result = {
+            'url': 0,
+            'term': 0,
+            'servers': defaultdict(lambda: {
+                'url': 0,
+                'term': 0,
+                'scrappers': defaultdict(lambda: {
+                    'url': 0,
+                    'term': 0
+                })
+            })
+        }
+        while not data or data[0] != page:
+            data = self.db.hscan(self.REDIS_JOBS_STATS,
+                                 cursor=page, match=match)
+            if not data:
+                break
+            page = data[0]
+            for key, value in data[1].items():
+                server, site, search_type = key.split(':')
+                try:
+                    value = int(value)
+                except ValueError:
+                    value = 0
+                # increment all stats
+                result[search_type] += value
+                # increment stats per server
+                result['servers'][server][search_type] += value
+                # increment stats per scrapper
+                result['servers'][server]['scrappers'][site][search_type] += \
+                    value
+        return result
