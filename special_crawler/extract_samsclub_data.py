@@ -334,7 +334,22 @@ class SamsclubScraper(Scraper):
                     print "WARNING: ", e.message
 
             img_urls = map(lambda u: u + '?wid=1500&hei=1500&fmt=jpg&qlt=80', img_urls)
-
+            image_alts = []
+            for im in img_urls:
+                im_c = im.replace("http:", '').split('?')[0]
+                image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@alt'.format(im_c))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@title'.format(im_c))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains("{}", @src)]/@alt'.format(im_c))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@alt'.format(im_c))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath(
+                        '//img[contains(@ng-src, "{}")]/@alt'.format(im.replace("http:", '')))
+                image_alt = image_alt[0] if image_alt else ''
+                image_alts.append(image_alt)
+            self.image_alt = image_alts
             self.image_urls = img_urls
             self.image_count = len(img_urls)
             # TODO add image alt extraction for single items as well
