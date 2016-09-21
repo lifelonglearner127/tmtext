@@ -48,6 +48,7 @@ class SamsclubScraper(Scraper):
     def __init__(self, **kwargs):
         Scraper.__init__(self, **kwargs)
 
+        # print self.ALL_DATA_TYPES
         self.HEADERS = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0', 'Cookie': 'myPreferredClub=6612'}
 
     def check_url_format(self):
@@ -321,6 +322,12 @@ class SamsclubScraper(Scraper):
             return img_urls
         else:
             return self.image_urls
+
+    def _image_alt_text(self):
+        return ['ALT_TEXT', 'ALT_TEXT_2']
+
+    def _image_alt_text_len(self):
+        return ['ALT_TEXT_LEN', 'ALT_TEXT_2_LEN']
 
     def _image_count(self):
         if self.image_count == -1:
@@ -1055,6 +1062,8 @@ class SamsclubScraper(Scraper):
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \
+        "image_alt_text" : _image_alt_text, # alt text for images, list of strings
+        "image_alt_text_len" : _image_alt_text_len,
 
          # CONTAINER : REVIEWS
         "review_count" : _review_count, \
