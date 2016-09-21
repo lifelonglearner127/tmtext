@@ -17,6 +17,7 @@ class ShopritedeliversProductsSpider(BaseProductsSpider):
     def __init__(self, *args, **kwargs):
         """Initiate input variables and etc."""
         super(ShopritedeliversProductsSpider, self).__init__(*args, **kwargs)
+        self.use_proxies = True
 
     @staticmethod
     def _scrape_total_matches(response):
