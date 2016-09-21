@@ -243,6 +243,15 @@ class JCpenneySpider(BaseCheckoutSpider):
         promo_field.send_keys(Keys.ENTER)
         time.sleep(8)
 
+    def _remove_promo_code(self):
+        self.log('Remove promo code')
+        try:
+            remove_field = self._find_by_xpath('//a[@onclick="removePromoCode(\'promoCodeRemovalForm_1\')\;"]')[0]
+            remove_field.click()
+            time.sleep(10)
+        except IndexError:
+            self.log('Invalid promo code')
+
     def _get_promo_total(self):
         order_total_element = self.wait.until(
             EC.element_to_be_clickable(
