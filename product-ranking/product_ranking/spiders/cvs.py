@@ -97,6 +97,21 @@ class CvsProductsSpider(BaseProductsSpider):
                 "storeId=2294&" \
                 "version=1.0" \
 
+    PRODUCT_DETAILS = "https://www.cvs.com/retail/frontstore/productDetails?" \
+                      "apiKey=c9c4a7d0-0a3c-4e88-ae30-ab24d2064e43&" \
+                      "apiSecret=4bcd4484-c9f5-4479-a5ac-9e8e2c8ad4b0&" \
+                      "appName=CVS_WEB&" \
+                      "channelName=WEB&" \
+                      "code={sku}&" \
+                      "codeType=sku&" \
+                      "deviceToken=2695&" \
+                      "deviceType=DESKTOP&" \
+                      "lineOfBusiness=RETAIL&" \
+                      "operationName=getSkuDetails&" \
+                      "serviceCORS=True&" \
+                      "serviceName=productDetails&" \
+                      "version=1.0"
+
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
         self.referer = None
@@ -257,6 +272,7 @@ class CvsProductsSpider(BaseProductsSpider):
             if onlineStockStatus == 'INSTOCK':
                 in_stock = True
             variant['in_stock'] = in_stock
+            variant['sku'] = skuID
             # del product['main_skuID']
             variant['properties'] = {}
             offers_variants = response.meta['offers_variants']
@@ -266,17 +282,58 @@ class CvsProductsSpider(BaseProductsSpider):
                 this_sku = item_offered.get('sku', None)
                 if item_offered and this_sku == skuID:
                     attr = {}
-                    if item_offered.get('color'):
-                        attr['Color'] = item_offered.get('color')
-                    if item_offered.get('weight'):
-                        attr['Weight'] = item_offered.get('weight').get('value')
-
+                    details_url = self.PRODUCT_DETAILS.format(sku=this_sku)
                     variant['properties'] = attr
-                    # variant['url'] = item_offered.get('url')
+                    reqs.append(Request(details_url,
+                                        self._parse_properties,
+                                        meta=response.meta))
                     break
 
             variants.append(variant)
             product['variants'] = variants
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def _parse_properties(self, response):
+        product = response.meta['product']
+        reqs = response.meta.get('reqs', [])
+        data = json.loads(response.body)
+
+        getSkuDetails = data.get(
+            'response', {}).get(
+                'getSkuDetails', [])
+
+        if getSkuDetails:
+            sku_details = getSkuDetails[0].get('skuDetails', [])
+
+        if len(sku_details) > 0:
+            detail = sku_details[0]['detail']
+            skuSize = detail['skuSize']
+            weight = detail['weight']
+            flavor = detail['flavor']
+            upcNumber = detail['upcNumber']
+
+            variants = product.get('variants', [])
+            skuID = sku_details[0].get('skuId', '')
+
+            for idx, variant in enumerate(variants):
+                # Check that the variant is not duplicated
+                this_sku = variant.get('sku', None)
+                if this_sku == skuID:
+                    attr = {}
+                    attr['Size'] = skuSize
+                    attr['Flavor'] = flavor
+                    attr['Weight'] = weight
+                    attr['UPCNumber'] = upcNumber
+                    variant['properties'] = attr
+                    variants[idx] = variant
+                    break
+
+            product['variants'] = variants
+
         if reqs:
             return self.send_next_request(reqs, response)
 
