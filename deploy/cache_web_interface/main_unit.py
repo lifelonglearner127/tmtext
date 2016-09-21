@@ -252,7 +252,8 @@ def jobs_history():
     """
     if request.method == 'GET':
         return render_template('jobs_history.html')
-    data = {}
+    days = int(request.form.get('days', '0'))
+    data = cache.get_jobs_history(days)
     resp = make_response(json.dumps(data))
     resp.headers['Content-Type'] = 'application/json'
     return resp

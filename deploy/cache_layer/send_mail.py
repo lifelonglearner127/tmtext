@@ -56,7 +56,7 @@ def delete_old_cache_data(cache):
     return res
 
 
-def save_instances_number(cache, context):
+def save_instances_number(cache):
     return cache.save_today_instances_count(cache.get_today_jobs())
 
 
@@ -77,7 +77,7 @@ def main():
     context = collect_data(cache)
     content = generate_mail_message(context)
     send_mail(sender, receivers, subject, content)
-    save_instances_number(cache, context)
+    save_instances_number(cache)
     save_jobs_number(cache, context)
     res = delete_old_cache_data(cache)
     print 'Deleted %s total records from cache.' % res

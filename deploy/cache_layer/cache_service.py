@@ -413,7 +413,7 @@ class SqsCache(object):
                 try:
                     value = int(value)
                 except ValueError:
-                    value = 0
+                    continue
                 # increment all stats
                 result[search_type] += value
                 # increment stats per server
