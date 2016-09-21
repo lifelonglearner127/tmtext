@@ -1,3 +1,4 @@
+# scrapy crawl jcpenney_checkout_products -a product_data='[{"url": "http://www.jcpenney.com/dotcom/jsp/browse/product.jsp?fromBag=true&selectedSKUId=51450361511&commerceId=ci53363021249&selectedLotId=5145036&fromName=false&catId=Bag&quantity=1&ppId=pp5006640590"}]' -a quantity=2 -a promo_price=2 -a promo_code="FUNDEAL,TWODAY"
 import re
 import socket
 import time
@@ -241,12 +242,12 @@ class JCpenneySpider(BaseCheckoutSpider):
         promo_field.send_keys(promo_code)
         time.sleep(2)
         promo_field.send_keys(Keys.ENTER)
-        time.sleep(8)
+        time.sleep(10)
 
     def _remove_promo_code(self):
         self.log('Remove promo code')
         try:
-            remove_field = self._find_by_xpath('//a[@onclick="removePromoCode(\'promoCodeRemovalForm_1\')\;"]')[0]
+            remove_field = self._find_by_xpath('//a[@title="remove" and @class="cr-remove"]')[0]
             remove_field.click()
             time.sleep(10)
         except IndexError:
