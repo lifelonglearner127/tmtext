@@ -1173,6 +1173,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 ' or contains(text(), "See the customer review")' \
                 ' or contains(text(), "See both customer reviews")]/@href'
             ).extract())
+            buyer_rev_link = urlparse.urljoin(response.url, buyer_rev_link)
             # Amazon started to display broken (404) link - fix
             if buyer_rev_link:
                 buyer_rev_link = re.search(r'.*product-reviews/[a-zA-Z0-9]+/',
