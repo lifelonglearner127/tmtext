@@ -49,6 +49,7 @@ def _get_random_proxy():
 def _get_domain(url):
     return urlparse.urlparse(url).netloc.replace('www.', '')
 
+
 def retry_func(ExceptionToCheck, tries=10, delay=2):
     """Retry call for decorated function"""
 
@@ -112,8 +113,10 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.requested_color = None
         self.is_requested_color = False
 
-        self.promo_code = kwargs.get('promo_code') # ticket 10585
+        self.promo_code = kwargs.get('promo_code', '') # ticket 10585
+        self.promo_code = [promo_code.strip() for promo_code in self.promo_code.split(',')]
         self.promo_price = int(kwargs.get('promo_price', 0))
+        self.promo_mode = self.promo_code and self.promo_price
 
         from pyvirtualdisplay import Display
         display = Display(visible=False, size=(1024, 768))
@@ -166,7 +169,8 @@ class BaseCheckoutSpider(scrapy.Spider):
                         self.requested_color = color
                     self.current_color = color
                     self.current_quantity = qty
-                    self.log('Parsing color - {}, quantity - {}'.format(color or 'None', qty), level=WARNING)
+                    self.log('Parsing color - {}, quantity - {}'.format(
+                        color or 'None', qty), level=WARNING)
                     # self._pre_parse_products()
                     self._parse_product_page(url, qty, color)
                     items = self._parse_cart_page()
@@ -202,7 +206,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         item['not_found'] = False
         if quantity and price:
             quantity = int(quantity)
-            item['price'] = round(float(price.replace(',','')) / quantity, 2)
+            item['price'] = round(float(price.replace(',', '')) / quantity, 2)
             item['quantity'] = quantity
             item['requested_color'] = self.requested_color
 
@@ -242,28 +246,30 @@ class BaseCheckoutSpider(scrapy.Spider):
 
     @retry_func(Exception)
     def _load_cart_page(self, cart_cookies=None):
-        # selenium need actual page opened to import cookies
-        self._open_new_session(self.SHOPPING_CART_URL)
-        time.sleep(5)
-        self.driver.delete_all_cookies()
-        time.sleep(5)
-        if cart_cookies:
-            for cookie in cart_cookies:
-                self.driver.add_cookie(cookie)
-        time.sleep(5)
-        self.driver.refresh()
+        self.driver.get(self.SHOPPING_CART_URL)
         product_list = self._get_product_list_cart()
-        # retry the page until we get correct element
         if product_list:
             return product_list
         else:
+            # selenium need actual page opened to import cookies
+            self._open_new_session(self.SHOPPING_CART_URL)
+            time.sleep(5)
+            self.driver.delete_all_cookies()
+            time.sleep(5)
+            if cart_cookies:
+                for cookie in cart_cookies:
+                    self.driver.add_cookie(cookie)
+            time.sleep(5)
+            self.driver.refresh()
+            # retry the page until we get correct element
             raise Exception
 
     # @retry_func(Exception)
     def _get_current_domain_name(self):
         # trying to get current domain to filter cookies
         url = self.driver.current_url
-        dom_name = urlparse.urlparse(url).netloc.replace('www1','').replace('www3','').replace('www','')
+        dom_name = urlparse.urlparse(url).netloc.replace(
+            'www1', '').replace('www3', '').replace('www', '')
         if not dom_name:
             dom_name = self.allowed_domains[0]
         self.log("Got domain name: %s" % dom_name, level=WARNING)
@@ -276,16 +282,15 @@ class BaseCheckoutSpider(scrapy.Spider):
         cart_cookies = [c for c in self.driver.get_cookies() if dom_name in c.get('domain')]
         self.log("Got cookies from page: %s" % len(cart_cookies), level=WARNING)
         product_list = self._load_cart_page(cart_cookies=cart_cookies)
-        if product_list:
-            for product in self._get_products_in_cart(product_list):
-                item = self._parse_item(product)
-                if item:
-                    item['order_subtotal'] = self._get_subtotal()
-                    item['order_total'] = self._get_total()
-                    self.promo_logic(item)
-                    yield item
-                else:
-                    self.log('Missing field in product from shopping cart')
+        for product in self._get_products_in_cart(product_list):
+            item = self._parse_item(product)
+            item['order_subtotal'] = float(self._get_subtotal())
+            item['order_total'] = float(self._get_total())
+            if self.promo_mode:
+                for item_promo in self.promo_logic(item):
+                    yield item_promo
+            else:
+                yield item
 
     def _find_by_xpath(self, xpath, element=None):
         """
@@ -323,11 +328,14 @@ class BaseCheckoutSpider(scrapy.Spider):
             selected_attribute[0].click()
 
     def promo_logic(self, item):
-        if self.promo_code and self.promo_price:
-            self._enter_promo_code(self.promo_code)
-            promo_order_total = self._get_promo_total()
-            promo_order_subtotal = self._get_promo_subtotal()
-            promo_price = round(float(promo_order_subtotal.replace(',', '')) / item['quantity'], 2)
+        for promo_code in self.promo_code:
+            item['promo_code'] = promo_code
+            self._enter_promo_code(promo_code)
+            promo_order_total = float(self._get_promo_total())
+            promo_order_subtotal = float(self._get_promo_subtotal().replace(',', ''))
+            promo_price = round(promo_order_subtotal / item['quantity'], 2)
+            is_promo_code_valid = not promo_order_total == item['order_total']
+            item['is_promo_code_valid'] = is_promo_code_valid
             if self.promo_price == 1:
                 item['order_total'] = promo_order_total
                 item['order_subtotal'] = promo_order_subtotal
@@ -336,6 +344,8 @@ class BaseCheckoutSpider(scrapy.Spider):
                 item['promo_order_total'] = promo_order_total
                 item['promo_order_subtotal'] = promo_order_subtotal
                 item['promo_price'] = promo_price
+            self._remove_promo_code()
+            yield item
 
     @abstractmethod
     def _get_promo_subtotal(self):
@@ -347,6 +357,10 @@ class BaseCheckoutSpider(scrapy.Spider):
 
     @abstractmethod
     def _enter_promo_code(self, promo_code):
+        return
+
+    @abstractmethod
+    def _remove_promo_code(self):
         return
 
     @abstractmethod
