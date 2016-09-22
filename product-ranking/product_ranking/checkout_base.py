@@ -49,6 +49,7 @@ def _get_random_proxy():
 def _get_domain(url):
     return urlparse.urlparse(url).netloc.replace('www.', '')
 
+
 def retry_func(ExceptionToCheck, tries=10, delay=2):
     """Retry call for decorated function"""
 
@@ -117,7 +118,6 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.promo_price = int(kwargs.get('promo_price', 0))
         self.promo_mode = self.promo_code and self.promo_price
 
-
         from pyvirtualdisplay import Display
         display = Display(visible=False, size=(1024, 768))
         display.start()
@@ -169,7 +169,8 @@ class BaseCheckoutSpider(scrapy.Spider):
                         self.requested_color = color
                     self.current_color = color
                     self.current_quantity = qty
-                    self.log('Parsing color - {}, quantity - {}'.format(color or 'None', qty), level=WARNING)
+                    self.log('Parsing color - {}, quantity - {}'.format(
+                        color or 'None', qty), level=WARNING)
                     # self._pre_parse_products()
                     self._parse_product_page(url, qty, color)
                     items = self._parse_cart_page()
@@ -205,7 +206,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         item['not_found'] = False
         if quantity and price:
             quantity = int(quantity)
-            item['price'] = round(float(price.replace(',','')) / quantity, 2)
+            item['price'] = round(float(price.replace(',', '')) / quantity, 2)
             item['quantity'] = quantity
             item['requested_color'] = self.requested_color
 
@@ -267,7 +268,8 @@ class BaseCheckoutSpider(scrapy.Spider):
     def _get_current_domain_name(self):
         # trying to get current domain to filter cookies
         url = self.driver.current_url
-        dom_name = urlparse.urlparse(url).netloc.replace('www1','').replace('www3','').replace('www','')
+        dom_name = urlparse.urlparse(url).netloc.replace(
+            'www1', '').replace('www3', '').replace('www', '')
         if not dom_name:
             dom_name = self.allowed_domains[0]
         self.log("Got domain name: %s" % dom_name, level=WARNING)
@@ -332,7 +334,7 @@ class BaseCheckoutSpider(scrapy.Spider):
             promo_order_total = float(self._get_promo_total())
             promo_order_subtotal = float(self._get_promo_subtotal().replace(',', ''))
             promo_price = round(promo_order_subtotal / item['quantity'], 2)
-            is_promo_code_valid = not (promo_order_total == item['order_total'])
+            is_promo_code_valid = not promo_order_total == item['order_total']
             item['is_promo_code_valid'] = is_promo_code_valid
             if self.promo_price == 1:
                 item['order_total'] = promo_order_total
