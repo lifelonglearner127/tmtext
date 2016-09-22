@@ -49,7 +49,7 @@ class JCpenneySpider(BaseCheckoutSpider):
                                   '//a[not(span[@class="no_color"]) and '
                                   'not(span[@class="color_illegal"])]')
 
-        if color and color in self.colors:
+        if color and color in self.available_colors:
             color_attribute_xpath = '*//*[@class="small_swatches"]//a' \
                                     '[img[@name="%s"]]' % color
 
@@ -215,7 +215,9 @@ class JCpenneySpider(BaseCheckoutSpider):
         promo_field.send_keys(promo_code)
         time.sleep(2)
         promo_field.send_keys(Keys.ENTER)
-        time.sleep(8)
+        time.sleep(5)
+        self.driver.refresh()
+        time.sleep(5)
         self.item_info = self._get_product_list_cart()
 
     def _get_promo_total(self):
