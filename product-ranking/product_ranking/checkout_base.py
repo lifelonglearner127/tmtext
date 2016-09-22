@@ -245,21 +245,22 @@ class BaseCheckoutSpider(scrapy.Spider):
 
     @retry_func(Exception)
     def _load_cart_page(self, cart_cookies=None):
-        # selenium need actual page opened to import cookies
-        self._open_new_session(self.SHOPPING_CART_URL)
-        time.sleep(5)
-        self.driver.delete_all_cookies()
-        time.sleep(5)
-        if cart_cookies:
-            for cookie in cart_cookies:
-                self.driver.add_cookie(cookie)
-        time.sleep(5)
-        self.driver.refresh()
+        self.driver.get(self.SHOPPING_CART_URL)
         product_list = self._get_product_list_cart()
-        # retry the page until we get correct element
         if product_list:
             return product_list
         else:
+            # selenium need actual page opened to import cookies
+            self._open_new_session(self.SHOPPING_CART_URL)
+            time.sleep(5)
+            self.driver.delete_all_cookies()
+            time.sleep(5)
+            if cart_cookies:
+                for cookie in cart_cookies:
+                    self.driver.add_cookie(cookie)
+            time.sleep(5)
+            self.driver.refresh()
+            # retry the page until we get correct element
             raise Exception
 
     # @retry_func(Exception)
