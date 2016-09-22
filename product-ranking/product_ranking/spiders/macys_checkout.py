@@ -219,8 +219,18 @@ class MacysSpider(BaseCheckoutSpider):
 
     def _enter_promo_code(self, promo_code):
         self.log('Enter promo code: {}'.format(promo_code))
+        time.sleep(2)
         promo_field = self._find_by_xpath('//input[@id="promoCode"]')[0]
         promo_field.send_keys(promo_code)
         time.sleep(2)
         promo_field.send_keys(Keys.ENTER)
         time.sleep(8)
+
+    def _remove_promo_code(self):
+        self.log('Remove promo code')
+        try:
+            remove_field = self._find_by_xpath('//a[@class="removelnk promocodeApply appliedRemovelnk"]')[0]
+            remove_field.click()
+            time.sleep(2)
+        except IndexError:
+            self.log('Invalid promo code')
