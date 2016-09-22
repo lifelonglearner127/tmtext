@@ -74,8 +74,8 @@ def run_spider_upload(username, password, local_file, task):
                                'product_ranking', 'spiders')
     if not os.path.exists(spiders_dir):
         spiders_dir = '.'
-    cmd = ('python {spiders_dir}/submit_amazon_images.py --username={username}'
-           ' --password={password} --upload_file={upload_file} --logging_file={log_file} --task={task}')
+    cmd = ('python {spiders_dir}/submit_amazon_images.py --username="{username}"'
+           ' --password="{password}" --upload_file="{upload_file}" --logging_file="{log_file}" --task="{task}"')
     os.system(cmd.format(username=username, password=password, upload_file=local_file,
                          log_file=log_fname, spiders_dir=spiders_dir, task = task))
     return log_fname
@@ -90,9 +90,9 @@ def run_spider_upload_text(username, password, local_file, task, group, emails):
                                'product_ranking', 'spiders')
     if not os.path.exists(spiders_dir):
         spiders_dir = '.'
-    cmd = ('python {spiders_dir}/submit_amazon_images.py --username={username}'
-           ' --password={password} --upload_file={upload_file} --logging_file={log_file}'
-           ' --task={task} --group={group} --emails={emails}')
+    cmd = ('python {spiders_dir}/submit_amazon_images.py --username="{username}"'
+           ' --password="{password}" --upload_file="{upload_file}" --logging_file="{log_file}"'
+           ' --task="{task}" --group="{group}" --emails="{emails}"')
     os.system(cmd.format(username=username, password=password, upload_file=local_file,
                          log_file=log_fname, spiders_dir=spiders_dir, task = task, group = group,
                          emails=emails))
