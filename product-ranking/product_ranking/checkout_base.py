@@ -7,6 +7,7 @@ import sys
 import time
 import traceback
 import urlparse
+import itertools
 from functools import wraps
 import inspect
 
@@ -140,48 +141,43 @@ class BaseCheckoutSpider(scrapy.Spider):
 
         for product in self.product_data:
             self.log("Product: %r" % product)
-            # Open product URL
-            for qty in self.quantity:
-                self.requested_color = None
-                self.is_requested_color = False
-                url = product.get('url')
-                # Fastest way to empty the cart
-                self._open_new_session(url)
-                if product.get('FetchAllColors'):
-                    # Parse all the products colors
-                    self._pre_parse_products()
-                    colors = self._get_colors_names()
+            url = product.get('url')
+            self._open_new_session(url)
+            self.requested_color = None
+            self.is_requested_color = False
+            self.available_colors = self._get_colors_names()
+            if product.get('FetchAllColors'):
+                # Parse all the products colors
+                self._pre_parse_products()
+                colors = self.available_colors
 
-                else:
-                    # Only parse the selected color
-                    # if None, the first fetched will be selected
-                    colors = product.get('color', None)
+            else:
+                # Only parse the selected color
+                # if None, the first fetched will be selected
+                colors = product.get('color', None)
 
-                    if colors:
-                        self.is_requested_color = True
+                if colors:
+                    self.is_requested_color = True
 
-                    if isinstance(colors, basestring) or not colors:
-                        colors = [colors]
-
-                self.log('Got colors {}'.format(colors), level=WARNING)
-                for color in colors:
-                    if self.is_requested_color:
-                        self.requested_color = color
-                    self.current_color = color
-                    self.current_quantity = qty
-                    self.log('Parsing color - {}, quantity - {}'.format(
-                        color or 'None', qty), level=WARNING)
-                    # self._pre_parse_products()
-                    self._parse_product_page(url, qty, color)
-                    items = self._parse_cart_page()
-                    for item in items:
-                        item['url'] = url
-                        yield item
-                    # only need to open new window if its not last color
-                    if not color == colors[-1]:
-                        self._open_new_session(url)
-
-                self.driver.quit()
+                if isinstance(colors, basestring) or not colors:
+                    colors = [colors]
+            self.log('Got colors {}'.format(colors), level=WARNING)
+            for i, (qty, color) in enumerate(itertools.product(self.quantity, colors)):
+                self.log('Parsing color - {}, quantity - {}'.format(
+                    color or 'None', qty), level=WARNING)
+                if i > 0:
+                    self.driver.delete_all_cookies()
+                    self.driver.get(url)
+                if self.is_requested_color:
+                    self.requested_color = color
+                self.current_color = color
+                self.current_quantity = qty
+                self._parse_product_page(url, qty, color)
+                items = self._parse_cart_page()
+                for item in items:
+                    item['url'] = url
+                    yield item
+        self.driver.quit()
 
     @retry_func(Exception)
     def _open_new_session(self, url):
@@ -260,7 +256,6 @@ class BaseCheckoutSpider(scrapy.Spider):
                 for cookie in cart_cookies:
                     self.driver.add_cookie(cookie)
             time.sleep(5)
-            self.driver.refresh()
             # retry the page until we get correct element
             raise Exception
 
@@ -478,7 +473,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         driver = webdriver.Chrome(desired_capabilities=chrome_flags,
                                   chrome_options=chrome_options,
                                   executable_path=executable_path)
-        driver.set_page_load_timeout(self.SOCKET_WAIT_TIME)
+        # driver.set_page_load_timeout(self.SOCKET_WAIT_TIME)
         # driver.maximize_window()
         return driver
 
