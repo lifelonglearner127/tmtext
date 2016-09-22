@@ -1,6 +1,5 @@
 import json
-import copy
-import time
+import uuid
 import re
 import itertools
 from HTMLParser import HTMLParser
@@ -103,7 +102,7 @@ class KohlsSpider(scrapy.Spider):
             meta['item'] = item
             meta['product'] = product
             meta['promo_code'] = promo_code
-            meta['cookiejar'] = "{}{}{}".format(i, promo_code, time.time())
+            meta['cookiejar'] = "{}{}{}".format(i, promo_code, uuid.uuid4())
             meta['color'] = color
             meta['quantity'] = quantity
 
