@@ -95,84 +95,79 @@ class AmazonScraper(Scraper):
         # User-Agent (this is cheating, ok?)
         self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
 
-    def _extract_page_tree(self, captcha_data=None, retries=0):
+    def _extract_page_tree(self, retry=0, captcha_data=None):
         self._initialize_browser_settings()
 
-        if '?' in self.product_page_url:
-            self.product_page_url = self.product_page_url + '&showDetailTechData=1'
-        else:
-            self.product_page_url = self.product_page_url + '?showDetailTechData=1'
+        if not re.search('showDetailTechData=1', self.product_page_url):
+            if '?' in self.product_page_url:
+                self.product_page_url = self.product_page_url + '&showDetailTechData=1'
+            else:
+                self.product_page_url = self.product_page_url + '?showDetailTechData=1'
 
-        for i in range(self.MAX_RETRIES):
-            self.is_timeout = False
+        self.is_timeout = False
 
-            try:
-                if captcha_data:
-                    data = urllib.urlencode(captcha_data)
-                    contents = self.browser.open(self.product_page_url, data, timeout=10).read()
-                else:
-                    contents = self.browser.open(self.product_page_url, timeout=10).read()
-            except timeout:
-                self.is_timeout = True
-                self.ERROR_RESPONSE["failure_type"] = "Timeout"
-                continue # continue to try again up to MAX_RETRIES
-            except mechanize.HTTPError as e:
-                # If 404 or this was the last retry, return failure
-                if e.code == 404 or i == self.MAX_RETRIES - 1:
-                    self.is_timeout = True # set self.is_timeout so we will return an error response
-                    self.ERROR_RESPONSE["failure_type"] = str(e)
-                    return
+        try:
+            if captcha_data:
+                data = urllib.urlencode(captcha_data)
+                contents = self.browser.open(self.product_page_url, data, timeout=10).read()
+            else:
+                contents = self.browser.open(self.product_page_url, timeout=10).read()
+        except timeout:
+            self.is_timeout = True
+            self.ERROR_RESPONSE["failure_type"] = "Timeout"
+        except mechanize.HTTPError as e:
+            self.is_timeout = True # set self.is_timeout so we will return an error response
+            self.ERROR_RESPONSE["failure_type"] = str(e)
 
-                # Otherwise, try again with proxies
+            # If 404, return failure
+            if e.code == 404:
+                return
+        except mechanize.URLError as e:
+            self.is_timeout = True # set self.is_timeout so we will return an error response
+            self.ERROR_RESPONSE["failure_type"] = str(e)
+
+        if self.is_timeout:
+            if retry < self.MAX_RETRIES - 1:
+                return self._extract_page_tree(retry+1, captcha_data)
+            else:
+                return
+
+        try:
+            # replace NULL characters
+            contents = self._clean_null(contents)
+            self.tree_html = html.fromstring(contents.decode("utf8"))
+        except UnicodeError, e:
+            # if string was not utf8, don't deocde it
+            print "Warning creating html tree from page content: ", e.message
+
+            # replace NULL characters
+            contents = self._clean_null(contents)
+            self.tree_html = html.fromstring(contents)
+
+        # it's a captcha page
+        if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
+            if retry < self.MAX_RETRIES - 1:
+                image = self.tree_html.xpath(".//img/@src")
+                if image:
+                    captcha_text = self.CB.solve_captcha(image[0])
+
+                # value to use if there was an exception
+                if not captcha_text:
+                    captcha_text = ''
+
+                return self._extract_page_tree(retry+1, captcha_data={'field-keywords' : captcha_text})
+
+            if retry == self.MAX_RETRIES - 1:
+                # If we have tried the maximum number of retries, try once more with proxies
                 self.proxies_enabled = True
-                self._initialize_browser_settings()
-                continue
-            except mechanize.URLError as e:
-                self.is_timeout = True # set self.is_timeout so we will return an error response
-                self.ERROR_RESPONSE["failure_type"] = str(e)
-                continue # continue to try again up to MAX_RETRIES
+                return self._extract_page_tree(retry+1)
 
-            try:
-                # replace NULL characters
-                contents = self._clean_null(contents)
+            # If we still get a CAPTCHA, return failure
+            self.is_timeout = True # set self.is_timeout so we will return an error response
+            self.ERROR_RESPONSE["failure_type"] = "CAPTCHA"
 
-                self.tree_html = html.fromstring(contents.decode("utf8"))
-            except UnicodeError, e:
-                # if string was not utf8, don't deocde it
-                print "Warning creating html tree from page content: ", e.message
-
-                # replace NULL characters
-                contents = self._clean_null(contents)
-
-                self.tree_html = html.fromstring(contents)
-
-            # it's a captcha page
-            if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
-                if retries < self.MAX_CAPTCHA_RETRIES:
-                    image = self.tree_html.xpath(".//img/@src")
-                    if image:
-                        captcha_text = self.CB.solve_captcha(image[0])
-
-                    # value to use if there was an exception
-                    if not captcha_text:
-                        captcha_text = ''
-
-                    retries += 1
-                    return self._extract_page_tree(captcha_data={'field-keywords' : captcha_text}, retries=retries)
-
-                if retries == self.MAX_CAPTCHA_RETRIES:
-                    # If we have tried the maximum number of times, try once more with proxies
-                    self.proxies_enabled = True
-                    self._initialize_browser_settings()
-                    retries += 1
-                    continue
-
-                # If we still get a CAPTCHA, return failure
-                self.is_timeout = True # set self.is_timeout so we will return an error response
-                self.ERROR_RESPONSE["failure_type"] = "CAPTCHA"
-
-            # if we got it we can exit the loop and stop retrying
-            return
+        # if we got it we can exit the loop and stop retrying
+        return
 
     def check_url_format(self):
         m = re.match(r"^https?://www.amazon.com/([a-zA-Z0-9%\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]*)?$", self.product_page_url)
