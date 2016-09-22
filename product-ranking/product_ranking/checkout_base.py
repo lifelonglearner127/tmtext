@@ -7,6 +7,7 @@ import sys
 import time
 import traceback
 import urlparse
+import itertools
 from functools import wraps
 import inspect
 
@@ -140,48 +141,43 @@ class BaseCheckoutSpider(scrapy.Spider):
 
         for product in self.product_data:
             self.log("Product: %r" % product)
-            # Open product URL
-            for qty in self.quantity:
-                self.requested_color = None
-                self.is_requested_color = False
-                url = product.get('url')
-                # Fastest way to empty the cart
-                self._open_new_session(url)
-                if product.get('FetchAllColors'):
-                    # Parse all the products colors
-                    self._pre_parse_products()
-                    colors = self._get_colors_names()
+            url = product.get('url')
+            self._open_new_session(url)
+            self.requested_color = None
+            self.is_requested_color = False
+            if product.get('FetchAllColors'):
+                # Parse all the products colors
+                self._pre_parse_products()
+                self.colors = self._get_colors_names()
 
-                else:
-                    # Only parse the selected color
-                    # if None, the first fetched will be selected
-                    colors = product.get('color', None)
+            else:
+                # Only parse the selected color
+                # if None, the first fetched will be selected
+                self.colors = product.get('color', None)
 
-                    if colors:
-                        self.is_requested_color = True
+                if self.colors:
+                    self.is_requested_color = True
 
-                    if isinstance(colors, basestring) or not colors:
-                        colors = [colors]
-
-                self.log('Got colors {}'.format(colors), level=WARNING)
-                for color in colors:
-                    if self.is_requested_color:
-                        self.requested_color = color
-                    self.current_color = color
-                    self.current_quantity = qty
-                    self.log('Parsing color - {}, quantity - {}'.format(
-                        color or 'None', qty), level=WARNING)
-                    # self._pre_parse_products()
-                    self._parse_product_page(url, qty, color)
-                    items = self._parse_cart_page()
-                    for item in items:
-                        item['url'] = url
-                        yield item
-                    # only need to open new window if its not last color
-                    if not color == colors[-1]:
-                        self._open_new_session(url)
-
-                self.driver.quit()
+                if isinstance(self.colors, basestring) or not self.colors:
+                    self.colors = [self.colors]
+            self.log('Got colors {}'.format(self.colors), level=WARNING)
+            for i, (qty, color) in enumerate(itertools.product(self.quantity, self.colors)):
+                if i > 0:
+                    self.driver.delete_all_cookies()
+                    self.driver.get(url)
+                if self.is_requested_color:
+                    self.requested_color = color
+                self.current_color = color
+                self.current_quantity = qty
+                self.log('Parsing color - {}, quantity - {}'.format(
+                    color or 'None', qty), level=WARNING)
+                # self._pre_parse_products()
+                self._parse_product_page(url, qty, color)
+                items = self._parse_cart_page()
+                for item in items:
+                    item['url'] = url
+                    yield item
+        self.driver.quit()
 
     @retry_func(Exception)
     def _open_new_session(self, url):

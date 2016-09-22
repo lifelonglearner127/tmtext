@@ -1,3 +1,4 @@
+# scrapy crawl jcpenney_checkout_products -a product_data='[{"url": "http://www.jcpenney.com/maternity-overbelly-colored-skinny-jeans/prod.jump?ppId=pp5006311127&searchTerm=jeans&catId=SearchResults&_dyncharset=UTF-8"}]'
 import re
 import socket
 import time
@@ -48,7 +49,7 @@ class JCpenneySpider(BaseCheckoutSpider):
                                   '//a[not(span[@class="no_color"]) and '
                                   'not(span[@class="color_illegal"])]')
 
-        if color and color in self._get_colors_names():
+        if color and color in self.colors:
             color_attribute_xpath = '*//*[@class="small_swatches"]//a' \
                                     '[img[@name="%s"]]' % color
 
@@ -171,7 +172,6 @@ class JCpenneySpider(BaseCheckoutSpider):
             item_info = re.findall(
                 'var jcpORDERJSONjcp = (\{.+?\});', self.page_source, re.MULTILINE)[0]
             self.item_info = json.loads(item_info)
-            print self.item_info
             return self.item_info
         except IndexError:
             return None
@@ -199,8 +199,12 @@ class JCpenneySpider(BaseCheckoutSpider):
 
     def _get_item_color(self, item):
         selector = scrapy.Selector(text=self.page_source)
-        return is_empty(selector.xpath('//span[@class="size" and '
+        color_new = is_empty(selector.xpath('//span[@class="size" and '
                               'contains(text(),"color:")]/text()').re('color\:\n(.+)'))
+        color_old = is_empty(selector.xpath(
+                        '//span[@class="size" and contains(text(),"color:")]'
+                        '/strong/text()').extract())
+        return color_new or color_old
 
     def _get_item_quantity(self, item):
         return item.get('quantity')
