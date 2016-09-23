@@ -89,7 +89,7 @@ class BaseCheckoutSpider(scrapy.Spider):
 
     retries = 0
     MAX_RETRIES = 10
-    SOCKET_WAIT_TIME = 90
+    SOCKET_WAIT_TIME = 100
     WEBDRIVER_WAIT_TIME = 60
 
     def __init__(self, *args, **kwargs):

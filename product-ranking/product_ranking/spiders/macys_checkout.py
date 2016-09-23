@@ -128,14 +128,15 @@ class MacysSpider(BaseCheckoutSpider):
     def _set_quantity(self, product, quantity):
         quantity_option = Select(self.driver.find_element_by_xpath('*//*[@class="productQuantity"]'))
         quantity_option.select_by_value(str(quantity))
-        time.sleep(3)
+        quantity_selected = quantity_option.first_selected_option.text
+        if quantity_selected != str(quantity):
+            time.sleep(4)
         self.log('Quantity "{}" selected'.format(quantity))
 
     def _get_product_list_cart(self):
         self.wait.until(
             EC.presence_of_element_located((By.XPATH, '//ul[@class="guest-nav-dropdown"]'))
         )
-        time.sleep(4)
         condition = EC.visibility_of_element_located(
             (By.ID, 'itemsContainer'))
         return self.wait.until(condition)
@@ -215,7 +216,7 @@ class MacysSpider(BaseCheckoutSpider):
         promo_field.send_keys(promo_code)
         time.sleep(2)
         promo_field.send_keys(Keys.ENTER)
-        time.sleep(8)
+        time.sleep(4)
 
     def _remove_promo_code(self):
         self.log('Remove promo code')
