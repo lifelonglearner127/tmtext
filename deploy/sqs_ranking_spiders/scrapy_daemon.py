@@ -1308,7 +1308,7 @@ def main():
                                e)
             try:
                 generated_key = '%s:%s:%s' % (
-                    task.get('server', 'UnknownServer'),
+                    task.get('server_name', 'UnknownServer'),
                     task.get('site', 'UnknownSite'),
                     'term' if 'term' in task and task['term'] else 'url'
                 )

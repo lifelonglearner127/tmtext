@@ -381,7 +381,7 @@ class SqsCache(object):
         return res
 
     def add_task_to_jobs_stats(self, task):
-        server = task.get('server', 'UnknownServer')
+        server = task.get('server_name', 'UnknownServer')
         site = task.get('site', 'UnknownSite')
         search_type = 'term' if 'term' in task and task['term'] else 'url'
         metric_field = '%s:%s:%s' % (server, site, search_type)
