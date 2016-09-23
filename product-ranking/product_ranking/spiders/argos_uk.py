@@ -175,6 +175,10 @@ class ArgosUKProductsSpider(BaseProductsSpider):
         cond_set(product, 'is_out_of_stock',
                  response.css('#globalDeliveryGrey[style="display:block;"]'),
                  bool)
+        reseller_id = re.findall(r'partNumber/(\d+)', response.url)
+        cond_set(
+            product, 'reseller_id', reseller_id[0] if reseller_id else None
+        )
         # Hardcoded
         cond_set_value(product, 'locale', 'en-GB')
 
