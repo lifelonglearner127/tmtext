@@ -129,6 +129,8 @@ class Scraper():
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
             "image_urls", # urls of product images, list of strings
+            "image_alt_text", # alt text for images, list of strings
+            "image_alt_text_len",  # lengths of alt text for images, list of integers
             "image_dimensions", # dimensions of product images
             "no_image_available", # binary (0/1), whether there is a 'no image available' image
             "video_count", # nr of videos, int
@@ -251,7 +253,7 @@ class Scraper():
                         "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5",
                         "usage", "directions", "warnings", "indications", "amazon_ingredients",
                             "specs"],
-        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
+        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_alt_text", "image_alt_text_len", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags", "meta_tag_count", "meta_description_count", \
                             "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv", \
@@ -603,7 +605,11 @@ class Scraper():
         results_dict = {}
 
         # if it's not a valid product page, abort
-        if self.is_timeout or self.not_a_product():
+        try:
+            if self.is_timeout or self.not_a_product():
+                return self.ERROR_RESPONSE
+        except:
+            self.ERROR_RESPONSE["failure_type"] = 'Not a product'
             return self.ERROR_RESPONSE
 
         for info in info_type_list:

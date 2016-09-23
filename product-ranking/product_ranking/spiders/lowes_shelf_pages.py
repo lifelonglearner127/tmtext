@@ -78,13 +78,13 @@ class LowesShelfPagesSpider(LowesProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         if self.current_page >= self.num_pages:
-            return
+            return None
         self.current_page += 1
 
         next_link = response.xpath("//li[contains(@class,'page-next')]/a/@href").extract()
         if len(next_link) > 0:
             return "http://www.lowes.com" + next_link[0]
-        return
+        return None
         # spliturl = self.product_url.split('?')
         # nextlink = spliturl[0]
         # if len(spliturl) == 1:

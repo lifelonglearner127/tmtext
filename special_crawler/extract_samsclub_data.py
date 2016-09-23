@@ -24,7 +24,7 @@ class SamsclubScraper(Scraper):
     ############### PREP+
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.samsclub.com/sams/(.+/)?prod<prod-id>.ip or http://www.samsclub.com/sams/(.+/)?<cat-id>.cp or http://www.samsclub.com/sams/pagedetails/content.jsp?pageName=<page-name> for shelf pages"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.samsclub.com/sams/(.+/)?(prod)?<prod-id>.ip or http://www.samsclub.com/sams/(.+/)?<cat-id>.cp or http://www.samsclub.com/sams/pagedetails/content.jsp?pageName=<page-name> for shelf pages"
 
     reviews_tree = None
     max_score = None
@@ -33,6 +33,10 @@ class SamsclubScraper(Scraper):
     average_review = None
     reviews = None
     image_urls = None
+    image_alt = []
+    # This is needed to extract alt-text for images of products
+    # from second half of shelf page, loaded via ajax
+    ajax_alt_text = {}
     image_count = -1
     price = None
     price_amount = None
@@ -48,22 +52,19 @@ class SamsclubScraper(Scraper):
     def __init__(self, **kwargs):
         Scraper.__init__(self, **kwargs)
 
+        # print self.ALL_DATA_TYPES
         self.HEADERS = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0', 'Cookie': 'myPreferredClub=6612'}
 
     def check_url_format(self):
-        m = re.match(r"^http://www\.samsclub\.com/sams/(.+/)?prod\d+\.ip$", self.product_page_url)
-        if m or self._is_shelf():
+        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?(prod)?\d+\.ip$", self.product_page_url):
             return True
-
-    def _failure_type(self):
-        if not self.tree_html.xpath("//div[@class='container' and @itemtype='http://schema.org/Product']"):
-            self.failure_type = "Invalid url"
-
-        return self.failure_type
-
-    def _is_shelf(self):
         if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?\d+\.cp$", self.product_page_url) or \
             re.match(r"^http://www\.samsclub\.com/sams/pagedetails/content.jsp\?pageName=.+$", self.product_page_url):
+            return True
+
+    def _is_shelf(self):
+        # default is shelf page
+        if not self.tree_html.xpath("//div[@class='container' and @itemtype='http://schema.org/Product']"):
             return True
 
     def not_a_product(self):
@@ -73,27 +74,34 @@ class SamsclubScraper(Scraper):
         and returns True if current page is one.
         '''
 
-        redirect = self.tree_html.xpath('//meta[@http-equiv="Refresh"]/@content')
+        redirect = self.tree_html.xpath('//meta[@http-equiv="Refresh" or @http-equiv="refresh"]/@content')
         if redirect:
-            self.product_page_url = re.search('url=(.*)', redirect[0]).group(1)
+            redirect_url = re.search('URL=(.*)', redirect[0], re.I).group(1)
 
-        self.page_raw_text = requests.get(self.product_page_url, headers=self.HEADERS).content
+        if not redirect:
+            for javascript in self.tree_html.xpath('//script[@type="text/javascript"]/text()'):
+                javascript = re.sub('[\s\'"\+\;]','',javascript)
+                redirect = re.match('location.href=(.*)', javascript)
+
+                if redirect:
+                    redirect_url = redirect.group(1)
+                    if not re.match('https?://.+\.samsclub.com', redirect_url):
+                        redirect_url = 'http://www.samsclub.com' + redirect_url
+
+        if redirect:
+            self.product_page_url = redirect_url
+
+        r = requests.get(self.product_page_url, headers=self.HEADERS)
+        if r.url == 'http://www.samsclub.com/sams/':
+            return True
+
+        self.page_raw_text = r.content
         self.tree_html = html.fromstring(self.page_raw_text)
 
         try:
             self.sv.setupCH(self.tree_html)
         except:
             pass
-
-        if self._is_shelf():
-            return False
-
-        self._failure_type()
-
-        if self.failure_type:
-            self.ERROR_RESPONSE["failure_type"] = self.failure_type
-
-            return True
 
         return False
 
@@ -272,13 +280,27 @@ class SamsclubScraper(Scraper):
 
             featured_images = map(lambda i: i.split('?')[0], featured_images)
             images += featured_images
-
             for image in map(lambda i: i['image'], self._items()):
                 if not image in images:
                     images.append(image)
 
             self.image_count = len(images)
-
+            image_alts = []
+            for im in images:
+                image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@alt'.format(im))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@title'.format(im))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains("{}", @src)]/@alt'.format(im))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@alt'.format(im.replace("http:",'')))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@ng-src, "{}")]/@alt'.format(im.replace("http:",'')))
+                image_alt = image_alt[0] if image_alt else ''
+                if not image_alt:
+                    image_alt = self.ajax_alt_text.get(im.replace("http:",''), '')
+                image_alts.append(image_alt)
+            self.image_alt = image_alts
             if images:
                 return images
 
@@ -312,12 +334,38 @@ class SamsclubScraper(Scraper):
                     print "WARNING: ", e.message
 
             img_urls = map(lambda u: u + '?wid=1500&hei=1500&fmt=jpg&qlt=80', img_urls)
-
+            image_alts = []
+            for im in img_urls:
+                im_c = im.replace("http:", '').split('?')[0]
+                image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@alt'.format(im_c))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@title'.format(im_c))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains("{}", @src)]/@alt'.format(im_c))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@alt'.format(im_c))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath(
+                        '//img[contains(@ng-src, "{}")]/@alt'.format(im.replace("http:", '')))
+                image_alt = image_alt[0] if image_alt else ''
+                image_alts.append(image_alt)
+            self.image_alt = image_alts
             self.image_urls = img_urls
             self.image_count = len(img_urls)
+            # TODO add image alt extraction for single items as well
             return img_urls
         else:
             return self.image_urls
+
+    def _image_alt_text(self):
+        if not self.image_count == -1 or not self.image_alt:
+            image_urls = self._image_urls()
+        return self.image_alt
+
+    def _image_alt_text_len(self):
+        if not self.image_alt:
+            image_urls = self._image_urls()
+        return [len(i) if i else 0 for i in self.image_alt] if self.image_alt else None
 
     def _image_count(self):
         if self.image_count == -1:
@@ -548,7 +596,9 @@ class SamsclubScraper(Scraper):
 
             for record in records:
                 price = None
-
+                # This is needed to extract alt-text for images of products
+                # from second half of shelf page, loaded via ajax
+                self.ajax_alt_text[record.get('listImage')] = record.get('productName')
                 if record.get('clubPricing') and not record['clubPricing']['forceLoginRequired']:
                     price = record['clubPricing']['finalPrice']['currencyAmount']
 
@@ -639,7 +689,8 @@ class SamsclubScraper(Scraper):
             return n
 
     def _num_items_no_price_displayed(self):
-        return self._results_per_page() - self._num_items_price_displayed()
+        if self._is_shelf():
+            return self._results_per_page() - self._num_items_price_displayed()
 
     def _meta_description_count(self):
         try:
@@ -1022,6 +1073,8 @@ class SamsclubScraper(Scraper):
         "num_items_no_price_displayed" : _num_items_no_price_displayed, \
         "body_copy" : _body_copy, \
         "body_copy_links" : _body_copy_links, \
+        "image_alt_text": _image_alt_text, \
+        "image_alt_text_len": _image_alt_text_len, \
 
         # CONTAINER : SELLERS
         "price" : _price, \

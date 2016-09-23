@@ -103,6 +103,11 @@ class UltaProductSpider(BaseProductsSpider):
         prod = response.meta['product']
         prod['url'] = response.url
 
+        if 'is no longer available' in ' '.join(
+                response.xpath('//*[contains(@id, "isLive")]//text()').extract()).lower():
+            prod['no_longer_available'] = True
+            return prod
+
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
 
@@ -288,6 +293,10 @@ class UltaProductSpider(BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         links = response.xpath('//li/p[@class="prod-desc"]/a/@href').extract()
+        if not links:
+            links = response.xpath('//*[contains(@id, "search-prod")]'
+                                   '//a[contains(@class, "product")]/@href').extract()
+
         for link in links:
             yield link, SiteProductItem()
 

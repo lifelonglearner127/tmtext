@@ -506,14 +506,22 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         return context
 
     def list(self, request):
+        start_ = datetime.datetime.now()
+        print 'START!!!', start_
         with open(get_walmart_api_invoke_log(request), "a+") as myfile:
             log_history = myfile.read().splitlines()
+
+        print '2!!!', (datetime.datetime.now() - start_).total_seconds()
 
         if isinstance(log_history, list):
             log_history.reverse()
 
+        print '3!!!', (datetime.datetime.now() - start_).total_seconds()
+
         pagination = self._paginate_log_file_results(request, log_history)
         pagination['log'] = pagination.pop('paginated_list')
+
+        print '4!!!', (datetime.datetime.now() - start_).total_seconds()
 
         return Response(pagination)
 

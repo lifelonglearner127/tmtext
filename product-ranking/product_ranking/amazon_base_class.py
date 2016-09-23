@@ -447,12 +447,15 @@ class AmazonBaseClass(BaseProductsSpider):
         #    reqs.append(marketplace_req)
 
         # Parse category
-        categories = self._parse_category(response)
+        categories_full_info = self._parse_category(response)
         # cond_set_value(product, 'category', category)
+        cond_set_value(product, 'categories_full_info', categories_full_info)
+        # Left old simple format just in case
+        categories = [c.get('name') for c in categories_full_info] if categories_full_info else None
+        cond_set_value(product, 'categories', categories)
 
         # build_categories(product)
         category_rank = self._parse_category_rank(response)
-        cond_set_value(product, 'categories', categories)
         if category_rank:
             # Parse departments and bestseller rank
             department = amazon_parse_department(category_rank)
@@ -500,16 +503,23 @@ class AmazonBaseClass(BaseProductsSpider):
     def _parse_category(self, response):
         cat = response.xpath(
             '//span[@class="a-list-item"]/'
-            'a[@class="a-link-normal a-color-tertiary"]/text()')
+            'a[@class="a-link-normal a-color-tertiary"]')
         if not cat:
-            cat = response.xpath('//li[@class="breadcrumb"]/a[@class="breadcrumb-link"]/text()')
+            cat = response.xpath('//li[@class="breadcrumb"]/a[@class="breadcrumb-link"]')
+        if not cat:
+            cat = response.xpath('.//*[@id="nav-subnav"]/a[@class="nav-a nav-b"]')
 
-        category = []
+        categories_full_info = []
         for cat_sel in cat:
-            category.append(cat_sel.extract().strip())
+            c_url = cat_sel.xpath("./@href").extract()
+            c_url = urlparse.urljoin(response.url, c_url[0]) if c_url else None
+            c_text = cat_sel.xpath(".//text()").extract()
+            c_text = c_text[0].strip() if c_text else None
+            categories_full_info.append({"url":c_url,
+                                         "name":c_text})
 
-        if category:
-            return category
+        if categories_full_info:
+            return categories_full_info
 
 
     def _parse_title(self, response, add_xpath=None):
@@ -547,6 +557,9 @@ class AmazonBaseClass(BaseProductsSpider):
                 for part in parts:
                     title += part
                 title = [title]
+
+        if not title:
+            title = self._is_empty(response.css('#ebooksProductTitle ::text').extract(), '').strip()
 
         return title
 
@@ -601,7 +614,14 @@ class AmazonBaseClass(BaseProductsSpider):
                 img_data = json.loads(img_jsons[0])
                 image = max(img_data.items(), key=lambda (_, size): size[0])
 
-        if 'base64' in image:
+        if not image:
+            image = response.xpath('//*[contains(@id, "ebooks-img-canvas")]//@src').extract()
+            if image:
+                image = image[0]
+            else:
+                image = None
+
+        if image and 'base64' in image:
             img_jsons = response.xpath(
                 '//*[@id="imgBlkFront"]/@data-a-dynamic-image | '
                 '//*[@id="landingImage"]/@data-a-dynamic-image'
@@ -1116,9 +1136,16 @@ class AmazonBaseClass(BaseProductsSpider):
                 'string(//div[@id="acr"]/div[@class="txtsmall"]'
                 '/div[contains(@class, "acrCount")])'
             ).re(FLOATING_POINT_RGEX)
+        if not total:
+            total = response.xpath('.//*[contains(@class, "totalReviewCount")]/text()').re(FLOATING_POINT_RGEX)
             if not total:
                 return ZERO_REVIEWS_VALUE
-        buyer_reviews['num_of_reviews'] = int(total[0].replace(',', '').
+        # For cases when total looks like: [u'4.2', u'5', u'51']
+        if len(total) == 3:
+            buyer_reviews['num_of_reviews'] = int(total[-1].replace(',', '').
+                                                  replace('.', ''))
+        else:
+            buyer_reviews['num_of_reviews'] = int(total[0].replace(',', '').
                                               replace('.', ''))
 
         average = response.xpath(
@@ -1128,7 +1155,11 @@ class AmazonBaseClass(BaseProductsSpider):
                 '//div[@id="acr"]/div[@class="txtsmall"]'
                 '/div[contains(@class, "acrRating")]/text()'
             )
-        average = average.extract()[0].replace('out of 5 stars','')
+        if not average:
+            average = response.xpath(
+                ".//*[@id='reviewStarsLinkedCustomerReviews']//span/text()"
+            )
+        average = average.extract()[0].replace('out of 5 stars','') if average else 0.0
         average = average.replace('von 5 Sternen', '').replace('5つ星のうち','')\
             .replace('平均','').replace(' 星','').replace('étoiles sur 5', '')\
             .strip()
@@ -1140,10 +1171,11 @@ class AmazonBaseClass(BaseProductsSpider):
         if not buyer_reviews.get('rating_by_star'):
             # scrape new buyer reviews request (that will lead to a new page)
             buyer_rev_link = is_empty(response.xpath(
-                '//div[@id="revSum"]//a[contains(text(), "See all")' \
+                '//div[@id="revSum" or @id="reviewSummary"]//a[contains(text(), "See all")' \
                 ' or contains(text(), "See the customer review")' \
                 ' or contains(text(), "See both customer reviews")]/@href'
             ).extract())
+            buyer_rev_link = urlparse.urljoin(response.url, buyer_rev_link)
             # Amazon started to display broken (404) link - fix
             if buyer_rev_link:
                 buyer_rev_link = re.search(r'.*product-reviews/[a-zA-Z0-9]+/',

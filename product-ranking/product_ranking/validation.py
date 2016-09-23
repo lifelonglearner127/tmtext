@@ -12,6 +12,7 @@ from pprint import pprint
 from collections import OrderedDict
 import logging
 import time
+import difflib
 import datetime
 
 from scrapy.log import INFO
@@ -795,6 +796,15 @@ class BaseValidator(object):
     def _validate_walmart_url(self, val):
         return True  # TODO: better validation!
 
+    def _validate_target_category(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_target_exists(self, val):
+        return True  # TODO: better validation!
+
+    def _validate_target_url(self, val):
+        return True  # TODO: better validation!
+
     def _get_failed_fields(self, data, add_row_index=False):
         """ Returns the fields with errors (and their first wrong values)
         :param data: 2-dimensions list or str
@@ -861,12 +871,14 @@ class BaseValidator(object):
     def _check_ranking_consistency(self, ranking_values):
         """ Check that the given ranking list is correct.
             [1,2,3,4] - correct; [1,2,4] - incorrect.
+            Allow about 5% of products to be missed (duplicated results in SERP?).
         :return: True if correct, False otherwise
         """
         if not isinstance(ranking_values, list):
             ranking_values = [r for r in ranking_values]
         ranking_values = sorted(ranking_values, key=lambda v: v)
-        return ranking_values == range(1, len(ranking_values)+1)
+        ratio = difflib.SequenceMatcher(None, ranking_values, range(1, len(ranking_values)+1)).ratio()
+        return ratio >= 0.95
 
     def _check_logs(self):
         """ Returns issues found in the log (if any).
