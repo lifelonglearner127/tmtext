@@ -72,42 +72,25 @@ class MacysSpider(BaseCheckoutSpider):
 
     def select_color(self, element=None, color=None):
         # If color was requested and is available
-        if color:
-            color = color.lower()
-        if color and color in map(lambda x: x.lower(), self.available_colors):
-            color_attribute_xpath = (
-                '*//div[@class="colorsSection"]//'
-                'li[translate(@data-title,'
-                '"ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")="%s"]' % color)
-            self.wait.until(
-                EC.element_to_be_clickable(
-                    (By.XPATH, color_attribute_xpath)
-                ))
-
-        # If color is set by default on the page
-        else:
-            color_attribute_xpath = (
-                '*//div[@class="colorsSection"]//li[@class="swatch selected"]')
-
-        # All Availables Collors
+        color_attribute_xpath = (
+            '*//div[@class="colorsSection"]//li[@class="swatch selected"]')
         color_attributes_xpath = (
             '*//*[@class="colorsSection"]//'
             'li[contains(@class, "swatch") '
             'and not(contains(@class, "disabled"))]')
+        color = color.lower() if color else color
+        if color and color in self.available_colors:
+            color_attribute_xpath = (
+                '*//div[@class="colorsSection"]//'
+                'li[translate(@data-title,'
+                '"ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")="%s"]' % color)
+
 
         self._click_attribute(color_attribute_xpath,
                               color_attributes_xpath,
                               element)
-        if color:
-            color_attribute_xpath = (
-                '*//div[@class="colorsSection"]//'
-                'li[translate(@data-title,'
-                '"ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz")="%s" and contains(@class, "selected")]' % color)
-            self.wait.until(
-                EC.presence_of_element_located(
-                    (By.XPATH, color_attribute_xpath)
-            ))
-            self.log('Color "{}" selected'.format(color))
+
+        self.log('Color selected')
 
     def _get_products(self):
         return self._find_by_xpath('//*[@id="productSidebar"]')
