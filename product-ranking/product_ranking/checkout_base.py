@@ -93,7 +93,6 @@ class BaseCheckoutSpider(scrapy.Spider):
     WEBDRIVER_WAIT_TIME = 60
 
     def __init__(self, *args, **kwargs):
-        socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
         settings.overrides['ITEM_PIPELINES'] = {}
         super(BaseCheckoutSpider, self).__init__(*args, **kwargs)
         self.user_agent = kwargs.get(
@@ -271,7 +270,6 @@ class BaseCheckoutSpider(scrapy.Spider):
         return dom_name
 
     def _parse_cart_page(self):
-        socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
         # get cookies with our cart stuff and filter them
         dom_name = self._get_current_domain_name()
         cart_cookies = [c for c in self.driver.get_cookies() if dom_name in c.get('domain')]
@@ -330,6 +328,8 @@ class BaseCheckoutSpider(scrapy.Spider):
             promo_order_subtotal = float(self._get_promo_subtotal().replace(',', ''))
             promo_price = round(promo_order_subtotal / item['quantity'], 2)
             is_promo_code_valid = not promo_order_total == item['order_total']
+            if not is_promo_code_valid:
+                item['promo_invalid_message'] = self._get_promo_invalid_message()
             item['is_promo_code_valid'] = is_promo_code_valid
             if self.promo_price == 1:
                 item['order_total'] = promo_order_total
@@ -341,6 +341,10 @@ class BaseCheckoutSpider(scrapy.Spider):
                 item['promo_price'] = promo_price
             self._remove_promo_code()
             yield item
+
+    @abstractmethod
+    def _get_promo_invalid_message(self):
+        return
 
     @abstractmethod
     def _get_promo_subtotal(self):

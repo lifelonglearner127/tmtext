@@ -2,6 +2,7 @@ import re
 import time
 
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
@@ -56,7 +57,6 @@ class MacysSpider(BaseCheckoutSpider):
         return [x.get_attribute("data-title").lower() for x in swatches]
 
     def select_size(self, element=None):
-        time.sleep(15)
         size_attribute_xpath = (
             '*//*[@class="sizesSection"]//li[@class="swatch selected"]')
 
@@ -74,7 +74,7 @@ class MacysSpider(BaseCheckoutSpider):
         # If color was requested and is available
         if color:
             color = color.lower()
-        if color and color in map(lambda x: x.lower(), self._get_colors_names()):
+        if color and color in map(lambda x: x.lower(), self.available_colors):
             color_attribute_xpath = (
                 '*//div[@class="colorsSection"]//'
                 'li[translate(@data-title,'
@@ -118,7 +118,6 @@ class MacysSpider(BaseCheckoutSpider):
 
         if add_to_bag:
             add_to_bag[0].click()
-            time.sleep(4)
             self.log('Added to cart')
             self.wait.until(
                 EC.presence_of_element_located(
@@ -126,18 +125,11 @@ class MacysSpider(BaseCheckoutSpider):
                 )
             )
 
-    def _do_others_actions(self):
-        return
-
     def _set_quantity(self, product, quantity):
-        quantity_option = self._find_by_xpath(
-            '*//*[@class="productQuantity"]'
-            '/option[@value="%d"]' % quantity, product)
-
-        if quantity_option:
-            quantity_option[0].click()
-            time.sleep(4)
-            self.log('Quantity "{}" selected'.format(quantity))
+        quantity_option = Select(self.driver.find_element_by_xpath('*//*[@class="productQuantity"]'))
+        quantity_option.select_by_value(str(quantity))
+        time.sleep(3)
+        self.log('Quantity "{}" selected'.format(quantity))
 
     def _get_product_list_cart(self):
         self.wait.until(
@@ -219,7 +211,6 @@ class MacysSpider(BaseCheckoutSpider):
 
     def _enter_promo_code(self, promo_code):
         self.log('Enter promo code: {}'.format(promo_code))
-        time.sleep(2)
         promo_field = self._find_by_xpath('//input[@id="promoCode"]')[0]
         promo_field.send_keys(promo_code)
         time.sleep(2)
@@ -234,3 +225,6 @@ class MacysSpider(BaseCheckoutSpider):
             time.sleep(2)
         except IndexError:
             self.log('Invalid promo code')
+
+    def _get_promo_invalid_message(self):
+        return self.driver.find_element_by_id('promoCodeError').text
