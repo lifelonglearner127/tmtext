@@ -37,6 +37,20 @@ sys.path.insert(2, os.path.join(path, '..', '..', 'special_crawler',
 sys.path.insert(3, os.path.join(path, 'tmtext', 'product-ranking'))
 
 
+push_simmetrica_event = None
+try:
+    from monitoring import push_simmetrica_event
+except ImportError:
+    try:
+        from spiders import push_simmetrica_event
+    except ImportError:
+        try:
+            from product_ranking.spiders import push_simmetrica_event
+        except ImportError:
+            #print 'ERROR: CAN NOT IMPORT MONITORING PACKAGE!'
+            pass
+
+
 from sqs_ranking_spiders.task_id_generator import \
     generate_hash_datestamp_data, load_data_from_hash_datestamp_data
 try:
@@ -880,6 +894,32 @@ class ScrapyTask(object):
         logger.info('Scrapy process started for task #%s',
                     self.task_data.get('task_id', 0))
 
+    def _push_simmetrica_events(self):
+        if push_simmetrica_event is None:
+            logger.error('Error! push_simmetrica_event method not imported!')
+            return
+        # push global tasks per server
+        push_simmetrica_event('monitoring_job_server_name_%s' % (self.task_data['server_name']))
+        # push global tasks for site
+        push_simmetrica_event('monitoring_job_site_%s' % (self.task_data['site']))
+        # push tasks server / site
+        push_simmetrica_event('monitoring_job_server_name_and_site_%s_%s' % (
+            self.task_data['server_name'], self.task_data['site']))
+        # push tasks per server per type
+        type = 'unknown'
+        if 'url' in self.task_data:
+            type = 'product_url'
+        elif 'searchterms_str' in self.task_data:
+            type = 'searchterm'
+        if 'checkout' in self.task_data['site']:
+            type = 'checkout'
+        if '_shelf' in self.task_data['site']:
+            type = 'shelf_page'
+        if 'screenshot' in self.task_data['site']:
+            type = 'screenshot'
+        push_simmetrica_event('monitoring_job_server_name_and_type_%s_%s' % (
+            self.task_data['server_name'], type))
+
     def _establish_connection(self):
         """
         tries to accept connection from the scrapy process to receive
@@ -1032,6 +1072,7 @@ class ScrapyTask(object):
             start_time = datetime.datetime.utcnow()
             self.start_date = start_time
             self._start_scrapy_process()
+            self._push_simmetrica_events()
             first_signal = self._get_next_signal(start_time)
         except Exception as ex:
             logger.warning('Error occured while starting scrapy: %s', ex)
