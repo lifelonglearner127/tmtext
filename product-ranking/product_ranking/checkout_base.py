@@ -171,9 +171,10 @@ class BaseCheckoutSpider(scrapy.Spider):
                     self.requested_color = color
                 self.current_color = color
                 self.current_quantity = qty
-                self._parse_product_page(qty, color)
-                items = self._parse_cart_page(url)
+                self._parse_product_page(url, qty, color)
+                items = self._parse_cart_page()
                 for item in items:
+                    item['url'] = url
                     yield item
         self.driver.quit()
 
@@ -217,7 +218,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.select_size(product)
         self._set_quantity(product, quantity)
 
-    def _parse_product_page(self, quantity, color=None):
+    def _parse_product_page(self, product_url, quantity, color=None):
         """ Process product and add it to the cart"""
         products = self._get_products()
 
@@ -268,7 +269,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.log("Got domain name: %s" % dom_name, level=WARNING)
         return dom_name
 
-    def _parse_cart_page(self, product_url):
+    def _parse_cart_page(self):
         # get cookies with our cart stuff and filter them
         dom_name = self._get_current_domain_name()
         cart_cookies = [c for c in self.driver.get_cookies() if dom_name in c.get('domain')]
@@ -276,7 +277,6 @@ class BaseCheckoutSpider(scrapy.Spider):
         product_list = self._load_cart_page(cart_cookies=cart_cookies)
         for product in self._get_products_in_cart(product_list):
             item = self._parse_item(product)
-            item['url'] = product_url
             item['order_subtotal'] = float(self._get_subtotal())
             item['order_total'] = float(self._get_total())
             if self.promo_mode:
