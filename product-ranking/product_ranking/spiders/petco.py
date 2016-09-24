@@ -3,12 +3,11 @@ import re
 import string
 import urllib
 
-from scrapy import Request
-
-from product_ranking.items import SiteProductItem, Price
+from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
+from product_ranking.items import Price, SiteProductItem
 from product_ranking.spiders import cond_set_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
-from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
+from scrapy import Request
 
 
 def dict_product(dicts):
@@ -65,7 +64,7 @@ class PetcoProductsSpider(ProductsSpider):
         return 48
 
     def _scrape_next_results_page_link(self, response):
-        #End of pagination
+        # End of pagination
         if not self.product_last_page:
             return None
 
@@ -102,7 +101,6 @@ class PetcoProductsSpider(ProductsSpider):
     def _parse_category(self, response):
         categories = self._parse_categories(response)
         return categories[-1] if categories else None
-
 
     def _parse_image_url(self, response):
         image_url = response.xpath(
@@ -214,7 +212,8 @@ class PetcoProductsSpider(ProductsSpider):
         if product_id:
             reqs.append(
                 Request(
-                    url=self.REVIEW_URL.format(product_id=product_id[0], index=0),
+                    url=self.REVIEW_URL.format(
+                        product_id=product_id[0], index=0),
                     dont_filter=True,
                     callback=self.parse_buyer_reviews,
                     meta=response.meta
