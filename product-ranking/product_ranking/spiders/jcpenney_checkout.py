@@ -220,6 +220,15 @@ class JCpenneySpider(BaseCheckoutSpider):
         time.sleep(5)
         self.item_info = self._get_product_list_cart()
 
+    def _remove_promo_code(self):
+        self.log('Remove promo code')
+        try:
+            remove_field = self._find_by_xpath('//a[@title="remove" and @class="cr-remove"]')[0]
+            remove_field.click()
+            time.sleep(10)
+        except IndexError:
+            self.log('Invalid promo code')
+
     def _get_promo_total(self):
         return self._get_total()
 
