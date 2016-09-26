@@ -4,4 +4,4 @@ from django import forms
 
 
 class ReportDateForm(forms.Form):
-    date = forms.DateField(auto_now_add=True)
+    date = forms.DateField(initial=datetime.datetime.today)
