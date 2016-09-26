@@ -20,6 +20,7 @@
             <li><a href="/get_s3_file">Download s3 file</a></li>
             <li><a href="/autoscale_history">Autoscale history</a></li>
             <li><a href="/jobs_history">Jobs History</a></li>
+            <li><a href="/requests_history">Request History</a></li>
             <li><a href="/killer">Killer logs</a></li>
             <li><a href="/settings">Cache settings</a></li>
             <li><a href="/clear_cache">Clear cache</a></li>
@@ -61,6 +62,7 @@
                 <li>Product urls - {{ completed_stats.url_total }}</li>
             </ul>
         </li>
+        <li>Today requests count: {{ today_requests_count }}</li>
         <li>Last hour executed tasks: {{ last_hour_executed_tasks }}</li>
         <li>Task left in queues: {{ left_tasks_total }}
             <ul>

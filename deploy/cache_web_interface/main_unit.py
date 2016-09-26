@@ -145,6 +145,7 @@ def stats():
         context['today_instances'] = cache.get_today_instances()
         context['today_jobs'] = cache.get_jobs_stats()
         context['today_executed_tasks'] = cache.get_executed_tasks_count()
+        context['today_requests_count'] = cache.get_today_requests()
         context['last_hour_executed_tasks'] = cache.get_executed_tasks_count(
             for_last_hour=True)
         context['responses_from_cache_url'] = \
@@ -254,6 +255,20 @@ def jobs_history():
         return render_template('jobs_history.html')
     days = int(request.form.get('days', '0'))
     data = cache.get_jobs_history(days)
+    resp = make_response(json.dumps(data))
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
+
+
+@app.route('/requests_history', methods=['GET', 'POST'])
+def requests_history():
+    """
+    Total number of jobs.
+    """
+    if request.method == 'GET':
+        return render_template('requests_history.html')
+    days = int(request.form.get('days', '0'))
+    data = cache.get_requests_count_history(days)
     resp = make_response(json.dumps(data))
     resp.headers['Content-Type'] = 'application/json'
     return resp

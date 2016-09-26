@@ -33,6 +33,9 @@ class SqsCache(object):
     REDIS_JOBS_COUNTER = 'daily_sqs_jobs_counter'  # int
     REDIS_JOBS_HISTORY = 'sqs_jobs_history'  # zset
     REDIS_JOBS_STATS = 'sqs_jobs_stats'  # hash
+    REDIS_REQUEST_COUNTER = 'daily_sqs_request_counter'  # int
+    REDIS_REQUEST_HISTORY = 'sqs_request_history'  # zset
+    REDIS_TASK_EXECUTION_TIME = 'sqs_task_execution_time'  # zset
     REDIS_URGENT_STATS = 'urgent_stats'  # zset
     REDIS_FAILED_TASKS = 'failed_tasks'  # set, store failed tasks here
     MAX_FAILED_TRIES = 3
@@ -185,6 +188,7 @@ class SqsCache(object):
                        self.REDIS_COMPLETED_COUNTER,
                        self.REDIS_JOBS_COUNTER,
                        self.REDIS_JOBS_STATS,
+                       self.REDIS_REQUEST_COUNTER,
                        self.REDIS_FAILED_TASKS)
 
         return \
@@ -226,9 +230,15 @@ class SqsCache(object):
 
     def get_today_jobs(self):
         """
-            get count of started jobs for current day
-            """
+        get count of started jobs for current day
+        """
         return self.db.get(self.REDIS_JOBS_COUNTER)
+
+    def get_today_requests(self):
+        """
+        get count of requests for current day
+        """
+        return self.db.get(self.REDIS_REQUEST_COUNTER)
 
     def get_executed_tasks_count(self, hours_from=None, hours_to=None,
                                  for_last_hour=False):
@@ -342,43 +352,62 @@ class SqsCache(object):
     def del_redis_keys(self, *keys):
         self.db.delete(*keys)
 
-    def save_today_instances_count(self, instances_num=None):
-        cnt = instances_num or self.db.get(self.REDIS_INSTANCES_COUNTER)
+    def __save_today_counter_to_history(self, counter_key_name,
+                                        history_key_name, number=None):
+        cnt = number or self.db.get(counter_key_name)
         cnt = int(cnt or '0')
         today = date.today() - timedelta(days=1)
         today = int(mktime(today.timetuple()))  # get today's timestamp
-        # score is current day timestamp, name is instances count
-        return self.db.zadd(self.REDIS_INSTANCES_HISTORY, today,
-                            '%s:%s' % (today, cnt))
+        # score is current day timestamp, name is count
+        return self.db.zadd(history_key_name, today, '%s:%s' % (today, cnt))
 
-    def get_instances_history(self, days):
-        date_offset = date.today() - timedelta(days=days+1)
-        offset = int(mktime(date_offset.timetuple()))
-        data = self.db.zrevrangebyscore(self.REDIS_INSTANCES_HISTORY,
-                                        9999999999, offset,
-                                        withscores=True, score_cast_func=int)
-        res = [(d[1], d[0].split(':')[-1]) for d in data]
-        res = OrderedDict(res)
-        return res
-
-    def save_today_jobs_count(self, jobs_num=None):
-        cnt = jobs_num or self.db.get(self.REDIS_JOBS_COUNTER)
-        cnt = int(cnt or '0')
-        today = date.today() - timedelta(days=1)
-        today = int(mktime(today.timetuple()))  # get today's timestamp
-        # score is current day timestamp, name is jobs count
-        return self.db.zadd(self.REDIS_JOBS_HISTORY, today,
-                            '%s:%s' % (today, cnt))
-
-    def get_jobs_history(self, days):
+    def __get_history(self, history_key_name, days):
         date_offset = date.today() - timedelta(days=days + 1)
         offset = int(mktime(date_offset.timetuple()))
-        data = self.db.zrevrangebyscore(self.REDIS_JOBS_HISTORY,
-                                        9999999999, offset,
+        data = self.db.zrevrangebyscore(history_key_name, 9999999999, offset,
                                         withscores=True, score_cast_func=int)
         res = [(d[1], d[0].split(':')[-1]) for d in data]
         res = OrderedDict(res)
         return res
+
+    def save_today_instances_count(self, instances_num=None):
+        return self.__save_today_counter_to_history(
+            counter_key_name=self.REDIS_INSTANCES_COUNTER,
+            history_key_name=self.REDIS_INSTANCES_HISTORY,
+            number=instances_num
+        )
+
+    def get_instances_history(self, days):
+        return self.__get_history(
+            history_key_name=self.REDIS_INSTANCES_HISTORY,
+            days=days
+        )
+
+    def save_today_jobs_count(self, jobs_num=None):
+        return self.__save_today_counter_to_history(
+            counter_key_name=self.REDIS_JOBS_COUNTER,
+            history_key_name=self.REDIS_JOBS_HISTORY,
+            number=jobs_num
+        )
+
+    def get_jobs_history(self, days):
+        return self.__get_history(
+            history_key_name=self.REDIS_JOBS_HISTORY,
+            days=days
+        )
+
+    def save_today_requests_count(self, jobs_num=None):
+        return self.__save_today_counter_to_history(
+            counter_key_name=self.REDIS_REQUEST_COUNTER,
+            history_key_name=self.REDIS_REQUEST_HISTORY,
+            number=jobs_num
+        )
+
+    def get_requests_count_history(self, days):
+        return self.__get_history(
+            history_key_name=self.REDIS_REQUEST_HISTORY,
+            days=days
+        )
 
     def add_task_to_jobs_stats(self, task):
         server = task.get('server_name', 'UnknownServer')
