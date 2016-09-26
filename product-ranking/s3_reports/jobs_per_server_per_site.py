@@ -14,6 +14,7 @@
 import os
 import gzip
 import sys
+import json
 import datetime
 import time
 from collections import OrderedDict
@@ -26,35 +27,42 @@ def main(input_file, date, spider_marker=None):
     lines_processed = 0
 
     date = date.strftime('%d-%m-%Y' + '____')
-    with gzip.open(input_file, 'rb') as fh:
-        for line in fh:
-            total_lines_processed += 1
 
-            if date in line:
-                if '.jl.zip' not in line:
+    if '.gz' in input_file.lower()[-5:]:
+        fh = gzip.open(input_file, 'rb')
+    else:
+        fh = open(input_file, 'r')
+
+    for line in fh:
+        total_lines_processed += 1
+
+        if date in line:
+            if '.jl.zip' not in line:
+                continue
+            try:
+                _, _, server_and_id, _, spider = line.split('____')
+            except:
+                continue
+
+            server = server_and_id.split('--')[0].strip()
+            spider = spider.replace('.jl.zip', '').replace('>', '').strip()
+
+            if spider_marker:
+                if spider_marker not in spider:
                     continue
-                try:
-                    _, _, server_and_id, _, spider = line.split('____')
-                except:
-                    continue
 
-                server = server_and_id.split('--')[0].strip()
-                spider = spider.replace('.jl.zip', '').replace('>', '').strip()
+            if not server in result:
+                result[server] = {}
 
-                if spider_marker:
-                    if spider_marker not in spider:
-                        continue
+            if not spider in result[server]:
+                result[server][spider] = 0
 
-                if not server in result:
-                    result[server] = {}
+            result[server][spider] += 1
 
-                if not spider in result[server]:
-                    result[server][spider] = 0
+            #print line
+            lines_processed += 1
 
-                result[server][spider] += 1
-
-                #print line
-                lines_processed += 1
+    fh.close()
 
     return result, total_lines_processed, lines_processed
 
@@ -69,6 +77,16 @@ def transform_report_by_spider(report):
                 result[spider_name] = {}
             result[spider_name][server] = spider_jobs
     return result
+
+
+def dump_reports(input_fname, date, output_fname):
+    report1 = main(input_fname, date)
+    report2 = transform_report_by_spider(report1)
+    with open(output_fname, 'w') as fh:
+        fh.write(json.dumps({
+            'by_server': report1,
+            'by_spider': report2
+        }))
 
 
 if __name__ == '__main__':
