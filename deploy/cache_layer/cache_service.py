@@ -363,6 +363,14 @@ class SqsCache(object):
 
     def __save_today_counter_to_history(self, counter_key_name,
                                         history_key_name, number=None):
+        """
+        Default method for save history from daily counter.
+        Args:
+            counter_key_name: Counter key name in redis db.
+            history_key_name: History key name in redis db.
+            number: amount of counter or read from counter.
+        Returns: number of inserted items.
+        """
         cnt = number or self.db.get(counter_key_name)
         cnt = int(cnt or '0')
         today = date.today() - timedelta(days=1)
@@ -371,6 +379,14 @@ class SqsCache(object):
         return self.db.zadd(history_key_name, today, '%s:%s' % (today, cnt))
 
     def __get_history(self, history_key_name, days):
+        """
+        Default method for get history.
+        Args:
+            history_key_name: History key name from redis db.
+            days: Amount of days.
+        Returns: OrderedDict with result from history.
+         Ex: {'timestamp': 'number', etc }
+        """
         date_offset = date.today() - timedelta(days=days + 1)
         offset = int(mktime(date_offset.timetuple()))
         data = self.db.zrevrangebyscore(history_key_name, 9999999999, offset,
@@ -419,6 +435,10 @@ class SqsCache(object):
         )
 
     def add_task_to_jobs_stats(self, task):
+        """
+        Adding task to jobs statistics.
+        Returns: Counter of today jobs inserted.
+        """
         server = task.get('server_name', 'UnknownServer')
         site = task.get('site', 'UnknownSite')
         search_type = 'term' if 'term' in task and task['term'] else 'url'
@@ -426,6 +446,30 @@ class SqsCache(object):
         return self.db.hincrby(self.REDIS_JOBS_STATS, metric_field, 1)
 
     def get_jobs_stats(self, match=None):
+        """
+        Get jobs statistics.
+        Args:
+            match: Additional filter for redis selector.
+        Returns: Dict of statistics. Ex:
+            {
+                'url': X,
+                'term': X,
+                'servers': {
+                    'Bic': {
+                        'url': X,
+                        'term': X,
+                        'scrappers': {
+                            'Amazon': {
+                                'url': X,
+                                'term': X
+                            }
+                            ...
+                        }
+                    }
+                    ...
+                }
+            }
+        """
         data = ()
         page = 0
         result = {
@@ -462,6 +506,14 @@ class SqsCache(object):
         return result
 
     def store_execution_time_per_task(self, execution_time, key=None):
+        """
+        Save execution time for task.
+        Args:
+            execution_time: Execution time in seconds for current task.
+            key: Time. Minutes, seconds and etc must be a Zero.
+              default: current hour.
+        Returns:
+        """
         if not key:
             key = list(datetime.today().timetuple())[0:4] + [0]*5
         sum_key = '%s:%s' % (key, 'sum')
@@ -473,6 +525,9 @@ class SqsCache(object):
 
     def get_task_executed_time(self, hours_from=None, hours_to=None,
                                for_last_hour=False):
+        """
+        Returns: OrderedDict with avg. time of executed tasks per hour.
+        """
         today = list(date.today().timetuple())[0:4] + [0]*5
         if for_last_hour:
             time_from = int(time()) - 60 * 60
