@@ -395,7 +395,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         if not amount or 'see low price in cart' in amount:
             amount = item.get(
                 'price').get('offerPrice').get('price')
-        return float(amount) if amount else 0
+        return float(amount.replace(',', '')) if amount else 0
 
     @staticmethod
     def _item_info_v3_store_only(item):
@@ -454,7 +454,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         if not 'Unauthorized' in item.get('message', ''):
             product['title'] = item.get('product_description').get('title')
             product['tcin'] = item.get('tcin')
-            product['description'] = item.get('product_description').get('downstream_description')
+            product['description'] = item.get('product_description').get('downstream_description', '')
             product['brand'] = item.get('product_brand').get('manufacturer_brand')
             product['buyer_reviews'] = self._item_info_v3_reviews(item_info)
             variants = self._item_info_v3_variants(item_info)
