@@ -272,9 +272,24 @@ def requests_history():
     """
     Total number of jobs.
     """
-    if request.method == 'GET':
-        return render_template('requests_history.html')
     days = int(request.form.get('days', '0'))
+    if request.method == 'GET':
+        if request.args.get('download', False):
+            data = cache.get_requests_count_history(days)
+            statistic = json.dumps(data)
+            filename = '%s.json' % datetime.datetime.today()
+            response = make_response(statistic)
+            response.headers['Content-Description'] = 'File Transfer'
+            response.headers['Content-Type'] = 'application/octet-stream'
+            response.headers['Content-Disposition'] = \
+                'attachment; filename=%s;' % filename
+            response.headers['Content-Transfer-Encoding'] = 'binary'
+            response.headers['Expires'] = '0'
+            response.headers['Cache-Control'] = 'must-revalidate'
+            response.headers['Pragma'] = 'public'
+            response.headers['Content-Length'] = len(statistic)
+            return response
+        return render_template('requests_history.html')
     data = cache.get_requests_count_history(days)
     resp = make_response(json.dumps(data))
     resp.headers['Content-Type'] = 'application/json'

@@ -61,6 +61,15 @@
                 });
             });
             selectBox.change();  // manually trigger change event to load initial data
+            // Download button
+            var download_button = $('#download_button');
+            download_button.click(function(){
+                var days = parseInt(selectBox.val());
+                if (days < 7){
+                    days = 7;
+                }
+                window.open('?download=1&days=' + days);
+            });
         });
         {% endraw %}
     </script>
@@ -73,6 +82,7 @@
         <option value="7" selected="selected">Week</option>
         <option value="30">Month</option>
     </select>
+    <input type="button" id="download_button" value="Download" />
 </div>
 <div id="myChart">
     <canvas id="myChart" width="800" height="400"></canvas>
