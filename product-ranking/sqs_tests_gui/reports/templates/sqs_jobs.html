@@ -39,6 +39,12 @@
     </form>
 </p>
 
+{% if request.GET.date %}
+    <script>
+        $('#id_date').val('{{ request.GET.date }}');
+    </script>
+{% endif %}
+
 {% if error_msg %}
     <p><b>{{ error_msg|safe }}</b></p>
 {% endif %}
