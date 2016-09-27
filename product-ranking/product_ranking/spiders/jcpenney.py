@@ -59,12 +59,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         'www.jcpenney.comjavascript'
     ]
 
-    SEARCH_URL = "http://www.jcpenney.com/jsp/search/results.jsp?" \
-                 "fromSearch=true&" \
-                 "Ntt={search_term}&" \
-                 "ruleZoneName=XGNSZone&" \
-                 "Ns={sort_mode}&" \
-                 "redirectTerm=skirts{search_term}"
+    SEARCH_URL = "http://www.jcpenney.com/jsp/search/results.jsp?fromSearch=true&Ntt={search_term}" \
+                 "&ruleZoneName=XGNSZone&successPage=null&_dyncharset=UTF-8&rootContentItemType=XGNS&Ns={sort_mode}"
     SORTING = None
     SORT_MODES = {
         'default': '',
