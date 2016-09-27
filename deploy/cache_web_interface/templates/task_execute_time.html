@@ -2,7 +2,7 @@
 <html>
 <head lang="en">
     <meta charset="UTF-8">
-    <title>Total number of Jobs</title>
+    <title>Task execute time for today</title>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js"></script>
     <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
     <script>
@@ -31,7 +31,7 @@
                     var chartData = {
                         labels: labels,
                         datasets: [{
-                            label: "Number of Jobs",
+                            label: "Avg. time by hour",
                             fillColor: "rgba(151,187,205,0.2)",
                             strokeColor: "rgba(151,187,205,1)",
                             pointColor: "rgba(151,187,205,1)",
@@ -50,8 +50,8 @@
                     var ctx = canvas[0].getContext("2d");
                     var options = {
                         scaleOverride : true,
-                        scaleSteps : 15,
-                        scaleStepWidth : 100000,
+                        scaleSteps : 30,
+                        scaleStepWidth : 240,
                         scaleStartValue : 0,
                         legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"color:<%=datasets[i].pointColor%>\"><%if(datasets[i].label){%><%=datasets[i].label%><%}%></span></li><%}%></ul>"
                     };

@@ -146,6 +146,13 @@ def stats():
         context['today_jobs'] = cache.get_jobs_stats()
         context['today_executed_tasks'] = cache.get_executed_tasks_count()
         context['today_requests_count'] = cache.get_today_requests()
+        task_executed_time = cache.get_task_executed_time(for_last_hour=True)
+        if task_executed_time:
+            task_execute_time_avg = \
+                sum(task_executed_time.values()) / len(task_execute_time)
+        else:
+            task_execute_time_avg = 0
+        context['last_hour_executed_tasks_time_avg'] = task_execute_time_avg
         context['last_hour_executed_tasks'] = cache.get_executed_tasks_count(
             for_last_hour=True)
         context['responses_from_cache_url'] = \
@@ -269,6 +276,16 @@ def requests_history():
         return render_template('requests_history.html')
     days = int(request.form.get('days', '0'))
     data = cache.get_requests_count_history(days)
+    resp = make_response(json.dumps(data))
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
+
+
+@app.route('/task_execute_time', methods=['GET', 'POST'])
+def task_execute_time():
+    if request.method == 'GET':
+        return render_template('task_execute_time.html')
+    data = cache.get_task_executed_time(hours_from=0, hours_to=23)
     resp = make_response(json.dumps(data))
     resp.headers['Content-Type'] = 'application/json'
     return resp

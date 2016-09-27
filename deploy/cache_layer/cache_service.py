@@ -189,6 +189,7 @@ class SqsCache(object):
                        self.REDIS_JOBS_COUNTER,
                        self.REDIS_JOBS_STATS,
                        self.REDIS_REQUEST_COUNTER,
+                       self.REDIS_TASK_EXECUTION_TIME,
                        self.REDIS_FAILED_TASKS)
 
         return \
@@ -212,6 +213,16 @@ class SqsCache(object):
         key_counter = 'term' if is_term else 'url'
         if is_from_cache:
             key_counter += '_cached'
+        # Task execution time
+        try:
+            start_time = int(task.get('start_time', 0))
+            finish_time = int(task.get('finish_time', 0))
+        except ValueError:
+            start_time, finish_time = 0, 0
+        if start_time and finish_time:
+            execution_time = finish_time - start_time
+            self.store_execution_time_per_task(execution_time)
+        # End task execution time
         self.db.hincrby(self.REDIS_COMPLETED_COUNTER,
                         self.REDIS_COMPLETED_COUNTER_DICT[key_counter])
         return self.db.zadd(self.REDIS_COMPLETED_TASKS, int(time()), key)
@@ -248,20 +259,18 @@ class SqsCache(object):
         """
         if hours_from is None and not for_last_hour:
             return self.db.zcard(self.REDIS_COMPLETED_TASKS)
+        today = list(date.today().timetuple())
+        if for_last_hour:
+            time_from = int(time()) - 60 * 60
         else:
-            today = list(date.today().timetuple())
-            if for_last_hour:
-                time_from = int(time()) - 60 * 60
-            else:
-                today[3] = hours_from
-                time_from = mktime(today)
-            if hours_to:
-                today[3] = hours_to
-                time_to = mktime(today)
-            else:
-                time_to = int(time())
-            return self.db.zcount(
-                self.REDIS_COMPLETED_TASKS, time_from, time_to)
+            today[3] = hours_from
+            time_from = mktime(today)
+        if hours_to:
+            today[3] = hours_to
+            time_to = mktime(today)
+        else:
+            time_to = int(time())
+        return self.db.zcount(self.REDIS_COMPLETED_TASKS, time_from, time_to)
 
     def get_most_popular_cached_items(self, cnt=10, is_term=False):
         """
@@ -451,3 +460,38 @@ class SqsCache(object):
                 result['servers'][server]['scrappers'][site][search_type] += \
                     value
         return result
+
+    def store_execution_time_per_task(self, execution_time, key=None):
+        if not key:
+            key = list(datetime.today().timetuple())[0:4] + [0]*5
+        sum_key = '%s:%s' % (key, 'sum')
+        count_key = '%s:%s' % (key, 'count')
+        self.db.hincrby(self.REDIS_TASK_EXECUTION_TIME, sum_key,
+                        execution_time)
+        self.db.hincrby(self.REDIS_TASK_EXECUTION_TIME, count_key)
+        return True
+
+    def get_task_executed_time(self, hours_from=None, hours_to=None,
+                               for_last_hour=False):
+        today = list(date.today().timetuple())[0:4] + [0]*5
+        if for_last_hour:
+            time_from = int(time()) - 60 * 60
+        else:
+            today[3] = hours_from
+            time_from = mktime(today)
+        if hours_to:
+            today[3] = hours_to
+            time_to = mktime(today)
+        else:
+            time_to = int(time())
+        executions_time_tmp = self.db.hgetall(self.REDIS_TASK_EXECUTION_TIME)
+        result = defaultdict(dict)
+        for key, val in executions_time_tmp.items():
+            key = key.split(':')
+            if time_from > int(key):
+                continue
+            if time_to < int(key):
+                break
+            result[key[0]][key[1]] = val
+        return OrderedDict([(k, float(v['sum']) / float(v['count']))
+                            for k, v in result.items()])

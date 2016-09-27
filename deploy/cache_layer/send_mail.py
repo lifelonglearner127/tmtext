@@ -28,7 +28,15 @@ def collect_data(cache):
     context['urgent_stats'] = cache.get_urgent_stats()
     context['completed_stats'] = cache.get_completed_stats()
     context['failed_tasks'] = cache.get_all_failed_results()
+    context['last_hour_executed_tasks_time_avg'] = \
+        get_task_executed_time_count(cache)
     return context
+
+
+def get_task_executed_time_count(cache):
+    task_executed_time = \
+        cache.get_task_executed_time(hours_from=0, hours_to=23)
+    return sum(task_executed_time.values()) / len(task_executed_time)
 
 
 def generate_mail_message(data):

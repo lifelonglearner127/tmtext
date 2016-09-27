@@ -790,6 +790,8 @@ class ScrapyTask(object):
                 logger.warning('Could not upload daemon logs: %s' % str(e))
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
+        self.task_data['finish_time'] = \
+            time.mktime(self.finish_date.timetuple())
 
     def _update_items_scraped(self):
         output_path = self.get_output_path() + '.jl'
@@ -1072,6 +1074,8 @@ class ScrapyTask(object):
         try:
             start_time = datetime.datetime.utcnow()
             self.start_date = start_time
+            self.task_data['start_time'] = \
+                time.mktime(self.start_date.timetuple())
             self._start_scrapy_process()
             self._push_simmetrica_events()
             first_signal = self._get_next_signal(start_time)
@@ -1277,6 +1281,35 @@ def is_task_taken(new_task, tasks):
     return new_task_id in task_ids
 
 
+def store_tasks_metrics(task, redis_db):
+    """This method will just increment reuired key in redis database
+        if connection to the database exist."""
+    if TEST_MODE:
+        print 'Simulate redis incremet, key is %s' % JOBS_COUNTER_REDIS_KEY
+        print 'Simulate redis incremet, key is %s' % JOBS_STATS_REDIS_KEY
+        return
+    if not redis_db:
+        return
+    try:
+        # increment quantity of tasks spinned up during the day.
+        redis_db.incr(JOBS_COUNTER_REDIS_KEY)
+    except Exception as e:
+        logger.warning("Failed to increment redis metric '%s' "
+                       "with exception '%s'", JOBS_COUNTER_REDIS_KEY,
+                       e)
+    generated_key = '%s:%s:%s' % (
+        task.get('server_name', 'UnknownServer'),
+        task.get('site', 'UnknownSite'),
+        'term' if 'term' in task and task['term'] else 'url'
+    )
+    try:
+        redis_db.hincrby(JOBS_STATS_REDIS_KEY, generated_key, 1)
+    except Exception as e:
+        logger.warning("Failed to increment redis key '%s' and"
+                       "redis metric '%s' with exception '%s'",
+                       JOBS_STATS_REDIS_KEY, generated_key, e)
+
+
 def main():
     if not TEST_MODE:
         instance_meta = get_instance_metadata()
@@ -1331,33 +1364,6 @@ def main():
         logger.info('#'*10 + 'START TASKS REPORT' + '#'*10)
         [logger.info(_.report()) for _ in tasks]
         logger.info('#'*10 + 'FINISH TASKS REPORT' + '#'*10)
-
-    def store_tasks_metrics(task, redis_db):
-        """This method will just increment reuired key in redis database
-            if connection to the database exist."""
-        if TEST_MODE:
-            print 'Simulate redis incremet, key is %s' % JOBS_COUNTER_REDIS_KEY
-            print 'Simulate redis incremet, key is %s' % JOBS_STATS_REDIS_KEY
-            return
-        if redis_db:
-            try:
-                # increment quantity of tasks spinned up during the day.
-                redis_db.incr(JOBS_COUNTER_REDIS_KEY)
-            except Exception as e:
-                logger.warning("Failed to increment redis metric '%s' "
-                               "with exception '%s'", JOBS_COUNTER_REDIS_KEY,
-                               e)
-            try:
-                generated_key = '%s:%s:%s' % (
-                    task.get('server_name', 'UnknownServer'),
-                    task.get('site', 'UnknownSite'),
-                    'term' if 'term' in task and task['term'] else 'url'
-                )
-                redis_db.hincrby(JOBS_STATS_REDIS_KEY, generated_key, 1)
-            except Exception as e:
-                logger.warning("Failed to increment redis key '%s' and"
-                               "redis metric '%s' with exception '%s'",
-                               JOBS_STATS_REDIS_KEY, generated_key, e)
 
     attributes = 'SentTimestamp'  # additional data to get with sqs messages
     add_timeout = 30  # add to visibility timeout
