@@ -224,18 +224,20 @@ class BaseCheckoutSpider(scrapy.Spider):
         quantity = self._get_item_quantity(product)
         item['no_longer_available'] = False
         item['not_found'] = False
+
         if quantity and price:
             quantity = int(quantity)
             item['price'] = round(float(price.replace(',', '')) / quantity, 2)
             item['quantity'] = quantity
             item['requested_color'] = self.requested_color
+            item['requested_quantity_not_available'] = quantity != self.current_quantity
 
         if color:
             item['color'] = color
 
         item['requested_color_not_available'] = (
             color and self.requested_color and
-            (self.requested_color != color))
+            (self.requested_color.lower() != color.lower()))
         return item
 
     def _parse_attributes(self, product, color, quantity):

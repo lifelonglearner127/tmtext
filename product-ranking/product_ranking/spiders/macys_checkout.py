@@ -24,31 +24,6 @@ class MacysSpider(BaseCheckoutSpider):
     def start_requests(self):
         yield scrapy.Request('http://www1.macys.com/', dont_filter=True)
 
-    def _parse_item(self, product):
-        item = CheckoutProductItem()
-        name = self._get_item_name(product)
-        item['name'] = name.strip() if name else name
-        item['id'] = self._get_item_id(product)
-        price = self._get_item_price(product)
-        item['price_on_page'] = self._get_item_price_on_page(product)
-        color = self._get_item_color(product)
-        quantity = self._get_item_quantity(product)
-
-        if quantity and price:
-            quantity = int(quantity)
-            item['price'] = float(price) / quantity
-            item['quantity'] = quantity
-            item['requested_color'] = self.requested_color
-            item['requested_quantity_not_available'] = quantity != self.current_quantity
-
-        if color:
-            item['color'] = color
-
-        item['requested_color_not_available'] = (
-            color and self.requested_color and
-            (self.requested_color.lower() != color.lower()))
-        return item
-
     def _get_colors_names(self):
         xpath = '//div[@class="colorsSection"]//li[@data-title]'
         condition = EC.presence_of_all_elements_located(
