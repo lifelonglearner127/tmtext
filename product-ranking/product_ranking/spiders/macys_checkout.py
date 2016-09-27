@@ -14,6 +14,7 @@ import scrapy
 is_empty = lambda x, y="": x[0] if x else y
 delete_commas = lambda x: x.replace(',', '')
 
+
 class MacysSpider(BaseCheckoutSpider):
     name = 'macys_checkout_products'
     allowed_domains = ['macys.com']  # do not remove comment - used in find_spiders()
@@ -109,7 +110,8 @@ class MacysSpider(BaseCheckoutSpider):
             )
 
     def _set_quantity(self, product, quantity):
-        quantity_option = Select(self.driver.find_element_by_xpath('*//*[@class="productQuantity"]'))
+        quantity_option = Select(
+            self.driver.find_element_by_xpath('*//*[@class="productQuantity"]'))
         quantity_option.select_by_value(str(quantity))
         quantity_selected = quantity_option.first_selected_option.text
         if quantity_selected != str(quantity):
@@ -212,3 +214,7 @@ class MacysSpider(BaseCheckoutSpider):
 
     def _get_promo_invalid_message(self):
         return self.driver.find_element_by_id('promoCodeError').text
+
+    def _parse_no_longer_available(self):
+        return bool(self._find_by_xpath(
+            '//*[contains(text(), "This product is currently unavailable")]'))

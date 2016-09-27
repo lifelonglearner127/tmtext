@@ -116,7 +116,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.promo_code = kwargs.get('promo_code', '') # ticket 10585
         self.promo_code = [promo_code.strip() for promo_code in self.promo_code.split(',')]
         self.promo_price = int(kwargs.get('promo_price', 0))
-        self.promo_mode = self.promo_code and self.promo_price
+        self.promo_mod = self.promo_code and self.promo_price
 
         from pyvirtualdisplay import Display
         display = Display(visible=False, size=(1024, 768))
@@ -144,7 +144,8 @@ class BaseCheckoutSpider(scrapy.Spider):
             self._open_new_session(url)
             self.requested_color = None
             self.is_requested_color = False
-            self.available_colors = self._get_colors_names()
+            self.no_longer_available = self._parse_no_longer_available()
+            self.available_colors = self._get_colors_names() if not self.no_longer_available else [None]
             if product.get('FetchAllColors'):
                 # Parse all the products colors
                 self._pre_parse_products()
@@ -161,9 +162,35 @@ class BaseCheckoutSpider(scrapy.Spider):
                 if isinstance(colors, basestring) or not colors:
                     colors = [colors]
             self.log('Got colors {}'.format(colors), level=WARNING)
-            for i, (qty, color) in enumerate(itertools.product(self.quantity, colors)):
-                self.log('Parsing color - {}, quantity - {}'.format(
-                    color or 'None', qty), level=WARNING)
+            for variant in self._parse_variants(colors, url):
+                yield variant
+        self.driver.quit()
+
+    def _parse_items(self, items, url):
+        for item in items:
+            item['url'] = url
+            if self.promo_mod:
+                for item_promo in self.promo_logic(item):
+                    yield item_promo
+            else:
+                yield item
+
+    def _parse_variants(self, colors, url):
+        for i, (qty, color) in enumerate(itertools.product(self.quantity, colors)):
+            self.log('Parsing color - {}, quantity - {}'.format(
+                color or 'None', qty), level=WARNING)
+            if self.no_longer_available:
+                for promo_code in self.promo_code:
+                    self.log('No longer available {}'.format(self.no_longer_available), level=WARNING)
+                    item = CheckoutProductItem()
+                    item['url'] = url
+                    item['color'] = color
+                    item['quantity'] = qty
+                    if self.promo_mod:
+                        item['promo_code'] = promo_code
+                    item['no_longer_available'] = True
+                    yield item
+            else:
                 if i > 0:
                     self.driver.delete_all_cookies()
                     self.driver.get(url)
@@ -173,10 +200,8 @@ class BaseCheckoutSpider(scrapy.Spider):
                 self.current_quantity = qty
                 self._parse_product_page(url, qty, color)
                 items = self._parse_cart_page()
-                for item in items:
-                    item['url'] = url
+                for item in self._parse_items(items, url):
                     yield item
-        self.driver.quit()
 
     @retry_func(Exception)
     def _open_new_session(self, url):
@@ -279,11 +304,7 @@ class BaseCheckoutSpider(scrapy.Spider):
             item = self._parse_item(product)
             item['order_subtotal'] = float(self._get_subtotal())
             item['order_total'] = float(self._get_total())
-            if self.promo_mode:
-                for item_promo in self.promo_logic(item):
-                    yield item_promo
-            else:
-                yield item
+            yield item
 
     def _find_by_xpath(self, xpath, element=None):
         """
@@ -452,6 +473,10 @@ class BaseCheckoutSpider(scrapy.Spider):
     @abstractmethod
     def _pre_parse_products(self):
         return
+
+    @abstractmethod
+    def _parse_no_longer_available(self):
+        return False
 
     # @retry_func(Exception)
     def _click_on_element_with_id(self, _id):
