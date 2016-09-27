@@ -131,13 +131,14 @@ class JcpenneyScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        if not self._no_longer_available():
+            return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self._product_name()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self._product_name()
 
     def _model(self):
         return None
