@@ -146,26 +146,6 @@ class StatsCollector(object):
         return cls(crawler)
 
 
-class RequestsExecutionTimer(object):
-
-    def __init__(self, *args, **kwargs):
-        dispatcher.connect(self.__handler_start, signals.request_scheduled)
-        dispatcher.connect(self.__handler_stop, signals.response_downloaded)
-
-    @staticmethod
-    def __handler_start(request, spider):
-        request.meta['start_time'] = time()
-
-    @staticmethod
-    def __handler_stop(response, request, spider):
-        stop_time = time()
-        execution_time = stop_time - request.meta['start_time']
-
-    @classmethod
-    def from_crawler(cls, crawler):
-        return cls(crawler)
-
-
 class RequestsCounter(object):
 
     __sqs_cache = None
