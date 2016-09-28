@@ -113,12 +113,15 @@ class LowesProductsSpider(BaseProductsSpider):
                                   meta={'product': prod})
 
     def _parse_single_product(self, response):
-        open_in_browser(response)
+        # open_in_browser(response)
         return self.parse_product(response)
 
-    def parse_product(self, response):
-        product = response.meta['product']
-        return product
+    # def parse_product(self, response):
+    #     product = response.meta['product']
+    #     return product
+
+    def clear_text(self, str_result):
+        return str_result.replace("\t", "").replace("\n", "").replace("\r", "").replace(u'\xa0', ' ').strip()
 
     def _scrape_total_matches(self, response):
         total_matches = response.xpath(
@@ -149,12 +152,21 @@ class LowesProductsSpider(BaseProductsSpider):
         return brand[0] if brand else None
 
     def _parse_model(self, response):
-        models = response.xpath('//*[@id="ModelNumber"]/text()').extract()
-        return models[0] if models else None
+        arr = response.xpath('//p[contains(@class,"secondary-text")]//text()').extract()
+        model = None
+        is_model = False
+        for item in arr:
+            if is_model:
+                model = item.strip()
+                break
+            if "model #" in item.lower():
+                is_model = True
+        return model
 
     def _parse_categories(self, response):
         return response.xpath(
-            '//*[@id="breadcrumbs-list"]//a/text()').extract() or None
+            '//li[@itemprop="itemListElement"]//a//text()'
+        ).extract() or None
 
     def _parse_category(self, response):
         categories = self._parse_categories(response)
@@ -184,8 +196,16 @@ class LowesProductsSpider(BaseProductsSpider):
         return bool(status)
 
     def _parse_description(self, response):
-        description = response.xpath('//*[@id="description-tab"]').extract()
-        return ''.join(description).strip() if description else None
+        description_div = response.xpath('//div[contains(@class,"panel-body")]')
+        if len(description_div) > 0:
+            description_div = description_div[0]
+            description = description_div.xpath('.//text()').extract()
+            if description:
+                return self.clear_text(''.join(description).strip())
+            else:
+                return ''
+        else:
+            return ''
 
     def _parse_related_products(self, response):
         related_products = []
