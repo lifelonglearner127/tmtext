@@ -1247,7 +1247,7 @@ def notify_cache(task, is_from_cache=False):
     """send request to cache (for statistics)"""
     url = CACHE_HOST + CACHE_URL_STATS
     json_task = json.dumps(task)
-    logger.debug('Notify cache task: %s', json_task)
+    logger.info('Notify cache task: %s', json_task)
     data = dict(task=json_task, is_from_cache=json.dumps(is_from_cache))
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
