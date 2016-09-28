@@ -31,14 +31,14 @@ class TargetShelfPagesSpider(TargetProductSpider):
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
-        self.quantity = sys.maxint
+        # self.quantity = sys.maxint
         self.site_name = self.allowed_domains[0]
         self.user_agent_key = None
         self.current_page = 1
 
     def _setup_meta_compatibility(self):
         """ Needed to prepare first request.meta vars to use """
-        return {'remaining': sys.maxint, 'search_term': ''}.copy()
+        return {'remaining': self.quantity, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
         super(TargetShelfPagesSpider, self).__init__(*args, **kwargs)
@@ -56,6 +56,9 @@ class TargetShelfPagesSpider(TargetProductSpider):
             self.num_pages = int(kwargs['num_pages'])
         else:
             self.num_pages = 1  # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
+
+        if "quantity" in kwargs:
+            self.quantity = int(kwargs['quantity'])
 
         # variants are switched off by default, see Bugzilla 3982#c11
         self.scrape_variants_with_extra_requests = False
