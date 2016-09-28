@@ -136,6 +136,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if search_sort == 'best_sellers':
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         # avoid tons of 'items' in logs
+        self.search_sort = search_sort
         SiteProductItem.__repr__ = lambda _: '[product item]'
         self.use_data_from_redirect_url = kwargs.get('use_data_from_redirect_url', False)
         super(WalmartProductsSpider, self).__init__(
@@ -146,6 +147,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             *args, **kwargs)
 
     def start_requests(self):
+        # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
+        """
         for st in self.searchterms:
             url = "http://www.walmart.com/midas/srv/ypn?" \
                 "query=%s&context=Home" \
@@ -157,6 +160,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 dont_filter=True, 
                 meta={"handle_httpstatus_list": [404, 502]},
             )
+        """
 
         if self.product_url:
             prod = SiteProductItem()
@@ -165,6 +169,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                           self._parse_single_product,
                           meta={'product': prod, 'handle_httpstatus_list': [404, 502, 520]},
                           dont_filter=True)
+        else:
+            for st in self.searchterms:
+                yield Request(self.SEARCH_URL.format(search_term=st,
+                                                     search_sort=self._SEARCH_SORT[self.search_sort]),
+                              #self._parse_single_product,
+                              meta={'handle_httpstatus_list': [404, 502, 520],
+                                    'remaining': self.quantity, 'search_term': st},
+                              dont_filter=True)
 
     def get_sponsored_links(self, response):
         self.reql = []
@@ -356,6 +368,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         #    return Request(url=url, meta=meta, callback=self.get_questions)
 
+        seller_ranking = self._scrape_seller_ranking(response)
+        # if seller_ranking:
+            # product['seller_ranking'] = seller_ranking
+        # seller_ranking = seller_ranking[0].get('ranking') if seller_ranking else None
+        product['bestseller_rank'] = seller_ranking
+
         if 'is_in_store_only' not in product:
             if re.search(
                     "only available .{0,20} Walmart store",
@@ -402,12 +420,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if _na_text:
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
-
-        seller_ranking = self._scrape_seller_ranking(response)
-        # if seller_ranking:
-            # product['seller_ranking'] = seller_ranking
-        # seller_ranking = seller_ranking[0].get('ranking') if seller_ranking else None
-        product['bestseller_rank'] = seller_ranking
 
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]

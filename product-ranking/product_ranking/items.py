@@ -181,6 +181,8 @@ class SiteProductItem(Item):
     related_products = Field()
     # Dict of SponsoredLinks. The key is the relation name.
     sponsored_links = Field()
+    # whether or not this product has been scraped coming from a sponsored link
+    is_sponsored_product = Field()
     # Available in-store only
     is_in_store_only = Field()
     # Out of stock
@@ -264,9 +266,14 @@ class SiteProductItem(Item):
     available_online = Field()
     available_store = Field()
     subscribe_and_save = Field() # Samclub.com
+
     walmart_url = Field()  # For amazon_top_categories_products spider, url of product on Walmart, if found
     walmart_category = Field()  # For amazon_top_categories_products spider, category of product on Walmart, if found
     walmart_exists = Field()  # For amazon_top_categories_products - True/False
+
+    target_url = Field()  # For amazon_top_categories_products spider, url of product on Target, if found
+    target_category = Field()  # For amazon_top_categories_products spider, category of product on Target, if found
+    target_exists = Field()  # For amazon_top_categories_products - True/False
 
     price_club = Field(serializer=scrapy_price_serializer) # Samclub.com
     price_club_with_discount = Field(serializer=scrapy_price_serializer) # Samclub.com
@@ -307,6 +314,7 @@ class DiscountCoupon(Item):
     end_date = Field()  # (10/31/2015)
     discount = Field()  # (Discount value or Percentage (20% OFF)
     conditions = Field()  # (Applies to select items priced $50 or more...)
+    promo_code = Field()  # (For ex: ALL4KIDS, 3BUYMORE, etc)
 
 class CheckoutProductItem(Item):
     name = Field()
@@ -322,4 +330,10 @@ class CheckoutProductItem(Item):
     color = Field()
     order_subtotal = Field()    # Pre-tax & shipping Cart Value
     order_total = Field()       # Post-tax & shipping Cart Value
+    promo_order_subtotal = Field()  # Pre-tax & shipping Cart Value - promo, ticket 10585
+    promo_order_total = Field() # Post-tax & shipping Cart Value - promo, ticket 10585
+    promo_price = Field() # # In-cart Product Value - promo, ticket 10585
+    promo_code = Field() # In-cart Product Code, ticket 11599
+    is_promo_code_valid = Field() # True if promo_code changed _order_total price, else False
+    promo_invalid_message = Field() # Message returned by website if promo code is invalid, ticket #11720
     url = Field()

@@ -61,6 +61,7 @@ def list_amazon_bucket(bucket=AMAZON_BUCKET_NAME,
     if os.path.exists(local_fname):
         os.unlink(local_fname)
     os.rename(tmp_file.name, local_fname)
+    os.chmod(local_fname, 0777)
 
 
 def num_of_running_instances(file_path):

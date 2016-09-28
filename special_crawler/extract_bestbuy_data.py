@@ -38,7 +38,7 @@ class BestBuyScraper(Scraper):
         Returns:
         True if valid, False otherwise
         """
-        m = re.match(r"^http://www\.bestbuy\.com/site/[a-zA-Z0-9%\-\%\_]+/[a-zA-Z0-9]+\.p\?id=[a-zA-Z0-9]+(&skuId=\d+)?$", self.product_page_url)
+        m = re.match(r"^http://www\.bestbuy\.com/site/[a-zA-Z0-9%\-\%\_]+/[a-zA-Z0-9]+\.p(\?id=[a-zA-Z0-9]+(&skuId=\d+)?)?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -73,9 +73,6 @@ class BestBuyScraper(Scraper):
     def _status(self):
         return "success"
 
-
-
-
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
@@ -92,14 +89,7 @@ class BestBuyScraper(Scraper):
         return self.tree_html.xpath('//span[@id="model-value"]/text()')[0]
 
     def _upc(self):
-        features = self._features()
-
-        if features:
-            for feature in features:
-                if feature.startswith("UPC:"):
-                    return feature[4:].strip()
-
-        return None
+        return self._specs()['UPC']
 
     def _specs(self):
         # http://www.bestbuy.com/site/sony-65-class-64-1-2-diag--led-2160p-smart-3d-4k-ultra-hd-tv-black/5005015.p;template=_specificationsTab
@@ -126,8 +116,6 @@ class BestBuyScraper(Scraper):
 
                 for group in groups:
                     rows = group.xpath("./ul/li")
-
-                    title = group.xpath("./div[@class='specification-title']/text()")[0]
 
                     if rows:
                         for index, r in enumerate(rows):
@@ -213,7 +201,6 @@ class BestBuyScraper(Scraper):
             return variants
 
 
-
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -222,6 +209,7 @@ class BestBuyScraper(Scraper):
 
     def _image_urls(self):
         image_urls = self.tree_html.xpath('//div[contains(@class,"image-wrapper")]/img/@data-src')
+        image_urls += self.tree_html.xpath('//div[contains(@class,"image-wrapper")]//img/@data-img-path')
         image_urls = filter(lambda i: not 'default_movies_l.jpg' in i, image_urls)
         if image_urls:
             return map(lambda u: u.split(';')[0], image_urls)
@@ -585,9 +573,6 @@ class BestBuyScraper(Scraper):
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
 
-
-
-
     ##########################################
     ################ RETURN TYPES
     ##########################################
@@ -645,8 +630,6 @@ class BestBuyScraper(Scraper):
         "category_name" : _category_name, \
         "brand" : _brand, \
 
-
-
         "loaded_in_seconds" : None, \
         }
 
@@ -673,6 +656,3 @@ class BestBuyScraper(Scraper):
         "flixmedia" : _flixmedia, \
         "sellpoints": _sellpoints, \
     }
-
-
-

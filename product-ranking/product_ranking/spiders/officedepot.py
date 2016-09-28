@@ -32,7 +32,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
     name = 'officedepot_products'
     allowed_domains = ["officedepot.com", "www.officedepot.com"]
     start_urls = []
-
+    _extra_requests = False
     # settings = DockersValidatorSettings
 
     SEARCH_URL = "http://www.officedepot.com/catalog/search.do?Ntt={search_term}&searchSuggestion=true&akamai-feo=off"
@@ -70,7 +70,6 @@ class OfficedepotProductsSpider(BaseProductsSpider):
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
-
         # officedepot seems to have a bot protection, so we first get the cookies
         # and parse the site with them after that
         self.proxy = None
@@ -82,7 +81,8 @@ class OfficedepotProductsSpider(BaseProductsSpider):
                            ' (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36')
         socket.setdefaulttimeout(60)
         self._get_selenium_cookies_for_main_page()
-
+        if kwargs.get('scrape_variants_with_extra_requests'):
+            self._extra_requests = True
         super(OfficedepotProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
 
@@ -224,7 +224,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         name = is_empty(response.xpath(
             '//h1[@itemprop="name"]/text()').re('(.*?),'))
 
-        if sku and name:
+        if sku and name and self.scrape_variants_with_extra_requests:
             name = urllib.quote_plus(name.strip().encode('utf-8'))
             reqs.append(Request(url=self.VARIANTS_URL.format(name=name,
                                                              sku=sku),
@@ -241,8 +241,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
     def _parse_is_out_of_stock(self, response):
         oos = response.xpath(
             '//*[@itemprop="availability"'
-            ' and content="http://schema.org/OutOfStock"]')
-
+            ' and @content="http://schema.org/OutOfStock"]')
         return bool(oos)
 
     def _parse_model(self, response):
@@ -299,10 +298,28 @@ class OfficedepotProductsSpider(BaseProductsSpider):
                 variants.append(vr)
 
             product['variants'] = variants
-
+        if product.get('variants') and self._extra_requests:
+            variants_urls = [p.get('url') for p in product['variants']]
+            for var_url in variants_urls:
+                req = Request(url=var_url, callback=self._parse_in_stock_for_variants)
+                req.meta['product'] = product
+                reqs.append(req)
         if reqs:
             return self.send_next_request(reqs, response)
 
+        return product
+
+    # parse variants one by one and set out of stock status for each variant
+    def _parse_in_stock_for_variants(self, response):
+        reqs = response.meta['reqs']
+        product = response.meta['product']
+        oos = self._parse_is_out_of_stock(response)
+        for variant in product['variants']:
+            if variant['url'] == response.url:
+                variant['in_stock'] = not oos
+                break
+        if reqs:
+            return self.send_next_request(reqs, response)
         return product
 
     def parse_buyer_reviews(self, response):
