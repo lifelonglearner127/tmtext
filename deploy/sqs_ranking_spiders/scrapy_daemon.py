@@ -1080,7 +1080,7 @@ class ScrapyTask(object):
             self._push_simmetrica_events()
             first_signal = self._get_next_signal(start_time)
         except Exception as ex:
-            logger.warning('Error occured while starting scrapy: %s', ex)
+            logger.warning('Error occurred while starting scrapy: %s', ex)
             return False
         try:
             self._run_signal(first_signal, start_time)
@@ -1246,7 +1246,9 @@ def log_failed_task(task):
 def notify_cache(task, is_from_cache=False):
     """send request to cache (for statistics)"""
     url = CACHE_HOST + CACHE_URL_STATS
-    data = dict(task=json.dumps(task), is_from_cache=json.dumps(is_from_cache))
+    json_task = json.dumps(task)
+    logger.debug('Notify cache task: %s', json_task)
+    data = dict(task=json_task, is_from_cache=json.dumps(is_from_cache))
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
                              auth=CACHE_AUTH)
