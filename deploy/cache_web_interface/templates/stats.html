@@ -43,7 +43,8 @@
         <li>Today started instances: {{ today_instances }}</li>
         <li>
             Today jobs: {{ today_jobs.term + today_jobs.url }} jobs ({{ today_jobs.term }} search terms, {{ today_jobs.url }} product URLs)
-            <ul>
+            <a href="#" onclick="javascript: toggle_jobs_metrics(event, this);">Show</a>
+            <ul hidden="hidden">
                 {% for server, server_metrics in today_jobs.servers.items() %}
                     <li>
                         {{ server }}: {{ server_metrics.url + server_metrics.term }} jobs ({{ server_metrics.term }} search terms, {{ server_metrics.url }} product URLs)
@@ -53,6 +54,8 @@
                             {% endfor %}
                         </ul>
                     </li>
+                {% else %}
+                    <li style="list-style: none;">Data was not found.</li>
                 {% endfor %}
             </ul>
         </li>
@@ -151,4 +154,23 @@
 </div>
 
 </body>
+<script type="text/javascript">
+    var toggle_jobs_metrics = function(event, el){
+        event.preventDefault();
+        var ul = el.nextSibling.nextSibling;
+        switch (el.text){
+            case 'Show':
+                el.text = 'Hide';
+                ul.hidden = false;
+                break;
+            case 'Hide':
+                el.text = 'Show';
+                ul.hidden = true;
+                break;
+            default:
+                alert('Error!');
+                break;
+        }
+    };
+</script>
 </html>
