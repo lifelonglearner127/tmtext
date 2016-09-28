@@ -516,6 +516,7 @@ class SqsCache(object):
         """
         if not key:
             key = list(datetime.today().timetuple())[0:4] + [0]*5
+        key = mktime(key)
         sum_key = '%s:%s' % (key, 'sum')
         count_key = '%s:%s' % (key, 'count')
         self.db.hincrby(self.REDIS_TASK_EXECUTION_TIME, sum_key,
