@@ -35,68 +35,60 @@ class JCpenneySpider(BaseCheckoutSpider):
         return [x.get_attribute("name") for x in swatches]
 
     def select_size(self, element=None):
-        size_attribute_xpath = '*//div[@id="skuOptions_size"]//' \
+        default_attr_xpath = '*//div[@id="skuOptions_size"]//' \
             'li[@class="sku_select"]'
-        size_attributes_xpath = '*//*[@id="skuOptions_size"]//' \
+        avail_attr_xpath = '*//*[@id="skuOptions_size"]//' \
             'li[not(@class="sku_not_available" or @class="sku_illegal")]/a'
-        self._click_attribute(size_attribute_xpath,
-                              size_attributes_xpath,
-                              element)
+        self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def select_color(self, element=None, color=None):
-        color_attribute_xpath = '*//li[@class="swatch_selected"]'
-        color_attributes_xpath = ('*//*[@class="small_swatches"]'
+        default_attr_xpath = '*//li[@class="swatch_selected"]'
+        avail_attr_xpath = ('*//*[@class="small_swatches"]'
                                   '//a[not(span[@class="no_color"]) and '
                                   'not(span[@class="color_illegal"])]')
 
         if color and color in self.available_colors:
-            color_attribute_xpath = '*//*[@class="small_swatches"]//a' \
+            default_attr_xpath = '*//*[@class="small_swatches"]//a' \
                                     '[img[@name="%s"]]' % color
 
-        self._click_attribute(color_attribute_xpath,
-                              color_attributes_xpath,
-                              element)
-        time.sleep(10)
-        # Remove focus to avoid hiddend the above element
-        self._find_by_xpath('//h1')[0].click()
+        self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
+
+    def click_condition(self, default_xpath, all_xpaths):
+        return self._find_by_xpath(default_xpath) or self._find_by_xpath(all_xpaths)
+
+    def select_attribute(self, default_attr_xpath, avail_attr_xpath, element):
+        if self.click_condition(default_attr_xpath, avail_attr_xpath):
+
+            self._click_attribute(default_attr_xpath,
+                                  avail_attr_xpath,
+                                  element)
+            time.sleep(2)
 
     def select_width(self, element=None):
-        width_attribute_xpath = '*//div[@id="skuOptions_width"]//' \
+        default_attr_xpath = '*//div[@id="skuOptions_width"]//' \
             'li[@class="sku_select"]'
-        width_attributes_xpath = '*//*[@id="skuOptions_width"]//' \
+        avail_attr_xpath = '*//*[@id="skuOptions_width"]//' \
             'li[not(@class="sku_not_available" or @class="sku_illegal")]/a'
-        self._click_attribute(width_attribute_xpath,
-                              width_attributes_xpath,
-                              element)
-        time.sleep(4)
 
+        self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def select_waist(self, element=None):
         default_attr_xpath = (
             '*//*[@id="skuOptions_waist"]//li[@class="sku_select"]')
-
         avail_attr_xpath = ('*//*[@id="skuOptions_waist"]//'
                             'li[not(@class="sku_not_available" '
                             'or @class="sku_illegal")]')
 
-        self._click_attribute(default_attr_xpath,
-                              avail_attr_xpath,
-                              element)
-        time.sleep(4)
-
+        self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def select_inseam(self, element=None):
         default_attr_xpath = (
             '*//*[@id="skuOptions_inseam"]//li[@class="sku_select"]')
-
         avail_attr_xpath = ('*//*[@id="skuOptions_inseam"]//'
                             'li[not(@class="sku_not_available" '
                             'or @class="sku_illegal")]')
 
-        self._click_attribute(default_attr_xpath,
-                              avail_attr_xpath,
-                              element)
-        time.sleep(4)
+        self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def select_neck(self, element=None):
         default_attr_xpath = (
@@ -106,10 +98,7 @@ class JCpenneySpider(BaseCheckoutSpider):
                             'li[not(@class="sku_not_available" '
                             'or @class="sku_illegal")]')
 
-        self._click_attribute(default_attr_xpath,
-                              avail_attr_xpath,
-                              element)
-        time.sleep(4)
+        self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def select_sleeve(self, element=None):
         default_attr_xpath = (
@@ -119,10 +108,7 @@ class JCpenneySpider(BaseCheckoutSpider):
                             'li[not(@class="sku_not_available" '
                             'or @class="sku_illegal")]')
 
-        self._click_attribute(default_attr_xpath,
-                              avail_attr_xpath,
-                              element)
-        time.sleep(4)
+        self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def _parse_attributes(self, product, color, quantity):
         self.select_color(product, color)
@@ -167,6 +153,7 @@ class JCpenneySpider(BaseCheckoutSpider):
         time.sleep(4)
 
     def _get_product_list_cart(self):
+        time.sleep(1)
         self.page_source = self.driver.page_source
         try:
             item_info = re.findall(
