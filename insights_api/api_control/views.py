@@ -183,7 +183,7 @@ class BrandsViewSet(viewsets.ModelViewSet):
     http_method_names = ['get']
 
     filter_backends = (filters.DjangoFilterBackend,)
-    filter_fields = ('id', 'name', 'created', 'company_id', 'brand_type', 'parent_id')
+    filter_fields = ('id', 'name', 'image_url')
 
     def get_queryset(self):
         request = self.request
