@@ -13,6 +13,7 @@ class LeviCouponsSpider(Spider):
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
                   "Chrome/37.0.2062.120 Safari/537.36")
     DEFAULT_URLS = [
+        # 'http://www.levi.com/US/en_US/',
         'http://www.levi.com/US/en_US/category/sale/men/all',
         'http://www.levi.com/US/en_US/category/sale/women/all',
         'http://www.levi.com/US/en_US/category/sale/kids/all'
@@ -69,6 +70,20 @@ class LeviCouponsSpider(Spider):
             url = '%s://www.%s%s' % ('http', self.allowed_domains[0], link)
             yield Request(url, callback=self.parse_coupon)
 
+    # def _parse_special_promo_code(self, response):
+    #     item = DiscountCoupon()
+    #     cond_set_value(item, 'description', response.xpath(".//*[@id='mdl-jc-sale-campaign']/p[1]/text()").extract())
+    #     cond_set_value(item, 'category', None)
+    #     cond_set_value(item, 'discount', response.xpath(".//*[@id='mdl-jc-sale-campaign']/h2/text()").re('\d+\%'))
+    #     cond_set_value(item, 'conditions', response.xpath(".//*[@id='mdl-jc-sale-campaign']/h2/text()").extract())
+    #     cond_set_value(item, 'start_date', None)
+    #     cond_set_value(item, 'end_date', None)
+    #     promo_code = response.xpath(".//*[@id='mdl-jc-sale-campaign']/*[contains(text(), 'code ')]/text()").extract()
+    #     promo_code = ''.join(promo_code).split(' ')
+    #     promo_code = promo_code[-1] if promo_code else None
+    #     cond_set_value(item, 'promo_code', promo_code)
+    #     return item
+
     def parse_coupon(self, response):
         item = DiscountCoupon()
         d = self._parse_description(response)
@@ -80,4 +95,5 @@ class LeviCouponsSpider(Spider):
         cond_set_value(item, 'conditions', self._parse_conditions(response))
         cond_set_value(item, 'start_date', self._parse_start_date(response))
         cond_set_value(item, 'end_date', self._parse_end_date(response))
+        cond_set_value(item, 'promo_code', None)
         return item
