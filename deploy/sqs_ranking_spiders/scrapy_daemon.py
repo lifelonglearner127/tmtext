@@ -1151,6 +1151,7 @@ class ScrapyTask(object):
                    '-o {output_file} &').format(
                        repo_base_path=REPO_BASE_PATH, url2scrape=url2scrape,
                        output_file=self.get_output_path()+'.screenshot.jl')
+            logger.info('Starting a new parallel screenshot job: %s' % cmd)
             os.system(cmd)  # use Popen instead?
 
     def report(self):
