@@ -79,7 +79,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                          '&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_US'
                          '&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US')
 
-    REDSKY_API_URL = 'http://redsky.target.com/v1/pdp/tcin/{}?excludes=taxonomy'
+    REDSKY_API_URL = 'http://redsky.target.com/v1/pdp/tcin/{}?excludes=taxonomy&storeId={}'
 
     QUESTION_API_URL = "http://api.bazaarvoice.com/data/questions.json" \
                        "?passkey={apipass}&Offset=0&apiversion=5.4" \
@@ -110,7 +110,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     RELATED_URL = "{path}?productId={pid}&userId=-1002&min={min}&max={max}&context=placementId," \
                   "{plid};categoryId,{cid}&callback=jsonCallback"
 
-    def __init__(self, sort_mode=None, zip_code='94117', *args, **kwargs):
+    def __init__(self, sort_mode=None, store='2766', zip_code='94117', *args, **kwargs):
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
@@ -118,6 +118,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 self.SORTING = self.SORT_MODES[sort_mode.lower()]
 
         self.zip_code = zip_code
+        self.store = store
 
         super(TargetProductSpider, self).__init__(
             site_name=self.allowed_domains[0],
@@ -363,7 +364,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     def _item_info_v3_request(self, tcin):
         content = requests.get(
-            self.REDSKY_API_URL.format(tcin)
+            self.REDSKY_API_URL.format(tcin, self.store)
         ).content
         return content
 
@@ -392,14 +393,24 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     def _item_info_v3_price_helper(item):
         amount = item.get(
             'price').get('offerPrice').get('formattedPrice', '').replace('$', '')
+        amount = amount.replace(',', '')
         if not amount or 'see low price in cart' in amount:
             amount = item.get(
                 'price').get('offerPrice').get('price')
-        return float(amount.replace(',', '')) if amount else 0
+        try:
+            return float(amount)
+        except ValueError:
+            return 0
 
     @staticmethod
     def _item_info_v3_store_only(item):
-        return item.get('price').get('channelAvailability') == '0'
+        try:
+            return item.get('available_to_promise_network').get(
+                'availability') == 'UNAVAILABLE' and item.get(
+                'available_to_promise_store').get('products')[0].get(
+                'availability') == 'AVAILABLE'
+        except TypeError:
+            return False
 
     @staticmethod
     def _item_info_v3_reviews(item_info):
@@ -444,9 +455,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         variant['image_url'] = self._item_info_v3_image(image_info)
         in_stock = item.get('available_to_promise_network').get(
             'availability') != 'UNAVAILABLE'
-        variant['in_stock'] = in_stock
-        variant['is_in_store_only'] = self._item_info_v3_store_only(item) \
-                                      and not in_stock
+        variant['is_in_store_only'] = self._item_info_v3_store_only(item)
+        variant['in_stock'] = in_stock or variant['is_in_store_only']
         return variant
 
     def _populate_from_v3(self, product, item_info):
@@ -483,7 +493,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 product['is_out_of_stock'] = False if self._item_info_v3_availability(
                     item_info) else True
                 product['no_longer_available'] = product['is_out_of_stock']
-                product['is_in_store_only'] = self._item_info_v3_store_only(item_info) and product['is_out_of_stock']
+                product['is_in_store_only'] = self._item_info_v3_store_only(item_info)
         else:
             product['not_found'] = True
 
