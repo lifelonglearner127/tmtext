@@ -25,7 +25,7 @@ class LeviCouponsSpider(Spider):
         super(LeviCouponsSpider, self).__init__(*args, **kwargs)
         product_url = kwargs.get('product_url')
         if product_url:
-            self.product_urls = [product_url]
+            self.product_urls = product_url.split('|||')
         else:
             self.product_urls = self.DEFAULT_URLS * self.REQUEST_TIMES
 
@@ -75,9 +75,10 @@ class LeviCouponsSpider(Spider):
 
     def parse(self, response):
         if not "category/" in response.url:
-            popup_promo = self._parse_popup_promo(response)
-            if popup_promo:
-                yield popup_promo
+            # Dont need this currently
+            # popup_promo = self._parse_popup_promo(response)
+            # if popup_promo:
+            #     yield popup_promo
             promo = self._parse_special_promo_code(response)
             if promo:
                 yield promo
