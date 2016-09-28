@@ -115,6 +115,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             **kwargs)
 
     def start_requests(self):
+        cookies = {'pageTemplate': 'new'}
         for st in self.searchterms:
             url = self.url_formatter.format(
                 self.SEARCH_URL,
@@ -124,7 +125,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             )
             yield Request(
                 url,
-                meta={'search_term': st, 'remaining': self.quantity}
+                meta={'search_term': st, 'remaining': self.quantity},
+                cookies=cookies
             )
 
         if self.product_url:
@@ -132,7 +134,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod, 'handle_httpstatus_list': [404]})
+                          meta={'product': prod, 'handle_httpstatus_list': [404]},
+                          cookies=cookies)
 
     def _parse_single_product(self, response):
         if response.status == 404:
@@ -699,15 +702,16 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         links = response.xpath(
-            '//div[@class="product_holder"]/div/div/'
-            'span[contains(@class, "product_image")]/a/@href'
+            '//li[@class="productDisplay"]//'
+            'div[@class="productDisplay_image"]/a/@href'
         ).extract()
-
+        products = re.findall(
+            'var filterResults\s?=\s?jq\.parseJSON\(\'(\{.+?\})\'\);', response.body, re.MULTILINE)[0].decode(
+            'string-escape')
+        products = json.loads(products).get('organicZoneInfo').get('records')
+        links += [product.get('pdpUrl') for product in products]
         for link in links:
-            if 'javascript:void(price)' in link:
-                continue
-            else:
-                yield 'http://www.jcpenney.com'+link, SiteProductItem()
+            yield 'http://www.jcpenney.com'+link, SiteProductItem()
 
     def _scrape_total_matches(self, response):
         if response.xpath('//div[@class="null_result_holder"]').extract():
@@ -716,8 +720,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             total = is_empty(
                 response.xpath(
-                    '//div[@class="sorted_items flt_wdt"]/p/text()'
-                ).re('of\s?(\d+)'))
+                    '//span[@data-anid="numberOfResults"]/text()'
+                ).extract())
 
             if total:
                 total_matches = int(total.replace(',', ''))
@@ -727,7 +731,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         next_page = response.xpath(
-            '//ul[@id="paginationIdTOP"]/li/a/@href'
+            '//li[@class="pagination_item--last"]/a/@href'
         ).extract()
 
         if next_page:
