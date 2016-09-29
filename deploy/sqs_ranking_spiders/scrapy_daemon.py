@@ -1141,8 +1141,8 @@ class ScrapyTask(object):
     def start_screenshot_job_if_needed(self):
         """ Starts a new url2screenshot local job, if needed """
         url2scrape = None
-        if self.task_data.get('product_url', None):
-            url2scrape = self.task_data.get('product_url')
+        if self.task_data.get('product_url', self.task_data.get('url', None)):
+            url2scrape = self.task_data.get('product_url', self.task_data.get('url', None))
         # TODO: searchterm jobs? checkout scrapers?
         if url2scrape:
             cmd = ('cd {repo_base_path}/product-ranking'
