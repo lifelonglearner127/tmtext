@@ -166,8 +166,11 @@ class RequestsCounter(object):
         except ValueError:
             request_count = 0
         if request_count:
-            self.get_sqs_cache().db.incr(
-                self.get_sqs_cache().REDIS_REQUEST_COUNTER, request_count)
+            try:
+                self.get_sqs_cache().db.incr(
+                    self.get_sqs_cache().REDIS_REQUEST_COUNTER, request_count)
+            except Exception as e:
+                print 'ERROR WHILE STORE REQUEST METRICS. EXP: %s', e
 
     @classmethod
     def from_crawler(cls, crawler):
