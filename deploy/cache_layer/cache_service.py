@@ -441,7 +441,8 @@ class SqsCache(object):
         """
         server = task.get('server_name', 'UnknownServer')
         site = task.get('site', 'UnknownSite')
-        search_type = 'term' if 'term' in task and task['term'] else 'url'
+        search_type = 'term' if 'searchterms_str' in task and \
+                                task['searchterms_str'] else 'url'
         metric_field = '%s:%s:%s' % (server, site, search_type)
         return self.db.hincrby(self.REDIS_JOBS_STATS, metric_field, 1)
 
