@@ -116,9 +116,12 @@ class LowesProductsSpider(BaseProductsSpider):
         # open_in_browser(response)
         return self.parse_product(response)
 
-    def parse_product(self, response):
-        product = response.meta['product']
-        return product
+    # def parse_product(self, response):
+    #     product = response.meta['product']
+    #     return product
+
+    def clear_text(self, str_result):
+        return str_result.replace("\t", "").replace("\n", "").replace("\r", "").replace(u'\xa0', ' ').strip()
 
     def _scrape_total_matches(self, response):
         # extracting total matches by calculating numbers on filter panel
@@ -156,19 +159,21 @@ class LowesProductsSpider(BaseProductsSpider):
         return brand[0] if brand else None
 
     def _parse_model(self, response):
-        models = response.xpath('//*[@id="ModelNumber"]/text()').extract()
-        if not models:
-            models = response.xpath(
-                './/strong[contains(text(), "Model #")]/following-sibling::text()[1]').extract()
-        return models[0] if models else None
+        arr = response.xpath('//p[contains(@class,"secondary-text")]//text()').extract()
+        model = None
+        is_model = False
+        for item in arr:
+            if is_model:
+                model = item.strip()
+                break
+            if "model #" in item.lower():
+                is_model = True
+        return model
 
     def _parse_categories(self, response):
-        categories = response.xpath(
-            '//*[@id="breadcrumbs-list"]//a/text()').extract()
-        if not categories:
-            categories = response.xpath(
-                './/*[@class="breadcrumb"]//*[@itemprop="name"]/text()').extract()
-        return categories if categories else None
+        return response.xpath(
+            '//li[@itemprop="itemListElement"]//a//text()'
+        ).extract() or None
 
     def _parse_category(self, response):
         categories = self._parse_categories(response)
@@ -203,10 +208,16 @@ class LowesProductsSpider(BaseProductsSpider):
         return bool(status)
 
     def _parse_description(self, response):
-        description = response.xpath('//*[@id="description-tab"]').extract()
-        if not description:
-            description = response.xpath('.//*[@class="list disc"]').extract()
-        return ''.join(description).strip() if description else None
+        description_div = response.xpath('//div[contains(@class,"panel-body")]')
+        if len(description_div) > 0:
+            description_div = description_div[0]
+            description = description_div.xpath('.//text()').extract()
+            if description:
+                return self.clear_text(''.join(description).strip())
+            else:
+                return ''
+        else:
+            return ''
 
     def _parse_related_products(self, response):
         related_products = []

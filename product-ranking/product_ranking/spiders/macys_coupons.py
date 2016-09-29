@@ -32,10 +32,14 @@ class MacysCouponsSpider(Spider):
         return ' '.join(coupon.xpath('.//h2/text()').extract())
 
     def _parse_discount(self, coupon):
-        return ', '.join(
-            coupon.xpath('.//h2[@class="offerSubHeaderPromo"]/text()').
+        percentage_discount = ', '.join(
+            coupon.xpath('.//h2/text()').
             re('\d+\%')
         )
+        flat_discount = coupon.xpath('.//h2/text()').re('\$\d+')
+        flat_discount = ', '.join(flat_discount[0]) if flat_discount else ''
+
+        return ', '.join([percentage_discount, flat_discount])
 
     def _parse_conditions(self, coupon):
         return is_empty(
@@ -48,11 +52,16 @@ class MacysCouponsSpider(Spider):
     def _parse_end_date(self, coupon):
         d = coupon.xpath('.//h5[@class="ftr_txt1"]/b/text()').extract()
         if d:
-            return datetime.strptime(d[0], '%m/%d/%Y').date()
+            return datetime.strptime(d[0], '%m/%d/%Y').date().strftime('%Y-%m-%d')
 
     def _parse_category(self, coupon):
         return is_empty(
             coupon.xpath('.//div[@class="header"]/text()').extract()
+        )
+
+    def _parse_promo_code(self, coupon):
+        return is_empty(
+            coupon.xpath('.//*[@label="promo code: "]/b/text()').extract()
         )
 
     def parse(self, response):
@@ -65,5 +74,6 @@ class MacysCouponsSpider(Spider):
             cond_set_value(item, 'discount', self._parse_discount(coupon))
             cond_set_value(item, 'conditions', self._parse_conditions(coupon))
             cond_set_value(item, 'start_date', self._parse_start_date(coupon))
+            cond_set_value(item, 'promo_code', self._parse_promo_code(coupon))
             cond_set_value(item, 'end_date', self._parse_end_date(coupon))
             yield item

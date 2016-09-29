@@ -151,7 +151,7 @@ class RequestsCounter(object):
     __sqs_cache = None
 
     def __init__(self, *args, **kwargs):
-        dispatcher.connect(self.__handler, signals.response_downloaded)
+        dispatcher.connect(self.__handler, signals.spider_closed)
 
     @classmethod
     def get_sqs_cache(cls):
@@ -160,8 +160,17 @@ class RequestsCounter(object):
         return cls.__sqs_cache
 
     def __handler(self, response, request, spider):
-        self.get_sqs_cache().db.incr(
-            self.get_sqs_cache().REDIS_REQUEST_COUNTER, 1)
+        spider_stats = spider.crawler.stats.get_stats()
+        try:
+            request_count = int(spider_stats.get('downloader/request_count'))
+        except ValueError:
+            request_count = 0
+        if request_count:
+            try:
+                self.get_sqs_cache().db.incr(
+                    self.get_sqs_cache().REDIS_REQUEST_COUNTER, request_count)
+            except Exception as e:
+                print 'ERROR WHILE STORE REQUEST METRICS. EXP: %s', e
 
     @classmethod
     def from_crawler(cls, crawler):

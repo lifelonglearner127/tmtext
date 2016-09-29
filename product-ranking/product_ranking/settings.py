@@ -68,7 +68,7 @@ EXTENSIONS['product_ranking.extensions.StatsCollector'] = 500
 
 EXTENSIONS['product_ranking.extensions.IPCollector'] = 500
 
-#EXTENSIONS['product_ranking.extensions.RequestsCounter'] = 500
+EXTENSIONS['product_ranking.extensions.RequestsCounter'] = 500
 
 # memory limit
 EXTENSIONS['scrapy.contrib.memusage.MemoryUsage'] = 500
