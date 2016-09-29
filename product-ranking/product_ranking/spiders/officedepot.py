@@ -270,7 +270,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
             all_a_text = ''.join(all_a_text[0]) if all_a_text else ''
             answers_regex = r"Answer:.+?>([^<]+)"
             answers = re.findall(answers_regex, all_a_text)
-            answers = [{'answerText':a}]
+            answers = [{'answerText':a} for a in answers]
             question = {
                 'questionId': question_id,
                 'questionDetail': question_details.strip() if question_details else '',
