@@ -99,6 +99,12 @@ class AmazonBaseClass(BaseProductsSpider):
             self.ignore_variant_data = True
         else:
             self.ignore_variant_data = False
+        # Turned on by default
+        self.ignore_color_variants = kwargs.get('ignore_color_variants', True)
+        if self.ignore_color_variants in ('0', False, 'false', 'False'):
+            self.ignore_color_variants = False
+        else:
+            self.ignore_color_variants = True
 
     def _is_empty(self, x, y=None):
         return x[0] if x else y
@@ -404,8 +410,21 @@ class AmazonBaseClass(BaseProductsSpider):
         if not self.ignore_variant_data:
             variants = self._parse_variants(response)
             product['variants'] = variants
+            if self.ignore_color_variants:
+                # Get default selected color and get prices only for default color
+                # Getting all variants prices raise performance concerns because of huge amount of added requests
+                # See bz #11443
+                try:
+                    default_color = [c['properties'].get('color') for c in variants if c.get('selected')]
+                    default_color = default_color[0] if default_color else None
+                    prc_variants = [v for v in variants if v['properties'].get('color') == default_color]
+                except Exception as e:
+                    self.log('Error ignoring color variants, getting price for all variants: {}'.format(e), WARNING)
+                    prc_variants = variants
+            else:
+                prc_variants = variants
             # Parse variants prices
-            if variants:
+            if prc_variants:
                 js_text = response.xpath('.//script[contains(text(),"immutableURLPrefix")]/text()').extract()
                 js_text = js_text[0] if js_text else None
                 if not js_text:
@@ -415,7 +434,7 @@ class AmazonBaseClass(BaseProductsSpider):
                     base_url = re.findall(url_regex, js_text)
                     # print base_url
                     base_url = base_url[0] if base_url else None
-                    for variant in variants:
+                    for variant in prc_variants:
                         # Set default price value
                         variant['price'] = None
                         # print(variant)
