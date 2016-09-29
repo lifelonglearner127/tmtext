@@ -751,7 +751,8 @@ class ScrapyTask(object):
             else:
                 try:
                     data_key = put_file_into_s3(
-                        AMAZON_BUCKET_NAME, output_path+'.jl')
+                        AMAZON_BUCKET_NAME, output_path+'.screenshot.jl')
+                    logger.info('Screenshot file uploaded: %s' % (output_path + '.screenshot.jl'))
                 except Exception as ex:
                     logger.error('Screenshot file uploading error')
                     logger.exception(ex)
