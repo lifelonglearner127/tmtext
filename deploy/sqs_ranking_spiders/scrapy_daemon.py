@@ -1146,11 +1146,15 @@ class ScrapyTask(object):
             url2scrape = self.task_data.get('product_url', self.task_data.get('url', None))
         # TODO: searchterm jobs? checkout scrapers?
         if url2scrape:
+            scrapy_path = "/home/spiders/virtual_environment/bin/scrapy"
+            python_path = "/home/spiders/virtual_environment/bin/python"
             cmd = ('cd {repo_base_path}/product-ranking'
-                   ' && scrapy crawl url2screenshot_products -a product_url="{url2scrape}"'
+                   ' && {python_path} {scrapy_path} crawl url2screenshot_products'
+                   ' -a product_url="{url2scrape}" '
                    ' -a width=1280 -a height=1024 -a timeout=60 '
                    ' -o "{output_file}" &').format(
-                       repo_base_path=REPO_BASE_PATH, url2scrape=url2scrape,
+                       repo_base_path=REPO_BASE_PATH, python_path=python_path,
+                       scrapy_path=scrapy_path, url2scrape=url2scrape,
                        output_file=self.get_output_path()+'.screenshot.jl')
             logger.info('Starting a new parallel screenshot job: %s' % cmd)
             os.system(cmd)  # use Popen instead?
