@@ -1146,9 +1146,9 @@ class ScrapyTask(object):
         # TODO: searchterm jobs? checkout scrapers?
         if url2scrape:
             cmd = ('cd {repo_base_path}/product-ranking'
-                   ' && scrapy crawl url2screenshot_products -a product_url={url2scrape}'
-                   '-a width=1280 -a height=1024 -a timeout=60 '
-                   '-o {output_file} &').format(
+                   ' && scrapy crawl url2screenshot_products -a product_url="{url2scrape}"'
+                   ' -a width=1280 -a height=1024 -a timeout=60 '
+                   ' -o "{output_file}" &').format(
                        repo_base_path=REPO_BASE_PATH, url2scrape=url2scrape,
                        output_file=self.get_output_path()+'.screenshot.jl')
             logger.info('Starting a new parallel screenshot job: %s' % cmd)
