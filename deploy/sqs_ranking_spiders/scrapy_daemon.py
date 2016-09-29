@@ -1300,7 +1300,8 @@ def store_tasks_metrics(task, redis_db):
     generated_key = '%s:%s:%s' % (
         task.get('server_name', 'UnknownServer'),
         task.get('site', 'UnknownSite'),
-        'term' if 'term' in task and task['term'] else 'url'
+        ('term' if 'searchterms_str' in task and task['searchterms_str']
+         else 'url')
     )
     try:
         redis_db.hincrby(JOBS_STATS_REDIS_KEY, generated_key, 1)
@@ -1446,6 +1447,8 @@ def main():
             # make sure all tasks are in same branch
             queue.reset_message()
             continue
+        # Store jobs metrics
+        store_tasks_metrics(task_data, redis_db)
         # start task
         # if started, remove from the queue and run
         task = ScrapyTask(queue, task_data, listener)
@@ -1456,8 +1459,6 @@ def main():
             notify_cache(task_data, is_from_cache=True)
             del task
             continue
-        # Store jobs metrics
-        store_tasks_metrics(task_data, redis_db)
         if task.start():
             tasks_taken.append(task)
             task.run()
