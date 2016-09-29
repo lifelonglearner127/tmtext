@@ -110,7 +110,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     RELATED_URL = "{path}?productId={pid}&userId=-1002&min={min}&max={max}&context=placementId," \
                   "{plid};categoryId,{cid}&callback=jsonCallback"
 
-    def __init__(self, sort_mode=None, store='2766', zip_code='94117', *args, **kwargs):
+    def __init__(self, sort_mode=None, store='2768', zip_code='94117', *args, **kwargs):
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
@@ -392,8 +392,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
     @staticmethod
     def _item_info_v3_price_helper(item):
         amount = item.get(
-            'price').get('offerPrice').get('formattedPrice', '').replace('$', '')
-        amount = amount.replace(',', '')
+            'price').get('offerPrice').get(
+            'formattedPrice', '').replace('$', '').replace(',', '')
         if not amount or 'see low price in cart' in amount:
             amount = item.get(
                 'price').get('offerPrice').get('price')
