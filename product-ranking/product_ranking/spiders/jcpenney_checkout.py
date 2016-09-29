@@ -63,6 +63,8 @@ class JCpenneySpider(BaseCheckoutSpider):
                                   avail_attr_xpath,
                                   element)
             time.sleep(2)
+            self._find_by_xpath('//h1')[0].click()
+            time.sleep(1)
 
     def select_width(self, element=None):
         default_attr_xpath = '*//div[@id="skuOptions_width"]//' \
