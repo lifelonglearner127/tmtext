@@ -3,7 +3,9 @@ import re
 import socket
 import time
 import json
+import inspect
 
+from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -52,19 +54,21 @@ class JCpenneySpider(BaseCheckoutSpider):
                                     '[img[@name="%s"]]' % color
 
         self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
+        if self.driver.find_elements(By.ID, 'page_loader'):
+            time.sleep(5)
+        self._find_by_xpath('//h1')[0].click()
+        time.sleep(1)
 
     def click_condition(self, default_xpath, all_xpaths):
         return self._find_by_xpath(default_xpath) or self._find_by_xpath(all_xpaths)
 
     def select_attribute(self, default_attr_xpath, avail_attr_xpath, element):
         if self.click_condition(default_attr_xpath, avail_attr_xpath):
-
             self._click_attribute(default_attr_xpath,
                                   avail_attr_xpath,
                                   element)
-            time.sleep(2)
-            self._find_by_xpath('//h1')[0].click()
-            time.sleep(1)
+            time.sleep(5)
+            print(inspect.currentframe().f_back.f_code.co_name)
 
     def select_width(self, element=None):
         default_attr_xpath = '*//div[@id="skuOptions_width"]//' \
@@ -113,6 +117,7 @@ class JCpenneySpider(BaseCheckoutSpider):
         self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def _parse_attributes(self, product, color, quantity):
+        time.sleep(5)
         self.select_color(product, color)
         self.select_size(product)
         self.select_width(product)
@@ -132,10 +137,9 @@ class JCpenneySpider(BaseCheckoutSpider):
 
         if addtobagbopus:
             self._click_on_element_with_id('addtobagbopus')
-
         elif addtobag:
             self._click_on_element_with_id('addtobag')
-        time.sleep(4)
+        time.sleep(5)
 
     def _do_others_actions(self):
         skip_this_offer = self._find_by_xpath(
@@ -145,14 +149,15 @@ class JCpenneySpider(BaseCheckoutSpider):
             time.sleep(4)
 
     def _set_quantity(self, product, quantity):
-        quantity_option = self._find_by_xpath(
-            '*//*[@name="prod_quantity"]'
-            '/option[@value="%d"]' % quantity, product)
-
-        if quantity_option:
-            quantity_option[0].click()
-
-        time.sleep(4)
+        quantity_option = Select(self.driver.find_element_by_xpath('*//*[@name="prod_quantity"]'))
+        try:
+            quantity_option.select_by_value(str(quantity))
+            quantity_selected = quantity_option.first_selected_option.text
+            if quantity_selected != str(quantity):
+                time.sleep(4)
+            self.log('Quantity "{}" selected'.format(quantity))
+        except:
+            pass
 
     def _get_product_list_cart(self):
         time.sleep(1)
