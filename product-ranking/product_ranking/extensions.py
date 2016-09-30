@@ -159,7 +159,7 @@ class RequestsCounter(object):
             cls.__sqs_cache = SqsCache()
         return cls.__sqs_cache
 
-    def __handler(self, response, request, spider):
+    def __handler(self, spider, reason):
         spider_stats = spider.crawler.stats.get_stats()
         try:
             request_count = int(spider_stats.get('downloader/request_count'))

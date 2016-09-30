@@ -1316,7 +1316,7 @@ def is_task_taken(new_task, tasks):
 
 
 def store_tasks_metrics(task, redis_db):
-    """This method will just increment reuired key in redis database
+    """This method will just increment required key in redis database
         if connection to the database exist."""
     if TEST_MODE:
         print 'Simulate redis incremet, key is %s' % JOBS_COUNTER_REDIS_KEY
