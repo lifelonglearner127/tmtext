@@ -123,6 +123,13 @@ class BootsProductsSpider(BaseProductsSpider):
 
         cond_set(
             product,
+            'reseller_id',
+            response.xpath("//p[@class='itemNumber']/span/text()").extract(),
+            conv=string.strip,
+        )
+
+        cond_set(
+            product,
             'price',
             response.xpath("//p[@class='productOfferPrice']/text()").extract(),
             conv=string.strip,
