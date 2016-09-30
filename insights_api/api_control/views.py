@@ -347,7 +347,7 @@ class PriceDataViewSet(viewsets.ModelViewSet):
                         from ranking_search_results_items rsri
                         join product_url pu on pu.id = rsri.url_id
                         join product_list_items pli on pli.product_url_id = rsri.url_id
-                        where pli.product_list_id in ({product_list_id}) and rsri.date_of_upload = ({date});
+                        where pli.product_list_id in ({product_list_id}) and rsri.date_of_upload in ({date});
                         """.format(product_list_id=product_list_id, date=date)
 
 	print sql_query
@@ -568,7 +568,7 @@ class BuyBoxDataViewSet(viewsets.ModelViewSet):
                             on pm.rsri_id = rsri.id
                         left join marketplace m on m.id = pm.marketplace_id
                         where pli.product_list_id in ({product_list_id})
-                             and rsri.date_of_upload = ({date});
+                             and rsri.date_of_upload in ({date});
                         """.format(product_list_id=product_list_id, date=date)
 
         print sql_query
