@@ -159,7 +159,8 @@ class RequestsCounter(object):
             cls.__sqs_cache = SqsCache()
         return cls.__sqs_cache
 
-    def __handler(self, spider, reason):
+    @staticmethod
+    def __handler(spider, reason):
         spider_stats = spider.crawler.stats.get_stats()
         try:
             request_count = int(spider_stats.get('downloader/request_count'))
@@ -167,8 +168,10 @@ class RequestsCounter(object):
             request_count = 0
         if request_count:
             try:
-                self.get_sqs_cache().db.incr(
-                    self.get_sqs_cache().REDIS_REQUEST_COUNTER, request_count)
+                RequestsCounter.get_sqs_cache().db.incr(
+                    RequestsCounter.get_sqs_cache().REDIS_REQUEST_COUNTER,
+                    request_count
+                )
             except Exception as e:
                 print 'ERROR WHILE STORE REQUEST METRICS. EXP: %s', e
 
