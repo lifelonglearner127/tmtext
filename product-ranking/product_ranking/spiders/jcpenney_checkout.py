@@ -1,4 +1,3 @@
-# scrapy crawl jcpenney_checkout_products -a product_data='[{"url": "http://www.jcpenney.com/maternity-overbelly-colored-skinny-jeans/prod.jump?ppId=pp5006311127&searchTerm=jeans&catId=SearchResults&_dyncharset=UTF-8"}]'
 import re
 import socket
 import time
@@ -24,6 +23,7 @@ class JCpenneySpider(BaseCheckoutSpider):
     SHOPPING_CART_URL = 'http://www.jcpenney.com/jsp/cart/viewShoppingBag.jsp'
     CHECKOUT_PAGE_URL = "https://www.jcpenney.com/dotcom/" \
                         "jsp/checkout/secure/checkout.jsp"
+
 
     def start_requests(self):
         yield scrapy.Request('http://www.jcpenney.com/')
@@ -54,8 +54,6 @@ class JCpenneySpider(BaseCheckoutSpider):
                                     '[img[@name="%s"]]' % color
 
         self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
-        if self.driver.find_elements(By.ID, 'page_loader'):
-            time.sleep(5)
         self._find_by_xpath('//h1')[0].click()
         time.sleep(1)
 
@@ -63,11 +61,15 @@ class JCpenneySpider(BaseCheckoutSpider):
         return self._find_by_xpath(default_xpath) or self._find_by_xpath(all_xpaths)
 
     def select_attribute(self, default_attr_xpath, avail_attr_xpath, element):
+        max_retries = 20
+        retries = 0
         if self.click_condition(default_attr_xpath, avail_attr_xpath):
             self._click_attribute(default_attr_xpath,
                                   avail_attr_xpath,
                                   element)
-            time.sleep(5)
+            while self.driver.find_elements(By.ID, 'page_loader') and retries < max_retries:
+                time.sleep(1)
+                retries += 1
             print(inspect.currentframe().f_back.f_code.co_name)
 
     def select_width(self, element=None):
@@ -117,7 +119,7 @@ class JCpenneySpider(BaseCheckoutSpider):
         self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def _parse_attributes(self, product, color, quantity):
-        time.sleep(5)
+        time.sleep(10)
         self.select_color(product, color)
         self.select_size(product)
         self.select_width(product)
