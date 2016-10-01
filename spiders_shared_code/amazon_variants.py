@@ -169,6 +169,7 @@ class AmazonVariants(object):
                 stockstatus_for_variants["in_stock"] = True
                 stockstatus_for_variants["selected"] = isSelected
                 stockstatus_for_variants["price"] = None
+                stockstatus_for_variants["asin"] = variation_asin_values[variation_combination_key]
 
                 if original_product_canonical_link:
                     stockstatus_for_variants["url"] = original_product_canonical_link[:original_product_canonical_link.rfind("/") + 1] + variation_asin_values[variation_combination_key]

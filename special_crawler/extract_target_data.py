@@ -50,6 +50,7 @@ class TargetScraper(Scraper):
         self.item_info_checked = False
 
         self.images = None
+        self.no_longer_available = 0
 
         self.wc_360 = 0
         self.wc_emc = 0
@@ -74,7 +75,10 @@ class TargetScraper(Scraper):
 
         if len(self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")) < 1:
             self.version = 2
-            self.tv.setupCH(self.tree_html, self._item_info())
+            try:
+                self.tv.setupCH(self.tree_html, self._item_info())
+            except:
+                self.no_longer_available = 1
 
         else:
             self.version = 1
@@ -304,6 +308,9 @@ class TargetScraper(Scraper):
 
         mta = self.tree_html.xpath('//div[@class="details-copy"]/following-sibling::ul')[0]
         return self._clean_html(html.tostring(mta))
+
+    def _no_longer_available(self):
+        return self.no_longer_available
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -787,6 +794,7 @@ class TargetScraper(Scraper):
         "swatches": _swatches, \
         "details": _details, \
         "mta": _mta, \
+        "no_longer_available": _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \

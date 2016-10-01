@@ -48,6 +48,7 @@ INSTALLED_APPS = (
     'watchdog',
     'kill_servers',
     'sqs_stats',
+    'reports',
 )
 
 MIDDLEWARE_CLASSES = (

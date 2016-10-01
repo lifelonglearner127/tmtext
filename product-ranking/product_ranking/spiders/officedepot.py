@@ -239,7 +239,6 @@ class OfficedepotProductsSpider(BaseProductsSpider):
             '//h1[@itemprop="name"]/text()').re('(.*?),'))
 
 
-
         if sku and name and self.scrape_variants_with_extra_requests:
             name = urllib.quote_plus(name.strip().encode('utf-8'))
             reqs.append(Request(url=self.VARIANTS_URL.format(name=name,

@@ -92,7 +92,7 @@ def main( environment, scrape_queue_name, thread_id):
                         output_json = json.loads(output_text)
                     except Exception as e:
                         output_json = {
-                            "error":e,
+                            "error":str(e),
                             "date":datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
                             "status":"failure",
                             "page_attributes":{"loaded_in_seconds":round(get_end-get_start,2)}}

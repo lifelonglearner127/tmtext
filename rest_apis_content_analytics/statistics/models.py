@@ -10,6 +10,8 @@ def process_check_feed_response(user, check_results_output, date, check_auth=Tru
     multi_item = not(check_results_output.get('itemsReceived', 0) == 1)
     ingestion_statuses = check_results_output.get('itemDetails', {}).get('itemIngestionStatus', [])
     feed_id = check_results_output.get('itemDetails', {}).get('feedId')
+    if not feed_id:
+        feed_id = check_results_output.get('feedId')
 
     for item in check_results_output.get('itemDetails', {}).get('itemIngestionStatus', []):
         if not 'ingestionStatus' in item:
@@ -22,13 +24,13 @@ def process_check_feed_response(user, check_results_output, date, check_auth=Tru
                           error_text=str(item.get('ingestionErrors')),
                           upc=item.get('sku'),
                           feed_id=feed_id)
-            print('Stat item created, status: FAILED')
+            print('Stat item created for feed %s, status: FAILED, UPC: %s' % (feed_id, item.get('sku')))
         else:
             stat_xml_item(user, 'session', 'successful', multi_item,
                           date=date,
                           upc=item.get('sku'),
                           feed_id=feed_id)
-            print('Stat item created, status: SUCCESS')
+            print('Stat item created for feed %s, status: SUCCESS, UPC: %s' % (feed_id, item.get('sku')))
 
     if not ingestion_statuses:
         if check_results_output.get('feedStatus', '').lower() == 'error':
@@ -37,7 +39,7 @@ def process_check_feed_response(user, check_results_output, date, check_auth=Tru
                           error_text=str(check_results_output.get('ingestionErrors')),
                           upc=check_results_output.get('sku'),
                           feed_id=feed_id)
-            print('Stat item created, status: FAILED')
+            print('Stat item created for feed %s, status: FAILED, UPC: %s' % (feed_id, check_results_output.get('sku')))
 
 
 def stat_xml_item(user, auth, status, multi_item, date, error_text=None, upc=None, feed_id=None):
@@ -69,11 +71,10 @@ class SubmitXMLItem(models.Model):
         'basic'  # user used some code to submit item and used Basic authentication
     )
 
-    user = models.ForeignKey(User, db_index=True)
+    user = models.ForeignKey(User)
     auth = models.CharField(max_length=15, choices=[(a, a) for a in _auth_types])
-    status = models.CharField(max_length=20, choices=[(c, c) for c in _status],
-                              db_index=True)
-    when = models.DateTimeField(default=datetime.datetime.now, db_index=True)
+    status = models.CharField(max_length=20, choices=[(c, c) for c in _status])  #, db_index=True)
+    when = models.DateTimeField(default=datetime.datetime.now)  #, db_index=True)
     multi_item = models.BooleanField(default=False)  # if multiple items have been merged into one
 
     def __unicode__(self):
