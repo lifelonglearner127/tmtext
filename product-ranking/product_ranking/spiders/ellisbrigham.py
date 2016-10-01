@@ -142,6 +142,11 @@ class EllisbrighamProductsSpider(BaseProductsSpider):
 
         prod["locale"] = "en_GB"
         prod['url'] = response.url
+
+        reseller_id_regex = "\/(\d+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(prod, 'reseller_id', reseller_id)
         self._populate_related_products(response, prod)
         return prod
 
