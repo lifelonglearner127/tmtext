@@ -741,6 +741,22 @@ class ScrapyTask(object):
         logs_key = put_file_into_s3(
             AMAZON_BUCKET_NAME, output_path+'.log')
 
+        if self.is_screenshot_job():
+            if not os.path.exists(output_path + '.screenshot.jl'):
+                # screenshot task not finished yet? wait 30 seconds
+                time.sleep(30)
+            if not os.path.exists(output_path + '.screenshot.jl'):
+                logger.error('Screenshot output file does not exist: %s' % (
+                    output_path + '.screenshot.jl'))
+            else:
+                try:
+                    data_key = put_file_into_s3(
+                        AMAZON_BUCKET_NAME, output_path+'.screenshot.jl')
+                    logger.info('Screenshot file uploaded: %s' % (output_path + '.screenshot.jl'))
+                except Exception as ex:
+                    logger.error('Screenshot file uploading error')
+                    logger.exception(ex)
+
         csv_data_key = None
         global CONVERT_TO_CSV
         if CONVERT_TO_CSV:
@@ -1120,6 +1136,29 @@ class ScrapyTask(object):
     def save_cached_result(self):
         return save_task_result_to_cache(self.task_data, self.get_output_path())
 
+    def is_screenshot_job(self):
+        return self.task_data.get('cmd_args', {}).get('make_screenshot_for_url', False)
+
+    def start_screenshot_job_if_needed(self):
+        """ Starts a new url2screenshot local job, if needed """
+        url2scrape = None
+        if self.task_data.get('product_url', self.task_data.get('url', None)):
+            url2scrape = self.task_data.get('product_url', self.task_data.get('url', None))
+        # TODO: searchterm jobs? checkout scrapers?
+        if url2scrape:
+            scrapy_path = "/home/spiders/virtual_environment/bin/scrapy"
+            python_path = "/home/spiders/virtual_environment/bin/python"
+            cmd = ('cd {repo_base_path}/product-ranking'
+                   ' && {python_path} {scrapy_path} crawl url2screenshot_products'
+                   ' -a product_url="{url2scrape}" '
+                   ' -a width=1280 -a height=1024 -a timeout=60 '
+                   ' -o "{output_file}" &').format(
+                       repo_base_path=REPO_BASE_PATH, python_path=python_path,
+                       scrapy_path=scrapy_path, url2scrape=url2scrape,
+                       output_file=self.get_output_path()+'.screenshot.jl')
+            logger.info('Starting a new parallel screenshot job: %s' % cmd)
+            os.system(cmd)  # use Popen instead?
+
     def report(self):
         """returns string with the task running stats"""
         s = 'Task #%s, command %r.\n' % (self.task_data.get('task_id', 0),
@@ -1300,7 +1339,8 @@ def store_tasks_metrics(task, redis_db):
     generated_key = '%s:%s:%s' % (
         task.get('server_name', 'UnknownServer'),
         task.get('site', 'UnknownSite'),
-        'term' if 'term' in task and task['term'] else 'url'
+        ('term' if 'searchterms_str' in task and task['searchterms_str']
+         else 'url')
     )
     try:
         redis_db.hincrby(JOBS_STATS_REDIS_KEY, generated_key, 1)
@@ -1427,6 +1467,9 @@ def main():
         elif (task_data['site'] in ('dockers', 'nike')) or 'checkout' in task_data['site']:
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
             logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
+        elif task_data.get('cmd_args', {}).get('make_screenshot_for_url', False):
+            MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
+            logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of the parallel url2screenshot job' % MAX_CONCURRENT_TASKS)
 
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))
@@ -1446,6 +1489,8 @@ def main():
             # make sure all tasks are in same branch
             queue.reset_message()
             continue
+        # Store jobs metrics
+        store_tasks_metrics(task_data, redis_db)
         # start task
         # if started, remove from the queue and run
         task = ScrapyTask(queue, task_data, listener)
@@ -1456,14 +1501,14 @@ def main():
             notify_cache(task_data, is_from_cache=True)
             del task
             continue
-        # Store jobs metrics
-        store_tasks_metrics(task_data, redis_db)
         if task.start():
             tasks_taken.append(task)
             task.run()
             logger.info(
                 'Task %s started successfully, removing it from the queue',
                 task.task_data.get('task_id'))
+            if task.is_screenshot_job():
+                task.start_screenshot_job_if_needed()
             task.queue.task_done()
             notify_cache(task_data, is_from_cache=False)
         else:
