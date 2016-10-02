@@ -82,6 +82,11 @@ class FreshDirectProductsSpider(ProductsSpider):
         des = ''.join(i.strip() for i in des)
         cond_set_value(prod, 'description', des)
 
+        reseller_id_regex = "[Pp]roduct[Ii][dD]=([^\&]+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(prod, 'reseller_id', reseller_id)
+
         related_products = []
         for li in response.xpath(
                 '//div[@class="pdp-likethat"]'
