@@ -7,11 +7,9 @@ import inspect
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
 
 import scrapy
-
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -38,20 +36,20 @@ class JCpenneySpider(BaseCheckoutSpider):
 
     def select_size(self, element=None):
         default_attr_xpath = '*//div[@id="skuOptions_size"]//' \
-            'li[@class="sku_select"]'
+                             'li[@class="sku_select"]'
         avail_attr_xpath = '*//*[@id="skuOptions_size"]//' \
-            'li[not(@class="sku_not_available" or @class="sku_illegal")]/a'
+                           'li[not(@class="sku_not_available" or @class="sku_illegal")]/a'
         self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def select_color(self, element=None, color=None):
         default_attr_xpath = '*//li[@class="swatch_selected"]'
         avail_attr_xpath = ('*//*[@class="small_swatches"]'
-                                  '//a[not(span[@class="no_color"]) and '
-                                  'not(span[@class="color_illegal"])]')
+                            '//a[not(span[@class="no_color"]) and '
+                            'not(span[@class="color_illegal"])]')
 
         if color and color in self.available_colors:
             default_attr_xpath = '*//*[@class="small_swatches"]//a' \
-                                    '[img[@name="%s"]]' % color
+                                 '[img[@name="%s"]]' % color
 
         self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
         self._find_by_xpath('//h1')[0].click()
@@ -74,9 +72,9 @@ class JCpenneySpider(BaseCheckoutSpider):
 
     def select_width(self, element=None):
         default_attr_xpath = '*//div[@id="skuOptions_width"]//' \
-            'li[@class="sku_select"]'
+                             'li[@class="sku_select"]'
         avail_attr_xpath = '*//*[@id="skuOptions_width"]//' \
-            'li[not(@class="sku_not_available" or @class="sku_illegal")]/a'
+                           'li[not(@class="sku_not_available" or @class="sku_illegal")]/a'
 
         self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
@@ -195,11 +193,12 @@ class JCpenneySpider(BaseCheckoutSpider):
 
     def _get_item_color(self, item):
         selector = scrapy.Selector(text=self.page_source)
-        color_new = is_empty(selector.xpath('//span[@class="size" and '
-                              'contains(text(),"color:")]/text()').re('color\:\n(.+)'))
+        color_new = is_empty(
+            selector.xpath('//span[@class="size" and '
+                           'contains(text(),"color:")]/text()').re('color\:\n(.+)'))
         color_old = is_empty(selector.xpath(
-                        '//span[@class="size" and contains(text(),"color:")]'
-                        '/strong/text()').extract())
+            '//span[@class="size" and contains(text(),"color:")]'
+            '/strong/text()').extract())
         return color_new or color_old
 
     def _get_item_quantity(self, item):
@@ -230,3 +229,7 @@ class JCpenneySpider(BaseCheckoutSpider):
 
     def _get_promo_subtotal(self):
         return str(self._get_subtotal())
+
+    def _parse_no_longer_available(self):
+        return bool(self._find_by_xpath(
+            '//*[@class="error_holder"]'))
