@@ -70,8 +70,8 @@ sys.path.insert(
 from sqs_queue import SQS_Queue
 from libs import convert_json_to_csv
 from cache_layer import REDIS_HOST, REDIS_PORT, INSTANCES_COUNTER_REDIS_KEY, \
-    TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET, \
-    JOBS_COUNTER_REDIS_KEY, JOBS_STATS_REDIS_KEY
+    TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET, JOBS_STATS_REDIS_KEY, \
+    JOBS_COUNTER_REDIS_KEY
 
 
 TEST_MODE = False  # if we should perform local file tests
@@ -165,15 +165,29 @@ def get_branch_for_task(task_data):
     return task_data.get('branch_name')
 
 
+def get_actual_branch_from_cache():
+    try:
+        from cache_layer.cache_service import SqsCache
+        sqs = SqsCache()
+        logger.info('Get default branch from redis.')
+        branch = sqs.get_settings('remote_instance_branch')
+    except Exception as e:
+        logger.error('Error while get branch. ERROR: %s', str(e))
+        branch = 'sc_production'
+    logger.info('Branch is %s', branch)
+    return branch or 'sc_production'
+
+
 def switch_branch_if_required(metadata):
-    branch_name = metadata.get('branch_name', 'sc_production')
+    default_branch = get_actual_branch_from_cache()
+    branch_name = metadata.get('branch_name', default_branch)
     if branch_name:
         logger.info("Checkout to branch %s", branch_name)
-        cmd = 'git checkout -f {branch} && git pull origin {branch} && '\
-              'git checkout sc_production -- task_id_generator.py && '\
-              'git checkout sc_production -- remote_instance_starter.py && '\
-              'git checkout sc_production -- upload_logs_to_s3.py'
-        cmd = cmd.format(branch=branch_name)
+        cmd = ('git checkout -f {branch} && git pull origin {branch} && '
+               'git checkout {default_branch} -- task_id_generator.py && '
+               'git checkout {default_branch} -- remote_instance_starter.py &&'
+               ' git checkout {default_branch} -- upload_logs_to_s3.py')
+        cmd = cmd.format(branch=branch_name, default_branch=default_branch)
         logger.info("Run '%s'", cmd)
         os.system(cmd)
 
