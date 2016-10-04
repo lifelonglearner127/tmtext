@@ -151,7 +151,7 @@ class RequestsCounter(object):
     __sqs_cache = None
 
     def __init__(self, *args, **kwargs):
-        dispatcher.connect(self.__handler, signals.spider_closed)
+        dispatcher.connect(RequestsCounter.__handler, signals.spider_closed)
 
     @classmethod
     def get_sqs_cache(cls):
