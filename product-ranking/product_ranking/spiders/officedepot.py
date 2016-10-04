@@ -18,7 +18,6 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
 
 is_empty =lambda x,y=None: x[0] if x else y
 
@@ -267,17 +266,22 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         for (question_summary, question_id, question_details, question_date) in questions_ids:
             # Convert date format
             if question_date:
-                years = re.findall("(\d+?)\s+?years", question_date)
-                years = years[0] if years else '0'
-                years = int(years) if years.isdigit() else '0'
-                months = re.findall("(\d+?)\s+?months", question_date)
-                months = months[0] if months else '0'
-                months = int(months) if months.isdigit() else '0'
-                if not months and not years:
+                try:
+                    from dateutil.relativedelta import relativedelta
+                    years = re.findall("(\d+?)\s+?years", question_date)
+                    years = years[0] if years else '0'
+                    years = int(years) if years.isdigit() else '0'
+                    months = re.findall("(\d+?)\s+?months", question_date)
+                    months = months[0] if months else '0'
+                    months = int(months) if months.isdigit() else '0'
+                    if not months and not years:
+                        converted_date = None
+                    else:
+                        converted_date = datetime.now() - relativedelta(years=years, months=months)
+                        converted_date = converted_date.strftime("%Y-%m-%d")
+                except Exception as e:
                     converted_date = None
-                else:
-                    converted_date = datetime.now() - relativedelta(years=years, months=months)
-                    converted_date = converted_date.strftime("%Y-%m-%d")
+                    self.log('Failed to parse date, setting date to None {}'.format(e))
             else:
                 converted_date = None
             # regex to get part of response that contain all answers to question with given id
