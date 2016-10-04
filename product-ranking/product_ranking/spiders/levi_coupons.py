@@ -3,6 +3,7 @@ from scrapy import Spider, Request
 from product_ranking.items import DiscountCoupon
 from product_ranking.spiders import cond_set_value
 from datetime import datetime
+import re
 
 is_empty = lambda x: x[0] if x else None
 
@@ -14,7 +15,7 @@ class LeviCouponsSpider(Spider):
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
                   "Chrome/37.0.2062.120 Safari/537.36")
     DEFAULT_URLS = [
-        'http://www.levi.com/US/en_US/',
+        # 'http://www.levi.com/US/en_US/',
         'http://www.levi.com/US/en_US/category/sale/men/all',
         'http://www.levi.com/US/en_US/category/sale/women/all',
         'http://www.levi.com/US/en_US/category/sale/kids/all'
@@ -24,7 +25,7 @@ class LeviCouponsSpider(Spider):
     def __init__(self, *args, **kwargs):
         super(LeviCouponsSpider, self).__init__(*args, **kwargs)
         product_url = kwargs.get('product_url')
-        if product_url:
+        if product_url and not product_url == 'http://www.levi.com/US/en_US/':
             self.product_urls = product_url.split('|||')
         else:
             self.product_urls = self.DEFAULT_URLS * self.REQUEST_TIMES
@@ -130,5 +131,13 @@ class LeviCouponsSpider(Spider):
         cond_set_value(item, 'conditions', self._parse_conditions(response))
         cond_set_value(item, 'start_date', self._parse_start_date(response))
         cond_set_value(item, 'end_date', self._parse_end_date(response))
-        cond_set_value(item, 'promo_code', None)
+        promo_code = None
+        if not item.get('promo_code'):
+            promo_regex = "[Uu]sing\s?[Pp]romo\s?[Cc]ode:\s?([A-Z0-9]+)"
+            promo_code = re.findall(promo_regex, item.get('conditions'))
+            promo_code = promo_code[0] if promo_code else None
+            if not promo_code:
+                promo_code = re.findall(promo_regex, item.get('description'))
+                promo_code = promo_code[0] if promo_code else None
+        cond_set_value(item, 'promo_code', promo_code)
         return item
