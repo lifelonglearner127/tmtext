@@ -113,22 +113,30 @@ class LowesProductsSpider(BaseProductsSpider):
                                   meta={'product': prod})
 
     def _parse_single_product(self, response):
-        open_in_browser(response)
+        # open_in_browser(response)
         return self.parse_product(response)
 
-    def parse_product(self, response):
-        product = response.meta['product']
-        return product
+    # def parse_product(self, response):
+    #     product = response.meta['product']
+    #     return product
+
+    def clear_text(self, str_result):
+        return str_result.replace("\t", "").replace("\n", "").replace("\r", "").replace(u'\xa0', ' ').strip()
 
     def _scrape_total_matches(self, response):
-        total_matches = response.xpath(
-            '//*[@title="productduct Search Results"]/span/text()').re('\d+')
-        return int(total_matches[0]) if total_matches else None
+        # extracting total matches by calculating numbers on filter panel
+        panel_values = response.xpath('.//li[contains(@class, "refinement-label") '
+                                      'and contains(@data-name, "$")]//span[@id]/text()').re(r'\((\d+)\)')
+        panel_values = [int(p) for p in panel_values if p.isdigit()]
+        total_matches = sum(panel_values)
+        return total_matches
 
     def _scrape_product_links(self, response):
         links = response.xpath(
             '//*[@name="listpage_productname"]/@href').extract()
-
+        if not links:
+            links = response.xpath(
+                './/*[contains(@id, "product-")]/@data-producturl').extract()
         for link in links:
             product = SiteProductItem()
             yield link, product
@@ -136,6 +144,8 @@ class LowesProductsSpider(BaseProductsSpider):
     def _scrape_next_results_page_link(self, response):
         next_page_url = response.xpath(
             '(//*[@title="Next Page"]/@href)[1]').extract()
+        if not next_page_url:
+            next_page_url= response.xpath('.//*[@class="page-next"]/a/@href').extract()
 
         return urljoin(response.url, next_page_url[0]) if \
             next_page_url else None
@@ -144,13 +154,26 @@ class LowesProductsSpider(BaseProductsSpider):
         title = response.xpath('//h1/text()').extract()
         return title[0] if title else None
 
+    def _parse_brand(self, response):
+        brand = response.xpath('//meta[@itemprop="brand"]/@content').extract()
+        return brand[0] if brand else None
+
     def _parse_model(self, response):
-        models = response.xpath('//*[@id="ModelNumber"]/text()').extract()
-        return models[0] if models else None
+        arr = response.xpath('//p[contains(@class,"secondary-text")]//text()').extract()
+        model = None
+        is_model = False
+        for item in arr:
+            if is_model:
+                model = item.strip()
+                break
+            if "model #" in item.lower():
+                is_model = True
+        return model
 
     def _parse_categories(self, response):
         return response.xpath(
-            '//*[@id="breadcrumbs-list"]//a/text()').extract() or None
+            '//li[@itemprop="itemListElement"]//a//text()'
+        ).extract() or None
 
     def _parse_category(self, response):
         categories = self._parse_categories(response)
@@ -159,6 +182,8 @@ class LowesProductsSpider(BaseProductsSpider):
     def _parse_price(self, response):
         price = response.xpath(
             '//*[@class="price"]/text()').re('[\d\.\,]+')
+        if not price:
+            price = response.xpath('.//*[@itemprop="price"]/@content').re('[\d\.\,]+')
 
         if not price:
             return None
@@ -168,6 +193,9 @@ class LowesProductsSpider(BaseProductsSpider):
     def _parse_image_url(self, response):
         image_url = response.xpath(
             '//*[@id="prodPrimaryImg"]/@src').extract()
+        if not image_url:
+            image_url = response.xpath(
+                './/img[contains(@class, "product-image")]/@src').extract()
         return image_url[0] if image_url else None
 
     def _parse_variants(self, response):
@@ -180,12 +208,20 @@ class LowesProductsSpider(BaseProductsSpider):
         return bool(status)
 
     def _parse_description(self, response):
-        description = response.xpath('//*[@id="description-tab"]').extract()
-        return ''.join(description).strip() if description else None
+        description_div = response.xpath('//div[contains(@class,"panel-body")]')
+        if len(description_div) > 0:
+            description_div = description_div[0]
+            description = description_div.xpath('.//text()').extract()
+            if description:
+                return self.clear_text(''.join(description).strip())
+            else:
+                return ''
+        else:
+            return ''
 
     def _parse_related_products(self, response):
         related_products = []
-        for a in response.xpath('//a[contains(@name, "relatedItems_Desc")]'):
+        for a in response.xpath('.//*[@class="slick-track"]/div[contains(@class, "item ")]/a[@tabindex]'):
             title = a.xpath('text()').extract()
             url = a.xpath('@href').extract()
 
@@ -196,7 +232,8 @@ class LowesProductsSpider(BaseProductsSpider):
         return related_products or None
 
     def _parse_no_longer_available(self, response):
-        return bool(response.xpath('//*[@class="prodUnavailable"]'))
+        return bool(response.xpath('.//*[contains(@class, "pd-shipping-delivery")]//'
+                                   'div[@class="media-body"]/p[contains(text(), "Available!")]'))
 
     def parse_product(self, response):
         reqs = response.meta.get('reqs',[])
@@ -208,6 +245,10 @@ class LowesProductsSpider(BaseProductsSpider):
         # Parse title
         title = self._parse_title(response)
         cond_set_value(product, 'title', title, conv=string.strip)
+
+        # Parse brand
+        brand = self._parse_brand(response)
+        cond_set_value(product, 'brand', brand, conv=string.strip)
 
         # Parse model
         model = self._parse_model(response)
@@ -244,13 +285,16 @@ class LowesProductsSpider(BaseProductsSpider):
         no_longer_available = self._parse_no_longer_available(response)
         cond_set_value(product, 'no_longer_available', no_longer_available)
 
-        related_products = self._parse_related_products(response) 
+        related_products = self._parse_related_products(response)
         cond_set_value(product, 'related_products', related_products)
 
         # Reviews
         bv_product_id = response.xpath('//*[@id="bvProductId"]/@value').extract()
+        bv_product_id = bv_product_id[0] if bv_product_id else None
+        if not bv_product_id:
+            bv_product_id = response.url.split('/')[-1]
         if bv_product_id:
-            url = self.RATING_URL.format(prodid=bv_product_id[0])                        
+            url = self.RATING_URL.format(prodid=bv_product_id)
             reqs.append(Request(
                     url,
                     meta=response.meta.copy(),

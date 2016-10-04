@@ -37,18 +37,32 @@ sys.path.insert(2, os.path.join(path, '..', '..', 'special_crawler',
 sys.path.insert(3, os.path.join(path, 'tmtext', 'product-ranking'))
 
 
+push_simmetrica_event = None
+try:
+    from monitoring import push_simmetrica_event
+except ImportError:
+    try:
+        from spiders import push_simmetrica_event
+    except ImportError:
+        try:
+            from product_ranking.spiders import push_simmetrica_event
+        except ImportError:
+            #print 'ERROR: CAN NOT IMPORT MONITORING PACKAGE!'
+            pass
+
+
 from sqs_ranking_spiders.task_id_generator import \
     generate_hash_datestamp_data, load_data_from_hash_datestamp_data
 try:
     # try local mode (we're in the deploy dir)
     from sqs_ranking_spiders.remote_instance_starter import REPO_BASE_PATH,\
-        logging, AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+        logging, AMAZON_BUCKET_NAME
     from sqs_ranking_spiders import QUEUES_LIST
     from product_ranking import statistics
 except ImportError:
     # we're in /home/spiders/repo
     from repo.remote_instance_starter import REPO_BASE_PATH, logging, \
-        AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+        AMAZON_BUCKET_NAME
     from repo.remote_instance_starter import QUEUES_LIST
     from product_ranking import statistics
 sys.path.insert(
@@ -56,7 +70,8 @@ sys.path.insert(
 from sqs_queue import SQS_Queue
 from libs import convert_json_to_csv
 from cache_layer import REDIS_HOST, REDIS_PORT, INSTANCES_COUNTER_REDIS_KEY, \
-    TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET
+    TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET, \
+    JOBS_COUNTER_REDIS_KEY, JOBS_STATS_REDIS_KEY
 
 
 TEST_MODE = False  # if we should perform local file tests
@@ -70,11 +85,8 @@ FOLDERS_PATH = None
 CONVERT_TO_CSV = True
 
 # Connect to S3
-S3_CONN = boto.connect_s3(
-    aws_access_key_id=AMAZON_ACCESS_KEY,
-    aws_secret_access_key=AMAZON_SECRET_KEY,
-    is_secure=False,  # uncomment if you are not using ssl
-)
+S3_CONN = boto.connect_s3(is_secure=False)  # uncomment if you are not using ssl
+
 # Get current bucket
 S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
 
@@ -373,10 +385,7 @@ def compress_multiple_files(output_fname, *filenames):
     zf.close()
 
 
-def put_file_into_s3(bucket_name, fname,
-                     amazon_public_key=AMAZON_ACCESS_KEY,
-                     amazon_secret_key=AMAZON_SECRET_KEY,
-                     compress=True):
+def put_file_into_s3(bucket_name, fname, compress=True):
     if TEST_MODE:
         print 'Simulate put file to s3, %s' % fname
         return True
@@ -732,6 +741,22 @@ class ScrapyTask(object):
         logs_key = put_file_into_s3(
             AMAZON_BUCKET_NAME, output_path+'.log')
 
+        if self.is_screenshot_job():
+            if not os.path.exists(output_path + '.screenshot.jl'):
+                # screenshot task not finished yet? wait 30 seconds
+                time.sleep(30)
+            if not os.path.exists(output_path + '.screenshot.jl'):
+                logger.error('Screenshot output file does not exist: %s' % (
+                    output_path + '.screenshot.jl'))
+            else:
+                try:
+                    put_file_into_s3(
+                        AMAZON_BUCKET_NAME, output_path+'.screenshot.jl')
+                    logger.info('Screenshot file uploaded: %s' % (output_path + '.screenshot.jl'))
+                except Exception as ex:
+                    logger.error('Screenshot file uploading error')
+                    logger.exception(ex)
+
         csv_data_key = None
         global CONVERT_TO_CSV
         if CONVERT_TO_CSV:
@@ -781,6 +806,8 @@ class ScrapyTask(object):
                 logger.warning('Could not upload daemon logs: %s' % str(e))
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
+        self.task_data['finish_time'] = \
+            time.mktime(self.finish_date.timetuple())
 
     def _update_items_scraped(self):
         output_path = self.get_output_path() + '.jl'
@@ -885,6 +912,32 @@ class ScrapyTask(object):
             logger.info('Skipping best seller')
         logger.info('Scrapy process started for task #%s',
                     self.task_data.get('task_id', 0))
+
+    def _push_simmetrica_events(self):
+        if push_simmetrica_event is None:
+            logger.error('Error! push_simmetrica_event method not imported!')
+            return
+        # push global tasks per server
+        push_simmetrica_event('monitoring_job_server_name_%s' % (self.task_data['server_name']))
+        # push global tasks for site
+        push_simmetrica_event('monitoring_job_site_%s' % (self.task_data['site']))
+        # push tasks server / site
+        push_simmetrica_event('monitoring_job_server_name_and_site_%s_%s' % (
+            self.task_data['server_name'], self.task_data['site']))
+        # push tasks per server per type
+        type = 'unknown'
+        if 'url' in self.task_data:
+            type = 'product_url'
+        elif 'searchterms_str' in self.task_data:
+            type = 'searchterm'
+        if 'checkout' in self.task_data['site']:
+            type = 'checkout'
+        if '_shelf' in self.task_data['site']:
+            type = 'shelf_page'
+        if 'screenshot' in self.task_data['site']:
+            type = 'screenshot'
+        push_simmetrica_event('monitoring_job_server_name_and_type_%s_%s' % (
+            self.task_data['server_name'], type))
 
     def _establish_connection(self):
         """
@@ -1037,7 +1090,10 @@ class ScrapyTask(object):
         try:
             start_time = datetime.datetime.utcnow()
             self.start_date = start_time
+            self.task_data['start_time'] = \
+                time.mktime(self.start_date.timetuple())
             self._start_scrapy_process()
+            self._push_simmetrica_events()
             first_signal = self._get_next_signal(start_time)
         except Exception as ex:
             logger.warning('Error occured while starting scrapy: %s', ex)
@@ -1079,6 +1135,29 @@ class ScrapyTask(object):
 
     def save_cached_result(self):
         return save_task_result_to_cache(self.task_data, self.get_output_path())
+
+    def is_screenshot_job(self):
+        return self.task_data.get('cmd_args', {}).get('make_screenshot_for_url', False)
+
+    def start_screenshot_job_if_needed(self):
+        """ Starts a new url2screenshot local job, if needed """
+        url2scrape = None
+        if self.task_data.get('product_url', self.task_data.get('url', None)):
+            url2scrape = self.task_data.get('product_url', self.task_data.get('url', None))
+        # TODO: searchterm jobs? checkout scrapers?
+        if url2scrape:
+            scrapy_path = "/home/spiders/virtual_environment/bin/scrapy"
+            python_path = "/home/spiders/virtual_environment/bin/python"
+            cmd = ('cd {repo_base_path}/product-ranking'
+                   ' && {python_path} {scrapy_path} crawl url2screenshot_products'
+                   ' -a product_url="{url2scrape}" '
+                   ' -a width=1280 -a height=1024 -a timeout=60 '
+                   ' -o "{output_file}" &').format(
+                       repo_base_path=REPO_BASE_PATH, python_path=python_path,
+                       scrapy_path=scrapy_path, url2scrape=url2scrape,
+                       output_file=self.get_output_path()+'.screenshot.jl')
+            logger.info('Starting a new parallel screenshot job: %s' % cmd)
+            os.system(cmd)  # use Popen instead?
 
     def report(self):
         """returns string with the task running stats"""
@@ -1241,6 +1320,36 @@ def is_task_taken(new_task, tasks):
     return new_task_id in task_ids
 
 
+def store_tasks_metrics(task, redis_db):
+    """This method will just increment reuired key in redis database
+        if connection to the database exist."""
+    if TEST_MODE:
+        print 'Simulate redis incremet, key is %s' % JOBS_COUNTER_REDIS_KEY
+        print 'Simulate redis incremet, key is %s' % JOBS_STATS_REDIS_KEY
+        return
+    if not redis_db:
+        return
+    try:
+        # increment quantity of tasks spinned up during the day.
+        redis_db.incr(JOBS_COUNTER_REDIS_KEY)
+    except Exception as e:
+        logger.warning("Failed to increment redis metric '%s' "
+                       "with exception '%s'", JOBS_COUNTER_REDIS_KEY,
+                       e)
+    generated_key = '%s:%s:%s' % (
+        task.get('server_name', 'UnknownServer'),
+        task.get('site', 'UnknownSite'),
+        ('term' if 'searchterms_str' in task and task['searchterms_str']
+         else 'url')
+    )
+    try:
+        redis_db.hincrby(JOBS_STATS_REDIS_KEY, generated_key, 1)
+    except Exception as e:
+        logger.warning("Failed to increment redis key '%s' and"
+                       "redis metric '%s' with exception '%s'",
+                       JOBS_STATS_REDIS_KEY, generated_key, e)
+
+
 def main():
     if not TEST_MODE:
         instance_meta = get_instance_metadata()
@@ -1324,10 +1433,12 @@ def main():
             time.sleep(3)
             continue
         task_data, queue = msg
-        if 'url' in task_data and 'searchterms_str' not in task_data:
+        if 'url' in task_data and 'searchterms_str' not in task_data \
+                and not 'checkout' in task_data['site']:
             if MAX_CONCURRENT_TASKS < 70:  # increase num of parallel jobs
                                            # for "light" URL-based jobs
                 MAX_CONCURRENT_TASKS += 1
+
         if task_data['site'] == 'walmart':
             task_quantity = task_data.get('cmd_args', {}).get('quantity', 20)
             with_best_seller_ranking = task_data.get('with_best_seller_ranking', None)
@@ -1353,9 +1464,12 @@ def main():
                     MAX_CONCURRENT_TASKS -= 3 if MAX_CONCURRENT_TASKS > 0 else 0
                     logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
                                 ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
-        elif task_data['site'] in ('dockers', 'nike'):
+        elif (task_data['site'] in ('dockers', 'nike')) or 'checkout' in task_data['site']:
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
-            logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Firefox-based spider in use' % MAX_CONCURRENT_TASKS)
+            logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
+        elif task_data.get('cmd_args', {}).get('make_screenshot_for_url', False):
+            MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
+            logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of the parallel url2screenshot job' % MAX_CONCURRENT_TASKS)
 
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))
@@ -1375,6 +1489,8 @@ def main():
             # make sure all tasks are in same branch
             queue.reset_message()
             continue
+        # Store jobs metrics
+        store_tasks_metrics(task_data, redis_db)
         # start task
         # if started, remove from the queue and run
         task = ScrapyTask(queue, task_data, listener)
@@ -1391,6 +1507,8 @@ def main():
             logger.info(
                 'Task %s started successfully, removing it from the queue',
                 task.task_data.get('task_id'))
+            if task.is_screenshot_job():
+                task.start_screenshot_job_if_needed()
             task.queue.task_done()
             notify_cache(task_data, is_from_cache=False)
         else:

@@ -34,7 +34,8 @@ queue_names = {
     "Walmartfullsite": "walmart-fullsite_scrape",
     "Walmartondemand": "walmart-ondemand_scrape",
     "WalmartMPHome": "walmart-mp_home_scrape",
-    "WalmartScrapeTO": "walmart-mp_scrapeto"
+    "WalmartScrapeTO": "walmart-mp_scrapeto",
+    "Productioncustomer": "production_customer_scrape"
 }
 
 INDEX_ERROR = "IndexError : The queue was really out of items, but the count was lagging so it tried to run again."
@@ -91,7 +92,7 @@ def main( environment, scrape_queue_name, thread_id):
                         output_json = json.loads(output_text)
                     except Exception as e:
                         output_json = {
-                            "error":e,
+                            "error":str(e),
                             "date":datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
                             "status":"failure",
                             "page_attributes":{"loaded_in_seconds":round(get_end-get_start,2)}}

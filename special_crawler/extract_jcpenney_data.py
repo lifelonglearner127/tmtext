@@ -52,6 +52,21 @@ class JcpenneyScraper(Scraper):
         self.wc_video = 0
         self.wc_pdf = 0
 
+        self.no_longer_available = 0
+
+    def _extract_page_tree(self):
+        Scraper._extract_page_tree(self)
+
+        if self.ERROR_RESPONSE["failure_type"] == "HTTP 404 - Page Not Found":
+            self.ERROR_RESPONSE["failure_type"] = None
+
+            self.no_longer_available = 1
+
+            contents = self.load_page_from_url_with_number_of_retries(self.product_page_url)
+
+            self.page_raw_text = contents
+            self.tree_html = html.fromstring(contents)
+
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
@@ -70,9 +85,12 @@ class JcpenneyScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        self.jv.setupCH(self.tree_html)
-
         try:
+            self.jv.setupCH(self.tree_html)
+
+            if self.no_longer_available:
+                return False
+
             itemtype = self.tree_html.xpath('//div[@class="pdp_details"]')
 
             if not itemtype:
@@ -113,13 +131,14 @@ class JcpenneyScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        if not self._no_longer_available():
+            return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self._product_name()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//meta[@property="og:title"]/@content')[0].strip()
+        return self._product_name()
 
     def _model(self):
         return None
@@ -143,6 +162,8 @@ class JcpenneyScraper(Scraper):
                 short_description_end_index = description_html_text.find('<div style="page-break-after: always;">')
             elif description_html_text.find('<ul>') > 0:
                 short_description_end_index = description_html_text.find('<ul>')
+            elif description_html_text.find('<p>&#9679;') > 0:
+                short_description_end_index = description_html_text.find('<p>&#9679;')
             elif short_description_start_index > 0:
                 short_description_end_index = description_html_text.rfind("</div>")
             else:
@@ -163,15 +184,16 @@ class JcpenneyScraper(Scraper):
             if description_html_text.find('<div style="page-break-after: always;">') > 0:
                 long_description_start_index = description_html_text.find('<div style="page-break-after: always;">')
                 long_description_start_index = description_html_text.find('</div>', long_description_start_index) + len("</div>")
-                long_description_end_index = description_html_text.rfind("</div>")
 
-                return description_html_text[long_description_start_index:long_description_end_index].strip()
-
-            if description_html_text.find('<ul>') > 0:
+            elif description_html_text.find('<ul>') > 0:
                 long_description_start_index = description_html_text.find('<ul>')
-                long_description_end_index = description_html_text.rfind("</div>")
 
-                return description_html_text[long_description_start_index:long_description_end_index].strip()
+            elif description_html_text.find('<p>&#9679;') > 0:
+                long_description_start_index = description_html_text.find('<p>&#9679;')
+
+            if long_description_start_index:
+                long_description_end_index = description_html_text.rfind("</div>")
+                return self._clean_text( description_html_text[long_description_start_index:long_description_end_index])
 
         return None
 
@@ -186,6 +208,9 @@ class JcpenneyScraper(Scraper):
 
     def _swatches(self):
         return self.jv.swatches()
+
+    def _no_longer_available(self):
+        return self.no_longer_available
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -546,7 +571,7 @@ class JcpenneyScraper(Scraper):
     ################ HELPER FUNCTIONS
     ##########################################
     def _clean_text(self, text):
-        return re.sub("&nbsp;", " ", text).strip()
+        return re.sub(' +', ' ', re.sub("&nbsp;|&#160;", " ", text)).strip()
 
     ##########################################
     ################ RETURN TYPES
@@ -560,6 +585,7 @@ class JcpenneyScraper(Scraper):
         "url" : _url, \
         "product_id" : _product_id, \
         "site_id" : _site_id, \
+
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
         "product_title" : _product_title, \
@@ -573,6 +599,8 @@ class JcpenneyScraper(Scraper):
         "ingredient_count": _ingredients_count,
         "variants": _variants,
         "swatches": _swatches,
+        "no_longer_available": _no_longer_available,
+
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \

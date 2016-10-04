@@ -11,13 +11,13 @@ class ChewyScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = 'Expected URL format is http://www.chewy.com/<item-name>/dp/<item-id>'
+    INVALID_URL_MESSAGE = 'Expected URL format is http(s)://www.chewy.com/<item-name>/dp/<item-id>'
 
     reviews_checked = False
     reviews_tree = None
 
     def check_url_format(self):
-        if re.match('^http://www\.chewy\.com/[\w-]+/dp/\d+$', self.product_page_url):
+        if re.match('^https?://www\.chewy\.com/[\w-]+/dp/\d+$', self.product_page_url):
             return True
         return False
 
@@ -142,6 +142,9 @@ class ChewyScraper(Scraper):
         if len(variants) > 1:
             return variants
 
+    def _no_longer_available(self):
+        return 0
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -164,11 +167,11 @@ class ChewyScraper(Scraper):
 
         for link in self.tree_html.xpath('//div[@id="media-selector"]//a/@href'):
             if not link == '#':
-                image_urls.append(link[2:]) # remove initial '//'
+                image_urls.append('http:' + link)
 
         for link in self.tree_html.xpath('//div[@id="product-image"]//a/@href'):
             if link[2:] and not link[2:] in image_urls:
-                image_urls.append(link[2:])
+                image_urls.append('http:' + link)
 
         '''
         item_data = self._variant_data()
@@ -360,6 +363,7 @@ class ChewyScraper(Scraper):
         "description" : _description, \
         "long_description" : _long_description, \
         "variants" : _variants, \
+        "no_longer_available" : _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "htags" : _htags, \

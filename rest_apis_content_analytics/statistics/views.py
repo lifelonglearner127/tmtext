@@ -5,6 +5,8 @@ from django.http.response import JsonResponse
 from django.core.urlresolvers import reverse_lazy
 
 from models import SubmitXMLItem
+from context_processors import _failed_xml_items, _successful_xml_items, \
+    _today_all_xml_items, _today_successful_xml_items
 
 
 class StatsView(TemplateView):
@@ -16,17 +18,23 @@ class StatsView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(StatsView, self).get_context_data(**kwargs)
+        result = {
+            'all_walmart_xml_items': SubmitXMLItem.objects.filter(user=self.request.user).order_by('-when').distinct(),
+            'failed_walmart_xml_items': _failed_xml_items(self.request.user),
+            'successful_walmart_xml_items': _successful_xml_items(self.request.user),
+            'today_all_xml_items': _today_all_xml_items(self.request.user),
+            'today_successful_xml_items': _today_successful_xml_items(self.request.user),
+        }
         context['breadcrumblist'] = [('Statistics', self.request.path)]
+        context.update(result)
         return context
 
-
+"""
 class GetStatsAjax(View):
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
-            return JsonResponse({
-                'redirect': str(reverse_lazy(
-                    'login')+'?next='+request.GET.get('next', ''))
-            })
+            return JsonResponse({})
+
         return JsonResponse({
             'stats_all_walmart_xml_items': SubmitXMLItem.objects.filter(
                 user=request.user).order_by('-when').distinct().count(),
@@ -35,3 +43,4 @@ class GetStatsAjax(View):
             'stats_today_all_xml_items': SubmitXMLItem.today_all_xml_items(request).count(),
             'stats_today_successful_xml_items': SubmitXMLItem.today_successful_xml_items(request).count(),
         })
+"""

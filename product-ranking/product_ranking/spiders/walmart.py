@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import division, absolute_import, unicode_literals
 
 import json
@@ -135,7 +136,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if search_sort == 'best_sellers':
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         # avoid tons of 'items' in logs
+        self.search_sort = search_sort
         SiteProductItem.__repr__ = lambda _: '[product item]'
+        self.use_data_from_redirect_url = kwargs.get('use_data_from_redirect_url', False)
         super(WalmartProductsSpider, self).__init__(
             site_name=self.allowed_domains[0],
             url_formatter=FormatterWithDefaults(
@@ -144,6 +147,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             *args, **kwargs)
 
     def start_requests(self):
+        # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
+        """
         for st in self.searchterms:
             url = "http://www.walmart.com/midas/srv/ypn?" \
                 "query=%s&context=Home" \
@@ -155,6 +160,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 dont_filter=True, 
                 meta={"handle_httpstatus_list": [404, 502]},
             )
+        """
 
         if self.product_url:
             prod = SiteProductItem()
@@ -163,6 +169,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                           self._parse_single_product,
                           meta={'product': prod, 'handle_httpstatus_list': [404, 502, 520]},
                           dont_filter=True)
+        else:
+            for st in self.searchterms:
+                yield Request(self.SEARCH_URL.format(search_term=st,
+                                                     search_sort=self._SEARCH_SORT[self.search_sort]),
+                              #self._parse_single_product,
+                              meta={'handle_httpstatus_list': [404, 502, 520],
+                                    'remaining': self.quantity, 'search_term': st},
+                              dont_filter=True)
 
     def get_sponsored_links(self, response):
         self.reql = []
@@ -354,6 +368,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         #    return Request(url=url, meta=meta, callback=self.get_questions)
 
+        seller_ranking = self._scrape_seller_ranking(response)
+        # if seller_ranking:
+            # product['seller_ranking'] = seller_ranking
+        # seller_ranking = seller_ranking[0].get('ranking') if seller_ranking else None
+        product['bestseller_rank'] = seller_ranking
+
         if 'is_in_store_only' not in product:
             if re.search(
                     "only available .{0,20} Walmart store",
@@ -401,10 +421,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
 
-        seller_ranking = self._scrape_seller_ranking(response)
-        if seller_ranking:
-            product['seller_ranking'] = seller_ranking
-
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
         return Request(
@@ -415,24 +431,30 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         )
 
     def _scrape_seller_ranking(self, response):
-        ranking = response.xpath('//div[@class="Grid-col item-ranks"]/ol')
-        ranking_data = []
-
-        for i in ranking:
-            x = i.xpath('li//text()').extract()
-            x = [i for i in x if i != ' ']
-            ranking_data.append(x)
-
-        seller_ranking = []
-        for i in ranking_data:
-            data = {}
-            rank = i[0].replace('#', '').replace(',', '')
-            data['ranking'] = int(rank)
-
-            cat = i[2:]
-            data['categories'] = cat
-            seller_ranking.append(data)
-
+        # Old, more detailed bestseller ranking format
+        # ranking = response.xpath('//div[@class="Grid-col item-ranks"]/ol')
+        # ranking_data = []
+        # for i in ranking:
+        #     x = i.xpath('li//text()').extract()
+        #     x = [i for i in x if i != ' ']
+        #     ranking_data.append(x)
+        #
+        # seller_ranking = []
+        # for i in ranking_data:
+        #     data = {}
+        #     rank = i[0].replace('#', '').replace(',', '')
+        #     print rank
+        #     data['ranking'] = int(rank) if rank else None
+        #
+        #     cat = i[2:]
+        #     data['categories'] = cat
+        #     seller_ranking.append(data)
+        bestseller_rank = response.xpath('(//*[@class="item-rank"])[1]/span[1]/text()').extract()
+        try:
+            bestseller_rank = bestseller_rank[0].strip().strip('#').replace(',','') if bestseller_rank else None
+            seller_ranking = int(bestseller_rank) if bestseller_rank else None
+        except BaseException:
+            seller_ranking = None
         if seller_ranking:
             return seller_ranking
 
@@ -459,6 +481,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         return not_available
 
     def _on_api_response(self, response):
+        if self.use_data_from_redirect_url:
+            yield self.parse_product(response.meta['original_response_'])
+            return
+
         if hasattr(response, 'getErrorMessage'):
             if response.getErrorMessage():
                 # API request failed
@@ -743,7 +769,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             conv=''.join
         )
 
-        if product['description']:
+        if product.get('description', ''):
             upc = re.findall('UPC: (\d+)', product['description'])
             cond_set(product, 'upc', upc)
 
@@ -764,13 +790,18 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             title = ''.join(title).strip()
             if title:
                 product['title'] = title
-
-        cond_set(
-            product,
-            'brand',
-            response.xpath(
+        brand = is_empty(response.xpath(
                 "//div[@class='product-subhead-section']"
                 "/a[@id='WMItemBrandLnk']/text()").extract())
+        if not brand:
+            brand = is_empty(response.xpath(
+                ".//*[@id='WMItemBrandLnk']//*[@itemprop='brand']/text()").extract())
+        if not brand:
+            brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
+            brand = [brand]
+        if '&amp;' in brand:
+            brand=brand.replace('&amp;', "&")
+        cond_set(product, 'brand', brand)
 
         try:
             cond_set(

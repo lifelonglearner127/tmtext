@@ -18,12 +18,14 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     user_agent = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:35.0) Gecko'
                   '/20100101 Firefox/35.0')
 
-    settings = AmazonValidatorSettings
+
 
     QUESTIONS_URL = "http://www.amazon.com/ask/questions/inline/{asin_id}/{page}"
 
     def __init__(self, *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
+
+        self.settings = AmazonValidatorSettings(spider_class=self)
 
         # String from html body that means there's no results ( "no results.", for example)
         self.total_match_not_found_re = 'did not match any products.'
@@ -34,8 +36,14 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         self.price_currency = 'USD'
         self.price_currency_view = '$'
 
+        self.scrape_questions = kwargs.get('scrape_questions', None)
+        if self.scrape_questions not in ('1', 1, True, 'true'):
+            self.scrape_questions = False
+
         # Locale
         self.locale = 'en-US'
+
+        # update validator settings
 
     def _format_last_br_date(self, date):
         """
@@ -83,6 +91,12 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     def _parse_recent_questions(self, response):
         product = response.meta['product']
         reqs = response.meta.get('reqs', [])
+
+        if not self.scrape_questions:
+            if reqs:
+                return self.send_next_request(reqs, response)
+            else:
+                return product
 
         recent_questions = product.get('recent_questions', [])
         questions = response.css('.askTeaserQuestions > div')

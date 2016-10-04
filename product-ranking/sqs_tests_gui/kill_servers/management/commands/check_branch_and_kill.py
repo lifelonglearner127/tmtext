@@ -13,7 +13,7 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 
 from kill_servers.models import ProductionBranchUpdate, ServerKill
 from sqs_stats import AUTOSCALE_GROUPS, set_autoscale_group_capacity,\
-    get_number_of_instances_in_autoscale_groups
+    get_number_of_instances_in_autoscale_groups, get_max_instances_in_groups
 
 
 sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',
@@ -88,7 +88,7 @@ class Command(BaseCommand):
         for group in AUTOSCALE_GROUPS:
             set_autoscale_group_capacity(group, 0, attributes=('max_size', 'desired_capacity'))
 
-    def _set_autoscale_max_instances(self, max_instances=100):
+    def _set_autoscale_max_instances(self, max_instances=150):
         global AUTOSCALE_GROUPS
         for group in AUTOSCALE_GROUPS:
             set_autoscale_group_capacity(group, max_instances, attributes=('max_size',))
@@ -97,6 +97,12 @@ class Command(BaseCommand):
         if num_of_running_instances('check_branch_and_kill') > 1:
             print 'another instance of the script is already running - exit'
             sys.exit()
+
+        # check that the group size is not zero due to possible previous exception
+        for autoscale_group, items in get_max_instances_in_groups().items():
+            max_size = items['max_size']
+            if not max_size or max_size < 150:
+                self._set_autoscale_max_instances()
 
         branch = ProductionBranchUpdate.branch_to_track
         # get last commit id

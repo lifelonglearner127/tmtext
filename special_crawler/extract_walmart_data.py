@@ -127,8 +127,13 @@ class WalmartScraper(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match("http://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
+        m = re.match("https?://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
         return not not m
+
+    def _is_collection_url(self):
+        if re.search('www.walmart.com/col', self.product_page_url):
+            return True
+        return False
 
     def not_a_product(self):
         """Checks if current page is not a valid product page
@@ -296,7 +301,8 @@ class WalmartScraper(Scraper):
         response_text = self.load_page_from_url_with_number_of_retries(request_url)
         tree = html.fromstring(response_text)
 
-        if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']"):
+        if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']") or \
+            tree.xpath("//div[@id='iframe-video-content']//script[@type='text/javascript']"):
             self.has_video = True
             self.has_sellpoints_media = True
 
@@ -644,6 +650,12 @@ class WalmartScraper(Scraper):
             string containing product name, or None
         """
 
+        if self._is_collection_url():
+            try:
+                return re.search('"productName":"(.+?)"', self.page_raw_text).group(1)
+            except:
+                return self.tree_html.xpath('//*[contains(@class,"prod-ProductTitle")]/div/text()')[0]
+
         # assume new design
         product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
 
@@ -710,6 +722,65 @@ class WalmartScraper(Scraper):
 
         return None
 
+    def _get_description_separator_index(self, description):
+        product_name = self._product_name_from_tree().split(',')[0]
+        product_name_bold = '<b>' + product_name
+        product_name_strong = '<strong>' + product_name
+
+        has_product_name = False
+
+        product_name_regex = '(<b>|<strong>)[^<]*(</b>|</strong>)[(<br>)\s":]*(</p>)?(<br>)*(<ul>|<li>)'
+
+        if product_name_bold in description or product_name_strong in description \
+            or re.search(product_name_regex, description, re.DOTALL):
+
+            has_product_name = True
+
+        possible_end_indexes = []
+
+        for item in [product_name_bold, product_name_strong, '<h3>', '<section class="product-about']:
+            if item in description:
+                possible_end_indexes.append( description.find(item))
+
+        for item in ['<dl>', '<ul>', '<li>']:
+             if not has_product_name and item in description:
+                possible_end_indexes.append( description.find(item))
+
+        if not (product_name_bold in description or product_name_strong in description):
+            match = re.search(product_name_regex, description, re.DOTALL)
+            if match:
+                possible_end_indexes.append( match.start())
+
+        if possible_end_indexes:
+            end_index = min( possible_end_indexes)
+        else:
+            end_index = None
+
+        short_description = description[:end_index]
+
+        while len(short_description) > 1000:
+            if '<p>' in short_description:
+                end_index = short_description.rfind('<p>')
+                short_description = description[:end_index]
+            else:
+                break
+
+        return end_index
+
+    def _clean_description(self, description):
+        description = self._clean_html( html.tostring(description))
+        description = re.sub('^<div[^>]*>', '', description)
+        description = re.sub('</div>$', '', description)
+
+        # recursively remove empty elements
+        while True:
+            old_description = description
+            description = re.sub(r'<(\S+)[^>]*></\1?>', '', description)
+            if description == old_description:
+                break
+
+        return description
+
     # extract product short description from its product page tree
     # ! may throw exception if not found
     def _short_description_from_tree(self):
@@ -725,100 +796,25 @@ class WalmartScraper(Scraper):
                 except:
                     return None
 
-        description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]"
-                                                    "/div[contains(@class, 'js-ellipsis')]")
-
-        short_description = ""
-        short_description_end_index = -1
-        sub_description = ""
-
-        product_name = self._product_name_from_tree().split(',')[0]
-        product_name_bold = '<b>' + product_name
-        product_name_strong = '<strong>' + product_name
+        if self._is_collection_url():
+            description_elements = self.tree_html.xpath('//div[@data-tl-id="AboutThis-ShortDescription"]')
+        else:
+            description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]/div[contains(@class, 'js-ellipsis')]")
 
         if description_elements:
-            description_elements = description_elements[0]
+            description = description_elements[0]
 
-            if description_elements.getparent().getparent().getparent().tag == "td":
+            if description.getparent().getparent().getparent().tag == "td":
                 return None
 
-            has_product_name = False
+            description = self._clean_description( description)
 
-            if product_name_bold in lxml.html.tostring(description_elements) or \
-                product_name_strong in lxml.html.tostring(description_elements):
+            end_index = self._get_description_separator_index(description)
 
-                has_product_name = True
+            short_description = description[:end_index]
 
-            short_description = self._clean_text (description_elements.text)
-
-            for description_element in description_elements:
-                if not description_element.text_content().strip():
-                    continue
-
-                sub_description = lxml.html.tostring(description_element)
-
-                if product_name_bold in sub_description or \
-                    product_name_strong in sub_description or \
-                    (not has_product_name and \
-                        ("<dl>" in sub_description or \
-                        "<ul>" in sub_description or \
-                        "<li>" in sub_description)) or \
-                    '<h3>' in sub_description or \
-                    '<section class="product-about' in sub_description:
-
-                    innerText = ""
-
-                    try:
-                        tree = html.fromstring(short_description)
-                        innerText = tree.xpath("//text()")
-                    except Exception:
-                        pass
-
-                    if not innerText:
-                        short_description = ""
-
-                    short_description_end_index_candiate_list = []
-
-                    if product_name_bold in sub_description:
-                        short_description_end_index = sub_description.find(product_name_bold)
-                        short_description_end_index_candiate_list.append(short_description_end_index)
-
-                    if product_name_strong in sub_description:
-                        short_description_end_index = sub_description.find(product_name_strong)
-                        short_description_end_index_candiate_list.append(short_description_end_index)
-
-                    if not has_product_name:
-                        if "<dl>" in sub_description:
-                            short_description_end_index = sub_description.find("<dl>")
-                            short_description_end_index_candiate_list.append(short_description_end_index)
-
-                        if "<ul>" in sub_description:
-                            short_description_end_index = sub_description.find("<ul>")
-                            short_description_end_index_candiate_list.append(short_description_end_index)
-
-                        if "<li>" in sub_description:
-                            short_description_end_index = sub_description.find("<li>")
-                            short_description_end_index_candiate_list.append(short_description_end_index)
-
-                    if '<h3>' in sub_description:
-                        short_description_end_index = sub_description.find('<h3>')
-                        short_description_end_index_candiate_list.append(short_description_end_index)
-
-                    if '<section class="product-about' in sub_description:
-                        short_description_end_index = sub_description.find('<section class="product-about')
-                        short_description_end_index_candiate_list.append(short_description_end_index)
-
-                    short_description_end_index = min(short_description_end_index_candiate_list)
-                    break
-
-                short_description += self._clean_text (sub_description)
-
-            if short_description_end_index > 0:
-                short_description = short_description + sub_description[:short_description_end_index]
-
-            # if no short description, return the long description
-            if not short_description.strip():
-                return None
+            if short_description.strip():
+                return short_description.strip()
         else:
             # try to extract from old page structure - in case walmart is
             # returning an old type of page
@@ -839,8 +835,6 @@ class WalmartScraper(Scraper):
             # if no short description, return the long description
             if not short_description.strip():
                 return None
-
-        return short_description.strip()
 
     def _short_description_from_api(self):
         return self._filter_key_fields("description")
@@ -913,7 +907,7 @@ class WalmartScraper(Scraper):
         full_description = ""
 
         for description_element in long_description_elements:
-            full_description += lxml.html.tostring(description_element)
+            full_description += html.tostring(description_element)
 
         if not full_description:
             return None
@@ -928,155 +922,48 @@ class WalmartScraper(Scraper):
             string containing the text content of the product's description, or None
         """
 
-        description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]"
-                                                    "/div[contains(@class, 'js-ellipsis')]")
+        if self._is_collection_url():
+            description_elements = self.tree_html.xpath('//div[@data-tl-id="AboutThis-ShortDescription"]')
+        else:
+            description_elements = self.tree_html.xpath("//*[starts-with(@class, 'product-about js-about')]/div[contains(@class, 'js-ellipsis')]")
+
         full_description = ""
 
         if description_elements:
-            description_elements = description_elements[0]
+            description = description_elements[0]
 
-            if description_elements.getparent().getparent().getparent().tag == "td":
+            if description.getparent().getparent().getparent().tag == "td":
                 return None
 
-            long_description_start = False
-            long_description_start_index = -2
+            description = self._clean_description( description)
 
-            product_name = self._product_name_from_tree().split(',')[0]
-            product_name_bold = '<b>' + product_name
-            product_name_strong = '<strong>' + product_name
+            start_index = self._get_description_separator_index(description)
 
-            has_product_name = False
+            if start_index == None:
+                return
 
-            if product_name_bold in lxml.html.tostring(description_elements) or \
-                product_name_strong in lxml.html.tostring(description_elements):
+            long_description = description[start_index:]
 
-                has_product_name = True
+            possible_end_indexes = []
 
-            for description_element in description_elements:
-                if not description_element.text_content().strip():
-                    continue
-                    
-                sub_description = lxml.html.tostring(description_element)
+            for subsection in ['warnings', 'indications', 'ingredients', 'directions']:
+                index = long_description.find('<section class="product-about js-' + subsection + ' health-about">')
+                if index == -1:
+                    match = re.search('(<strong>|<b>)' + subsection.capitalize() + ':', description)
+                    if match:
+                        index = match.start()
+                if index > -1:
+                    possible_end_indexes.append(index)
 
-                if re.match('<h3>', sub_description):
-                    break
+            index = long_description.find('<h3>')
+            if index > -1 and not index == long_description.find('<h3>About'):
+                possible_end_indexes.append(index)
 
-                if (not long_description_start and \
-                        (product_name_bold in sub_description or \
-                        product_name_strong in sub_description or \
-                        (not has_product_name and \
-                            ("<dl>" in sub_description or \
-                            "<ul>" in sub_description or \
-                            "<li>" in sub_description)))):
+            if possible_end_indexes:
+                long_description = long_description[:min(possible_end_indexes)]
 
-                    long_description_start = True
-
-                    if long_description_start_index == -2:
-                        long_description_start_index_candiate_list = []
-
-                        if product_name_bold in sub_description:
-                            long_description_start_index = sub_description.find(product_name_bold)
-                            long_description_start_index_candiate_list.append(long_description_start_index)
-
-                        if product_name_strong in sub_description:
-                            long_description_start_index = sub_description.find(product_name_strong)
-                            long_description_start_index_candiate_list.append(long_description_start_index)
-
-                        if not has_product_name:
-                            if "<dl>" in sub_description:
-                                long_description_start_index = sub_description.find("<dl>")
-                                long_description_start_index_candiate_list.append(long_description_start_index)
-
-                            if "<ul>" in sub_description:
-                                long_description_start_index = sub_description.find("<ul>")
-                                long_description_start_index_candiate_list.append(long_description_start_index)
-
-                            if "<li>" in sub_description:
-                                long_description_start_index = sub_description.find("<li>")
-                                long_description_start_index_candiate_list.append(long_description_start_index)
-
-                        long_description_start_index = min(long_description_start_index_candiate_list)
-                        sub_description = sub_description[long_description_start_index:]
-
-                if "<strong>Warnings:" in sub_description or "<b>Warnings:" in sub_description:
-                    warnings_index = sub_description.find('<section class="product-about js-warnings health-about">')
-                    if warnings_index == -1:
-                        warnings_index = sub_description.find('<strong>Warnings:')
-                    if warnings_index == -1:
-                        warnings_index = sub_description.find('<b>Warnings:')
-
-                    warnings_description = True
-                else:
-                    warnings_description = False
-
-                if "<strong>Indications:" in sub_description or "<b>Indications:" in sub_description:
-                    indications_index = sub_description.find('<section class="product-about js-indications health-about">')
-                    if indications_index == -1:
-                        indications_index = sub_description.find('<strong>Indications:')
-                    if indications_index == -1:
-                        indications_index = sub_description.find('<b>Indications:')
-
-                    indications_description = True
-                else:
-                    indications_description = False
-
-                if "<strong>Ingredients:" in sub_description or "<b>Ingredients:" in sub_description:
-                    ingredients_index = sub_description.find('<section class="product-about js-ingredients health-about">')
-                    if ingredients_index == -1:
-                        ingredients_index = sub_description.find('<strong>Ingredients:')
-                    if ingredients_index == -1:
-                        ingredients_index = sub_description.find('<b>Ingredients:')
-
-                    ingredients_description = True
-                else:
-                    ingredients_description = False
-
-                if "<strong>Directions:" in sub_description or "<b>Directions:" in sub_description:
-                    directions_index = sub_description.find('<section class="product-about js-directions health-about">')
-                    if directions_index == -1:
-                        directions_index = sub_description.find('<strong>Directions:')
-                    if directions_index == -1:
-                        directions_index = sub_description.find('<b>Directions:')
-
-                    directions_description = True
-                else:
-                    directions_description = False
-
-                if long_description_start:
-                    if not (warnings_description or indications_description or ingredients_description or directions_description):
-                        full_description += self._clean_text (sub_description)
-
-                        if long_description_start_index > 0:
-                            long_description_start_index = -1
-
-                    else:
-                        description_start_index = -1
-                        last_index = -1
-
-                        if warnings_description:
-                            description_start_index = warnings_index
-                            last_index = description_start_index
-
-                        if indications_description:
-                            if description_start_index == -1:
-                                description_start_index = indications_index
-
-                            last_index = indications_index
-
-                        if ingredients_description:
-                            if description_start_index == -1:
-                                description_start_index = ingredients_index
-
-                            last_index = ingredients_index
-
-                        if directions_description:
-                            if description_start_index == -1:
-                                description_start_index = directions_index
-
-                            last_index = directions_index
-
-                        description_end_index = sub_description.find("</section>", last_index) + 10
-                        full_description += self._clean_text (sub_description[:description_start_index] + sub_description[description_end_index:])
+            if long_description.strip():
+                return long_description.strip()
 
         if self.product_page_url[self.product_page_url.rfind("/") + 1:].isnumeric():
             url = "http://www.walmart-content.com/product/idml/emc/" + \
@@ -1089,12 +976,12 @@ class WalmartScraper(Scraper):
 
             for description_element in description_elements:
                 if not long_description_start and "<h2>Product Description</h2>" in \
-                        lxml.html.tostring(description_element):
+                        html.tostring(description_element):
                     long_description_start = True
 
-                if long_description_start and "<h2>Product Description</h2>" not in lxml.html.tostring(description_element) \
+                if long_description_start and "<h2>Product Description</h2>" not in html.tostring(description_element) \
                         and (description_element.tag == "p" or description_element.tag == "h2" or (description_element.tag == "ul" and not description_element.get("class"))):
-                    full_description += lxml.html.tostring(description_element)
+                    full_description += html.tostring(description_element)
 
         # return None if empty
         if not full_description:
@@ -1149,11 +1036,11 @@ class WalmartScraper(Scraper):
         return self._exclude_javascript_from_description(long_description)
 
     def _shelf_description(self):
-        shelf_description_html = self.tree_html.xpath("//div[@class='product-short-description module']")
+        shelf_description_html = self.tree_html.xpath("//div[contains(@class,'product-short-description')]")
 
         if shelf_description_html:
             shelf_description_html = html.tostring(shelf_description_html[0])
-            shelf_description_html = shelf_description_html.replace('<div class="product-short-description module">', '')
+            shelf_description_html = re.sub('<div class="product-short-description[^>]*>', '', shelf_description_html)
             shelf_description_html = shelf_description_html[:shelf_description_html.rfind("</div>")]
 
             if shelf_description_html and shelf_description_html.strip():
@@ -1197,7 +1084,7 @@ class WalmartScraper(Scraper):
         return None
 
     def _related_product_urls(self):
-        page_raw_text = lxml.html.tostring(self.tree_html)
+        page_raw_text = html.tostring(self.tree_html)
         startIndex = page_raw_text.find('"variantProducts":') + len('"variantProducts":')
 
         if startIndex == -1:
@@ -1415,6 +1302,11 @@ class WalmartScraper(Scraper):
             or None if list is empty of not found
         """
 
+        if self._is_collection_url():
+            categories_list = self.tree_html.xpath("//li[contains(@class,'breadcrumb')]/a/text()")
+            if categories_list:
+                return categories_list
+
         # assume new page design
         if self._version() == "Walmart v2":
             if self.is_bundle_product:
@@ -1480,6 +1372,8 @@ class WalmartScraper(Scraper):
         """
 
         # return last element of the categories list
+        if self._is_collection_url():
+            return self._categories_hierarchy()[-1]
 
         # assume new design
         if self._version() == "Walmart v2":
@@ -1811,10 +1705,6 @@ class WalmartScraper(Scraper):
         if self.tree_html.xpath('//*[contains(@class, "NotAvailable") and contains(text(), "ot Available")]'):
             return True
 
-        if self.tree_html.xpath("//div[@class='js-product-price product-price clearfix']") and \
-                        "item not available" in self.tree_html.xpath("//div[@class='js-product-price product-price clearfix']")[0].text_content().lower():
-            return True
-
         return False
 
     def _shipping(self):
@@ -1871,7 +1761,7 @@ class WalmartScraper(Scraper):
             return True
         else:
             try:
-                return Scraper._no_image(self, url)
+                return Scraper._no_image(self, url, True)
             except:
                 return True
 
@@ -1963,15 +1853,17 @@ class WalmartScraper(Scraper):
 
         if self.is_bundle_product:
             image_list = self.tree_html.xpath("//div[contains(@class, 'choice-hero-non-carousel')]//img/@src")
-
+            image_dimensions = []
             for index, url in enumerate(image_list):
                 if ".jpg?" in url:
                     image_list[index] = url[:url.rfind(".jpg?") + 4]
                 elif ".png" in url:
                     image_list[index] = url[:url.rfind(".png?") + 4]
+                image_dimensions.append(1)
 
             image_list = [url for index, url in enumerate(image_list) if index > 4 or not self._no_image(url)]
 
+            self.image_dimensions = image_dimensions
             if image_list:
                 return image_list
 
@@ -2004,7 +1896,7 @@ class WalmartScraper(Scraper):
                 zoom_image_url = item.get('versions', {}).get('zoom', None)
                 is_image_selected = False
 
-                if zoom_image_url and zoom_image_url.startswith("http://i5.walmartimages.com"):
+                if zoom_image_url and re.match("https?://i5.walmartimages.com", zoom_image_url):
                     if no_image_check_count_limit < 0:
                         images_carousel.append(zoom_image_url)
                         image_dimensions.append(1)
@@ -2015,7 +1907,7 @@ class WalmartScraper(Scraper):
                         image_dimensions.append(1)
                         no_image_check_count_limit -= 1
 
-                if not is_image_selected and hero_image_url and hero_image_url.startswith("http://i5.walmartimages.com"):
+                if not is_image_selected and hero_image_url and re.match("https?://i5.walmartimages.com", hero_image_url):
                     if no_image_check_count_limit < 0:
                         images_carousel.append(hero_image_url)
                         image_dimensions.append(0)
@@ -2071,6 +1963,11 @@ class WalmartScraper(Scraper):
             return self.image_urls
 
         self.extracted_image_urls = True
+
+        if self._is_collection_url():
+            image_urls = self.tree_html.xpath('//div[@class="prod-ProductCard"]//img/@src')
+            self.image_urls = map(lambda i: i[2:].split('?')[0], image_urls)
+            return self.image_urls
 
         if self._version() == "Walmart v1":
             self.image_urls = self.remove_duplication_keeping_order_in_list(self._image_urls_old())
@@ -2163,7 +2060,7 @@ class WalmartScraper(Scraper):
 
                 return self.product_info_json
             else:
-                page_raw_text = self.page_raw_text
+                page_raw_text = requests.get(self.product_page_url).content
                 product_info_json = json.loads(re.search('define\("product\/data",\n(.+?)\n', page_raw_text).group(1))
 
                 self.product_info_json = product_info_json
@@ -2538,9 +2435,24 @@ class WalmartScraper(Scraper):
 
         if self._version() == "Walmart v2":
             self._extract_product_info_json()
-            return self.product_info_json["buyingOptions"]["seller"]["displayName"]
+            seller = self.product_info_json["buyingOptions"]["seller"]["displayName"]
+            if self.tree_html.xpath('//span[contains(@class,"primary-seller")]//b/text()')[0] == 'Walmart store':
+                return "Walmart store"
+            return seller
 
         return None
+
+    def _seller_id(self):
+        self._extract_product_info_json()
+        if self._primary_seller() == "Walmart store":
+            return None
+        return self.product_info_json["buyingOptions"]["seller"]["sellerId"]
+
+    def _us_seller_id(self):
+        self._extract_product_info_json()
+        if self._primary_seller() == "Walmart store":
+            return None
+        return self.product_info_json["buyingOptions"]["seller"]["catalogSellerId"]
 
     def _site_online(self):
         """Extracts whether the item is sold by the site and delivered directly
@@ -2606,6 +2518,9 @@ class WalmartScraper(Scraper):
                 if "walmart.com" in marketplace.text_content().lower().strip():
                     return 1
 
+        if pinfo_dict.get("buyingOptions", {}).get("allVariantsOutOfStock") == False:
+            return 1
+
         return 0
 
     def _site_online_out_of_stock(self):
@@ -2618,6 +2533,9 @@ class WalmartScraper(Scraper):
             try:
                 if self._version() == "Walmart v2":
                     if self.product_info_json["buyingOptions"]["displayArrivalDate"].lower() == "see dates in checkout":
+                        return 0
+
+                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False:
                         return 0
 
                     marketplace_options = self.product_info_json.get("buyingOptions", {}).get("marketplaceOptions")
@@ -2681,9 +2599,8 @@ class WalmartScraper(Scraper):
         if "We can't find the product you are looking for, but we have similar items for you to consider." in text_contents:
             self.failure_type = "404 Error"
 
-        # TODO: Temporary fix
         # If there is no product name, return failure
-        if not self._product_name_from_tree():
+        if not self._is_collection_url() and not self._product_name_from_tree():
             self.failure_type = "No product name"
 
         return self.failure_type
@@ -2759,7 +2676,7 @@ class WalmartScraper(Scraper):
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
-        if canonical_link.startswith("http://www.walmart.com"):
+        if re.match("https?://www.walmart.com", canonical_link):
             return canonical_link
         else:
             return "http://www.walmart.com" + canonical_link
@@ -3114,6 +3031,13 @@ class WalmartScraper(Scraper):
 
         return re.sub("&nbsp;|&#160;", " ", text).strip()
 
+    def _clean_html(self, html):
+        html = self._clean_text(html)
+        #html = re.sub('<(\S+)[^>]*>', r'<\1>', html)
+        html = re.sub('\s+', ' ', html)
+        html = re.sub('> <', '><', html)
+        return html
+
     # dictionaries mapping type of info to be extracted to the method that does it
     # also used to define types of data that can be requested to the REST service
     #
@@ -3183,6 +3107,8 @@ class WalmartScraper(Scraper):
         "marketplace_out_of_stock": _marketplace_out_of_stock, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \
         "primary_seller": _primary_seller, \
+        "seller_id": _seller_id, \
+        "us_seller_id": _us_seller_id, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "review_count": _review_count, \
@@ -3227,39 +3153,9 @@ class WalmartScraper(Scraper):
         "pdf_urls" : _pdf_urls, \
         "pdf_count" : _pdf_count, \
         "mobile_image_same" : _mobile_image_same \
-
-    #    "reviews" : reviews_for_url \
     }
 
 
 if __name__=="__main__":
     WD = WalmartScraper()
     print WD.main(sys.argv)
-
-## TODO:
-## Implemented:
-##     - name
-##  - meta keywords
-##  - short description
-##  - long description
-##  - price
-##  - url of video
-##  - url of pdf
-##  - anchors (?)
-##  - H tags
-##  - page load time (?)
-##  - number of reviews
-##  - model
-##  - list of features
-##  - meta brand tag
-##  - page title
-##  - number of features
-##  - sold by walmart / sold by marketplace sellers
-
-##
-## To implement:
-##     - number of images, URLs of images
-##  - number of videos, URLs of videos if more than 1
-##  - number of pdfs
-##  - category info (name, code, parents)
-##  - minimum review value, maximum review value

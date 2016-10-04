@@ -4,6 +4,7 @@
 import re, json, requests
 from lxml import html, etree
 from extract_data import Scraper
+import urllib2, socket
 
 class PetcoScraper(Scraper):
 
@@ -13,11 +14,53 @@ class PetcoScraper(Scraper):
 
     INVALID_URL_MESSAGE = 'Expected URL format is http://www.petco.com/shop/en/petcostore/<product-name>'
 
-    reviews_checked = False
-    reviews_json = None
+    def __init__(self, **kwargs):
+        Scraper.__init__(self, **kwargs)
 
-    prod_jsons_checked = False
-    prod_jsons = None
+        self.reviews_checked = False
+        self.reviews_json = None
+
+        self.prod_jsons_checked = False
+        self.prod_jsons = None
+
+    def _extract_page_tree(self):
+        request = urllib2.Request(self.product_page_url)
+
+        agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+        request.add_header('User-Agent', agent)
+
+        for i in range(self.MAX_RETRIES):
+            try:
+                contents = urllib2.urlopen(request, timeout=30).read()
+            except urllib2.HTTPError, err:
+                if err.code == 404:
+                    self.ERROR_RESPONSE["failure_type"] = "404 Not Found"
+                    return
+                elif err.code == 504:
+                    self.ERROR_RESPONSE["failure_type"] = "504 Gateway Timeout"
+                    continue
+                else:
+                    raise
+            except urllib2.URLError, err:
+                if str(err) == '<urlopen error timed out>':
+                    self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                    continue
+                else:
+                    raise
+            except socket.timeout, err:
+                self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                continue
+
+            break
+
+        if self.ERROR_RESPONSE["failure_type"]:
+            return
+
+        contents = self._clean_null(contents).decode("utf8")
+        self.page_raw_text = contents
+        self.tree_html = html.fromstring(contents)
+
+        return
 
     def check_url_format(self):
         if re.match('^http://www\.petco\.com/shop/en/petcostore/.+$', self.product_page_url):
@@ -25,6 +68,13 @@ class PetcoScraper(Scraper):
         return False
 
     def not_a_product(self):
+        if self.ERROR_RESPONSE["failure_type"]:
+            return True
+
+        if 'Generic Error' in self.tree_html.xpath('//title/text()')[0]:
+            self.ERROR_RESPONSE["failure_type"] = '404 Not Found'
+            return True
+
         return False
 
     ##########################################
@@ -109,6 +159,9 @@ class PetcoScraper(Scraper):
 
         if len(variants) > 1:
             return variants
+
+    def _no_longer_available(self):
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -348,6 +401,7 @@ class PetcoScraper(Scraper):
         "description" : _description, \
         "long_description" : _long_description, \
         "variants" : _variants, \
+        "no_longer_available" : _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "htags" : _htags, \

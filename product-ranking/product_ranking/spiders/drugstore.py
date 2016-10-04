@@ -6,7 +6,7 @@ import urllib
 from scrapy.selector import Selector
 from scrapy.log import ERROR
 from scrapy.http import Request
-
+from scrapy.conf import settings
 from product_ranking.items import SiteProductItem, Price, RelatedProduct, \
     BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
@@ -46,6 +46,7 @@ class DrugstoreProductsSpider(BaseProductsSpider):
             ),
             site_name="drugstore.com",
             *args, **kwargs)
+        #settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         for st in self.searchterms:
@@ -68,7 +69,7 @@ class DrugstoreProductsSpider(BaseProductsSpider):
         product = response.meta['product']
 
         cond_set(product, 'title', response.xpath(
-            "string(//div[@id='divCaption']/h1[1])").extract())
+            "//div[@id='divCaption']/h1/text()[1]").extract(), lambda y: y.strip())
 
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='divPImage']//img/@src").extract())
@@ -91,8 +92,10 @@ class DrugstoreProductsSpider(BaseProductsSpider):
                     priceCurrency='USD'
                 )
 
-        cond_set_value(product, 'description', response.xpath(
-            "//div[@id='divPromosPDetail']/table/tr/td").extract())
+        cond_set_value(product,
+                       'description',
+                       response.xpath("//div[@id='divPromosPDetail']/table/tr/td").extract(),
+                       conv=''.join)
 
         brand = response.xpath('//div[@id="brandStoreLink"]/a/text()').extract()
         if brand:
@@ -124,8 +127,7 @@ class DrugstoreProductsSpider(BaseProductsSpider):
 
         #Buyer reviews
         average_rating = response.xpath(
-            '//span[contains(@class, "average")]/text()'
-        ).re(FLOATING_POINT_RGEX)
+            '//span[@itemprop="ratingValue"]/text()').re(FLOATING_POINT_RGEX)
 
         num_of_reviews = response.xpath(
             '//p[@class="pr-review-count"]/text()').re(FLOATING_POINT_RGEX)

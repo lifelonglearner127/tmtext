@@ -7,18 +7,20 @@ import re
 import string
 import urllib
 import urlparse
+import json
+import requests
 
-from product_ranking.items import SiteProductItem, Price
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider
 from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
 from scrapy.http import Request, FormRequest
-from scrapy.log import DEBUG, ERROR
-
+from scrapy.log import DEBUG, ERROR, WARNING
 
 class SamsclubProductsSpider(BaseProductsSpider):
     name = 'samsclub_products'
-    allowed_domains = ["samsclub.com"]
+    allowed_domains = ["samsclub.com", "api.bazaarvoice.com"]
     start_urls = []
 
     SEARCH_URL = "http://www.samsclub.com/sams/search/searchResults.jsp" \
@@ -26,14 +28,19 @@ class SamsclubProductsSpider(BaseProductsSpider):
         "&_requestid=29417"
 
     _NEXT_PAGE_URL = "http://www.samsclub.com/sams/shop/common" \
-        "/ajaxSearchPageLazyLoad.jsp?sortKey=relevance&searchCategoryId=all" \
-        "&searchTerm={search_term}&noOfRecordsPerPage={prods_per_page}" \
-        "&sortOrder=0&offset={offset}&rootDimension=0&tireSearch=" \
-        "&selectedFilter=null&pageView=list&servDesc=null&_=1407437029456"
+                     "/ajaxSearchPageLazyLoad.jsp?sortKey=relevance&searchCategoryId=all" \
+                     "&searchTerm={search_term}&noOfRecordsPerPage={prods_per_page}" \
+                     "&sortOrder=0&offset={offset}&rootDimension=0&tireSearch=" \
+                     "&selectedFilter=null&pageView=list&servDesc=null&_=1407437029456"
+
     CLUB_SET_URL = (
         "http://www.samsclub.com/sams/search/wizard/common"
         "/displayClubs.jsp?_DARGS=/sams/search/wizard/common"
         "/displayClubs.jsp.selectId")
+
+
+    _REVIEWS_URL = "http://api.bazaarvoice.com/data/reviews.json?apiversion=5.5&passkey=dap59bp2pkhr7ccd1hv23n39x" \
+                   "&Filter=ProductId:{prod_id}&Include=Products&Stats=Reviews"
 
     def __init__(self, clubno='4704', zip_code='94117', *args, **kwargs):
         self.clubno = clubno
@@ -159,106 +166,45 @@ class SamsclubProductsSpider(BaseProductsSpider):
         cond_set(product, 'image_url', response.xpath(
             "//div[@id='plImageHolder']/img/@src").extract())
 
-        old_price = ''.join(response.xpath(
-            '//li[@class="wasPrice"]//span[@class="striked strikedPrice"]'
-            '/text()').re('[\d\.\,]+')) or \
-            ''.join(response.xpath(
-                '//*[@class="ltGray" and contains(text(),"Everyday Price")]/'
-                'following-sibling::span[@class="striked '
-                'strikedPrice"]/text()').re('[\d\.\,]+'))
-        old_price = old_price.strip().replace(',', '')
+        url = "http://m.samsclub.com/api/sams/samsapi/v2/productInfo?repositoryId={}&class=product&loadType=full&bypassEGiftCardViewOnly=true&clubId={}"
+        product_id = response.xpath('//input[@id="pProductId"]/@value').extract()[0]
+        product_data = json.loads(requests.get(url.format(product_id, self.clubno)).text)
+        try:
+            price = float(product_data.get('sa')[0].get('onlinePrice')
+                          .get('listPrice').replace('$', '').replace(',', ''))
+            cond_set_value(product,
+                     'price',
+                     Price(price=price, priceCurrency='USD'))
+        except:
+            pass
 
-        if not product.get("price"):
-            price = response.xpath("//li/span[@itemprop='price']/text()").extract()
+        try:
+            price = float(product_data.get('sa')[0].get('onlinePrice')
+                          .get('finalPrice').replace('$', '').replace(',', ''))
+            cond_set_value(product,
+                     'price_with_discount',
+                     Price(price=price, priceCurrency='USD'))
+        except:
+            pass
 
-            if old_price:
-                cond_set_value(product, 'price', Price(price=old_price,
-                                                       priceCurrency='USD'))
-                cond_set_value(product, 'price_with_discount', Price(price=price[0],
-                                                                     priceCurrency='USD'))
+        try:
+            price = float(product_data.get('sa')[0].get('clubPrice')
+                          .get('listPrice').replace('$', '').replace(',', ''))
+            cond_set_value(product,
+                     'price_club',
+                     Price(price=price, priceCurrency='USD'))
+        except:
+            pass
 
-            elif price:
-                cond_set_value(product, 'price', Price(price=price[0],
-                                                       priceCurrency='USD'))
+        try:
+            price = float(product_data.get('sa')[0].get('clubPrice')
+                          .get('finalPrice').replace('$', '').replace(',', ''))
+            cond_set_value(product,
+                    'price_club_with_discount',
+                    Price(price=price, priceCurrency='USD'))
+        except:
+            pass
 
-        price = response.xpath(
-            "//div[@class='moneyBoxBtn']/a"
-            "/span[contains(@class,'onlinePrice')]"
-            "/text()").re(FLOATING_POINT_RGEX)
-
-        if not price and not product.get("price"):
-            oos_pr = '.'.join(response.xpath(
-                '//*[contains(@class,"pricingInfo oos")]'
-                '/ul[@class="lgFont"]//span/text()').re('\d+'))
-
-            if oos_pr:
-                price = [float(oss_pr)]
-
-            pr = response.xpath(
-                "//div[contains(@class,'pricingInfo')]//li"
-                "/span/text()").extract()
-            if pr and not price:
-                price = "".join(pr[:-1]) + "." + pr[-1]
-                member_price, discounted_price = None, None
-                if 'too low to show' in price.lower():
-                    # price is visible only after you add the product in cart
-                    product['price_details_in_cart'] = True
-                    price = re.search("'item_price':'([\d\.]+)',",
-                                      response.body_as_unicode()).group(1)
-                    price = [float(price)]
-                elif 'was' in price.lower():
-                    discounted_price = '.'.join(response.xpath(
-                        '//div[contains(@class,"pricingInfo")]'
-                        '//li[@class="nowOnly"]/following-sibling::li[1]'
-                        '/span/text()').re('[\d]+')).replace(',', '').strip()
-
-                    member_price = '.'.join(response.xpath(
-                        '//*[contains(@class,"pricingInfo")]'
-                        '//*[@class="dkGray"]/*[@itemprop="price"]'
-                        '/text()').re('[\d\.\,]+')).replace(',', '').strip()
-
-                elif 'tech savings' in price.lower():
-                    discounted_price = '.'.join(response.xpath(
-                        '//*[contains(@class,"pricingInfo")]'
-                        '/*[@class="lgFont"]'
-                        '//text()').re('[\d\.\,]+')).replace(',', '').strip()
-
-                    member_price = '.'.join(response.xpath(
-                        '//*[contains(@class,"pricingInfo")]'
-                        '//*[@class="dkGray"]/*[@itemprop="price"]'
-                        '/text()').re('[\d\.\,]+')).replace(',', '').strip()
-
-                else:
-                    m = re.search(FLOATING_POINT_RGEX, price)
-                    if m:
-                        price = [m.group(0).strip('.')]
-                    else:
-                        price = None
-
-                if member_price and discounted_price:
-                        cond_set_value(product,
-                                       'price',
-                                       Price(price=member_price,
-                                             priceCurrency='USD'))
-                        cond_set_value(product,
-                                       'price_with_discount',
-                                       Price(price=discounted_price,
-                                             priceCurrency='USD'))
-                        price = None
-                elif discounted_price:
-                        cond_set_value(product,
-                                       'price',
-                                       Price(price=discounted_price,
-                                             priceCurrency='USD'))
-                        price = None
-
-            if not price:
-                price = response.xpath(
-                    "//span[contains(@class,'onlinePrice')]"
-                    "/text()").re(FLOATING_POINT_RGEX)
-
-        if price:
-            cond_set_value(product, 'price', Price(price=price[0], priceCurrency='USD'))
 
         cond_set(
             product,
@@ -278,10 +224,16 @@ class SamsclubProductsSpider(BaseProductsSpider):
         # Categories
         categorie_filters = [u'sam\u2019s club']
         # Clean and filter categories names from breadcrumb
+        bc = response.xpath('//*[@id="breadcrumb"]//a/text()').extract()
+        bc = [b.strip() for b in bc if b.strip()]
+        if not bc or len(bc)==1:
+            bc = response.xpath(".//*[@id='breadcrumb']//text()").extract()
+        bc = [b.strip() for b in bc if b.strip()]
+        if not bc:
+            bc = response.xpath('//*[@id="breadcrumb"]//a//*[@itemprop="title"]/text()').extract()
+        bc = [b.strip() for b in bc if b.strip()]
         categories = list(filter((lambda x: x.lower() not in categorie_filters),
-                          map((lambda x: x.strip()),
-                              response.xpath(
-                              '//*[@id="breadcrumb"]//a/text()').extract())))
+                                 map((lambda x: x.strip()), bc)))
         category = categories[-1] if categories else None
         cond_set_value(product, 'categories', categories)
         cond_set_value(product, 'category', category)
@@ -325,36 +277,191 @@ class SamsclubProductsSpider(BaseProductsSpider):
                        'available_online',
                        1 if available_online and not oos_in_both else 0)
 
+        if str(product.get('available_online', None)) == '0' and str(product.get('available_store', None)) == '0':
+            product['is_out_of_stock'] = True
+
         if not shipping_included and not product.get('no_longer_available'):
             productId = ''.join(response.xpath('//*[@id="mbxProductId"]/@value').extract())
+            if not productId:
+                productId = self._product_id(response)
             pSkuId = ''.join(response.xpath('//*[@id="mbxSkuId"]/@value').extract())
+            # This is fixing bug with sku and prod_id extraction for bundle products
+            if not productId or not pSkuId:
+                js_sku_prodid = response.xpath(
+                    './/script[contains(text(), "var skuId") and contains(text(), "var productId")]/text()').extract()
+                js_sku_prodid = ''.join(js_sku_prodid) if js_sku_prodid else None
+                if js_sku_prodid:
+                    rgx = r'(prod\d+)'
+                    match_list = re.findall(rgx, js_sku_prodid)
+                    productId = match_list[0] if match_list else None
+                    rgx = r'(sku\d+)'
+                    match_list = re.findall(rgx, js_sku_prodid)
+                    pSkuId = match_list[0] if match_list else None
             shipping_prices_url = "http://www.samsclub.com/sams/shop/product/moneybox/shippingDeliveryInfo.jsp?zipCode=%s&productId=%s&skuId=%s" % (self.zip_code, productId, pSkuId)
-            return Request(shipping_prices_url, 
-                           meta={'product': product}, 
+            return Request(shipping_prices_url,
+                           meta={'product': product, 'prod_id':productId},
                            callback=self._parse_shipping_cost)
+
+        elif not product.get('buyer_reviews'):
+            productId = ''.join(response.xpath('//*[@id="mbxProductId"]/@value').extract())
+            if not productId:
+                productId = self._product_id(response)
+            reviews_url = self._REVIEWS_URL.format(prod_id=productId)
+            return Request(reviews_url,
+                           meta={'product': product, 'prod_id':productId},
+                           callback=self._load_reviews)
 
         return product
 
     def _parse_shipping_cost(self, response):
         product = response.meta['product']
-        product['shipping'] = []
-        shipping_names = response.xpath('//tr/td[1]/span/text()').extract()
-        shipping_prices = response.xpath('//tr/td[2]/text()').re('[\d\.\,]+')
+        productId = response.meta['prod_id']
+        shipping_list = []
+        shipping_blocks = response.xpath('//tr')
+        for block in shipping_blocks:
+            name_l = block.xpath('./td//span/text()').extract()
+            name = name_l[0] if name_l else None
+            cost = block.xpath('.//*[contains(text(), "$")]/text()').re('[\d\.\,]+')
+            cost = cost[0] if cost else None
+            if not cost:
+                if block.xpath('./*[contains(text(), "FREE")]').extract() or 'FREE' in name_l:
+                    cost = '0'
+                else:
+                    cost = None
+            if cost and name:
+                shipping_list.append({'name': name, 'cost': cost})
+        product['shipping'] = shipping_list
 
-        for shipping in zip(shipping_names, shipping_prices):
-            product['shipping'].append({'name': shipping[0], 'cost': shipping[1]})
+        if not product.get('buyer_reviews'):
+            reviews_url = self._REVIEWS_URL.format(prod_id=productId)
+            return Request(reviews_url,
+                           meta={'product': product, 'prod_id':productId},
+                           callback=self._load_reviews)
+
+        return product
+
+    def _product_id(self, response):
+        try:
+            product_id = response.xpath(
+                "//input[@name='/atg/commerce/order/purchase/CartModifierFormHandler.baseProductId']/@value").extract()
+            product_id = product_id[0].strip() if product_id else product_id
+            return product_id
+        except:
+            pass
+        try:
+            product_id = response.xpath("//input[@id='mbxProductId']/@value").extract()
+            product_id = product_id[0].strip() if product_id else product_id
+        except IndexError:
+            product_id = response.xpath("//div[@id='myShoppingList']/@data-productid").extract()
+            product_id = product_id[0].strip() if product_id else product_id
+        return product_id
+
+    def _load_reviews(self, response):
+        productId = response.meta.get('prod_id')
+        product = response.meta['product']
+        buyer_reviews = {}
+
+        contents = response.body_as_unicode()
+        try:
+            tmp_reviews = re.findall(r'<span class=\\"BVRRHistAbsLabel\\">(.*?)<\\/span>', contents)
+            if not tmp_reviews:
+                raise BaseException
+            reviews = []
+            for review in tmp_reviews:
+                review = review.replace(",", "")
+                m = re.findall(r'([0-9]+)', review)
+                reviews.append(m[0])
+
+            reviews = reviews[:5]
+
+            by_star = {}
+
+            score = 1
+            total_review = 0
+            review_cnt = 0
+            for review in reversed(reviews):
+                by_star[str(score)] = int(review)
+                total_review += score * int(review)
+                review_cnt += int(review)
+                score += 1
+            # filling missing scores with zero count for consistency
+            for sc in range(1,6):
+                if str(sc) not in by_star:
+                    by_star[str(sc)] = 0
+
+            review_count = review_cnt
+
+            buyer_reviews['rating_by_star'] = by_star
+
+            buyer_reviews['num_of_reviews'] = review_count
+            average_review = total_review * 1.0 / review_cnt
+            # rounding
+            average_review = float(format(average_review, '.2f'))
+
+            buyer_reviews['average_rating'] = average_review
+            product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
+            if review_count == 0:
+                raise BaseException  # we have to jump to the version #2
+        except:
+            if not product.get('buyer_reviews'):
+                contents = json.loads(contents)
+                incl = contents.get('Includes')
+                brs = incl.get('Products').get(productId) if incl else None
+                if not incl:
+                    if not product.get('buyer_reviews'):
+                        product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+                    return product
+                if not brs:
+                    try:
+                        prod_id = incl.get('Products').keys()[0]
+                        brs = incl.get('Products').get(prod_id)
+                    except IndexError:
+                        pass
+                if brs:
+                    by_star = {}
+                    for d in brs['ReviewStatistics']['RatingDistribution']:
+                        by_star[str(d['RatingValue'])] = d['Count']
+                    for sc in range(1, 6):
+                        if str(sc) not in by_star:
+                            by_star[str(sc)] = 0
+                    buyer_reviews['rating_by_star'] = by_star
+                    review_count = brs['ReviewStatistics']['TotalReviewCount']
+
+                    if review_count == 0:
+                        product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+                        return product
+
+                    buyer_reviews['num_of_reviews'] = review_count
+                    average_review = brs['ReviewStatistics']['AverageOverallRating']
+                    average_review = float(format(average_review, '.2f'))
+                    buyer_reviews['average_rating'] = average_review
+
+                    product['buyer_reviews'] = BuyerReviews(**buyer_reviews)
+                else:
+                    product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+
+        if not product.get('buyer_reviews'):
+            product['buyer_reviews'] = ZERO_REVIEWS_VALUE
 
         return product
 
     def _scrape_total_matches(self, response):
         if response.url.find('ajaxSearch') > 0:
-            items = response.xpath("//body/li[contains(@class,'item')]")
+            items = response.xpath("//a[@class='shelfProdImgHolder']/@href")
             return len(items)
 
         totals = response.xpath(
             "//div[contains(@class,'shelfSearchRelMsg2')]"
             "/span/span[@class='gray3']/text()"
         ).extract()
+        if not totals:
+            totals = response.xpath(
+                '//*[@class="resultsfound"]/span[@ng-show="!clientAjaxCall"]/text()'
+            ).extract()
+            # links = response.xpath(
+            #     "//div[@class='products']//a[@class='cardProdLink' or @class='cardProdLink ng-scope']/@href").extract()
+            # total = len(links)
+            # return total
         if totals:
             total = int(totals[0])
         elif response.css('.nullSearchShelfZeroResults'):
@@ -371,6 +478,10 @@ class SamsclubProductsSpider(BaseProductsSpider):
                 "//ul[contains(@class,'shelfItems')]"
                 "/li[contains(@class,'item')]/a/@href"
             ).extract()
+
+        if not links:
+            links = response.xpath(
+                "//div[@class='products']//a[@class='cardProdLink' or @class='cardProdLink ng-scope']/@href").extract()
 
         if not links:
             self.log("Found no product links.", ERROR)

@@ -1,11 +1,11 @@
-import time
+#Note: you need Firefox < 47 for selenium to work
 import sys
 import os
 import argparse
 import logging
 import tempfile
 import json
-
+import time
 
 from selenium import webdriver
 from selenium.webdriver.support.ui import Select
@@ -21,7 +21,6 @@ start_url = 'https://vendorcentral.amazon.com/gp/vendor/sign-in'
 headers = "Mozilla/5.0 (Windows NT 6.1; WOW64)" \
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.94 Safari/537.36"
 
-
 def check_system():
     import apt
     cache = apt.Cache()
@@ -32,7 +31,6 @@ def check_system():
         logging_info('Wget is not installed', level='ERROR')
         return False
     return True
-
 
 def logging_info(msg, level='INFO'):
     """ We're using JSON which is easier to parse """
@@ -100,12 +98,14 @@ def login(br, username, password):
         cap_result = solve_login_captcha(br, username, password)  # reliably solve captcha
         if cap_result == -1:
             return -1
+    if br.current_url == u'https://vendorcentral.amazon.com/gp/vendor/sign-in/answer-contact':
+        br.get('https://vendorcentral.amazon.com/gp/vendor/members/home')
     if br.current_url == u'https://vendorcentral.amazon.com/st/vendor/members/dashboard':
         logging_info('Passed login form')
         return True
 
 
-def upload_file(br, file):
+def upload_image(br, file):
     br.find_element_by_link_text("Add images").click()
     time.sleep(3)
     upload = br.find_element_by_name('Content')
@@ -124,6 +124,111 @@ def upload_file(br, file):
         return True
     else:
         logging_info('Failed to upload images', level='ERROR')
+        return False
+
+
+def download_report(br):
+    try:
+        br.get('https://vendorcentral.amazon.com/st/vendor/members/analytics/basic/productDetail')
+        time.sleep(2)
+        br.find_element_by_xpath('//span[@id="vxa-ab-reporting-period"]').click()
+        time.sleep(2)
+        br.find_element_by_link_text('Last reported day').click()
+        time.sleep(2)
+        br.find_element_by_xpath('//button[@data-action="a-splitdropdown-button"]').click()
+        time.sleep(2)
+        br.find_element_by_xpath('//a[@id="vxa-ab-export-selector_1"]').click()
+        time.sleep(2)
+        '''
+        br.get('https://vendorcentral.amazon.com/st/vendor/members/analytics/basic/dashboard')
+        time.sleep(2)
+        br.find_element_by_xpath('//span[@id="vxa-report-selector-wrapper"]').click()
+        time.sleep(2)
+        br.find_element_by_partial_link_text("Product Details").click()
+        time.sleep(2)
+        br.find_element_by_xpath('//span[@id="vxa-ab-reporting-period"]').click()
+        time.sleep(2)
+        br.find_element_by_link_text('Last reported day').click()
+        time.sleep(2)
+        br.find_element_by_xpath('//button[@id="a-autoid-26-announce"]').click()
+        time.sleep(2)
+        br.find_element_by_xpath('//a[@id="vxa-ab-export-selector_1"]').click()
+        time.sleep(2)
+        '''
+        logging_info('Report was downloaded successfully')
+        return True
+    except Exception as e:
+        logging_info('Failed to downoad report ' + str(e), level='ERROR')
+        return False
+
+def download_status(br):
+    try:
+        br.find_element_by_link_text("Add images").click()
+        time.sleep(3)
+        br.find_element_by_link_text("Review the status").click()
+        time.sleep(3)
+        logging_info("Made it to status page")
+        br.find_element_by_id("ext-gen37").click()
+        time.sleep(2)
+        file_url = br.find_element_by_xpath('//div[@class="x-grid3-row  x-grid3-row-first"]/table/tbody/tr/td[@class="x-grid3-col x-grid3-cell x-grid3-td-columnDownloadLink x-grid3-cell-last "]/div/a').get_attribute("href")
+        br.get(file_url)
+        time.sleep(3)
+        logging_info("Report was downloaded successfully")
+        return True
+    except:
+        logging_info('Failed to downoad report', level='ERROR')
+        return False
+
+def generate_status(br):
+    try:
+        br.find_element_by_link_text("Add images").click()
+        time.sleep(3)
+        br.find_element_by_link_text("Review the status").click()
+        time.sleep(3)
+        logging_info("Made it to status page")
+        br.find_element_by_id("ext-gen37").click()
+        time.sleep(2)
+        br.find_element_by_id("ext-gen152").click()
+        time.sleep(3)
+        logging_info("Report was generated successfully")
+        return True
+    except:
+        logging_info('Failed to downoad report', level='ERROR')
+        return False
+
+def upload_text(br, file, group, emails):
+    print 'EMAILS', emails
+    try:
+        br.get('https://vendorcentral.amazon.com/st/vendor/members/contactusapp')
+        time.sleep(3)
+        try:
+            business_group = Select(br.find_element_by_id("businessGroupId"))
+            business_group.select_by_visible_text(group)
+            time.sleep(2)
+        except:
+            logging_info("No business group")
+        support_topic = Select(br.find_element_by_id("issueId"))
+        support_topic.select_by_value("32600")
+        time.sleep(2)
+        specific_issue = Select(br.find_element_by_id("subIssueId"))
+        specific_issue.select_by_value("32751")
+        time.sleep(2)
+        br.find_element_by_id("contactUsContinue").click()
+        time.sleep(2)
+        logging_info("Passed initial form")
+        title = br.find_element_by_id("subject")
+        title.send_keys("Please update product content for the attached items in the file.")
+        upload = br.find_element_by_name('upload')
+        upload.clear()
+        upload.send_keys(file)
+        time.sleep(2)
+        logging_info("Passed upload form")
+        br.find_element_by_id("contactUsSubmit").click()
+        #TODO: find what the response is
+        logging_info("Uploaded")
+        return True
+    except:
+        logging_info('Failed to upload text', level='ERROR')
         return False
 
 
@@ -150,19 +255,30 @@ def main():
                         help="Enter your email")
     parser.add_argument('-p', '--password', type=str, required=True,
                         help="Enter your password")
-    parser.add_argument('--zip_file', type=str, required=True,
-                        help="ZIP file to upload")
+    parser.add_argument('--upload_file', type=str, required=False,
+                        help="File to upload")
+    parser.add_argument('--task', type=str, required=True,
+                        help="Task for spider")
     parser.add_argument('--logging_file', type=str, required=True,
                         help="filename for output logging")
+    parser.add_argument('--group', type=str, required=False,
+                        help="Business group for text upload")
+    parser.add_argument('--emails', type=str, required=False,
+                        help="Emails (?)")
     namespace = parser.parse_args()
+    task = namespace.task
 
     LOG_FILE = namespace.logging_file
 
     profile = webdriver.FirefoxProfile()
     profile.set_preference("general.useragent.override", headers)
+    profile.set_preference("browser.download.folderList", 2)
+    profile.set_preference('browser.download.manager.showWhenStarting', False)
+    profile.set_preference('browser.download.dir', os.path.join(os.getcwd(), '_downloads'))
+    profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'text/csv')
 
     #Set up headless version of Firefox
-    display = Display(visible=0, size=(1027, 768))
+    display = Display(visible=0, size=(1024, 768))
     display.start()
 
     br = webdriver.Firefox(profile)
@@ -178,10 +294,30 @@ def main():
         on_close(br, display)
         sys.exit(1)
 
-    if not upload_file(br, namespace.zip_file):
-        logging_info("Could not upload the file! Exit...", level='ERROR')
-        on_close(br, display)
-        sys.exit(1)
+    if task == 'image':
+        if not upload_image(br, namespace.upload_file):
+            logging_info("Could not upload the file! Exit...", level='ERROR')
+            on_close(br, display)
+            sys.exit(1)
+    elif task == 'text':
+        if not upload_text(br, namespace.upload_file, namespace.group, namespace.emails):
+            logging_info("Could not upload the file! Exit...", level='ERROR')
+            on_close(br, display)
+            sys.exit(1)
+    elif task == 'status':
+        if not download_status(br):
+            logging_info("Could not download the file! Exit...", level='ERROR')
+            on_close(br, display)
+            sys.exit(1)
+    elif task == 'genstatus':
+        if not generate_status(br):
+            logging_info("Could not generate the file! Exit...", level='ERROR')
+            on_close(br, display)
+            sys.exit(1)
+    elif not download_report(br):
+            logging_info("Could not download the file! Exit...", level='ERROR')
+            on_close(br, display)
+            sys.exit(1)
 
     on_close(br, display)
 

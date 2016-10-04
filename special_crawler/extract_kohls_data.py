@@ -47,6 +47,17 @@ class KohlsScraper(Scraper):
         self.is_product_info_json_checked = False
         self.video_urls = []
 
+    def _extract_page_tree(self):
+        Scraper._extract_page_tree(self)
+
+        if self.ERROR_RESPONSE["failure_type"] == "HTTP 404 - Page Not Found":
+            self.ERROR_RESPONSE["failure_type"] = None
+
+            contents = self.load_page_from_url_with_number_of_retries(self.product_page_url)
+
+            self.page_raw_text = contents
+            self.tree_html = html.fromstring(contents)
+
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
@@ -118,8 +129,21 @@ class KohlsScraper(Scraper):
 
         return product_id
 
+    def _is_out_of_stock(self):
+        try:
+            message = html.tostring(self.tree_html.xpath('//div[@id="content"]/p')[0])
+            message = re.sub('[\r\n\t]', '', message)
+
+            if re.match('<p><strong>We&#8217;re very sorry, this item</strong><b>.+</b><strong> is out of stock.</strong></p>', message):
+                return True
+        except:
+            return False
+
     def _failure_type(self):
         itemtype = self.tree_html.xpath('//div[@itemtype="http://schema.org/Product"]')
+
+        if self._is_out_of_stock():
+            return
 
         if not itemtype:
             self.failure_type = "Not a product"
@@ -132,14 +156,19 @@ class KohlsScraper(Scraper):
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
+    def _out_of_stock_product_name(self):
+        return self.tree_html.xpath('//div[@id="content"]/p/b/text()')[0]
+
     def _product_name(self):
+        if self._is_out_of_stock():
+            return self._out_of_stock_product_name()
         return self.tree_html.xpath('//title/text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//title/text()')[0].strip()
+        return self._product_name()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//title/text()')[0].strip()
+        return self._product_name()
 
     def _model(self):
         return None
@@ -191,7 +220,8 @@ class KohlsScraper(Scraper):
                 if inner_text in features_title_list:
                     break
 
-                short_description += html.tostring(element_block)
+                if not element_block.xpath('./a'):
+                    short_description += html.tostring(element_block)
         else:
             for element_block in description_block:
                 if element_block.tag == "ul":
@@ -236,7 +266,8 @@ class KohlsScraper(Scraper):
                     continue
 
                 if features_ul == 2:
-                    long_description += html.tostring(element_block)
+                    if not element_block.xpath('./em'):
+                        long_description += html.tostring(element_block)
         else:
             is_long_description = False
 
@@ -271,6 +302,11 @@ class KohlsScraper(Scraper):
     def _swatches(self):
         return self.kv.swatches()
 
+    def _no_longer_available(self):
+        if self._is_out_of_stock():
+            return 1
+        return 0
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -284,13 +320,6 @@ class KohlsScraper(Scraper):
             for alt_image in self.product_info_json["productItem"]["media"]["alternateImages"]:
                 if not alt_image["largeImage"] in image_urls:
                     image_urls.append(alt_image["largeImage"])
-
-        if self.product_info_json["productItem"]["variants"].get('preSelectedColor',None):                
-            color_swatch_images = self.tree_html.xpath("//div[@itemtype='http://schema.org/Product']/meta[@itemprop='image']/@content")
-            color_swatch_images = [url[:url.find("?")] + "?wid=1000&amp;hei=1000&amp;op_sharpen=1" if url.find("?") > 0 else url for url in color_swatch_images]
-            for img in color_swatch_images:
-                if not img in image_urls:
-                    image_urls.append(img)
 
         if image_urls:
             return image_urls
@@ -510,6 +539,9 @@ class KohlsScraper(Scraper):
         return 0
 
     def _site_online(self):
+        if self._is_out_of_stock():
+            return 1
+
         if self._marketplace() == 1:
             return 0
 
@@ -522,6 +554,9 @@ class KohlsScraper(Scraper):
         return 0
 
     def _site_online_out_of_stock(self):
+        if self._is_out_of_stock():
+            return 1
+
         if self._marketplace() == 1:
             return None
 
@@ -605,6 +640,8 @@ class KohlsScraper(Scraper):
         "ingredient_count": _ingredients_count,
         "variants": _variants,
         "swatches": _swatches,
+        "no_longer_available": _no_longer_available,
+
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \

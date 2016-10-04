@@ -30,7 +30,7 @@ class AmazonScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.amazon.com/dp/<product-id> or http://www.amazon.co.uk/dp/<product-id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http(s)://www.amazon.com/dp/<product-id> or http(s)://www.amazon.co.uk/dp/<product-id>"
 
     CB = captcha_solver.CaptchaBreakerWrapper()
     # special dir path to store the captchas, so that the service has permissions to create it on the scraper instances
@@ -48,12 +48,12 @@ class AmazonScraper(Scraper):
         self.max_review = None
         self.min_review = None
         self.is_marketplace_sellers_checked = False
-        self.store_url = 'http://www.amazon.com/'
         self.browser = mechanize.Browser()
         self.marketplace_prices = None
         self.marketplace_sellers = None
         self.is_variants_checked = False
         self.variants = None
+        self.no_image_available = 0
 
         self.proxy_host = "proxy.crawlera.com"
         self.proxy_port = "8010"
@@ -98,8 +98,13 @@ class AmazonScraper(Scraper):
     def _extract_page_tree(self, captcha_data=None, retries=0):
         self._initialize_browser_settings()
 
+        if '?' in self.product_page_url:
+            self.product_page_url = self.product_page_url + '&showDetailTechData=1'
+        else:
+            self.product_page_url = self.product_page_url + '?showDetailTechData=1'
+
         for i in range(self.MAX_RETRIES):
-            self.timeout = False
+            self.is_timeout = False
 
             try:
                 if captcha_data:
@@ -122,6 +127,10 @@ class AmazonScraper(Scraper):
                 self.proxies_enabled = True
                 self._initialize_browser_settings()
                 continue
+            except mechanize.URLError as e:
+                self.is_timeout = True # set self.is_timeout so we will return an error response
+                self.ERROR_RESPONSE["failure_type"] = str(e)
+                continue # continue to try again up to MAX_RETRIES
 
             try:
                 # replace NULL characters
@@ -166,10 +175,10 @@ class AmazonScraper(Scraper):
             return
 
     def check_url_format(self):
-        m = re.match(r"^http://www.amazon.com/([a-zA-Z0-9%\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
-        n = re.match(r"^http://www.amazon.co.uk/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
-        o = re.match(r"^http://www.amazon.ca/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
-        l = re.match(r"^http://www.amazon.co.uk/.*$", self.product_page_url)
+        m = re.match(r"^https?://www.amazon.com/([a-zA-Z0-9%\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]*)?$", self.product_page_url)
+        n = re.match(r"^https?://www.amazon.co.uk/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]*)?$", self.product_page_url)
+        o = re.match(r"^https?://www.amazon.ca/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]*)?$", self.product_page_url)
+        l = re.match(r"^https?://www.amazon.co.uk/.*$", self.product_page_url)
         self.scraper_version = "com"
 
         if (not not n) or (not not l): self.scraper_version = "uk"
@@ -200,11 +209,11 @@ class AmazonScraper(Scraper):
 
     def _product_id(self):
         if self.scraper_version == "uk":
-            product_id = re.match("^http://www.amazon.co.uk/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+            product_id = re.match("^https?://www.amazon.co.uk/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]*)?$", self.product_page_url).group(3)
         elif self.scraper_version == "ca":
-            product_id = re.match("^http://www.amazon.ca/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+            product_id = re.match("^https?://www.amazon.ca/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]*)?$", self.product_page_url).group(3)
         else:
-            product_id = re.match("^http://www.amazon.com/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+            product_id = re.match("^https?://www.amazon.com/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]*)?$", self.product_page_url).group(3)
         return product_id
 
     def _site_id(self):
@@ -279,6 +288,25 @@ class AmazonScraper(Scraper):
             asin = asin.group(1)
             return asin
 
+    def _specs(self):
+        specs = {}
+
+        for r in self.tree_html.xpath('//table[@id="productDetails_techSpec_section_1"]/tr'):
+            key = r.xpath('./th/text()')[0].strip()
+            value = r.xpath('./td/text()')[0].strip()
+
+            specs[key] = value
+
+        if not specs:
+            for r in self.tree_html.xpath('//div[@id="technicalProductFeatures"]/following-sibling::div/ul/li'):
+                key = r.xpath('./b/text()')[0]
+                value = r.text_content().split(': ')[-1]
+
+                specs[key] = value
+
+        if specs:
+            return specs
+
     def _features(self):
         rows = self.tree_html.xpath("//div[@class='content pdClearfix'][1]//tbody//tr")
         if len(rows)==0:
@@ -322,8 +350,19 @@ class AmazonScraper(Scraper):
         return None
 
     def _description(self):
-        if self.tree_html.xpath("//*[contains(@id,'feature-bullets')]"):
-            return self._clean_text(self._exclude_javascript_from_description(html.tostring(self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")[0])))
+        description = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")
+        if description:
+            description = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]")[0]
+
+            hidden = description.xpath('//*[@class="aok-hidden"]')
+            more_button = description.xpath('//div[@id="fbExpanderMoreButtonSection"]')
+
+            description = html.tostring(description)
+
+            for exclude in hidden + more_button:
+                description = re.sub(html.tostring(exclude), '', description)
+
+            return self._clean_text(self._exclude_javascript_from_description(description))
 
         short_description = " " . join(self.tree_html.xpath("//div[@class='dv-simple-synopsis dv-extender']//text()")).strip()
 
@@ -597,10 +636,10 @@ class AmazonScraper(Scraper):
         return 0
 
     def _no_longer_available(self):
-        availability = self.tree_html.xpath('//div[@id="availability"]')
+        availability = self.tree_html.xpath('//*[@id="availability" or @id="pantry-availability"]')
 
         if availability:
-            if 'Currently unavailable' in availability[0].text_content():
+            if re.search('Currently [uU]navailable', availability[0].text_content()):
                 return 1
 
         return 0
@@ -653,7 +692,7 @@ class AmazonScraper(Scraper):
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
-        if canonical_link.startswith("http://www.amazon.com"):
+        if re.match("https?://www.amazon.com", canonical_link):
             return canonical_link
         else:
             return "http://www.amazon.com" + canonical_link
@@ -743,34 +782,45 @@ class AmazonScraper(Scraper):
         if tree == None:
             tree = self.tree_html
 
-        swatch_images = []
-
         try:
+            swatch_images = []
+
             swatch_image_json = json.loads(self._find_between(html.tostring(self.tree_html), 'data["colorImages"] = ', ';\n'))
 
             if swatch_image_json:
+                try:
+                    selected_color = self.tree_html.xpath('//span[@class="selection"]/text()')[0].strip()
+                except:
+                    try:
+                        selected_variations = json.loads( re.search('selected_variations":({.*?})', html.tostring(self.tree_html)).group(1))
+                        selected_color = ' '.join(reversed(selected_variations.values()))
+                    except:
+                        selected_color = None
+
                 for color in swatch_image_json:
-                    for image in swatch_image_json[color]:
-                        swatch_images = self._swatch_image_helper(image, swatch_images)
+                    if color == selected_color:
+                        for image in swatch_image_json[color]:
+                            swatch_images = self._swatch_image_helper(image, swatch_images)
 
             else:
+                # e.g. https://www.amazon.com/Clorox-Bleach-Stain-Remover-Colors/dp/B01CZKEGMA
                 swatch_image_json = re.search("'colorImages': { 'initial': ([^\n]*)},", html.tostring(self.tree_html))
                 swatch_image_json = json.loads(swatch_image_json.group(1))
 
                 for image in swatch_image_json:
                     swatch_images = self._swatch_image_helper(image, swatch_images)
 
+            if swatch_images:
+                return self._remove_no_image_available(swatch_images)
+
         except:
             pass
 
-        if swatch_images:
-            return swatch_images
-
         moca_images = self.tree_html.xpath("//div[contains(@class,'verticalMocaThumb')]/span/img/@src")
         if moca_images:
-            return self._get_origin_image_urls_from_thumbnail_urls(moca_images)
+            return self._remove_no_image_available(self._get_origin_image_urls_from_thumbnail_urls(moca_images))
 
-        image_url = swatch_images
+        image_url = []
 
         #The small images are to the left of the big image
         image_url.extend(tree.xpath("//span[@class='a-button-text']//img/@src"))
@@ -888,6 +938,22 @@ class AmazonScraper(Scraper):
             return 0
         return len(iu)
 
+    def _remove_no_image_available(self, image_urls):
+        filtered_image_urls = []
+
+        for image in image_urls:
+            if 'no-img' in image:
+                self.no_image_available = 1
+            else:
+                filtered_image_urls.append(image)
+
+        if filtered_image_urls:
+            return filtered_image_urls
+
+    def _no_image_available(self):
+        self._image_urls()
+        return self.no_image_available
+
     # return 1 if the "no image" image is found
     def no_image(self,image_url):
         try:
@@ -923,6 +989,12 @@ class AmazonScraper(Scraper):
         for v in image_url:
             if v.find("player")>0 :
                 temp.append(v)
+
+        video_urls = re.findall('"url":"([^"]+.mp4)"', html.tostring(self.tree_html))
+        for video in video_urls:
+            if not video in temp:
+                temp.append(video)
+
         if len(temp)==0: return None
         return temp#",".join(temp)
 
@@ -967,6 +1039,12 @@ class AmazonScraper(Scraper):
             return related_product_url_list
 
         return None
+
+    def _best_seller_category(self):
+        try:
+            return re.search('#[\d,]+ in ([^\(]+) \(', html.tostring(self.tree_html)).group(1)
+        except:
+            return re.search('#[\d,]+ in ([^<]+)</span>', html.tostring(self.tree_html)).group(1)
 
     ##########################################
     ################ CONTAINER : REVIEWS
@@ -1391,23 +1469,23 @@ class AmazonScraper(Scraper):
 
     def _brand(self):
         bn=self.tree_html.xpath('//div[@id="mbc"]/@data-brand')
-        if len(bn)>0 and bn[0]!="":
-            return bn[0]
+        if bn and bn[0].strip():
+            return bn[0].strip()
         bn=self.tree_html.xpath('//a[@id="brand"]//text()')
-        if len(bn)>0 and bn[0]!="":
-            return bn[0]
+        if bn and bn[0].strip():
+            return bn[0].strip()
         bn=self.tree_html.xpath('//div[@class="buying"]//span[contains(text(),"by")]/a//text()')
-        if len(bn)>0  and bn[0]!="":
-            return bn[0]
+        if bn and bn[0].strip():
+            return bn[0].strip()
         bn=self.tree_html.xpath('//a[contains(@class,"contributorName")]//text()')
-        if len(bn)>0  and bn[0]!="":
-            return bn[0]
+        if bn and bn[0].strip():
+            return bn[0].strip()
         bn=self.tree_html.xpath('//a[contains(@id,"contributorName")]//text()')
-        if len(bn)>0  and bn[0]!="":
-            return bn[0]
+        if bn and bn[0].strip():
+            return bn[0].strip()
         bn=self.tree_html.xpath('//span[contains(@class,"author")]//a//text()')
-        if len(bn)>0  and bn[0]!="":
-            return bn[0]
+        if bn and bn[0].strip():
+            return bn[0].strip()
         fts = self._features()
         if fts:
             for f in fts:
@@ -1460,6 +1538,7 @@ class AmazonScraper(Scraper):
         "asin" : _asin,\
         "features" : _features, \
         "feature_count" : _feature_count, \
+        "specs" : _specs, \
         "model_meta" : _model_meta, \
         "description" : _description, \
         "seller_ranking": _seller_ranking, \
@@ -1487,6 +1566,7 @@ class AmazonScraper(Scraper):
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
+        "no_image_available" : _no_image_available, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
 #        "no_image" : _no_image, \
@@ -1498,6 +1578,7 @@ class AmazonScraper(Scraper):
         "meta_tags": _meta_tags,\
         "meta_tag_count": _meta_tag_count,\
         "canonical_link": _canonical_link,
+        "best_seller_category" : _best_seller_category, \
 
         # CONTAINER : REVIEWS
         "review_count" : _review_count, \

@@ -49,6 +49,9 @@ class TargetScraper(Scraper):
         self.item_info = None
         self.item_info_checked = False
 
+        self.images = None
+        self.no_longer_available = 0
+
         self.wc_360 = 0
         self.wc_emc = 0
         self.wc_video = 0
@@ -72,7 +75,10 @@ class TargetScraper(Scraper):
 
         if len(self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")) < 1:
             self.version = 2
-            self.tv.setupCH(self.tree_html, self._item_info())
+            try:
+                self.tv.setupCH(self.tree_html, self._item_info())
+            except:
+                self.no_longer_available = 1
 
         else:
             self.version = 1
@@ -113,6 +119,8 @@ class TargetScraper(Scraper):
         if not self.item_info_checked:
             self.item_info_checked = True
             item_info = self._item_info_helper( self._product_id())
+
+            self.images = item_info["Images"][0]
 
             if item_info.get('parentPartNumber') and item_info['parentPartNumber'] != self._product_id():
                 item_info = self._item_info_helper( item_info['parentPartNumber'])
@@ -301,6 +309,9 @@ class TargetScraper(Scraper):
         mta = self.tree_html.xpath('//div[@class="details-copy"]/following-sibling::ul')[0]
         return self._clean_html(html.tostring(mta))
 
+    def _no_longer_available(self):
+        return self.no_longer_available
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -312,7 +323,8 @@ class TargetScraper(Scraper):
         image_urls = []
 
         if self.version == 2:
-            images = self._item_info()["Images"][0]
+            self._item_info()
+            images = self.images
 
             image_urls.append( images["PrimaryImage"][0]["image"])
 
@@ -322,7 +334,7 @@ class TargetScraper(Scraper):
                 for alt_number in alternate_images['imageAltNumber'].split(','):
                     image_urls.append( alternate_images['image'] + alt_number)
 
-            return image_urls
+            return map( lambda i: i + '?scl=1', image_urls)
 
         start_index = self.product_page_url.find("/-/A-") + len("/-/A-")
         end_index = self.product_page_url.rfind("?")
@@ -782,6 +794,7 @@ class TargetScraper(Scraper):
         "swatches": _swatches, \
         "details": _details, \
         "mta": _mta, \
+        "no_longer_available": _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \

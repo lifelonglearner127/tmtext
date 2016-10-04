@@ -7,6 +7,7 @@ import re
 import requests
 
 from lxml import html, etree
+import xml.etree.ElementTree as ET
 from extract_data import Scraper
 from spiders_shared_code.verizonwireless_variants import VerizonWirelessVariants
 
@@ -54,12 +55,9 @@ class VerizonWirelessScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        try:
-            if not self.tree_html.xpath('//*[@itemtype="http://schema.org/Product"]'):
-                raise Exception()
-        except Exception:
+        if not (self.tree_html.xpath('//*[@itemtype="http://schema.org/Product"]') \
+            or self.tree_html.xpath('//script[@id="accessoryPdpJson"]')):
             return True
-
         return False
 
     ##########################################
@@ -137,15 +135,8 @@ class VerizonWirelessScraper(Scraper):
 
         return ''.join(filter(None, map((lambda x: x.strip()),description))).strip() if description else None
 
-
     def _long_description(self):
-        description = self.tree_html.xpath(
-            '//*[@itemprop="description" and '
-            '@class="is-hidden"]//text()')
-
-        return ''.join(filter(None, map((lambda x: x.strip()),description))).strip() if description else None
-
-
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -162,6 +153,26 @@ class VerizonWirelessScraper(Scraper):
         self.json_data = json.loads(json_text[0])
 
     def _image_urls(self):
+        if self.images:
+            return self.images
+
+        self.images = []
+
+        try:
+            main_image_url = self.tree_html.xpath('//input[@id="MainProductImageURL"]/@value')[0].split('?')[0]
+
+            c = requests.get(main_image_url + '?req=set').content
+            x = ET.fromstring(c)
+
+            for item in x:
+                self.images.append('https://ss7.vzw.com/is/image/' + item[0].get('n'))
+
+            if self.images:
+                return self.images
+
+        except:
+            pass
+
         try:
             if not self.images:
                 if not self.json_data:
@@ -175,7 +186,7 @@ class VerizonWirelessScraper(Scraper):
                         images += list(itertools.chain.from_iterable([x.get(
                             'set', {}).get('item') for x in data[
                                 'item'] if x.get('type') == 'img_set']))
-                        images += [x for x in data['item'] if x.get('dx')]
+                        images = [x for x in data['item'] if x.get('dx')] + images
 
                     except:
                         data = self.json_data['set']['item']
