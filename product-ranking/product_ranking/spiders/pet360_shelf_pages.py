@@ -1,18 +1,17 @@
 import re
-import json
 import urlparse
 
 from scrapy.http import Request
 
 from product_ranking.items import SiteProductItem
-from .jcpenney import JcpenneyProductsSpider
+from .pet360 import Pet360ProductsSpider
 
 is_empty = lambda x: x[0] if x else None
 
 
-class JCPenneyShelfPagesSpider(JcpenneyProductsSpider):
-    name = 'jcpenney_shelf_urls_products'
-    allowed_domains = ['jcpenney.com', 'www.jcpenney.com']
+class Pet360ShelfPagesSpider(Pet360ProductsSpider):
+    name = 'pet360_shelf_urls_products'
+    allowed_domains = ['pet360.com', 'www.pet360.com']
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
@@ -27,7 +26,7 @@ class JCPenneyShelfPagesSpider(JcpenneyProductsSpider):
         return {'remaining': 99999, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
-        super(JCPenneyShelfPagesSpider, self).__init__(*args, **kwargs)
+        super(Pet360ShelfPagesSpider, self).__init__(*args, **kwargs)
         self._setup_class_compatibility()
         self.product_url = kwargs['product_url']
         if "num_pages" in kwargs:
@@ -57,20 +56,18 @@ class JCPenneyShelfPagesSpider(JcpenneyProductsSpider):
 
     def _scrape_product_links(self, response):
         urls = response.xpath(
-            '//li[@class="productDisplay"]//'
-            'div[@class="productDisplay_image"]/a/@href'
+            '//div[contains(@class,"category-products")]'
+            '//li//a[contains(@class,"image")]/@href'
         ).extract()
-        products = re.findall(
-            'var filterResults\s?=\s?jq\.parseJSON\(\'(\{.+?\})\'\);', response.body, re.MULTILINE)[0].decode(
-            'string-escape')
-        products = json.loads(products).get('organicZoneInfo').get('records')
-        urls += [product.get('pdpUrl') for product in products]
-        ulrs = [urlparse.urljoin(response.url, url) for url in urls]
 
+        categories = response.xpath(
+            '//div[@id="breadcrumbs"]//li[not(@class="home")]/a//text()'
+        ).extract()
+        shelf_categories = categories if categories else None
 
-        shelf_categories = response.xpath(
-            '//*[contains(@data-anid, "breadcrumbIndex_")]/text()').extract()
-        shelf_category = shelf_categories[-1] if shelf_categories else None
+        shelf_category = categories[-1] if categories else None
+
+        urls = ["".join(i.replace('https://www.pet360.com', '')) for i in urls]
 
         for url in urls:
             item = SiteProductItem()
@@ -84,8 +81,8 @@ class JCPenneyShelfPagesSpider(JcpenneyProductsSpider):
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1
-        return super(JCPenneyShelfPagesSpider,
+        return super(Pet360ShelfPagesSpider,
                      self)._scrape_next_results_page_link(response)
 
     def parse_product(self, response):
-        return super(JCPenneyShelfPagesSpider, self).parse_product(response)
+        return super(Pet360ShelfPagesSpider, self).parse_product(response)
