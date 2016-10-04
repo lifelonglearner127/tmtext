@@ -750,8 +750,9 @@ class ScrapyTask(object):
                     output_path + '.screenshot.jl'))
             else:
                 try:
-                    data_key = put_file_into_s3(
-                        AMAZON_BUCKET_NAME, output_path+'.jl')
+                    put_file_into_s3(
+                        AMAZON_BUCKET_NAME, output_path+'.screenshot.jl')
+                    logger.info('Screenshot file uploaded: %s' % (output_path + '.screenshot.jl'))
                 except Exception as ex:
                     logger.error('Screenshot file uploading error')
                     logger.exception(ex)
@@ -1141,15 +1142,19 @@ class ScrapyTask(object):
     def start_screenshot_job_if_needed(self):
         """ Starts a new url2screenshot local job, if needed """
         url2scrape = None
-        if self.task_data.get('product_url', None):
-            url2scrape = self.task_data.get('product_url')
+        if self.task_data.get('product_url', self.task_data.get('url', None)):
+            url2scrape = self.task_data.get('product_url', self.task_data.get('url', None))
         # TODO: searchterm jobs? checkout scrapers?
         if url2scrape:
+            scrapy_path = "/home/spiders/virtual_environment/bin/scrapy"
+            python_path = "/home/spiders/virtual_environment/bin/python"
             cmd = ('cd {repo_base_path}/product-ranking'
-                   ' && scrapy crawl url2screenshot_products -a product_url={url2scrape}'
-                   '-a width=1280 -a height=1024 -a timeout=60 '
-                   '-o {output_file} &').format(
-                       repo_base_path=REPO_BASE_PATH, url2scrape=url2scrape,
+                   ' && {python_path} {scrapy_path} crawl url2screenshot_products'
+                   ' -a product_url="{url2scrape}" '
+                   ' -a width=1280 -a height=1024 -a timeout=60 '
+                   ' -o "{output_file}" &').format(
+                       repo_base_path=REPO_BASE_PATH, python_path=python_path,
+                       scrapy_path=scrapy_path, url2scrape=url2scrape,
                        output_file=self.get_output_path()+'.screenshot.jl')
             logger.info('Starting a new parallel screenshot job: %s' % cmd)
             os.system(cmd)  # use Popen instead?

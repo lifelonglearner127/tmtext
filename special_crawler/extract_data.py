@@ -500,7 +500,7 @@ class Scraper():
             request.add_header('User-Agent', agent)
 
             if walmart_ca_url:
-                request.add_header('Cookie', 'cookieLanguageType=en; deliveryCatchment=2000; marketCatchment=2001; walmart.shippingPostalCode=V5M2G7')
+                request.add_header('Cookie', 'cookieLanguageType=en; deliveryCatchment=2000; marketCatchment=2001; walmart.shippingPostalCode=V5M2G7; zone=2')
 
             for i in range(self.MAX_RETRIES):
                 try:
