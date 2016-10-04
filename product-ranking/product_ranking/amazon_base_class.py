@@ -52,15 +52,15 @@ class AmazonBaseClass(BaseProductsSpider):
     buyer_reviews_stars = ['one_star', 'two_star', 'three_star', 'four_star',
                            'five_star']
 
-    SEARCH_URL = 'http://{domain}/s/ref=nb_sb_noss_1?url=search-alias' \
+    SEARCH_URL = 'https://{domain}/s/ref=nb_sb_noss_1?url=search-alias' \
                  '%3Daps&field-keywords={search_term}'
 
-    REVIEW_DATE_URL = 'http://{domain}/product-reviews/{product_id}/' \
+    REVIEW_DATE_URL = 'https://{domain}/product-reviews/{product_id}/' \
                       'ref=cm_cr_pr_top_recent?ie=UTF8&showViewpoints=0&' \
                       'sortBy=bySubmissionDateDescending'
-    REVIEW_URL_1 = 'http://{domain}/ss/customer-reviews/ajax/reviews/get/' \
+    REVIEW_URL_1 = 'https://{domain}/ss/customer-reviews/ajax/reviews/get/' \
                    'ref=cm_cr_pr_viewopt_sr'
-    REVIEW_URL_2 = 'http://{domain}/product-reviews/{product_id}/' \
+    REVIEW_URL_2 = 'https://{domain}/product-reviews/{product_id}/' \
                    'ref=acr_dpx_see_all?ie=UTF8&showViewpoints=1'
 
     handle_httpstatus_list = [404]
