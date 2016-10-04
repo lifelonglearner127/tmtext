@@ -50,7 +50,7 @@ class SqsCache(object):
     def __init__(self, db=None, timeout=10):
         self.db = db if db else StrictRedis(REDIS_HOST, REDIS_PORT,
                                             socket_timeout=timeout)
-        # self.db = db if db else StrictRedis()  # for local
+        self.db = db if db else StrictRedis()  # for local
 
     @staticmethod
     def _task_to_key(task):
@@ -485,10 +485,12 @@ class SqsCache(object):
                 })
             })
         }
-        while not data or data[0] != page:
+        while True:
             data = self.db.hscan(self.REDIS_JOBS_STATS,
                                  cursor=page, match=match)
             if not data:
+                break
+            if page == data[0] or not data[0]:
                 break
             page = data[0]
             for key, value in data[1].items():
