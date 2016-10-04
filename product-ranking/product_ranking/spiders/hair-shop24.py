@@ -141,6 +141,10 @@ class HairShop24Spider(BaseProductsSpider):
         product['price'] = Price(price=price_one, priceCurrency='EUR')
         cond_set_value(product, 'locale', 'de_DE')
 
+        reseller_id = response.xpath('//*[@class="product_id"]/text()').extract()
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         rel_key = response.xpath(
             "//div[@class='box-collateral box-cross-sell box-up-sell block']"
             "/h2/text()").extract()
