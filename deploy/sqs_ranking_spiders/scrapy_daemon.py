@@ -1285,6 +1285,10 @@ def log_failed_task(task):
 def notify_cache(task, is_from_cache=False):
     """send request to cache (for statistics)"""
     url = CACHE_HOST + CACHE_URL_STATS
+    if 'start_time' in task and task['start_time']:
+        if ('finish_time' in task and not task['finish_time']) or \
+                'finish_time' not in task:
+            task['finish_time'] = int(time.time())
     data = dict(task=json.dumps(task), is_from_cache=json.dumps(is_from_cache))
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
@@ -1321,7 +1325,7 @@ def is_task_taken(new_task, tasks):
 
 
 def store_tasks_metrics(task, redis_db):
-    """This method will just increment reuired key in redis database
+    """This method will just increment required key in redis database
         if connection to the database exist."""
     if TEST_MODE:
         print 'Simulate redis incremet, key is %s' % JOBS_COUNTER_REDIS_KEY
@@ -1498,7 +1502,7 @@ def main():
         if task.get_cached_result(TASK_QUEUE_NAME):
             # if found response in cache, upload data, delete task from sqs
             task.queue.task_done()
-            notify_cache(task_data, is_from_cache=True)
+            notify_cache(task.task_data, is_from_cache=True)
             del task
             continue
         if task.start():
@@ -1510,7 +1514,7 @@ def main():
             if task.is_screenshot_job():
                 task.start_screenshot_job_if_needed()
             task.queue.task_done()
-            notify_cache(task_data, is_from_cache=False)
+            notify_cache(task.task_data, is_from_cache=False)
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
                          task.task_data.get('task_id', 0))
