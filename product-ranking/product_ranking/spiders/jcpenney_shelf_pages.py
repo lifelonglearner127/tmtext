@@ -1,4 +1,5 @@
 import re
+import json
 import urlparse
 
 from scrapy.http import Request
@@ -56,18 +57,20 @@ class JCPenneyShelfPagesSpider(JcpenneyProductsSpider):
 
     def _scrape_product_links(self, response):
         urls = response.xpath(
-            '//div[@class="product_gallery_holder2"]//div[contains(@class, "product_description")]'
-            '//img[contains(@id, "ThumbnailImage")]/../../../a/@href'
+            '//li[@class="productDisplay"]//'
+            'div[@class="productDisplay_image"]/a/@href'
         ).extract()
-        urls = [urlparse.urljoin(response.url, x) if x.startswith('/') else x
-                for x in urls]
+        products = re.findall(
+            'var filterResults\s?=\s?jq\.parseJSON\(\'(\{.+?\})\'\);', response.body, re.MULTILINE)[0].decode(
+            'string-escape')
+        products = json.loads(products).get('organicZoneInfo').get('records')
+        urls += [product.get('pdpUrl') for product in products]
+        ulrs = [urlparse.urljoin(response.url, url) for url in urls]
 
-        sample = response.xpath('//div[@id="breadcrumb"]/'
-                                'ul/li//text()').extract()
-        shelf_categories = [i.strip() for i in sample if i.strip() and i != '>']
+
+        shelf_categories = response.xpath(
+            '//*[contains(@data-anid, "breadcrumbIndex_")]/text()').extract()
         shelf_category = shelf_categories[-1] if shelf_categories else None
-
-        urls = ["".join(i.replace('http://www.jcpenney.com', '')) for i in urls]
 
         for url in urls:
             item = SiteProductItem()

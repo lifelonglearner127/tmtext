@@ -5,6 +5,7 @@
 import os
 import sys
 import datetime
+from time import time
 from multiprocessing.connection import Client
 from socket import error as socket_error
 
@@ -30,6 +31,14 @@ except ImportError:
             from product_ranking.spiders import push_simmetrica_event
         except ImportError:
             print 'ERROR: CAN NOT IMPORT MONITORING PACKAGE!'
+
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CWD, '..', '..', 'deploy'))
+
+try:
+    from cache_layer.cache_service import SqsCache
+except ImportError:
+    print 'ERROR: CANNOT IMPORT SQSCACHE PACKAGE!'
 
 
 bucket_name = 'spiders-cache'
@@ -131,6 +140,37 @@ class StatsCollector(object):
     def __init__(self, *args, **kwargs):
         dispatcher.connect(_stats_on_spider_open, signals.spider_opened)
         dispatcher.connect(_stats_on_spider_close, signals.spider_closed)
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler)
+
+
+class RequestsCounter(object):
+
+    __sqs_cache = None
+
+    def __init__(self, *args, **kwargs):
+        dispatcher.connect(self.__handler, signals.spider_closed)
+
+    @classmethod
+    def get_sqs_cache(cls):
+        if cls.__sqs_cache is None:
+            cls.__sqs_cache = SqsCache()
+        return cls.__sqs_cache
+
+    def __handler(self, response, request, spider):
+        spider_stats = spider.crawler.stats.get_stats()
+        try:
+            request_count = int(spider_stats.get('downloader/request_count'))
+        except ValueError:
+            request_count = 0
+        if request_count:
+            try:
+                self.get_sqs_cache().db.incr(
+                    self.get_sqs_cache().REDIS_REQUEST_COUNTER, request_count)
+            except Exception as e:
+                print 'ERROR WHILE STORE REQUEST METRICS. EXP: %s', e
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -350,9 +390,7 @@ if __name__ == '__main__':
                     print ' '*8, searchterm
     else:
         # list all files in bucket, for convenience
-        CWD = os.path.dirname(os.path.abspath(__file__))
-        sys.path.append(os.path.join(CWD, '..', '..', 'deploy',
-                                     'sqs_ranking_spiders'))
-        from list_all_files_in_s3_bucket import list_files_in_bucket
+        from sqs_ranking_spiders.list_all_files_in_s3_bucket import \
+            list_files_in_bucket
         for f in (list_files_in_bucket(bucket_name)):
             print f.key

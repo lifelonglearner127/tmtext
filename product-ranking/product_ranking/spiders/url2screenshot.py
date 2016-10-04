@@ -402,6 +402,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         # we will use requesocks for checking response code
         r_session = requests.session()
+        if self.timeout:
+            self.timeout = int(self.timeout)
         r_session.timeout = self.timeout
         #if self.proxy:
         #    r_session.proxies = {'http': self.proxy_type+'://'+self.proxy,

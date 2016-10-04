@@ -47,11 +47,14 @@ class JCPenneyCouponsSpider(scrapy.Spider):
             coupon.xpath(".//div[@class='couponItem_location']//text()").extract()
         )
 
+    def _parse_start_date(self, coupon):
+        return None
+
     def _parse_end_date(self, coupon):
         try:
             str_date = coupon.xpath(".//div[@class='couponItem_valid']//text()").extract()
             str_date = " ".join(str_date[0].split(" ")[2:])
-            return parse_date(str_date).strftime('%m/%d/%Y')
+            return parse_date(str_date).strftime('%Y-%m-%d')
         except:
             return None
 
@@ -77,6 +80,7 @@ class JCPenneyCouponsSpider(scrapy.Spider):
             item = DiscountCoupon()
             item['category'] = self._parse_category(coupon)
             item['description'] = self._parse_description(coupon)
+            item['start_date'] = self._parse_start_date(coupon)
             item['end_date'] = self._parse_end_date(coupon)
             item['discount'] = self._parse_discount(coupon)
             item['conditions'] = self._parse_conditions(coupon)
