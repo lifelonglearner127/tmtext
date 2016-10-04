@@ -1220,8 +1220,12 @@ class AmazonBaseClass(BaseProductsSpider):
         if not buyer_reviews.get('rating_by_star'):
             response.meta['product']['buyer_reviews'] = buyer_reviews
             # if still no rating_by_star (probably the rating is percent-based)
+            return self._create_get_requests(response)
+
+        if not buyer_reviews.get('rating_by_star'):
+            response.meta['product']['buyer_reviews'] = buyer_reviews
+            # if still no rating_by_star (probably the rating is percent-based)
             return self._create_post_requests(response)
-            #return
 
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
 
@@ -1273,6 +1277,26 @@ class AmazonBaseClass(BaseProductsSpider):
                     number.replace(',', '')
                 )
         return buyer_reviews, table
+
+    def _create_get_requests(self, response):
+        """
+        Method to create request for every star count.
+        """
+        meta = response.meta.copy()
+        meta['_current_star'] = {}
+        asin = meta['product_id']
+        for i, star in enumerate(self.buyer_reviews_stars):
+            args = 'ref=cm_cr_arp_d_hist_{star_number}?' \
+                   'ie=UTF8&filterByStar={star}&' \
+                   'pageNumber=1'.format(star_number=i+1, star=star)
+            url = response.url + args
+            meta['_current_star'] = star
+            yield Request(
+                url,
+                meta=meta,
+                callback=self._get_rating_by_star_by_individual_request,
+                dont_filter=True
+            )
 
     def _create_post_requests(self, response):
         """
