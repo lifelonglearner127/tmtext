@@ -139,10 +139,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         self.search_sort = search_sort
         SiteProductItem.__repr__ = lambda _: '[product item]'
         self.use_data_from_redirect_url = kwargs.get('use_data_from_redirect_url', False)
-        # remove odd spaces for single product urls
-        if self.product_url:
-            if type(self.product_url) is str or type(self.product_url) is unicode:
-                self.product_url = self.product_url.strip()
+
         super(WalmartProductsSpider, self).__init__(
             site_name=self.allowed_domains[0],
             url_formatter=FormatterWithDefaults(
@@ -167,6 +164,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         """
 
         if self.product_url:
+            # remove odd spaces for single product urls
+            if type(self.product_url) is str or type(self.product_url) is unicode:
+                self.product_url = self.product_url.strip()
             prod = SiteProductItem()
             prod['is_single_result'] = True
             yield Request(self.product_url,
