@@ -14,6 +14,8 @@ def collect_data(cache):
     context['total_instances'] = cache.get_today_instances()
     context['today_jobs'] = cache.get_jobs_stats()
     context['today_requests_count'] = cache.get_today_requests()
+    if context['today_requests_count'] is None:
+        context['today_requests_count'] = 0
     context['total_cached_items'] = cache.get_cached_tasks_count()
     context['cache_most_popular_url'] = \
         cache.get_most_popular_cached_items(5, False)
