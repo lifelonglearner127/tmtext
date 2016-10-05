@@ -217,6 +217,13 @@ class LeviSpider(BaseCheckoutSpider):
             promp_window[0].click()
             time.sleep(2)
 
+        promp_window = self._find_by_xpath('//*[@id="oo_close_prompt" and @aria-label="Close dialog"]')
+
+        if promp_window and promp_window[0].is_displayed():
+            promp_window[0].click()
+            time.sleep(2)
+
+
         more_colors_button = self._find_by_xpath(
             '//*[@class="color-swatch more-button"]')
 
