@@ -22,16 +22,14 @@
                     for (var i=0; i<keys.length; i++) {
                         var date = new Date(parseInt(keys[i]) * 1000);
                         labels.push(
-                                date.getUTCFullYear() + "/"
-                                + (date.getUTCMonth()+1) + "/"
-                                + date.getUTCDate()
+                            date.getUTCHours() + ' Hour'
                         );
                         data.push(resp[keys[i]]);
                     }
                     var chartData = {
                         labels: labels,
                         datasets: [{
-                            label: "Avg. time by hour",
+                            label: "Task execute avg. time by hour",
                             fillColor: "rgba(151,187,205,0.2)",
                             strokeColor: "rgba(151,187,205,1)",
                             pointColor: "rgba(151,187,205,1)",
@@ -67,7 +65,7 @@
 </head>
 <body>
 <div>
-    <select class="date-select">
+    <select class="date-select" style="display: none;">
         <option>Days:</option>
         <option value="1">1 day</option>
         <option value="7" selected="selected">Week</option>
