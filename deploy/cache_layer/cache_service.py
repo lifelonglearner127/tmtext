@@ -545,11 +545,11 @@ class SqsCache(object):
         executions_time_tmp = self.db.hgetall(self.REDIS_TASK_EXECUTION_TIME)
         result = defaultdict(dict)
         for key, val in executions_time_tmp.items():
-            key = key.split(':')
-            if time_from > int(key):
+            _time, _type = key.split(':')
+            if time_from > int(_time):
                 continue
-            if time_to < int(key):
+            if time_to < int(_time):
                 break
-            result[key[0]][key[1]] = val
+            result[_time][_type] = val
         return OrderedDict([(k, float(v['sum']) / float(v['count']))
                             for k, v in result.items()])
