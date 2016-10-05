@@ -1107,7 +1107,7 @@ class AmazonScraper(Scraper):
 
             for retry_index in range(10):
                 try:
-                    contents = self.browser.open(review_link).read()
+                    contents = self.browser.open(review_link, timeout=10).read()
 
                     if "Sorry, no reviews match your current selections." in contents:
                         review_list.append([index + 1, 0])
@@ -1290,7 +1290,7 @@ class AmazonScraper(Scraper):
         fl = 0
 
         while len(url) > 10:
-            contents = self.browser.open(url).read()
+            contents = self.browser.open(url, timeout=10).read()
             tree = html.fromstring(contents)
             sells = tree.xpath('//div[@class="a-row a-spacing-mini olpOffer"]')
 
@@ -1321,14 +1321,14 @@ class AmazonScraper(Scraper):
 
                             if seller_name == "":
                                 if seller_link[0].startswith("http://www.amazon."):
-                                    seller_content = self.browser.open(seller_link[0]).read()
+                                    seller_content = self.browser.open(seller_link[0], timeout=10).read()
                                 else:
                                     if self.scraper_version == "uk":
-                                        seller_content = self.browser.open("http://www.amazon.co.uk" + seller_link[0]).read()
+                                        seller_content = self.browser.open("http://www.amazon.co.uk" + seller_link[0], timeout=10).read()
                                     elif self.scraper_version == "ca":
-                                        seller_content = self.browser.open("http://www.amazon.ca" + seller_link[0]).read()
+                                        seller_content = self.browser.open("http://www.amazon.ca" + seller_link[0], timeout=10).read()
                                     else:
-                                        seller_content = self.browser.open("http://www.amazon.com" + seller_link[0]).read()
+                                        seller_content = self.browser.open("http://www.amazon.com" + seller_link[0], timeout=10).read()
 
                                 seller_tree = html.fromstring(seller_content)
                                 seller_names = seller_tree.xpath("//h2[@id='s-result-count']/span/span//text()")
