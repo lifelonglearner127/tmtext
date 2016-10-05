@@ -1,21 +1,29 @@
+import re
+
 import json
 from pprint import pprint
 
 import lxml.html
-
+import requests
 
 class TargetVariants(object):
 
-    def setupSC(self, response, debug=False):
+    def setupSC(self, response, zip_code='94117', item_info=None, debug=False):
         """ Call it from SC spiders """
         self.response = response
         self.tree_html = lxml.html.fromstring(response.body)
+        self.item_info = item_info
+        self.zip_code = zip_code
         self.debug = debug
 
-    def setupCH(self, tree_html, debug=False):
+    def setupCH(self, tree_html, zip_code='94117', item_info=None, debug=False):
         """ Call it from CH spiders """
         self.tree_html = tree_html
+        self.item_info = item_info
         self.debug = debug
+
+        self.zip_code = zip_code
+        self.location_id = None
 
     def _scrape_possible_variant_urls(self):
         """ Returns possible variants (URLs) as scraped from HTML blocks (see #3930) """
@@ -117,7 +125,161 @@ class TargetVariants(object):
 
         return stockstatus_for_variation_combinations
 
+    def _availability_info(self, variants):
+
+        url = 'https://api.target.com/available_to_promise_aggregator/v1?key=adaptive-pdp&request_type=availability'
+
+        payload = { 'products': [] }
+
+        for item in variants:
+            payload['products'].append(
+                {
+                    'request_line_id': 1,
+                    'product': {
+                        'product_id': str(item['partNumber']),
+                        'multichannel_option': 'none',
+                        'location_ids': str(self.location_id),
+                        'inventory_type': 'stores',
+                        'requested_quantity': '1',
+                        'field_groups': 'location_summary'
+                  }
+                }
+            )
+
+        if not payload['products']:
+            return
+
+        headers = {
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Encoding': 'gzip, deflate, sdch, br',
+            'Accept-Language': 'en-US,en;q=0.8,ja;q=0.6,vi;q=0.4,es;q=0.2,fr;q=0.2,zh-CN;q=0.2,zh;q=0.2,pt;q=0.2',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/json',
+            'Host': 'api.target.com',
+            'Origin': 'http://www.target.com',
+            'Pragma': 'no-cache',
+            'Referer': self.item_info['dynamicKitURL'],
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36'
+        }
+        try:
+            response = requests.post(url, data=json.dumps(payload), headers=headers)
+            # TODO: url http://www.target.com/p/mid-rise-straight-leg-jeans-curvy-fit-black-mossimo/-/A-15545812 fails
+
+            return response.json()['products']
+        except:
+            print 'ERROR getting avilability info! '# + response.text
+
+    def _extract_location_id(self, product_id):
+        " extract location id to use it in stock status checking "
+
+        url = 'https://api.target.com/available_to_promise/v2/%s/search?nearby=%s&requested_quantity=1&inventory_type=stores&radius=100&multichannel_option=none&field_groups=location_summary&key=q0jGNkIyuqUTYIlzZKoCfK6ugaNGSP8h' % (product_id, self.zip_code)
+
+        headers = {
+            'Accept': 'application/json, text/javascript, */*',
+            'Accept-Encoding': 'gzip, deflate, sdch, br',
+            'Accept-Language': 'en-US,en;q=0.8,ja;q=0.6,vi;q=0.4,es;q=0.2,fr;q=0.2,zh-CN;q=0.2,zh;q=0.2,pt;q=0.2',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Host': 'api.target.com',
+            'Origin': 'http://www.target.com',
+            'Pragma': 'no-cache',
+            'Referer': self.item_info['dynamicKitURL'],
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36'
+        }
+
+        response = requests.get(url, headers=headers)
+        try:
+            return response.json()['products'][0]['locations'][0]['location_id']
+        except Exception as e:
+            print str(e)
+            return ''
+
     def _variants(self):
+        if self.item_info:
+            variants = []
+
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36'
+            }
+            page_raw_text = requests.get(self.item_info['dynamicKitURL'], headers=headers).content
+            # decides if users can see "get it in 4-7 business days"
+            refresh_items = {}
+            match = re.search(r'refreshItems = (.*?)\s*</script>', page_raw_text)
+            if match:
+                data = json.loads(match.group(1).strip())
+                for item in data:
+                    refresh_items[item['Attributes']['partNumber']] = item['Attributes']['callToActionDetail']['shipToStoreEligible']
+
+            if not getattr(self, 'location_id', None):
+                if self.item_info['SKUs']:
+                    self.location_id = self._extract_location_id(self.item_info['SKUs'][0]['partNumber'])
+                else:
+                    self.location_id = None
+
+            availability_info = {}
+            items = self._availability_info(self.item_info['SKUs'])
+            for item in items if items else []:
+                product_id = item['products'][0]['product_id']
+
+                try:
+                    availability_info[product_id] = [refresh_items[product_id]]  # TODO: this fails sometimes, wrapped in exception but not sure it's what we need
+                except KeyError:
+                    continue
+
+                if 'locations' in item['products'][0]:
+                    status = False
+                    try:
+                        status = True if item['products'][0]['locations'][0][
+                                             'availability_status'] == 'IN_STOCK' else False
+                        availability_info[product_id].append(status)
+                    except (KeyError, IndexError):
+                        availability_info[product_id] = [status]
+
+            for item in self.item_info['SKUs']:
+                try:
+                    price = item['Offers'][0]['OfferPrice'][0]['formattedPriceValue']
+                except ValueError as e:
+                    if 'low to display' in str(e):
+                        price = None  # in cart price?
+                except KeyError:
+                    price = None
+
+                v = {
+                    'in_stock' : False,
+                    'price': float( price[1:].replace(',',''))\
+                        if price not in ('Too low to display', None, 'price varies')\
+                        else None, # convert price
+                    'properties' : {},
+                    'image_url' : item['Images'][0]['PrimaryImage'][0]['image'],
+                    'selected' : False,
+                    'upc':None,
+                    'dpci': None,
+                }
+                # Adding UPC, dpci and tcin
+
+                v['upc'] = item.get('UPC')
+                v['dpci'] = item.get('DPCI')
+                img_url = v.get('image_url')
+                v['tcin'] = img_url.split('/')[-1] if img_url else None
+                v['in_stock'] = any(availability_info.get(item.get('partNumber', True), [True]))  # TODO: this fails if written as indexes ([]), not get()
+
+                for attribute in item.get('VariationAttributes', []):
+                    v['properties'][ attribute['name'].lower() ] = attribute['value']
+
+                # Extracting selected color from page html and comaring with current variant color
+                current_color = v['properties'].get('color')
+                selected_color = self.tree_html.xpath('.//*[@aria-checked="true"]/input/@data-key')
+                selected_color = selected_color[0] if selected_color else None
+                if selected_color == current_color and len(v['properties']) == 1:
+                    v['selected'] = True
+                variants.append(v)
+
+            if variants:
+                return variants
+            return None
+
         try:
             variation_combinations_values = json.loads(self.tree_html.xpath("//div[@id='entitledItem']/text()")[0])
 
@@ -177,7 +339,10 @@ class TargetVariants(object):
                 stockstatus_for_variants["properties"] = properties
                 stockstatus_for_variants["selected"] = None
                 try:
-                    stockstatus_for_variants["price"] = float(hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["price"]["formattedOfferPrice"][1:])
+                    if hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["price"]["formattedOfferPrice"] == "Too low to display":
+                        stockstatus_for_variants["price"] = None
+                    else:
+                        stockstatus_for_variants["price"] = float(hash_catentryid_to_stockstatus[variant_item["catentry_id"]]["price"]["formattedOfferPrice"][1:])
                 except:
                     continue
 

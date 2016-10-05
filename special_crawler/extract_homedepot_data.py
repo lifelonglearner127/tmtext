@@ -4,6 +4,7 @@ import urllib
 import re
 import sys
 import json
+import copy
 
 from lxml import html, etree
 import time
@@ -66,7 +67,7 @@ class HomeDepotScraper(Scraper):
             return
 
         try:
-            product_json_text = self._find_between(html.tostring(self.tree_html), "THD.PIP.products.primary = new THD.PIP.Product(", ");\n")
+            product_json_text = re.search('product: ({.*}),\s*channel:', html.tostring(self.tree_html), re.DOTALL).group(1)
             self.product_json = json.loads(product_json_text)
         except:
             self.product_json = None
@@ -92,11 +93,6 @@ class HomeDepotScraper(Scraper):
     def _status(self):
         return "success"
 
-
-
-
-
-
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
@@ -115,11 +111,9 @@ class HomeDepotScraper(Scraper):
         return self.product_json["info"]["modelNumber"]
 
     def _upc(self):
-        print '\n\n\n\n\n'
         scripts = self.tree_html.xpath('//script//text()')
         for script in scripts:
             var = re.findall(r'CI_ItemUPC=(.*?);', script)
-            print var
             if len(var) > 0:
                 var = var[0]
                 break
@@ -184,7 +178,69 @@ class HomeDepotScraper(Scraper):
 
         return None
 
+    def _swatches(self):
+        swatches = []
 
+        for img in self.tree_html.xpath('//div[contains(@class, "sku_variant")]/ul/li/a/img'):
+            swatch = {
+                'color' : img.get('title'),
+                'hero' : 1,
+                'hero_image' : img.get('src')
+            }
+            swatches.append(swatch)
+
+        if swatches:
+            return swatches
+
+    def _variants(self):
+        variants = []
+
+        first_sku_variant = True
+
+        for sku_variant in self.tree_html.xpath('//div[contains(@class, "sku_variant")]'):
+            variants = []
+
+            for option in sku_variant.xpath('ul/li'):
+                if 'product_sku_Overlay_ColorSwatch' in sku_variant.get('class'):
+                    v = {
+                        'selected' : False,
+                        'properties' : {
+                            'color' : option.xpath('a/img/@title')[0]
+                        }
+                    }
+
+                    if option.get('class') and 'selected' in option.get('class'):
+                        v['selected'] = True
+
+                else:
+                    custom_label = sku_variant.xpath('a[@class="customLabel"]/text()')[0]
+                    selected_value = sku_variant.xpath('a[@class="customLabel"]/span[contains(@class,"select")]/text()')[0]
+
+                    value = option.xpath('a/text()')[0]
+
+                    v = {
+                        'selected' : selected_value == value,
+                        'properties' : {
+                            custom_label : value
+                        }
+                    }
+
+                if not first_sku_variant:
+                    for variant in original_variants:
+                        variant_copy = copy.deepcopy(variant)
+                        variant_copy['properties'].update(v['properties'])
+                        if not v['selected']:
+                            variant_copy['selected'] = False
+                        variants.append(variant_copy)
+
+                else:
+                    variants.append(v)
+
+            original_variants = copy.deepcopy(variants)
+            first_sku_variant = False
+
+        if variants:
+            return variants
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -227,12 +283,16 @@ class HomeDepotScraper(Scraper):
         return None
 
     def _video_count(self):
+        self._extract_product_json()
         videos = self._video_urls()
+
+        media_list = self.product_json["media"]["mediaList"]
+        video_count = len( filter(lambda m: 'videoId' in m, media_list))
 
         if videos:
             return len(videos)
 
-        return 0
+        return video_count
 
     def _pdf_urls(self):
         moreinfo = self.tree_html.xpath('//div[@id="moreinfo_wrapper"]')[0]
@@ -263,9 +323,6 @@ class HomeDepotScraper(Scraper):
 
     def _keywords(self):
         return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
-
-    def _no_image(self):
-        return None
     
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -345,17 +402,21 @@ class HomeDepotScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        self._extract_product_json()
+        ajax_price = self.tree_html.xpath('//div[not(@class="bulk_wrapper")]/span[@id="ajaxPrice"]/text()')
 
-        return "$" + '{0:,}'.format(float(self.product_json["itemExtension"]["displayPrice"]))
+        if ajax_price:
+            return self._clean_text( ajax_price[0])
+
+        return self._clean_text( self.tree_html.xpath('//span[@id="ajaxPriceAlt"]/text()')[0])
 
     def _price_amount(self):
-        self._extract_product_json()
-
-        return float(self.product_json["itemExtension"]["displayPrice"])
+        return float( self._price()[1:].replace(',',''))
 
     def _price_currency(self):
         return self.tree_html.xpath("//meta[@itemprop='priceCurrency']/@content")[0]
+
+    def _temp_price_cut(self):
+        return self.product_json["itemExtension"]["localStoreSku"]["pricing"]["itemOnSale"]
 
     def _in_stores(self):
         self._extract_product_json()
@@ -397,17 +458,13 @@ class HomeDepotScraper(Scraper):
     def _marketplace_lowest_price(self):
         return None
 
-
-
-
-
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
         scripts = self.tree_html.xpath('//script//text()')
         for script in scripts:
-            jsonvar = re.findall(r'BREADCRUMB_JSON = (.*?);', script)
+            jsonvar = re.findall(r'BREADCRUMB_JSON = (.*?});', script)
             if len(jsonvar) > 0:
                 jsonvar = jsonvar[0]
                 break
@@ -424,14 +481,12 @@ class HomeDepotScraper(Scraper):
         return self.product_json["info"]["brandName"]
 
 
-
     ##########################################
     ################ HELPER FUNCTIONS
     ##########################################
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
-        return re.sub("&nbsp;", " ", text).strip()
-
+        return re.sub("[\n\t]", "", text).strip()
 
 
     ##########################################
@@ -460,13 +515,14 @@ class HomeDepotScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
+        "swatches" : _swatches, \
+        "variants" : _variants, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
-        "no_image" : _no_image, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
@@ -480,10 +536,12 @@ class HomeDepotScraper(Scraper):
         "max_review" : _max_review, \
         "min_review" : _min_review, \
         "reviews" : _reviews, \
+
         # CONTAINER : SELLERS
         "price" : _price, \
         "price_amount" : _price_amount, \
         "price_currency" : _price_currency, \
+        "temp_price_cut" : _temp_price_cut, \
         "in_stores" : _in_stores, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
@@ -496,8 +554,6 @@ class HomeDepotScraper(Scraper):
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
-
-
 
         "loaded_in_seconds" : None, \
         }

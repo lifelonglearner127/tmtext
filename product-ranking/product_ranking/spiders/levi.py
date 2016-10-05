@@ -62,6 +62,8 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
                       "&ur=http%3A%2F%2Fwww.levi.com%2FUS%2Fen_US%" \
                       "2Fwomens-jeans%2Fp%2F095450043&plk=&"
 
+    handle_httpstatus_list = [404]
+
     use_proxies = True
 
     def __init__(self, *args, **kwargs):
@@ -75,6 +77,12 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta.get('product', SiteProductItem())
+
+        if response.status == 404 or 'This product is no longer available' in response.body_as_unicode() \
+                or "www.levi.com/US/en_US/error" in response.url:
+            product.update({"not_found": True})
+            product.update({"no_longer_available": True})
+            return product
 
         reqs = []
 
@@ -119,7 +127,6 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
-        # Parse variants
         try:
             variants = self._parse_variants(response)
         except KeyError:
@@ -213,8 +220,12 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_title(self, response):
         title = response.xpath(
-            '//h1[contains(@class, "title")]/text()').extract()
-
+                '//meta[contains(@property, "og:title")]/@content').extract()
+        if title:
+            title = [title[0].replace('&trade;', '').replace('\u2122', '')]
+        else:
+            title = response.xpath(
+                '//h1[contains(@class, "title")]/text()').extract()
         return title
 
     def parse_data(self, response):

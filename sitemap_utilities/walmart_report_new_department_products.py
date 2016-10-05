@@ -1,29 +1,36 @@
 __author__ = 'root'
 
-import os,time
+import os
+import time
 
 #!/usr/bin/env python
 
 import re
 import zlib
-import os
 import csv
 import glob
 import operator
 import shutil
 import smtplib
+import gzip
 import sys
+from pprint import pprint
+
 
 def generate_department_product_list(input_file, output_dir):
     with open(input_file) as f:
-        fieldnames = ['url', 'department', 'type']
         owned_home_count = marketplace_count = 0
         department_owned_marketplace_total_list = {}
 
         for line in f:
             try:
                 url = re.search('\<url\>(.+?)\</url\>', line).group(1)
-                department = re.search('<department>(.+?)</department>', line).group(1)
+                super_department = re.search(
+                    '<super_department>(.+?)</super_department>', line)
+                if super_department:
+                    department = super_department.group(1)
+                else:
+                    department = re.search('<department>(.+?)</department>', line).group(1)
                 type = re.search('<type>(.+?)</type>', line).group(1)
                 count_list = [0, 0, 0]
 
@@ -63,8 +70,12 @@ def generate_department_product_list(input_file, output_dir):
             except:
                 continue
 
-path_output = "/home/ubuntu/walmart_departments_output/"
-gz_file_list = glob.glob("/home/ubuntu/walmart_departments/*.gz")
+if os.path.exists('/tmp/walmart_csv_local'):
+    path_output = "/tmp/walmart_departments_output/"
+    gz_file_list = glob.glob("/tmp/walmart_departments/*.gz")
+else:
+    path_output = "/home/ubuntu/walmart_departments_output/"
+    gz_file_list = glob.glob("/home/ubuntu/walmart_departments/*.gz")
 
 for i in range(len(gz_file_list)):
     statinfo = os.stat(gz_file_list[i])

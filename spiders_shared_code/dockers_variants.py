@@ -35,6 +35,7 @@ class DockersVariants(object):
             buy_stack_json = None
 
         if buy_stack_json:
+            product_url = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
             attribute_values_list = []
             out_of_stock_combination_list = []
 
@@ -67,6 +68,7 @@ class DockersVariants(object):
             out_of_stock_combination_list = [list(tup) for tup in out_of_stock_combination_list]
             attribute_list = []
             variant_list = []
+            registered_value_list = []
 
             for variant_combination in buy_stack_json["sku"]:
                 variant_item = {}
@@ -74,28 +76,45 @@ class DockersVariants(object):
                 value_list = []
 
                 if "colorid" in buy_stack_json["sku"][variant_combination]:
-                    _colorid = buy_stack_json["sku"][variant_combination]["colorid"]
-                    if _colorid not in buy_stack_json['colorid']:
+                    if color_list:
+                        if buy_stack_json["sku"][variant_combination]["colorid"] not in buy_stack_json["colorid"]:
+                            continue
+                        variant_item['colorid'] = buy_stack_json["sku"][variant_combination]['colorid']
+                        properties["color"] = buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]["colorid"]]["finish"]["title"]
+                        variant_item["url"] = product_url[:product_url.rfind("/") + 1] + buy_stack_json["sku"][variant_combination]["colorid"]
+                        value_list.append(properties["color"])
+                        if "color" not in attribute_list: attribute_list.append("color")
+                    else:
                         continue
-                    properties["color"] = buy_stack_json["colorid"][_colorid]["finish"]["title"]
-                    value_list.append(properties["color"])
-
-                    if "color" not in attribute_list: attribute_list.append("color")
 
                 if "length" in buy_stack_json["sku"][variant_combination]:
-                    properties["length"] = buy_stack_json["sku"][variant_combination]["length"]
-                    value_list.append(properties["length"])
-                    if "length" not in attribute_list: attribute_list.append("length")
+                    if length_list:
+                        properties["length"] = buy_stack_json["sku"][variant_combination]["length"]
+                        value_list.append(properties["length"])
+                        if "length" not in attribute_list: attribute_list.append("length")
+                    else:
+                        continue
 
                 if "size" in buy_stack_json["sku"][variant_combination]:
-                    properties["size"] = buy_stack_json["sku"][variant_combination]["size"]
-                    value_list.append(properties["size"])
-                    if "size" not in attribute_list: attribute_list.append("size")
+                    if size_list:
+                        properties["size"] = buy_stack_json["sku"][variant_combination]["size"]
+                        value_list.append(properties["size"])
+                        if "size" not in attribute_list: attribute_list.append("size")
+                    else:
+                        continue
 
                 if "waist" in buy_stack_json["sku"][variant_combination]:
-                    properties["waist"] = buy_stack_json["sku"][variant_combination]["waist"]
-                    value_list.append(properties["waist"])
-                    if "waist" not in attribute_list: attribute_list.append("waist")
+                    if waist_list:
+                        properties["waist"] = buy_stack_json["sku"][variant_combination]["waist"]
+                        value_list.append(properties["waist"])
+                        if "waist" not in attribute_list: attribute_list.append("waist")
+                    else:
+                        continue
+
+                if value_list in registered_value_list:
+                    continue
+
+                registered_value_list.append(value_list)
 
                 if value_list in out_of_stock_combination_list:
                     out_of_stock_combination_list.remove(value_list)
@@ -136,6 +155,7 @@ class DockersVariants(object):
                 variant_item["upc"] = None
                 variant_item["stock"] = 0
                 variant_item["in_stock"] = False
+                variant_item["url"] = None
 
                 variant_list.append(variant_item)
 

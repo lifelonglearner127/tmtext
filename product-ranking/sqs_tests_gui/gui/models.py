@@ -62,7 +62,7 @@ class Job(models.Model):
 
     name = models.CharField(max_length=100, blank=True, null=True,
                             help_text='Optional, just for convenience')
-    spider = models.CharField(max_length=100, choices=[])
+    spider = models.CharField(max_length=100, choices=[])  # see gui/forms.py
 
     search_term = models.CharField(
         max_length=255, blank=True, null=True,
@@ -114,6 +114,9 @@ class Job(models.Model):
     status = models.CharField(max_length=100, choices=_status_choices,
                               default='created')
 
+    priority_choices = ['test', 'urgent', 'production', 'dev']
+    priority = models.CharField(max_length=20, default='test', choices=[(c, c) for c in priority_choices])
+
     def searchterm_or_url(self):
         return ('SearchTerm [%s]' % self.search_term if self.search_term
                 else 'URL')
@@ -129,10 +132,16 @@ class Job(models.Model):
     view_as_image.allow_tags = True
 
     def get_input_queue(self):
+        if self.priority not in self.priority_choices\
+                or self.priority == 'test':  # default, test priority
+            if self.mode == 'no cache':
+                return settings.TEST_QUEUE
+            elif self.mode == 'cache':
+                return settings.TEST_CACHE_QUEUE
         if self.mode == 'no cache':
-            return settings.TEST_QUEUE
+            return settings.QUEUES_LIST[self.priority]
         elif self.mode == 'cache':
-            return settings.TEST_CACHE_QUEUE
+            return settings.CACHE_QUEUES_LIST[self.priority]
 
 
 class JobGrouperCache(models.Model):

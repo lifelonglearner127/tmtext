@@ -23,9 +23,9 @@ class TargetValidatorSettings(object):  # do NOT set BaseValidatorSettings as pa
 
     test_urls = {
         'http://intl.target.com/p/crafted-by-lee-men-s-slim-fit-jeans-medium-blue-stretch/-/A-50193843#prodSlot=large_1_1',
-        'http://www.target.com/p/women-s-xhilaration-mixed-print-fit-and-flare-dress-onyx/-/A-18770459?lnk=rec|pdp|viewed_bought|pdph1',
-        'http://www.target.com/p/women-s-stripe-ponte-fit-and-flare-dress-merona/-/A-16622562',
-        'http://www.target.com/p/women-s-shirt-dress-merona/-/A-17257480#prodSlot=medium_1_19&term=dress',
+        'http://www.target.com/p/oster-microwave-oven-red/-/A-17279251#prodSlot=medium_1_16',
+        'http://www.target.com/p/panasonic-silver-1-2-cu-ft-microwave-oven/-/A-14045881#prodSlot=medium_1_25',
+        'http://www.target.com/p/sunbeam-microwave-0-9-cu-ft-black/-/A-13288321#prodSlot=medium_1_6',
         'http://www.target.com/p/women-s-sleeveless-easy-waist-dress-mossimo-supply-co-junior-s/-/A-16716172?lnk=rec|pdp|viewed_bought|pdp404h2',
         'http://www.target.com/p/women-s-woven-skater-dress-mossimo-supply-co/-/A-21442655?lnk=rec|pdp|viewed_bought|pdp404h2'
 

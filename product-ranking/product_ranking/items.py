@@ -115,17 +115,21 @@ def scrapy_marketplace_serializer(value):
     result = []
 
     for rec in value:
+        #import pdb; pdb.set_trace()
         if isinstance(rec, Price):
             converted = {u'price': float(rec.price),
                          u'currency': unicode(rec.priceCurrency),
                          u'name': None}
         elif isinstance(rec, dict):
-            converted = {
-                u'price': get(rec, 'price', 'price', float),
-                u'currency': get(rec, 'price', 'priceCurrency', unicode),
-                u'name': conv_or_none(rec.get('name'), unicode),
-                u'seller_type': rec.get('seller_type', None)
-            }
+            if rec.get('price', None) and rec.get('currency', None):
+                converted = rec
+            else:
+                converted = {
+                    u'price': get(rec, 'price', 'price', float),
+                    u'currency': get(rec, 'price', 'priceCurrency', unicode),
+                    u'name': conv_or_none(rec.get('name'), unicode),
+                    u'seller_type': rec.get('seller_type', None)
+                }
         else:
             converted = {u'price': None, u'currency': None,
                          u'name': unicode(rec)}
@@ -161,6 +165,7 @@ class SiteProductItem(Item):
     # Product data.
     title = Field()  # String.
     upc = Field(serializer=scrapy_upc_serializer)  # Integer.
+    asin = Field()
     model = Field()  # String, alphanumeric code.
     sku = Field()  # product SKU, if any
     url = Field()  # String, URL.
@@ -168,12 +173,16 @@ class SiteProductItem(Item):
     description = Field()  # String with HTML tags.
     brand = Field()  # String.
     price = Field(serializer=scrapy_price_serializer)  # see Price obj
+    price_with_discount = Field(serializer=scrapy_price_serializer)
     marketplace = Field(serializer=scrapy_marketplace_serializer)  # see marketplace obj
+
     locale = Field()  # String.
     # Dict of RelatedProducts. The key is the relation name.
     related_products = Field()
     # Dict of SponsoredLinks. The key is the relation name.
     sponsored_links = Field()
+    # whether or not this product has been scraped coming from a sponsored link
+    is_sponsored_product = Field()
     # Available in-store only
     is_in_store_only = Field()
     # Out of stock
@@ -184,7 +193,8 @@ class SiteProductItem(Item):
     bestseller_rank = Field()
     department = Field()  # now for Amazons only; may change in the future
     category = Field()  # now for Amazons only; may change in the future
-    categories = Field() # now for amazon and maybe walmart
+    categories = Field()  # now for amazon and maybe walmart
+    categories_full_info = Field()  # for Walmart, see BZ 5828
 
     # Calculated data.
     search_term_in_title_partial = Field()  # Bool
@@ -216,6 +226,8 @@ class SiteProductItem(Item):
     variants = Field()
 
     shipping = Field()  # now for Walmart only; may change in the future
+    shipping_included = Field()
+    shipping_cost = Field(serializer=scrapy_price_serializer)
 
     img_count = Field()   # now for Walmart only; may change in the future
     video_count = Field()   # now for Walmart only; may change in the future
@@ -246,7 +258,41 @@ class SiteProductItem(Item):
                                      # only after you put the product in cart
 
     seller_ranking = Field()  # for Walmart
+
     _subitem = Field()
+
+    minimum_order_quantity = Field() # Costco.com
+
+    available_online = Field()
+    available_store = Field()
+    subscribe_and_save = Field() # Samclub.com
+
+    walmart_url = Field()  # For amazon_top_categories_products spider, url of product on Walmart, if found
+    walmart_category = Field()  # For amazon_top_categories_products spider, category of product on Walmart, if found
+    walmart_exists = Field()  # For amazon_top_categories_products - True/False
+
+    target_url = Field()  # For amazon_top_categories_products spider, url of product on Target, if found
+    target_category = Field()  # For amazon_top_categories_products spider, category of product on Target, if found
+    target_exists = Field()  # For amazon_top_categories_products - True/False
+
+    price_club = Field(serializer=scrapy_price_serializer) # Samclub.com
+    price_club_with_discount = Field(serializer=scrapy_price_serializer) # Samclub.com
+
+    _jcpenney_has_size_range = Field()  # see BZ 9913
+    level1 = Field()
+    level2 = Field()
+    level3 = Field()
+    level4 = Field()
+    level5 = Field()
+    level6 = Field()
+    level7 = Field()
+    level8 = Field()
+    level9 = Field()
+    level10 = Field()
+
+    dpci = Field()  # Target.com unique item identifier, example - 008-09-1171
+    tcin = Field()  # Target.com online item number, for example - Online Item #: 16390220
+    origin = Field()  # Target.com origin field, describes if item is imported or not
 
 
 class DiscountCoupon(Item):
@@ -268,3 +314,26 @@ class DiscountCoupon(Item):
     end_date = Field()  # (10/31/2015)
     discount = Field()  # (Discount value or Percentage (20% OFF)
     conditions = Field()  # (Applies to select items priced $50 or more...)
+    promo_code = Field()  # (For ex: ALL4KIDS, 3BUYMORE, etc)
+
+class CheckoutProductItem(Item):
+    name = Field()
+    id = Field()
+    price = Field()             # In-cart Product Value
+    price_on_page = Field()     # On-Page Product Value
+    quantity = Field()
+    requested_color = Field()
+    requested_color_not_available = Field()
+    requested_quantity_not_available = Field()  # True if quantity not available, else False
+    no_longer_available = Field()  # True if item no longer available, else False
+    not_found = Field()  # True if item not found, else False
+    color = Field()
+    order_subtotal = Field()    # Pre-tax & shipping Cart Value
+    order_total = Field()       # Post-tax & shipping Cart Value
+    promo_order_subtotal = Field()  # Pre-tax & shipping Cart Value - promo, ticket 10585
+    promo_order_total = Field() # Post-tax & shipping Cart Value - promo, ticket 10585
+    promo_price = Field() # # In-cart Product Value - promo, ticket 10585
+    promo_code = Field() # In-cart Product Code, ticket 11599
+    is_promo_code_valid = Field() # True if promo_code changed _order_total price, else False
+    promo_invalid_message = Field() # Message returned by website if promo code is invalid, ticket #11720
+    url = Field()

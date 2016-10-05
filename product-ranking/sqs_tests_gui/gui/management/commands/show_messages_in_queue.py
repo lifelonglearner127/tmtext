@@ -16,8 +16,7 @@ sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
 import scrapy_daemon
 from test_sqs_flow import download_s3_file, AMAZON_BUCKET_NAME, unzip_file
-from list_all_files_in_s3_bucket import list_files_in_bucket, \
-        AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+from list_all_files_in_s3_bucket import list_files_in_bucket
 
 from update_jobs import _get_queue
 

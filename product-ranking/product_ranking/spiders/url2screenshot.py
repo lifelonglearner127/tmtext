@@ -9,6 +9,10 @@ import sys
 import time
 import socket
 import random
+import re
+import urlparse
+import shutil
+import datetime
 
 import scrapy
 from scrapy.conf import settings
@@ -28,6 +32,8 @@ except ImportError:
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', '..'))
 
+DEBUG_MODE = False  # TODO! fix
+
 try:
     from search.captcha_solver import CaptchaBreakerWrapper
 except ImportError as e:
@@ -38,9 +44,52 @@ except ImportError as e:
 class ScreenshotItem(scrapy.Item):
     url = scrapy.Field()
     image = scrapy.Field()
+    via_proxy = scrapy.Field()  # IP via webdriver
+    site_settings = scrapy.Field()  # site-specified settings that were activated (if any)
 
     def __repr__(self):
         return '[image data]'  # don't dump image data into logs
+
+
+def _get_random_proxy():
+    proxy_file = '/tmp/http_proxies.txt'
+    if os.path.exists(proxy_file):
+        with open(proxy_file, 'r') as fh:
+            lines = [l.strip().replace('http://', '')
+                     for l in fh.readlines() if l.strip()]
+            return random.choice(lines)
+
+
+def _get_domain(url):
+    return urlparse.urlparse(url).netloc.replace('www.', '')
+
+"""
+def authenticate_driver_and_get(driver, url):
+    driver.set_page_load_timeout(60)
+    # handle http basic auth for Crawlera proxy, if needed
+
+    driver.get(url)
+
+    from selenium.webdriver.common.alert import Alert
+    time.sleep(3)
+    alert = Alert(driver)
+    time.sleep(3)
+    #alert.authenticate(CRAWLERA_APIKEY, '')
+    #import pdb; pdb.set_trace()
+    alert.send_keys(settings['CRAWLERA_APIKEY'] + '\n')
+    alert.accept()
+    #alert.send_keys('\t')
+    #alert.send_keys('\n')
+    #import pdb; pdb.set_trace()
+    driver.set_page_load_timeout(30)
+"""
+
+
+def _check_bad_results_macys(driver):
+    if u'something went wrong' in driver.page_source.lower():
+        return True
+    if u'Access Denied' in driver.page_source and u"You don't have permission" in driver.page_source:
+        return True
 
 
 class URL2ScreenshotSpider(scrapy.Spider):
@@ -48,16 +97,17 @@ class URL2ScreenshotSpider(scrapy.Spider):
     # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
     available_drivers = ['chromium', 'firefox']
 
+    handle_httpstatus_list = [403, 404, 502, 500]
+
     def __init__(self, *args, **kwargs):
         self.product_url = kwargs['product_url']
         self.width = kwargs.get('width', 1280)
         self.height = kwargs.get('height', 1024)
-        self.timeout = kwargs.get('timeout', 30)
+        self.timeout = kwargs.get('timeout', 60)
         self.image_copy = kwargs.get('image_copy', None)
         self.user_agent = kwargs.get(
             'user_agent',
-            ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/53 "
-             "(KHTML, like Gecko) Chrome/15.0.87")
+            ("Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0) Gecko/20100101 Firefox/32.0")
         )
         self.crop_left = kwargs.get('crop_left', 0)
         self.crop_top = kwargs.get('crop_top', 0)
@@ -71,11 +121,64 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.close_popups = kwargs.get('close_popups', kwargs.get('close_popup', None))
         self.driver = kwargs.get('driver', None)  # if None, then a random UA will be used
 
+        self.disable_site_settings = kwargs.get('disable_site_settings', None)
+        if not self.disable_site_settings:
+            self.set_site_specified_settings()
+
         settings.overrides['ITEM_PIPELINES'] = {}
         super(URL2ScreenshotSpider, self).__init__(*args, **kwargs)
 
+    def set_site_specified_settings(self):
+        """ Override some settings if they are site-specified """
+        domain = _get_domain(self.product_url)
+        if domain == 'hm.com':
+            self.proxy = _get_random_proxy()
+            self.proxy_type = 'http'
+            self.code_200_required = False
+            self._site_settings_activated_for = domain
+            self.log('Site-specified settings activated for: %s' % domain)
+        if domain == 'macys.com' or domain == 'www1.macys.com':
+            self.code_200_required = False
+            #self.proxy = _get_random_proxy()
+            #self.proxy_type = 'http'
+            settings.overrides['CRAWLERA_ENABLED'] = True
+            self.make_screenshot = self.make_screenshot_for_macys
+            self._site_settings_activated_for = domain
+            self.log('Site-specified settings activated for: %s' % domain)
+            self.check_bad_results_function = _check_bad_results_macys
+
+    def make_screenshot_for_macys(self, driver, output_fname):
+        #time.sleep(7*60)  # delay for PhantomJS2 unpacking?
+        rasterize_script = os.path.join(CWD, 'rasterize.js')
+        phantomjs_binary = 'phantomjs' if not os.path.exists('/usr/sbin/phantomjs2') else '/usr/sbin/phantomjs2'
+        # cmd = 'phantomjs --ssl-protocol=any {script} "{url}" {output_fname} {width}px*{height}px'.format(
+        #     script=rasterize_script, url=self.product_url, output_fname=output_fname,
+        #     width=self.width)#, height=self.height
+        cmd = '{phantomjs_binary} --ssl-protocol=any {script} "{url}" {output_fname} {width}px'.format(
+            script=rasterize_script, url=self.product_url, output_fname=output_fname,
+            width=self.width, phantomjs_binary=phantomjs_binary)#, height=self.height
+        self.log('Using %s' % phantomjs_binary)
+        self.log(cmd)
+        # extra debug data
+        version_file = '/tmp/phantomjs_version.txt'
+        if not os.path.exists(version_file):
+            os.system('{phantomjs_binary} -v > {version_file} 2>&1'.format(
+                phantomjs_binary=phantomjs_binary, version_file=version_file))
+        if os.path.exists(version_file):
+            self.log('PhantomJS real version: %s' % open(version_file, 'r').read())
+        _start = datetime.datetime.now()
+        os.system(cmd)
+        self.log('Command finished in %s second(s)' % ((datetime.datetime.now() - _start).total_seconds()))
+        assert os.path.exists(output_fname), 'Output file does not exist'
+        if self.image_copy:  # save a copy of the file if needed
+            shutil.copyfile(output_fname, self.image_copy)
+        try:
+            driver.quit()
+        except:
+            pass
+
     def start_requests(self):
-        req = Request(self.product_url)
+        req = Request(self.product_url, dont_filter=True)
         req.headers.setdefault('User-Agent', self.user_agent)
         yield req
 
@@ -93,9 +196,6 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 time.sleep(2)
                 driver.save_screenshot('/tmp/_captcha_after.png')
 
-    def _log_proxy(self, r_session):
-        self.log("IP : %s" % r_session.get('http://icanhazip.com').text)
-
     def _get_js_body_height(self, driver):
         scroll = driver.execute_script('return document.body.scrollHeight;')
         window_outer = driver.execute_script('return window.outerHeight;')
@@ -111,12 +211,68 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 elements[i].click();
             }
         """ % cls
-        driver.execute_script(script)
+        try:
+            driver.execute_script(script)
+        except Exception as e:
+            self.log('Error on clicking (JS) element with class %s: %s' % (cls, str(e)))
+        try:
+            for element in driver.find_elements_by_class_name(cls):
+                element.click()
+        except Exception as e:
+            self.log('Error on clicking element with class %s: %s' % (cls, str(e)))
+
+    def _click_on_element_with_id(self, driver, _id):
+        script = """
+            var element = document.getElementById('%s');
+            element.click();
+        """ % _id
+        try:
+            driver.execute_script(script)
+        except Exception as e:
+            self.log('Error on clicking element with ID %s: %s' % (_id, str(e)))
+
+    def _click_on_element_with_xpath(self, driver, xpath):
+        try:
+            for element in driver.find_elements_by_xpath(xpath):
+                element.click()
+        except Exception as e:
+            self.log('Error on clicking elements with XPath %s: %s' % (xpath, str(e)))
+
+    def _remove_element_with_xpath(self, driver, xpath):
+        try:
+            for element in driver.find_elements_by_xpath(xpath):
+                driver.execute_script("""
+                    var element = arguments[0];
+                    element.parentNode.removeChild(element);
+                    """, element)
+        except Exception as e:
+            self.log('Error on removing elements with XPath %s: %s' % (xpath, str(e)))
 
     def _choose_another_driver(self):
         for d in self.available_drivers:
             if d != self._driver:
                 return d
+
+    def _init_phantomjs(self):
+        from selenium import webdriver
+        from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+        self.log('No product links found at first attempt'
+                 ' - trying PhantomJS with UA %s' % self.user_agent)
+        dcap = dict(DesiredCapabilities.PHANTOMJS)
+        dcap["phantomjs.page.settings.userAgent"] = self.user_agent
+        service_args = []
+        if self.proxy:
+            service_args.append('--proxy="%s"' % self.proxy)
+            service_args.append('--proxy-type=' + self.proxy_type)
+            proxy_auth = getattr(self, '_proxy_auth', None)
+            if proxy_auth:
+                service_args.append("--proxy-auth=\"%s\":" % proxy_auth)
+
+        #assert False, service_args
+        driver = webdriver.PhantomJS(desired_capabilities=dcap, service_args=service_args)
+        driver.set_page_load_timeout(60)
+        driver.set_script_timeout(60)
+        return driver
 
     def _init_chromium(self):
         from selenium import webdriver
@@ -137,10 +293,18 @@ class URL2ScreenshotSpider(scrapy.Spider):
         return driver
 
     def _init_firefox(self):
-        # TODO: proxies
         from selenium import webdriver
         profile = webdriver.FirefoxProfile()
         profile.set_preference("general.useragent.override", self.user_agent)
+        profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
+        if self.proxy:
+            if 'socks' in self.proxy_type:
+                profile.set_preference("network.proxy.socks", self.proxy.split(':')[0])
+                profile.set_preference("network.proxy.socks_port", int(self.proxy.split(':')[1]))
+            else:
+                profile.set_preference("network.proxy.http", self.proxy.split(':')[0])
+                profile.set_preference("network.proxy.http_port", int(self.proxy.split(':')[1]))
+        profile.update_preferences()
         driver = webdriver.Firefox(profile)
         return driver
 
@@ -155,6 +319,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
             else:
                 self._driver = self.driver
         print('Using driver: ' + self._driver)
+        self.log('Using driver: ' + self._driver)
         init_driver = getattr(self, '_init_'+self._driver)
         return init_driver()
 
@@ -174,13 +339,53 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         if self.close_popups:
             time.sleep(3)
+            self._click_on_element_with_xpath(driver, '//*[contains(@class, "monetate_lightbox_close_")]')  # for ralphlauren.com
             self._click_on_elements_with_class(driver, 'close')
+            self._remove_element_with_xpath(
+                driver, '//body/*[contains(@class, "email-lightbox")]')  # for levi.com
+            self._click_on_element_with_id(driver, 'closeBtn')  # for macys
+            self._click_on_element_with_id(driver, 'closeBtn')  # 2 times - first time doesn't work sometimes
+            self._click_on_elements_with_class(driver, 'brdialog-close')  # for madewell.com
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "lightboximg")]//*[contains(@class, "closePopup")]')  # for madewell.com
+            self._click_on_element_with_id(driver, 'skipSignup')  # for madewell.com
+            self._click_on_element_with_xpath(driver, '//*[contains(@class, "padiPopupContent")]//*[contains(@class, "padiClose")]')  # for carters.com
+            self._click_on_element_with_id(driver, 'oo_no_thanks')  # for levi.com
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "cookiebar")]//button')  # for HM.com
+            self._remove_element_with_xpath(driver, '//*[contains(@id, "emailAcqPopupContainer")]')  # for http://bananarepublic.gap.com
+            self._click_on_element_with_id(driver, 'welcomeMatStart')  # for jcrew.com
 
-        time.sleep(2)
+            self._click_on_element_with_xpath(
+                driver, '//*[contains(@class, "featherlight-content")]//*[contains(@class, "featherlight-close")]')  # for agjeans.com
+            time.sleep(2)
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "top")]//*[contains(@id, "closeButton")]')  # for agjeans.com
+            self._click_on_element_with_xpath(driver, '/html/body/div[contains(@class, "ui-widget")]'
+                                                      '/div[contains(@class, "ui-dialog-titlebar")]'
+                                                      '/a/span[contains(@class, "ui-icon-closethick")]')  # for childrensplace.com
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "popup-subcription-closes-link")'
+                                                      ' and contains(text(), "lose")]')  # for luckybrand.com
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "emOv-container")]//*[contains(@id, "emOv-signupClose")]')  # for uniqlo.com
+            self._click_on_element_with_xpath(driver, '//*[contains(@id, "topbar")]/*[contains(@id, "close")]/a')  # for gap.com
+
+        time.sleep(4)
         driver.save_screenshot(output_fname)
         if self.image_copy:  # save a copy of the file if needed
             driver.save_screenshot(self.image_copy)
-        driver.quit()
+
+        _check_bad_results_function = getattr(self, 'check_bad_results_function', None)
+        if _check_bad_results_function is not None and callable(_check_bad_results_function):
+            if _check_bad_results_function(driver):
+                assert False, 'Bad results returned'
+
+        if not DEBUG_MODE:
+            driver.quit()
+
+    @staticmethod
+    def _get_proxy_ip(driver):
+        driver.get('http://icanhazip.com')
+        ip = re.search('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', driver.page_source)
+        if ip:
+            ip = ip.group(1)
+            return ip
 
     def parse(self, response):
         socket.setdefaulttimeout(int(self.timeout))
@@ -189,46 +394,62 @@ class URL2ScreenshotSpider(scrapy.Spider):
         t_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
         t_file.close()
         print('Created temporary image file: %s' % t_file.name)
+        self.log('Created temporary image file: %s' % t_file.name)
 
-        display = Display(visible=0, size=(self.width, self.height))
-        display.start()
+        if not DEBUG_MODE:
+            display = Display(visible=int(bool(DEBUG_MODE)), size=(self.width, self.height))
+            display.start()
 
         # we will use requesocks for checking response code
         r_session = requests.session()
+        if self.timeout:
+            self.timeout = int(self.timeout)
         r_session.timeout = self.timeout
         #if self.proxy:
         #    r_session.proxies = {'http': self.proxy_type+'://'+self.proxy,
         #                         'https': self.proxy_type+'://'+self.proxy}
         if self.user_agent:
             r_session.headers = {'User-Agent': self.user_agent}
-        self._log_proxy(r_session)
 
         # check if the page returns code != 200
         if self.code_200_required and str(self.code_200_required).lower() not in ('0', 'false', 'off'):
-            page_code = r_session.get(self.product_url).status_code
+            page_code = r_session.get(self.product_url, verify=False).status_code
             if page_code != 200:
                 self.log('Page returned code %s at %s' % (page_code, self.product_url), ERROR)
                 yield ScreenshotItem()  # return empty item
-                display.stop()
+                if not DEBUG_MODE:
+                    display.stop()
                 return
 
         driver = self.init_driver()
+        item = ScreenshotItem()
+
+        if self.proxy:
+            ip_via_proxy = URL2ScreenshotSpider._get_proxy_ip(driver)
+            item['via_proxy'] = ip_via_proxy
+            print 'IP via proxy:', ip_via_proxy
+            self.log('IP via proxy: %s' % ip_via_proxy)
+
         try:
             self.prepare_driver(driver)
             self.make_screenshot(driver, t_file.name)
+            self.log('Screenshot was made for file %s' % t_file.name)
         except Exception as e:
             self.log('Exception while getting response using selenium! %s' % str(e))
             # lets try with another driver
             another_driver_name = self._choose_another_driver()
             try:
-                driver.quit()  # clean RAM
+                if not DEBUG_MODE:
+                    driver.quit()  # clean RAM
             except Exception as e:
                 pass
             driver = self.init_driver(name=another_driver_name)
             self.prepare_driver(driver)
             self.make_screenshot(driver, t_file.name)
+            self.log('Screenshot was made for file %s (2nd attempt)' % t_file.name)
             try:
-                driver.quit()
+                if not DEBUG_MODE:
+                    driver.quit()
             except:
                 pass
 
@@ -245,23 +466,30 @@ class URL2ScreenshotSpider(scrapy.Spider):
                    self.crop_top+self.crop_height)
             area = img.crop(box)
             area.save(t_file.name, 'png')
+            self.log('Screenshot was cropped and saved to %s' % t_file.name)
             if self.image_copy:  # save a copy of the file if needed
                 area.save(self.image_copy, 'png')
 
         with open(t_file.name, 'rb') as fh:
             img_content = fh.read()
+            self.log('Screenshot content was read, size: %s bytes' % len(img_content))
 
         if self.remove_img is True:
             os.unlink(t_file.name)  # remove old output file
+            self.log('Screenshot file was removed: %s' % t_file.name)
 
-        # create and yield item
-        item = ScreenshotItem()
+        # yield the item
         item['url'] = response.url
         item['image'] = base64.b64encode(img_content)
+        item['site_settings'] = getattr(self, '_site_settings_activated_for', None)
 
-        display.stop()
+        if not DEBUG_MODE:
+            display.stop()
 
-        yield item
+        self.log('Item image key length: %s' % len(item.get('image', '')))
+
+        if img_content:
+            yield item
 
     def _has_captcha(self, response_or_text):
         if not isinstance(response_or_text, (str, unicode)):

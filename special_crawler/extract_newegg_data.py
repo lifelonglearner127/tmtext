@@ -9,6 +9,7 @@ from lxml import html, etree
 import time
 import requests
 from extract_data import Scraper
+from lxml.etree import tostring
 
 
 class NeweggScraper(Scraper):
@@ -65,6 +66,43 @@ class NeweggScraper(Scraper):
     ############### CONTAINER : NONE
     ##########################################
 
+    def _primary_seller_info(self):
+        seller_text_block = self.tree_html.xpath("//p[@class='grpNote-sold-by']")
+        seller_name = ""
+
+        if len(seller_text_block) > 1:
+            seller_text_block = self.tree_html.xpath("//p[@class='grpNote-sold-by' and @id='grpNotesoldby_{0}']".format(self.related_item_id))
+
+        if "newegg" in seller_text_block[0].text_content().lower():
+            seller_name = "Newegg"
+        else:
+            seller_name = seller_text_block[0].xpath(".//a/text()")[0].strip()
+
+
+        price = self._price_amount()
+
+        return {seller_name: price}
+
+    def _secondary_seller_list_info(self):
+        secondary_sellers_list = {}
+
+        secondary_sellers_block_list = self.tree_html.xpath("//div[@class='grpAction grpActionSecondary additional-sellers']")
+
+        if len(secondary_sellers_block_list) > 1:
+            secondary_sellers_block_list = self.tree_html.xpath("//div[@class='grpAction grpActionSecondary additional-sellers' and @id='MBO_{0}']".format(self.related_item_id))
+
+        if secondary_sellers_block_list:
+            for seller_block in secondary_sellers_block_list[0].xpath(".//ul[@class='sellers-list']/li[@class='sellers-list-item normal-available']"):
+                seller_name = seller_block.xpath(".//div[@class='store']")[0].text_content().strip()
+                price = seller_block.xpath(".//li[@class='price-current ']")[0].text_content()
+                price = price[price.find("$"):]
+                price = float(re.findall(r"\d*\.\d+|\d+", price.replace(",", ""))[0])
+                secondary_sellers_list[seller_name] = price
+
+            return secondary_sellers_list
+
+        return None
+
     def _extract_product_json(self):
         try:
             self.hdGroupItemModelString_json = json.loads(self._find_between(html.tostring(self.tree_html), "var hdGroupItemModelString = ", ";\r"))
@@ -97,11 +135,28 @@ class NeweggScraper(Scraper):
             print "Issue(Newegg): product availableMap json loading"
 
         try:
-            self.webcollage_contents = self.load_page_from_url_with_number_of_retries(self.WEBCOLLAGE_BASE_URL.format(self._product_id()))
-            self.webcollage_contents = html.fromstring(self._find_between(self.webcollage_contents, 'html: "', '"\n'))
+            self.flixcars = []
+
+            flixcar = re.search('"(http://media.flixcar.com/delivery/js/inpage/[^"]+)"', tostring(self.tree_html))
+
+            if flixcar:
+                content = self.load_page_from_url_with_number_of_retries( flixcar.group(1))
+                distributor_id = re.search( "distributor: '(\d+)'", content ).group(1)
+                product_ids = re.findall( "product: '(\d+)'", content )
+
+                for id in product_ids:
+                    response = self.load_page_from_url_with_number_of_retries('http://media.flixcar.com/delivery/inpage/show/%s/us/%s/json?c=jsonpcar%sus%s&complimentary=0&type=.html' % (distributor_id, id, distributor_id, id))
+
+                    self.flixcars.append(response)
         except:
-            self.webcollage_contents = None
-            print "Issue(Newegg): webcollage contents loading"
+            self.flixcars = None
+            print "Issue(Newegg): flixcars loading"
+
+        try:
+            self.liveclicker = self.load_page_from_url_with_number_of_retries('http://sv.liveclicker.net/service/api?method=liveclicker.widget.getList&account_id=2437&&extra_options=%7B%22include_description%22%3A%22true%22%2C%22include_extra_images%22%3A%22true%22%2C%22return_dimensions%22%3A%226%22%7D&dim1=' + self._product_id() + '&order=recent&status=online&format=json&var=liveclicker.api_res[0]')
+        except:
+            self.liveclicker = None
+            print "Issue(Newegg): liveclicker loading"
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
@@ -127,13 +182,13 @@ class NeweggScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0].strip()
+        return self.tree_html.xpath("//h1/span[@itemprop='name']/text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0].strip()
+        return self.tree_html.xpath("//h1/span[@itemprop='name']/text()")[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath("//h1[@id='grpDescrip_h']/span[@itemprop='name']/text()")[0].strip()
+        return self.tree_html.xpath("//h1/span[@itemprop='name']/text()")[0].strip()
 
     def _model(self):
         for item in self.hdGroupItemModelString_json:
@@ -165,7 +220,10 @@ class NeweggScraper(Scraper):
         return None
 
     def _description(self):
-        description_block = self.tree_html.xpath("//ul[@id='grpBullet_{0}']".format(self.related_item_id))
+        if self.related_item_id:
+            description_block = self.tree_html.xpath("//ul[@id='grpBullet_{0}']".format(self.related_item_id))
+        else:
+            description_block = self.tree_html.xpath("//ul[@id='grpBullet_']")
 
         if description_block:
             description_block = html.tostring(description_block[0])
@@ -225,7 +283,7 @@ class NeweggScraper(Scraper):
         base_url_for_non_s7 = "http://images10.newegg.com/productimage/"
 
         for item in self.imgGalleryConfig_json:
-            if item["itemNumber"] == self._product_id():
+            if item["itemNumber"] == self._product_id() or len(self.imgGalleryConfig_json) == 1:
                 if item["normalImageInfo"]:
                     image_list = [base_url_for_non_s7 + img_name for img_name in item["normalImageInfo"]["imageNameList"].split(",")]
                 elif item["scene7ImageInfo"]:
@@ -242,30 +300,51 @@ class NeweggScraper(Scraper):
         return len(image_urls) if image_urls else 0
 
     def _video_urls(self):
-        if self.webcollage_contents:
-            #a[ends-with(@href, '.jpg')]
-            urls = self.webcollage_contents.xpath("//meta[contains(@content, '.mp4')]/@content")
-            video_urls = []
+        video_urls = []
 
-            for url in urls:
-                if url.endswith('.mp4\\"'):
-                    video_urls.append(url.replace("\\", "")[1:-1])
+        widget_id_results = re.search('widget_id" : "(\d+)', self.liveclicker)
 
-            return list(set(video_urls)) if video_urls else None
+        if widget_id_results:
+            widget_id = widget_id_results.group(1)
+
+            response = self.load_page_from_url_with_number_of_retries('http://sv.liveclicker.net/service/getEmbed?client_id=2437&widget_id=%s&width=320&height=180&bufferTime=0&container=LiveclickerVideoDiv&player_custom_id=1783&div_id=LiveclickerVideoDiv' % widget_id)
+
+            for url in re.findall('http://ecdn.liveclicker.net[^"]+.mp4', response):
+                if not url in video_urls:
+                    video_urls.append(url)
+
+        for flixcar in self.flixcars:
+            for url in re.findall('media.flixcar.com.[^"]+.mp4', flixcar):
+                if not url in video_urls:
+                    video_urls.append(url)
+
+        if video_urls:
+            return map( lambda x: x.replace('\\', ''), video_urls)
 
         return None
 
     def _video_count(self):
         videos = self._video_urls()
 
-        if videos:
-            return len(videos)
+        num_embed_videos = len( self.tree_html.xpath('//div[contains(@class,"video")]'))
 
-        return 0
+        if videos:
+            return len(videos) + num_embed_videos
+
+        return num_embed_videos
 
     def _pdf_urls(self):
-        pdf_urls = self.tree_html.xpath("//div[@id='moreResource_{0}']//a[contains(@href, '.pdf')]/@href".format(self.related_item_id))
-        return pdf_urls if pdf_urls else None
+        pdf_urls = []
+
+        for flixcar in self.flixcars:
+            for url in re.findall('media.flixcar.com[^"]+.pdf', flixcar):
+                if not url in pdf_urls:
+                    pdf_urls.append(url)
+
+        if pdf_urls:
+            return map( lambda x: x.replace('\\', ''), pdf_urls)
+
+        return None
 
     def _pdf_count(self):
         if self._pdf_urls():
@@ -355,11 +434,13 @@ class NeweggScraper(Scraper):
         return "${0}".format(self._price_amount())
 
     def _price_amount(self):
-        for item in self.availableMap_json:
-            if item["info"]["item"] == self.related_item_id:
-                return float(item["info"]["price"])
+        shipping_cost = float(self._find_between(html.tostring(self.tree_html), "product_default_shipping_cost:['", "'],"))
+        sale_price = float(self._find_between(html.tostring(self.tree_html), "product_sale_price:['", "'],"))
 
-        return None
+        if shipping_cost > 0.01:
+            return sale_price - shipping_cost
+
+        return sale_price
 
     def _price_currency(self):
         return "USD"
@@ -368,8 +449,10 @@ class NeweggScraper(Scraper):
         return 0
 
     def _site_online(self):
-        seller_text_block = self.tree_html.xpath("//p[@id='grpNotesoldby_{0}']/span[@class='grpNote-ship-by']/text()".format(self.related_item_id))
-        return 1 if seller_text_block and seller_text_block[0].strip().lower() == "newegg" else 0
+        if "Newegg" in self._primary_seller_info() or "Newegg" in self._secondary_seller_list_info():
+            return 1
+
+        return 0
 
     def _site_online_out_of_stock(self):
         stock_status = int(self._find_between(html.tostring(self.tree_html), "product_instock:['", "'],"))
@@ -382,47 +465,63 @@ class NeweggScraper(Scraper):
     def _in_stores_out_of_stock(self):
         return 0
 
+    def _primary_seller(self):
+        return self._primary_seller_info().keys()[0]
+
     def _marketplace(self):
         return 1 if self._marketplace_sellers() else 0
 
     def _marketplace_sellers(self):
-        marketplace_sellers = self.tree_html.xpath("//div[@id='MBO_{0}']//ul[@class='sellers-list']/li[contains(@class, 'sellers-list-item')]//div[@class='store']//a/@title".format(self.related_item_id))
+        primary_sellers = self._primary_seller_info()
 
-        if self._site_online() == 0:
-            seller_text_block = self.tree_html.xpath("//p[@id='grpNotesoldby_{0}']/a[contains(@href, 'http://www.newegg.com/')]/text()".format(self.related_item_id))
+        if primary_sellers.keys()[0].lower() == "newegg":
+            primary_sellers = {}
 
-            if seller_text_block and seller_text_block[0].strip() != "":
-                marketplace_sellers.append(seller_text_block[0].strip())
+        secondary_sellers = self._secondary_seller_list_info()
+        secondary_sellers = secondary_sellers if secondary_sellers else {}
 
-        return marketplace_sellers if marketplace_sellers else None
+        marketplace_sellers = primary_sellers.keys() + secondary_sellers.keys()
+
+        if marketplace_sellers:
+            return marketplace_sellers
+
+        return None
 
     def _marketplace_lowest_price(self):
         marketplace_prices = self._marketplace_prices()
         return sorted(marketplace_prices)[0] if marketplace_prices else None
 
     def _marketplace_prices(self):
-        marketplace_prices = self.tree_html.xpath("//div[@id='MBO_{0}']//ul[@class='sellers-list']/li[contains(@class, 'sellers-list-item')]//ul[contains(@class, 'price')]//li[contains(@class, 'price-current')]".format(self.related_item_id))
-        marketplace_prices = [price.text_content() for price in marketplace_prices]
-        marketplace_prices = [float(re.compile("\$(\d*\.\d+|\d+)").search(price_text.replace(',', '')).group(1)) for price_text in marketplace_prices]
+        primary_sellers = self._primary_seller_info()
 
-        if self._site_online() == 0:
-            seller_text_block = self.tree_html.xpath("//p[@id='grpNotesoldby_{0}']/a[contains(@href, 'http://www.newegg.com/')]/text()".format(self.related_item_id))
+        if primary_sellers.keys()[0].lower() == "newegg":
+            primary_sellers = {}
 
-            if seller_text_block and seller_text_block[0].strip() != "":
-                marketplace_prices.append(self._price_amount())
+        secondary_sellers = self._secondary_seller_list_info()
+        secondary_sellers = secondary_sellers if secondary_sellers else {}
 
-        return marketplace_prices if marketplace_prices else None
+        marketplace_prices = primary_sellers.values() + secondary_sellers.values()
+
+        if marketplace_prices:
+            return marketplace_prices
+
+        return None
 
     def _marketplace_out_of_stock(self):
-        stock_status = int(self._find_between(html.tostring(self.tree_html), "product_instock:['", "'],"))
+        if self._marketplace() == 1:
+            stock_status = int(self._find_between(html.tostring(self.tree_html), "product_instock:['", "'],"))
 
-        if stock_status == 0 and self._marketplace() == 1:
-            return 1
+            if stock_status == 0:
+                return 1
 
-        return 0
+            return 0
+
+        return None
+
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
+
     def _categories(self):
         return self.tree_html.xpath("//div[@id='baBreadcrumbTop']//dd/a/text()")[1:]
 
@@ -496,6 +595,7 @@ class NeweggScraper(Scraper):
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "in_stores_out_of_stock": _in_stores_out_of_stock, \
+        "primary_seller": _primary_seller, \
         "marketplace" : _marketplace, \
         "marketplace_sellers" : _marketplace_sellers, \
         "marketplace_lowest_price" : _marketplace_lowest_price, \

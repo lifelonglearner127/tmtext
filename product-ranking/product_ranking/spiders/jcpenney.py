@@ -31,6 +31,8 @@ from spiders_shared_code.jcpenney_variants import JcpenneyVariants
 from spiders_shared_code.jcpenney_variants import JcpenneyVariants, extract_ajax_variants
 from product_ranking.validation import BaseValidator
 from product_ranking.validators.jcpenney_validator import JcpenneyValidatorSettings
+from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
+
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -57,12 +59,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         'www.jcpenney.comjavascript'
     ]
 
-    SEARCH_URL = "http://www.jcpenney.com/jsp/search/results.jsp?" \
-                 "fromSearch=true&" \
-                 "Ntt={search_term}&" \
-                 "ruleZoneName=XGNSZone&" \
-                 "Ns={sort_mode}&pageSize=72&" \
-                 "redirectTerm=skirts{search_term}"
+    SEARCH_URL = "http://www.jcpenney.com/jsp/search/results.jsp?fromSearch=true&Ntt={search_term}" \
+                 "&ruleZoneName=XGNSZone&successPage=null&_dyncharset=UTF-8&rootContentItemType=XGNS&Ns={sort_mode}"
     SORTING = None
     SORT_MODES = {
         'default': '',
@@ -78,6 +76,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
     REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{product_id}" \
                  "/reviews.djs?format=embeddedhtml"
+    SEPHORA_REVIEW_URL = 'http://sephora.ugc.bazaarvoice.com/8723jcp/' \
+                         '{product_id}/reviews.djs?format=embeddedhtml'
 
     RELATED_URL = "http://recs.richrelevance.com/rrserver/p13n_generated.js?" \
                   "a=5387d7af823640a7&" \
@@ -100,6 +100,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     settings = JcpenneyValidatorSettings
 
     def __init__(self, sort_mode=None, *args, **kwargs):
+        self.buyer_reviews = BuyerReviewsBazaarApi(called_class=self)
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
@@ -114,6 +115,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             **kwargs)
 
     def start_requests(self):
+        cookies = {'pageTemplate': 'new'}
         for st in self.searchterms:
             url = self.url_formatter.format(
                 self.SEARCH_URL,
@@ -123,7 +125,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             )
             yield Request(
                 url,
-                meta={'search_term': st, 'remaining': self.quantity}
+                meta={'search_term': st, 'remaining': self.quantity},
+                cookies=cookies
             )
 
         if self.product_url:
@@ -131,9 +134,16 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod})
+                          meta={'product': prod, 'handle_httpstatus_list': [404]},
+                          cookies=cookies)
 
     def _parse_single_product(self, response):
+        if response.status == 404:
+            product = response.meta.get('product', SiteProductItem())
+            product['url'] = response.url
+            product['not_found'] = True
+            product['response_code'] = 404
+            return product
         return self.parse_product(response)
 
     dynamic_props = {}
@@ -402,6 +412,11 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                 variant['in_stock'] = _avail[color]
         yield product
 
+    @staticmethod
+    def _is_sephora_reviews(response):
+        return ('varisSephora=true'
+                in response.body_as_unicode().replace(' ', '').replace("'", ''))
+
     def parse_product(self, response):
         prod = response.meta['product']
         prod['url'] = response.url
@@ -411,6 +426,9 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             prod['not_found'] = True
             yield prod
             return
+
+        prod['_jcpenney_has_size_range'] = bool(response.xpath(
+            '//*[contains(@class, "skuOptions") and contains(text(), "size range")]'))  # a temporary hack, see BZ #9913
 
         product_id = is_empty(re.findall('ppId=([a-zA-Z0-9]+)&{0,1}', response.url))
 
@@ -425,41 +443,42 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         processed_lots = []  # lots for which we collected dynamic variants
         new_lot_structure = {}
         p_l = 0
-        for var_indx, variant in enumerate(prod['variants']):
-            if getattr(self, 'scrape_variants_with_extra_requests', None):
+        if prod.get('variants'):
+            for var_indx, variant in enumerate(prod['variants']):
+                if getattr(self, 'scrape_variants_with_extra_requests', None):
 
-                if variant.get('properties', {}).get('lot', '').lower() in processed_lots:
-                    continue
-                _lot, _dynamic_structure = self._ajax_variant_request(
-                    product_id, response, prod['variants'], variant, var_indx,
-                    async=False, null_values=['size']
-                )
-                if variant.get('properties', {}).get('lot', '').lower():
-                    processed_lots.append(variant.get('properties', {}).get('lot', '').lower())
-                else:
-                    processed_lots.append(variant.get('lot', '').lower())
+                    if variant.get('properties', {}).get('lot', '').lower() in processed_lots:
+                        continue
+                    _lot, _dynamic_structure = self._ajax_variant_request(
+                        product_id, response, prod['variants'], variant, var_indx,
+                        async=False, null_values=['size']
+                    )
+                    if variant.get('properties', {}).get('lot', '').lower():
+                        processed_lots.append(variant.get('properties', {}).get('lot', '').lower())
+                    else:
+                        processed_lots.append(variant.get('lot', '').lower())
 
-                new_lot_structure[_lot] = _dynamic_structure
-                if _lot:
-                    self.remove_old_static_variants_of_lot(prod['variants'], _lot)
-                    self.append_new_dynamic_variants(prod, prod['variants'], _lot, _dynamic_structure, self.log)
-        try:
-            processed_lots[1] = processed_lots[0]
-        except:
-            pass
-        for var_indx, variant in enumerate(prod['variants']):
-            if getattr(self, 'scrape_variants_with_extra_requests', None):
+                    new_lot_structure[_lot] = _dynamic_structure
+                    if _lot:
+                        self.remove_old_static_variants_of_lot(prod['variants'], _lot)
+                        self.append_new_dynamic_variants(prod, prod['variants'], _lot, _dynamic_structure, self.log)
+            try:
+                processed_lots[1] = processed_lots[0]
+            except:
+                pass
+            for var_indx, variant in enumerate(prod['variants']):
+                if getattr(self, 'scrape_variants_with_extra_requests', None):
 
-                if processed_lots:
-                    lot_id = processed_lots[p_l]
-                    p_l += 1
-                    if p_l >= len(processed_lots):
-                        p_l = 0
-                else:
-                    lot_id = ''
-                yield self._ajax_variant_request(
-                    product_id, response, prod['variants'], variant, var_indx,
-                    Lot=lot_id)
+                    if processed_lots:
+                        lot_id = processed_lots[p_l]
+                        p_l += 1
+                        if p_l >= len(processed_lots):
+                            p_l = 0
+                    else:
+                        lot_id = ''
+                    yield self._ajax_variant_request(
+                        product_id, response, prod['variants'], variant, var_indx,
+                        Lot=lot_id)
 
         new_meta = response.meta.copy()
         new_meta['product'] = prod
@@ -469,16 +488,20 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         review_id = is_empty(response.xpath(
             '//script/text()[contains(.,"reviewId")]'
         ).re('reviewId:\"(\d+)\",'))
-        if review_id:
-            yield Request(self.url_formatter.format(self.REVIEW_URL,
-                                                     product_id=review_id),
-                           meta=new_meta, callback=self._parse_reviews,
-                           dont_filter=True)
-        elif product_id:
-            yield Request(self.url_formatter.format(self.REVIEW_URL,
-                                                     product_id=product_id),
-                           meta=new_meta, callback=self._parse_reviews,
-                           dont_filter=True)
+        if not review_id:
+            review_id = is_empty(response.xpath(
+                '//script/text()[contains(.,"reviewIdNew")]'
+            ).re('reviewId.*?\=.*?([a-zA-Z\d]+)'))
+
+        if JcpenneyProductsSpider._is_sephora_reviews(response):
+            review_url = self.url_formatter.format(
+                self.SEPHORA_REVIEW_URL, product_id=review_id or product_id)
+        else:
+            review_url = self.url_formatter.format(
+                self.REVIEW_URL, product_id=review_id or product_id)
+        yield Request(review_url, meta=new_meta,
+                      callback=self._parse_reviews, dont_filter=True)
+
         yield prod
 
     def _populate_from_html(self, response, product):
@@ -515,7 +538,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
         if json_data:
             data = json.loads(json_data)
-            brand = is_empty(is_empty(data['products'])['lots'])['brandName']
+            brand = is_empty(is_empty(data['products'])['lots']).get('brandName', None)
             cond_set_value(
                 product,
                 'brand',
@@ -593,7 +616,22 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         product = response.meta['product']
         product_id = response.meta.get('product_id')
         text = response.body_as_unicode().encode('utf-8')
-        if response.status == 200:
+
+        """ for debugging only!
+        import requests
+        text2 = requests.get('http://sephora.ugc.bazaarvoice.com/8723jcp/P261621/reviews.djs?format=embeddedhtml&page=0').text
+        result = self.buyer_reviews.parse_buyer_reviews_per_page(response)
+        open('/tmp/text', 'w').write(text)
+        open('/tmp/text2', 'w').write(text2.encode('utf8'))
+        import pdb; pdb.set_trace()
+        """
+
+        brs = self.buyer_reviews.parse_buyer_reviews_per_page(response)
+        if brs.get('average_rating', None):
+            if brs.get('rating_by_star', None):
+                product['buyer_reviews'] = brs
+
+        if not product.get('buyer_reviews', None) and response.status == 200:
             x = re.search(
                 r"var materials=(.*),\sinitializers=", text, re.M + re.S)
             if x:
@@ -607,6 +645,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                     "/div[@class='BVRRRatingNormalOutOf']"
                     "/span[contains(@class,'BVRRRatingNumber')]"
                     "/text()").extract()
+                if not avrg:
+                    avrg = sel.css('.BVRRNumber .BVRRRatingNumber ::text').extract()
                 if avrg:
                     try:
                         avrg = float(avrg[0])
@@ -662,15 +702,15 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         links = response.xpath(
-            '//div[@class="product_holder"]/div/div/'
-            'span[contains(@class, "product_image")]/a/@href'
+            '//li[contains(@class,"productDisplay")]//div[@class="productDisplay_image"]/a/@href'
         ).extract()
-
+        products = re.findall(
+            'var filterResults\s?=\s?jq\.parseJSON\(\'(\{.+?\})\'\);', response.body, re.MULTILINE)[0].decode(
+            'string-escape')
+        products = json.loads(products).get('organicZoneInfo').get('records')
+        links += [product.get('pdpUrl') for product in products]
         for link in links:
-            if 'javascript:void(price)' in link:
-                continue
-            else:
-                yield 'http://www.jcpenney.com'+link, SiteProductItem()
+            yield 'http://www.jcpenney.com'+link, SiteProductItem()
 
     def _scrape_total_matches(self, response):
         if response.xpath('//div[@class="null_result_holder"]').extract():
@@ -679,8 +719,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             total = is_empty(
                 response.xpath(
-                    '//div[@class="sorted_items flt_wdt"]/p/text()'
-                ).re('of\s?(\d+)'))
+                    '//span[@data-anid="numberOfResults"]/text()'
+                ).extract())
 
             if total:
                 total_matches = int(total.replace(',', ''))
@@ -690,7 +730,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         next_page = response.xpath(
-            '//ul[@id="paginationIdTOP"]/li/a/@href'
+            '//li[@class="pagination_item--last"]/a/@href'
         ).extract()
 
         if next_page:

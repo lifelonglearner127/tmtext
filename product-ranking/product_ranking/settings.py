@@ -34,7 +34,8 @@ ITEM_PIPELINES = {
     'product_ranking.pipelines.SetMarketplaceSellerType': 300,
     'product_ranking.pipelines.AddSearchTermInTitleFields': 300,
     'product_ranking.pipelines.CheckGoogleSourceSiteFieldIsCorrectJson': 400,
-    'product_ranking.pipelines.WalmartRedirectedItemFieldReplace': 999,
+    'product_ranking.pipelines.WalmartRedirectedItemFieldReplace': 800,
+    'product_ranking.pipelines.SetRankingField': 900,
     'product_ranking.pipelines.MergeSubItems': 1000,
     'product_ranking.pipelines.CollectStatistics': 1300
 }
@@ -67,10 +68,13 @@ EXTENSIONS['product_ranking.extensions.StatsCollector'] = 500
 
 EXTENSIONS['product_ranking.extensions.IPCollector'] = 500
 
+EXTENSIONS['product_ranking.extensions.RequestsCounter'] = 500
+
 # memory limit
 EXTENSIONS['scrapy.contrib.memusage.MemoryUsage'] = 500
 MEMUSAGE_LIMIT_MB = 2048
 MEMUSAGE_ENABLED = True
+
 
 
 # redefine log foramtter. DropItem exception provided with ERROR level
@@ -94,7 +98,13 @@ RETRY_HTTP_CODES = [500, 502, 503, 504, 400, 403, 404, 408]
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.contrib.downloadermiddleware.retry.RetryMiddleware': 90,
     'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware': 110,
+    'scrapy_crawlera.CrawleraMiddleware': 600  # pip install scrapy-crawlera
 }
+
+
+CRAWLERA_ENABLED = False  # false by default
+CRAWLERA_APIKEY = 'eff4d75f7d3a4d1e89115c0b59fab9b2'
+
 
 _args_names = [arg.split('=')[0] if '=' in arg else arg for arg in sys.argv]
 if 'validate' in _args_names:

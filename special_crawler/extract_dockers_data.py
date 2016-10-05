@@ -4,7 +4,9 @@ import urllib
 import re
 import sys
 import json
-
+import mechanize
+from requests.auth import HTTPProxyAuth
+import cookielib
 from lxml import html, etree
 import time
 import requests
@@ -29,16 +31,21 @@ class DockersScraper(Scraper):
         self.buy_stack_json = None
         # whether product has any webcollage media
         self.review_json = None
-        self.review_list = None
+        self.rev_list = None
         self.is_review_checked = False
         self.dk = DockersVariants()
+        self.proxy_host = "proxy.crawlera.com"
+        self.proxy_port = "8010"
+        self.proxy_auth = HTTPProxyAuth("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
+        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+        self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.dockers.com/US/en_US/(.*/)?p/[a-zA-Z0-9\-]+$", self.product_page_url)
+        m = re.match(r"^http://www.dockers.com/US/en_US/(.*/)?p/.*$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -78,7 +85,11 @@ class DockersScraper(Scraper):
             product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\r")
             self.product_json = json.loads(product_json_text)
         except:
-            self.product_json = None
+            try:
+                product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\n")
+                self.product_json = json.loads(product_json_text)
+            except:
+                self.product_json = None
 
         try:
             buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
@@ -222,7 +233,7 @@ class DockersScraper(Scraper):
 
     def _no_image(self):
         return None
-    
+
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
@@ -263,6 +274,11 @@ class DockersScraper(Scraper):
                 return i + 1
 
     def _reviews(self):
+        if self.is_review_checked:
+            return self.rev_list
+
+        self.is_review_checked = True
+
         h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
         s = requests.Session()
         a = requests.adapters.HTTPAdapter(max_retries=3)
@@ -287,11 +303,15 @@ class DockersScraper(Scraper):
         real_count = []
         real_count += re.findall(r'<div class=\\"BVRRHeaderPagingControls\\">'
                                  r'SHOWING \d+-\d+ OF (\d+)', contents)
-        review_count = int(real_count[0])
-        self.glob_review_count = int(real_count[0]) # for transfer to another method
 
-        if review_count > 8:
-            for index, i in enumerate(xrange(9, review_count + 1, 30)):
+        review_count = self.glob_review_count = 0
+
+        if real_count:
+            review_count = int(real_count[0])
+            self.glob_review_count = int(real_count[0]) # for transfer to another method
+
+        if review_count > 0:
+            for index, i in enumerate(xrange(1, review_count + 1, 30)):
                 contents += s.get(self.ADD_REVIEW_URL.
                                   format(self._product_id(), index + 2),
                                   headers=h, timeout=5).text

@@ -6,6 +6,7 @@
 from pprint import pprint
 import json
 import argparse
+import urlparse
 
 import colorama  # pip install colorama
 
@@ -14,6 +15,7 @@ def parse_cmd_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--f1")  # input .JL file 1
     parser.add_argument("--f2")  # input .JL file 2
+    # strip_get_args=True OR strip_get_args=1 OR strip_get_args=get_param1,get_param2,session,page
     parser.add_argument(
         "--strip_get_args", default=False, required=False)  # exclude GET args from URL?
     parser.add_argument(
@@ -31,8 +33,23 @@ def parse_cmd_args():
     return parser.parse_args()
 
 
-def _strip_get_args(url):
-    return url.rsplit('?', 1)[0]
+def _strip_get_args(url, strip_get_args):
+    # 1st case - strip ALL GET params
+    if strip_get_args is True or str(strip_get_args) in ('true', 'True', '1'):
+        return url.rsplit('?', 1)[0]
+    # 2nd case - remove only specified params
+    result_url = ''
+    parsed = urlparse.urlparse(url)
+    params = urlparse.parse_qs(parsed.query)
+    result_url += parsed.scheme + '://' + parsed.netloc + parsed.path + '?'
+    for param_name in params.keys():
+        if param_name in strip_get_args.split(','):
+            continue
+        for param_value in params[param_name]:
+            result_url += '%s=%s&' % (param_name, param_value)
+    while result_url.endswith('&'):
+        result_url = result_url[0:-1]
+    return result_url
 
 
 def unify_br(br):
@@ -261,7 +278,7 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
             continue
         url1 = json1['url']
         if strip_get_args:
-            url1 = _strip_get_args(url1)
+            url1 = _strip_get_args(url1, strip_get_args)
 
         total_urls += 1
 
@@ -276,7 +293,7 @@ def match(f1, f2, fields2exclude=None, strip_get_args=None,
                 continue
             url2 = json2['url']
             if strip_get_args:
-                url2 = _strip_get_args(url2)
+                url2 = _strip_get_args(url2, strip_get_args)
 
             if url1 == url2:
                 matched_urls += 1

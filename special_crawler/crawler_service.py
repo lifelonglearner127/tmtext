@@ -60,6 +60,7 @@ from extract_deliverywalmart_data import DeliveryWalmartScraper
 from extract_flipkart_data import FlipkartScraper
 from extract_pepperfry_data import PepperfryScraper
 from extract_cvs_data import CVSScraper
+from extract_walgreens_data import WalgreensScraper
 from extract_hairshop24_data import HairShop24Scraper
 from extract_hagelshop_data import HagelShopScraper
 from extract_levi_data import LeviScraper
@@ -76,6 +77,22 @@ from extract_riverisland_data import RiverislandScraper
 from extract_mothercare_data import MotherCareScraper
 from extract_toysrus_data import ToysRusScraper
 from extract_microsoft_data import MicrosoftScraper
+from extract_nike_data import NikeScraper
+from extract_forever21_data import Forever21Scraper
+from extract_officedepot_data import OfficeDepotScraper
+from extract_orientaltrading_data import OrientalTradingScraper
+from extract_walmartmx_data import WalmartMXScraper
+from extract_riteaid_data import RiteAidScraper
+from extract_att_data import ATTScraper
+from extract_verizonwireless_data import VerizonWirelessScraper
+from extract_lowes_data import LowesScraper
+from extract_petco_data import PetcoScraper
+from extract_wag_data import WagScraper
+from extract_chewy_data import ChewyScraper
+from extract_petfooddirect_data import PetFoodDirectScraper
+from extract_pet360_data import Pet360Scraper
+from extract_petsmart_data import PetsmartScraper
+from extract_walmartgrocery_data import WalmartGroceryScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -83,6 +100,10 @@ import logging
 from logging import StreamHandler
 import re
 import json
+from lxml import etree, html
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+import time
 
 app = Flask(__name__)
 
@@ -144,6 +165,7 @@ SUPPORTED_SITES = {
                     "flipkart": FlipkartScraper,
                     "pepperfry": PepperfryScraper,
                     "cvs": CVSScraper,
+                    "walgreens": WalgreensScraper,
                     "hairshop24": HairShop24Scraper,
                     "hagelshop": HagelShopScraper,
                     "levi": LeviScraper,
@@ -159,7 +181,23 @@ SUPPORTED_SITES = {
                     "riverisland": RiverislandScraper,
                     "mothercare": MotherCareScraper,
                     "toysrus": ToysRusScraper,
-                    "microsoftstore": MicrosoftScraper
+                    "microsoftstore": MicrosoftScraper,
+                    "nike": NikeScraper,
+                    "forever21": Forever21Scraper,
+                    "officedepot": OfficeDepotScraper,
+                    "orientaltrading": OrientalTradingScraper,
+                    "walmartmx": WalmartMXScraper,
+                    "riteaid": RiteAidScraper,
+                    "att": ATTScraper,
+                    "verizonwireless": VerizonWirelessScraper,
+                    "lowes": LowesScraper,
+                    "petco": PetcoScraper,
+                    "wag": WagScraper,
+                    "chewy" : ChewyScraper,
+                    "petfooddirect": PetFoodDirectScraper,
+                    "pet360" : Pet360Scraper,
+                    "petsmart" : PetsmartScraper,
+                    "walmartgrocery" : WalmartGroceryScraper,
                     }
 
 # add logger
@@ -239,6 +277,8 @@ def extract_domain(url):
         return 'groceries'
     if 'walmart.ca' in url:
         return 'walmartca'
+    if 'walmart.com.mx' in url:
+        return 'walmartmx'
     if 'next.co.uk' in url:
         return 'nextcouk'
     if 'delivery.walmart' in url:
@@ -255,8 +295,12 @@ def extract_domain(url):
         return "clarkscouk"
     if "amazon.fr" in url:
         return "amazonfr"
+    if "store.nike.com" in url:
+        return "nike"
+    if 'grocery.walmart.com' in url:
+        return 'walmartgrocery'
 
-    m = re.match("^https?://(www|shop|www1)\.([^/\.]+)\..*$", url)
+    m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:
         return m.group(2)
     # TODO: return error message about bad URL if it does not match the regex
@@ -291,6 +335,22 @@ def validate_args(arguments):
 
     if site_argument not in SUPPORTED_SITES.keys():
         raise InvalidUsage("Unsupported site: " + site_argument)
+
+# validate request mandatory arguments
+def validate_google_search_args(arguments):
+    # normalize all arguments to str
+    argument_keys = map(lambda s: str(s), arguments.keys())
+
+    mandatory_keys = ['query']
+
+    # If missing any of the needed arguments, throw exception
+    for argument in mandatory_keys:
+        if argument not in argument_keys:
+            raise InvalidUsage("Invalid usage: missing GET parameter: " + argument)
+
+    if 'sellers_search_only' in arguments:
+        if arguments["sellers_search_only"][0].lower() not in ["true", "false"]:
+            raise InvalidUsage("Invalid usage: invalid TYPE parameter: sellers_search_only")
 
 # validate request "data" parameters
 def validate_data_params(arguments, ALL_DATA_TYPES):
@@ -360,9 +420,95 @@ def get_data():
     except HTTPError:
         raise GatewayError("Error communicating with site crawled.")
 
-
     return jsonify(ret)
 
+
+@app.route('/google_search', methods=['GET'])
+def google_search():
+
+    # this is used to convert an ImmutableMultiDictionary into a regular dictionary. will be left with only one "data" key
+    request_arguments = dict(request.args)
+
+    # validate request parameters
+    validate_google_search_args(request_arguments)
+    sellers_search_only = True if request_arguments.get("sellers_search_only", [""])[0].lower() == "true" else False
+    query = request_arguments['query'][0]
+    results = {}
+
+    driver = webdriver.PhantomJS()
+    driver.set_window_size(1440, 900)
+
+    try:
+        if sellers_search_only:
+            driver.get("https://www.google.com/shopping?hl=en")
+        else:
+            #means broad search
+            driver.get("https://www.google.com/")
+
+        input_search_text = None
+
+        if sellers_search_only:
+            input_search_text = driver.find_element_by_xpath("//input[@title='Search']")
+        else:
+            input_search_text = driver.find_element_by_xpath("//input[@title='Google Search']")
+
+        input_search_text.clear()
+        input_search_text.send_keys('"' + query + '"')
+        input_search_text.send_keys(Keys.ENTER)
+        time.sleep(3)
+
+        google_search_results_page_raw_text = driver.page_source
+        google_search_results_page_html_tree = html.fromstring(google_search_results_page_raw_text)
+
+        if google_search_results_page_html_tree.xpath("//form[@action='CaptchaRedirect']"):
+            raise Exception('Google blocks search requests and claim to input captcha.')
+
+        if google_search_results_page_html_tree.xpath("//title") and \
+                        "Error 400 (Bad Request)" in google_search_results_page_html_tree.xpath("//title")[0].text_content():
+            raise Exception('Error 400 (Bad Request)')
+
+        if sellers_search_only:
+            seller_block = None
+
+            for left_block in google_search_results_page_html_tree.xpath("//ul[@class='sr__group']"):
+                if left_block.xpath("./li[@class='sr__title sr__item']/text()")[0].strip().lower() == "seller":
+                    seller_block = left_block
+                    break
+
+            seller_name_list = None
+
+            if seller_block:
+                seller_name_list = seller_block.xpath(".//li[@class='sr__item']//a/text()")
+                seller_name_list = [seller for seller in seller_name_list if seller.lower() != "walmart"]
+
+            if not seller_name_list:
+                results["success"] = 1
+                results["message"] = "Unique content."
+            else:
+                results["success"] = 1
+                results["message"] = "Found duplicate content from other sellers: ." + ", ".join(seller_name_list)
+        else:
+            duplicate_content_links = google_search_results_page_html_tree.xpath("//div[@id='search']//cite/text()")
+
+            if duplicate_content_links:
+                duplicate_content_links = [url for url in duplicate_content_links if "walmart.com" not in url.lower()]
+
+            if not duplicate_content_links:
+                results["success"] = 1
+                results["message"] = "Unique content."
+            else:
+                results["success"] = 1
+                results["message"] = "Found duplicate content from other links."
+
+    except Exception, e:
+        print e
+        results["success"] = 0
+        results["message"] = str(e)
+
+    driver.close()
+    driver.quit()
+
+    return jsonify(results)
 
 @app.errorhandler(InvalidUsage)
 def handle_invalid_usage(error):

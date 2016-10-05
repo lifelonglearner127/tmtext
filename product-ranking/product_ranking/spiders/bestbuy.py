@@ -2,8 +2,8 @@ from __future__ import division, absolute_import, unicode_literals
 
 import re
 
-from product_ranking.items import Price
-from product_ranking.spiders import cond_set, cond_replace_value
+from product_ranking.items import Price, BuyerReviews
+from product_ranking.spiders import cond_set, cond_set_value, cond_replace_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
 
 
@@ -22,6 +22,11 @@ class BestBuyProductSpider(ProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
+        rows = ''.join(response.xpath("//div[contains(@class,'cart-button')]/@data-add-to-cart-message").extract())
+        if "Sold Out Online" in rows:
+            product['is_out_of_stock'] = True
+        else:
+            product['is_out_of_stock'] = False
         if 'this item is no longer available' in response.body_as_unicode().lower():
             product['not_found'] = True
             return product
@@ -48,7 +53,7 @@ class BestBuyProductSpider(ProductsSpider):
                                          page=next_link)
 
     def _fetch_product_boxes(self, response):
-        return response.css('.list-content .list-item')
+        return response.css('.list-items .list-item')
 
     def _link_from_box(self, box):
         return box.css('::attr(data-url)').extract()[0]
@@ -65,6 +70,15 @@ class BestBuyProductSpider(ProductsSpider):
         cond_set(product, 'image_url', product_tree.xpath(
             "descendant::*[not (@itemtype)]/img[@itemprop='image']/@src"
         ).extract())
+        if not product.get('image_url', None):
+            image = response.xpath('//meta[contains(@property, "og:image")]/@content').extract()
+            if image:
+                product['image_url'] = image[0]
+        if product.get('image_url', None):
+            image = product.get('image_url')
+            if 'maxHeight' in image:
+                image = image.split(';maxHeight', 1)[0]
+                product['image_url'] = image
         cond_set(product, 'model', product_tree.xpath(
             "descendant::*[not (@itemtype)]/*[@itemprop='model']/text()"
         ).extract())
@@ -98,6 +112,31 @@ class BestBuyProductSpider(ProductsSpider):
             "descendant::*[not (@itemtype) and @itemprop='name']/@content"
         ).extract())
 
+    def _get_buyer_reviews(self, response):
+        average = response.xpath('//*[contains(@class, "average-score")]'
+                                 '[contains(@itemprop, "ratingValue")]//text()').extract()
+        if not average:
+            return
+        try:
+            average = float(average[0])
+        except:
+            self.log('Invalid buyer reviews at %s' % response.url)
+            return
+        num = response.xpath('//meta[contains(@itemprop, "reviewCount")]/@content').extract()
+        num = int(num[0].replace(',', ''))
+        # scrape rating by star
+        rating_by_star = {}
+        for star_num, star_breakdown in enumerate(response.xpath(
+                '//*[contains(@id, "ratings-tooltip")]'
+                '//*[contains(@class, "star-breakdowns")]'
+                '//*[contains(@class, "star-breakdown")]')):
+            current_mark = 5 - star_num
+            if star_num >= 5:
+                break
+            star_count = star_breakdown.css('.star-count ::text').extract()[0].replace(',', '')
+            rating_by_star[str(current_mark)] = int(re.search('(\d+)', star_count).group(1))
+        return BuyerReviews(num_of_reviews=num, average_rating=average, rating_by_star=rating_by_star)
+
     def _populate_from_html(self, response, product):
         self._populate_from_schemaorg(response, product)
         title = response.css("#sku-title ::text").extract()[0]
@@ -106,7 +145,7 @@ class BestBuyProductSpider(ProductsSpider):
             cond_set(product, 'brand', [brand])
 
         cond_set(product, 'title', [title])
-
+        cond_set_value(product, 'buyer_reviews', self._get_buyer_reviews(response))
         cond_set(product, 'upc', response.css("#sku-value ::text").extract())
         cond_set(product, 'model',
                  response.css("#model-value ::text").extract())
@@ -114,7 +153,7 @@ class BestBuyProductSpider(ProductsSpider):
 
     def _unify_price(self, product):
         price = product.get('price')
-        if price is None:
+        if not price:
             return
         price_match = re.search('\$ *([, 0-9]+(?:\.[, 0-9]+)?)', price)
         price = price_match.group(1)
