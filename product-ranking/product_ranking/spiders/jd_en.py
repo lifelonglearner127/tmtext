@@ -66,11 +66,16 @@ class JdProductsSpider(BaseProductsSpider):
 
         prod['locale'] = 'en-GB'  # ?
         prod['is_out_of_stock'] = False  # ?
-        cond_set(prod, 'title', response.css('h1.tit::text').extract())
-        cond_set(prod, 'image_url', response.css('meta[property="og:image"]::'
-                                                 'attr(content)').extract())
-        sku = response.css('#summary-price::attr(skuid)').extract()[0]
-        prod_id = response.css('#summary::attr(data-ware-id)').extract()[0]
+        title = response.xpath('//div[@id="name"]//h1/text()').extract()
+        cond_set(prod, 'title', title)
+
+        image_url = response.xpath('//div[contains(@class, "spec-items")]//ul/li/img/@src').extract()
+        prod['image_url'] = image_url
+        sku = response.xpath('//div[@id="summary-price"]//a/@data-sku').extract()
+        if len(sku) > 0:
+            sku = sku[0]
+        # prod_id = response.css('#summary::attr(data-ware-id)').extract()[0]
+        prod_id = sku
         cond_set_value(prod, 'sku', sku)
         self._parse_variants(response)
 
