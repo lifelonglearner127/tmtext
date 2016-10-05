@@ -189,6 +189,7 @@ class BaseCheckoutSpider(scrapy.Spider):
                     if self.promo_mod:
                         item['promo_code'] = promo_code
                     item['no_longer_available'] = True
+                    item['not_found'] = True
                     yield item
             else:
                 if i > 0:

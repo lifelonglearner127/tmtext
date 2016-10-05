@@ -85,13 +85,15 @@ class MacysSpider(BaseCheckoutSpider):
             )
 
     def _set_quantity(self, product, quantity):
-        quantity_option = Select(
-            self.driver.find_element_by_xpath('*//*[@class="productQuantity"]'))
-        quantity_option.select_by_value(str(quantity))
-        quantity_selected = quantity_option.first_selected_option.text
-        if quantity_selected != str(quantity):
-            time.sleep(4)
-        self.log('Quantity "{}" selected'.format(quantity))
+        quantity_option = Select(self.driver.find_element_by_xpath('*//*[@class="productQuantity"]'))
+        try:
+            quantity_option.select_by_value(str(quantity))
+            quantity_selected = quantity_option.first_selected_option.text
+            if quantity_selected != str(quantity):
+                time.sleep(4)
+            self.log('Quantity "{}" selected'.format(quantity))
+        except:
+            pass
 
     def _get_product_list_cart(self):
         self.wait.until(
@@ -192,4 +194,5 @@ class MacysSpider(BaseCheckoutSpider):
 
     def _parse_no_longer_available(self):
         return bool(self._find_by_xpath(
-            '//*[contains(text(), "This product is currently unavailable")]'))
+            '//*[contains(., "This product is currently unavailable") or '
+            'contains(., "This product is no longer available.")]'))

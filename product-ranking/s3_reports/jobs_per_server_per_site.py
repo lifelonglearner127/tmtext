@@ -82,11 +82,12 @@ def transform_report_by_spider(report):
 def dump_reports(input_fname, date, output_fname):
     report1 = main(input_fname, date)
     report2 = transform_report_by_spider(report1)
-    with open(output_fname, 'w') as fh:
-        fh.write(json.dumps({
-            'by_server': report1,
-            'by_spider': report2
-        }))
+    if report1 and report2:
+        with open(output_fname, 'w') as fh:
+            fh.write(json.dumps({
+                'by_server': report1,
+                'by_spider': report2
+            }))
 
 
 if __name__ == '__main__':

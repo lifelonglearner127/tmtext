@@ -70,7 +70,8 @@ sys.path.insert(
 from sqs_queue import SQS_Queue
 from libs import convert_json_to_csv
 from cache_layer import REDIS_HOST, REDIS_PORT, INSTANCES_COUNTER_REDIS_KEY, \
-    TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET
+    TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET, \
+    JOBS_COUNTER_REDIS_KEY, JOBS_STATS_REDIS_KEY
 
 
 TEST_MODE = False  # if we should perform local file tests
@@ -740,6 +741,22 @@ class ScrapyTask(object):
         logs_key = put_file_into_s3(
             AMAZON_BUCKET_NAME, output_path+'.log')
 
+        if self.is_screenshot_job():
+            if not os.path.exists(output_path + '.screenshot.jl'):
+                # screenshot task not finished yet? wait 30 seconds
+                time.sleep(30)
+            if not os.path.exists(output_path + '.screenshot.jl'):
+                logger.error('Screenshot output file does not exist: %s' % (
+                    output_path + '.screenshot.jl'))
+            else:
+                try:
+                    put_file_into_s3(
+                        AMAZON_BUCKET_NAME, output_path+'.screenshot.jl')
+                    logger.info('Screenshot file uploaded: %s' % (output_path + '.screenshot.jl'))
+                except Exception as ex:
+                    logger.error('Screenshot file uploading error')
+                    logger.exception(ex)
+
         csv_data_key = None
         global CONVERT_TO_CSV
         if CONVERT_TO_CSV:
@@ -789,6 +806,8 @@ class ScrapyTask(object):
                 logger.warning('Could not upload daemon logs: %s' % str(e))
         self.finished = True
         self.finish_date = datetime.datetime.utcnow()
+        self.task_data['finish_time'] = \
+            time.mktime(self.finish_date.timetuple())
 
     def _update_items_scraped(self):
         output_path = self.get_output_path() + '.jl'
@@ -1071,6 +1090,8 @@ class ScrapyTask(object):
         try:
             start_time = datetime.datetime.utcnow()
             self.start_date = start_time
+            self.task_data['start_time'] = \
+                time.mktime(self.start_date.timetuple())
             self._start_scrapy_process()
             self._push_simmetrica_events()
             first_signal = self._get_next_signal(start_time)
@@ -1114,6 +1135,29 @@ class ScrapyTask(object):
 
     def save_cached_result(self):
         return save_task_result_to_cache(self.task_data, self.get_output_path())
+
+    def is_screenshot_job(self):
+        return self.task_data.get('cmd_args', {}).get('make_screenshot_for_url', False)
+
+    def start_screenshot_job_if_needed(self):
+        """ Starts a new url2screenshot local job, if needed """
+        url2scrape = None
+        if self.task_data.get('product_url', self.task_data.get('url', None)):
+            url2scrape = self.task_data.get('product_url', self.task_data.get('url', None))
+        # TODO: searchterm jobs? checkout scrapers?
+        if url2scrape:
+            scrapy_path = "/home/spiders/virtual_environment/bin/scrapy"
+            python_path = "/home/spiders/virtual_environment/bin/python"
+            cmd = ('cd {repo_base_path}/product-ranking'
+                   ' && {python_path} {scrapy_path} crawl url2screenshot_products'
+                   ' -a product_url="{url2scrape}" '
+                   ' -a width=1280 -a height=1024 -a timeout=60 '
+                   ' -o "{output_file}" &').format(
+                       repo_base_path=REPO_BASE_PATH, python_path=python_path,
+                       scrapy_path=scrapy_path, url2scrape=url2scrape,
+                       output_file=self.get_output_path()+'.screenshot.jl')
+            logger.info('Starting a new parallel screenshot job: %s' % cmd)
+            os.system(cmd)  # use Popen instead?
 
     def report(self):
         """returns string with the task running stats"""
@@ -1241,6 +1285,10 @@ def log_failed_task(task):
 def notify_cache(task, is_from_cache=False):
     """send request to cache (for statistics)"""
     url = CACHE_HOST + CACHE_URL_STATS
+    if 'start_time' in task and task['start_time']:
+        if ('finish_time' in task and not task['finish_time']) or \
+                'finish_time' not in task:
+            task['finish_time'] = int(time.time())
     data = dict(task=json.dumps(task), is_from_cache=json.dumps(is_from_cache))
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
@@ -1274,6 +1322,36 @@ def is_task_taken(new_task, tasks):
     if new_task_id is None:
         return False
     return new_task_id in task_ids
+
+
+def store_tasks_metrics(task, redis_db):
+    """This method will just increment required key in redis database
+        if connection to the database exist."""
+    if TEST_MODE:
+        print 'Simulate redis incremet, key is %s' % JOBS_COUNTER_REDIS_KEY
+        print 'Simulate redis incremet, key is %s' % JOBS_STATS_REDIS_KEY
+        return
+    if not redis_db:
+        return
+    try:
+        # increment quantity of tasks spinned up during the day.
+        redis_db.incr(JOBS_COUNTER_REDIS_KEY)
+    except Exception as e:
+        logger.warning("Failed to increment redis metric '%s' "
+                       "with exception '%s'", JOBS_COUNTER_REDIS_KEY,
+                       e)
+    generated_key = '%s:%s:%s' % (
+        task.get('server_name', 'UnknownServer'),
+        task.get('site', 'UnknownSite'),
+        ('term' if 'searchterms_str' in task and task['searchterms_str']
+         else 'url')
+    )
+    try:
+        redis_db.hincrby(JOBS_STATS_REDIS_KEY, generated_key, 1)
+    except Exception as e:
+        logger.warning("Failed to increment redis key '%s' and"
+                       "redis metric '%s' with exception '%s'",
+                       JOBS_STATS_REDIS_KEY, generated_key, e)
 
 
 def main():
@@ -1393,6 +1471,9 @@ def main():
         elif (task_data['site'] in ('dockers', 'nike')) or 'checkout' in task_data['site']:
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
             logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
+        elif task_data.get('cmd_args', {}).get('make_screenshot_for_url', False):
+            MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
+            logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of the parallel url2screenshot job' % MAX_CONCURRENT_TASKS)
 
         logger.info("Task message was successfully received.")
         logger.info("Whole tasks msg: %s", str(task_data))
@@ -1412,6 +1493,8 @@ def main():
             # make sure all tasks are in same branch
             queue.reset_message()
             continue
+        # Store jobs metrics
+        store_tasks_metrics(task_data, redis_db)
         # start task
         # if started, remove from the queue and run
         task = ScrapyTask(queue, task_data, listener)
@@ -1419,7 +1502,7 @@ def main():
         if task.get_cached_result(TASK_QUEUE_NAME):
             # if found response in cache, upload data, delete task from sqs
             task.queue.task_done()
-            notify_cache(task_data, is_from_cache=True)
+            notify_cache(task.task_data, is_from_cache=True)
             del task
             continue
         if task.start():
@@ -1428,8 +1511,10 @@ def main():
             logger.info(
                 'Task %s started successfully, removing it from the queue',
                 task.task_data.get('task_id'))
+            if task.is_screenshot_job():
+                task.start_screenshot_job_if_needed()
             task.queue.task_done()
-            notify_cache(task_data, is_from_cache=False)
+            notify_cache(task.task_data, is_from_cache=False)
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
                          task.task_data.get('task_id', 0))

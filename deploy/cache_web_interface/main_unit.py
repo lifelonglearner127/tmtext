@@ -59,8 +59,9 @@ def clear_cache():
         'cache_stats': ('Stats of most used cached items', [
             cache.REDIS_CACHE_STATS_URL, cache.REDIS_CACHE_STATS_TERM,
             cache.REDIS_COMPLETED_COUNTER]),
-        'sqs_stats': ('Stats of the sqs: count of tasks and instances', [
-            cache.REDIS_COMPLETED_TASKS, cache.REDIS_INSTANCES_COUNTER]),
+        'sqs_stats': ('Stats of the sqs: count of tasks, jobs and instances', [
+            cache.REDIS_COMPLETED_TASKS, cache.REDIS_INSTANCES_COUNTER,
+            cache.REDIS_JOBS_COUNTER]),
         'urgent_stats': ('Stats of the urgent queue', [
             cache.REDIS_URGENT_STATS])
     }
@@ -142,7 +143,18 @@ def stats():
         context['running_instances'] = sum(instances.itervalues())
         context['running_instances_info'] = instances
         context['today_instances'] = cache.get_today_instances()
+        context['today_jobs'] = cache.get_jobs_stats()
         context['today_executed_tasks'] = cache.get_executed_tasks_count()
+        context['today_requests_count'] = cache.get_today_requests()
+        if context['today_requests_count'] is None:
+            context['today_requests_count'] = 0
+        _task_executed_time = cache.get_task_executed_time(for_last_hour=True)
+        if _task_executed_time:
+            task_execute_time_avg = \
+                sum(_task_executed_time.values()) / len(_task_executed_time)
+        else:
+            task_execute_time_avg = 0
+        context['last_hour_executed_tasks_time_avg'] = task_execute_time_avg
         context['last_hour_executed_tasks'] = cache.get_executed_tasks_count(
             for_last_hour=True)
         context['responses_from_cache_url'] = \
@@ -241,6 +253,64 @@ def complete_task():
     is_from_cache_str = request.form['is_from_cache']
     cache.complete_task(task, is_from_cache_str)
     return make_response('', 200)
+
+
+@app.route('/jobs_history', methods=['GET', 'POST'])
+def jobs_history():
+    """
+    Total number of jobs.
+    """
+    if request.method == 'GET':
+        return render_template('jobs_history.html')
+    days = int(request.form.get('days', '0'))
+    data = cache.get_jobs_history(days)
+    resp = make_response(json.dumps(data))
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
+
+
+@app.route('/requests_history', methods=['GET', 'POST'])
+def requests_history():
+    """
+    Total number of jobs.
+    """
+    try:
+        days = int(request.form.get('days', 0))
+        if not days:
+            days = int(request.args.get('days', 0))
+    except ValueError:
+        days = 0
+    if request.method == 'GET':
+        if request.args.get('download', False):
+            data = cache.get_requests_count_history(days)
+            statistic = json.dumps(data)
+            filename = '%s.json' % datetime.datetime.today()
+            response = make_response(statistic)
+            response.headers['Content-Description'] = 'File Transfer'
+            response.headers['Content-Type'] = 'application/octet-stream'
+            response.headers['Content-Disposition'] = \
+                'attachment; filename=%s;' % filename
+            response.headers['Content-Transfer-Encoding'] = 'binary'
+            response.headers['Expires'] = '0'
+            response.headers['Cache-Control'] = 'must-revalidate'
+            response.headers['Pragma'] = 'public'
+            response.headers['Content-Length'] = len(statistic)
+            return response
+        return render_template('requests_history.html')
+    data = cache.get_requests_count_history(days)
+    resp = make_response(json.dumps(data))
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
+
+
+@app.route('/task_execute_time', methods=['GET', 'POST'])
+def task_execute_time():
+    if request.method == 'GET':
+        return render_template('task_execute_time.html')
+    data = cache.get_task_executed_time(hours_from=0, hours_to=23)
+    resp = make_response(json.dumps(data))
+    resp.headers['Content-Type'] = 'application/json'
+    return resp
 
 
 @app.route('/fail_task', methods=['POST'])
