@@ -59,6 +59,11 @@ class LLBeanProductsSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
+
+        reseller_id = response.xpath('.//*[@itemprop="productID"]/text()').extract()
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         elts = response.xpath('//div[@id="ppDetails"]/node()')
         elts = [elt.extract()
                 for elt in elts if not elt.css('#ppPremiseStatement')]
