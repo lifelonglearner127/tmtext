@@ -37,7 +37,7 @@ class AmazonScraper(Scraper):
     CB.CAPTCHAS_DIR = '/tmp/captchas'
     CB.SOLVED_CAPTCHAS_DIR = '/tmp/solved_captchas'
 
-    MAX_CAPTCHA_RETRIES = 3
+    MAX_PROXY_RETRIES = 3
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -74,8 +74,8 @@ class AmazonScraper(Scraper):
             self.browser.add_proxy_password(*self.proxy_auth)
 
         # Cookie Jar
-        cj = cookielib.LWPCookieJar()
-        self.browser.set_cookiejar(cj)
+        #cj = cookielib.LWPCookieJar()
+        #self.browser.set_cookiejar(cj)
 
         # Browser options
         self.browser.set_handle_equiv(True)
@@ -95,7 +95,7 @@ class AmazonScraper(Scraper):
         # User-Agent (this is cheating, ok?)
         self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
 
-    def _extract_page_tree(self, retry=0, captcha_data=None):
+    def _extract_page_tree(self, retry=0, proxy_retry=0, captcha_data=None):
         self._initialize_browser_settings()
 
         if not re.search('showDetailTechData=1', self.product_page_url):
@@ -127,10 +127,13 @@ class AmazonScraper(Scraper):
             self.ERROR_RESPONSE["failure_type"] = str(e)
 
         if self.is_timeout:
-            if retry < self.MAX_RETRIES - 1:
-                return self._extract_page_tree(retry+1, captcha_data)
-            else:
+            if retry >= self.MAX_RETRIES or proxy_retry >= self.MAX_PROXY_RETRIES:
                 return
+            else:
+                if self.proxies_enabled:
+                    return self._extract_page_tree(retry, proxy_retry+1)
+                else:
+                    return self._extract_page_tree(retry+1)
 
         try:
             # replace NULL characters
@@ -155,12 +158,12 @@ class AmazonScraper(Scraper):
                 if not captcha_text:
                     captcha_text = ''
 
-                return self._extract_page_tree(retry+1, captcha_data={'field-keywords' : captcha_text})
+                return self._extract_page_tree(retry+1, proxy_retry, captcha_data={'field-keywords' : captcha_text})
 
             if retry == self.MAX_RETRIES - 1:
                 # If we have tried the maximum number of retries, try once more with proxies
                 self.proxies_enabled = True
-                return self._extract_page_tree(retry+1)
+                return self._extract_page_tree(retry, proxy_retry+1)
 
             # If we still get a CAPTCHA, return failure
             self.is_timeout = True # set self.is_timeout so we will return an error response
@@ -1121,7 +1124,9 @@ class AmazonScraper(Scraper):
                         review_list.append([index + 1, review_count])
 
                     break
-                except:
+                except mechanize.HTTPError as e:
+                    if e.code == 404:
+                        break
                     continue
 
         if not review_list:
