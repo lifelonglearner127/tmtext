@@ -120,6 +120,7 @@ def stop_flag_exists_at_s3(bucket_name, key):
 
 def get_actual_branch_from_cache():
     try:
+        logger.info('Get default branch from redis.')
         sys.path.append(os.path.join(REPO_BASE_PATH, 'deploy'))
         from cache_layer.cache_service import SqsCache
         sqs = SqsCache()
