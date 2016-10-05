@@ -563,11 +563,11 @@ class SqsCache(object):
         Set option value by field name (key) in settings hash.
         """
         return self.db.hset(self.REDIS_SETTINGS_KEY,
-                            self.REDIS_SETTINGS_FIELDS.get(key), value)
+                            self.REDIS_SETTINGS_FIELDS[key], value)
 
     def get_settings(self, key):
         """
         Get option from settings hash.
         """
         return self.db.hget(self.REDIS_SETTINGS_KEY,
-                            self.REDIS_SETTINGS_FIELDS.get(key))
+                            self.REDIS_SETTINGS_FIELDS[key])
