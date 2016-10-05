@@ -206,26 +206,61 @@ def upload_text(br, file, group, emails):
             business_group.select_by_visible_text(group)
             time.sleep(2)
         except:
-            logging_info("No business group")
-        support_topic = Select(br.find_element_by_id("issueId"))
-        support_topic.select_by_value("32600")
+            try:
+                br.find_element_by_xpath('//a[contains(text(), "%s")]' % group).click()
+                time.sleep(2)
+            except:
+                logging_info("No business group")
+        try:
+            support_topic = Select(br.find_element_by_id("issueId"))
+            support_topic.select_by_value("32600")
+            time.sleep(2)
+        except:
+            br.find_element_by_xpath('//span[contains(text(), "Manage My Catalog")]').click()
+            time.sleep(2)
+        try:
+            specific_issue = Select(br.find_element_by_id("subIssueId"))
+            specific_issue.select_by_value("32751")
+            time.sleep(2)
+        except:
+            br.find_element_by_xpath('//a[contains(text(), "Item Detail Page or Buy Button")]').click()
+            time.sleep(2)
+
+        try:
+            br.find_element_by_id("contactUsContinue").click()
+        except:
+            br.find_element_by_link_text("Send an email").click()
         time.sleep(2)
-        specific_issue = Select(br.find_element_by_id("subIssueId"))
-        specific_issue.select_by_value("32751")
-        time.sleep(2)
-        br.find_element_by_id("contactUsContinue").click()
-        time.sleep(2)
+
         logging_info("Passed initial form")
         title = br.find_element_by_id("subject")
         title.send_keys("Please update product content for the attached items in the file.")
-        upload = br.find_element_by_name('upload')
-        upload.clear()
+        import pdb; pdb.set_trace()
+
+        try:
+            upload = br.find_element_by_name('upload')
+        except:
+            script = """
+            var elements = document.getElementsByClassName('a-button-input');
+            for(var i=0; i < elements.length; i++) {
+                elements[i].class="34543534253453452345";
+                //alert(elements[i]);
+            };
+            """
+            br.execute_script(script)
+            upload = br.find_element_by_xpath(
+                '//input[contains(@aria-labelledby, "contact-add-attachment-button")]')
+        try:
+            upload.clear()
+        except:
+            pass
         upload.send_keys(file)
         time.sleep(2)
         logging_info("Passed upload form")
-        br.find_element_by_id("contactUsSubmit").click()
+        #br.find_element_by_id("contactUsSubmit").click()
         #TODO: find what the response is
         logging_info("Uploaded")
+        import pdb; pdb.set_trace()
         return True
     except:
         logging_info('Failed to upload text', level='ERROR')
@@ -278,10 +313,11 @@ def main():
     profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'text/csv')
 
     #Set up headless version of Firefox
-    display = Display(visible=0, size=(1024, 768))
+    display = Display(visible=1, size=(1024, 768))  # TODO: visible=0
     display.start()
 
-    br = webdriver.Firefox(profile)
+    #br = webdriver.Firefox(profile)
+    br = webdriver.Chrome()  # TODO: Use Firefox?
     br.set_window_size(1024, 768)
 
     login_result = login(br, namespace.username, namespace.password)
