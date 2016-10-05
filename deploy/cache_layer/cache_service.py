@@ -471,7 +471,6 @@ class SqsCache(object):
                 }
             }
         """
-        data = ()
         page = 0
         result = {
             'url': 0,
