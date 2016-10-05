@@ -146,10 +146,12 @@ def stats():
         context['today_jobs'] = cache.get_jobs_stats()
         context['today_executed_tasks'] = cache.get_executed_tasks_count()
         context['today_requests_count'] = cache.get_today_requests()
-        task_executed_time = cache.get_task_executed_time(for_last_hour=True)
-        if task_executed_time:
+        if context['today_requests_count'] is None:
+            context['today_requests_count'] = 0
+        _task_executed_time = cache.get_task_executed_time(for_last_hour=True)
+        if _task_executed_time:
             task_execute_time_avg = \
-                sum(task_executed_time.values()) / len(task_execute_time)
+                sum(_task_executed_time.values()) / len(_task_executed_time)
         else:
             task_execute_time_avg = 0
         context['last_hour_executed_tasks_time_avg'] = task_execute_time_avg
@@ -272,7 +274,12 @@ def requests_history():
     """
     Total number of jobs.
     """
-    days = int(request.form.get('days', '0'))
+    try:
+        days = int(request.form.get('days', 0))
+        if not days:
+            days = int(request.args.get('days', 0))
+    except ValueError:
+        days = 0
     if request.method == 'GET':
         if request.args.get('download', False):
             data = cache.get_requests_count_history(days)

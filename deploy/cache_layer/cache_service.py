@@ -475,7 +475,6 @@ class SqsCache(object):
                 }
             }
         """
-        data = ()
         page = 0
         result = {
             'url': 0,
@@ -489,10 +488,12 @@ class SqsCache(object):
                 })
             })
         }
-        while not data or data[0] != page:
+        while True:
             data = self.db.hscan(self.REDIS_JOBS_STATS,
                                  cursor=page, match=match)
             if not data:
+                break
+            if page == data[0] or not data[0]:
                 break
             page = data[0]
             for key, value in data[1].items():
@@ -548,12 +549,12 @@ class SqsCache(object):
         executions_time_tmp = self.db.hgetall(self.REDIS_TASK_EXECUTION_TIME)
         result = defaultdict(dict)
         for key, val in executions_time_tmp.items():
-            key = key.split(':')
-            if time_from > int(key):
+            _time, _type = key.split(':')
+            if time_from > int(_time):
                 continue
-            if time_to < int(key):
+            if time_to < int(_time):
                 break
-            result[key[0]][key[1]] = val
+            result[_time][_type] = val
         return OrderedDict([(k, float(v['sum']) / float(v['count']))
                             for k, v in result.items()])
 
