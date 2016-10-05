@@ -127,11 +127,26 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
+        reseller_id_regex = "p\/(\d+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         try:
             variants = self._parse_variants(response)
         except KeyError:
             product['not_found'] = True
             return product
+
+        # set reseller_id for variants as well
+        for variant in variants:
+            v_url = variant.get('url')
+            if v_url:
+                reseller_id = re.findall(reseller_id_regex, v_url)
+                reseller_id = reseller_id[0] if reseller_id else None
+            else:
+                reseller_id = None
+            variant['reseller_id'] = reseller_id
 
         product['variants'] = variants
 
