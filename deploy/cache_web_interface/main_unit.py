@@ -347,7 +347,7 @@ def common_settings():
             cmd = 'git branch -a | grep -P "[/\s]%s$"'
             with os.popen(cmd % branch) as stdout:
                 branch_exist = stdout.read()
-            if not branch_exist.strip('\n\s\r'):
+            if not branch_exist.strip('\n\r '):
                 raise Exception('This branch does not exists.')
             cache.set_settings('remote_instance_branch', branch)
             return 'OK'
