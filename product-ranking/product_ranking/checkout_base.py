@@ -119,7 +119,7 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.promo_mod = self.promo_code and self.promo_price
 
         from pyvirtualdisplay import Display
-        display = Display(visible=False, size=(1024, 768))
+        display = Display(visible=False, size=(1280, 720))
         display.start()
 
         if self.quantity:

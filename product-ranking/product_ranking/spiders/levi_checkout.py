@@ -174,9 +174,10 @@ class LeviSpider(BaseCheckoutSpider):
                               color_attributes_xpath,
                               element)
 
-        time.sleep(1)
+        time.sleep(4)
 
     def select_waist(self, element=None):
+        time.sleep(4)
         size_attribute_xpath = (
             '*//*[@id="pdp-buystack-waist-values"]'
             '/li[contains(@class,"selected") and not(contains(@class, "not-available"))]')
@@ -188,6 +189,7 @@ class LeviSpider(BaseCheckoutSpider):
                               element)
 
     def select_length(self, element=None):
+        time.sleep(4)
         size_attribute_xpath = (
             '*//*[@id="pdp-buystack-length-values"]'
             '/li[contains(@class,"selected") and not(contains(@class, "not-available"))]')
@@ -216,6 +218,13 @@ class LeviSpider(BaseCheckoutSpider):
         if promp_window and promp_window[0].is_displayed():
             promp_window[0].click()
             time.sleep(2)
+
+        promp_window = self._find_by_xpath('//*[@id="oo_close_prompt" and @aria-label="Close dialog"]')
+
+        if promp_window and promp_window[0].is_displayed():
+            promp_window[0].click()
+            time.sleep(2)
+
 
         more_colors_button = self._find_by_xpath(
             '//*[@class="color-swatch more-button"]')
