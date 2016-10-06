@@ -338,12 +338,21 @@ def common_settings():
     try:
         if 'action' not in form:
             raise Exception('Unknown action.')
+        # Set default branch
         if form['action'] == 'remote_instance_branch':
             branch = form.get('branch', '').strip()
             if not branch:
                 raise Exception('Branch cannot be blank.')
+            # Check branch for existing
+            os.system('git fetch -q')
+            cmd = 'git branch -a | grep -P "[/\s]%s$"'
+            with os.popen(cmd % branch) as stdout:
+                branch_exist = stdout.read()
+            if not branch_exist.strip('\n\r '):
+                raise Exception('This branch does not exists.')
             cache.set_settings('remote_instance_branch', branch)
             return 'OK'
+        # End default branch
         raise Exception('Unknown action.')
     except Exception as e:
         return str(e)
