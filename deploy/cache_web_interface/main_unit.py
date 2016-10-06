@@ -344,6 +344,7 @@ def common_settings():
             if not branch:
                 raise Exception('Branch cannot be blank.')
             # Check branch for existing
+            os.system('git fetch -q')
             cmd = 'git branch -a | grep -P "[/\s]%s$"'
             with os.popen(cmd % branch) as stdout:
                 branch_exist = stdout.read()
