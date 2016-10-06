@@ -323,6 +323,32 @@ def fail_task():
 # ###################################
 
 
+@app.route('/common-settings', methods=['GET', 'POST'])
+def common_settings():
+    if request.method == 'GET':
+        try:
+            context = dict()
+            context['remote_instance_branch'] = \
+                cache.get_settings('remote_instance_branch')
+            return render_template('settings.html', **context)
+        except Exception as e:
+            return str(e)
+    # Store settings
+    form = request.form
+    try:
+        if 'action' not in form:
+            raise Exception('Unknown action.')
+        if form['action'] == 'remote_instance_branch':
+            branch = form.get('branch', '').strip()
+            if not branch:
+                raise Exception('Branch cannot be blank.')
+            cache.set_settings('remote_instance_branch', branch)
+            return 'OK'
+        raise Exception('Unknown action.')
+    except Exception as e:
+        return str(e)
+
+
 if __name__ == '__main__':
     app.secret_key = '$%6^78967804^46#$%^$fdG'
     app.debug = False
