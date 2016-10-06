@@ -25,7 +25,7 @@ class LeviVariants(object):
             start = s.index(first) + len(first)
             end = s.index(last, start)
             return s[start:end]
-        except ValueError:
+        except ValueError as e:
             return ""
 
     def _is_unique_variant(self, variant):
@@ -83,9 +83,25 @@ class LeviVariants(object):
 
         try:
             buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
+            # print buy_stack_json_text
             buy_stack_json = json.loads(buy_stack_json_text)
         except:
             buy_stack_json = None
+
+        if not buy_stack_json:
+            try:
+                js_block = self.tree_html.xpath(
+                    "//script[@type='text/javascript' and contains(text(), 'buyStackJSON')]/text()")
+                js_block = js_block[0] if js_block else ""
+                json_regex = r"var\s?buyStackJSON\s?=\s?[\'\"](.+)[\'\"];?\s?"
+                json_regex_c = re.compile(json_regex)
+                buy_stack_json_text = json_regex_c.search(js_block)
+                buy_stack_json_text = buy_stack_json_text.groups()[0] if buy_stack_json_text else ""
+                buy_stack_json_text = buy_stack_json_text.replace("\'", '"').replace('\\\\"', "")
+                buy_stack_json = json.loads(buy_stack_json_text)
+            except Exception as e:
+                print "Failed extracting json block with regex: {}".format(e)
+                buy_stack_json = None
 
         if buy_stack_json:
             product_url = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
