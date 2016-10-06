@@ -1327,20 +1327,23 @@ class AmazonBaseClass(BaseProductsSpider):
                 dont_filter=True
             )
 
-    @staticmethod
-    def _review_retry(response):
+    def _review_retry(self, response):
         if response.status == 503:
-            response_without_crawlera = requests.get(response.url)
+            response_without_crawlera = requests.get(
+                response.url,
+                headers={'User-Agent': random.choice(self.MKTP_USER_AGENTS)})
             if response_without_crawlera.status_code == 503:
                 proxy_host = "proxy.crawlera.com"
                 proxy_port = "8010"
                 proxy_auth = HTTPProxyAuth("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
                 proxies = {"https": "https://{}:{}/".format(proxy_host, proxy_port)}
                 verify = os.path.dirname(os.path.realpath(__file__)) + "/../../rest_apis_content_analytics/walmart_api/crawlera-ca.crt"
-                response_with_crawlera = requests.get(response.url,
-                                                      proxies=proxies,
-                                                      auth=proxy_auth,
-                                                      verify=verify)
+                response_with_crawlera = requests.get(
+                    response.url,
+                    proxies=proxies,
+                    auth=proxy_auth,
+                    verify=verify,
+                    headers={'User-Agent': random.choice(self.MKTP_USER_AGENTS)})
                 body = response_with_crawlera.text
             else:
                 body = response_without_crawlera.text
