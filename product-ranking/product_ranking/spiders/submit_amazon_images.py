@@ -235,7 +235,6 @@ def upload_text(br, file, group, emails):
         logging_info("Passed initial form")
         title = br.find_element_by_id("subject")
         title.send_keys("Please update product content for the attached items in the file.")
-        import pdb; pdb.set_trace()
 
         try:
             upload = br.find_element_by_name('upload')
@@ -257,10 +256,13 @@ def upload_text(br, file, group, emails):
         upload.send_keys(file)
         time.sleep(2)
         logging_info("Passed upload form")
-        #br.find_element_by_id("contactUsSubmit").click()
+        try:
+            br.find_element_by_id("contactUsSubmit").click()
+        except:
+            br.find_element_by_xpath(
+                '//input[contains(@id, "contact-email-form")][contains(@id, "-submit")]').click()
         #TODO: find what the response is
         logging_info("Uploaded")
-        import pdb; pdb.set_trace()
         return True
     except:
         logging_info('Failed to upload text', level='ERROR')
@@ -313,11 +315,11 @@ def main():
     profile.set_preference('browser.helperApps.neverAsk.saveToDisk', 'text/csv')
 
     #Set up headless version of Firefox
-    display = Display(visible=1, size=(1024, 768))  # TODO: visible=0
+    display = Display(visible=0, size=(1024, 768))  # TODO: visible=0
     display.start()
 
-    #br = webdriver.Firefox(profile)
-    br = webdriver.Chrome()  # TODO: Use Firefox?
+    br = webdriver.Firefox(profile)
+    # br = webdriver.Chrome()  # TODO: Use Firefox?
     br.set_window_size(1024, 768)
 
     login_result = login(br, namespace.username, namespace.password)
