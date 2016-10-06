@@ -25,7 +25,7 @@ class LeviVariants(object):
             start = s.index(first) + len(first)
             end = s.index(last, start)
             return s[start:end]
-        except ValueError as e:
+        except ValueError:
             return ""
 
     def _is_unique_variant(self, variant):
