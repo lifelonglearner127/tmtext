@@ -97,7 +97,6 @@ class MaplinProductsSpider(BaseValidator, BaseProductsSpider):
 
         if not prod.get('brand', None):
             dump_url_to_file(response.url)
-
         price = response.xpath(
             '//p[@class="new-price"]/meta[@itemprop="price"]/@content'
         ).extract()
@@ -122,6 +121,10 @@ class MaplinProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set(prod, 'image_url', img_url)
 
         cond_set(prod, 'locale', ['en-US'])
+
+        if not prod.get("reseller_id"):
+            reseller_id = response.xpath('.//*[@itemprop="sku"]/text()').extract()
+            cond_set(prod, 'reseller_id', reseller_id)
 
         prod['url'] = response.url
 
