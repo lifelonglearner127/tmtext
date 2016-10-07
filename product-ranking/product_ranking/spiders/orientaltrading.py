@@ -68,6 +68,9 @@ class OrientaltradingProductsSpider(BaseProductsSpider):
         sku = self.parse_sku(response)
         cond_set_value(product, 'sku', sku)
 
+        # Parse reseller_id
+        cond_set_value(product, "reseller_id", sku)
+
         # Parse price
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
