@@ -12,6 +12,10 @@ def collect_data(cache):
     context = dict()
     context['executed_tasks'] = cache.get_executed_tasks_count()
     context['total_instances'] = cache.get_today_instances()
+    context['today_jobs'] = cache.get_jobs_stats()
+    context['today_requests_count'] = cache.get_today_requests()
+    if context['today_requests_count'] is None:
+        context['today_requests_count'] = 0
     context['total_cached_items'] = cache.get_cached_tasks_count()
     context['cache_most_popular_url'] = \
         cache.get_most_popular_cached_items(5, False)
@@ -25,7 +29,19 @@ def collect_data(cache):
     context['urgent_stats'] = cache.get_urgent_stats()
     context['completed_stats'] = cache.get_completed_stats()
     context['failed_tasks'] = cache.get_all_failed_results()
+    context['last_hour_executed_tasks_time_avg'] = \
+        get_task_executed_time_count(cache)
     return context
+
+
+def get_task_executed_time_count(cache):
+    task_executed_time = \
+        cache.get_task_executed_time(hours_from=0, hours_to=23)
+    try:
+        return sum(task_executed_time.values()) / len(task_executed_time)
+    except Exception as e:
+        print str(e)
+        return 0
 
 
 def generate_mail_message(data):
@@ -54,9 +70,16 @@ def delete_old_cache_data(cache):
     return res
 
 
-def save_instances_number(cache, context):
-    data = context.get('total_instances', 0)
-    return cache.save_today_instances_count(data)
+def save_instances_number(cache):
+    return cache.save_today_instances_count(cache.get_today_instances())
+
+
+def save_jobs_number(cache):
+    return cache.save_today_jobs_count(cache.get_today_jobs())
+
+
+def save_requests_count(cache):
+    return cache.save_today_requests_count(cache.get_today_requests())
 
 
 def main():
@@ -71,7 +94,9 @@ def main():
     context = collect_data(cache)
     content = generate_mail_message(context)
     send_mail(sender, receivers, subject, content)
-    save_instances_number(cache, context)
+    save_instances_number(cache)
+    save_jobs_number(cache)
+    save_requests_count(cache)
     res = delete_old_cache_data(cache)
     print 'Deleted %s total records from cache.' % res
 

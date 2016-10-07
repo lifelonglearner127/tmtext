@@ -16,7 +16,7 @@ from product_ranking.spiders import BaseProductsSpider,FormatterWithDefaults, \
 
 class DrugstoreProductsSpider(BaseProductsSpider):
     name = 'drugstore_products'
-    allowed_domains = ["drugstore.com",
+    allowed_domains = ["drugstore.com", 'walgreens.com',
         "recs.richrelevance.com"]
     start_urls = []
 
@@ -63,10 +63,14 @@ class DrugstoreProductsSpider(BaseProductsSpider):
             prod['url'] = self.product_url
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod})
+                          meta={'product': prod, 'handle_httpstatus_list': [404, 503, 500]})
 
     def parse_product(self, response):
         product = response.meta['product']
+
+        if response.status == 404:
+            product['not_found'] = True
+            return product
 
         cond_set(product, 'title', response.xpath(
             "//div[@id='divCaption']/h1/text()[1]").extract(), lambda y: y.strip())

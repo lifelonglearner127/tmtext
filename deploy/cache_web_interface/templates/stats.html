@@ -19,9 +19,13 @@
             <li><a href="/list_s3">View Bucket</a></li>
             <li><a href="/get_s3_file">Download s3 file</a></li>
             <li><a href="/autoscale_history">Autoscale history</a></li>
+            <li><a href="/jobs_history">Jobs History</a></li>
+            <li><a href="/requests_history">Request History</a></li>
+            <li><a href="/task_execute_time">Task Execute Time</a></li>
             <li><a href="/killer">Killer logs</a></li>
             <li><a href="/settings">Cache settings</a></li>
             <li><a href="/clear_cache">Clear cache</a></li>
+            <li><a href="/common-settings">Common Settings</a></li>
         </ul>
     </header>
 </div>
@@ -39,12 +43,32 @@
         </li>
         <li>Today started instances: {{ today_instances }}</li>
         <li>
+            Today jobs: {{ today_jobs.term + today_jobs.url }} jobs ({{ today_jobs.term }} search terms, {{ today_jobs.url }} product URLs)
+            <a href="#" onclick="javascript: toggle_jobs_metrics(event, this);">Show</a>
+            <ul hidden="hidden">
+                {% for server, server_metrics in today_jobs.servers.items() %}
+                    <li>
+                        {{ server }}: {{ server_metrics.url + server_metrics.term }} jobs ({{ server_metrics.term }} search terms, {{ server_metrics.url }} product URLs)
+                        <ul>
+                            {% for scrapper, scrapper_metrics in server_metrics.scrappers.items() %}
+                                <li>{{ scrapper }}: {{ scrapper_metrics.term + scrapper_metrics.url }} jobs ({{ scrapper_metrics.term }} search terms, {{ scrapper_metrics.url }} product URLs)</li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                {% else %}
+                    <li style="list-style: none;">Data was not found.</li>
+                {% endfor %}
+            </ul>
+        </li>
+        <li>
             Today executed tasks: {{ today_executed_tasks }}
             <ul>
                 <li>Search terms - {{ completed_stats.term_total }}</li>
                 <li>Product urls - {{ completed_stats.url_total }}</li>
             </ul>
         </li>
+        <li>Today requests count: {{ today_requests_count }}</li>
+        <li>Task executed avg time for last hour: {{ last_hour_executed_tasks_time_avg|round(2) }} sec</li>
         <li>Last hour executed tasks: {{ last_hour_executed_tasks }}</li>
         <li>Task left in queues: {{ left_tasks_total }}
             <ul>
@@ -131,4 +155,23 @@
 </div>
 
 </body>
+<script type="text/javascript">
+    var toggle_jobs_metrics = function(event, el){
+        event.preventDefault();
+        var ul = el.nextSibling.nextSibling;
+        switch (el.text){
+            case 'Show':
+                el.text = 'Hide';
+                ul.hidden = false;
+                break;
+            case 'Hide':
+                el.text = 'Show';
+                ul.hidden = true;
+                break;
+            default:
+                alert('Error!');
+                break;
+        }
+    };
+</script>
 </html>
