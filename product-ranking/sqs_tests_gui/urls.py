@@ -39,7 +39,7 @@ urlpatterns = [
     url(r'^render-s3-cache/$', RenderS3CachePage.as_view(), name='render-s3-cache'),
 
     url(r'^reports/sqs-jobs/$', ReportSQSJobs.as_view(), name='report-sqs-jobs'),
-    url(r'^reports/get-csv/(?P<encrypted_filename>[0-9a-zA-Z\=]+)/$',
+    url(r'^reports/get-csv/(?P<encrypted_filename>.+)',
         ReportDownloadCSV.as_view(), name='report-get-csv'),
 
     url('^fcgi/$', include('fcgi.urls'))
