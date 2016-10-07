@@ -39,7 +39,11 @@ class SearsScraper(Scraper):
 
         url = 'http://www.sears.com/content/pdp/config/products/v1/products/' + product_id
 
-        h = requests.get(url).content
+        h = requests.get(
+            url,
+            proxies=self.proxy_config["proxies"] if self.proxy_config else None,
+            auth=self.proxy_config["proxy_auth"] if self.proxy_config else None
+        ).content
         self.product_info_json = json.loads(re.search('{.*}', h).group(0))['data']
         #pyperclip.copy(json.dumps(self.product_info_json))
 
@@ -104,7 +108,7 @@ class SearsScraper(Scraper):
             for g in self.product_info_json['product']['curatedContents']['curatedGrp']:
                 for c in g['content']:
                     if c['type'] == 'copy':
-                        features.append(c['name'] + ': ' + c)
+                        features.append(c['name'] + ': ' + c['data'])
 
         if features:
             return features
