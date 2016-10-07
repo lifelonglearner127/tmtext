@@ -68,7 +68,10 @@ class ReportDownloadCSV(View):
         fname = kwargs.get('encrypted_filename', '')
         if isinstance(fname, unicode):
             fname = fname.encode('utf8')
-        fname = decrypt(fname)
+        try:
+            fname = decrypt(fname)
+        except:
+            fname = decrypt(fname[0:-1])  # remove ending slash?
         if not fname.startswith('/tmp/'):
             return HttpResponse('')
         if not os.path.exists(fname):
