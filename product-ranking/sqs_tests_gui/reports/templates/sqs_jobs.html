@@ -57,11 +57,19 @@
 
 
 {% if by_server %}
-    <p><a href="{{ csv_by_server }}">Download "By server" CSV report</a></p>
+    <p>
+        {% if not is_email_template %}<a href="{{ csv_by_server }}">Download "By server" CSV report</a>
+        {% else %}"By server" CSV report: {{ csv_by_server }}
+        {% endif %}
+    </p>
 {% endif %}
 
 {% if by_spider %}
-    <p><a href="{{ csv_by_site }}">Download "By spider" CSV report</a></p>
+    <p>
+        {% if not is_email_template %}<a href="{{ csv_by_site }}">Download "By spider" CSV report</a>
+        {% else %}"By spider" CSV report: {{ csv_by_site }}
+        {% endif %}
+    </p>
 {% endif %}
 
 <table>
