@@ -33,7 +33,7 @@ class ReportSQSJobs(AuthViewMixin, FormView):
         if form.is_bound:
             if form.is_valid():
                 date = form.cleaned_data.get('date')
-                if not os.path.exists(self._get_report_fname(date)):
+                if not os.path.exists(get_report_fname(date)):
                     context['error_msg'] = ("Report does not exist. Now it's already being generated."
                                             "Please wait a few minutes and try again.")
                     run_report_generation(date)
