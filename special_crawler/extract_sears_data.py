@@ -167,6 +167,9 @@ class SearsScraper(Scraper):
     def _swatches(self):
         swatches = []
 
+        if not self.product_info_json.get('attributes'):
+            return
+
         for attribute in self.product_info_json['attributes']['attributes']:
             if attribute['name'] == 'Color':
                 for value in attribute['values']:
