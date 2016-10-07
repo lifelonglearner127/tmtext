@@ -51,11 +51,11 @@ class ReportSQSJobs(AuthViewMixin, FormView):
 
                 site = Site.objects.get_current()
 
-                context['csv_by_server'] = 'http://' + site.domain + '/' + str(reverse_lazy(
+                context['csv_by_server'] = 'http://' + site.domain + str(reverse_lazy(
                     'report-get-csv',
                     kwargs={'encrypted_filename': encrypt(csv_by_server)}
                 ))
-                context['csv_by_site'] = 'http://' + site.domain + '/' + str(reverse_lazy(
+                context['csv_by_site'] = 'http://' + site.domain + str(reverse_lazy(
                     'report-get-csv',
                     kwargs={'encrypted_filename': encrypt(csv_by_site)}
                 ))
@@ -65,7 +65,10 @@ class ReportSQSJobs(AuthViewMixin, FormView):
 
 class ReportDownloadCSV(View):
     def get(self, request, *args, **kwargs):
-        fname = decrypt(kwargs.get('encrypted_filename', ''))
+        fname = kwargs.get('encrypted_filename', '')
+        if isinstance(fname, unicode):
+            fname = fname.encode('utf8')
+        fname = decrypt(fname)
         if not fname.startswith('/tmp/'):
             return HttpResponse('')
         if not os.path.exists(fname):
