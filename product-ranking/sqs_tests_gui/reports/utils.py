@@ -51,7 +51,7 @@ def report_to_csv(headers, rows_2_dimensions):
             writer.writerow(header)
         for row_top, row_top_data in rows_2_dimensions:
             for row_bottom, value in row_top_data:
-                writer.writerow(row_top, row_bottom, value)
+                writer.writerow([row_top, row_bottom, value])
 
     return t_file.name
 
