@@ -47,8 +47,7 @@ def report_to_csv(headers, rows_2_dimensions):
 
     with open(t_file.name, 'wb') as fh:
         writer = csv.writer(fh, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        for header in headers:
-            writer.writerow(header)
+        writer.writerow(headers)
         for row_top, row_top_data in rows_2_dimensions:
             for row_bottom, value in row_top_data:
                 writer.writerow([row_top, row_bottom, value])
