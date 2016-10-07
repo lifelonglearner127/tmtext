@@ -27,7 +27,7 @@ SCRIPT_DIR = REPORTS_DIR = os.path.join(CWD, '..', '..', 's3_reports')
 LIST_FILE = os.path.join(CWD, '..', 'gui', 'management', 'commands', "_amazon_listing.txt")
 
 
-SEND_TO = ['no.andrey@gmail.com']
+SEND_TO = ['no.andrey@gmail.com', 'support@contentanalyticsinc.com']
 
 
 class Command(BaseCommand):
