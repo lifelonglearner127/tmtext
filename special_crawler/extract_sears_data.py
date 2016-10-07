@@ -37,8 +37,8 @@ class SearsScraper(Scraper):
 
             h = requests.get(
                 url,
-                proxies=self.proxy_config["proxies"] if self.proxy_config else None,
-                auth=self.proxy_config["proxy_auth"] if self.proxy_config else None
+                # proxies=self.proxy_config["proxies"] if self.proxy_config else None,
+                # auth=self.proxy_config["proxy_auth"] if self.proxy_config else None
             ).content
 
             json_info_container.update(json.loads(re.search('{.*}', h).group(0))['data'])
