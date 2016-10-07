@@ -5,7 +5,6 @@ from lxml import html
 import re, json, requests
 from extract_data import Scraper
 
-import pyperclip
 
 class SearsScraper(Scraper):
 
@@ -42,8 +41,6 @@ class SearsScraper(Scraper):
             ).content
 
             json_info_container.update(json.loads(re.search('{.*}', h).group(0))['data'])
-
-        # pyperclip.copy(json.dumps(self.product_info_json))
 
         return json_info_container
 
@@ -139,7 +136,7 @@ class SearsScraper(Scraper):
             for variant in self.product_info_json['attributes']['variants']:
                 v = {
                     'in_stock': variant['isAvailable'],
-                    'price_amount': self._price_amount(),
+                    'price': self._price_amount(),
                     'properties': {},
                     'selected': False
                     }
@@ -153,12 +150,11 @@ class SearsScraper(Scraper):
             for swatch in self.product_info_json['offer']['assocs']['linkedSwatch']:
                
                 variant = {
-                    'product_id': swatch['id'],
-                    'price_amount': self._price_amount(),
-                    'price_currency': 'USD',
+                    # 'product_id': swatch['id'],
+                    'price': self._price_amount(),
                     'properties': {},
                     'selected': False,
-                    'url': 'http://www.sears.com' + swatch['url'] + '/p-' + swatch['id']
+                    # 'url': 'http://www.sears.com' + swatch['url'] + '/p-' + swatch['id']
                     }
 
                 info = self._extract_product_info_json(swatch['id'])
@@ -168,25 +164,25 @@ class SearsScraper(Scraper):
                     any(info['offermapping']['fulfillment'].values())
                 )
 
-                image_urls = []
-                for group in info['product']['assets']['imgs']:
-                    for image in group['vals']:
-                        image_urls.append(image['src'])
-                if image_urls:
-                    variant['image_urls'] = image_urls
-                    variant['image_count'] = len(image_urls)
+                # image_urls = []
+                # for group in info['product']['assets']['imgs']:
+                #     for image in group['vals']:
+                #         image_urls.append(image['src'])
+                # if image_urls:
+                #     variant['image_urls'] = image_urls
+                #     variant['image_count'] = len(image_urls)
 
-                videos = []
-                for video in info['product']['assets'].get('videos', []):
-                    videos.append(video['link']['attrs']['href'])
-                if videos:
-                    variant['video_urls'] = videos
-                    variant['video_count'] = len(videos)
+                # videos = []
+                # for video in info['product']['assets'].get('videos', []):
+                #     videos.append(video['link']['attrs']['href'])
+                # if videos:
+                #     variant['video_urls'] = videos
+                #     variant['video_count'] = len(videos)
 
-                variant['model'] = info['offer']['modelNo']
+                # variant['model'] = info['offer']['modelNo']
 
-                variant['product_title'] = info['offer']['brandName'] + ' ' + info['offer']['name']
-                variant['product_name'] = info['offer']['name']
+                # variant['product_title'] = info['offer']['brandName'] + ' ' + info['offer']['name']
+                # variant['product_name'] = info['offer']['name']
 
                 for spec in info['product']['specs']:
                     for attr in spec['attrs']:
