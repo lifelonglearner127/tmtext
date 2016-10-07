@@ -44,6 +44,7 @@ def dicts_to_ordered_lists(dikt):
 def report_to_csv(headers, rows_2_dimensions):
     t_file = tempfile.NamedTemporaryFile(suffix='.csv', delete=False)
     t_file.close()
+    os.chmod(t_file.name, 0777)
 
     with open(t_file.name, 'wb') as fh:
         writer = csv.writer(fh, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
