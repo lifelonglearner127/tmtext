@@ -12,9 +12,10 @@ def collect_data(cache):
     context = dict()
     context['executed_tasks'] = cache.get_executed_tasks_count()
     context['total_instances'] = cache.get_today_instances()
-    context['today_jobs'] = cache.get_today_jobs()
+    context['today_jobs'] = cache.get_jobs_stats()
     context['today_requests_count'] = cache.get_today_requests()
-    context['jobs_stats'] = cache.get_jobs_stats()
+    if context['today_requests_count'] is None:
+        context['today_requests_count'] = 0
     context['total_cached_items'] = cache.get_cached_tasks_count()
     context['cache_most_popular_url'] = \
         cache.get_most_popular_cached_items(5, False)
@@ -36,7 +37,11 @@ def collect_data(cache):
 def get_task_executed_time_count(cache):
     task_executed_time = \
         cache.get_task_executed_time(hours_from=0, hours_to=23)
-    return sum(task_executed_time.values()) / len(task_executed_time)
+    try:
+        return sum(task_executed_time.values()) / len(task_executed_time)
+    except Exception as e:
+        print str(e)
+        return 0
 
 
 def generate_mail_message(data):
@@ -66,7 +71,7 @@ def delete_old_cache_data(cache):
 
 
 def save_instances_number(cache):
-    return cache.save_today_instances_count(cache.get_today_jobs())
+    return cache.save_today_instances_count(cache.get_today_instances())
 
 
 def save_jobs_number(cache):

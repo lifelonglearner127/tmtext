@@ -22,16 +22,15 @@
                     for (var i=0; i<keys.length; i++) {
                         var date = new Date(parseInt(keys[i]) * 1000);
                         labels.push(
-                                date.getUTCFullYear() + "/"
-                                + (date.getUTCMonth()+1) + "/"
-                                + date.getUTCDate()
+                            date.getUTCHours() + ' Hour'
                         );
-                        data.push(resp[keys[i]]);
+                        var v = parseFloat(resp[keys[i]]).toFixed(2);
+                        data.push(v);
                     }
                     var chartData = {
                         labels: labels,
                         datasets: [{
-                            label: "Avg. time by hour",
+                            label: "Task execute avg. time by hour in seconds",
                             fillColor: "rgba(151,187,205,0.2)",
                             strokeColor: "rgba(151,187,205,1)",
                             pointColor: "rgba(151,187,205,1)",
@@ -50,8 +49,8 @@
                     var ctx = canvas[0].getContext("2d");
                     var options = {
                         scaleOverride : true,
-                        scaleSteps : 30,
-                        scaleStepWidth : 5,
+                        scaleSteps : 5,
+                        scaleStepWidth : 7,
                         scaleStartValue : 0,
                         legendTemplate : "<ul class=\"<%=name.toLowerCase()%>-legend\"><% for (var i=0; i<datasets.length; i++){%><li><span style=\"color:<%=datasets[i].pointColor%>\"><%if(datasets[i].label){%><%=datasets[i].label%><%}%></span></li><%}%></ul>"
                     };
@@ -67,7 +66,7 @@
 </head>
 <body>
 <div>
-    <select class="date-select">
+    <select class="date-select" style="display: none;">
         <option>Days:</option>
         <option value="1">1 day</option>
         <option value="7" selected="selected">Week</option>

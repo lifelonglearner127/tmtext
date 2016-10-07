@@ -139,6 +139,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         self.search_sort = search_sort
         SiteProductItem.__repr__ = lambda _: '[product item]'
         self.use_data_from_redirect_url = kwargs.get('use_data_from_redirect_url', False)
+        self.username = kwargs.get('username', None)
         super(WalmartProductsSpider, self).__init__(
             site_name=self.allowed_domains[0],
             url_formatter=FormatterWithDefaults(
@@ -163,6 +164,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         """
 
         if self.product_url:
+            # remove odd spaces for single product urls
+            if type(self.product_url) is str or type(self.product_url) is unicode:
+                self.product_url = self.product_url.strip()
             prod = SiteProductItem()
             prod['is_single_result'] = True
             yield Request(self.product_url,
@@ -1337,6 +1341,16 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             yield product
             return
         all_questions.extend(content['questionDetails'])
+        if self.username:
+            for idx, q in enumerate(all_questions):
+                if not 'answeredByUsername' in q:
+                    all_questions[idx]['answeredByUsername'] = False
+                    if 'answers' in q:
+                        for answer in q['answers']:
+                            if 'userNickname' in answer:
+                                if self.username.strip().lower() == answer['userNickname'].strip().lower():
+                                    all_questions[idx]['answeredByUsername'] = True
+
         product['all_questions'] = all_questions
         # this is for [future] debugging - do not remove!
         #for qa in content['questionDetails']:

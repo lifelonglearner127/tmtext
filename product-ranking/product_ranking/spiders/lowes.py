@@ -25,7 +25,7 @@ from scrapy.utils.response import open_in_browser
 
 class LowesProductsSpider(BaseProductsSpider):
     name = 'lowes_products'
-    allowed_domains = ["lowes.com", "bazaarvoice.com"]
+    allowed_domains = ["lowes.com", "bazaarvoice.com", "lowes.ugc.bazaarvoice.com"]
     start_urls = []
 
     SEARCH_URL = "http://www.lowes.com/Search={search_term}?storeId="\
@@ -115,10 +115,6 @@ class LowesProductsSpider(BaseProductsSpider):
     def _parse_single_product(self, response):
         # open_in_browser(response)
         return self.parse_product(response)
-
-    # def parse_product(self, response):
-    #     product = response.meta['product']
-    #     return product
 
     def clear_text(self, str_result):
         return str_result.replace("\t", "").replace("\n", "").replace("\r", "").replace(u'\xa0', ' ').strip()
@@ -304,18 +300,20 @@ class LowesProductsSpider(BaseProductsSpider):
             bv_product_id = response.url.split('/')[-1]
         if bv_product_id:
             url = self.RATING_URL.format(prodid=bv_product_id)
-            reqs.append(Request(
+            reqs.append(
+                Request(
                     url,
-                    meta=response.meta.copy(),
-                    callback=self._parse_bazaarv))
-
+                    dont_filter=True,
+                    callback=self._parse_bazaarv,
+                    meta={'product': product, 'reqs': reqs}
+                ))
         if reqs:
             return self.send_next_request(reqs, response)
 
         return product
 
     def _parse_bazaarv(self, response):
-        reqs = response.meta.get('reqs',[])
+        reqs = response.meta.get('reqs', [])
         product = response.meta['product']
         text = response.body_as_unicode().encode('utf-8')
         if response.status == 200:

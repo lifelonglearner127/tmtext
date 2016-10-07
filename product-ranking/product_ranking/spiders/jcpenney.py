@@ -710,8 +710,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         links = response.xpath(
-            '//li[@class="productDisplay"]//'
-            'div[@class="productDisplay_image"]/a/@href'
+            '//li[contains(@class,"productDisplay")]//div[@class="productDisplay_image"]/a/@href'
         ).extract()
         products = re.findall(
             'var filterResults\s?=\s?jq\.parseJSON\(\'(\{.+?\})\'\);', response.body, re.MULTILINE)[0].decode(
