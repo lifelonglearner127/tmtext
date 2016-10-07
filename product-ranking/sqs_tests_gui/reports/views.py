@@ -77,4 +77,5 @@ class ReportDownloadCSV(View):
         if not os.path.exists(fname):
             return HttpResponse('')
         response = HttpResponse(open(fname, 'r').read(), content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="%s.csv"' % fname
         return response
