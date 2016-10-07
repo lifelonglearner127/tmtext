@@ -17,35 +17,36 @@ class SearsScraper(Scraper):
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
-
-        self.product_info_json = None
-        self.is_product_info_json_checked = False
-
-        self.variant_info_jsons = None
-        self.is_variant_info_jsons_checked = False
+        self.product_info_json = {}
+        self.variant_info_jsons = {}
 
     def check_url_format(self):
         if re.match(r"^http://www\.sears\.com/.+/p-\w+$", self.product_page_url):
             return True
         return False
 
-    def _extract_product_info_json(self):
-        if self.is_product_info_json_checked:
-            return self.product_info_json
+    def _extract_product_info_json(self, product_id=None):
+        if product_id is None:
+            product_id = re.search('p-(\w+)$', self.product_page_url).group(1)
+            json_info_container = self.product_info_json
+        else:
+            json_info_container = self.variant_info_jsons.setdefault(product_id, {})
 
-        self.is_product_info_json_checked = True
+        if not json_info_container:
+            url = 'http://www.sears.com/content/pdp/config/products/v1/products/' + product_id
 
-        product_id = re.search('p-(\w+)$', self.product_page_url).group(1)
+            h = requests.get(
+                url,
+                proxies=self.proxy_config["proxies"] if self.proxy_config else None,
+                auth=self.proxy_config["proxy_auth"] if self.proxy_config else None
+            ).content
 
-        url = 'http://www.sears.com/content/pdp/config/products/v1/products/' + product_id
+            json_info_container.update(json.loads(re.search('{.*}', h).group(0))['data'])
 
-        h = requests.get(
-            url,
-            proxies=self.proxy_config["proxies"] if self.proxy_config else None,
-            auth=self.proxy_config["proxy_auth"] if self.proxy_config else None
-        ).content
-        self.product_info_json = json.loads(re.search('{.*}', h).group(0))['data']
-        #pyperclip.copy(json.dumps(self.product_info_json))
+        # pyperclip.copy(json.dumps(self.product_info_json))
+
+        return json_info_container
+
 
     def not_a_product(self):
         """Checks if current page is not a valid product page
@@ -86,10 +87,14 @@ class SearsScraper(Scraper):
         return self.product_info_json['product']['seo']['title']
     
     def _model(self):
-        return self.product_info_json['offer']['modelNo']
+        if self.product_info_json.get('offer'):
+            return self.product_info_json['offer']['modelNo']
+        else:
+            return self.product_info_json['product']['mfr']['modelNo']
 
     def _upc(self):
-        return self.product_info_json['offer']['altIds']['upc']
+        if self.product_info_json.get('offer'):
+            return self.product_info_json['offer']['altIds']['upc']
 
     def _specs(self):
         specs = {}
@@ -127,16 +132,6 @@ class SearsScraper(Scraper):
     def _long_description(self):
         return self.product_info_json['product']['desc'][1]['val']
 
-    '''
-    def _get_variant_info_jsons(self):
-        for swatch in self.product_info_json['offer']['assocs']['linkedSwatch']:
-            #url = 'http://www.sears.com' + swatch['url'] + '/p-' + swatch['id']
-
-            product_info_json = self._extract_product_info_json(swatch['id'])
-
-            variant_info = self._get_variant_info(product_info_json)
-    '''
-
     def _variants(self):
         variants = []
 
@@ -144,7 +139,7 @@ class SearsScraper(Scraper):
             for variant in self.product_info_json['attributes']['variants']:
                 v = {
                     'in_stock': variant['isAvailable'],
-                    'price': self._price_amount(),
+                    'price_amount': self._price_amount(),
                     'properties': {},
                     'selected': False
                     }
@@ -154,12 +149,50 @@ class SearsScraper(Scraper):
 
                 variants.append(v)
 
-        '''
         else:
-            self._get_variant_info_jsons()
+            for swatch in self.product_info_json['offer']['assocs']['linkedSwatch']:
+               
+                variant = {
+                    'product_id': swatch['id'],
+                    'price_amount': self._price_amount(),
+                    'price_currency': 'USD',
+                    'properties': {},
+                    'selected': False,
+                    'url': 'http://www.sears.com' + swatch['url'] + '/p-' + swatch['id']
+                    }
 
-            for variant in self.variant_info_jsons:
-        '''
+                info = self._extract_product_info_json(swatch['id'])
+
+                variant['in_stock'] = (
+                    # info['productstatus']['isAvailable'] and 
+                    any(info['offermapping']['fulfillment'].values())
+                )
+
+                image_urls = []
+                for group in info['product']['assets']['imgs']:
+                    for image in group['vals']:
+                        image_urls.append(image['src'])
+                if image_urls:
+                    variant['image_urls'] = image_urls
+                    variant['image_count'] = len(image_urls)
+
+                videos = []
+                for video in info['product']['assets'].get('videos', []):
+                    videos.append(video['link']['attrs']['href'])
+                if videos:
+                    variant['video_urls'] = videos
+                    variant['video_count'] = len(videos)
+
+                variant['model'] = info['offer']['modelNo']
+
+                variant['product_title'] = info['offer']['brandName'] + ' ' + info['offer']['name']
+                variant['product_name'] = info['offer']['name']
+
+                for spec in info['product']['specs']:
+                    for attr in spec['attrs']:
+                        variant['properties'][attr['name']] = attr['val']
+
+                variants.append(variant)
 
         if variants:
             return variants
@@ -315,7 +348,11 @@ class SearsScraper(Scraper):
         return 0
 
     def _home_delivery(self):
-        if self.product_info_json['offermapping']['fulfillment']['delivery']:
+        if self.product_info_json.get('attributes'):
+            if self.product_info_json['attributes']['variants'][0].get('isDeliveryAvail'):
+                return 1
+            return 0
+        elif self.product_info_json['offermapping']['fulfillment']['delivery']:
             return 1
         return 0
 
@@ -324,7 +361,14 @@ class SearsScraper(Scraper):
         or it can not be ordered online at all and can only be purchased in a local store,
         irrespective of availability - binary
         '''
-        if self.product_info_json['offermapping']['fulfillment']['storepickup']:
+        if self.product_info_json.get('attributes'):
+            if (
+                self.product_info_json['attributes']['variants'][0].get('isPickupAvail')
+                # not self.product_info_json['attributes']['variants'][0].get('isShipAvail')
+            ):
+                return 1
+            return 0
+        elif self.product_info_json['offermapping']['fulfillment']['storepickup']:
             return 1
         return 0
 
@@ -337,7 +381,11 @@ class SearsScraper(Scraper):
 
     def _site_online(self):
         # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
-        if self.product_info_json['offerstatus']['isOnline']:
+        if self.product_info_json.get('attributes'):
+            if self.product_info_json['attributes']['variants'][0].get('isShipAvail'):
+                return 1
+            return 0
+        elif self.product_info_json['offerstatus']['isOnline']:
             return 1
         return 0
 
@@ -346,7 +394,11 @@ class SearsScraper(Scraper):
         if not self._site_online():
             return None
 
-        if self.product_info_json['offerstatus']['isAvailable']:
+        if self.product_info_json.get('attributes'):
+            if self.product_info_json['attributes']['variants'][0].get('isAvailable'):
+                return 0
+            return 1
+        elif self.product_info_json['offerstatus']['isAvailable']:
             return 0
         return 1
 
@@ -360,7 +412,11 @@ class SearsScraper(Scraper):
         return self._categories()[-1]
 
     def _brand(self):
-        return self.product_info_json['offer']['brandName']
+        if self.product_info_json.get('offer'):
+            return self.product_info_json['offer']['brandName']
+        else:
+            return self.product_info_json['product']['brand']['name']
+
 
     ##########################################
     ################ HELPER FUNCTIONS
