@@ -9,7 +9,7 @@ import datetime
 
 from django.core.management.base import BaseCommand, CommandError
 from django.core.mail import send_mail
-from email_utils import SESMessage
+from reports.email_utils import SESMessage
 from django.template.loader import render_to_string
 
 
@@ -17,7 +17,7 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', 's3_reports'))
 
 from jobs_per_server_per_site import dump_reports
-from utils import run_report_generation, get_report_fname, dicts_to_ordered_lists
+from reports.utils import run_report_generation, get_report_fname, dicts_to_ordered_lists
 
 
 SCRIPT_DIR = REPORTS_DIR = os.path.join(CWD, '..', '..', 's3_reports')
@@ -27,7 +27,7 @@ LIST_FILE = os.path.join(CWD, '..', 'gui', 'management', 'commands', "_amazon_li
 SEND_TO = ['no.andrey@gmail.com']
 
 
-class SendEmail(BaseCommand):
+class Command(BaseCommand):
 
     @staticmethod
     def _get_mail_sent_marker(date):
