@@ -189,6 +189,9 @@ class RiteAidProductsSpider(ProductsSpider):
         sku = self._parse_sku(response)
         cond_set_value(product, 'sku', sku)
 
+        # Parse reseller_id
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         # Parse image url
         image_url = self._parse_image_url(response)
         cond_set_value(product, 'image_url', image_url)
