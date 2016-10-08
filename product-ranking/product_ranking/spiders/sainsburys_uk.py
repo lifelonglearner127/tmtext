@@ -5,6 +5,7 @@ import urlparse
 import re
 from itertools import ifilter
 from decimal import Decimal, InvalidOperation
+import string
 
 from scrapy.http import Request
 
@@ -223,6 +224,10 @@ class SainsburysProductSpider(ProductsSpider):
                      response.css('#productImageHolder img::attr(src)')
                      .extract(),
                      lambda url: urlparse.urljoin(response.url, url))
+
+        reseller_id = response.xpath('.//*[@class="skuCode"]/text()').extract()
+        cond_set(product, 'reseller_id', reseller_id, string.strip)
+
         title = product['title']
         brand = guess_brand_from_first_words(title, max_words=15)
         cond_set_value(product, 'brand', brand)
