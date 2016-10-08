@@ -158,6 +158,8 @@ class ShopritedeliversProductsSpider(BaseProductsSpider):
         sku = self._parse_sku(response)
         cond_set_value(product, 'sku', sku)
 
+        cond_set_value(product, 'reseller_id', sku)
+
         price = self._parse_price(response)
         cond_set_value(product, 'price', price)
 
