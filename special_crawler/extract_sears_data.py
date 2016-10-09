@@ -160,8 +160,11 @@ class SearsScraper(Scraper):
                 info = self._extract_product_info_json(swatch['id'])
 
                 variant['in_stock'] = (
-                    # info['productstatus']['isAvailable'] and 
-                    any(info['offermapping']['fulfillment'].values())
+                    info['offerstatus']['isAvailable'] if info.get('offerstatus') else
+                    (
+                        any(info['offermapping']['fulfillment'].values()) if
+                        info.get('offermapping', {}).get('fulfillment') else False
+                    )
                 )
 
                 # image_urls = []
@@ -185,8 +188,12 @@ class SearsScraper(Scraper):
                 # variant['product_name'] = info['offer']['name']
 
                 for spec in info['product']['specs']:
-                    for attr in spec['attrs']:
-                        variant['properties'][attr['name']] = attr['val']
+                    if 'color' in spec['grpName'].lower():
+                        for attr in spec['attrs']:
+                            if attr['name'].lower().startswith('color'):
+                                variant['properties']['color'] = attr['val']
+                                break
+                        break
 
                 variants.append(variant)
 
