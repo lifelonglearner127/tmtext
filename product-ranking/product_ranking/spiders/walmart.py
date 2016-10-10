@@ -1045,8 +1045,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     # see bugzilla #12076
                     try:
                         variants_ = data['variantInformation']['variantTypes'][0]['variants']
+                        print [v.get('available') for v in variants_]
                         variants_instock = any([v.get('available') for v in variants_])
-                        prod['is_out_of_stock'] = not variants_instock
+                        print variants_instock
+                        print not variants_instock
+                        prod['is_out_of_stock'] = variants_instock
                     except Exception as e:
                         self.log('Could not load JSON at %s' % response.url, e)
                     if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
