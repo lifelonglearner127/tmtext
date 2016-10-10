@@ -17,6 +17,8 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FLOATING_POINT_RGEX, cond_set_value
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
+from datetime import datetime
+
 is_empty =lambda x,y=None: x[0] if x else y
 
 
@@ -30,7 +32,7 @@ def is_num(s):
 
 class OfficedepotProductsSpider(BaseProductsSpider):
     name = 'officedepot_products'
-    allowed_domains = ["officedepot.com", "www.officedepot.com"]
+    allowed_domains = ["officedepot.com", "www.officedepot.com", 'officedepot.ugc.bazaarvoice.com']
     start_urls = []
     _extra_requests = False
     # settings = DockersValidatorSettings
@@ -50,6 +52,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
 
     VARIANTS_URL = 'http://www.officedepot.com/mobile/getSkuAvailable' \
             'Options.do?familyDescription={name}&sku={sku}&noLogin=true'
+    QA_URL = "http://officedepot.ugc.bazaarvoice.com/answers/2563/product/{product_id}/questions.djs?format=embeddedhtml"
     #
     # RELATED_PRODUCT = "http://www.res-x.com/ws/r2/Resonance.aspx?" \
     #                   "appid=dockers01&tk=187015646137297" \
@@ -73,7 +76,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         # officedepot seems to have a bot protection, so we first get the cookies
         # and parse the site with them after that
         self.proxy = None
-        self.timeout = 30
+        self.timeout = 60
         self.width = 1024
         self.height = 768
         self.selenium_cookies = {}
@@ -97,10 +100,20 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         display.start()
         driver = self._init_chromium()
         self._prepare_driver(driver)
-        driver.get('http://' + self.allowed_domains[0])
-        time.sleep(10)
-        for cookie in driver.get_cookies():
-            self.selenium_cookies[cookie['name']] = cookie['value']
+        try:
+            driver.get('http://' + self.allowed_domains[0])
+            time.sleep(10)
+            for cookie in driver.get_cookies():
+                self.selenium_cookies[cookie['name']] = cookie['value']
+            driver.quit()
+        except Exception as e:
+            driver.quit()
+            time.sleep(10)
+            self.log('Error getting cookies from homepage, trying one more time: %s' % str(e))
+            driver.get('http://' + self.allowed_domains[0])
+            time.sleep(10)
+            for cookie in driver.get_cookies():
+                self.selenium_cookies[cookie['name']] = cookie['value']
         try:
             driver.quit()
             display.stop()
@@ -224,13 +237,70 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         name = is_empty(response.xpath(
             '//h1[@itemprop="name"]/text()').re('(.*?),'))
 
+
         if sku and name and self.scrape_variants_with_extra_requests:
             name = urllib.quote_plus(name.strip().encode('utf-8'))
             reqs.append(Request(url=self.VARIANTS_URL.format(name=name,
                                                              sku=sku),
                         callback=self._parse_variants,
                         meta=meta))
+        # parse questions & answers
+        reqs.append(Request(
+            url=self.QA_URL.format(product_id=self._get_product_id(
+            response.url)),
+            callback=self._parse_questions,
+            meta=meta
+        ))
 
+        if reqs:
+            return self.send_next_request(reqs, response)
+        return product
+
+    def _parse_questions(self, response):
+        meta = response.meta
+        reqs = response.meta['reqs']
+        product = response.meta['product']
+        qa = []
+        questions_ids_regex = """BVQAQuestionSummary.+?javascript:void.+?>([^<]+)[^"']+["']BVQAQuestionMain(\d+)(?:.+?BVQAQuestionDetails.+?div>([^<]+)?).+?BVQAElapsedTime.+?>([^<]+)"""
+        questions_ids = re.findall(questions_ids_regex, response.body_as_unicode())
+        for (question_summary, question_id, question_details, question_date) in questions_ids:
+            # Convert date format
+            if question_date:
+                try:
+                    from dateutil.relativedelta import relativedelta
+                    years = re.findall("(\d+?)\s+?years", question_date)
+                    years = years[0] if years else '0'
+                    years = int(years) if years.isdigit() else '0'
+                    months = re.findall("(\d+?)\s+?months", question_date)
+                    months = months[0] if months else '0'
+                    months = int(months) if months.isdigit() else '0'
+                    if not months and not years:
+                        converted_date = None
+                    else:
+                        converted_date = datetime.now() - relativedelta(years=years, months=months)
+                        converted_date = converted_date.strftime("%Y-%m-%d")
+                except Exception as e:
+                    converted_date = None
+                    self.log('Failed to parse date, setting date to None {}'.format(e))
+            else:
+                converted_date = None
+            # regex to get part of response that contain all answers to question with given id
+            text_r = "BVQAQuestion{}Answers(.+?)BVQAQuestionDivider".format(question_id)
+            all_a_text = re.findall(text_r, response.body_as_unicode())
+            all_a_text = ''.join(all_a_text[0]) if all_a_text else ''
+            answers_regex = r"Answer:.+?>([^<]+)"
+            answers = re.findall(answers_regex, all_a_text)
+            answers = [{'answerText':a} for a in answers]
+            question = {
+                'questionDate': converted_date,
+                'questionId': question_id,
+                'questionDetail': question_details.strip() if question_details else '',
+                'qestionSmmary': question_summary.strip() if question_summary else '',
+                'answers': answers,
+                'totalAnswersCount': len(answers)
+            }
+            qa.append(question)
+        product['all_questions'] = qa
         if reqs:
             return self.send_next_request(reqs, response)
         return product

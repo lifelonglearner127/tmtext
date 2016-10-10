@@ -1125,7 +1125,7 @@ class AmazonScraper(Scraper):
 
                     break
                 except mechanize.HTTPError as e:
-                    if e.code == 404:
+                    if e.code == 404 or e.code == 400:
                         break
                     continue
 
