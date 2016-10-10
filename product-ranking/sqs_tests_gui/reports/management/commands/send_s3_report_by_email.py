@@ -9,25 +9,28 @@ import datetime
 
 from django.core.management.base import BaseCommand, CommandError
 from django.core.mail import send_mail
-from email_utils import SESMessage
+from reports.email_utils import SESMessage
 from django.template.loader import render_to_string
+from django.core.urlresolvers import reverse_lazy
+from django.contrib.sites.models import Site
 
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', 's3_reports'))
 
 from jobs_per_server_per_site import dump_reports
-from utils import run_report_generation, get_report_fname, dicts_to_ordered_lists
+from reports.utils import run_report_generation, get_report_fname, dicts_to_ordered_lists,\
+    encrypt, decrypt, report_to_csv
 
 
 SCRIPT_DIR = REPORTS_DIR = os.path.join(CWD, '..', '..', 's3_reports')
 LIST_FILE = os.path.join(CWD, '..', 'gui', 'management', 'commands', "_amazon_listing.txt")
 
 
-SEND_TO = ['no.andrey@gmail.com']
+SEND_TO = ['no.andrey@gmail.com', 'support@contentanalyticsinc.com']
 
 
-class SendEmail(BaseCommand):
+class Command(BaseCommand):
 
     @staticmethod
     def _get_mail_sent_marker(date):
@@ -52,6 +55,21 @@ class SendEmail(BaseCommand):
                                        dicts_to_ordered_lists(reports['by_server']).items()])
         context['by_spider'] = sorted([(spider, data) for spider, data in
                                        dicts_to_ordered_lists(reports['by_spider']).items()])
+
+        # generate CSV files
+        csv_by_server = report_to_csv(["server", "spider", "num of jobs"], context['by_server'])
+        csv_by_site = report_to_csv(["spider", "server", "num of jobs"], context['by_spider'])
+
+        site = Site.objects.get_current()
+
+        context['csv_by_server'] = 'http://' + site.domain + str(reverse_lazy(
+            'report-get-csv',
+            kwargs={'encrypted_filename': encrypt(csv_by_server)}
+        ))
+        context['csv_by_site'] = 'http://' + site.domain + str(reverse_lazy(
+            'report-get-csv',
+            kwargs={'encrypted_filename': encrypt(csv_by_site)}
+        ))
         html_template = render_to_string('sqs_jobs.html', context=context)
 
         msg = SESMessage(
