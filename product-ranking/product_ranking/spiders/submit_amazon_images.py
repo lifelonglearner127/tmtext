@@ -21,6 +21,7 @@ start_url = 'https://vendorcentral.amazon.com/gp/vendor/sign-in'
 headers = "Mozilla/5.0 (Windows NT 6.1; WOW64)" \
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.94 Safari/537.36"
 
+
 def check_system():
     import apt
     cache = apt.Cache()
@@ -31,6 +32,7 @@ def check_system():
         logging_info('Wget is not installed', level='ERROR')
         return False
     return True
+
 
 def logging_info(msg, level='INFO'):
     """ We're using JSON which is easier to parse """
@@ -161,6 +163,7 @@ def download_report(br):
         logging_info('Failed to downoad report ' + str(e), level='ERROR')
         return False
 
+
 def download_status(br):
     try:
         br.find_element_by_link_text("Add images").click()
@@ -179,6 +182,7 @@ def download_status(br):
         logging_info('Failed to downoad report', level='ERROR')
         return False
 
+
 def generate_status(br):
     try:
         br.find_element_by_link_text("Add images").click()
@@ -195,6 +199,7 @@ def generate_status(br):
     except:
         logging_info('Failed to downoad report', level='ERROR')
         return False
+
 
 def upload_text(br, file, group, emails):
     print 'EMAILS', emails
