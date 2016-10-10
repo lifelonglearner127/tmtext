@@ -61,32 +61,37 @@ class AmazonSpider(BaseCheckoutSpider):
         return matched_colors
 
     def select_size(self, element=None):
-        size_attribute_xpath = '//option[contains(@class, "dropdownSelect")]'
-        size_attributes_xpath = '//option[contains(@class, "dropdownAvailable")]'
-        self._click_attribute(size_attribute_xpath,
-                              size_attributes_xpath,
+        default_attr_xpath = '//select[@name="dropdown_selected_size_name"]/option[contains(@class, "dropdownSelect")]'
+        avail_attr_xpath = '//select[@name="dropdown_selected_size_name"]/option[contains(@class, "dropdownAvailable")]'
+        self.select_attribute(default_attr_xpath,
+                              avail_attr_xpath,
                               element)
         self.log('Size selected')
 
     def select_color(self, element=None, color=None):
-        time.sleep(8)
-        color_attributes_xpath = ('*//li[@class="swatchAvailable"]')
+        avail_attr_xpath = ('*//li[@class="swatchAvailable"] | '
+                                  '//select[@name="dropdown_selected_color_name"]/option[contains(@class, "dropdownSelect")]')
 
         if color and color.lower() in map(lambda x: x.lower(), self._get_colors_names()):
-            color_attribute_xpath = '//*[contains(@id, "color_name_")]//' \
+            default_attr_xpath = '//*[contains(@id, "color_name_")]//' \
                                     'img[contains(translate(' \
                                     '@alt, "ABCDEFGHIJKLMNOPQRSTUVWXYZ",' \
-                                    ' "abcdefghijklmnopqrstuvwxyz"), "{}")]'.format(color.lower())
+                                    ' "abcdefghijklmnopqrstuvwxyz"), "{color}")] | ' \
+                                    '//select[@name="dropdown_selected_color_name"]/' \
+                                    'option[contains(@class, "dropdownAvailable") ' \
+                                    'and contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"), "{color}")]'.format(color=color.lower())
         else:
-            color_attribute_xpath = '//*[contains(@id, "color_name_") and @class="swatchSelect"]'
+            default_attr_xpath = '//*[contains(@id, "color_name_") and @class="swatchSelect"]'
             try:
                 self.current_color = self._find_by_xpath(
                     '//*[contains(@id, "color_name_") and contains(@class, "swatchSelect")]//img')[0].get_attribute('alt')
             except IndexError:
                 pass
+        if len(self.available_colors) == 1:
+            self.current_color = self.available_colors[0]
 
-        self._click_attribute(color_attribute_xpath,
-                              color_attributes_xpath,
+        self.select_attribute(default_attr_xpath,
+                              avail_attr_xpath,
                               element)
         self.log('Color {} selected'.format(color))
 
@@ -209,3 +214,14 @@ class AmazonSpider(BaseCheckoutSpider):
             return True
         except Exception as e:
             self.log('Error on clicking element with XPATH %s: %s' % (_xpath, str(e)))
+
+    def click_condition(self, default_xpath, all_xpaths):
+        return self._find_by_xpath(default_xpath) or self._find_by_xpath(all_xpaths)
+
+    def select_attribute(self, default_attr_xpath, avail_attr_xpath, element):
+        if self.click_condition(default_attr_xpath, avail_attr_xpath):
+
+            self._click_attribute(default_attr_xpath,
+                                  avail_attr_xpath,
+                                  element)
+            time.sleep(3)
