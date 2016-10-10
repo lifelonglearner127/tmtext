@@ -146,10 +146,12 @@ def stats():
         context['today_jobs'] = cache.get_jobs_stats()
         context['today_executed_tasks'] = cache.get_executed_tasks_count()
         context['today_requests_count'] = cache.get_today_requests()
-        task_executed_time = cache.get_task_executed_time(for_last_hour=True)
-        if task_executed_time:
+        if context['today_requests_count'] is None:
+            context['today_requests_count'] = 0
+        _task_executed_time = cache.get_task_executed_time(for_last_hour=True)
+        if _task_executed_time:
             task_execute_time_avg = \
-                sum(task_executed_time.values()) / len(task_execute_time)
+                sum(_task_executed_time.values()) / len(_task_executed_time)
         else:
             task_execute_time_avg = 0
         context['last_hour_executed_tasks_time_avg'] = task_execute_time_avg
@@ -272,7 +274,12 @@ def requests_history():
     """
     Total number of jobs.
     """
-    days = int(request.form.get('days', '0'))
+    try:
+        days = int(request.form.get('days', 0))
+        if not days:
+            days = int(request.args.get('days', 0))
+    except ValueError:
+        days = 0
     if request.method == 'GET':
         if request.args.get('download', False):
             data = cache.get_requests_count_history(days)
@@ -314,6 +321,41 @@ def fail_task():
 # ###################################
 # ######### CACHE METHODS END #######
 # ###################################
+
+
+@app.route('/common-settings', methods=['GET', 'POST'])
+def common_settings():
+    if request.method == 'GET':
+        try:
+            context = dict()
+            context['remote_instance_branch'] = \
+                cache.get_settings('remote_instance_branch')
+            return render_template('settings.html', **context)
+        except Exception as e:
+            return str(e)
+    # Store settings
+    form = request.form
+    try:
+        if 'action' not in form:
+            raise Exception('Unknown action.')
+        # Set default branch
+        if form['action'] == 'remote_instance_branch':
+            branch = form.get('branch', '').strip()
+            if not branch:
+                raise Exception('Branch cannot be blank.')
+            # Check branch for existing
+            os.system('git fetch -q')
+            cmd = 'git branch -a | grep -P "[/\s]%s$"'
+            with os.popen(cmd % branch) as stdout:
+                branch_exist = stdout.read()
+            if not branch_exist.strip('\n\r '):
+                raise Exception('This branch does not exists.')
+            cache.set_settings('remote_instance_branch', branch)
+            return 'OK'
+        # End default branch
+        raise Exception('Unknown action.')
+    except Exception as e:
+        return str(e)
 
 
 if __name__ == '__main__':

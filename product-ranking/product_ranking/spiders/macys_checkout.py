@@ -50,11 +50,9 @@ class MacysSpider(BaseCheckoutSpider):
 
     def _get_colors_names(self):
         xpath = '//div[@class="colorsSection"]//li[@data-title]'
-        condition = EC.presence_of_all_elements_located(
-            (By.XPATH, xpath))
-        swatches = self.wait.until(condition)
-        self.log('Colors matched')
-        return [x.get_attribute("data-title").lower() for x in swatches]
+        swatches = self._find_by_xpath(xpath)
+        colors = [x.get_attribute("data-title").lower() for x in swatches]
+        return colors if colors else [None]
 
     def select_size(self, element=None):
         size_attribute_xpath = (
@@ -110,11 +108,14 @@ class MacysSpider(BaseCheckoutSpider):
 
     def _set_quantity(self, product, quantity):
         quantity_option = Select(self.driver.find_element_by_xpath('*//*[@class="productQuantity"]'))
-        quantity_option.select_by_value(str(quantity))
-        quantity_selected = quantity_option.first_selected_option.text
-        if quantity_selected != str(quantity):
-            time.sleep(4)
-        self.log('Quantity "{}" selected'.format(quantity))
+        try:
+            quantity_option.select_by_value(str(quantity))
+            quantity_selected = quantity_option.first_selected_option.text
+            if quantity_selected != str(quantity):
+                time.sleep(4)
+            self.log('Quantity "{}" selected'.format(quantity))
+        except:
+            pass
 
     def _get_product_list_cart(self):
         self.wait.until(
@@ -160,7 +161,9 @@ class MacysSpider(BaseCheckoutSpider):
                         '*//*[@class="itemTotal"]/text()').re('\$(.*)')))
 
     def _get_item_price_on_page(self, item):
-        return delete_commas(min(item.xpath('//*[@class="colPrice"]//text()').re('\$(.*)')))
+        prices = item.xpath('//*[@class="colPrice"]//text()').re('\$(.*)')
+        prices = [float(delete_commas(price)) for price in prices]
+        return min(prices)
 
     def _get_item_color(self, item):
         return delete_commas(is_empty(item.xpath(

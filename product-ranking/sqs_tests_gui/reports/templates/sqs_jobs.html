@@ -4,51 +4,69 @@
     <meta charset="UTF-8">
     <title></title>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
-    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.0/themes/smoothness/jquery-ui.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.0/jquery-ui.min.js"></script>
+    {% if not is_email_template %}
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+        <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.0/themes/smoothness/jquery-ui.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.0/jquery-ui.min.js"></script>
 
-    <script>
-      $(function() {
-        $( ".datepicker" ).datepicker({
+        <script>
+          $(function() {
+            $( ".datepicker" ).datepicker({
 
-          dateFormat: 'yy-mm-dd',
-          changeMonth: true,
-          changeYear: true,
-          //yearRange: "1900:2012",
-          // You can put more options here.
+              dateFormat: 'yy-mm-dd',
+              changeMonth: true,
+              changeYear: true,
+              //yearRange: "1900:2012",
+              // You can put more options here.
 
-        });
-      });
-    </script>
+            });
+          });
+        </script>
+    {% endif %}
 
 </head>
 <body>
 
 <h1>SQS Jobs report</h1>
 
-<p>
-    Select date you want to see the data for.
-</p>
-<p>
-    <form method="GET" action=".">
-        <table>
-            {{ form.as_table }}
-            <tr><td></td><td><button type="submit">Submit</button></td></tr>
-        </table>
-    </form>
-</p>
 
-{% if request.GET.date %}
-    <script>
-        $('#id_date').val('{{ request.GET.date }}');
-    </script>
+{% if not is_email_template %}
+    <p>
+        Select date you want to see the data for.
+    </p>
+    <p>
+        <form method="GET" action=".">
+            <table>
+                {{ form.as_table }}
+                <tr><td></td><td><button type="submit">Submit</button></td></tr>
+            </table>
+        </form>
+    </p>
+
+    {% if request.GET.date %}
+        <script>
+            $('#id_date').val('{{ request.GET.date }}');
+        </script>
+    {% endif %}
 {% endif %}
+
 
 {% if error_msg %}
     <p><b>{{ error_msg|safe }}</b></p>
 {% endif %}
 
+
+{% if by_server %}
+    <p>
+        <a href="{{ csv_by_server }}">Download "By server" CSV report</a>
+    </p>
+{% endif %}
+
+{% if by_spider %}
+    <p>
+        <a href="{{ csv_by_site }}">Download "By spider" CSV report</a>
+    </p>
+{% endif %}
 
 <table>
     <tr>
