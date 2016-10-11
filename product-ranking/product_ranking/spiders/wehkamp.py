@@ -7,7 +7,7 @@ import string
 from scrapy.log import WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
 class WehkampProductsSpider(BaseProductsSpider):
@@ -82,6 +82,11 @@ class WehkampProductsSpider(BaseProductsSpider):
             response.xpath(
                 "//html/@lang").extract()
         )
+
+        regex = "\/([A-Z0-9_]+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
 
         j = response.xpath(
             "//div[@id='extraInformatie']/"
