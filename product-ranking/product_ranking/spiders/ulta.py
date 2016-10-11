@@ -113,6 +113,7 @@ class UltaProductSpider(BaseProductsSpider):
 
         model = response.css('.product-item-no ::text').re('\d{3,20}')[0]
         prod['model'] = model
+        prod['reseller_id'] = model
         product_id = re.findall('\?productId=([a-zA-Z0-9]+)', response.url)
         new_meta = response.meta.copy()
         new_meta['product'] = prod
