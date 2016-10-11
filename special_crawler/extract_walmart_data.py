@@ -2673,6 +2673,44 @@ class WalmartScraper(Scraper):
 
         return len(ingredients)
 
+    def _warnings(self):
+        warnings = self.tree_html.xpath("//section[contains(@class,'warnings')]/p[2]")
+
+        if not warnings:
+            warnings = self.tree_html.xpath("//section[contains(@class,'js-warnings')]/p[1]")
+
+        if warnings:
+            warnings = warnings[0]
+
+            header = warnings.xpath('./b/text()')
+
+            if not header:
+                header = warnings.xpath('./strong/text()')
+
+            if header and 'Warning Text' in header[0]:
+                for txt in warnings.xpath('./text()'):
+                    if txt.strip():
+                        return txt.strip()
+
+    def _directions(self):
+        directions = self.tree_html.xpath("//section[contains(@class,'directions')]/p[2]")
+
+        if not directions:
+            directions = self.tree_html.xpath("//section[contains(@class,'js-directions')]/p[1]")
+
+        if directions:
+            directions = directions[0]
+
+            header = directions.xpath('./b/text()')
+
+            if not header:
+                header = directions.xpath('./strong/text()')
+
+            if header and 'Instructions' in header[0]:
+                for txt in directions.xpath('./text()'):
+                    if txt.strip():
+                        return txt.strip()
+
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
@@ -3075,6 +3113,8 @@ class WalmartScraper(Scraper):
         "related_products_urls":  _related_product_urls, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredient_count, \
+        "directions" : _directions, \
+        "warnings" : _warnings, \
         "nutrition_facts": _nutrition_facts, \
         "nutrition_fact_count": _nutrition_fact_count, \
         "nutrition_fact_text_health": _nutrition_fact_text_health, \
