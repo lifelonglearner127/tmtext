@@ -105,6 +105,12 @@ class AmazonBaseClass(BaseProductsSpider):
             self.ignore_variant_data = True
         else:
             self.ignore_variant_data = False
+        # Turned on by default
+        self.ignore_color_variants = kwargs.get('ignore_color_variants', True)
+        if self.ignore_color_variants in ('0', False, 'false', 'False'):
+            self.ignore_color_variants = False
+        else:
+            self.ignore_color_variants = True
 
     def _is_empty(self, x, y=None):
         return x[0] if x else y
@@ -409,6 +415,45 @@ class AmazonBaseClass(BaseProductsSpider):
         if not self.ignore_variant_data:
             variants = self._parse_variants(response)
             product['variants'] = variants
+            if self.ignore_color_variants:
+                # Get default selected color and get prices only for default color
+                # Getting all variants prices raise performance concerns because of huge amount of added requests
+                # See bz #11443
+                try:
+                    default_color = [c['properties'].get('color') for c in variants if c.get('selected')]
+                    default_color = default_color[0] if default_color else None
+                    prc_variants = [v for v in variants if v['properties'].get('color') == default_color]
+                except Exception as e:
+                    self.log('Error ignoring color variants, getting price for all variants: {}'.format(e), WARNING)
+                    prc_variants = variants
+            else:
+                prc_variants = variants
+            # Parse variants prices
+            # Turn on only for amazon.com for now
+            if prc_variants and 'amazon.com/' in response.url:
+                js_text = response.xpath('.//script[contains(text(),"immutableURLPrefix")]/text()').extract()
+                js_text = js_text[0] if js_text else None
+                if not js_text:
+                    self.log('js block not found for url'.format(response.url), WARNING)
+                else:
+                    url_regex = """immutableURLPrefix['"]:['"](.+?)['"]"""
+                    base_url = re.findall(url_regex, js_text)
+                    # print base_url
+                    base_url = base_url[0] if base_url else None
+                    for variant in prc_variants:
+                        # Set default price value
+                        variant['price'] = None
+                        # print(variant)
+                        child_asin = variant.get('asin')
+                        if child_asin:
+                            # Build child variants urls based on parent url
+                            child_url = base_url + "&psc=1&asinList={}&isFlushing=2&dpEnvironment=softlines&id={}&mType=full".format(
+                                child_asin, child_asin)
+                            req_url = urlparse.urljoin(response.url, child_url)
+                            if req_url:
+                                req = Request(req_url, meta=meta, callback=self._parse_variants_price)
+                                reqs.append(req)
+
 
         # Parse buyer reviews
         buyer_reviews = self._parse_buyer_reviews(response)
@@ -481,6 +526,39 @@ class AmazonBaseClass(BaseProductsSpider):
         req = self._parse_questions(response)
         if req:
             reqs.append(req)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def _parse_variants_price(self, response):
+        meta = response.meta
+        reqs = meta.get('reqs')
+        product = meta['product']
+        child_asin = re.findall(r'asinList=(.+?)&', response.url)
+        child_asin = child_asin[0] if child_asin else None
+        price_regex = """price_feature_div.+?priceblock_ourprice[^_].+?">\$([\d\.]+)"""
+        price = re.findall(price_regex, response.body)
+        # Trying alternative regex
+        if not price:
+            price_regex = """buybox_feature_div.+?a-color-price['"]>\s?.+?([\d\.]+)"""
+            price = re.findall(price_regex, response.body)
+        if not price:
+            fail_var_url = [v.get('url') for v in product["variants"] if v.get('asin')==child_asin]
+            self.log('Unable to find price for variant: {} ASIN {} url {}'.format(
+                response.url, child_asin, fail_var_url), WARNING)
+        else:
+            try:
+                price = float(price[0]) if price else None
+                for variant in product["variants"]:
+                    var_asin = variant.get('asin')
+                    # print(var_asin, child_asin)
+                    if var_asin and var_asin == child_asin:
+                        variant['price'] = price
+                        break
+            except BaseException as e:
+                self.log('Unable to convert price for variant: {}, {}'.format(response.url, e), WARNING)
 
         if reqs:
             return self.send_next_request(reqs, response)

@@ -4,7 +4,7 @@ import ast
 import itertools
 import re
 import copy
-
+import requests
 import lxml.html
 
 
@@ -196,9 +196,11 @@ class AmazonVariants(object):
 
             stockstatus_for_variants_list = [v for v in stockstatus_for_variants_list
                                              if v not in vars2remove]
+
             if not stockstatus_for_variants_list:
                 return None
             else:
                 return stockstatus_for_variants_list
-        except:
+        except Exception as e:
+            print e
             return None
