@@ -9,6 +9,7 @@ import string
 import random
 import tempfile
 import json
+import uuid
 
 from flask import (Flask, request, flash, url_for, redirect, render_template,
                    session, send_file, jsonify)
@@ -65,7 +66,7 @@ def check_downloads_dir():
     return True
 
 
-def run_spider_upload(username, password, local_file, task):
+def run_spider_upload(username, password, local_file, task, do_submit, random_id):
     log_fname = tempfile.NamedTemporaryFile(delete=False)
     log_fname.close()
     log_fname = log_fname.name
@@ -75,13 +76,17 @@ def run_spider_upload(username, password, local_file, task):
     if not os.path.exists(spiders_dir):
         spiders_dir = '.'
     cmd = ('python {spiders_dir}/submit_amazon_images.py --username="{username}"'
-           ' --password="{password}" --upload_file="{upload_file}" --logging_file="{log_file}" --task="{task}"')
-    os.system(cmd.format(username=username, password=password, upload_file=local_file,
-                         log_file=log_fname, spiders_dir=spiders_dir, task = task))
+           ' --password="{password}" --upload_file="{upload_file}" --logging_file="{log_file}" --task="{task}"'
+           ' --submit={do_submit} --id="{random_id}"')
+    cmd_run = cmd.format(username=username, password=password, upload_file=local_file,
+                         log_file=log_fname, spiders_dir=spiders_dir, task=task, do_submit=do_submit,
+                         random_id=random_id)
+    print(cmd_run)
+    os.system(cmd_run)
     return log_fname
 
 
-def run_spider_upload_text(username, password, local_file, task, group, emails):
+def run_spider_upload_text(username, password, local_file, task, group, emails, do_submit, random_id):
     log_fname = tempfile.NamedTemporaryFile(delete=False)
     log_fname.close()
     log_fname = log_fname.name
@@ -92,14 +97,17 @@ def run_spider_upload_text(username, password, local_file, task, group, emails):
         spiders_dir = '.'
     cmd = ('python {spiders_dir}/submit_amazon_images.py --username="{username}"'
            ' --password="{password}" --upload_file="{upload_file}" --logging_file="{log_file}"'
-           ' --task="{task}" --group="{group}" --emails="{emails}"')
-    os.system(cmd.format(username=username, password=password, upload_file=local_file,
-                         log_file=log_fname, spiders_dir=spiders_dir, task = task, group = group,
-                         emails=emails))
+           ' --task="{task}" --group="{group}" --emails="{emails}" --submit={do_submit}'
+           ' --id="{random_id}"')
+    cmd_run = cmd.format(username=username, password=password, upload_file=local_file,
+                         log_file=log_fname, spiders_dir=spiders_dir, task=task, group=group,
+                         emails=emails, do_submit=do_submit, random_id=random_id)
+    print(cmd_run)
+    os.system(cmd_run)
     return log_fname
 
 
-def run_spider_download(username, password, task):
+def run_spider_download(username, password, task, do_submit, random_id):
     log_fname = tempfile.NamedTemporaryFile(delete=False)
     log_fname.close()
     log_fname = log_fname.name
@@ -108,9 +116,12 @@ def run_spider_download(username, password, task):
     if not os.path.exists(spiders_dir):
         spiders_dir = '.'
     cmd = ('python {spiders_dir}/submit_amazon_images.py --username={username}'
-           ' --password={password} --logging_file={log_file} --task={task}')
-    os.system(cmd.format(username=username, password=password, log_file=log_fname,
-                         spiders_dir=spiders_dir, task = task))
+           ' --password={password} --logging_file={log_file} --task={task} --submit={do_submit}'
+           ' --id="{random_id}"')
+    cmd_run = cmd.format(username=username, password=password, log_file=log_fname,
+                         spiders_dir=spiders_dir, task=task, random_id=random_id)
+    print(cmd_run)
+    os.system(cmd_run)
     return log_fname
 
 
@@ -137,6 +148,10 @@ def upload_view():
     task = request.form.get('task', None)
     group = request.form.get('group', None)
     emails = request.form.get('emails', None)
+    do_submit = request.form.get('do_submit', False)
+
+    random_id = uuid.uuid4()
+
     if not username:
         return 'Enter username'
     if not password:
@@ -162,25 +177,26 @@ def upload_view():
                 if task == 'image':
                     local_file = upload_file_to_our_server(file)
                     log_fname = run_spider_upload(username=username, password=password,
-                                           local_file=local_file, task = task)
+                        local_file=local_file, task=task, do_submit=do_submit, random_id=random_id)
                     success, messages = parse_log(log_fname)
                     return success, messages, task
                 elif task == 'text':
                     local_file = upload_file_to_our_server(file)
-                    log_fname = run_spider_upload_text(username=username, password=password,
-                                           local_file=local_file, task=task, group=group,
-                                           emails=emails)
+                    log_fname = run_spider_upload_text(
+                        username=username, password=password,
+                        local_file=local_file, task=task, group=group,
+                        emails=emails, do_submit=do_submit, random_id=random_id)
                     success, messages = parse_log(log_fname)
                     return success, messages, task
                 elif task == 'genstatus':
                     log_fname = run_spider_download(username=username, password=password,
-                                           task = task)
+                        task=task, do_submit=do_submit, random_id=random_id)
                     success, messages = parse_log(log_fname)
                     return success, messages, task
                 else:
                     if check_downloads_dir():
                         log_fname = run_spider_download(username=username, password=password,
-                                               task = task)
+                            task=task, do_submit=do_submit, random_id=random_id)
                         success, messages = parse_log(log_fname)
                         return success, messages, task
 
