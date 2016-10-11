@@ -20,7 +20,7 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
 
 
 
-    QUESTIONS_URL = "http://www.amazon.com/ask/questions/inline/{asin_id}/{page}"
+    QUESTIONS_URL = "https://www.amazon.com/ask/questions/inline/{asin_id}/{page}"
 
     def __init__(self, *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
