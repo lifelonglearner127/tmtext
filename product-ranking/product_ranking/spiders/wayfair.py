@@ -47,9 +47,7 @@ class WayfairProductSpider(BaseProductsSpider):
 
         # Set product primary sku
         product_sku = is_empty(
-            response.xpath('//span[@class="product_breadcrumb"]/text() |'
-                           '//div[contains(@class,"sku_info_header")]'
-                           '/div[contains(@class, "emphasis")]/text()').extract()
+            response.xpath('.//*[contains(text(), "SKU:")]/text()').extract()
         )
 
         if product_sku:
@@ -61,6 +59,8 @@ class WayfairProductSpider(BaseProductsSpider):
             self.log('No product sku in {0}'.format(
                 response.url
             ), WARNING)
+
+        cond_set_value(product, 'reseller_id', product_sku)
 
         # Set kitid
         # Needed to choose product own variants
