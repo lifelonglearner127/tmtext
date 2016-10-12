@@ -2436,8 +2436,11 @@ class WalmartScraper(Scraper):
         if self._version() == "Walmart v2":
             self._extract_product_info_json()
             seller = self.product_info_json["buyingOptions"]["seller"]["displayName"]
-            if self.tree_html.xpath('//span[contains(@class,"primary-seller")]//b/text()')[0] == 'Walmart store':
+
+            primary_seller = self.tree_html.xpath('//span[contains(@class,"primary-seller")]//b/text()')
+            if primary_seller and primary_seller[0] == 'Walmart store':
                 return "Walmart store"
+
             return seller
 
         return None
