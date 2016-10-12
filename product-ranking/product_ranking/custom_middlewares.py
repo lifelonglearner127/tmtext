@@ -1,10 +1,11 @@
 import re
+import base64
 
 from scrapy.http import HtmlResponse
 from scrapy.utils.response import get_meta_refresh
 from scrapy.contrib.downloadermiddleware.redirect import MetaRefreshMiddleware
 from scrapy.contrib.downloadermiddleware.redirect import RedirectMiddleware
-
+from scrapy import log
 from urlparse import urljoin
 
 class VerizonMetaRefreshMiddleware(MetaRefreshMiddleware):
@@ -51,3 +52,30 @@ class VerizonRedirectMiddleware(RedirectMiddleware):
 
         redirected = self._redirect_request_using_get(request, redirected_url)
         return self._redirect(redirected, request, spider, response.status)
+
+
+class AmazonProxyMiddleware(object):
+    def change_proxy(self, request):
+        log.msg('PROXY')
+        log.msg(request.url)
+        proxy_address = 'https://proxy.crawlera.com:8010'
+        proxy_user_pass = 'eff4d75f7d3a4d1e89115c0b59fab9b2:'
+
+        request.meta['proxy'] = proxy_address
+        basic_auth = 'Basic ' + base64.encodestring(proxy_user_pass)
+        request.headers['Proxy-Authorization'] = basic_auth
+        request.meta['dont_filter'] = True
+        return request
+
+    def process_exception(self, request, exception, spider):
+        return_request = self.change_proxy(request)
+        if return_request:
+            return return_request
+
+    def process_response(self, request, response, spider):
+        proxy_status_list = [503]
+        if response.status in proxy_status_list:
+            return_request = self.change_proxy(request)
+            if return_request:
+                return return_request
+        return response
