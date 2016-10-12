@@ -1088,6 +1088,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 'is_out_of_stock',
                 not available,
             )
+            # In stock if at least one of variants in stock
+            # see bugzilla #12076
+            try:
+                variants_ = data['variantInformation']['variantTypes'][0]['variants']
+                variants_instock = any([v.get('available') for v in variants_])
+                product['is_out_of_stock'] = not variants_instock
+            except Exception as e:
+                self.log('Could not load JSON at %s' % response.url, e)
             # the next 2 lines of code should not be uncommented, see BZ #1459
             #if response.xpath('//button[@id="WMItemAddToCartBtn"]').extract():
             #    product['is_out_of_stock'] = False
