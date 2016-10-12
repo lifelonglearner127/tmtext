@@ -7,6 +7,7 @@ import string
 import urllib
 import itertools
 import random
+import urlparse
 
 import requests
 from scrapy.http import Request, FormRequest
@@ -701,16 +702,23 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                        #dont_filter=True)
 
     def _scrape_product_links(self, response):
-        links = response.xpath(
+        urls = response.xpath(
             '//li[contains(@class,"productDisplay")]//div[@class="productDisplay_image"]/a/@href'
         ).extract()
-        products = re.findall(
-            'var filterResults\s?=\s?jq\.parseJSON\(\'(\{.+?\})\'\);', response.body, re.MULTILINE)[0].decode(
-            'string-escape')
-        products = json.loads(products).get('organicZoneInfo').get('records')
-        links += [product.get('pdpUrl') for product in products]
-        for link in links:
-            yield 'http://www.jcpenney.com'+link, SiteProductItem()
+
+        try:
+            products = re.findall(
+                'var\s?filterResults\s?=\s?jq\.parseJSON\([\'\"](\{.+?\})[\'\"]\);', response.body, re.MULTILINE)[0].decode(
+                'string-escape')
+            products = json.loads(products).get('organicZoneInfo').get('records')
+
+            urls += [product.get('pdpUrl') for product in products]
+        except Exception as e:
+            self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
+            self.log('Extracted urls using xpath: %s' % (len(urls)), WARNING)
+
+        for link in urls:
+            yield urlparse.urljoin(response.url, link), SiteProductItem()
 
     def _scrape_total_matches(self, response):
         if response.xpath('//div[@class="null_result_holder"]').extract():
