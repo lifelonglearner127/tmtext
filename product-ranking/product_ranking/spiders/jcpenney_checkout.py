@@ -4,10 +4,12 @@ import time
 import json
 import inspect
 
+from scrapy import Selector
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from product_ranking.checkout_base import BaseCheckoutSpider
+from product_ranking.spiders import FLOATING_POINT_RGEX
 
 import scrapy
 
@@ -162,6 +164,7 @@ class JCpenneySpider(BaseCheckoutSpider):
     def _get_product_list_cart(self):
         time.sleep(1)
         self.page_source = self.driver.page_source
+        self.page_selector = Selector(text=self.page_source)
         try:
             item_info = re.findall(
                 'var jcpORDERJSONjcp = (\{.+?\});', self.page_source, re.MULTILINE)[0]
@@ -189,7 +192,11 @@ class JCpenneySpider(BaseCheckoutSpider):
         return str(item.get('lineTotalPrice'))
 
     def _get_item_price_on_page(self, item):
-        return item.get('discountedLineUnitPrice')
+        price_on_page_from_json = float(item.get('lineUnitPrice'))
+        price_on_page_from_html = self.page_selector.xpath(
+            '//span[contains(@data-anid, "product_CurrentSellingPrice")]/text()').re(FLOATING_POINT_RGEX)
+        price_on_page_from_html = float(is_empty(price_on_page_from_html, 0))
+        return price_on_page_from_json if price_on_page_from_json >= 0 else price_on_page_from_html
 
     def _get_item_color(self, item):
         selector = scrapy.Selector(text=self.page_source)
