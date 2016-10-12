@@ -64,7 +64,7 @@ class AmazonProxyMiddleware(object):
         request.meta['proxy'] = proxy_address
         basic_auth = 'Basic ' + base64.encodestring(proxy_user_pass)
         request.headers['Proxy-Authorization'] = basic_auth
-        request.meta['dont_filter'] = True
+        request.dont_filter = True
         return request
 
     def process_exception(self, request, exception, spider):
