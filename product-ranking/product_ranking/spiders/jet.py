@@ -24,9 +24,9 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
     name = 'jet_products'
     allowed_domains = ["jet.com"]
 
-    SEARCH_URL = "https://jet.com/search/results"
+    SEARCH_URL = "https://jet.com/api/search/"
 
-    START_URL = "http://jet.com"
+    START_URL = "https://jet.com"
 
     PRICE_URL = "https://jet.com/api/productAndPrice"
 
@@ -77,27 +77,31 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
 
     def start_requests_with_csrf(self, response):
         csrf = self.get_csrf(response)
+        st = response.met.get('search_term')
         if not self.product_url:
-            for st in self.searchterms:
-                yield Request(
-                    url=self.SEARCH_URL,
-                    callback=self.after_start,
-                    method="POST",
-                    body=json.dumps({"term": self.searchterms[0]}),
-                    meta={
-                        'search_term': st, 
-                        'remaining': self.quantity, 
-                        'csrf': csrf
-                    },
-                    dont_filter=True,
-                    headers={
-                        "content-type": "application/json",
-                        "x-csrf-token": csrf,
-                    },
-                )
+            yield Request(
+                url=self.SEARCH_URL,
+                callback=self.selftest,
+                method="POST",
+                body=json.dumps({"term": st,"origination":"none"}),
+                meta={
+                    'search_term': st,
+                    'remaining': self.quantity,
+                    'csrf': csrf
+                },
+                dont_filter=True,
+                headers={
+                    "content-type": "application/json",
+                    "x-csrf-token": csrf,
+                    "X-Requested-With":"XMLHttpRequest",
+                    "jet-referer":"/search?term={}".format(st),
+
+                },
+            )
 
     def after_start(self, response):
         csrf = response.meta.get("csrf")
+        st = response.meta.get("search_term")
         if "24 of 10,000+ results" in response.body_as_unicode():
             a = response.xpath("//div[contains(@class, 'pagination')]"
                 "/a[contains(@class, 'history') and "
@@ -124,15 +128,15 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                 dont_filter=True
             )
         else:
-            yield Request(
+            yield Request(callback=self.selftest,
                     url=self.SEARCH_URL,
                     method="POST",
                     body=json.dumps({
-                        "term": self.searchterms[0],
+                        "term": st,
                         "sort": self.sort,
                     }),
                     meta={
-                        'search_term': self.searchterms[0], 
+                        'search_term': st,
                         'remaining': self.quantity, 
                         'csrf': csrf
                     },
@@ -140,6 +144,8 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                     headers={
                         "content-type": "application/json",
                         "x-csrf-token": csrf,
+                        "X-Requested-With": "XMLHttpRequest",
+                        "jet-referer": "/search?term={}".format(st),
                     },
                 )
 
@@ -400,23 +406,29 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         return int(total_matches)
 
     def _scrape_product_links(self, response):
-        for item in response.xpath("//div[contains(@class, 'product')]"):
-            link = is_empty(item.xpath("a/@href").extract())
-            price = is_empty(item.xpath(
-                ".//div[contains(@class, 'price')]/div/text()").extract(), "")
-            priceCurrency = ''.join(
-                re.findall("[^\d]*", price)).strip().replace(
-                    ".", "").replace(",", "")
-            price = is_empty(re.findall(FLOATING_POINT_RGEX, price))
-            if price:
-                price = Price(
-                    priceCurrency=self.CURRENCY_SIGNS.get(priceCurrency, "GBP"),
-                    price=price,
-                )
-            if link and not link in self.product_links:
-                self.product_links.append(link)
-                yield link, SiteProductItem(price=price)
-            continue
+        data = json.loads(response.body)
+        prods = data['result'].get('products')
+        product_ids = [p.get('id') for p in prods]
+        total_match = data['result'].get('total')
+        total_match = int(total_match)
+
+        # for item in response.xpath("//div[contains(@class, 'product')]"):
+        #     link = is_empty(item.xpath("a/@href").extract())
+        #     price = is_empty(item.xpath(
+        #         ".//div[contains(@class, 'price')]/div/text()").extract(), "")
+        #     priceCurrency = ''.join(
+        #         re.findall("[^\d]*", price)).strip().replace(
+        #             ".", "").replace(",", "")
+        #     price = is_empty(re.findall(FLOATING_POINT_RGEX, price))
+        #     if price:
+        #         price = Price(
+        #             priceCurrency=self.CURRENCY_SIGNS.get(priceCurrency, "GBP"),
+        #             price=price,
+        #         )
+        #     if link and not link in self.product_links:
+        #         self.product_links.append(link)
+        #         yield link, SiteProductItem(price=price)
+        #     continue
 
     def _scrape_next_results_page_link(self, response):
         csrf = self.get_csrf(response) or response.meta.get("csrf")
@@ -450,4 +462,5 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         return self.parse_product(response)
 
     def get_csrf(self, response):
-        return is_empty(re.findall("__csrf\"\:\"([^\"]*)", response.body))
+        return is_empty(response.xpath('//*[@data-id="csrf"]/@data-val').re('[^\"\']+'))
+        # return is_empty(re.findall("__csrf\"\:\"([^\"]*)", response.body))
