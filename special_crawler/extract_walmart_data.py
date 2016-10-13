@@ -2541,6 +2541,9 @@ class WalmartScraper(Scraper):
                     if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False:
                         return 0
 
+                    if self.product_info_json['buyingOptions'].get('available') == True:
+                        return 0
+
                     marketplace_options = self.product_info_json.get("buyingOptions", {}).get("marketplaceOptions")
 
                     if marketplace_options:
