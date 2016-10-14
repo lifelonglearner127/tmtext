@@ -376,7 +376,6 @@ def validate_data_params(arguments, ALL_DATA_TYPES):
 # the <data_type> values must be among the keys of DATA_TYPES imported dictionary
 @app.route('/get_data', methods=['GET'])
 def get_data():
-
     # this is used to convert an ImmutableMultiDictionary into a regular dictionary. will be left with only one "data" key
     request_arguments = dict(request.args)
 
@@ -392,6 +391,11 @@ def get_data():
 
     # create scraper class for requested site
     site_scraper = SUPPORTED_SITES[site](url=url, bot=bot)
+
+    # add ppw=fresh to Amazon arguments
+    if site == 'amazon':
+        if request_arguments.get('ppw'):
+            request_arguments['url'] += request_arguments.get('ppw')[0]
 
     # validate parameter values
     # url
