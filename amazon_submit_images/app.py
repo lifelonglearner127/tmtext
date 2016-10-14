@@ -123,8 +123,9 @@ def run_spider_download(username, password, task, do_submit, random_id):
     cmd = ('python {spiders_dir}/submit_amazon_images.py --username={username}'
            ' --password={password} --logging_file={log_file} --task={task} --submit={do_submit}'
            ' --id="{random_id}"')
+
     cmd_run = cmd.format(username=username, password=password, log_file=log_fname,
-                         spiders_dir=spiders_dir, task=task, random_id=random_id)
+                         spiders_dir=spiders_dir, task=task, random_id=random_id, do_submit=do_submit)
     print(cmd_run)
     os.system(cmd_run)
     return log_fname
