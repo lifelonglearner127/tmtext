@@ -6,6 +6,7 @@ import json
 import urllib
 import urlparse
 import unicodedata
+from scrapy.conf import settings
 
 from scrapy.http import Request
 
@@ -65,6 +66,8 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         super(JetProductsSpider, self).__init__(*args, **kwargs)
         self.sort = self.SORT_MODES.get(
             sort_mode) or self.SORT_MODES.get("relevance")
+        self.current_page = 1
+        # settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         if not self.product_url:
@@ -95,7 +98,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                 #V1
                 # callback=self.after_start,
                 #V2
-                callback=self._get_products,
+                # callback=self._get_products,
                 method="POST",
                 body=json.dumps({"term": st,"origination":"none"}),
                 meta={
@@ -112,7 +115,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
 
                 },
             )
-        else:
+        elif self.product_url:
             prod_id = self.product_url.split('/')[-1]
             yield Request(
                 url=self.PROD_URL,
@@ -134,6 +137,30 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
 
                 },
             )
+        elif self.products_url:
+            urls = self.products_url.split('||||')
+            for url in urls:
+                prod_id = url.split('/')[-1]
+                yield Request(
+                    url=self.PROD_URL,
+                    callback=self.parse_product,
+                    method="POST",
+                    body=json.dumps({"sku": prod_id, "origination": "none"}),
+                    meta={
+                        "product": SiteProductItem(),
+                        'search_term': st,
+                        'remaining': self.quantity,
+                        'csrf': csrf
+                    },
+                    dont_filter=True,
+                    headers={
+                        "content-type": "application/json",
+                        "x-csrf-token": csrf,
+                        "X-Requested-With": "XMLHttpRequest",
+                        "jet-referer": "/search?term={}".format(st),
+
+                    },
+                )
 
     def parse_product(self, response):
         csrf = response.meta.get('csrf')
@@ -198,8 +225,6 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
 
             # Filling other variants prices
             # with additional requests
-            print self.scrape_variants_with_extra_requests
-            print reqs
             # See bz #11124
             if self.scrape_variants_with_extra_requests:
                 for variant in product.get("variants"):
@@ -528,31 +553,29 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         csrf = self.get_csrf(response) or response.meta.get("csrf")
-        link = is_empty(response.xpath("//div[contains(@class, 'pagination')]"
-                                       "/a[contains(@class, 'next')]/@href").extract(), "")
-        page = is_empty(re.findall("page=(\d+)", link))
-
-        if not page or int(page)*24 > self.quantity+24:
+        st = response.meta.get("search_term")
+        print "***********"
+        print csrf
+        print st
+        if int(self.current_page)*24 > self.quantity+24:
             return None
-        return Request(
-                    url=self.SEARCH_URL,
-                    method="POST",
-                    dont_filter=True,
-                    body=json.dumps({
-                        "page": str(page),
-                        "sort": self.sort,
-                        "term": self.searchterms[0],
-                    }),
-                    meta={
-                        'search_term': self.searchterms[0],
-                        'remaining': self.quantity, 
-                        'csrf': csrf
-                    },
-                    headers={
-                        "content-type": "application/json",
-                        "x-csrf-token": csrf,
-                    },
-                )
+        else:
+            self.current_page += 1
+            return Request(
+                url=self.SEARCH_URL,
+                method="POST",
+                body=json.dumps({"term": st, "origination": "none", "page": self.current_page}),
+                meta={
+                    'search_term': st,
+                    'csrf': csrf
+                },
+                dont_filter=True,
+                headers={
+                    "content-type": "application/json",
+                    "x-csrf-token": csrf,
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+            )
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
