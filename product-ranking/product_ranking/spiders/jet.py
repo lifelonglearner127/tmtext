@@ -85,9 +85,6 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                 dont_filter=True,
                 callback=self.start_requests_with_csrf,
             )
-            # print super(JetProductsSpider, self).start_requests()
-            # for req in super(JetProductsSpider, self).start_requests():
-            #     yield req
 
     def start_requests_with_csrf(self, response):
         csrf = self.get_csrf(response)
@@ -95,9 +92,6 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         if not self.product_url:
             yield Request(
                 url=self.SEARCH_URL,
-                #V1
-                # callback=self.after_start,
-                #V2
                 # callback=self._get_products,
                 method="POST",
                 body=json.dumps({"term": st,"origination":"none"}),
@@ -554,9 +548,6 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
     def _scrape_next_results_page_link(self, response):
         csrf = self.get_csrf(response) or response.meta.get("csrf")
         st = response.meta.get("search_term")
-        print "***********"
-        print csrf
-        print st
         if int(self.current_page)*24 > self.quantity+24:
             return None
         else:
@@ -582,5 +573,3 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
 
     def get_csrf(self, response):
         return is_empty(response.xpath('//*[@data-id="csrf"]/@data-val').re('[^\"\']+'))
-        # Old layout
-        # return is_empty(re.findall("__csrf\"\:\"([^\"]*)", response.body))
