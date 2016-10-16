@@ -6,6 +6,7 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..'))
 
 from flask import Flask, jsonify, abort, request
+from extract_shopritedelivers_data import ShopritedeliversScraper
 from extract_walmart_data import WalmartScraper
 from extract_tesco_data import TescoScraper
 from extract_amazon_data import AmazonScraper
@@ -198,6 +199,7 @@ SUPPORTED_SITES = {
                     "pet360" : Pet360Scraper,
                     "petsmart" : PetsmartScraper,
                     "walmartgrocery" : WalmartGroceryScraper,
+                    "shopritedelivers": ShopritedeliversScraper,
                     }
 
 # add logger
