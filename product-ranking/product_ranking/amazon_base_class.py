@@ -754,11 +754,9 @@ class AmazonBaseClass(BaseProductsSpider):
             brand = brand.replace(u'®', '')
 
         if not brand:
-            brand_logo = self._is_empty(
-                response.xpath('//a[@id="brand"]/@href').extract()
+            brand = self._is_empty(
+                response.xpath('//a[@id="brand"]/@href').re("\/([A-Z].+?)\/b")
             )
-            if brand_logo:
-                brand = brand_logo.split('/')[1]
 
         if not brand and title:
             try:
