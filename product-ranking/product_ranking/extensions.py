@@ -164,7 +164,7 @@ class RequestsCounter(object):
         spider_stats = spider.crawler.stats.get_stats()
         try:
             request_count = int(spider_stats.get('downloader/request_count'))
-        except ValueError:
+        except (ValueError, TypeError):
             request_count = 0
         if request_count:
             try:
