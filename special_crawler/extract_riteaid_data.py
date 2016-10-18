@@ -116,30 +116,17 @@ class RiteAidScraper(Scraper):
     def _description(self):
         description = ''
 
-        for element in self.tree_html.xpath('//div[@class="std"]/*'):
-            is_features = element.xpath('strong/text()') and 'Features' in element.xpath('strong/text()')[0]
-
-            if element.tag != 'p' or is_features:
-                break
-
+        for element in self.tree_html.xpath('//dd[@class="tab-container"]')[0].xpath("./*"):
             if not element.text_content():
                 continue
 
-            description += self._clean_text(html.tostring(element))
+            description += self._clean_html(html.tostring(element))
 
         if description:
             return description
 
     def _long_description(self):
         description = ''
-
-        for element in self.tree_html.xpath('//div[@class="std"]/*'):
-            is_features = element.xpath('strong/text()') and 'Features' in element.xpath('strong/text()')[0]
-
-            if element.tag != 'p' or is_features or not element.text_content():
-                continue
-
-            description += self._clean_text(html.tostring(element))
 
         if description:
             if description != self._description():
@@ -379,6 +366,9 @@ class RiteAidScraper(Scraper):
         text = re.sub('[\r\n]', '', text)
         return text.strip()
 
+    def _clean_html(self, html):
+        html = re.sub('<(\w+)[^>]*>', r'<\1>', html)
+        return self._clean_text(html)
     ##########################################
     ################ RETURN TYPES
     ##########################################
