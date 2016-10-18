@@ -78,12 +78,11 @@ class StaplesProductsSpider(BaseProductsSpider):
         if maintenance_error:
             self.log("Website under maintenance error, retrying request: {}".format(response.url), WARNING)
             return Request(response.url, callback=self.parse_product, meta=meta, dont_filter=True)
-        # try:
-        sku_url, js_data = self.parse_js_data(response)
-        # except Exception as e:
-        #     self.log("Error extracting json data from product page, repeating request: {}".format(e), WARNING)
-        #     print response.url
-        #     return Request(response.url, callback=self.parse_product, meta=meta, dont_filter=True)
+        try:
+            sku_url, js_data = self.parse_js_data(response)
+        except Exception as e:
+            self.log("Error extracting json data from product page, repeating request: {}".format(e), WARNING)
+            return Request(response.url, callback=self.parse_product, meta=meta, dont_filter=True)
 
         # Parse title
         title = self.parse_title(response)
