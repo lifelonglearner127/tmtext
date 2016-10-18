@@ -165,15 +165,35 @@ def get_branch_for_task(task_data):
     return task_data.get('branch_name')
 
 
+class GlobalSettingsFromRedis(object):
+    """settings cache"""
+
+    __settings = None
+
+    @classmethod
+    def get_global_settings_from_sqs_cache(cls):
+        if cls.__settings is None:
+            try:
+                from cache_layer.cache_service import SqsCache
+                sqs = SqsCache()
+                logger.info('Getting global settings from redis cache.')
+                cls.__settings = sqs.get_settings()
+            except Exception as e:
+                cls.__settings = {}
+                logger.error(
+                    'Error while get global settings from redis cache.'
+                    ' ERROR: %s', str(e))
+        return cls.__settings
+
+    def get(self, key, default=None):
+        return self.get_global_settings_from_sqs_cache().get(key, default)
+global_settings_from_redis = GlobalSettingsFromRedis()
+
+
 def get_actual_branch_from_cache():
-    try:
-        from cache_layer.cache_service import SqsCache
-        sqs = SqsCache()
-        logger.info('Get default branch from redis.')
-        branch = sqs.get_settings('remote_instance_branch')
-    except Exception as e:
-        logger.error('Error while get branch. ERROR: %s', str(e))
-        branch = 'sc_production'
+    logger.info('Get default branch from redis cache.')
+    branch = global_settings_from_redis.get('remote_instance_branch',
+                                            'sc_production')
     logger.info('Branch is %s', branch)
     return branch or 'sc_production'
 
@@ -1368,6 +1388,16 @@ def store_tasks_metrics(task, redis_db):
                        JOBS_STATS_REDIS_KEY, generated_key, e)
 
 
+def get_instance_billing_limit_time():
+    try:
+        return int(global_settings_from_redis.get('instance_max_billing_time'))
+    except Exception as e:
+        logger.warning('Error while getting instance billing '
+                       'time limit from redis cache. Limitation is disabled.'
+                       ' ERROR: %s.', str(e))
+    return 0
+
+
 def main():
     if not TEST_MODE:
         instance_meta = get_instance_metadata()
@@ -1396,6 +1426,15 @@ def main():
         logger.debug("Create job output dir %s",
                      os.path.expanduser(JOB_OUTPUT_PATH))
         os.makedirs(os.path.expanduser(JOB_OUTPUT_PATH))
+
+    def is_end_billing_instance_time():
+        if not instance_start_time or \
+                not get_instance_billing_limit_time() or \
+                not ((time.time() - instance_start_time) >
+                     get_instance_billing_limit_time()):
+            return False
+        logger.info('Instance execution time limit.')
+        return True
 
     def is_all_tasks_finished(tasks):
         return all([_.is_finished() for _ in tasks])
@@ -1431,7 +1470,8 @@ def main():
     global MAX_CONCURRENT_TASKS
     # try to get tasks, untill max number of tasks is reached or
     # max number of tries to get tasks is reached
-    while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
+    while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries and \
+            not is_end_billing_instance_time():
         TASK_QUEUE_NAME = QUEUES_LIST[q_keys[q_ind]]
         logger.info('Trying to get task from %s, try #%s',
                     TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
@@ -1624,6 +1664,8 @@ if __name__ == '__main__':
         logger.debug('TEST MODE ON')
         logger.debug('Faking the SQS_Queue class')
 
+    instance_start_time = time.time()
+
     try:
         main()
         log_free_disk_space()
@@ -1631,6 +1673,8 @@ if __name__ == '__main__':
         log_free_disk_space()
         logger.exception(e)
         logger.error('Finished with error.')  # write fail finish marker
+        logger.debug('Instance working time: %s sec.',
+                     time.time() - instance_start_time)
         try:
             os.killpg(os.getpgid(os.getpid()), 9)
         except:
