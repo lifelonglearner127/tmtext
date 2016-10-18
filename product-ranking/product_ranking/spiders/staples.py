@@ -29,7 +29,7 @@ class StaplesProductsSpider(BaseProductsSpider):
 
     PAGINATE_URL = "http://www.staples.com/{search_term}/directory_{search_term}?sby=0&pn={nao}"
 
-    CURRENT_NAO = 0
+    CURRENT_NAO = 1
     PAGINATE_BY = 18  # 18 products
     TOTAL_MATCHES = None  # for pagination
 
@@ -465,14 +465,15 @@ class StaplesProductsSpider(BaseProductsSpider):
         if self.TOTAL_MATCHES is None:
             self.log('No "next result page" link!')
             return
-        if self.CURRENT_NAO > self.TOTAL_MATCHES + self.PAGINATE_BY:
+        if self.CURRENT_NAO * self.PAGINATE_BY >= self.TOTAL_MATCHES:
             return  # it's over
-        self.CURRENT_NAO += self.PAGINATE_BY
+        self.CURRENT_NAO += 1
         return Request(
             self.PAGINATE_URL.format(
                 search_term=response.meta['search_term'],
                 nao=str(self.CURRENT_NAO)),
-            callback=self.parse, meta=response.meta
+            callback=self.parse, meta=response.meta,
+            dont_filter=True
         )
 
     def parse_data_variant_price(self, response):
