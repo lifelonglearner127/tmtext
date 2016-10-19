@@ -399,7 +399,8 @@ def compress_multiple_files(output_fname, *filenames):
     zf.close()
 
 
-def put_file_into_s3(bucket_name, fname, compress=True):
+def put_file_into_s3(bucket_name, fname, compress=True,
+                     is_add_file_time=False):
     if TEST_MODE:
         print 'Simulate put file to s3, %s' % fname
         return True
@@ -442,6 +443,9 @@ def put_file_into_s3(bucket_name, fname, compress=True):
     k = Key(S3_BUCKET)
     # Set path to file on S3
     k.key = folders
+    # Add file creation time to metadata
+    if is_add_file_time:
+        k.metadata['creation_time'] = get_file_cm_time(fname)
     try:
         # Upload file to S3
         k.set_contents_from_filename(fname)
@@ -765,7 +769,8 @@ class ScrapyTask(object):
             else:
                 try:
                     put_file_into_s3(
-                        AMAZON_BUCKET_NAME, output_path+'.screenshot.jl')
+                        AMAZON_BUCKET_NAME, output_path+'.screenshot.jl',
+                        is_add_file_time=True)
                     logger.info('Screenshot file uploaded: %s' % (output_path + '.screenshot.jl'))
                 except Exception as ex:
                     logger.error('Screenshot file uploading error')
@@ -1215,6 +1220,21 @@ class ScrapyTask(object):
         with open(progress_fname, 'w') as fh:
             fh.write(json.dumps(msg, default=json_serializer))
         put_file_into_s3(AMAZON_BUCKET_NAME, progress_fname)
+
+
+def get_file_cm_time(file_path):
+    """Get unix timestamp of create date of file or last modify date."""
+    try:
+        create_time = os.path.getctime(file_path)
+        if create_time:
+            return int(create_time)
+        modify_time = os.path.getmtime(file_path)
+        if modify_time:
+            return int(modify_time)
+    except (OSError, ValueError) as e:
+        logger.error('Error while get creation time of file. ERROR: %s.',
+                     str(e))
+    return 0
 
 
 def get_task_result_from_cache(task, queue_name):
