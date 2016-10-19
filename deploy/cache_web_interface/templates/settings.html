@@ -9,12 +9,25 @@
             list-style-type: none;
             padding-right: 20px;
         }
+        .dv-settings {
+            margin-bottom: 7px;
+        }
+        .dv-settings form {
+            width: 300px;
+        }
+        .dv-settings fieldset > span {
+            display: block;
+            color: grey;
+            font-size: 14px;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
 <div>
     <header>
         <ul class="inline">
+            <li><a href="/stats">Stats</a></li>
             <li><a href="/list_s3">View Bucket</a></li>
             <li><a href="/get_s3_file">Download s3 file</a></li>
             <li><a href="/autoscale_history">Autoscale history</a></li>
@@ -29,13 +42,25 @@
     </header>
 </div>
 <div><h3>Common Settings</h3></div>
-<div>
-    <form method="post" onsubmit="submitForm(event, this); return false;" style="width: 300px;">
+<div class="dv-settings">
+    <form method="post" onsubmit="submitForm(event, this); return false;">
         <fieldset>
             <legend>Remote Instance Branch</legend>
             <input type="hidden" name="action" value="remote_instance_branch" />
-            <input type="text" name="branch" pattern="[\w\-]+" required="required" value="{{ remote_instance_branch }}" />
+            <input type="text" name="branch" pattern="[\w\-]+" required="required" value="{{ settings.remote_instance_branch }}" />
             <input type="submit" value="Save" />
+            <span>Default branch is `sc_production`</span>
+        </fieldset>
+    </form>
+</div>
+<div class="dv-settings">
+    <form method="post" onsubmit="submitForm(event, this); return false;">
+        <fieldset>
+            <legend>Instance max billing time (in seconds)</legend>
+            <input type="hidden" name="action" value="instance_max_billing_time" />
+            <input type="text" name="limitation" pattern="[0-9]+" required="required" value="{{ settings.instance_max_billing_time }}" />
+            <input type="submit" value="Save" />
+            <span>Set `0` to disable limitation.</span>
         </fieldset>
     </form>
 </div>
