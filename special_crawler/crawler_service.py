@@ -389,9 +389,6 @@ def get_data():
     else:
         bot = None
 
-    # create scraper class for requested site
-    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot)
-
     # add ppw=fresh to Amazon arguments
     if site == 'amazon':
         if request_arguments.get('ppw'):
@@ -399,6 +396,9 @@ def get_data():
                 url += '&ppw=' + request_arguments.get('ppw')[0]
             else:
                 url += '?ppw=' + request_arguments.get('ppw')[0]
+
+    # create scraper class for requested site
+    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot)
 
     # validate parameter values
     # url
