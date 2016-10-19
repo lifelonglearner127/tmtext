@@ -395,7 +395,10 @@ def get_data():
     # add ppw=fresh to Amazon arguments
     if site == 'amazon':
         if request_arguments.get('ppw'):
-            request_arguments['url'] += request_arguments.get('ppw')[0]
+            if '?' in url:
+                url += '&ppw=' + request_arguments.get('ppw')[0]
+            else:
+                url += '?ppw=' + request_arguments.get('ppw')[0]
 
     # validate parameter values
     # url
