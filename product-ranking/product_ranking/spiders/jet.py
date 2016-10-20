@@ -111,6 +111,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
             )
         elif self.product_url:
             prod_id = self.product_url.split('/')[-1]
+            prod_id = prod_id.replace("#","") if prod_id else None
             yield Request(
                 url=self.PROD_URL,
                 callback=self.parse_product,
