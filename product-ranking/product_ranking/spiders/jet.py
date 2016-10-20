@@ -74,7 +74,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
             for st in self.searchterms:
                 yield Request(
                     url=self.START_URL,
-                    meta={'search_term': st, 'remaining': self.quantity, "sort": self.sort},
+                    meta={'search_term': st, 'remaining': self.quantity},
                     dont_filter=True,
                     callback=self.start_requests_with_csrf,
                 )
@@ -94,7 +94,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                 url=self.SEARCH_URL,
                 # callback=self._get_products,
                 method="POST",
-                body=json.dumps({"term": st,"origination":"none"}),
+                body=json.dumps({"term": st, "origination": "none", "sort": self.sort}),
                 meta={
                     'search_term': st,
                     'remaining': self.quantity,
