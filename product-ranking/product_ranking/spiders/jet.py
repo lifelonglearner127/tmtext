@@ -193,6 +193,14 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
 
             cond_set_value(product, "sku", prod_data.get('sku'))
 
+            if not product.get("url"):
+                # Construct product url
+                prod_id = prod_data.get('retailSkuId')
+                prod_name = product.get('title')
+                prod_slug = self.slugify(prod_name)
+                prod_url = "https://jet.com/product/{}/{}".format(prod_slug, prod_id)
+                cond_set_value(product, "url", prod_url)
+
             image_url = prod_data.get('images')
             image_url = image_url[0].get('raw') if image_url else None
             cond_set_value(product, "image_url", image_url)
