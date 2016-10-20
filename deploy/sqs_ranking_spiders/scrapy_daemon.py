@@ -465,7 +465,7 @@ def put_file_into_s3(bucket_name, fname, compress=True,
     k.key = folders
     # Add file creation time to metadata
     if is_add_file_time:
-        k.metadata['creation_time'] = get_file_cm_time(fname)
+        k.set_metadata('creation_time', get_file_cm_time(filename))
     try:
         # Upload file to S3
         k.set_contents_from_filename(fname)
