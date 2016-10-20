@@ -70,6 +70,11 @@ class AmazonBaseClass(BaseProductsSpider):
                    'ref=acr_dpx_see_all?ie=UTF8&showViewpoints=1'
 
     handle_httpstatus_list = [404]
+    middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+    middlewares['product_ranking.custom_middlewares.AmazonProxyMiddleware'] = 750
+
+    settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+    settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 504, 400, 403, 404, 408]
 
     AMAZON_PRIME_URL = 'http://www.amazon.com/gp/product/du' \
                        '/bbop-ms3-ajax-endpoint.html?ASIN={0}&merchantID={1}' \
@@ -463,7 +468,6 @@ class AmazonBaseClass(BaseProductsSpider):
             )
         else:
             product['buyer_reviews'] = buyer_reviews
-        meta['handle_httpstatus_list'] = [503]
         reqs.append(
             Request(
                 url=self.REVIEW_DATE_URL.format(
@@ -750,11 +754,9 @@ class AmazonBaseClass(BaseProductsSpider):
             brand = brand.replace(u'®', '')
 
         if not brand:
-            brand_logo = self._is_empty(
-                response.xpath('//a[@id="brand"]/@href').extract()
+            brand = self._is_empty(
+                response.xpath('//a[@id="brand"]/@href').re("\/([A-Z].+?)\/b")
             )
-            if brand_logo:
-                brand = brand_logo.split('/')[1]
 
         if not brand and title:
             try:
@@ -1175,7 +1177,6 @@ class AmazonBaseClass(BaseProductsSpider):
                 response,
                 self._parse_last_buyer_review_date
             )
-        response = self._review_retry(response)
         meta = response.meta.copy()
         product = meta['product']
         reqs = meta.get('reqs')
@@ -1365,7 +1366,6 @@ class AmazonBaseClass(BaseProductsSpider):
         """
         meta = response.meta.copy()
         meta['_current_star'] = {}
-        meta['handle_httpstatus_list'] = [503]
         asin = meta['product_id']
         for i, star in enumerate(self.buyer_reviews_stars):
             args = 'ref=cm_cr_arp_d_hist_{star_number}?' \
@@ -1386,7 +1386,6 @@ class AmazonBaseClass(BaseProductsSpider):
         """
         meta = response.meta.copy()
         meta['_current_star'] = {}
-        meta['handle_httpstatus_list'] = [503]
         asin = meta['product_id']
 
         for star in self.buyer_reviews_stars:
@@ -1405,31 +1404,9 @@ class AmazonBaseClass(BaseProductsSpider):
                 dont_filter=True
             )
 
-    def _review_retry(self, response):
-        if response.status == 503:
-            response_without_crawlera = requests.get(
-                response.url,
-                headers={'User-Agent': random.choice(self.MKTP_USER_AGENTS)})
-            if response_without_crawlera.status_code == 503:
-                proxy_host = "proxy.crawlera.com"
-                proxy_port = "8010"
-                proxy_auth = HTTPProxyAuth("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
-                proxies = {"https": "https://{}:{}/".format(proxy_host, proxy_port)}
-                verify = os.path.dirname(os.path.realpath(__file__)) + "/../../rest_apis_content_analytics/walmart_api/crawlera-ca.crt"
-                response_with_crawlera = requests.get(
-                    response.url,
-                    proxies=proxies,
-                    auth=proxy_auth,
-                    verify=verify,
-                    headers={'User-Agent': random.choice(self.MKTP_USER_AGENTS)})
-                body = response_with_crawlera.text
-            else:
-                body = response_without_crawlera.text
-            return response.replace(body=body)
-        return response
+
 
     def _get_rating_by_star_by_individual_request(self, response):
-        response = self._review_retry(response)
         reqs = response.meta.get('reqs', [])
         product = response.meta['product']
         mkt_place_link = response.meta.get("mkt_place_link")
