@@ -34,6 +34,7 @@ class JetShelfPagesSpider(JetProductsSpider):
             self.num_pages = int(kwargs['num_pages'])
         else:
             self.num_pages = 1
+        self.quantity = self.num_pages * 24
 
     def start_requests(self):
         yield Request(
@@ -47,13 +48,12 @@ class JetShelfPagesSpider(JetProductsSpider):
         csrf = self.get_csrf(response)
         st = response.meta.get('search_term')
         if self.product_url:
-            category_id = re.findall("category=(\d+)", self.product_url)
-            category_id = category_id[0] if category_id else None
+            body = self.construct_post_body()
             yield Request(
                 url=self.SEARCH_URL,
                 # callback=self._get_products,
                 method="POST",
-                body=json.dumps({"categories": category_id, "origination": "PLP", "sort": self.sort}),
+                body=body,
                 meta={
                     'search_term': st,
                     'remaining': self.quantity,
@@ -99,11 +99,11 @@ class JetShelfPagesSpider(JetProductsSpider):
         return int(total_matches)
 
     def _scrape_product_links(self, response):
+        shelf_categories = []
         try:
             data = json.loads(response.body)
             prods = data['result'].get('products', [])
-            shelf_categories = [l.get("categoryName") for l in data.get("categoryLevels", [])]
-            shelf_category = shelf_categories[-1] if shelf_categories else None
+            shelf_categories = [l.get("categoryName") for l in data['result'].get("categoryLevels", [])]
         except Exception as e:
             self.log(
                 "Failed parsing json at {} - {}".format(response.url, e)
@@ -112,9 +112,8 @@ class JetShelfPagesSpider(JetProductsSpider):
 
         item = SiteProductItem()
         if shelf_categories:
-            item['shelf_name'] = shelf_categories
-        if shelf_category:
-            item['shelf_path'] = shelf_category
+            item['shelf_name'] = shelf_categories[-1]
+            item['shelf_path'] = shelf_categories
         for prod in prods:
             prod_id = prod.get('id')
             # Construct product url
@@ -123,19 +122,37 @@ class JetShelfPagesSpider(JetProductsSpider):
             prod_url = "https://jet.com/product/{}/{}".format(prod_slug, prod_id)
             yield prod_url, item
 
+    def construct_post_body(self):
+        # Helper func to construct post params for request
+        category_id = re.findall("category=(\d+)", self.product_url)
+        category_id = category_id[0] if category_id else None
+
+        searchterm = re.findall("term=([\w\s]+)", urllib.unquote(self.product_url).decode('utf8'))
+        searchterm = searchterm[0] if searchterm else None
+
+        if searchterm and not category_id:
+            body = json.dumps({"term": searchterm, "origination": "none",
+                               "sort": self.sort, "page": self.current_page})
+        elif category_id and not searchterm:
+            body = json.dumps({"categories": category_id, "origination": "PLP",
+                               "sort": self.sort, "page": self.current_page})
+        else:
+            body = json.dumps({"term": searchterm, "categories": category_id,
+                               "origination": "PLP", "sort": self.sort, "page": self.current_page})
+        return body
+
     def _scrape_next_results_page_link(self, response):
         csrf = self.get_csrf(response) or response.meta.get("csrf")
         st = response.meta.get("search_term")
-        if int(self.current_page) > self.num_pages:
+        if int(self.current_page) >= self.num_pages:
             return None
         else:
             self.current_page += 1
-            category_id = re.findall("category=(\d+)", self.product_url)
-            category_id = category_id[0] if category_id else None
+            body = self.construct_post_body()
             return Request(
                 url=self.SEARCH_URL,
                 method="POST",
-                body=json.dumps({"categories": category_id, "origination": "PLP"}),
+                body=body,
                 meta={
                     'search_term': st,
                     'csrf': csrf
