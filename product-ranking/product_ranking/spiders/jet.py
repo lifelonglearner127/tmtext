@@ -94,7 +94,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                 url=self.SEARCH_URL,
                 # callback=self._get_products,
                 method="POST",
-                body=json.dumps({"term": st,"origination":"none"}),
+                body=json.dumps({"term": st, "origination": "none", "sort": self.sort}),
                 meta={
                     'search_term': st,
                     'remaining': self.quantity,
@@ -187,11 +187,20 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
 
             cond_set_value(product, "upc", prod_data.get('upc'))
 
-            cond_set_value(product, "description", prod_data.get('description'))
+            desc = prod_data.get('description', "") + "\n" + "\n".join(prod_data.get('bullets', []))
+            cond_set_value(product, "description", desc)
 
             cond_set_value(product, "brand", prod_data.get('manufacturer'))
 
             cond_set_value(product, "sku", prod_data.get('sku'))
+
+            if not product.get("url"):
+                # Construct product url
+                prod_id = prod_data.get('retailSkuId')
+                prod_name = product.get('title')
+                prod_slug = self.slugify(prod_name)
+                prod_url = "https://jet.com/product/{}/{}".format(prod_slug, prod_id)
+                cond_set_value(product, "url", prod_url)
 
             image_url = prod_data.get('images')
             image_url = image_url[0].get('raw') if image_url else None
@@ -556,7 +565,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
             return Request(
                 url=self.SEARCH_URL,
                 method="POST",
-                body=json.dumps({"term": st, "origination": "none", "page": self.current_page}),
+                body=json.dumps({"term": st, "origination": "none", "page": self.current_page, "sort": self.sort}),
                 meta={
                     'search_term': st,
                     'csrf': csrf
