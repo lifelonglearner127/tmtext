@@ -187,7 +187,8 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
 
             cond_set_value(product, "upc", prod_data.get('upc'))
 
-            cond_set_value(product, "description", prod_data.get('description'))
+            desc = prod_data.get('description', "") + "\n" + "\n".join(prod_data.get('bullets', []))
+            cond_set_value(product, "description", desc)
 
             cond_set_value(product, "brand", prod_data.get('manufacturer'))
 
