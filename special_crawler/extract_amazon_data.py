@@ -1030,7 +1030,7 @@ class AmazonScraper(Scraper):
         related_product_url_list = []
 
         for variant in variants:
-            if variant["url"] and variant["url"] != self.product_page_url:
+            if variant["url"] and variant["url"] != self.product_page_url.split('?')[0]:
                 related_product_url_list.append(variant["url"])
 
         if related_product_url_list:
