@@ -69,35 +69,6 @@ class JetShelfPagesSpider(JetProductsSpider):
                 },
             )
 
-    def send_next_request(self, reqs, response):
-        req = reqs.pop(0)
-        new_meta = response.meta.copy()
-        if reqs:
-            new_meta["reqs"] = reqs
-        return req.replace(meta=new_meta)
-
-    def _scrape_results_per_page(self, response):
-        try:
-            data = json.loads(response.body)
-            prods = data['result'].get('products')
-            results_per_page = len(prods)
-        except Exception as e:
-            print e
-            results_per_page = 0
-
-        return int(results_per_page)
-
-    def _scrape_total_matches(self, response):
-        try:
-            data = json.loads(response.body)
-            total_matches = data['result'].get('total')
-            total_matches = int(total_matches) if total_matches else 0
-        except Exception as e:
-            print e
-            total_matches = 0
-
-        return int(total_matches)
-
     def _scrape_product_links(self, response):
         shelf_categories = []
         try:

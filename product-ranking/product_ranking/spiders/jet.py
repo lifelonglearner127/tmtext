@@ -539,7 +539,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                     method="POST",
                     body=json.dumps({"sku": prod_id, "origination": "none"}),
                     meta={
-                        "product": prod_item,
+                        "product": prod_item.copy(), # <- somehow this fixes rankings for shelf spider
                         'search_term': search_term,
                         'remaining': self.quantity,
                         'csrf': csrf
