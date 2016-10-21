@@ -94,6 +94,7 @@ from extract_pet360_data import Pet360Scraper
 from extract_petsmart_data import PetsmartScraper
 from extract_walmartgrocery_data import WalmartGroceryScraper
 from extract_sears_data import SearsScraper
+from extract_pepboys_data import PepboysScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -199,7 +200,8 @@ SUPPORTED_SITES = {
                     "pet360" : Pet360Scraper,
                     "petsmart" : PetsmartScraper,
                     "walmartgrocery" : WalmartGroceryScraper,
-                    "sears" : SearsScraper
+                    "sears" : SearsScraper,
+                    "pepboys" : PepboysScraper,
                     }
 
 # add logger
