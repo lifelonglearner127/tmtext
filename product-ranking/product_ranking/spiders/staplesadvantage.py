@@ -38,14 +38,13 @@ class StaplesadvantageProductsSpider(ProductsSpider):
     name = "staplesadvantage_products"
 
     allowed_domains = ['staplesadvantage.com']
-
-    SEARCH_URL = "http://www.staplesadvantage.com/webapp/wcs/stores/servlet" \
+    SEARCH_URL = "https://www.staplesadvantage.com/webapp/wcs/stores/servlet" \
                  "/StplCategoryDisplay?term={search_term}" \
                  "&act=4&src=SRCH&reset=true&storeId=10101&pg={page}"
 
-    START_URL = 'http://www.staplesadvantage.com/learn?storeId=10101'
+    START_URL = 'https://www.staplesadvantage.com/learn?storeId=10101'
 
-    BASE_URL = "http://www.staplesadvantage.com/webapp/wcs/stores/servlet" \
+    BASE_URL = "https://www.staplesadvantage.com/webapp/wcs/stores/servlet" \
                "/StplCategoryDisplay?catalogId=4&langId=-1&storeId=10101"
 
     SORT_MODES = {
@@ -138,7 +137,6 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         """Generate final sorted url based on data from page."""
         url = self.generate_url_from_inputs(response, 'galleryfullnav')
         return Request(url, meta=response.meta)
-
 
     def _total_matches_from_html(self, response):
         total = response.css('.didYouMeanNoOfItems').extract()
@@ -233,7 +231,6 @@ class StaplesadvantageProductsSpider(ProductsSpider):
                                    title=text[0].extract().strip()))
         cond_set_value(product, 'related_products',
                        {'More product options': products})
-
 
     def _request_buyer_reviews(self, response):
         prod_id = re.search('var pr_page_id="(\d+)"', response.body)
