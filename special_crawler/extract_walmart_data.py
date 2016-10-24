@@ -146,9 +146,12 @@ class WalmartScraper(Scraper):
             False otherwise
         """
 
-        if not self._short_description_wrapper():
-            self.page_raw_text = requests.get(self.product_page_url.encode("utf-8"), headers=self.HEADERS).content
-            self.tree_html = html.fromstring(self.page_raw_text)
+        try:
+            if not self._no_longer_available() and not self._short_description_wrapper():
+                self.page_raw_text = requests.get(self.product_page_url, headers=self.HEADERS).text
+                self.tree_html = html.fromstring(self.page_raw_text)
+        except Exception as e:
+            print e
 
         try:
             self.wv.setupCH(self.tree_html)
@@ -2066,8 +2069,7 @@ class WalmartScraper(Scraper):
 
                 return self.product_info_json
             else:
-                page_raw_text = requests.get(self.product_page_url).text
-                product_info_json = json.loads(re.search('define\("product\/data",\n(.+?)\n', page_raw_text).group(1))
+                product_info_json = json.loads(re.search('define\("product\/data",\n(.+?)\n', self.page_raw_text).group(1))
 
                 self.product_info_json = product_info_json
 
