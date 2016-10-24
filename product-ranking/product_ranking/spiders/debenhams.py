@@ -1,19 +1,17 @@
 # -*- coding: utf-8 -*-#
+from __future__ import unicode_literals
 
-import json
 import re
+import json
 import string
-import itertools
-import urllib
 
-from scrapy.http import FormRequest, Request
+from scrapy.http import Request
 from scrapy.log import ERROR, INFO, WARNING
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
-    cond_set_value
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
+from product_ranking.spiders import BaseProductsSpider, cond_set_value
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
+
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -23,15 +21,12 @@ class DebenhamsProductSpider(BaseProductsSpider):
     name = 'debenhams_products'
     allowed_domains = ["debenhams.com"]
 
-    #SEARCH_URL = "http://www.debenhams.com/webapp/wcs/stores/servlet/" \
-    #             "Navigate?langId=-1&storeId=10701&catalogId=10001&txt={search_term}"
-
-    SEARCH_URL = "http://int.debenhams.com/us/search/{search_term}/"
+    SEARCH_URL = 'http://www.debenhams.com/search/{search_term}'
 
     items_per_page = 60
 
-    BUYER_REVIEWS_URL = 'http://debenhams.ugc.bazaarvoice.com/9364redes-en_gb/{upc}/' \
-                        'reviews.djs?format=embeddedhtml'
+    BUYER_REVIEWS_URL = 'http://debenhams.ugc.bazaarvoice.com/' \
+                        '9364redes-en_gb/{upc}/reviews.djs?format=embeddedhtml'
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
@@ -105,9 +100,9 @@ class DebenhamsProductSpider(BaseProductsSpider):
         cond_set_value(product, 'related_products', related_products)
 
         if reqs:
-            return self.send_next_request(reqs, response)
+            yield self.send_next_request(reqs, response)
 
-        return product
+        yield product
 
     def _parse_title(self, response):
         title = is_empty(
@@ -120,6 +115,11 @@ class DebenhamsProductSpider(BaseProductsSpider):
         brand = is_empty(
             response.xpath('//img[@class="brand"]/@alt').extract()
         )
+
+        if not brand:
+            brand = is_empty(response.xpath(
+                '//meta[@property="brand"]/@content'
+            ).extract())
 
         return brand
 
@@ -176,10 +176,23 @@ class DebenhamsProductSpider(BaseProductsSpider):
                 currency = response.xpath(
                     '//*[contains(@class, "attributes")]//*[contains(@class, "price")]'
                     '//*[contains(@class, "amount")]/span/@title').extract()[0]
+
+        if not price:
+            price = is_empty(response.xpath(
+                '//meta[@property="current_price"]/@content'
+            ).extract())
+
+        if not price:
+            price = response.xpath(
+                '//*[@id="product_pricing"]/span/text()'
+            ).extract()
+            if price:
+                price = price[-1]
+
         if price:
             price = is_empty(
                 re.findall(
-                    r'(\d+\.\d+)',
+                    r'(\d+\.?\d?)',
                     price
                 ), 0.00
             )
@@ -205,15 +218,19 @@ class DebenhamsProductSpider(BaseProductsSpider):
             response.xpath('//h3[@class="description"]/text()').extract()
         )
 
+        if not description:
+            description = is_empty(response.xpath(
+                '//meta[@property="description"]/@content'
+            ).extract())
+
         return description
 
     def _parse_stock_status(self, response):
         stock_status = is_empty(
-            response.xpath('//div[@class="product-stock-status"]'
-                           '/p/span/text()').extract()
+            response.xpath('//meta[@name="twitter:data2"]/@content').extract()
         )
 
-        if 'In stock' in stock_status:
+        if stock_status and 'In stock' in stock_status[0]:
             stock_status = False
         else:
             stock_status = True
@@ -224,6 +241,12 @@ class DebenhamsProductSpider(BaseProductsSpider):
         upc = is_empty(
             response.xpath('//span[@class="product-code"]/text()').extract()
         )
+
+        try:
+            upc = re.search(r'productId[\"\']\s?\:\s?[\'\"](\d+)',
+                                   response.body).group(1)
+        except Exception as e:
+            self.log('Can\'t find product id. ERROR: %s.' % str(e), ERROR)
 
         if upc:
             return upc
@@ -257,13 +280,44 @@ class DebenhamsProductSpider(BaseProductsSpider):
             price, currency = self._parse_price(response)
             price = float(price)
 
+        if not sizes:
+            sizes = is_empty(response.xpath(
+                '//meta[@property="size"]/@content'
+            ).extract())
+            if sizes:
+                sizes = sizes.split('|')
+            stocks = is_empty(response.xpath(
+                '//div[@id="entitledItem_' + product['upc'] + '"]/text()'
+            ).extract())
+            if not stocks:
+                self.log('Error parse variants.', ERROR)
+                return variants
+            try:
+                params = \
+                    json.loads(stocks.replace('\'', '"'), encoding='utf-8')
+            except Exception as e:
+                self.log('Error parse variants. ERROR: %s.' % str(e), ERROR)
+                return variants
+            for param in params:
+                size_p = is_empty([x.split('Size_')[1]
+                                   for x in param['Attributes'].keys()
+                                   if x.startswith('Size_')])
+                variants.append({
+                    'price': price or product['price'],
+                    'properties': {
+                        'size': size_p
+                    },
+                    'is_out_of_stock': size_p not in sizes
+                })
+            return variants
+
         for index, size in enumerate(sizes):
             properties = {}
             variant = {}
 
             properties['size'] = size
             variant['is_out_of_stock'] = True if 'Out of stock' in \
-                                                  stock_status[index] else False
+                                                 stock_status[index] else False
 
             variant['price'] = price if price else None
             variant['properties'] = properties
@@ -315,7 +369,7 @@ class DebenhamsProductSpider(BaseProductsSpider):
         Scraping number of resulted product links
         """
         total_matches = is_empty(
-            response.xpath('//span[@class="product-count"]'
+            response.xpath('//span[@class="products_count"]'
                            '/text()').re('\d.\d+'), 0)
 
         if total_matches:
@@ -334,18 +388,18 @@ class DebenhamsProductSpider(BaseProductsSpider):
         """
         Scraping product links from search page
         """
-        links = response.xpath(
-            '//div[contains(@class, "product-image")]//a'
-            '//img[contains(@class, "product-medium")]/../@href'
-        ).extract()
+        links = response.xpath('//div[contains(@class, "item_container")]//'
+                               'input/@value').extract()
         if links:
             for link in links:
                 yield link, SiteProductItem()
         else:
-            self.log("Found no product links in {url}".format(url=response.url), INFO)
+            self.log("Found no product links in {url}".format(
+                url=response.url), INFO)
 
     def _scrape_next_results_page_link(self, response):
-        url = response.xpath('//*[contains(@class, "pagination_Next")]/@href').extract()
+        url = response.xpath('//div[@class="product_nav"]//'
+                             'a[contains(text(), "Next")]/@href').extract()
         if url:
             return url[0]
         else:
