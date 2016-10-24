@@ -50,8 +50,6 @@ class WalmartScraper(Scraper):
     # base URL for product API
     BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
 
-    HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'}
-
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
@@ -145,13 +143,6 @@ class WalmartScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-
-        try:
-            if not self._no_longer_available() and not self._short_description_wrapper():
-                self.page_raw_text = requests.get(self.product_page_url, headers=self.HEADERS).text
-                self.tree_html = html.fromstring(self.page_raw_text)
-        except Exception as e:
-            print e
 
         try:
             self.wv.setupCH(self.tree_html)
@@ -2069,7 +2060,8 @@ class WalmartScraper(Scraper):
 
                 return self.product_info_json
             else:
-                product_info_json = json.loads(re.search('define\("product\/data",\n(.+?)\n', self.page_raw_text).group(1))
+                page_raw_text = requests.get(self.product_page_url).text
+                product_info_json = json.loads(re.search('define\("product\/data",\n(.+?)\n', page_raw_text).group(1))
 
                 self.product_info_json = product_info_json
 
