@@ -1,21 +1,15 @@
 from __future__ import division, absolute_import, unicode_literals
-from .samsclub import SamsclubProductsSpider
-from scrapy.http import Request, FormRequest
-from product_ranking.items import SiteProductItem
-from scrapy.log import DEBUG, WARNING, ERROR
 import urlparse
-import socket
 import math
+from scrapy.http import Request, FormRequest
+from scrapy.log import DEBUG
+from product_ranking.items import SiteProductItem
+from .samsclub import SamsclubProductsSpider
 
 
 class SamsclubShelfPagesSpider(SamsclubProductsSpider):
     name = 'samsclub_shelf_urls_products'
     allowed_domains = ["samsclub.com", "api.bazaarvoice.com"]
-
-    _NEXT_SHELF_URL = "http://www.samsclub.com/sams/shop/common/ajaxSearchPageLazyLoad.jsp?sortKey=p_sales_rank" \
-                      "&searchCategoryId={category_id}&searchTerm=null&noOfRecordsPerPage={prods_per_page}" \
-                      "&sortOrder=0&offset={offset}" \
-                      "&rootDimension=0&tireSearch=&selectedFilter=null&pageView=list&servDesc=null&_=1407437029456"
 
     def __init__(self, *args, **kwargs):
         super(SamsclubShelfPagesSpider, self).__init__(clubno='4704', zip_code='94117', *args, **kwargs)
@@ -53,17 +47,18 @@ class SamsclubShelfPagesSpider(SamsclubProductsSpider):
             c = response.xpath(
                 "//div[@id='headerClubLocation']/text()").extract()
             self.log("Club mark: %s" % c, DEBUG)
-            data = {'/sams_dyncharset': 'ISO-8859-1',
-                    '_dynSessConf': '-7856921515575376948',
-                    '/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.selectedClub': self.clubno,
-                    '_D:/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.selectedClub': '',
-                    'selectClub': 'null',
-                    '/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.neighboringClubs': self.clubno,
-                    '_D:/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.neighboringClubs': '',
-                    '/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.wizardClubSelection': 'submit',
-                    '_D:/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.wizardClubSelection': '',
-                    '_DARGS:/sams/search/wizard/common/displayClubs.jsp.selectId': ''
-                    }
+            data = {
+                '/sams_dyncharset': 'ISO-8859-1',
+                '_dynSessConf': '-7856921515575376948',
+                '/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.selectedClub': self.clubno,
+                '_D:/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.selectedClub': '',
+                'selectClub': 'null',
+                '/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.neighboringClubs': self.clubno,
+                '_D:/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.neighboringClubs': '',
+                '/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.wizardClubSelection': 'submit',
+                '_D:/com/walmart/ecommerce/samsclub/shoppingfilter/handler/ShoppingFilterFormHandler.wizardClubSelection': '',
+                '_DARGS:/sams/search/wizard/common/displayClubs.jsp.selectId': ''
+                }
 
             new_meta = response.meta.copy()
             new_meta['club'] = 2
