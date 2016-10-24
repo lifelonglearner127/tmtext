@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-#
+from __future__ import division, absolute_import, unicode_literals
+from future_builtins import *
 
 import hjson
 import re
@@ -24,15 +26,16 @@ class HalfordsProductSpider(BaseProductsSpider):
         "halfords.ugc.bazaarvoice.com"
     ]
 
-    SEARCH_URL = "http://www.halfords.com/webapp/wcs/stores/servlet/SearchCmd?storeId=10001" \
-                 "&catalogId=10151&langId=-1&srch={search_term}&categoryId=-1&action=listrefine&" \
-                 "tabNo=1&qcon=fh_location=%2F%2Fcatalog_10151%2Fen_GB%2F%24s%3Dblah%3Bt%3Ddefault" \
-                 "%2Fattr_78cdb44b%3D1&channel=desktop&sort={sort}"
-    BUYER_REVIEWS_URL = "http://halfords.ugc.bazaarvoice.com/4028-redes/{product_id}/" \
-                        "reviews.djs?format=embeddedhtml"
+    SEARCH_URL = "http://www.halfords.com/webapp/wcs/stores/servlet/" \
+                 "SearchCmd?srch={search_term}&action=search&storeId=10001" \
+                 "&catalogId=10151&langId=-1"
+
+    BUYER_REVIEWS_URL = "http://halfords.ugc.bazaarvoice.com/4028-redes/" \
+                        "{product_id}/reviews.djs?format=embeddedhtml"
 
     IMG_URL = "http://i1.adis.ws/s/washford/684906_is.js?deep=true&" \
-              "timestamp=1442469600000&arg=%{cat_code}_is%27&func=amp.jsonReturn"
+              "timestamp=1442469600000&arg=%{cat_code}_is%27&" \
+              "func=amp.jsonReturn"
 
     _SORT_MODES = {
         'price asc': 'price-low-to-high',
@@ -125,9 +128,9 @@ class HalfordsProductSpider(BaseProductsSpider):
         )
 
         if reqs:
-            return self.send_next_request(reqs, response)
+            yield self.send_next_request(reqs, response)
 
-        return product
+        yield product
 
     def _parse_title(self, response):
         title = is_empty(
@@ -140,14 +143,13 @@ class HalfordsProductSpider(BaseProductsSpider):
 
     def _parse_price(self, response):
         price = is_empty(
-            response.xpath(
-                'string(//div[@id="priceAndLogo"]/h2)'
-            ).extract(), 0.00
+            response.xpath('//div[@id="priceAndRating"]/h2/text()').extract(),
+            0.00
         )
         if price:
             price = is_empty(
                 re.findall(
-                    r'(\d+\.\d+)',
+                    r'(\d+\.?\d+?)',
                     price
                 ), 0.00
             )
@@ -352,15 +354,15 @@ class HalfordsProductSpider(BaseProductsSpider):
         """
         Scraping product links from search page
         """
-
         items = response.xpath(
-            '//ul[@id="product-listing"]/li'
+            '//div[@id="product-listing"]/ul/li'
         )
 
         if items:
             for item in items:
                 link = is_empty(
-                    item.xpath('././/span[@class="productTitle"]/a/@href').extract()
+                    item.xpath('.//a[@class="productModuleImageLink"]/@href')
+                        .extract()
                 )
                 res_item = SiteProductItem()
                 yield link, res_item
@@ -370,13 +372,11 @@ class HalfordsProductSpider(BaseProductsSpider):
     def _scrape_next_results_page_link(self, response):
         url = is_empty(
             response.xpath(
-                '//section[@class="pagination"]/./'
-                '/a[contains(@class,"next")]/@href'
-            ).extract()
+                '//a[contains(@class, "pageLink next")]/@href').extract()
         )
 
         if url:
-            return url
+            return url[0]
         else:
             self.log("Found no 'next page' links", WARNING)
             return None
