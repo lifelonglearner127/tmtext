@@ -5,6 +5,7 @@ import HTMLParser
 
 from lxml import html, etree
 from extract_data import Scraper
+from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
 
 class RiteAidScraper(Scraper):
@@ -29,6 +30,7 @@ class RiteAidScraper(Scraper):
         self.ingredients = None
         self.images = None
         self.videos = None
+        self.reviews = None
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -275,15 +277,21 @@ class RiteAidScraper(Scraper):
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
-    def _average_review(self):
-        rating_value = self.tree_html.xpath('//div[@itemprop="aggregateRating"]/span[@itemprop="ratingValue"]/text()')
+    def _load_reviews(self):
+        if not self.reviews:
+            br = BuyerReviewsBazaarApi()
+            self.reviews =
 
+    def _average_review(self):
+        rating_value = self.tree_html.xpath('//span[@class="bv-rating"]/span[@itemprop="ratingValue"]/text()')
+        print rating_value
         if rating_value:
             return rating_value[0]
 
-    def _review_count(self):
-        review_count = self.tree_html.xpath('//div[@itemprop="aggregateRating"]/span[@itemprop="reviewCount"]/text()')
 
+    def _review_count(self):
+        review_count = self.tree_html.xpath('//span[@class="bv-rating-ratio-count"]/span[@itemprop="reviewCount"]/text()')
+        print review_count
         if review_count:
             return review_count[0]
 
