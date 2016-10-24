@@ -110,8 +110,10 @@ class UltaProductSpider(BaseProductsSpider):
 
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
-
-        model = response.css('.product-item-no ::text').re('\d{3,20}')[0]
+        try:
+            model = response.xpath('//*[@id="itemNumber"]/text()').re('\d{3,20}')[0]
+        except:
+            model = None
         prod['model'] = model
         product_id = re.findall('\?productId=([a-zA-Z0-9]+)', response.url)
         new_meta = response.meta.copy()
