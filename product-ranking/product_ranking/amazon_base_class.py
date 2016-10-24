@@ -72,7 +72,7 @@ class AmazonBaseClass(BaseProductsSpider):
     handle_httpstatus_list = [404]
 
 
-    AMAZON_PRIME_URL = 'http://www.amazon.com/gp/product/du' \
+    AMAZON_PRIME_URL = 'https://www.amazon.com/gp/product/du' \
                        '/bbop-ms3-ajax-endpoint.html?ASIN={0}&merchantID={1}' \
                        '&bbopruleID=Acquisition_AddToCart_PrimeBasicFreeTrial' \
                        'UpsellEligible&sbbopruleID=Acquisition_AddToCart_' \
@@ -421,44 +421,46 @@ class AmazonBaseClass(BaseProductsSpider):
         if not self.ignore_variant_data:
             variants = self._parse_variants(response)
             product['variants'] = variants
-            if self.ignore_color_variants:
-                # Get default selected color and get prices only for default color
-                # Getting all variants prices raise performance concerns because of huge amount of added requests
-                # See bz #11443
-                try:
-                    default_color = [c['properties'].get('color') for c in variants if c.get('selected')]
-                    default_color = default_color[0] if default_color else None
-                    prc_variants = [v for v in variants if v['properties'].get('color') == default_color]
-                except Exception as e:
-                    self.log('Error ignoring color variants, getting price for all variants: {}'.format(e), WARNING)
-                    prc_variants = variants
-            else:
-                prc_variants = variants
-            # Parse variants prices
-            # Turn on only for amazon.com for now
-            if prc_variants and 'amazon.com/' in response.url:
-                js_text = response.xpath('.//script[contains(text(),"immutableURLPrefix")]/text()').extract()
-                js_text = js_text[0] if js_text else None
-                if not js_text:
-                    self.log('js block not found for url'.format(response.url), WARNING)
+            # Nothing to parse here, move along
+            if variants:
+                if self.ignore_color_variants:
+                    # Get default selected color and get prices only for default color
+                    # Getting all variants prices raise performance concerns because of huge amount of added requests
+                    # See bz #11443
+                    try:
+                        default_color = [c['properties'].get('color') for c in variants if c.get('selected')]
+                        default_color = default_color[0] if default_color else None
+                        prc_variants = [v for v in variants if v['properties'].get('color') == default_color]
+                    except Exception as e:
+                        self.log('Error ignoring color variants, getting price for all variants: {}'.format(e), WARNING)
+                        prc_variants = variants
                 else:
-                    url_regex = """immutableURLPrefix['"]:['"](.+?)['"]"""
-                    base_url = re.findall(url_regex, js_text)
-                    # print base_url
-                    base_url = base_url[0] if base_url else None
-                    for variant in prc_variants:
-                        # Set default price value
-                        variant['price'] = None
-                        # print(variant)
-                        child_asin = variant.get('asin')
-                        if child_asin:
-                            # Build child variants urls based on parent url
-                            child_url = base_url + "&psc=1&asinList={}&isFlushing=2&dpEnvironment=softlines&id={}&mType=full".format(
-                                child_asin, child_asin)
-                            req_url = urlparse.urljoin(response.url, child_url)
-                            if req_url:
-                                req = Request(req_url, meta=meta, callback=self._parse_variants_price)
-                                reqs.append(req)
+                    prc_variants = variants
+                # Parse variants prices
+                # Turn on only for amazon.com for now
+                if prc_variants and 'amazon.com/' in response.url:
+                    js_text = response.xpath('.//script[contains(text(),"immutableURLPrefix")]/text()').extract()
+                    js_text = js_text[0] if js_text else None
+                    if not js_text:
+                        self.log('js block not found for url'.format(response.url), WARNING)
+                    else:
+                        url_regex = """immutableURLPrefix['"]:['"](.+?)['"]"""
+                        base_url = re.findall(url_regex, js_text)
+                        # print base_url
+                        base_url = base_url[0] if base_url else None
+                        for variant in prc_variants:
+                            # Set default price value
+                            variant['price'] = None
+                            # print(variant)
+                            child_asin = variant.get('asin')
+                            if child_asin:
+                                # Build child variants urls based on parent url
+                                child_url = base_url + "&psc=1&asinList={}&isFlushing=2&dpEnvironment=softlines&id={}&mType=full".format(
+                                    child_asin, child_asin)
+                                req_url = urlparse.urljoin(response.url, child_url)
+                                if req_url:
+                                    req = Request(req_url, meta=meta, callback=self._parse_variants_price)
+                                    reqs.append(req)
 
 
         # Parse buyer reviews
