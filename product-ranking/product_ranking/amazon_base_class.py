@@ -70,11 +70,7 @@ class AmazonBaseClass(BaseProductsSpider):
                    'ref=acr_dpx_see_all?ie=UTF8&showViewpoints=1'
 
     handle_httpstatus_list = [404]
-    middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
-    middlewares['product_ranking.custom_middlewares.AmazonProxyMiddleware'] = 750
 
-    settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
-    settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 504, 400, 403, 404, 408]
 
     AMAZON_PRIME_URL = 'http://www.amazon.com/gp/product/du' \
                        '/bbop-ms3-ajax-endpoint.html?ASIN={0}&merchantID={1}' \
@@ -94,6 +90,11 @@ class AmazonBaseClass(BaseProductsSpider):
     ]
 
     def __init__(self, captcha_retries='10', *args, **kwargs):
+        middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+        middlewares['product_ranking.custom_middlewares.AmazonProxyMiddleware'] = 750
+        middlewares['product_ranking.randomproxy.RandomProxy'] = None
+        settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 504, 400, 403, 404, 408]
         # this turns off crawlera per-request
         # settings.overrides['CRAWLERA_ENABLED'] = True
         super(AmazonBaseClass, self).__init__(
