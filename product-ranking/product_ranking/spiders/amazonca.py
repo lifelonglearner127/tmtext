@@ -12,7 +12,7 @@ from product_ranking.validators.amazonca_validator import AmazoncaValidatorSetti
 
 class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     name = 'amazonca_products'
-    allowed_domains = ["amazon.ca"]
+    allowed_domains = ["amazon.ca", "amazon.com"]
 
     settings = AmazoncaValidatorSettings
 
