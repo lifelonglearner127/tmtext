@@ -94,6 +94,8 @@ from extract_petfooddirect_data import PetFoodDirectScraper
 from extract_pet360_data import Pet360Scraper
 from extract_petsmart_data import PetsmartScraper
 from extract_walmartgrocery_data import WalmartGroceryScraper
+from extract_autozone_data import AutozoneScraper
+from extract_sears_data import SearsScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -200,6 +202,8 @@ SUPPORTED_SITES = {
                     "petsmart" : PetsmartScraper,
                     "walmartgrocery" : WalmartGroceryScraper,
                     "shopritedelivers": ShopritedeliversScraper,
+                    "autozone" : AutozoneScraper,
+                    "sears" : SearsScraper
                     }
 
 # add logger
@@ -378,7 +382,6 @@ def validate_data_params(arguments, ALL_DATA_TYPES):
 # the <data_type> values must be among the keys of DATA_TYPES imported dictionary
 @app.route('/get_data', methods=['GET'])
 def get_data():
-
     # this is used to convert an ImmutableMultiDictionary into a regular dictionary. will be left with only one "data" key
     request_arguments = dict(request.args)
 
@@ -391,6 +394,14 @@ def get_data():
         bot = request_arguments['bot'][0]
     else:
         bot = None
+
+    # add ppw=fresh to Amazon arguments
+    if site == 'amazon':
+        if request_arguments.get('ppw'):
+            if '?' in url:
+                url += '&ppw=' + request_arguments.get('ppw')[0]
+            else:
+                url += '?ppw=' + request_arguments.get('ppw')[0]
 
     # create scraper class for requested site
     site_scraper = SUPPORTED_SITES[site](url=url, bot=bot)

@@ -997,7 +997,8 @@ class AmazonScraper(Scraper):
         return temp#",".join(temp)
 
     def _video_count(self):
-        if self._video_urls()==None: return 0
+        if self._video_urls()==None:
+            return len(self.tree_html.xpath('//*[@id="cr-video-swf-url"]'))
         return len(self._video_urls())#.split(','))
 
     # return one element containing the PDF
@@ -1030,7 +1031,7 @@ class AmazonScraper(Scraper):
         related_product_url_list = []
 
         for variant in variants:
-            if variant["url"] and variant["url"] != self.product_page_url:
+            if variant["url"] and variant["url"] != self.product_page_url.split('?')[0]:
                 related_product_url_list.append(variant["url"])
 
         if related_product_url_list:

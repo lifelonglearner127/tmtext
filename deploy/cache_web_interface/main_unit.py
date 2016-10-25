@@ -328,8 +328,7 @@ def common_settings():
     if request.method == 'GET':
         try:
             context = dict()
-            context['remote_instance_branch'] = \
-                cache.get_settings('remote_instance_branch')
+            context['settings'] = cache.get_settings()
             return render_template('settings.html', **context)
         except Exception as e:
             return str(e)
@@ -353,6 +352,19 @@ def common_settings():
             cache.set_settings('remote_instance_branch', branch)
             return 'OK'
         # End default branch
+        # Set instance execution time
+        elif form['action'] == 'instance_max_billing_time':
+            try:
+                limitation = int(form.get('limitation', 0))
+            except ValueError:
+                raise Exception('Instance limit of execution time must'
+                                ' be integer.')
+            if limitation < 0:
+                raise Exception('Instance limit of execution time can\'t'
+                                ' have negative value.')
+            cache.set_settings('instance_max_billing_time', limitation)
+            return 'OK'
+        # End instance execution time
         raise Exception('Unknown action.')
     except Exception as e:
         return str(e)

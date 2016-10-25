@@ -1,9 +1,13 @@
+# -*- coding: utf-8 -*-#
+from __future__ import division, absolute_import, unicode_literals
+
 import re
 import json
 import urlparse
 
 from scrapy.http import Request
 
+from scrapy.log import WARNING
 from product_ranking.items import SiteProductItem
 from .jcpenney import JcpenneyProductsSpider
 
@@ -59,13 +63,19 @@ class JCPenneyShelfPagesSpider(JcpenneyProductsSpider):
         urls = response.xpath(
             '//li[contains(@class,"productDisplay")]//div[@class="productDisplay_image"]/a/@href'
         ).extract()
-        products = re.findall(
-            'var filterResults\s?=\s?jq\.parseJSON\(\'(\{.+?\})\'\);', response.body, re.MULTILINE)[0].decode(
-            'string-escape')
-        products = json.loads(products).get('organicZoneInfo').get('records')
-        urls += [product.get('pdpUrl') for product in products]
-        ulrs = [urlparse.urljoin(response.url, url) for url in urls]
 
+        try:
+            products = re.findall(
+                'var\s?filterResults\s?=\s?jq\.parseJSON\([\'\"](\{.+?\})[\'\"]\);', response.body, re.MULTILINE)[0].decode(
+                'string-escape')
+            products = json.loads(products).get('organicZoneInfo').get('records')
+
+            urls += [product.get('pdpUrl') for product in products]
+        except Exception as e:
+            self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
+            self.log('Extracted urls using xpath: %s' % (len(urls)), WARNING)
+
+        ulrs = [urlparse.urljoin(response.url, url) for url in urls]
 
         shelf_categories = response.xpath(
             '//*[contains(@data-anid, "breadcrumbIndex_")]/text()').extract()
