@@ -3,8 +3,10 @@
 import re
 import HTMLParser
 
+import requests
 from lxml import html, etree
 from extract_data import Scraper
+import json
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
 
@@ -279,29 +281,65 @@ class RiteAidScraper(Scraper):
     ##########################################
     def _load_reviews(self):
         if not self.reviews:
-            br = BuyerReviewsBazaarApi()
-            self.reviews =
+            try:
+                sku = self.tree_html.xpath('//meta[@itemprop="sku"]/@content')[0]
+
+                reviews_json = self.load_page_from_url_with_number_of_retries(
+                    "http://api.bazaarvoice.com/data/reviews.json?apiversion=5.4"
+                    "&passkey=tezax0lg4cxakub5hhurfey5o&Filter=ProductId:{}"
+                    "&Include=Products&Stats=Reviews".format(sku))
+
+                self.reviews = json.loads(reviews_json).get("Includes", {}).get(
+                    "Products", {}).get(sku, {}).get("ReviewStatistics", {})
+            except Exception as ex:
+                print ex
 
     def _average_review(self):
-        rating_value = self.tree_html.xpath('//span[@class="bv-rating"]/span[@itemprop="ratingValue"]/text()')
-        print rating_value
+        self._load_reviews()
+        rating_value = self.reviews.get("AverageOverallRating")
+        rating_value = round(rating_value, 2) if rating_value else None
         if rating_value:
-            return rating_value[0]
-
+            return rating_value
 
     def _review_count(self):
-        review_count = self.tree_html.xpath('//span[@class="bv-rating-ratio-count"]/span[@itemprop="reviewCount"]/text()')
-        print review_count
+        self._load_reviews()
+        review_count = self.reviews.get("TotalReviewCount")
         if review_count:
-            return review_count[0]
+            return review_count
 
     def _max_review(self):
-        return None
+        reviews = self._reviews()
+
+        if reviews:
+            for review in reviews:
+                if review[1] != 0:
+                    return review[0]
 
     def _min_review(self):
-        return None
+        reviews = self._reviews()
+
+        if reviews:
+            for review in reviews[::-1]:
+                if review[1] != 0:
+                    return review[0]
 
     def _reviews(self):
+        self._load_reviews()
+        if self.reviews['RatingDistribution']:
+            reviews = []
+
+            for i in range(1,6):
+                has_value = False
+
+                for review in self.reviews['RatingDistribution']:
+                    if review['RatingValue'] == i:
+                        reviews.append([i, review['Count']])
+                        has_value = True
+
+                if not has_value:
+                    reviews.append([i, 0])
+
+            return reviews[::-1]
         return None
 
     ##########################################
