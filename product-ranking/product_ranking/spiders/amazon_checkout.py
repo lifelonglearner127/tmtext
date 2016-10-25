@@ -21,6 +21,31 @@ class AmazonSpider(BaseCheckoutSpider):
     def start_requests(self):
         yield scrapy.Request('http://www.amazon.com/')
 
+    def _parse_item(self, product):
+        item = CheckoutProductItem()
+        name = self._get_item_name(product)
+        item['name'] = name.strip() if name else name
+        item['id'] = self._get_item_id(product)
+        price = self._get_subtotal()
+        item['price_on_page'] = self._get_item_price_on_page(product)
+        color = self.current_color
+        quantity = self._get_item_quantity(product)
+
+        if quantity and price:
+            quantity = int(quantity)
+            item['price'] = round(float(price) / quantity, 2)
+            item['quantity'] = quantity
+            item['requested_color'] = self.requested_color
+            item['requested_quantity_not_available'] = quantity != self.current_quantity
+
+        if color:
+            item['color'] = color
+
+        item['requested_color_not_available'] = (
+            color and self.requested_color and
+            (self.requested_color.lower() != color.lower()))
+        return item
+
     def _get_colors_names(self):
         time.sleep(4)
         pattern = re.compile("\"color_name\":\[(.+?)\]")
@@ -36,30 +61,32 @@ class AmazonSpider(BaseCheckoutSpider):
         return matched_colors
 
     def select_size(self, element=None):
-        default_attr_xpath = '//select[@name="dropdown_selected_size_name"]/option[contains(@class, "dropdownSelect")]'
-        avail_attr_xpath = '//select[@name="dropdown_selected_size_name"]/option[contains(@class, "dropdownAvailable")]'
-        self.select_attribute(default_attr_xpath,
-                              avail_attr_xpath,
+        size_attribute_xpath = '//option[contains(@class, "dropdownSelect")]'
+        size_attributes_xpath = '//option[contains(@class, "dropdownAvailable")]'
+        self._click_attribute(size_attribute_xpath,
+                              size_attributes_xpath,
                               element)
         self.log('Size selected')
 
     def select_color(self, element=None, color=None):
-        avail_attr_xpath = ('*//li[@class="swatchAvailable"] | '
-                                  '//select[@name="dropdown_selected_color_name"]/option[contains(@class, "dropdownSelect")]')
+        time.sleep(8)
+        color_attributes_xpath = ('*//li[@class="swatchAvailable"]')
 
         if color and color.lower() in map(lambda x: x.lower(), self._get_colors_names()):
-            default_attr_xpath = '//*[contains(@id, "color_name_")]//' \
+            color_attribute_xpath = '//*[contains(@id, "color_name_")]//' \
                                     'img[contains(translate(' \
                                     '@alt, "ABCDEFGHIJKLMNOPQRSTUVWXYZ",' \
-                                    ' "abcdefghijklmnopqrstuvwxyz"), "{color}")] | ' \
-                                    '//select[@name="dropdown_selected_color_name"]/' \
-                                    'option[contains(@class, "dropdownAvailable") ' \
-                                    'and contains(translate(text(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "abcdefghijklmnopqrstuvwxyz"), "{color}")]'.format(color=color.lower())
+                                    ' "abcdefghijklmnopqrstuvwxyz"), "{}")]'.format(color.lower())
         else:
-            default_attr_xpath = '//*[contains(@id, "color_name_") and @class="swatchSelect"]'
+            color_attribute_xpath = '//*[contains(@id, "color_name_") and @class="swatchSelect"]'
+            try:
+                self.current_color = self._find_by_xpath(
+                    '//*[contains(@id, "color_name_") and contains(@class, "swatchSelect")]//img')[0].get_attribute('alt')
+            except IndexError:
+                pass
 
-        self.select_attribute(default_attr_xpath,
-                              avail_attr_xpath,
+        self._click_attribute(color_attribute_xpath,
+                              color_attributes_xpath,
                               element)
         self.log('Color {} selected'.format(color))
 
@@ -156,11 +183,9 @@ class AmazonSpider(BaseCheckoutSpider):
         ).re('\$(.*)')))
 
     def _get_item_color(self, item):
-        name = self._get_item_name(item).lower()
-        for color in self.available_colors:
-            if color.lower() in name:
-                return color
-        return None
+        return is_empty(item.xpath(
+                        '*//span[@class="size" and contains(text(),"color:")]'
+                        '/strong/text()').extract())
 
     def _get_item_quantity(self, item):
         return is_empty(item.xpath(
@@ -184,14 +209,3 @@ class AmazonSpider(BaseCheckoutSpider):
             return True
         except Exception as e:
             self.log('Error on clicking element with XPATH %s: %s' % (_xpath, str(e)))
-
-    def click_condition(self, default_xpath, all_xpaths):
-        return self._find_by_xpath(default_xpath) or self._find_by_xpath(all_xpaths)
-
-    def select_attribute(self, default_attr_xpath, avail_attr_xpath, element):
-        if self.click_condition(default_attr_xpath, avail_attr_xpath):
-
-            self._click_attribute(default_attr_xpath,
-                                  avail_attr_xpath,
-                                  element)
-            time.sleep(3)
