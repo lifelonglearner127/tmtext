@@ -67,7 +67,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         self.sort = self.SORT_MODES.get(
             sort_mode) or self.SORT_MODES.get("relevance")
         self.current_page = 1
-        # settings.overrides['CRAWLERA_ENABLED'] = True
+        settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         if not self.product_url:
@@ -201,7 +201,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
             prod_name = product.get('title')
             prod_slug = self.slugify(prod_name)
             prod_url = "https://jet.com/product/{}/{}".format(prod_slug, prod_id)
-            cond_set_value(product, "url", prod_url)
+            product["url"] = prod_url
 
             image_url = prod_data.get('images')
             image_url = image_url[0].get('raw') if image_url else None
