@@ -328,7 +328,7 @@ class PepboysScraper(Scraper):
     def _price_amount(self):
         arr = self.tree_html.xpath("//div[contains(@class,'price-stack')]//span[contains(@class,'price')]//text()")
         if len(arr) > 0:
-            value = re.findall(r'\d+', arr[0])[0]
+            value = re.findall(r'[\d\.]+', arr[0])[0]
             return float(value)
         return None
 
