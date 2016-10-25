@@ -81,7 +81,14 @@ class ShopritedeliversScraper(Scraper):
     def _image_urls(self):
         image_url = self.tree_html.xpath(
             '//*[@id="ProductImageUrl"]/@href')
-        return image_url
+        image_urls = self.tree_html.xpath(
+            '//div[@class="additionalImages"]'
+            '/div[@class="thumbnailsList"]//li/a/@href'
+        )
+        if not image_urls:
+            image_urls = image_url
+        return [urlparse.urljoin(self.product_page_url, url) for url in image_urls
+                if '/Assets/ProductImages/ImageComingSoon_t.jpg' not in url]
 
     def _image_count(self):
         if self._image_urls():
