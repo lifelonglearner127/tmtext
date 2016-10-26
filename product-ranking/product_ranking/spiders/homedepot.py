@@ -1,28 +1,24 @@
 from __future__ import division, absolute_import, unicode_literals
 from future_builtins import *
 
-import json
-import hjson
 import re
-import string
 import urllib
 import urlparse
+import json
+import hjson
 
 from scrapy import Request, Selector
 from scrapy.log import DEBUG
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FLOATING_POINT_RGEX
-from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.validation import BaseValidator
 from product_ranking.validators.homedepot_validator import HomedepotValidatorSettings
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
-from lxml import html
 
-is_empty =lambda x,y=None: x[0] if x else y
+is_empty = lambda x, y=None: x[0] if x else y
 
 
 def is_num(s):
@@ -60,20 +56,33 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
+    @staticmethod
+    def _parse_no_longer_available(response):
+        message = response.xpath(
+            '//div[@class="error" and '
+            'contains(., "The product you are trying to view is not currently available.")]')
+        return bool(message)
+
     def parse_product(self, response):
         product = response.meta['product']
         product['_subitem'] = True
 
-        cond_set(
-            product,
-            'title',
-            response.xpath("//h1[@class='product_title']/text()").extract())
+        if self._parse_no_longer_available(response):
+            product['no_longer_available'] = True
+            return product
+        else:
+            product['no_longer_available'] = False
 
         cond_set(
             product,
+            'title',
+            response.xpath("//h1[contains(@class, 'product-title')]/text()").extract())
+        brand = response.xpath("//h2[@itemprop='brand']/text()").extract()
+        brand = ["".join(brand).strip()]
+        cond_set(
+            product,
             'brand',
-            response.xpath("//h2[@class='brandName']/span/text()").extract(),
-            conv=string.strip)
+            brand)
 
         cond_set(
             product,
@@ -102,9 +111,9 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
 
         if not product.get('price'):
             price = response.xpath(
-                    "//div[@class='pricingReg']"
-                    "/span[@itemprop='price']/text() |"
-                    "//div[contains(@class, 'pricingReg')]/span[@itemprop='price']"
+                "//div[@class='pricingReg']"
+                "/span[@itemprop='price']/text() |"
+                "//div[contains(@class, 'pricingReg')]/span[@itemprop='price']"
             ).re(FLOATING_POINT_RGEX)
             if price:
                 product["price"] = Price(
@@ -127,6 +136,10 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
             "ItemUPC=\'(\d+)\'", response.body))
         if upc:
             product["upc"] = upc
+
+        upc = response.xpath("//upc/text()").re('\d+')
+        if upc:
+            product["upc"] = upc[0]
 
         desc = response.xpath(
             "//div[@id='product_description']"
@@ -196,8 +209,7 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
                 url,
                 self._parse_skudetails,
                 meta=new_meta,
-                priority=1000)
-            )
+                priority=1000))
         if not reqs:
             return product
         return reqs
@@ -366,13 +378,20 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
             total_matches = ''.join(c for c in total_matches if c.isdigit())
             if total_matches and total_matches.isdigit():
                 return int(total_matches)
+        total_matches = response.xpath('//div[@id="allProdCount"]/text()').re(FLOATING_POINT_RGEX)
+        if total_matches:
+            total_matches = total_matches[0]
+            total_matches = total_matches.replace(',', '')
+            if total_matches.isdigit():
+                return int(total_matches)
         return
 
     def _scrape_product_links(self, response):
         links = response.xpath(
             "//div[contains(@class,'product') "
             "and contains(@class,'plp-grid')]"
-            "//descendant::a[contains(@class, 'item_description')]/@href").extract()
+            "//descendant::a[contains(@class, 'item_description')]/@href | "
+            "//div[contains(@class, 'description')]/a[@data-pod-type='pr']/@href").extract()
 
         if not links:
             self.log("Found no product links.", DEBUG)
@@ -384,11 +403,13 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
             yield link, SiteProductItem()
 
     def _scrape_next_results_page_link(self, response):
-        next = response.xpath(
+        next_page = response.xpath(
             "//div[@class='pagination-wrapper']/ul/li/span"
             "/a[@title='Next']/@href |"
             "//div[contains(@class, 'pagination')]/ul/li/span"
-            "/a[@class='icon-next']/@href"
+            "/a[@class='icon-next']/@href |"
+            "//li[contains(@class, 'hd-pagination__item')]"
+            "/a[contains(@class, 'pagination__link') and @title='Next']/@href"
         ).extract()
-        if next:
-            return urlparse.urljoin(response.url, next[0])
+        if next_page:
+            return urlparse.urljoin(response.url, next_page[0])
