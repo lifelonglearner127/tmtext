@@ -122,6 +122,18 @@ class WalmartScraper(Scraper):
         self.wv = WalmartVariants()
         self.is_bundle_product = False
 
+    def _extract_page_tree(self):
+        for i in range(self.MAX_RETRIES):
+                try:
+                    contents = requests.get(self.product_page_url, timeout=20).text.encode("utf-8")
+                    contents = self._clean_null(contents)
+                    self.page_raw_text = contents
+                    self.tree_html = html.fromstring(contents)
+
+                    return
+                except Exception, e:
+                    continue
+
     # checks input format
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -1998,7 +2010,7 @@ class WalmartScraper(Scraper):
         url = self.product_page_url
         url = re.sub('http://www', 'http://mobile', url)
         mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
-        contents = requests.get(url, headers=mobile_headers).content
+        contents = requests.get(url, headers=mobile_headers, timeout=10).content
         tree = html.fromstring(contents)
         mobile_img = tree.xpath('.//*[contains(@class,"carousel ")]//*[contains(@class, "carousel-item")]/@data-model-id')
         img = self._image_urls()
