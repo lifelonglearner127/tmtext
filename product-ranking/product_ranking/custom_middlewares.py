@@ -59,7 +59,7 @@ class AmazonProxyMiddleware(object):
         request.meta['503_retry'] = request.meta.get('503_retry', 0)
         if request.meta['503_retry'] < 10:
             log.msg('PROXY {}'.format(request.url))
-            proxy_address = 'https://proxy.crawlera.com:8010'
+            proxy_address = 'http://proxy.crawlera.com:8010'
             proxy_user_pass = 'eff4d75f7d3a4d1e89115c0b59fab9b2:'
             request.meta['503_retry'] += 1
             request.meta['proxy'] = proxy_address
