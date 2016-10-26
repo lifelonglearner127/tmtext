@@ -56,16 +56,20 @@ class VerizonRedirectMiddleware(RedirectMiddleware):
 
 class AmazonProxyMiddleware(object):
     def change_proxy(self, request):
-        log.msg('PROXY')
-        log.msg(request.url)
-        proxy_address = 'https://proxy.crawlera.com:8010'
-        proxy_user_pass = 'eff4d75f7d3a4d1e89115c0b59fab9b2:'
-
-        request.meta['proxy'] = proxy_address
-        basic_auth = 'Basic ' + base64.encodestring(proxy_user_pass)
-        request.headers['Proxy-Authorization'] = basic_auth
-        request.dont_filter = True
-        return request
+        request.meta['503_retry'] = request.meta.get('503_retry', 0)
+        if request.meta['503_retry'] < 10:
+            log.msg('PROXY {}'.format(request.url))
+            proxy_address = 'https://proxy.crawlera.com:8010'
+            proxy_user_pass = 'eff4d75f7d3a4d1e89115c0b59fab9b2:'
+            request.meta['503_retry'] += 1
+            request.meta['proxy'] = proxy_address
+            basic_auth = 'Basic ' + base64.encodestring(proxy_user_pass)
+            request.headers['Proxy-Authorization'] = basic_auth
+            request.headers.pop('Referer', '')
+            request.cookies = {}
+            request.dont_filter = True
+            return request
+        return None
 
     def process_exception(self, request, exception, spider):
         return_request = self.change_proxy(request)

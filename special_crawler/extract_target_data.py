@@ -546,13 +546,13 @@ class TargetScraper(Scraper):
 
     def _price(self):
         if self.version == 2:
-            return self.item_info['price']['offerPrice']['price']
+            return self.item_info['price']['offerPrice']['formattedPrice']
 
         return self.tree_html.xpath("//span[@itemprop='price']//text()")[0].strip()
 
     def _price_amount(self):
         if self.version == 2:
-            return self.item_info['price']['offerPrice']['formattedPrice']
+            return self.item_info['price']['offerPrice']['price']
 
         price = self._price()
         price = price.replace(",", "")

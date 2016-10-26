@@ -26,7 +26,9 @@ class DebenhamsProductSpider(BaseProductsSpider):
     #SEARCH_URL = "http://www.debenhams.com/webapp/wcs/stores/servlet/" \
     #             "Navigate?langId=-1&storeId=10701&catalogId=10001&txt={search_term}"
 
-    SEARCH_URL = "http://int.debenhams.com/us/search/{search_term}/"
+    # SEARCH_URL = "http://int.debenhams.com/us/search/{search_term}/"
+
+    SEARCH_URL = 'http://www.debenhams.com/search/{search_term}'
 
     items_per_page = 60
 
@@ -105,9 +107,9 @@ class DebenhamsProductSpider(BaseProductsSpider):
         cond_set_value(product, 'related_products', related_products)
 
         if reqs:
-            return self.send_next_request(reqs, response)
+            yield self.send_next_request(reqs, response)
 
-        return product
+        yield product
 
     def _parse_title(self, response):
         title = is_empty(
@@ -209,11 +211,10 @@ class DebenhamsProductSpider(BaseProductsSpider):
 
     def _parse_stock_status(self, response):
         stock_status = is_empty(
-            response.xpath('//div[@class="product-stock-status"]'
-                           '/p/span/text()').extract()
+            response.xpath('//meta[@name="twitter:data2"]/@content').extract()
         )
 
-        if 'In stock' in stock_status:
+        if stock_status and 'In stock' in stock_status[0]:
             stock_status = False
         else:
             stock_status = True
@@ -315,7 +316,7 @@ class DebenhamsProductSpider(BaseProductsSpider):
         Scraping number of resulted product links
         """
         total_matches = is_empty(
-            response.xpath('//span[@class="product-count"]'
+            response.xpath('//span[@class="products_count"]'
                            '/text()').re('\d.\d+'), 0)
 
         if total_matches:
@@ -334,18 +335,18 @@ class DebenhamsProductSpider(BaseProductsSpider):
         """
         Scraping product links from search page
         """
-        links = response.xpath(
-            '//div[contains(@class, "product-image")]//a'
-            '//img[contains(@class, "product-medium")]/../@href'
-        ).extract()
+        links = response.xpath('//div[contains(@class, "item_container")]//'
+                               'input/@value').extract()
         if links:
             for link in links:
                 yield link, SiteProductItem()
         else:
-            self.log("Found no product links in {url}".format(url=response.url), INFO)
+            self.log("Found no product links in {url}".format(
+                url=response.url), INFO)
 
     def _scrape_next_results_page_link(self, response):
-        url = response.xpath('//*[contains(@class, "pagination_Next")]/@href').extract()
+        url = response.xpath('//div[@class="product_nav"]//'
+                             'a[contains(text(), "Next")]/@href').extract()
         if url:
             return url[0]
         else:

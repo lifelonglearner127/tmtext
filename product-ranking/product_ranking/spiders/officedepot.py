@@ -32,7 +32,7 @@ def is_num(s):
 
 class OfficedepotProductsSpider(BaseProductsSpider):
     name = 'officedepot_products'
-    allowed_domains = ["officedepot.com", "www.officedepot.com", 'officedepot.ugc.bazaarvoice.com']
+    allowed_domains = ["officedepot.com", "www.officedepot.com", 'bazaarvoice.com']
     start_urls = []
     _extra_requests = False
     # settings = DockersValidatorSettings
@@ -249,7 +249,8 @@ class OfficedepotProductsSpider(BaseProductsSpider):
             url=self.QA_URL.format(product_id=self._get_product_id(
             response.url)),
             callback=self._parse_questions,
-            meta=meta
+            meta=meta,
+            dont_filter=True
         ))
 
         if reqs:

@@ -49,6 +49,7 @@ class SqsCache(object):
     REDIS_SETTINGS_KEY = 'settings'  # hash
     REDIS_SETTINGS_FIELDS = {
         'remote_instance_branch': 'remote_instance_branch',
+        'instance_max_billing_time': 'instance_max_billing_time'
     }
 
     def __init__(self, db=None, timeout=10):
@@ -565,9 +566,11 @@ class SqsCache(object):
         return self.db.hset(self.REDIS_SETTINGS_KEY,
                             self.REDIS_SETTINGS_FIELDS[key], value)
 
-    def get_settings(self, key):
+    def get_settings(self, key=None):
         """
         Get option from settings hash.
         """
+        if key is None:
+            return self.db.hgetall(self.REDIS_SETTINGS_KEY)
         return self.db.hget(self.REDIS_SETTINGS_KEY,
                             self.REDIS_SETTINGS_FIELDS[key])
