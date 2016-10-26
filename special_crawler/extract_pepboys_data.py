@@ -266,13 +266,15 @@ class PepboysScraper(Scraper):
         )
         review_html = html.fromstring(re.search('BVRRRatingSummarySourceID":"(.*?)"},', reviews).group(1))
         arr = review_html.xpath("//div[contains(@class,'BVRRHistogramTitle')]//span[contains(@class,'BVRRNumber')]//text()")
-        if len(arr) > 0:
-            self.review_count = int(re.findall(r'\d+', arr[0])[0])
         review_list = []
         if len(arr) > 11:
             for i in range(0, 5):
                 try:
-                    value = int(self._clean_text(arr[(i+1)*2]))
+                    item = re.findall(r'\d+', arr[(i+1)*2])
+                    if len(item) > 0:
+                        value = int(item[0])
+                    else:
+                        value = 0
                 except:
                     value = 0
                 review_list.append([5-i, value])
