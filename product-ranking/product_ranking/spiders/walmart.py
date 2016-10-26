@@ -126,7 +126,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     _JS_DATA_RE = re.compile(
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
-    user_agent = 'default'
+    user_agent = 'python-requests/2.7.0 CPython/2.7.10 Darwin/16.0.0'
 
     def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
