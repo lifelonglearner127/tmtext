@@ -37,12 +37,13 @@ class JetShelfPagesSpider(JetProductsSpider):
         self.quantity = self.num_pages * 24
 
     def start_requests(self):
-        yield Request(
-            url=self.START_URL,
-            meta={'search_term': "", 'remaining': self.quantity},
-            dont_filter=True,
-            callback=self.start_requests_with_csrf,
-        )
+        if self.product_url:
+            yield Request(
+                url=self.product_url,
+                meta={'search_term': "", 'remaining': self.quantity},
+                dont_filter=True,
+                callback=self.start_requests_with_csrf,
+            )
 
     def start_requests_with_csrf(self, response):
         csrf = self.get_csrf(response)
@@ -76,6 +77,8 @@ class JetShelfPagesSpider(JetProductsSpider):
             prods = data['result'].get('products', [])
             shelf_categories = [l.get("categoryName") for l in data['result'].get("categoryLevels", [])]
         except Exception as e:
+            #from scrapy.shell import inspect_response
+            #inspect_response(response, self)
             self.log(
                 "Failed parsing json at {} - {}".format(response.url, e)
                 , WARNING)

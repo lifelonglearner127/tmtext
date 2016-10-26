@@ -67,7 +67,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         self.sort = self.SORT_MODES.get(
             sort_mode) or self.SORT_MODES.get("relevance")
         self.current_page = 1
-        settings.overrides['CRAWLERA_ENABLED'] = True
+        # settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         if not self.product_url:
