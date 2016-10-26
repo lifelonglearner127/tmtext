@@ -178,7 +178,7 @@ class RiteAidScraper(Scraper):
                 if is_video_image:
                     continue
 
-                if 'cloudfront.net/media/catalog/product' in image and not image in images:
+                if '/media/catalog/product' in image and not image in images:
                     images.append(image)
 
             if images:
