@@ -84,7 +84,7 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         if asin_id:
             return Request(self.QUESTIONS_URL
                                .format(asin_id=asin_id[0], page="1"),
-                           callback=self._parse_recent_questions)
+                           callback=self._parse_recent_questions, dont_filter=True)
 
         return None
 
