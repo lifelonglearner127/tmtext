@@ -126,8 +126,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     _JS_DATA_RE = re.compile(
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
-
-
     def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
         global SiteProductItem
