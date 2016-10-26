@@ -5,10 +5,13 @@ import re
 import json
 import urllib
 import urlparse
+import unicodedata
+from scrapy.conf import settings
 
 from scrapy.http import Request
 
-from scrapy.log import ERROR
+from itertools import islice
+from scrapy.log import ERROR, WARNING, INFO
 from product_ranking.items import Price
 from product_ranking.items import SiteProductItem
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
@@ -24,9 +27,11 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
     name = 'jet_products'
     allowed_domains = ["jet.com"]
 
-    SEARCH_URL = "https://jet.com/search/results"
+    SEARCH_URL = "https://jet.com/api/search/"
 
-    START_URL = "http://jet.com"
+    PROD_URL = "https://jet.com/api/product/v2"
+
+    START_URL = "https://jet.com"
 
     PRICE_URL = "https://jet.com/api/productAndPrice"
 
@@ -61,6 +66,8 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         super(JetProductsSpider, self).__init__(*args, **kwargs)
         self.sort = self.SORT_MODES.get(
             sort_mode) or self.SORT_MODES.get("relevance")
+        self.current_page = 1
+        # settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         if not self.product_url:
@@ -72,306 +79,318 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                     callback=self.start_requests_with_csrf,
                 )
         else:
-            for req in super(JetProductsSpider, self).start_requests():
-                yield req
+            yield Request(
+                url=self.START_URL,
+                meta={'search_term': "", 'remaining': self.quantity},
+                dont_filter=True,
+                callback=self.start_requests_with_csrf,
+            )
 
     def start_requests_with_csrf(self, response):
         csrf = self.get_csrf(response)
+        st = response.meta.get('search_term')
         if not self.product_url:
-            for st in self.searchterms:
-                yield Request(
-                    url=self.SEARCH_URL,
-                    callback=self.after_start,
-                    method="POST",
-                    body=json.dumps({"term": self.searchterms[0]}),
-                    meta={
-                        'search_term': st, 
-                        'remaining': self.quantity, 
-                        'csrf': csrf
-                    },
-                    dont_filter=True,
-                    headers={
-                        "content-type": "application/json",
-                        "x-csrf-token": csrf,
-                    },
-                )
-
-    def after_start(self, response):
-        csrf = response.meta.get("csrf")
-        if "24 of 10,000+ results" in response.body_as_unicode():
-            a = response.xpath("//div[contains(@class, 'pagination')]"
-                "/a[contains(@class, 'history') and "
-                "not(contains(@class, 'next'))][last()]"
-            )
-            link = is_empty(a.xpath("@href").extract())
-            max_num = int(is_empty(a.xpath("span/text()").extract(), 0))
-            url = urlparse.urljoin("http://"+self.allowed_domains[0], link)
-
             yield Request(
                 url=self.SEARCH_URL,
+                # callback=self._get_products,
                 method="POST",
-                meta={"max_num": max_num-1, "csrf": csrf},
-                callback=self.calculate_total,
-                body=json.dumps({
-                    "page": str(max_num),
-                    "sort": self.sort,
-                    "term": self.searchterms[0],
-                }),
+                body=json.dumps({"term": st, "origination": "none", "sort": self.sort}),
+                meta={
+                    'search_term': st,
+                    'remaining': self.quantity,
+                    'csrf': csrf
+                },
+                dont_filter=True,
                 headers={
                     "content-type": "application/json",
                     "x-csrf-token": csrf,
+                    "X-Requested-With":"XMLHttpRequest",
+                    "jet-referer":"/search?term={}".format(st),
+
                 },
-                dont_filter=True
             )
-        else:
+        elif self.product_url:
+            prod_id = self.product_url.split('/')[-1]
+            prod_id = prod_id.replace("#","") if prod_id else None
             yield Request(
-                    url=self.SEARCH_URL,
-                    method="POST",
-                    body=json.dumps({
-                        "term": self.searchterms[0],
-                        "sort": self.sort,
-                    }),
-                    meta={
-                        'search_term': self.searchterms[0], 
-                        'remaining': self.quantity, 
-                        'csrf': csrf
-                    },
-                    dont_filter=True,
-                    headers={
-                        "content-type": "application/json",
-                        "x-csrf-token": csrf,
-                    },
-                )
+                url=self.PROD_URL,
+                callback=self.parse_product,
+                method="POST",
+                body=json.dumps({"sku": prod_id, "origination": "none"}),
+                meta={
+                    "product": SiteProductItem(),
+                    'search_term': st,
+                    'remaining': self.quantity,
+                    'csrf': csrf
+                },
+                dont_filter=True,
+                headers={
+                    "content-type": "application/json",
+                    "x-csrf-token": csrf,
+                    "X-Requested-With": "XMLHttpRequest",
+                    "jet-referer": "/search?term={}".format(st),
 
-    def calculate_total(self, response):
-        max_num = response.meta.get("max_num", 0)
-
-        links = response.xpath("//div[contains(@class, 'product')]"
-                               "/a/@href").extract()
-
-        last_page_num = len(set(links))
-        self.tm = 24*int(max_num)+last_page_num
-
-        csrf = response.meta.get("csrf")
-        if not self.product_url:
-            for st in self.searchterms:
+                },
+            )
+        elif self.products_url:
+            urls = self.products_url.split('||||')
+            for url in urls:
+                prod_id = url.split('/')[-1]
                 yield Request(
-                    url=self.SEARCH_URL,
+                    url=self.PROD_URL,
+                    callback=self.parse_product,
                     method="POST",
-                    body=json.dumps({
-                        "term": self.searchterms[0], 
-                        "sort": self.sort,
-                    }),
+                    body=json.dumps({"sku": prod_id, "origination": "none"}),
                     meta={
-                        'search_term': st, 
-                        'remaining': self.quantity, 
+                        "product": SiteProductItem(),
+                        'search_term': st,
+                        'remaining': self.quantity,
                         'csrf': csrf
                     },
                     dont_filter=True,
                     headers={
                         "content-type": "application/json",
                         "x-csrf-token": csrf,
+                        "X-Requested-With": "XMLHttpRequest",
+                        "jet-referer": "/search?term={}".format(st),
+
                     },
                 )
-        else:
-            for req in super(JetProductsSpider, self).start_requests():
-                yield req
-
-    def redirected_from_product_to_main_page(self, response):
-        """ Returns True if the spider was redirected from a product page
-             to the main website page (//jet.com).
-            Means "not_found" product. """
-        history = response.meta.get('redirect_urls', None)
-        if history:
-            current_url = response.url.replace('/', '').replace('https:', '')\
-                .replace('http:', '').replace('www.', '')
-            if current_url == 'jet.com':
-                return True
 
     def parse_product(self, response):
+        csrf = response.meta.get('csrf')
+        remaining = response.meta['remaining']
+        search_term = response.meta['search_term']
         meta = response.meta.copy()
         product = meta['product']
         reqs = []
+        if "jet.com/api/product/v2" in response.url:
+            # New layout
+            try:
+                data = json.loads(response.body)
+                prod_data = data.get('result')
+            except Exception as e:
+                self.log(
+                    "Failed parsing json at {} - {}".format(response.url, e)
+                    , WARNING)
+                cond_set_value(product, "not_found", True)
+                if not product.get('url'):
+                    cond_set_value(product, "url", self.product_url)
+                return product
 
-        if self.redirected_from_product_to_main_page(response):
-            product['not_found'] = True
-            return product
+            cond_set_value(product, "title", prod_data.get('title'))
 
-        cond_set(
-            product, "title", response.xpath(
-                "//div[contains(@class, 'content')]"
-                "//div[contains(@class, 'title')]/text()"
-            ).extract()
-        )
-        if not product.get('title', '').strip():
-            cond_set(
-                product, "title", response.css("h1.title ::text").extract()
-            )
+            # Uncomment when reseller_id ticket will be deployed, see bz #12076
+            # cond_set(product, "reseller_id", prod_data.get('retailSkuId'))
 
-        models = response.xpath("//div[contains(@class, 'products')]/div/@rel").extract()
-        response.meta['model'] = response.url.split('/')[-1] if len(models) > 1 else is_empty(models)
+            cond_set_value(product, "model", prod_data.get('part_no'))
 
-        brand = is_empty(response.xpath("//div[contains(@class, 'content')]"
-                                        "/div[contains(@class, 'brand')]/text()").extract())
-        if not brand:
-            brand = is_empty(response.css('.manufacturer ::text').extract())
-        if brand:
-            brand = brand.replace("by ", "")
-            product["brand"] = brand
+            cond_set_value(product, "upc", prod_data.get('upc'))
 
-        image_url = is_empty(response.xpath(
-            "//div[contains(@class,'images')]/div/@style"
-        ).extract())
+            desc = prod_data.get('description', "") + "\n" + "\n".join(prod_data.get('bullets', []))
+            cond_set_value(product, "description", desc)
 
-        if not image_url:
-            image_url_list = response.xpath(
-                "//div[contains(@class, 'images')]/.//a[@href='#']/@rel "
-            ).extract()
-            for img in image_url_list:
-                if ("-0.500" in img) or (".500" in img):
-                    image_url = img
-                    break
-        if image_url:
-            if "background:url" in image_url:
-                image_url = is_empty(re.findall(
-                    "background\:url\(([^\)]*)", image_url))
-            product["image_url"] = image_url
+            cond_set_value(product, "brand", prod_data.get('manufacturer'))
 
-        if not product.get('image_url'):
-            cond_set(product, 'image_url',
-                response.xpath(
-                    '//*[contains(@class, "container-image")]/img/@src').extract()
-            )
+            cond_set_value(product, "sku", prod_data.get('sku'))
 
-        cond_set(
-            product, "description", response.xpath(
-                "//div[contains(@class, 'container')]"
-                "/div[contains(@class, 'half')]"
-            ).extract()
-        )
+            if not product.get("url"):
+                # Construct product url
+                prod_id = prod_data.get('retailSkuId')
+                prod_name = product.get('title')
+                prod_slug = self.slugify(prod_name)
+                prod_url = "https://jet.com/product/{}/{}".format(prod_slug, prod_id)
+                cond_set_value(product, "url", prod_url)
 
-        upc = re.search('"upc":"(\d+)"', response.body)
-        if upc:
-            product['upc'] = upc.group(1)
+            image_url = prod_data.get('images')
+            image_url = image_url[0].get('raw') if image_url else None
+            cond_set_value(product, "image_url", image_url)
 
-        product["locale"] = "en_US"
+            cond_set_value(product, "title", prod_data.get('title'))
 
-        JV = JetVariants()
-        JV.setupSC(response)
-        product["variants"] = JV._variants()
+            cond_set_value(product, "locale", "en_US")
 
-        csrf = self.get_csrf(response)
-
-        # For each variant with SkuId we need to do a POST to get its price
-        for skuids in map((lambda x: x['skuId']),filter((lambda x: 'skuId' in x), product["variants"] or [])):
-            reqs.append(
-                Request(
-                    url=self.PRICE_URL+"?sku=%s" % skuids,
-                    method="POST",
-                    callback=self.parse_variant_prices,
-                    meta={"product": product},
-                    body=json.dumps({"sku": skuids}),
-                    headers={
-                        "content-type": "application/json",
-                        "x-csrf-token": csrf,
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    dont_filter=True,
-                )
-            )
-
-        if response.meta.get("model") and csrf:
-            reqs.append(
-                Request(
-                    url=self.PRICE_URL,
-                    method="POST",
-                    callback=self.parse_price_and_marketplace,
-                    meta={"product": product},
-                    body=json.dumps({"sku": response.meta.get("model")}),
-                    headers={
-                        "content-type": "application/json",
-                        "x-csrf-token": csrf,
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    dont_filter=True,
-                )
-            )
-
-        if reqs:
-            return self.send_next_request(reqs, response)
-
-        return product
-
-    def parse_variant_prices(self, response):
-        sku = response.url.split('?sku=')[-1]
-        product = response.meta.get('product')
-        reqs = response.meta.get('reqs')
-        data = json.loads(response.body)
-
-        # Search for the variant with the given skuId on the list
-        for variant in filter((lambda x: 'skuId' in x), product['variants']):
-            if variant['skuId'] == sku:
-                break
-
-        # Got it's index
-        index = product['variants'].index(variant)
-
-        #Update price
-        variant['price'] = data.get("referencePrice")
-
-        # Replace it on the list 
-        product['variants'].pop(index)
-        product['variants'].insert(index, variant)
-        
-        # Continue with others requests
-        if reqs:
-            return self.send_next_request(reqs, response)
-
-        return product
-
-    def parse_price_and_marketplace(self, response):
-        product = response.meta.get("product")
-        reqs = response.meta.get("reqs")
-        try:
-            data = json.loads(response.body)
-
-            if str(data.get("twoDay")) == "True":
+            if prod_data.get("productPrice", {}).get('shippingPromise') == "TwoDay":
                 product["deliver_in"] = "2 Days"
 
-            if data.get("unavailable", None):
+            if prod_data.get("productPrice", {}).get('status'):
                 cond_set_value(product, "is_out_of_stock", True)
             else:
                 cond_set_value(product, "is_out_of_stock", False)
 
             if not product.get("price"):
-                for price in data.get("quantities", []):
-                    if price.get("quantity") == 1:
-                        product["price"] = Price(
-                            priceCurrency="USD",
-                            price=price.get("price")
-                        )
+                price = prod_data.get('productPrice', {})
+                price = price.get("referencePrice")
+                cond_set_value(product, "price", Price(priceCurrency="USD", price=price))
 
-            marketplace = []
-            if data.get("comparisons"):
-                for markp in data.get("comparisons", []):
-                    marketplace.append({
-                        "name": markp.get("source"),
-                        "price": Price(
-                            priceCurrency="USD",
-                            price=markp.get("price")
-                        )
-                    })
-                if marketplace:
-                    marketplace.append({
-                        "name": self.DEFAULT_MARKETPLACE,
-                        "price": product["price"]
-                    })
-                    product["marketplace"] = marketplace
+            JV = JetVariants()
+            JV.setupSC(response)
+            product["variants"] = JV._variants_v2()
 
-            if data.get('unavailable', None):
+            # Filling other variants prices
+            # with additional requests
+            # See bz #11124
+            if self.scrape_variants_with_extra_requests:
+                for variant in product.get("variants"):
+                    # Default variant already have price filled
+                    if not variant.get("selected"):
+                        # Construct additional requests to get prices for variants
+                        prod_id = variant.get("sku")
+                        req = Request(
+                            url=self.PROD_URL,
+                            callback=self.parse_variant_price,
+                            method="POST",
+                            body=json.dumps({"sku": prod_id, "origination": "none"}),
+                            meta={
+                                  'csrf': csrf,
+                                  "reqs": reqs,
+                                  "product": product
+                                 },
+                            dont_filter=True,
+                            headers={
+                                "content-type": "application/json",
+                                "x-csrf-token": csrf,
+                                "X-Requested-With": "XMLHttpRequest",
+                                "jet-referer": "/search?term={}".format(search_term),
+                            },
+                        )
+                        reqs.append(req)
+            if reqs:
+                return self.send_next_request(reqs, response)
+            return product
+
+        else:
+            # Old layout
+            if self.redirected_from_product_to_main_page(response):
                 product['not_found'] = True
+                return product
+
+            cond_set(
+                product, "title", response.xpath(
+                    "//div[contains(@class, 'content')]"
+                    "//div[contains(@class, 'title')]/text()"
+                ).extract()
+            )
+            if not product.get('title', '').strip():
+                cond_set(
+                    product, "title", response.css("h1.title ::text").extract()
+                )
+
+            models = response.xpath("//div[contains(@class, 'products')]/div/@rel").extract()
+            response.meta['model'] = response.url.split('/')[-1] if len(models) > 1 else is_empty(models)
+
+            brand = is_empty(response.xpath("//div[contains(@class, 'content')]"
+                                            "/div[contains(@class, 'brand')]/text()").extract())
+            if not brand:
+                brand = is_empty(response.css('.manufacturer ::text').extract())
+            if brand:
+                brand = brand.replace("by ", "")
+                product["brand"] = brand
+
+            image_url = is_empty(response.xpath(
+                "//div[contains(@class,'images')]/div/@style"
+            ).extract())
+
+            if not image_url:
+                image_url_list = response.xpath(
+                    "//div[contains(@class, 'images')]/.//a[@href='#']/@rel "
+                ).extract()
+                for img in image_url_list:
+                    if ("-0.500" in img) or (".500" in img):
+                        image_url = img
+                        break
+            if image_url:
+                if "background:url" in image_url:
+                    image_url = is_empty(re.findall(
+                        "background\:url\(([^\)]*)", image_url))
+                product["image_url"] = image_url
+
+            if not product.get('image_url'):
+                cond_set(product, 'image_url',
+                    response.xpath(
+                        '//*[contains(@class, "container-image")]/img/@src').extract()
+                )
+
+            cond_set(
+                product, "description", response.xpath(
+                    "//div[contains(@class, 'container')]"
+                    "/div[contains(@class, 'half')]"
+                ).extract()
+            )
+
+            upc = re.search('"upc":"(\d+)"', response.body)
+            if upc:
+                product['upc'] = upc.group(1)
+
+            product["locale"] = "en_US"
+
+            JV = JetVariants()
+            JV.setupSC(response)
+            product["variants"] = JV._variants()
+
+            csrf = self.get_csrf(response)
+
+            # For each variant with SkuId we need to do a POST to get its price
+            for skuids in map((lambda x: x['skuId']),filter((lambda x: 'skuId' in x), product["variants"] or [])):
+                reqs.append(
+                    Request(
+                        url=self.PRICE_URL+"?sku=%s" % skuids,
+                        method="POST",
+                        callback=self.parse_variant_prices,
+                        meta={"product": product},
+                        body=json.dumps({"sku": skuids}),
+                        headers={
+                            "content-type": "application/json",
+                            "x-csrf-token": csrf,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        dont_filter=True,
+                    )
+                )
+
+            if response.meta.get("model") and csrf:
+                reqs.append(
+                    Request(
+                        url=self.PRICE_URL,
+                        method="POST",
+                        callback=self.parse_price_and_marketplace,
+                        meta={"product": product},
+                        body=json.dumps({"sku": response.meta.get("model")}),
+                        headers={
+                            "content-type": "application/json",
+                            "x-csrf-token": csrf,
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        dont_filter=True,
+                    )
+                )
+
+            if reqs:
+                return self.send_next_request(reqs, response)
+
+            return product
+
+    def parse_variant_price(self, response):
+        product = response.meta.get('product')
+        reqs = response.meta.get('reqs')
+
+        try:
+            data = json.loads(response.body)
+            prod_data = data.get('result')
+            variant_price = prod_data.get('productPrice', {}).get("referencePrice")
+            variant_prod_id = prod_data.get('retailSkuId')
         except Exception as e:
-            self.log(str(e), ERROR)
+            self.log("Failed parsing json at {} - {}".format(response.url, e), WARNING)
+            variant_price = None
+            variant_prod_id = None
+
+        for variant in product['variants']:
+            if not variant.get("selected"):
+                if variant.get("sku") == variant_prod_id:
+                    variant["price"] = variant_price
+                    break
+
+        # Continue with other requests
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -383,6 +402,17 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         if reqs:
             new_meta["reqs"] = reqs
         return req.replace(meta=new_meta)
+
+    def _scrape_results_per_page(self, response):
+        try:
+            data = json.loads(response.body)
+            prods = data['result'].get('products')
+            results_per_page = len(prods)
+        except Exception as e:
+            print e
+            results_per_page = 0
+
+        return int(results_per_page)
 
     def _scrape_total_matches(self, response):
         total_matches = response.xpath(
@@ -397,57 +427,159 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         if "24 of 10,000+ results" in response.body_as_unicode():
             total_matches = self.tm
 
+        if not total_matches:
+            try:
+                data = json.loads(response.body)
+                total_matches = data['result'].get('total')
+                total_matches = int(total_matches) if total_matches else 0
+            except Exception as e:
+                print e
+                total_matches = 0
+
         return int(total_matches)
 
     def _scrape_product_links(self, response):
-        for item in response.xpath("//div[contains(@class, 'product')]"):
-            link = is_empty(item.xpath("a/@href").extract())
-            price = is_empty(item.xpath(
-                ".//div[contains(@class, 'price')]/div/text()").extract(), "")
-            priceCurrency = ''.join(
-                re.findall("[^\d]*", price)).strip().replace(
-                    ".", "").replace(",", "")
-            price = is_empty(re.findall(FLOATING_POINT_RGEX, price))
-            if price:
-                price = Price(
-                    priceCurrency=self.CURRENCY_SIGNS.get(priceCurrency, "GBP"),
-                    price=price,
-                )
-            if link and not link in self.product_links:
-                self.product_links.append(link)
-                yield link, SiteProductItem(price=price)
-            continue
+        try:
+            data = json.loads(response.body)
+            prods = data['result'].get('products', [])
+        except Exception as e:
+            self.log(
+                "Failed parsing json at {} - {}".format(response.url, e)
+                , WARNING)
+            prods = []
 
-    def _scrape_next_results_page_link(self, response):
-        csrf = self.get_csrf(response) or response.meta.get("csrf")
-        link = is_empty(response.xpath("//div[contains(@class, 'pagination')]"
-                                       "/a[contains(@class, 'next')]/@href").extract(), "")
-        page = is_empty(re.findall("page=(\d+)", link))
+        for prod in prods:
+            prod_id = prod.get('id')
+            # Construct product url
+            prod_name = prod.get('title')
+            prod_slug = self.slugify(prod_name)
+            prod_url = "https://jet.com/product/{}/{}".format(prod_slug, prod_id)
+            yield prod_url, SiteProductItem()
 
-        if not page or int(page)*24 > self.quantity+24:
-            return None
-        return Request(
-                    url=self.SEARCH_URL,
+    @staticmethod
+    def slugify(value):
+        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+        # Removed .lower() for this website
+        value = re.sub('[^\w\s-]', '', value).strip()
+        return re.sub('[-\s]+', '-', value)
+
+    def _get_products(self, response):
+        csrf = response.meta.get('csrf')
+        remaining = response.meta['remaining']
+        search_term = response.meta['search_term']
+        prods_per_page = response.meta.get('products_per_page')
+        total_matches = response.meta.get('total_matches')
+        scraped_results_per_page = response.meta.get('scraped_results_per_page')
+
+        prods = self._scrape_product_links(response)
+
+        if prods_per_page is None:
+            # Materialize prods to get its size.
+            prods = list(prods)
+            prods_per_page = len(prods)
+            response.meta['products_per_page'] = prods_per_page
+
+        if scraped_results_per_page is None:
+            scraped_results_per_page = self._scrape_results_per_page(response)
+            if scraped_results_per_page:
+                self.log(
+                    "Found %s products at the first page" %scraped_results_per_page
+                    , INFO)
+            else:
+                scraped_results_per_page = prods_per_page
+                if hasattr(self, 'is_nothing_found'):
+                    if not self.is_nothing_found(response):
+                        self.log(
+                            "Failed to scrape number of products per page", WARNING)
+            response.meta['scraped_results_per_page'] = scraped_results_per_page
+
+        if total_matches is None:
+            total_matches = self._scrape_total_matches(response)
+            if total_matches is not None:
+                response.meta['total_matches'] = total_matches
+                self.log("Found %d total matches." % total_matches, INFO)
+            else:
+                if hasattr(self, 'is_nothing_found'):
+                    if not self.is_nothing_found(response):
+                        self.log(
+                            "Failed to parse total matches for %s" % response.url,ERROR)
+
+        if total_matches and not prods_per_page:
+            # Parsing the page failed. Give up.
+            self.log("Failed to get products for %s" % response.url, ERROR)
+            return
+
+        for i, (prod_url, prod_item) in enumerate(islice(prods, 0, remaining)):
+            # Initialize the product as much as possible.
+            prod_item['site'] = self.site_name
+            prod_item['search_term'] = search_term
+            prod_item['total_matches'] = total_matches
+            prod_item['results_per_page'] = prods_per_page
+            prod_item['scraped_results_per_page'] = scraped_results_per_page
+            # The ranking is the position in this page plus the number of
+            # products from other pages.
+            prod_item['ranking'] = (i + 1) + (self.quantity - remaining)
+            if self.user_agent_key not in ["desktop", "default"]:
+                prod_item['is_mobile_agent'] = True
+
+            if prod_url is None:
+                # The product is complete, no need for another request.
+                yield prod_item
+            elif isinstance(prod_url, Request):
+                cond_set_value(prod_item, 'url', prod_url.url)  # Tentative.
+                yield prod_url
+            else:
+                # Another request is necessary to complete the product.
+                url = urlparse.urljoin(response.url, prod_url)
+                cond_set_value(prod_item, 'url', url)  # Tentative.
+                # Getting product data from api POST request instead of regular url
+                prod_id = prod_url.split('/')[-1]
+                yield Request(
+                    url=self.PROD_URL,
+                    callback=self.parse_product,
                     method="POST",
-                    dont_filter=True,
-                    body=json.dumps({
-                        "page": str(page),
-                        "sort": self.sort,
-                        "term": self.searchterms[0],
-                    }),
+                    body=json.dumps({"sku": prod_id, "origination": "none"}),
                     meta={
-                        'search_term': self.searchterms[0],
-                        'remaining': self.quantity, 
+                        "product": prod_item,
+                        'search_term': search_term,
+                        'remaining': self.quantity,
                         'csrf': csrf
                     },
+                    dont_filter=True,
                     headers={
                         "content-type": "application/json",
                         "x-csrf-token": csrf,
+                        "X-Requested-With": "XMLHttpRequest",
+                        "jet-referer": "/search?term={}".format(search_term),
+
                     },
                 )
+
+    def _scrape_next_results_page_link(self, response):
+        csrf = self.get_csrf(response) or response.meta.get("csrf")
+        st = response.meta.get("search_term")
+        if int(self.current_page)*24 > self.quantity+24:
+            return None
+        else:
+            self.current_page += 1
+            return Request(
+                url=self.SEARCH_URL,
+                method="POST",
+                body=json.dumps({"term": st, "origination": "none", "page": self.current_page, "sort": self.sort}),
+                meta={
+                    'search_term': st,
+                    'csrf': csrf
+                },
+                dont_filter=True,
+                headers={
+                    "content-type": "application/json",
+                    "x-csrf-token": csrf,
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+            )
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
     def get_csrf(self, response):
-        return is_empty(re.findall("__csrf\"\:\"([^\"]*)", response.body))
+        return is_empty(response.xpath('//*[@data-id="csrf"]/@data-val').re('[^\"\']+'))
