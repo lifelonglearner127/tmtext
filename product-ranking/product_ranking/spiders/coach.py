@@ -96,6 +96,9 @@ class CoachSpider(BaseProductsSpider):
         else:
             return self.parse_product_old(response)
 
+    def _parse_single_product(self, response):
+        return self.parse_product(response)
+
     def parse_product_new(self, response):
         prod = response.meta['product']
         populate_from_open_graph(response, prod)
@@ -179,17 +182,20 @@ class CoachSpider(BaseProductsSpider):
 
         re_pattern = r'(\d+,\d+|\d+)'
         price = response.xpath(
-            '//span[@id="pdTabProductSalePrice"]/text()'
-        ).re(re_pattern)
+            '//span[@itemprop="price"]//span[contains(@class,"price-sales")]//text()'
+        ).extract()
+        if len(price) > 0:
+            price = re.findall(r'[\d\.]+', price[0])
+            if len(price) > 0:
+                price = price[0].replace(",", "")
+        else:
+            price = None
         # in case item use usual price, not sale
-        if not price:
-            price = response.xpath(
-                '//span[@id="pdTabProductPriceSpan"]/text()'
-            ).re(re_pattern)
-        prod['price'] = Price(
-            priceCurrency='USD',
-            price=price[0]
-        )
+        if price:
+            prod['price'] = Price(
+                priceCurrency='USD',
+                price=price
+            )
 
         brand = response.xpath(
             '//meta[@itemprop="brand"]/@content'
