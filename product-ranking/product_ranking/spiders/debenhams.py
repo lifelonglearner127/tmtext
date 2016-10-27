@@ -100,9 +100,9 @@ class DebenhamsProductSpider(BaseProductsSpider):
         cond_set_value(product, 'related_products', related_products)
 
         if reqs:
-            yield self.send_next_request(reqs, response)
+            return self.send_next_request(reqs, response)
 
-        yield product
+        return product
 
     def _parse_title(self, response):
         title = is_empty(
