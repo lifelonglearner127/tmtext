@@ -109,6 +109,7 @@ from selenium.webdriver.common.keys import Keys
 import time
 
 app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False
 
 # dictionary containing supported sites as keys
 # and their respective scrapers as values
