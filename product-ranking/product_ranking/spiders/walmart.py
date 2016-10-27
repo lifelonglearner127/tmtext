@@ -90,22 +90,22 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     default_hhl = [404, 500, 502, 520]
 
-    SEARCH_URL = "http://www.walmart.com/search/search-ng.do?Find=Find" \
+    SEARCH_URL = "https://www.walmart.com/search/search-ng.do?Find=Find" \
         "&_refineresult=true&ic=16_0&search_constraint=0" \
         "&search_query={search_term}&sort={search_sort}"
 
-    LOCATION_URL = "http://www.walmart.com/location"
-    LOCATION_PROD_URL = "http://www.walmart.com/product/dynamic/{product_id}?" \
+    LOCATION_URL = "https://www.walmart.com/location"
+    LOCATION_PROD_URL = "https://www.walmart.com/product/dynamic/{product_id}?" \
                         "location={zip_code}&selected=true"
 
-    QA_URL = "http://www.walmart.com/reviews/api/questions" \
+    QA_URL = "https://www.walmart.com/reviews/api/questions" \
              "/{product_id}?sort=mostRecentQuestions&pageNumber={page}"
     ALL_QA_URL = 'http://www.walmart.com/reviews/api/questions/%s?pageNumber=%i'
 
-    REVIEW_URL = 'http://walmart.ugc.bazaarvoice.com/1336/{product_id}/' \
+    REVIEW_URL = 'https://walmart.ugc.bazaarvoice.com/1336/{product_id}/' \
                  'reviews.djs?format=embeddedhtml&sort=submissionTime'
 
-    REVIEW_DATE_URL = 'http://www.walmart.com/reviews/api/product/{product_id}?' \
+    REVIEW_DATE_URL = 'https://www.walmart.com/reviews/api/product/{product_id}?' \
                       'limit=3&sort=submission-desc&filters=&showProduct=false'
 
     QA_LIMIT = 0xffffffff
@@ -525,7 +525,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         yield self.parse_product(original_response)
 
     def _get_walmart_api_data_for_item_id(self, original_response, original_id, current_id, meta):
-        api_url = 'http://api.walmartlabs.com/v1/items/%s?apiKey=%s&format=json'
+        api_url = 'https://api.walmartlabs.com/v1/items/%s?apiKey=%s&format=json'
         api_key = _get_walmart_api_key()
         meta['original_id'] = original_id
         meta['current_id'] = current_id
@@ -921,7 +921,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         cid = hashlib.md5(prodid).hexdigest()
         reql = []
         url1 = (
-            "http://www.walmart.com/irs?parentItemId%5B%5D={prodid}"
+            "https://www.walmart.com/irs?parentItemId%5B%5D={prodid}"
             "&module=ProductAjax&clientGuid={cid}").format(
                 prodid=prodid,
                 cid=cid)
