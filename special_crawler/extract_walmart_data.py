@@ -10,6 +10,7 @@ import lxml.html
 import requests
 import random
 import yaml
+from requests.auth import HTTPProxyAuth
 
 from extract_data import Scraper
 from compare_images import compare_images
@@ -50,7 +51,7 @@ class WalmartScraper(Scraper):
     # base URL for product API
     BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
 
-    HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'}
+    CRAWLERA_APIKEY = 'eff4d75f7d3a4d1e89115c0b59fab9b2'
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
@@ -122,17 +123,39 @@ class WalmartScraper(Scraper):
         self.wv = WalmartVariants()
         self.is_bundle_product = False
 
-    def _extract_page_tree(self):
-        for i in range(self.MAX_RETRIES):
-                try:
-                    contents = requests.get(self.product_page_url, timeout=20).text.encode("utf-8")
-                    contents = self._clean_null(contents)
-                    self.page_raw_text = contents
-                    self.tree_html = html.fromstring(contents)
+        self.proxy_host = "proxy.crawlera.com"
+        self.proxy_port = "8010"
+        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
+        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
+                        "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
-                    return
-                except Exception, e:
+        self.proxies_enabled = True
+
+    def _extract_page_tree(self):
+        # request https instead of http
+        if re.match('http://', self.product_page_url):
+            self.product_page_url = 'https://' + re.match('http://(.+)', self.product_page_url).group(1)
+
+        for i in range(self.MAX_RETRIES):
+            try:
+                resp = requests.get(self.product_page_url, \
+                    proxies=self.proxies, auth=self.proxy_auth, \
+                    verify=False, \
+                    timeout=20, \
+                    headers={'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36'})
+
+                if resp.status_code != 200:
+                    print 'Got status code %s for walmart url %s' % (resp.status_code, walmart_url)
+                    print resp.text[0:300]
                     continue
+
+                contents = self._clean_null(resp.text)
+                self.page_raw_text = contents
+                self.tree_html = html.fromstring(contents)
+
+                return
+            except Exception, e:
+                print e
 
     # checks input format
     def check_url_format(self):
