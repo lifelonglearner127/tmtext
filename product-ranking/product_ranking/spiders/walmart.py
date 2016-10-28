@@ -126,8 +126,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     _JS_DATA_RE = re.compile(
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
-    user_agent = 'default'
-
     def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
         global SiteProductItem
@@ -146,6 +144,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
+        self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.71 Safari/537.36"
 
     def start_requests(self):
         # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
