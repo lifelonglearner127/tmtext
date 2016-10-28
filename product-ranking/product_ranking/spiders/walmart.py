@@ -145,7 +145,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
-        settings.overrides['DEFAULT_REQUEST_HEADERS'] = {"X-Forwarded-For": "127.0.0.1"}
+        settings.overrides['DEFAULT_REQUEST_HEADERS'] = {"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                                                         "Referer": "https://www.google.ru/",
+                                                         "Accept-Encoding": "gzip, deflate, sdch, br",
+                                                         "X-Forwarded-For": "127.0.0.1",
+                                                         "Content-Length": "2"}
         self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.71 Safari/537.36"
 
     def start_requests(self):
