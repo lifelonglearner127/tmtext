@@ -86,8 +86,8 @@ class CvsProductsSpider(BaseProductsSpider):
                 "apiSecret=4bcd4484-c9f5-4479-a5ac-9e8e2c8ad4b0&" \
                 "appName=CVS_WEB&" \
                 "channelName=WEB&" \
-                "code={price_id}&" \
-                "codeType=product&" \
+                "code={sku}&" \
+                "codeType=sku&" \
                 "deviceToken=2695&" \
                 "deviceType=DESKTOP&" \
                 "lineOfBusiness=RETAIL&" \
@@ -96,6 +96,21 @@ class CvsProductsSpider(BaseProductsSpider):
                 "serviceName=productDetails&" \
                 "storeId=2294&" \
                 "version=1.0" \
+
+    PRODUCT_DETAILS = "https://www.cvs.com/retail/frontstore/productDetails?" \
+                      "apiKey=c9c4a7d0-0a3c-4e88-ae30-ab24d2064e43&" \
+                      "apiSecret=4bcd4484-c9f5-4479-a5ac-9e8e2c8ad4b0&" \
+                      "appName=CVS_WEB&" \
+                      "channelName=WEB&" \
+                      "code={sku}&" \
+                      "codeType=sku&" \
+                      "deviceToken=2695&" \
+                      "deviceType=DESKTOP&" \
+                      "lineOfBusiness=RETAIL&" \
+                      "operationName=getSkuDetails&" \
+                      "serviceCORS=True&" \
+                      "serviceName=productDetails&" \
+                      "version=1.0"
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
@@ -143,8 +158,19 @@ class CvsProductsSpider(BaseProductsSpider):
 
                 cond_set_value(product, 'title', product_data.get('name'))
                 cond_set_value(product, 'brand', product_data.get('brand'))
-
+                ########  variants ########
                 variants = product_data.get('offers')
+                if len(variants) > 1:
+                    for variant in variants:
+                        try:
+                            sku = variant['itemOffered']['sku']
+                            price_url = self.PRICE_URL.format(sku=sku)
+                            reqs.append(Request(price_url,
+                                                self._parse_variant_new,
+                                                meta=response.meta))
+                        except:
+                            pass
+
                 main_variant = variants[0]
                 description = main_variant.get('itemOffered', {}).get(
                     'description') or product_data.get('description')
@@ -160,22 +186,25 @@ class CvsProductsSpider(BaseProductsSpider):
 
                 cond_set_value(product, 'image_url',
                                main_variant.get('itemOffered').get('image'))
+                response.meta['main_skuID'] = main_skuID
+                response.meta['offers_variants'] = variants
 
                 if main_variant.get('price'):
                     cond_set_value(product, 'price',
                                    Price(price=main_variant.get('price'),
                                          priceCurrency='USD'))
 
-                elif product_data.get('productId'):
-                    price_url = self.PRICE_URL.format(
-                        price_id=product_data.get('productId'))
-                    reqs.append(Request(price_url,
-                                        self._parse_price,
-                                        meta=response.meta))
+                # elif product_data.get('productId'):
+                #     price_url = self.PRICE_URL.format(
+                #         price_id=product_data.get('productId'))
+                #     reqs.append(Request(price_url,
+                #                         self._parse_price,
+                #                         meta=response.meta))
 
-                cond_set_value(product, 'variants',
-                               self._parse_variants(variants, main_skuID))
+                # cond_set_value(product, 'variants',
+                #                self._parse_variants(variants, main_skuID))
 
+                ##############################
                 if main_skuID:
                     review_url = self.REVIEW_URL.format(product_id=main_skuID)
                     reqs.append(Request(review_url,
@@ -207,7 +236,7 @@ class CvsProductsSpider(BaseProductsSpider):
             new_meta["reqs"] = reqs
         return req.replace(meta=new_meta)
 
-    def _parse_price(self, response):
+    def _parse_variant_new(self, response):
         product = response.meta['product']
         reqs = response.meta.get('reqs', [])
         data = json.loads(response.body)
@@ -220,10 +249,91 @@ class CvsProductsSpider(BaseProductsSpider):
             sku_details = sku_price_promotions[0].get('skuDetails', [])
 
         if sku_details:
+            variants = product.get('variants', [])
+            variant = {}
+            skuID = sku_details[0].get('skuId', '')
+            variant['url'] = product.get('url', '') + "?skuId=%s" % skuID
+
             price = sku_details[0].get('priceInfo', {}).get('listPrice', None)
             if price:
                 cond_set_value(product, 'price', Price(price=price,
                                                        priceCurrency='USD'))
+
+            variant['price'] = price
+            main_skuID = response.meta['main_skuID']
+            variant['selected'] = main_skuID == skuID
+            bohInventory = sku_details[0].get('statusInfo', {}).get('bohInventory', 0)
+            bohStockStatus = sku_details[0].get('statusInfo', {}).get('bohStockStatus', 'NOTAVAILABLE')
+            onlineOnly = sku_details[0].get('statusInfo', {}).get('onlineOnly', False)
+            onlineStockStatus = sku_details[0].get('statusInfo', {}).get('onlineStockStatus', None)
+            in_stock = False
+            if bohInventory and bohStockStatus != 'NOTAVAILABLE':
+                in_stock = True
+            if onlineStockStatus == 'INSTOCK':
+                in_stock = True
+            variant['in_stock'] = in_stock
+            variant['sku'] = skuID
+            # del product['main_skuID']
+            variant['properties'] = {}
+            offers_variants = response.meta['offers_variants']
+            for offers_variant in offers_variants:
+                # Check that the variant is not duplicated
+                item_offered = offers_variant.get('itemOffered', {})
+                this_sku = item_offered.get('sku', None)
+                if item_offered and this_sku == skuID:
+                    attr = {}
+                    details_url = self.PRODUCT_DETAILS.format(sku=this_sku)
+                    variant['properties'] = attr
+                    reqs.append(Request(details_url,
+                                        self._parse_properties,
+                                        meta=response.meta))
+                    break
+
+            variants.append(variant)
+            product['variants'] = variants
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def _parse_properties(self, response):
+        product = response.meta['product']
+        reqs = response.meta.get('reqs', [])
+        data = json.loads(response.body)
+
+        getSkuDetails = data.get(
+            'response', {}).get(
+                'getSkuDetails', [])
+
+        if getSkuDetails:
+            sku_details = getSkuDetails[0].get('skuDetails', [])
+
+        if len(sku_details) > 0:
+            detail = sku_details[0]['detail']
+            skuSize = detail['skuSize']
+            weight = detail['weight']
+            flavor = detail['flavor']
+            upcNumber = detail['upcNumber']
+
+            variants = product.get('variants', [])
+            skuID = sku_details[0].get('skuId', '')
+
+            for idx, variant in enumerate(variants):
+                # Check that the variant is not duplicated
+                this_sku = variant.get('sku', None)
+                if this_sku == skuID:
+                    attr = {}
+                    attr['Size'] = skuSize
+                    attr['Flavor'] = flavor
+                    attr['Weight'] = weight
+                    attr['UPCNumber'] = upcNumber
+                    variant['properties'] = attr
+                    variants[idx] = variant
+                    break
+
+            product['variants'] = variants
+
         if reqs:
             return self.send_next_request(reqs, response)
 
