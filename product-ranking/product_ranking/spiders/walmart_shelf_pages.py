@@ -53,10 +53,6 @@ class WalmartShelfPagesSpider(WalmartProductsSpider):
             scrape_variants_with_extra_requests = kwargs['scrape_variants_with_extra_requests']
             if scrape_variants_with_extra_requests in (1, '1', 'true', 'True', True):
                 self.scrape_variants_with_extra_requests = True
-        settings.overrides['CRAWLERA_ENABLED'] = True
-        self.scrape_questions = kwargs.get('scrape_questions', None)
-        if self.scrape_questions not in ('1', 1, True, 'true'):
-            self.scrape_questions = False
 
     @staticmethod
     def valid_url(url):
