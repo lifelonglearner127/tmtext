@@ -21,7 +21,7 @@ class WayfairScraper(Scraper):
     ##########################################
     ############### PREP
     ##########################################
-    INVALID_URL_MESSAGE = "Expected URL format is (http|https)://www.wayfair.com/<product-name>.html"
+    INVALID_URL_MESSAGE = "Expected URL format is (http|https)://www.wayfair.com/(.*)"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -32,8 +32,7 @@ class WayfairScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^(http|https)://www.wayfair.com/.+\.html$", self.product_page_url)
-
+        m = re.match(r"^(https|http)://www\.wayfair\.com/(.*)", self.product_page_url)
         return not not m
     
     def not_a_product(self):
@@ -75,7 +74,7 @@ class WayfairScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//span[contains(@class,"js-product-title-name")]//text()')[0].strip()
+        return "product name" #self.tree_html.xpath('//span[contains(@class,"js-product-title-name")]//text()')[0].strip()
 
     def _product_title(self):
         return self.tree_html.xpath('//span[contains(@class,"js-product-title-name")]//text()')[0].strip()
