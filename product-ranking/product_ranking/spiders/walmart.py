@@ -127,6 +127,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     _JS_DATA_RE = re.compile(
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
+    user_agent = 'default'
+
     def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
         global SiteProductItem
@@ -145,7 +147,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
-        self.user_agent = "Adsbot-Google"
+        settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
@@ -1017,12 +1019,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         )
 
     def _on_dynamic_api_response(self, response):
-        yield Request(  # make another call - to scrape questions/answers
-            self.ALL_QA_URL % (
-                get_walmart_id_from_url(response.meta['product']['url']), 1),
-            meta={'product': response.meta['product']},
-            callback=self._parse_all_questions_and_answers
-        )
+        # turned off for now
+        # yield Request(  # make another call - to scrape questions/answers
+        #     self.ALL_QA_URL % (
+        #         get_walmart_id_from_url(response.meta['product']['url']), 1),
+        #     meta={'product': response.meta['product']},
+        #     callback=self._parse_all_questions_and_answers
+        # )
         if response.status != 200:
             # walmart's unofficial API returned bad code - site change?
             self.log('Unofficial API returned code [%s], URL: %s' % (

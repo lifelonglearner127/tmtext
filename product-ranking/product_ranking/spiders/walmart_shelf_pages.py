@@ -5,6 +5,7 @@ import requests
 import json
 
 import scrapy
+from scrapy.conf import settings
 from scrapy.log import WARNING, ERROR
 from scrapy.http import Request
 from scrapy import Selector
@@ -33,8 +34,9 @@ class WalmartShelfPagesSpider(WalmartProductsSpider):
         """ Needed to prepare first request.meta vars to use """
         return {'remaining': 99999, 'search_term': ''}.copy()
 
+    user_agent = 'default'
+
     def __init__(self, *args, **kwargs):
-        self.user_agent = "Adsbot-Google"
         self._setup_class_compatibility()
 
         self.product_url = kwargs['product_url']
@@ -50,6 +52,7 @@ class WalmartShelfPagesSpider(WalmartProductsSpider):
             scrape_variants_with_extra_requests = kwargs['scrape_variants_with_extra_requests']
             if scrape_variants_with_extra_requests in (1, '1', 'true', 'True', True):
                 self.scrape_variants_with_extra_requests = True
+        settings.overrides['CRAWLERA_ENABLED'] = True
 
     @staticmethod
     def valid_url(url):
