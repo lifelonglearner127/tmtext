@@ -12,6 +12,7 @@ import string
 from datetime import datetime
 import lxml.html
 
+from scrapy.conf import settings
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
@@ -144,6 +145,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
+        settings.overrides['DEFAULT_REQUEST_HEADERS'] = {"X-Forwarded-For": "127.0.0.1"}
         self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.71 Safari/537.36"
 
     def start_requests(self):
@@ -171,8 +173,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             yield Request(self.product_url,
                           self._parse_single_product,
                           meta={'product': prod, 'handle_httpstatus_list': [404, 502, 520]},
-                          dont_filter=True,
-                          headers={"X-Forwarded-For": "127.0.0.1"})
+                          dont_filter=True)
 
         else:
             for st in self.searchterms:
@@ -181,8 +182,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                               #self._parse_single_product,
                               meta={'handle_httpstatus_list': [404, 502, 520],
                                     'remaining': self.quantity, 'search_term': st},
-                              dont_filter=True,
-                              headers={"X-Forwarded-For": "127.0.0.1"})
+                              dont_filter=True)
 
     def get_sponsored_links(self, response):
         self.reql = []
