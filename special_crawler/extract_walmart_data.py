@@ -10,6 +10,7 @@ import lxml.html
 import requests
 import random
 import yaml
+from requests.auth import HTTPProxyAuth
 
 from extract_data import Scraper
 from compare_images import compare_images
@@ -50,7 +51,8 @@ class WalmartScraper(Scraper):
     # base URL for product API
     BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
 
-    HEADERS = {'User-Agent': 'Adsbot-Google'}
+    CRAWLERA_APIKEY = 'eff4d75f7d3a4d1e89115c0b59fab9b2'
+    HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36', 'Accept-Language': 'en-US;q=0.6,en;q=0.4'}
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
@@ -122,18 +124,46 @@ class WalmartScraper(Scraper):
         self.wv = WalmartVariants()
         self.is_bundle_product = False
 
-    def _extract_page_tree(self):
-        for i in range(self.MAX_RETRIES):
-                try:
-                    contents = requests.get(self.product_page_url, headers=self.HEADERS, timeout=20).text.encode('utf-8')
-                    contents = self._clean_null(contents)
-                    self.page_raw_text = contents
-                    self.tree_html = html.fromstring(contents)
+        self.proxy_host = "proxy.crawlera.com"
+        self.proxy_port = "8010"
+        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
+        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
+                        "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
-                    return
-                except Exception, e:
-                    print e
+        self.proxies_enabled = True
+
+    def _request(self, url, headers=None):
+        if not headers:
+            headers = self.HEADERS
+
+        if self.proxies_enabled and 'walmart.com' in url:
+            return requests.get(url, \
+                    proxies=self.proxies, auth=self.proxy_auth, \
+                    verify=False, \
+                    timeout=10, \
+                    headers=headers)
+        else:
+            return requests.get(url, timeout=10)
+
+    def _extract_page_tree(self):
+        # request https instead of http
+        if re.match('http://', self.product_page_url):
+            self.product_page_url = 'https://' + re.match('http://(.+)', self.product_page_url).group(1)
+
+        for i in range(self.MAX_RETRIES):
+            try:
+                resp = self._request(self.product_page_url)
+
+                if resp.status_code != 200:
                     continue
+
+                contents = self._clean_null(resp.text)
+                self.page_raw_text = contents
+                self.tree_html = html.fromstring(contents)
+
+                return
+            except Exception, e:
+                print e
 
     # checks input format
     def check_url_format(self):
@@ -161,7 +191,7 @@ class WalmartScraper(Scraper):
 
         try:
             if not self._no_longer_available() and not self._short_description_wrapper():
-                self.page_raw_text = requests.get(self.product_page_url, headers=self.HEADERS).text
+                self.page_raw_text = self._request(self.product_page_url).text
                 self.tree_html = html.fromstring(self.page_raw_text)
         except Exception as e:
             print e
@@ -265,7 +295,7 @@ class WalmartScraper(Scraper):
 
             if emc_link:
                 emc_link = "http:" + emc_link[0]
-                contents = requests.get(emc_link, headers=self.HEADERS, timeout=10).content
+                contents = self._request(emc_link).content
                 tree = html.fromstring(contents)
                 wcobj_links = tree.xpath("//img[contains(@class, 'wc-media')]/@wcobj")
 
@@ -276,7 +306,7 @@ class WalmartScraper(Scraper):
 
         # webcollage video info
         request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
-        response_text = requests.get(request_url, headers=self.HEADERS, timeout=10).text
+        response_text = self._request(request_url).text
         tree = html.fromstring(response_text)
 
         if tree.xpath("//div[@id='iframe-video-content']"):
@@ -300,7 +330,7 @@ class WalmartScraper(Scraper):
         # check sellpoints media if webcollage media doesn't exist
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
         #TODO: handle errors
-        response_text = requests.get(request_url, headers=self.HEADERS, timeout=10).text
+        response_text = self._request(request_url).text
         # get first "src" value in response
         # # webcollage videos
         video_url_candidates = re.findall("'file': '([^']+)'", response_text)
@@ -320,7 +350,7 @@ class WalmartScraper(Scraper):
         # check sellpoints media if webcollage media doesn't exist
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS_NEW % self._extract_product_id()
         # TODO: handle errors
-        response_text = requests.get(request_url, headers=self.HEADERS, timeout=10).text
+        response_text = self._request(request_url).text
         tree = html.fromstring(response_text)
 
         if tree.xpath("//div[@id='iframe-video-content']//div[@id='player-holder']") or \
@@ -330,7 +360,7 @@ class WalmartScraper(Scraper):
 
         if len(self.video_urls) == 0:
             if self.tree_html.xpath("//div[starts-with(@class,'js-idml-video-container')]"):
-                contents = requests.get("http://www.walmart.com/product/idml/video/" + str(self._extract_product_id()) + "/WebcollageVideos", headers=self.HEADERS, timeout=10).content
+                contents = self._request("http://www.walmart.com/product/idml/video/" + str(self._extract_product_id()) + "/WebcollageVideos").content
 
                 if not contents:
                     self.video_urls = None
@@ -369,7 +399,7 @@ class WalmartScraper(Scraper):
         if self.is_bundle_product:
             return 0
 
-        contents = requests.get("http://www.walmart-content.com/product/idml/video/" + str(self._extract_product_id()) + "/Webcollage360View", headers=self.HEADERS, timeout=10).content
+        contents = self._request("http://www.walmart-content.com/product/idml/video/" + str(self._extract_product_id()) + "/Webcollage360View").content
 
         tree = html.fromstring(contents)
         existance_360view = tree.xpath("//div[@class='wc-360']")
@@ -418,7 +448,7 @@ class WalmartScraper(Scraper):
         if self.is_bundle_product:
             return 0
 
-        contents = requests.get("http://www.walmart-content.com/product/idml/video/" + str(self._extract_product_id()) + "/WebcollageVideos", headers=self.HEADERS, timeout=10).content
+        contents = self._request("http://www.walmart-content.com/product/idml/video/" + str(self._extract_product_id()) + "/WebcollageVideos").content
         tree = html.fromstring(contents)
         existance_webcollage_video = tree.xpath("//div[@class='wc-fragment']")
 
@@ -465,7 +495,7 @@ class WalmartScraper(Scraper):
         if self.is_bundle_product:
             return 0
 
-        contents = requests.get("http://www.walmart-content.com/product/idml/video/" + str(self._extract_product_id()) + "/WebcollageInteractiveTour", headers=self.HEADERS, timeout=10).content
+        contents = self._request("http://www.walmart-content.com/product/idml/video/" + str(self._extract_product_id()) + "/WebcollageInteractiveTour").content
         tree = html.fromstring(contents)
         existance_product_tour = tree.xpath("//div[contains(@class, 'wc-aplus-body')]")
 
@@ -509,7 +539,7 @@ class WalmartScraper(Scraper):
 
             request_url = self.BASE_URL_PDFREQ_WEBCOLLAGE + self._extract_product_id()
 
-            response_text = requests.get(request_url, headers=self.HEADERS, timeout=10).text.decode('string-escape')
+            response_text = self._request(request_url).text.decode('string-escape')
 
             pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")',
                                             response_text)
@@ -530,7 +560,7 @@ class WalmartScraper(Scraper):
             if self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src"):
                 request_url = self.tree_html.xpath("//iframe[contains(@class, 'js-marketing-content-iframe')]/@src")[0]
                 request_url = "http:" + request_url.strip()
-                response_text = requests.get(request_url, headers=self.HEADERS, timeout=10).text.decode('string-escape')
+                response_text = self._request(request_url).text.decode('string-escape')
                 pdf_url_candidates = re.findall('(?<=")http[^"]*media\.webcollage\.net[^"]*[^"]+\.[pP][dD][fF](?=")', response_text)
 
                 if pdf_url_candidates:
@@ -560,7 +590,7 @@ class WalmartScraper(Scraper):
             'average_review' - value is float
         """
         request_url = self.BASE_URL_REVIEWSREQ.format(self._extract_product_id())
-        content = requests.get(request_url, headers=self.HEADERS, timeout=10).content
+        content = self._request(request_url).content
 
         try:
             reviews_count = re.findall(r"BVRRNonZeroCount\\\"><span class=\\\"BVRRNumber\\\">([0-9,]+)<", content)[0]
@@ -990,7 +1020,7 @@ class WalmartScraper(Scraper):
         if self.product_page_url[self.product_page_url.rfind("/") + 1:].isnumeric():
             url = "http://www.walmart-content.com/product/idml/emc/" + \
                   self.product_page_url[self.product_page_url.rfind("/") + 1:]
-            contents = requests.get(url, headers=self.HEADERS, timeout=10).content
+            contents = self._request(url).content
             tree = html.fromstring(contents)
             description_elements = tree.xpath("//div[@id='js-marketing-content']//*")
 
@@ -1095,7 +1125,7 @@ class WalmartScraper(Scraper):
 
             for id in product_id_list:
                 try:
-                    product_json = json.loads(requests.get(self.BASE_URL_PRODUCT_API.format(id), headers=self.HEADERS, timeout=10).content)
+                    product_json = json.loads(self._request(self.BASE_URL_PRODUCT_API.format(id)).content)
                     bundle_component_list.append({"upc": product_json["analyticsData"]["upc"], "url": "http://www.walmart.com" + product_json["product"]["canonicalUrl"]})
                 except:
                     continue
@@ -1647,7 +1677,7 @@ class WalmartScraper(Scraper):
         if self._version() == "Walmart v1":
             og_url_id = self.tree_html.xpath("//meta[@property='og:url']/@content")[0]
             og_url_id = og_url_id[og_url_id.rfind("/") + 1:]
-            contents = requests.get(self.BASE_URL_REVIEWSREQ.format(og_url_id), headers=self.HEADERS, timeout=10).content
+            contents = self._request(self.BASE_URL_REVIEWSREQ.format(og_url_id)).content
 
             try:
                 start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
@@ -2011,7 +2041,7 @@ class WalmartScraper(Scraper):
         url = self.product_page_url
         url = re.sub('http://www', 'http://mobile', url)
         mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
-        contents = requests.get(url, headers=mobile_headers, timeout=10).content
+        contents = self._request(url, headers=mobile_headers).content
         tree = html.fromstring(contents)
         mobile_img = tree.xpath('.//*[contains(@class,"carousel ")]//*[contains(@class, "carousel-item")]/@data-model-id')
         img = self._image_urls()
@@ -2043,8 +2073,13 @@ class WalmartScraper(Scraper):
         self.extracted_product_info_jsons = True
 
         try:
-            product_api_json = requests.get(self.BASE_URL_PRODUCT_API.format(self._extract_product_id()), headers=self.HEADERS, timeout=20).content
-            self.product_api_json = json.loads(product_api_json)
+            for i in range(self.MAX_RETRIES):
+                try:
+                    product_api_json = self._request(self.BASE_URL_PRODUCT_API.format(self._extract_product_id())).content
+                    self.product_api_json = json.loads(product_api_json)
+                    break
+                except Exception as e:
+                    print e
         except Exception, e:
             try:
                 product_api_json = self._exclude_javascript_from_description(product_api_json)
