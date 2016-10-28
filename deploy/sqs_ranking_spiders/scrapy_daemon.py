@@ -1672,6 +1672,7 @@ def log_free_disk_space():
 
 
 if __name__ == '__main__':
+    logger.info("START SCRAPY DAEMON FOR TEST!")
     if 'test' in [a.lower().strip() for a in sys.argv]:
         TEST_MODE = True
         prepare_test_data()
@@ -1696,6 +1697,7 @@ if __name__ == '__main__':
         logger.debug('Instance working time: %s sec.',
                      time.time() - instance_start_time)
         try:
+            logger.info("STOP SCRAPY DAEMON FOR TEST!")
             os.killpg(os.getpgid(os.getpid()), 9)
         except:
             pass
