@@ -37,6 +37,7 @@ class WalmartShelfPagesSpider(WalmartProductsSpider):
     user_agent = 'default'
 
     def __init__(self, *args, **kwargs):
+        super(WalmartShelfPagesSpider, self).__init__(*args, **kwargs)
         self._setup_class_compatibility()
 
         self.product_url = kwargs['product_url']

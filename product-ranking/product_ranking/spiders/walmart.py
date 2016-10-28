@@ -131,6 +131,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
+        middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+        middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
+        middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
+
+        settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
         global SiteProductItem
         if zip_code:
             self.zip_code = zip_code
