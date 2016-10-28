@@ -307,6 +307,8 @@ def extract_domain(url):
         return "nike"
     if 'grocery.walmart.com' in url:
         return 'walmartgrocery'
+    if 'jet.com' in url:
+        return 'jet'
 
     m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:

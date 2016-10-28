@@ -14,9 +14,10 @@ class JetVariants(object):
         self.response = response
         self.tree_html = lxml.html.fromstring(response.body)
 
-    def setupCH(self, tree_html):
+    def setupCH(self, product_data):
         """ Call it from CH spiders """
-        self.tree_html = tree_html
+        self.response = None
+        self.product_data = product_data
 
     def _variants(self):
         try:
@@ -117,15 +118,19 @@ class JetVariants(object):
 
             return final_variants or None
 
-        except:
-            return None
+        except Exception as e:
+            print e
 
     def _variants_v2(self):
         # New layout
         try:
-            data = json.loads(self.response.body)
+            if self.response:
+                data = json.loads(self.response.body)
+            else:
+                data = json.loads(self.product_data)
         except:
             return None
+
         variants = []
         prod_data = data.get('result')
 
