@@ -2073,8 +2073,13 @@ class WalmartScraper(Scraper):
         self.extracted_product_info_jsons = True
 
         try:
-            product_api_json = self._request(self.BASE_URL_PRODUCT_API.format(self._extract_product_id())).content
-            self.product_api_json = json.loads(product_api_json)
+            for i in range(self.MAX_RETRIES):
+                try:
+                    product_api_json = self._request(self.BASE_URL_PRODUCT_API.format(self._extract_product_id())).content
+                    self.product_api_json = json.loads(product_api_json)
+                    break
+                except Exception as e:
+                    print e
         except Exception, e:
             try:
                 product_api_json = self._exclude_javascript_from_description(product_api_json)
