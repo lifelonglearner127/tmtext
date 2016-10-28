@@ -12,6 +12,7 @@ import string
 from datetime import datetime
 import lxml.html
 
+from scrapy.conf import settings
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
@@ -144,7 +145,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
-        self.user_agent = 'python-requests/2.7.0 CPython/2.7.10 Darwin/16.0.0'
+        self.user_agent = "Adsbot-Google"
 
     def start_requests(self):
         # uncomment below to enable sponsored links (but this may cause walmart.com errors!)

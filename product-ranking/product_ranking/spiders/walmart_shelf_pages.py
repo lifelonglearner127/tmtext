@@ -34,7 +34,7 @@ class WalmartShelfPagesSpider(WalmartProductsSpider):
         return {'remaining': 99999, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
-        super(WalmartShelfPagesSpider, self).__init__(*args, **kwargs)
+        self.user_agent = "Adsbot-Google"
         self._setup_class_compatibility()
 
         self.product_url = kwargs['product_url']
