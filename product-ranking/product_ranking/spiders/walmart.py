@@ -148,6 +148,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             ),
             *args, **kwargs)
         settings.overrides['CRAWLERA_ENABLED'] = True
+        self.scrape_questions = kwargs.get('scrape_questions', None)
+        if self.scrape_questions not in ('1', 1, True, 'true'):
+            self.scrape_questions = False
 
     def start_requests(self):
         # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
@@ -1019,13 +1022,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         )
 
     def _on_dynamic_api_response(self, response):
-        # turned off for now
-        # yield Request(  # make another call - to scrape questions/answers
-        #     self.ALL_QA_URL % (
-        #         get_walmart_id_from_url(response.meta['product']['url']), 1),
-        #     meta={'product': response.meta['product']},
-        #     callback=self._parse_all_questions_and_answers
-        # )
+        if self.scrape_questions:
+            yield Request(  # make another call - to scrape questions/answers
+                self.ALL_QA_URL % (
+                    get_walmart_id_from_url(response.meta['product']['url']), 1),
+                meta={'product': response.meta['product']},
+                callback=self._parse_all_questions_and_answers
+            )
         if response.status != 200:
             # walmart's unofficial API returned bad code - site change?
             self.log('Unofficial API returned code [%s], URL: %s' % (
