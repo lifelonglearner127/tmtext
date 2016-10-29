@@ -155,13 +155,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         settings.overrides['CRAWLERA_APIKEY'] = '1c946889036f48a6b97cc2a0fbe8ac79'
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['CRAWLERA_ENABLED'] = True
-        settings.overrides['CONCURRENT_REQUESTS'] = 2
+        settings.overrides['CONCURRENT_REQUESTS'] = 1
+        settings.overrides['DOWNLOAD_DELAY'] = 1
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
-        headers = settings.get('DEFAULT_REQUEST_HEADERS')
-        headers['X-Forwarded-For'] = "127.0.0.1"
-        settings.overrides['DEFAULT_REQUEST_HEADERS'] = headers
         self.scrape_questions = kwargs.get('scrape_questions', None)
         if self.scrape_questions not in ('1', 1, True, 'true'):
             self.scrape_questions = False
@@ -194,6 +192,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                           dont_filter=True)
 
         else:
+            # reduce quantity to 100 because we're having issues with Walmart now
+            #  (it bans us so we're using Crawlera)
+            if not self.quantity or not isinstance(self.quantity, int):
+                self.quantity = 100
+            if self.quantity and isinstance(self.quantity, int):
+                if self.quantity > 100:
+                    self.quantity = 100
+
             for st in self.searchterms:
                 yield Request(self.SEARCH_URL.format(search_term=st,
                                                      search_sort=self._SEARCH_SORT[self.search_sort]),
