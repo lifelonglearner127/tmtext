@@ -131,11 +131,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
-        middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
-        middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
-        middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
-
-        settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+        # middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+        # middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
+        # middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
+        #
+        # settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
         global SiteProductItem
         if zip_code:
             self.zip_code = zip_code
@@ -152,6 +152,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
+        settings.overrides['CRAWLERA_APIKEY'] = '1c946889036f48a6b97cc2a0fbe8ac79'
+        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['CRAWLERA_ENABLED'] = True
         self.scrape_questions = kwargs.get('scrape_questions', None)
         if self.scrape_questions not in ('1', 1, True, 'true'):
@@ -812,7 +814,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             brand = is_empty(response.xpath(
                 ".//*[@id='WMItemBrandLnk']//*[@itemprop='brand']/text()").extract())
         if not brand:
-            brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
+            brand = guess_brand_from_first_words(product.get('title', '').replace(u'®', ''))
             brand = [brand]
         if '&amp;' in brand:
             brand=brand.replace('&amp;', "&")
