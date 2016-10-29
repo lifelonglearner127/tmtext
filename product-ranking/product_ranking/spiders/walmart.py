@@ -155,6 +155,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         settings.overrides['CRAWLERA_APIKEY'] = '1c946889036f48a6b97cc2a0fbe8ac79'
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['CRAWLERA_ENABLED'] = True
+        middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+        middlewares['product_ranking.randomproxy.RandomProxy'] = None
+        settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+        headers = settings.get('DEFAULT_REQUEST_HEADERS')
+        headers['X-Forwarded-For'] = "127.0.0.1"
+        settings.overrides['DEFAULT_REQUEST_HEADERS'] = headers
         self.scrape_questions = kwargs.get('scrape_questions', None)
         if self.scrape_questions not in ('1', 1, True, 'true'):
             self.scrape_questions = False
