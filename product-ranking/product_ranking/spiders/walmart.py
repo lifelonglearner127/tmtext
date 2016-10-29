@@ -11,9 +11,7 @@ import re
 import string
 from datetime import datetime
 import lxml.html
-import boto
 
-from boto.s3.key import Key
 from scrapy.conf import settings
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -159,7 +157,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         settings.overrides['CRAWLERA_ENABLED'] = True
         settings.overrides['CONCURRENT_REQUESTS'] = 1
         settings.overrides['DOWNLOAD_DELAY'] = 1
-        settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+        settings.overrides['CRAWLERA_PRESERVE_DELAY'] = False
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
