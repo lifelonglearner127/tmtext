@@ -88,7 +88,7 @@ class Command(BaseCommand):
         for group in AUTOSCALE_GROUPS:
             set_autoscale_group_capacity(group, 0, attributes=('max_size', 'desired_capacity'))
 
-    def _set_autoscale_max_instances(self, max_instances=150):
+    def _set_autoscale_max_instances(self, max_instances=100):
         global AUTOSCALE_GROUPS
         for group in AUTOSCALE_GROUPS:
             set_autoscale_group_capacity(group, max_instances, attributes=('max_size',))
@@ -101,7 +101,7 @@ class Command(BaseCommand):
         # check that the group size is not zero due to possible previous exception
         for autoscale_group, items in get_max_instances_in_groups().items():
             max_size = items['max_size']
-            if not max_size or max_size < 150:
+            if not max_size or max_size < 100:
                 self._set_autoscale_max_instances()
 
         branch = ProductionBranchUpdate.branch_to_track
