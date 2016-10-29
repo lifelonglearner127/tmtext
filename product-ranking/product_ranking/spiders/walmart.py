@@ -127,8 +127,15 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     _JS_DATA_RE = re.compile(
         r'define\(\s*"product/data\"\s*,\s*(\{.+?\})\s*\)\s*;', re.DOTALL)
 
+    user_agent = 'default'
+
     def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
+        # middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+        # middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
+        # middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
+        #
+        # settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
         global SiteProductItem
         if zip_code:
             self.zip_code = zip_code
@@ -145,7 +152,19 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
-        self.user_agent = "Adsbot-Google"
+        settings.overrides['CRAWLERA_APIKEY'] = '1c946889036f48a6b97cc2a0fbe8ac79'
+        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
+        settings.overrides['CRAWLERA_ENABLED'] = True
+        settings.overrides['CONCURRENT_REQUESTS'] = 2
+        middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+        middlewares['product_ranking.randomproxy.RandomProxy'] = None
+        settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+        headers = settings.get('DEFAULT_REQUEST_HEADERS')
+        headers['X-Forwarded-For'] = "127.0.0.1"
+        settings.overrides['DEFAULT_REQUEST_HEADERS'] = headers
+        self.scrape_questions = kwargs.get('scrape_questions', None)
+        if self.scrape_questions not in ('1', 1, True, 'true'):
+            self.scrape_questions = False
 
     def start_requests(self):
         # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
@@ -802,7 +821,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             brand = is_empty(response.xpath(
                 ".//*[@id='WMItemBrandLnk']//*[@itemprop='brand']/text()").extract())
         if not brand:
-            brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
+            brand = guess_brand_from_first_words(product.get('title', '').replace(u'®', ''))
             brand = [brand]
         if '&amp;' in brand:
             brand=brand.replace('&amp;', "&")
@@ -1017,12 +1036,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         )
 
     def _on_dynamic_api_response(self, response):
-        yield Request(  # make another call - to scrape questions/answers
-            self.ALL_QA_URL % (
-                get_walmart_id_from_url(response.meta['product']['url']), 1),
-            meta={'product': response.meta['product']},
-            callback=self._parse_all_questions_and_answers
-        )
+        if self.scrape_questions:
+            yield Request(  # make another call - to scrape questions/answers
+                self.ALL_QA_URL % (
+                    get_walmart_id_from_url(response.meta['product']['url']), 1),
+                meta={'product': response.meta['product']},
+                callback=self._parse_all_questions_and_answers
+            )
         if response.status != 200:
             # walmart's unofficial API returned bad code - site change?
             self.log('Unofficial API returned code [%s], URL: %s' % (
