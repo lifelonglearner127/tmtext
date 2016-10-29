@@ -1418,6 +1418,36 @@ def get_instance_billing_limit_time():
     return 0
 
 
+def shut_down_instance_if_swap_used():
+    """ Shuts down the instance of swap file is used heavily
+    :return:
+    """
+    stats = statistics.report_statistics()
+    swap_usage_total = stats.get('swap_usage_total', None)
+    ram_usage_total = stats.get('ram_usage_total', None)
+
+    logger.info('Checking swap and RAM usage...')
+
+    if swap_usage_total and ram_usage_total:
+        try:
+            swap_usage_total = float(ram_usage_total)
+            ram_usage_total = float(ram_usage_total)
+        except:
+            logger.error('Swap and RAM usage check failed during float() conversion')
+            return
+
+        if ram_usage_total > 70:
+            if swap_usage_total > 10:
+                # we're swapping very badly!
+                logger.error('Swap and RAM usage is too high! Terminating instance')
+                try:
+                    conn = boto.connect_ec2()
+                    instance_id = get_instance_metadata()['instance-id']
+                    conn.terminate_instances(instance_id, decrement_capacity=True)
+                except Exception as e:
+                    logger.error('Failed to terminate instance, exception: %s' % str(e))
+
+
 def main():
     if not TEST_MODE:
         instance_meta = get_instance_metadata()
@@ -1620,6 +1650,7 @@ def main():
             send_tasks_status(tasks_taken)
             time.sleep(step_time)
             logger.info('Server statistics: ' + str(statistics.report_statistics()))
+            shut_down_instance_if_swap_used()
         else:
             logger.error('Some of the tasks not finished in allowed time, '
                          'stopping them.')
