@@ -155,7 +155,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         settings.overrides['CRAWLERA_APIKEY'] = '1c946889036f48a6b97cc2a0fbe8ac79'
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['CRAWLERA_ENABLED'] = True
-        settings.overrides['CONCURRENT_REQUESTS'] = 3
+        settings.overrides['CONCURRENT_REQUESTS'] = 1
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
@@ -840,10 +840,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     '//meta[@property="og:image"]/@content').extract(), "")
 
         if not product.get("brand"):
-            brand = is_empty(response.xpath(
+            brand = response.xpath(
                 "//h1[contains(@class, 'product-name product-heading')]/text()"
-                " | //h1[@class='productTitle']/text()"
-            ).extract())
+                " | //h1[@class='productTitle']/text()").extract()
+            print brand
             cond_set(
                 product,
                 'brand',
