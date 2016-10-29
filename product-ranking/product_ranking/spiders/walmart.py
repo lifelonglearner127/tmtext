@@ -838,10 +838,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     '//meta[@property="og:image"]/@content').extract(), "")
 
         if not product.get("brand"):
-            brand = response.xpath(
+            brand = is_empty(response.xpath(
                 "//h1[contains(@class, 'product-name product-heading')]/text()"
-                " | //h1[@class='productTitle']/text()").extract()
-            print brand
+                " | //h1[@class='productTitle']/text()"
+            ).extract())
             cond_set(
                 product,
                 'brand',
