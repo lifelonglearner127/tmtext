@@ -157,6 +157,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         settings.overrides['CRAWLERA_ENABLED'] = True
         settings.overrides['CONCURRENT_REQUESTS'] = 1
         settings.overrides['DOWNLOAD_DELAY'] = 1
+        settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
