@@ -156,7 +156,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
-        crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '89821a564f3346378b711472aa526128']
+        crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
         settings.overrides['CRAWLERA_APIKEY'] = random.choice(crawlera_keys)
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['CRAWLERA_ENABLED'] = True
