@@ -14,7 +14,6 @@ import lxml.html
 
 from boto.s3.key import Key
 import boto
-import logging
 from scrapy.conf import settings
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -169,8 +168,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if self.scrape_questions not in ('1', 1, True, 'true'):
             self.scrape_questions = False
 
-    @staticmethod
-    def _get_download_delay():
+    def _get_download_delay(self):
         amazon_bucket_name = "sc-settings"
         config_filename = "walmart_download_delay.cfg"
         default_download_delay = 1.0
@@ -180,15 +178,15 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             k = Key(S3_BUCKET)
             k.key = config_filename
             value = k.get_contents_as_string()
-            logging.info('Retrieved download_delay={}'.format(value))
+            self.log('Retrieved download_delay={}'.format(value))
         except Exception, e:
-            logging.error(e)
+            self.log(e)
             return default_download_delay
 
         try:
             return float(value)
         except Exception, e:
-            logging.error(e)
+            self.log(e)
             return default_download_delay
 
     def start_requests(self):
