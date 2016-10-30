@@ -152,7 +152,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
-        settings.overrides['CRAWLERA_APIKEY'] = '1c946889036f48a6b97cc2a0fbe8ac79'
+        crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '89821a564f3346378b711472aa526128']
+        settings.overrides['CRAWLERA_APIKEY'] = random.choice(crawlera_keys)
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['CRAWLERA_ENABLED'] = True
         settings.overrides['CONCURRENT_REQUESTS'] = 1
@@ -1309,8 +1310,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         new_meta = response.meta.copy()
         new_meta['product']['recent_questions'] = []
         url = self.QA_URL.format(product_id=product_id, page=1)
-        return Request(url, self._parse_questions,
-                       meta=new_meta, dont_filter=True)
+        if self.scrape_questions:
+            return Request(url, self._parse_questions,
+                           meta=new_meta, dont_filter=True)
+        else:
+            return response.meta['product']
 
     def _parse_questions(self, response):
         data = json.loads(response.body_as_unicode())
