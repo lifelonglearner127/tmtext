@@ -52,7 +52,13 @@ class WalmartScraper(Scraper):
     BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
 
     CRAWLERA_APIKEY = '4c1e7c0bb0f14695a8e198f08d80e3df'
-    HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36', 'Accept-Language': 'en-US;q=0.6,en;q=0.4'}
+    HEADERS = {'Host': 'www.walmart.com', \
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', \
+        'Accept-Language': 'en-US,en;q=0.5', \
+        'Accept-Encoding': 'gzip, deflate', \
+        'Connection': 'keep-alive', \
+        'Upgrade-Insecure-Requests': '1', \
+        }
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
@@ -150,20 +156,25 @@ class WalmartScraper(Scraper):
         if re.match('http://', self.product_page_url):
             self.product_page_url = 'https://' + re.match('http://(.+)', self.product_page_url).group(1)
 
-        for i in range(self.MAX_RETRIES):
-            try:
-                resp = self._request(self.product_page_url)
+        try:
+            resp = self._request(self.product_page_url)
 
-                if resp.status_code != 200:
-                    continue
-
-                contents = self._clean_null(resp.text)
-                self.page_raw_text = contents
-                self.tree_html = html.fromstring(contents)
-
+            if resp.status_code != 200:
+                print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
+                self.is_timeout = True
+                self.ERROR_RESPONSE["failure_type"] = "Timeout"
                 return
-            except Exception, e:
-                print e
+
+            contents = self._clean_null(resp.text)
+            self.page_raw_text = contents
+            self.tree_html = html.fromstring(contents)
+
+            return
+        except Exception, e:
+            print self.product_page_url, e
+
+        self.is_timeout = True
+        self.ERROR_RESPONSE["failure_type"] = "Timeout"
 
     # checks input format
     def check_url_format(self):
@@ -193,22 +204,31 @@ class WalmartScraper(Scraper):
             if not self._no_longer_available() and not self._short_description_wrapper():
                 self.page_raw_text = self._request(self.product_page_url).text
                 self.tree_html = html.fromstring(self.page_raw_text)
-        except Exception as e:
-            print e
+        except Exception, e:
+            print self.product_page_url, e
+            return True
 
         try:
             self.wv.setupCH(self.tree_html)
         except:
             pass
 
-        self._failure_type()
+        try:
+            self._failure_type()
+        except Exception, e:
+            print self.product_page_url, e
+            return True
 
         if self.failure_type:
             self.ERROR_RESPONSE["failure_type"] = self.failure_type
 
             return True
 
-        self._extract_product_info_json()
+        try:
+            self._extract_product_info_json()
+        except Exception, e:
+            print self.product_page_url, e
+            return True
 
         return False
 
@@ -2073,20 +2093,15 @@ class WalmartScraper(Scraper):
         self.extracted_product_info_jsons = True
 
         try:
-            for i in range(self.MAX_RETRIES):
-                try:
-                    product_api_json = self._request(self.BASE_URL_PRODUCT_API.format(self._extract_product_id())).content
-                    self.product_api_json = json.loads(product_api_json)
-                    break
-                except Exception as e:
-                    print e
+            product_api_json = self._request(self.BASE_URL_PRODUCT_API.format(self._extract_product_id())).content
+            self.product_api_json = json.loads(product_api_json)
         except Exception, e:
             try:
                 product_api_json = self._exclude_javascript_from_description(product_api_json)
                 product_api_json = product_api_json.replace("\n", "").replace("\r", "")
                 self.product_api_json = json.loads(product_api_json)
             except:
-                print "Error (Loading product json from Walmart api)" + str(e)
+                print "Error (Loading product json from Walmart api)", e
                 self.product_api_json = None
 
         if self._version() == "Walmart v2":
