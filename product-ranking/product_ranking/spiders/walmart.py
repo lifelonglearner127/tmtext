@@ -171,7 +171,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _get_download_delay():
-        raise
         amazon_bucket_name = "sc-settings"
         config_filename = "walmart_download_delay.cfg"
         default_download_delay = 1.0
