@@ -171,6 +171,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _get_download_delay():
+        raise
         amazon_bucket_name = "sc-settings"
         config_filename = "walmart_download_delay.cfg"
         default_download_delay = 1.0
@@ -187,8 +188,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         try:
             return float(value)
-        except ValueError:
-            logging.error('Cannot convert value from S3 cloud to float')
+        except Exception, e:
+            logging.error(e)
             return default_download_delay
 
     def start_requests(self):
