@@ -12,6 +12,9 @@ import string
 from datetime import datetime
 import lxml.html
 
+from boto.s3.key import Key
+import boto
+import logging
 from scrapy.conf import settings
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -157,7 +160,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['CRAWLERA_ENABLED'] = True
         settings.overrides['CONCURRENT_REQUESTS'] = 1
-        settings.overrides['DOWNLOAD_DELAY'] = 1
+        settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
         settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
@@ -165,6 +168,28 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         self.scrape_questions = kwargs.get('scrape_questions', None)
         if self.scrape_questions not in ('1', 1, True, 'true'):
             self.scrape_questions = False
+
+    @staticmethod
+    def _get_download_delay():
+        amazon_bucket_name = "sc-settings"
+        config_filename = "walmart_download_delay.cfg"
+        default_download_delay = 1.0
+        try:
+            S3_CONN = boto.connect_s3(is_secure=False)
+            S3_BUCKET = S3_CONN.get_bucket(amazon_bucket_name, validate=False)
+            k = Key(S3_BUCKET)
+            k.key = config_filename
+            value = k.get_contents_as_string()
+            logging.info('Retrieved download_delay={}'.format(value))
+        except Exception, e:
+            logging.error(e)
+            return default_download_delay
+
+        try:
+            return float(value)
+        except ValueError:
+            logging.error('Cannot convert value from S3 cloud to float')
+            return default_download_delay
 
     def start_requests(self):
         # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
