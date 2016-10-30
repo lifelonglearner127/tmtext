@@ -12,8 +12,10 @@ import string
 from datetime import datetime
 import lxml.html
 
-from boto.s3.key import Key
+import logging
+logger = logging.getLogger(__name__)
 import boto
+from boto.s3.key import Key
 from scrapy.conf import settings
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -178,15 +180,15 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             k = Key(S3_BUCKET)
             k.key = config_filename
             value = k.get_contents_as_string()
-            self.log('Retrieved download_delay={}'.format(value))
+            logging.info('Retrieved download_delay={}'.format(value))
         except Exception, e:
-            self.log(e)
+            logging.error(e)
             return default_download_delay
 
         try:
             return float(value)
         except Exception, e:
-            self.log(e)
+            logging.error(e)
             return default_download_delay
 
     def start_requests(self):
