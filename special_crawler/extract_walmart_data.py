@@ -52,13 +52,6 @@ class WalmartScraper(Scraper):
     BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
 
     CRAWLERA_APIKEY = '4c1e7c0bb0f14695a8e198f08d80e3df'
-    HEADERS = {'Host': 'www.walmart.com', \
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8', \
-        'Accept-Language': 'en-US,en;q=0.5', \
-        'Accept-Encoding': 'gzip, deflate', \
-        'Connection': 'keep-alive', \
-        'Upgrade-Insecure-Requests': '1', \
-        }
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
@@ -139,15 +132,11 @@ class WalmartScraper(Scraper):
         self.proxies_enabled = True
 
     def _request(self, url, headers=None):
-        if not headers:
-            headers = self.HEADERS
-
         if self.proxies_enabled and 'walmart.com' in url:
             return requests.get(url, \
                     proxies=self.proxies, auth=self.proxy_auth, \
                     verify=False, \
-                    timeout=10, \
-                    headers=headers)
+                    timeout=30)
         else:
             return requests.get(url, timeout=10)
 
@@ -156,22 +145,21 @@ class WalmartScraper(Scraper):
         if re.match('http://', self.product_page_url):
             self.product_page_url = 'https://' + re.match('http://(.+)', self.product_page_url).group(1)
 
-        try:
-            resp = self._request(self.product_page_url)
+        for i in range(5):
+            try:
+                resp = self._request(self.product_page_url)
 
-            if resp.status_code != 200:
-                print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
-                self.is_timeout = True
-                self.ERROR_RESPONSE["failure_type"] = "Timeout"
+                if resp.status_code != 200:
+                    print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
+                    break
+
+                contents = self._clean_null(resp.text)
+                self.page_raw_text = contents
+                self.tree_html = html.fromstring(contents)
+
                 return
-
-            contents = self._clean_null(resp.text)
-            self.page_raw_text = contents
-            self.tree_html = html.fromstring(contents)
-
-            return
-        except Exception, e:
-            print self.product_page_url, e
+            except Exception, e:
+                print self.product_page_url, e
 
         self.is_timeout = True
         self.ERROR_RESPONSE["failure_type"] = "Timeout"
@@ -2062,6 +2050,7 @@ class WalmartScraper(Scraper):
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
     # might be outdated? (since walmart site redesign)
     def _mobile_image_same(self):
+        '''
         url = self.product_page_url
         url = re.sub('http://www', 'http://mobile', url)
         mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
@@ -2081,6 +2070,8 @@ class WalmartScraper(Scraper):
                 return None
         else:
             return None # no images found to compare
+        '''
+        return None
 
     # ! may throw exception if json object not decoded properly
     def _extract_product_info_json(self):
