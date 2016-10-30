@@ -1301,8 +1301,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         new_meta = response.meta.copy()
         new_meta['product']['recent_questions'] = []
         url = self.QA_URL.format(product_id=product_id, page=1)
-        return Request(url, self._parse_questions,
-                       meta=new_meta, dont_filter=True)
+        if self.scrape_questions:
+            return Request(url, self._parse_questions,
+                           meta=new_meta, dont_filter=True)
+        else:
+            return response.meta['product']
 
     def _parse_questions(self, response):
         data = json.loads(response.body_as_unicode())
