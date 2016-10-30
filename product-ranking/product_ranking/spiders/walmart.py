@@ -181,11 +181,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             k.key = config_filename
             value = k.get_contents_as_string()
             logging.info('Retrieved download_delay={}'.format(value))
-        except Exception, e:
-            logging.error(e)
-            return default_download_delay
-
-        try:
             return float(value)
         except Exception, e:
             logging.error(e)
