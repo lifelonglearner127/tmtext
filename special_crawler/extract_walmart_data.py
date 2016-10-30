@@ -157,9 +157,11 @@ class WalmartScraper(Scraper):
                 self.page_raw_text = contents
                 self.tree_html = html.fromstring(contents)
 
+                self._failure_type()
+
                 return
             except Exception, e:
-                print self.product_page_url, e
+                print 'Error extracting', self.product_page_url, e
 
         self.is_timeout = True
         self.ERROR_RESPONSE["failure_type"] = "Timeout"
@@ -189,14 +191,6 @@ class WalmartScraper(Scraper):
         """
 
         try:
-            if not self._no_longer_available() and not self._short_description_wrapper():
-                self.page_raw_text = self._request(self.product_page_url).text
-                self.tree_html = html.fromstring(self.page_raw_text)
-        except Exception, e:
-            print self.product_page_url, e
-            return True
-
-        try:
             self.wv.setupCH(self.tree_html)
         except:
             pass
@@ -204,7 +198,7 @@ class WalmartScraper(Scraper):
         try:
             self._failure_type()
         except Exception, e:
-            print self.product_page_url, e
+            print 'Error getting failure type', self.product_page_url, e
             return True
 
         if self.failure_type:
@@ -215,7 +209,7 @@ class WalmartScraper(Scraper):
         try:
             self._extract_product_info_json()
         except Exception, e:
-            print self.product_page_url, e
+            print 'Error extracting product info json', self.product_page_url, e
             return True
 
         return False
