@@ -347,6 +347,7 @@ class WalmartScraper(Scraper):
             else:
                 self.video_urls.extend(list(set(tree.xpath("//img[contains(@class, 'wc-media wc-iframe') and contains(@data-asset-url, 'autostart')]/@data-asset-url"))))
 
+        '''
         # check sellpoints media if webcollage media doesn't exist
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
         #TODO: handle errors
@@ -394,6 +395,7 @@ class WalmartScraper(Scraper):
                 self.has_video = True
             else:
                 self.video_urls = None
+        '''
 
     def _video_urls(self):
         """Extracts video URLs for a given walmart product
@@ -1140,6 +1142,7 @@ class WalmartScraper(Scraper):
         product_id_list = [id.split("I")[1] for id in product_id_list]
         product_id_list = list(set(product_id_list))
 
+        '''
         if product_id_list:
             bundle_component_list = []
 
@@ -1152,6 +1155,7 @@ class WalmartScraper(Scraper):
 
             if bundle_component_list:
                 return bundle_component_list
+        '''
 
         return None
 
@@ -2092,6 +2096,7 @@ class WalmartScraper(Scraper):
 
         self.extracted_product_info_jsons = True
 
+        '''
         try:
             product_api_json = self._request(self.BASE_URL_PRODUCT_API.format(self._extract_product_id())).content
             self.product_api_json = json.loads(product_api_json)
@@ -2103,6 +2108,7 @@ class WalmartScraper(Scraper):
             except:
                 print "Error (Loading product json from Walmart api)", e
                 self.product_api_json = None
+        '''
 
         if self._version() == "Walmart v2":
             if self.is_bundle_product:
