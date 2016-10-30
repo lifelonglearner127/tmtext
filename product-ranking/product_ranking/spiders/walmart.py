@@ -165,6 +165,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         self.scrape_questions = kwargs.get('scrape_questions', None)
         if self.scrape_questions not in ('1', 1, True, 'true'):
             self.scrape_questions = False
+        self.scrape_related_products = kwargs.get('scrape_related_products', None)
+        if self.scrape_related_products not in ('1', 1, True, 'true'):
+            self.scrape_related_products = False
 
     def start_requests(self):
         # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
@@ -323,7 +326,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
         if 'brand' not in product:
             cond_set_value(product, 'brand', u'NO BRAND')
-        self._gen_related_req(response)
+        if self.scrape_related_products:
+            self._gen_related_req(response)
 
         # parse category and department
         wcp = WalmartCategoryParser()
