@@ -52,7 +52,6 @@ class WalmartScraper(Scraper):
     BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
 
     CRAWLERA_APIKEY = '4c1e7c0bb0f14695a8e198f08d80e3df'
-    HEADERS = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.87 Safari/537.36', 'Accept-Language': 'en-US;q=0.6,en;q=0.4'}
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
@@ -133,15 +132,11 @@ class WalmartScraper(Scraper):
         self.proxies_enabled = True
 
     def _request(self, url, headers=None):
-        if not headers:
-            headers = self.HEADERS
-
         if self.proxies_enabled and 'walmart.com' in url:
             return requests.get(url, \
                     proxies=self.proxies, auth=self.proxy_auth, \
                     verify=False, \
-                    timeout=10, \
-                    headers=headers)
+                    timeout=30)
         else:
             return requests.get(url, timeout=10)
 
@@ -150,20 +145,26 @@ class WalmartScraper(Scraper):
         if re.match('http://', self.product_page_url):
             self.product_page_url = 'https://' + re.match('http://(.+)', self.product_page_url).group(1)
 
-        for i in range(self.MAX_RETRIES):
+        for i in range(5):
             try:
                 resp = self._request(self.product_page_url)
 
                 if resp.status_code != 200:
-                    continue
+                    print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
+                    break
 
                 contents = self._clean_null(resp.text)
                 self.page_raw_text = contents
                 self.tree_html = html.fromstring(contents)
 
+                self._failure_type()
+
                 return
             except Exception, e:
-                print e
+                print 'Error extracting', self.product_page_url, e
+
+        self.is_timeout = True
+        self.ERROR_RESPONSE["failure_type"] = "Timeout"
 
     # checks input format
     def check_url_format(self):
@@ -190,25 +191,26 @@ class WalmartScraper(Scraper):
         """
 
         try:
-            if not self._no_longer_available() and not self._short_description_wrapper():
-                self.page_raw_text = self._request(self.product_page_url).text
-                self.tree_html = html.fromstring(self.page_raw_text)
-        except Exception as e:
-            print e
-
-        try:
             self.wv.setupCH(self.tree_html)
         except:
             pass
 
-        self._failure_type()
+        try:
+            self._failure_type()
+        except Exception, e:
+            print 'Error getting failure type', self.product_page_url, e
+            return True
 
         if self.failure_type:
             self.ERROR_RESPONSE["failure_type"] = self.failure_type
 
             return True
 
-        self._extract_product_info_json()
+        try:
+            self._extract_product_info_json()
+        except Exception, e:
+            print 'Error extracting product info json', self.product_page_url, e
+            return True
 
         return False
 
@@ -327,6 +329,7 @@ class WalmartScraper(Scraper):
             else:
                 self.video_urls.extend(list(set(tree.xpath("//img[contains(@class, 'wc-media wc-iframe') and contains(@data-asset-url, 'autostart')]/@data-asset-url"))))
 
+        '''
         # check sellpoints media if webcollage media doesn't exist
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
         #TODO: handle errors
@@ -374,6 +377,7 @@ class WalmartScraper(Scraper):
                 self.has_video = True
             else:
                 self.video_urls = None
+        '''
 
     def _video_urls(self):
         """Extracts video URLs for a given walmart product
@@ -1120,6 +1124,7 @@ class WalmartScraper(Scraper):
         product_id_list = [id.split("I")[1] for id in product_id_list]
         product_id_list = list(set(product_id_list))
 
+        '''
         if product_id_list:
             bundle_component_list = []
 
@@ -1132,6 +1137,7 @@ class WalmartScraper(Scraper):
 
             if bundle_component_list:
                 return bundle_component_list
+        '''
 
         return None
 
@@ -2038,6 +2044,7 @@ class WalmartScraper(Scraper):
     # 1 if mobile image is same as pc image, 0 otherwise, and None if it can't grab images from one site
     # might be outdated? (since walmart site redesign)
     def _mobile_image_same(self):
+        '''
         url = self.product_page_url
         url = re.sub('http://www', 'http://mobile', url)
         mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
@@ -2057,6 +2064,8 @@ class WalmartScraper(Scraper):
                 return None
         else:
             return None # no images found to compare
+        '''
+        return None
 
     # ! may throw exception if json object not decoded properly
     def _extract_product_info_json(self):
@@ -2072,22 +2081,19 @@ class WalmartScraper(Scraper):
 
         self.extracted_product_info_jsons = True
 
+        '''
         try:
-            for i in range(self.MAX_RETRIES):
-                try:
-                    product_api_json = self._request(self.BASE_URL_PRODUCT_API.format(self._extract_product_id())).content
-                    self.product_api_json = json.loads(product_api_json)
-                    break
-                except Exception as e:
-                    print e
+            product_api_json = self._request(self.BASE_URL_PRODUCT_API.format(self._extract_product_id())).content
+            self.product_api_json = json.loads(product_api_json)
         except Exception, e:
             try:
                 product_api_json = self._exclude_javascript_from_description(product_api_json)
                 product_api_json = product_api_json.replace("\n", "").replace("\r", "")
                 self.product_api_json = json.loads(product_api_json)
             except:
-                print "Error (Loading product json from Walmart api)" + str(e)
+                print "Error (Loading product json from Walmart api)", e
                 self.product_api_json = None
+        '''
 
         if self._version() == "Walmart v2":
             if self.is_bundle_product:
