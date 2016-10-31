@@ -59,7 +59,8 @@ class AmazonScraper(Scraper):
         self.proxy_host = "proxy.crawlera.com"
         self.proxy_port = "8010"
         self.proxy_auth = (self.CRAWLERA_APIKEY, "")
-        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
+                        "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
         self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
 
         self.proxies_enabled = False  # first, they are OFF to save allowed requests
