@@ -51,8 +51,6 @@ class WalmartScraper(Scraper):
     # base URL for product API
     BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
 
-    CRAWLERA_APIKEY = '4c1e7c0bb0f14695a8e198f08d80e3df'
-
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
