@@ -7,9 +7,6 @@ from lxml import html
 from extract_data import Scraper
 from spiders_shared_code.jet_variants import JetVariants
 
-import pyperclip
-
-
 class JetScraper(Scraper):
     ##########################################
     ############### PREP
@@ -48,8 +45,6 @@ class JetScraper(Scraper):
                 self.jv.setupCH(self.product_data)
 
                 self.product_data = json.loads(self.product_data)['result']
-
-                pyperclip.copy(json.dumps(self.product_data))
 
             except Exception as e:
                 print e
