@@ -151,6 +151,12 @@ class WalmartScraper(Scraper):
 
                 if resp.status_code != 200:
                     print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
+
+                    if resp.status_code == 429:
+                        self.is_timeout = True
+                        self.ERROR_RESPONSE["failure_type"] = "429"
+                        return
+
                     break
 
                 contents = self._clean_null(resp.text)
