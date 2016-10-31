@@ -12,6 +12,10 @@ import string
 from datetime import datetime
 import lxml.html
 
+import logging
+logger = logging.getLogger(__name__)
+import boto
+from boto.s3.key import Key
 from scrapy.conf import settings
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
@@ -152,12 +156,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
-        crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '89821a564f3346378b711472aa526128']
+        crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
         settings.overrides['CRAWLERA_APIKEY'] = random.choice(crawlera_keys)
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['CRAWLERA_ENABLED'] = True
         settings.overrides['CONCURRENT_REQUESTS'] = 1
-        settings.overrides['DOWNLOAD_DELAY'] = 1
+        settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
         settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
@@ -165,6 +169,25 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         self.scrape_questions = kwargs.get('scrape_questions', None)
         if self.scrape_questions not in ('1', 1, True, 'true'):
             self.scrape_questions = False
+        self.scrape_related_products = kwargs.get('scrape_related_products', None)
+        if self.scrape_related_products not in ('1', 1, True, 'true'):
+            self.scrape_related_products = False
+
+    def _get_download_delay(self):
+        amazon_bucket_name = "sc-settings"
+        config_filename = "walmart_download_delay.cfg"
+        default_download_delay = 1.0
+        try:
+            S3_CONN = boto.connect_s3(is_secure=False)
+            S3_BUCKET = S3_CONN.get_bucket(amazon_bucket_name, validate=False)
+            k = Key(S3_BUCKET)
+            k.key = config_filename
+            value = k.get_contents_as_string()
+            logging.info('Retrieved download_delay={}'.format(value))
+            return float(value)
+        except Exception, e:
+            logging.error(e)
+            return default_download_delay
 
     def start_requests(self):
         # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
@@ -323,7 +346,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
         if 'brand' not in product:
             cond_set_value(product, 'brand', u'NO BRAND')
-        self._gen_related_req(response)
+        if self.scrape_related_products:
+            self._gen_related_req(response)
 
         # parse category and department
         wcp = WalmartCategoryParser()
