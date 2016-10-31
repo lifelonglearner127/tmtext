@@ -123,13 +123,19 @@ class WalmartScraper(Scraper):
 
         self.proxy_host = "proxy.crawlera.com"
         self.proxy_port = "8010"
-        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
+        self.CRAWLERA_APIKEYS = [self.CRAWLERA_APIKEY, self.CRAWLERA_APIKEY_ALT]
+        random.shuffle(self.CRAWLERA_APIKEYS)
+        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEYS[0], "")
         self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
                         "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
         self.proxies_enabled = True
+        self.try_alternate_apikey = False
 
     def _request(self, url, headers=None):
+        if self.try_alternate_apikey:
+            self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEYS[1], "")
+
         if self.proxies_enabled and 'walmart.com' in url:
             return requests.get(url, \
                     proxies=self.proxies, auth=self.proxy_auth, \
@@ -151,9 +157,13 @@ class WalmartScraper(Scraper):
                     print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
 
                     if resp.status_code == 429:
-                        self.is_timeout = True
-                        self.ERROR_RESPONSE["failure_type"] = "429"
-                        return
+                        if try_alternate_apikey:
+                            self.is_timeout = True
+                            self.ERROR_RESPONSE["failure_type"] = "429"
+                            return
+                        else:
+                            self.try_alternate_apikey = True
+                            continue
 
                     break
 
