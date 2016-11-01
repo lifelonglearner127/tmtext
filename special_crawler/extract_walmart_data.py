@@ -51,12 +51,14 @@ class WalmartScraper(Scraper):
     # base URL for product API
     BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
 
-    CRAWLERA_APIKEY = '4c1e7c0bb0f14695a8e198f08d80e3df'
-
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
+
+        self.additional_requests = False
+        if kwargs.get('additional_requests'):
+            self.additional_requests = kwargs.get('additional_requests') == 'true'
 
         # whether product has any webcollage media
         self.has_webcollage_media = False
@@ -125,18 +127,24 @@ class WalmartScraper(Scraper):
 
         self.proxy_host = "proxy.crawlera.com"
         self.proxy_port = "8010"
-        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
+        self.CRAWLERA_APIKEYS = [self.CRAWLERA_APIKEY, self.CRAWLERA_APIKEY_ALT]
+        random.shuffle(self.CRAWLERA_APIKEYS)
+        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEYS[0], "")
         self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
                         "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
         self.proxies_enabled = True
+        self.try_alternate_apikey = False
 
     def _request(self, url, headers=None):
+        if self.try_alternate_apikey:
+            self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEYS[1], "")
+
         if self.proxies_enabled and 'walmart.com' in url:
             return requests.get(url, \
                     proxies=self.proxies, auth=self.proxy_auth, \
                     verify=False, \
-                    timeout=30)
+                    timeout=160)
         else:
             return requests.get(url, timeout=10)
 
@@ -151,6 +159,16 @@ class WalmartScraper(Scraper):
 
                 if resp.status_code != 200:
                     print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
+
+                    if resp.status_code == 429:
+                        if try_alternate_apikey:
+                            self.is_timeout = True
+                            self.ERROR_RESPONSE["failure_type"] = "429"
+                            return
+                        else:
+                            self.try_alternate_apikey = True
+                            continue
+
                     break
 
                 contents = self._clean_null(resp.text)
@@ -306,6 +324,18 @@ class WalmartScraper(Scraper):
                         if wcobj_link.endswith(".flv"):
                             self.video_urls.append(wcobj_link)
 
+        for video in self.product_info_json.get('videos', {}):
+            video = video.get('versions', {}).get('large')
+            if video:
+                if video[:2] == '//':
+                    video = video[2:]
+                self.video_urls.append(video)
+
+        if not self.additional_requests:
+            if not self.video_urls:
+                self.video_urls = None
+            return
+
         # webcollage video info
         request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
         response_text = self._request(request_url).text
@@ -329,7 +359,6 @@ class WalmartScraper(Scraper):
             else:
                 self.video_urls.extend(list(set(tree.xpath("//img[contains(@class, 'wc-media wc-iframe') and contains(@data-asset-url, 'autostart')]/@data-asset-url"))))
 
-        '''
         # check sellpoints media if webcollage media doesn't exist
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
         #TODO: handle errors
@@ -377,7 +406,6 @@ class WalmartScraper(Scraper):
                 self.has_video = True
             else:
                 self.video_urls = None
-        '''
 
     def _video_urls(self):
         """Extracts video URLs for a given walmart product

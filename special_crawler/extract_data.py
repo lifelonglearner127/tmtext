@@ -56,6 +56,9 @@ class Scraper():
     # number of retries for fetching product page source before giving up
     MAX_RETRIES = 3
 
+    CRAWLERA_APIKEY = "4c1e7c0bb0f14695a8e198f08d80e3df"
+    CRAWLERA_APIKEY_ALT = "4c1e7c0bb0f14695a8e198f08d80e3df"
+
     # List containing all data types returned by the crawler (that will appear in responses of requests to service in crawler_service.py)
     # In practice, all returned data types for all crawlers should be defined here
     # The final list containing actual implementing methods for each data type will be defined in the constructor
