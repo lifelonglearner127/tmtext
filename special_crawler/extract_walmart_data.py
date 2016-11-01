@@ -1600,22 +1600,21 @@ class WalmartScraper(Scraper):
             return self._filter_key_fields("upc", self._find_between(html.tostring(self.tree_html), "upc: '", "'").strip())
 
         if self._version() == "Walmart v2":
+            product_info_json = self._extract_product_info_json()
+
+            upc = product_info_json.get("analyticsData", {}).get("upc")
+
+            if upc:
+                return upc
+
+            upc = self.product_choice_info_json.get("product", {}).get("wupc")
+
+            if upc:
+                return upc
+
             if self.is_bundle_product:
-                product_info_json = self._extract_product_info_json()
-
-                upc = product_info_json.get("analyticsData", {}).get("upc")
-
-                if upc:
-                    return upc
-
-                upc = self.product_choice_info_json.get("product", {}).get("wupc")
-
-                if upc:
-                    return upc
-
                 return self._filter_key_fields("upc", None)
             else:
-
                 upc_info = self.tree_html.xpath("//meta[@property='og:upc']/@content")
                 upc = upc_info[0] if len(upc_info) > 0 else None
 
