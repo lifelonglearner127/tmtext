@@ -6,6 +6,7 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..'))
 
 from flask import Flask, jsonify, abort, request
+from extract_shopritedelivers_data import ShopritedeliversScraper
 from extract_walmart_data import WalmartScraper
 from extract_tesco_data import TescoScraper
 from extract_amazon_data import AmazonScraper
@@ -95,6 +96,7 @@ from extract_petsmart_data import PetsmartScraper
 from extract_walmartgrocery_data import WalmartGroceryScraper
 from extract_autozone_data import AutozoneScraper
 from extract_sears_data import SearsScraper
+from extract_jet_data import JetScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -200,8 +202,10 @@ SUPPORTED_SITES = {
                     "pet360" : Pet360Scraper,
                     "petsmart" : PetsmartScraper,
                     "walmartgrocery" : WalmartGroceryScraper,
+                    "shopritedelivers": ShopritedeliversScraper,
                     "autozone" : AutozoneScraper,
-                    "sears" : SearsScraper
+                    "sears" : SearsScraper,
+                    "jet" : JetScraper
                     }
 
 # add logger
@@ -303,6 +307,8 @@ def extract_domain(url):
         return "nike"
     if 'grocery.walmart.com' in url:
         return 'walmartgrocery'
+    if 'jet.com' in url:
+        return 'jet'
 
     m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:

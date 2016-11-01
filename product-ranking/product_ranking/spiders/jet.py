@@ -194,13 +194,14 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
 
             cond_set_value(product, "sku", prod_data.get('sku'))
 
-            if not product.get("url"):
-                # Construct product url
-                prod_id = prod_data.get('retailSkuId')
-                prod_name = product.get('title')
-                prod_slug = self.slugify(prod_name)
-                prod_url = "https://jet.com/product/{}/{}".format(prod_slug, prod_id)
-                cond_set_value(product, "url", prod_url)
+            # Needed for shelf spider
+            
+            # Construct product url
+            prod_id = prod_data.get('retailSkuId')
+            prod_name = product.get('title')
+            prod_slug = self.slugify(prod_name)
+            prod_url = "https://jet.com/product/{}/{}".format(prod_slug, prod_id)
+            product["url"] = prod_url
 
             image_url = prod_data.get('images')
             image_url = image_url[0].get('raw') if image_url else None
@@ -521,7 +522,6 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
             prod_item['ranking'] = (i + 1) + (self.quantity - remaining)
             if self.user_agent_key not in ["desktop", "default"]:
                 prod_item['is_mobile_agent'] = True
-
             if prod_url is None:
                 # The product is complete, no need for another request.
                 yield prod_item
@@ -540,7 +540,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
                     method="POST",
                     body=json.dumps({"sku": prod_id, "origination": "none"}),
                     meta={
-                        "product": prod_item,
+                        "product": prod_item.copy(), # <- somehow this fixes rankings for shelf spider
                         'search_term': search_term,
                         'remaining': self.quantity,
                         'csrf': csrf
