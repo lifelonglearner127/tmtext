@@ -13,7 +13,6 @@ import json
 import requests
 import threading
 import urllib
-import random
 from datetime import datetime
 
 # initialize the logger
@@ -83,10 +82,6 @@ def main( environment, scrape_queue_name, thread_id):
                 logger.info("Received: thread %d server %s url %s" % ( thread_id, server_name, url))
 
                 for i in range(3):
-                    # Wait between 0-10 seconds before requesting Walmart url
-                    if 'walmart.com' in url:
-                        time.sleep(random.randint(0,10))
-
                     # Scrape the page using the scraper running on localhost
                     get_start = time.time()
                     output_text = requests.get(base%(urllib.quote(url))).text
