@@ -56,9 +56,9 @@ class WalmartScraper(Scraper):
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
-        self.turn_off_requests = False
-        if kwargs.get('turn_off_requests'):
-            self.turn_off_requests = kwargs.get('turn_off_requests') == 'true'
+        self.additional_requests = False
+        if kwargs.get('additional_requests'):
+            self.additional_requests = kwargs.get('additional_requests') == 'true'
 
         # whether product has any webcollage media
         self.has_webcollage_media = False
@@ -324,7 +324,7 @@ class WalmartScraper(Scraper):
                         if wcobj_link.endswith(".flv"):
                             self.video_urls.append(wcobj_link)
 
-        if self.turn_off_requests:
+        if not self.additional_requests:
             if not self.video_urls:
                 self.video_urls = None
             return
