@@ -174,7 +174,10 @@ class AutozoneProductsSpider(BaseProductsSpider):
             for i, review in review_list:
                 sum += review*i
                 cnt += review
-            average_rating = float(sum)/cnt
+            if cnt > 0:
+                average_rating = float(sum)/cnt
+            else:
+                average_rating = 0.0
             # number of reviews
             num_of_reviews = 0
             for i, review in review_list:
