@@ -323,6 +323,8 @@ class WalmartScraper(Scraper):
         for video in self.product_info_json.get('videos', {}):
             video = video.get('versions', {}).get('large')
             if video:
+                if video[:2] == '//':
+                    video = video[2:]
                 self.video_urls.append(video)
 
         # webcollage video info
