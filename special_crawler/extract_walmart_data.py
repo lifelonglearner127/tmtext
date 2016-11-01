@@ -320,6 +320,11 @@ class WalmartScraper(Scraper):
                         if wcobj_link.endswith(".flv"):
                             self.video_urls.append(wcobj_link)
 
+        for video in self.product_info_json.get('videos', {}):
+            video = video.get('versions', {}).get('large')
+            if video:
+                self.video_urls.append(video)
+
         # webcollage video info
         request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
         response_text = self._request(request_url).text
