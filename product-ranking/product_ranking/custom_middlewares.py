@@ -7,6 +7,7 @@ from scrapy.contrib.downloadermiddleware.redirect import MetaRefreshMiddleware
 from scrapy.contrib.downloadermiddleware.redirect import RedirectMiddleware
 from scrapy import log
 from urlparse import urljoin
+import random
 
 class VerizonMetaRefreshMiddleware(MetaRefreshMiddleware):
     def process_response(self, request, response, spider):
@@ -97,3 +98,37 @@ class WalmartRetryMiddleware(RedirectMiddleware):
                 request = request.replace(url=location)
                 return request
         return response
+
+
+class LuminatiProxy(object):
+    def __init__(self, settings):
+        self.username = 'lum-customer-CUSTOMER-zone-YOURZONE'
+        self.password = 'YOURPASS'
+        self.port = 22225
+        self.session_id = random.random()
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler.settings)
+
+    def _insert_proxy_into_request(self, request):
+        # Actual Luminati proxy
+        super_proxy_url = 'http://{}-country-us-session-{}:{}@zproxy.luminati.io:{}'.format(
+        self.username, self.session_id, self.password, self.port)
+        # Debug proxies
+        # super_proxy_url = 'http://127.0.0.1:8123'
+        # super_proxy_url = "http://107.189.36.34:3128"
+        request.meta['proxy'] = super_proxy_url
+        # Debug
+        log.msg('Using Luminati proxy {}'.format(super_proxy_url))
+
+    def process_request(self, request, spider):
+        # Don't overwrite existing
+        if 'proxy' in request.meta:
+            return
+        self._insert_proxy_into_request(request)
+
+    def process_exception(self, request, exception, spider):
+        log.msg('Error {} getting url {} using Luminati proxy, changing session'.format(exception, request.url))
+        self.session_id = random.random()
+        self._insert_proxy_into_request(request)
