@@ -407,8 +407,13 @@ def get_data():
             else:
                 url += '?ppw=' + request_arguments.get('ppw')[0]
 
+    if 'turn_off_requests' in request_arguments:
+        turn_off_requests = request_arguments['turn_off_requests'][0]
+    else:
+        turn_off_requests = None
+
     # create scraper class for requested site
-    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot)
+    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot, turn_off_requests=turn_off_requests)
 
     # validate parameter values
     # url

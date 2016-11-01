@@ -56,6 +56,10 @@ class WalmartScraper(Scraper):
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
+        self.turn_off_requests = False
+        if kwargs.get('turn_off_requests'):
+            self.turn_off_requests = kwargs.get('turn_off_requests') == 'True'
+
         # whether product has any webcollage media
         self.has_webcollage_media = False
         # whether product has any sellpoints media
@@ -320,6 +324,11 @@ class WalmartScraper(Scraper):
                         if wcobj_link.endswith(".flv"):
                             self.video_urls.append(wcobj_link)
 
+        if self.turn_off_requests:
+            if not self.video_urls:
+                self.video_urls = None
+            return
+
         # webcollage video info
         request_url = self.BASE_URL_VIDEOREQ_WEBCOLLAGE_NEW % self._extract_product_id()
         response_text = self._request(request_url).text
@@ -343,7 +352,6 @@ class WalmartScraper(Scraper):
             else:
                 self.video_urls.extend(list(set(tree.xpath("//img[contains(@class, 'wc-media wc-iframe') and contains(@data-asset-url, 'autostart')]/@data-asset-url"))))
 
-        '''
         # check sellpoints media if webcollage media doesn't exist
         request_url = self.BASE_URL_VIDEOREQ_SELLPOINTS % self._extract_product_id()
         #TODO: handle errors
@@ -391,7 +399,6 @@ class WalmartScraper(Scraper):
                 self.has_video = True
             else:
                 self.video_urls = None
-        '''
 
     def _video_urls(self):
         """Extracts video URLs for a given walmart product
