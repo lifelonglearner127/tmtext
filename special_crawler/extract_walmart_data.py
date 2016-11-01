@@ -58,7 +58,7 @@ class WalmartScraper(Scraper):
 
         self.turn_off_requests = False
         if kwargs.get('turn_off_requests'):
-            self.turn_off_requests = kwargs.get('turn_off_requests') == 'True'
+            self.turn_off_requests = kwargs.get('turn_off_requests') == 'true'
 
         # whether product has any webcollage media
         self.has_webcollage_media = False
