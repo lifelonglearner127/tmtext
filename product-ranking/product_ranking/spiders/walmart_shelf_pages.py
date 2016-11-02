@@ -5,6 +5,7 @@ import requests
 import json
 
 import scrapy
+from scrapy.conf import settings
 from scrapy.log import WARNING, ERROR
 from scrapy.http import Request
 from scrapy import Selector
@@ -33,8 +34,10 @@ class WalmartShelfPagesSpider(WalmartProductsSpider):
         """ Needed to prepare first request.meta vars to use """
         return {'remaining': 99999, 'search_term': ''}.copy()
 
+    user_agent = 'default'
+
     def __init__(self, *args, **kwargs):
-        self.user_agent = "Adsbot-Google"
+        super(WalmartShelfPagesSpider, self).__init__(*args, **kwargs)
         self._setup_class_compatibility()
 
         self.product_url = kwargs['product_url']
