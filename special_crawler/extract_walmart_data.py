@@ -127,7 +127,7 @@ class WalmartScraper(Scraper):
         self.wv = WalmartVariants()
         self.is_bundle_product = False
 
-        self.proxy_host = "proxy.crawlera.com"
+        self.proxy_host = "content.crawlera.com"
         self.proxy_port = "8010"
         self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
         self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
