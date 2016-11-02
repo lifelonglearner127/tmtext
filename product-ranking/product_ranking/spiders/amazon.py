@@ -84,7 +84,7 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         if asin_id:
             return Request(self.QUESTIONS_URL
                                .format(asin_id=asin_id[0], page="1"),
-                           callback=self._parse_recent_questions)
+                           callback=self._parse_recent_questions, dont_filter=True)
 
         return None
 
@@ -161,7 +161,7 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 current_page = int(re.search('/(\d+)$', response.url).group(1))
                 url = re.sub('/\d+$', "/%d" % (current_page + 1), response.url)
                 reqs.append(
-                    Request(url, callback=self._parse_recent_questions))
+                    Request(url, callback=self._parse_recent_questions, dont_filter=True))
             except:
                 pass
 

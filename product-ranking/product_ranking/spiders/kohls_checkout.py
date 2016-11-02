@@ -1,5 +1,7 @@
 import json
 import uuid
+import random
+import requests
 import re
 import itertools
 from HTMLParser import HTMLParser
@@ -14,13 +16,32 @@ class KohlsSpider(scrapy.Spider):
     allowed_domains = ['kohls.com']  # do not remove comment - used in find_spiders()
 
     SHOPPING_CART_URL = 'http://www.kohls.com/checkout/shopping_cart.jsp'
-    PROMO_CODE_URL = "https://www.kohls.com/checkout/v2/includes/kohlsCash.jsp?" \
-                     "shouldIncludeForms=true"
+    PROMO_CODE_URL = "http://www.kohls.com/checkout/v2/json/wallet_applied_discount_json.jsp?_DARGS=/checkout/v2/includes/wallet_discounts_update_forms.jsp.2"
     TAX_URL = "http://www.kohls.com/checkout/v2/json/shipping_surcharges_gift_tax_json.jsp"
+
+    def _get_proxy(timeout=10):
+        http_proxy_path = '/tmp/http_proxies.txt'
+
+        with open(http_proxy_path, 'r') as fh:
+            proxies = [l.strip() for l in fh.readlines() if l.strip()]
+
+        for _ in range(100):
+            prox = random.choice(proxies)
+            try:
+                r = requests.get(
+                    'http://www.kohls.com/',
+                    proxies={'http': prox, 'https': prox},
+                    timeout=timeout
+                )
+                if r.status_code == 200:
+                    return prox
+            except:
+                pass
 
     def __init__(self, *args, **kwargs):
         settings.overrides['ITEM_PIPELINES'] = {}
         super(KohlsSpider, self).__init__(*args, **kwargs)
+        settings.overrides['COOKIES_DEBUG'] = True
         self.user_agent = kwargs.get(
             'user_agent',
             ('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -42,6 +63,7 @@ class KohlsSpider(scrapy.Spider):
         self.promo_price = int(kwargs.get('promo_price', 0))
         self.promo_mode = self.promo_code and self.promo_price
         self.promo_code = self.promo_code if self.promo_code else [None]
+        self.proxy = self._get_proxy()
 
     def start_requests(self):
         for product in self.product_data:
@@ -105,6 +127,7 @@ class KohlsSpider(scrapy.Spider):
             meta['cookiejar'] = "{}{}{}".format(i, promo_code, uuid.uuid4())
             meta['color'] = color
             meta['quantity'] = quantity
+            meta['proxy'] = self.proxy
 
             formdata['/atg/commerce/order/purchase/'
                      'CartModifierFormHandler.catalogRefIds'] = variants.get(color)

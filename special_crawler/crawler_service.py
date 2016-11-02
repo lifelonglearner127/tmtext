@@ -6,6 +6,7 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..'))
 
 from flask import Flask, jsonify, abort, request
+from extract_shopritedelivers_data import ShopritedeliversScraper
 from extract_walmart_data import WalmartScraper
 from extract_tesco_data import TescoScraper
 from extract_amazon_data import AmazonScraper
@@ -93,8 +94,10 @@ from extract_petfooddirect_data import PetFoodDirectScraper
 from extract_pet360_data import Pet360Scraper
 from extract_petsmart_data import PetsmartScraper
 from extract_walmartgrocery_data import WalmartGroceryScraper
+from extract_autozone_data import AutozoneScraper
 from extract_sears_data import SearsScraper
 from extract_pepboys_data import PepboysScraper
+from extract_jet_data import JetScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -202,6 +205,10 @@ SUPPORTED_SITES = {
                     "walmartgrocery" : WalmartGroceryScraper,
                     "sears" : SearsScraper,
                     "pepboys" : PepboysScraper,
+                    "shopritedelivers": ShopritedeliversScraper,
+                    "autozone" : AutozoneScraper,
+                    "sears" : SearsScraper,
+                    "jet" : JetScraper
                     }
 
 # add logger
@@ -303,6 +310,8 @@ def extract_domain(url):
         return "nike"
     if 'grocery.walmart.com' in url:
         return 'walmartgrocery'
+    if 'jet.com' in url:
+        return 'jet'
 
     m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:
@@ -401,8 +410,13 @@ def get_data():
             else:
                 url += '?ppw=' + request_arguments.get('ppw')[0]
 
+    if 'additional_requests' in request_arguments:
+        additional_requests = request_arguments['additional_requests'][0]
+    else:
+        additional_requests = None
+
     # create scraper class for requested site
-    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot)
+    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot, additional_requests=additional_requests)
 
     # validate parameter values
     # url

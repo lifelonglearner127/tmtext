@@ -12,6 +12,11 @@ import string
 from datetime import datetime
 import lxml.html
 
+import logging
+logger = logging.getLogger(__name__)
+import boto
+from boto.s3.key import Key
+from scrapy.conf import settings
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
@@ -90,22 +95,22 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     default_hhl = [404, 500, 502, 520]
 
-    SEARCH_URL = "http://www.walmart.com/search/search-ng.do?Find=Find" \
+    SEARCH_URL = "https://www.walmart.com/search/search-ng.do?Find=Find" \
         "&_refineresult=true&ic=16_0&search_constraint=0" \
         "&search_query={search_term}&sort={search_sort}"
 
-    LOCATION_URL = "http://www.walmart.com/location"
-    LOCATION_PROD_URL = "http://www.walmart.com/product/dynamic/{product_id}?" \
+    LOCATION_URL = "https://www.walmart.com/location"
+    LOCATION_PROD_URL = "https://www.walmart.com/product/dynamic/{product_id}?" \
                         "location={zip_code}&selected=true"
 
-    QA_URL = "http://www.walmart.com/reviews/api/questions" \
+    QA_URL = "https://www.walmart.com/reviews/api/questions" \
              "/{product_id}?sort=mostRecentQuestions&pageNumber={page}"
     ALL_QA_URL = 'http://www.walmart.com/reviews/api/questions/%s?pageNumber=%i'
 
-    REVIEW_URL = 'http://walmart.ugc.bazaarvoice.com/1336/{product_id}/' \
+    REVIEW_URL = 'https://walmart.ugc.bazaarvoice.com/1336/{product_id}/' \
                  'reviews.djs?format=embeddedhtml&sort=submissionTime'
 
-    REVIEW_DATE_URL = 'http://www.walmart.com/reviews/api/product/{product_id}?' \
+    REVIEW_DATE_URL = 'https://www.walmart.com/reviews/api/product/{product_id}?' \
                       'limit=3&sort=submission-desc&filters=&showProduct=false'
 
     QA_LIMIT = 0xffffffff
@@ -130,6 +135,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
+        # middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+        # middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
+        # middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
+        #
+        # settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
         global SiteProductItem
         if zip_code:
             self.zip_code = zip_code
@@ -146,6 +156,38 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
+        crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
+        settings.overrides['CRAWLERA_APIKEY'] = random.choice(crawlera_keys)
+        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
+        settings.overrides['CRAWLERA_ENABLED'] = True
+        settings.overrides['CONCURRENT_REQUESTS'] = 1
+        settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
+        settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+        middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+        middlewares['product_ranking.randomproxy.RandomProxy'] = None
+        settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+        self.scrape_questions = kwargs.get('scrape_questions', None)
+        if self.scrape_questions not in ('1', 1, True, 'true'):
+            self.scrape_questions = False
+        self.scrape_related_products = kwargs.get('scrape_related_products', None)
+        if self.scrape_related_products not in ('1', 1, True, 'true'):
+            self.scrape_related_products = False
+
+    def _get_download_delay(self):
+        amazon_bucket_name = "sc-settings"
+        config_filename = "walmart_download_delay.cfg"
+        default_download_delay = 1.0
+        try:
+            S3_CONN = boto.connect_s3(is_secure=False)
+            S3_BUCKET = S3_CONN.get_bucket(amazon_bucket_name, validate=False)
+            k = Key(S3_BUCKET)
+            k.key = config_filename
+            value = k.get_contents_as_string()
+            logging.info('Retrieved download_delay={}'.format(value))
+            return float(value)
+        except Exception, e:
+            logging.error(e)
+            return default_download_delay
 
     def start_requests(self):
         # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
@@ -173,7 +215,16 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                           self._parse_single_product,
                           meta={'product': prod, 'handle_httpstatus_list': [404, 502, 520]},
                           dont_filter=True)
+
         else:
+            # reduce quantity to 100 because we're having issues with Walmart now
+            #  (it bans us so we're using Crawlera)
+            if not self.quantity or not isinstance(self.quantity, int):
+                self.quantity = 100
+            if self.quantity and isinstance(self.quantity, int):
+                if self.quantity > 100:
+                    self.quantity = 100
+
             for st in self.searchterms:
                 yield Request(self.SEARCH_URL.format(search_term=st,
                                                      search_sort=self._SEARCH_SORT[self.search_sort]),
@@ -295,7 +346,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
         if 'brand' not in product:
             cond_set_value(product, 'brand', u'NO BRAND')
-        self._gen_related_req(response)
+        if self.scrape_related_products:
+            self._gen_related_req(response)
 
         # parse category and department
         wcp = WalmartCategoryParser()
@@ -525,7 +577,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         yield self.parse_product(original_response)
 
     def _get_walmart_api_data_for_item_id(self, original_response, original_id, current_id, meta):
-        api_url = 'http://api.walmartlabs.com/v1/items/%s?apiKey=%s&format=json'
+        api_url = 'https://api.walmartlabs.com/v1/items/%s?apiKey=%s&format=json'
         api_key = _get_walmart_api_key()
         meta['original_id'] = original_id
         meta['current_id'] = current_id
@@ -801,7 +853,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             brand = is_empty(response.xpath(
                 ".//*[@id='WMItemBrandLnk']//*[@itemprop='brand']/text()").extract())
         if not brand:
-            brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
+            brand = guess_brand_from_first_words(product.get('title', '').replace(u'®', ''))
             brand = [brand]
         if '&amp;' in brand:
             brand=brand.replace('&amp;', "&")
@@ -921,7 +973,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         cid = hashlib.md5(prodid).hexdigest()
         reql = []
         url1 = (
-            "http://www.walmart.com/irs?parentItemId%5B%5D={prodid}"
+            "https://www.walmart.com/irs?parentItemId%5B%5D={prodid}"
             "&module=ProductAjax&clientGuid={cid}").format(
                 prodid=prodid,
                 cid=cid)
@@ -1016,12 +1068,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         )
 
     def _on_dynamic_api_response(self, response):
-        yield Request(  # make another call - to scrape questions/answers
-            self.ALL_QA_URL % (
-                get_walmart_id_from_url(response.meta['product']['url']), 1),
-            meta={'product': response.meta['product']},
-            callback=self._parse_all_questions_and_answers
-        )
+        if self.scrape_questions:
+            yield Request(  # make another call - to scrape questions/answers
+                self.ALL_QA_URL % (
+                    get_walmart_id_from_url(response.meta['product']['url']), 1),
+                meta={'product': response.meta['product']},
+                callback=self._parse_all_questions_and_answers
+            )
         if response.status != 200:
             # walmart's unofficial API returned bad code - site change?
             self.log('Unofficial API returned code [%s], URL: %s' % (
@@ -1281,8 +1334,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         new_meta = response.meta.copy()
         new_meta['product']['recent_questions'] = []
         url = self.QA_URL.format(product_id=product_id, page=1)
-        return Request(url, self._parse_questions,
-                       meta=new_meta, dont_filter=True)
+        if self.scrape_questions:
+            return Request(url, self._parse_questions,
+                           meta=new_meta, dont_filter=True)
+        else:
+            return response.meta['product']
 
     def _parse_questions(self, response):
         data = json.loads(response.body_as_unicode())

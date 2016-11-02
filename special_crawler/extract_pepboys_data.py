@@ -167,7 +167,7 @@ class PepboysScraper(Scraper):
             return self.images
 
         image_urls = self.tree_html.xpath(
-            "//div[contains(@class,'tdImgDetailLinks')]//img/@src")
+            "//div[contains(@class,'tdImgDetailLinks')]//img[@alt!='Play']/@src")
         self.images = image_urls
 
         if image_urls:
@@ -192,10 +192,11 @@ class PepboysScraper(Scraper):
             return video_urls
 
     def _video_count(self):
-        video_urls = self._video_urls()
+        videos = self.tree_html.xpath(
+            "//div[contains(@class,'tdImgDetailLinks')]//img[@alt='Play']/@src")
 
-        if video_urls:
-            return len( video_urls)
+        if videos:
+            return len(videos)
 
     def _pdf_urls(self):
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
