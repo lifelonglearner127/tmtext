@@ -206,6 +206,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         """
 
         if self.product_url:
+            cookies = {}
+            # cookies['prefper'] = 'PREFSTORE~12648~2PREFCITY~1San%20Leandro~2PREFFULLSTREET~11919%20Davis%20St~2PREFSTATE~1CA~2PREFZIP~194117'
+            # cookies['PSID'] = '2648'
+            # cookies['NSID'] = '2648'
             # remove odd spaces for single product urls
             if type(self.product_url) is str or type(self.product_url) is unicode:
                 self.product_url = self.product_url.strip()
@@ -214,7 +218,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             yield Request(self.product_url,
                           self._parse_single_product,
                           meta={'product': prod, 'handle_httpstatus_list': [404, 502, 520]},
-                          dont_filter=True)
+                          dont_filter=True,
+                          cookies=cookies)
 
         else:
             # reduce quantity to 100 because we're having issues with Walmart now
@@ -332,6 +337,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         wv = WalmartVariants()
         wv.setupSC(response)
         product['variants'] = wv._variants()
+        print product['variants']
 
         if self.sponsored_links:
             product["sponsored_links"] = self.sponsored_links
@@ -1075,6 +1081,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 meta={'product': response.meta['product']},
                 callback=self._parse_all_questions_and_answers
             )
+        # TODO: we can replace it with a setting store in cookies
         if response.status != 200:
             # walmart's unofficial API returned bad code - site change?
             self.log('Unofficial API returned code [%s], URL: %s' % (
@@ -1116,6 +1123,15 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                         INFO
                     )
         yield self._start_related(response)
+
+    # opts = data.get('buyingOptions', {})
+    # if opts is None:
+    #     # product "no longer available"?
+    #     self.log('buyingOptions are None: %s' % response.url, WARNING)
+    #     prod.update({"no_longer_available": True})
+    @staticmethod
+    def _parse_no_longer_available(variants):
+        return bool(variants.get('buyingOptions'))
 
     def _populate_from_js(self, response, product):
         data = {}
