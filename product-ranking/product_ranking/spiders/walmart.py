@@ -156,13 +156,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
-        crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
-        settings.overrides['CRAWLERA_APIKEY'] = random.choice(crawlera_keys)
-        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
-        settings.overrides['CRAWLERA_ENABLED'] = True
-        settings.overrides['CONCURRENT_REQUESTS'] = 1
-        settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
-        settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+        # crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
+        # settings.overrides['CRAWLERA_APIKEY'] = random.choice(crawlera_keys)
+        # settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
+        # settings.overrides['CRAWLERA_ENABLED'] = True
+        # settings.overrides['CONCURRENT_REQUESTS'] = 1
+        # settings.overrides['DOWNLOAD_TIMEOUT'] = 300
+        # settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
+        # settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
@@ -172,6 +173,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         self.scrape_related_products = kwargs.get('scrape_related_products', None)
         if self.scrape_related_products not in ('1', 1, True, 'true'):
             self.scrape_related_products = False
+        self.cookies = {}
+        self.cookies[
+            'prefper'] = 'PREFSTORE~12648~2PREFCITY~1San%20Leandro~2PREFFULLSTREET~11919%20Davis%20St~2PREFSTATE~1CA~2PREFZIP~194117'
+        self.cookies['PSID'] = '2648'
+        self.cookies['NSID'] = '2648'
 
     def _get_download_delay(self):
         amazon_bucket_name = "sc-settings"
@@ -198,18 +204,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 "&clientId=walmart_us_desktop_backfill_search" \
                 "&channel=ch_8,backfill" % (st,)
             yield Request(
-                url=url, 
+                url=url,
                 callback=self.get_sponsored_links,
-                dont_filter=True, 
+                dont_filter=True,
                 meta={"handle_httpstatus_list": [404, 502]},
             )
         """
 
         if self.product_url:
-            cookies = {}
-            # cookies['prefper'] = 'PREFSTORE~12648~2PREFCITY~1San%20Leandro~2PREFFULLSTREET~11919%20Davis%20St~2PREFSTATE~1CA~2PREFZIP~194117'
-            # cookies['PSID'] = '2648'
-            # cookies['NSID'] = '2648'
             # remove odd spaces for single product urls
             if type(self.product_url) is str or type(self.product_url) is unicode:
                 self.product_url = self.product_url.strip()
@@ -219,7 +221,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                           self._parse_single_product,
                           meta={'product': prod, 'handle_httpstatus_list': [404, 502, 520]},
                           dont_filter=True,
-                          cookies=cookies)
+                          cookies=self.cookies)
 
         else:
             # reduce quantity to 100 because we're having issues with Walmart now
@@ -236,7 +238,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                               #self._parse_single_product,
                               meta={'handle_httpstatus_list': [404, 502, 520],
                                     'remaining': self.quantity, 'search_term': st},
-                              dont_filter=True)
+                              dont_filter=True,
+                              cookies=self.cookies)
 
     def get_sponsored_links(self, response):
         self.reql = []
@@ -337,7 +340,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         wv = WalmartVariants()
         wv.setupSC(response)
         product['variants'] = wv._variants()
-        print product['variants']
 
         if self.sponsored_links:
             product["sponsored_links"] = self.sponsored_links
@@ -469,10 +471,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     price_amount = float(display_price)
                     product['price'] = Price(price=price_amount, priceCurrency="USD")
 
-        if not product.get('price'):
-            cond_set_value(product, 'url', response.url)
-            return self._gen_location_request(response)
-
         _na_text = response.xpath(
             '//*[contains(@class, "NotAvailable")]'
             '[contains(@style, "block")]/text()'
@@ -485,12 +483,15 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
-        return Request(
-            self.LOCATION_PROD_URL.format(
-                product_id=response.meta['product_id'], zip_code=self.zip_code),
-            callback=self._on_dynamic_api_response,
-            meta=_meta
-        )
+        if self.scrape_questions:
+            return Request(  # make another call - to scrape questions/answers
+                self.ALL_QA_URL % (
+                    get_walmart_id_from_url(product['url']), 1),
+                meta={'product': response.meta['product']},
+                callback=self._parse_all_questions_and_answers
+            )
+        else:
+            return product
 
     def _scrape_seller_ranking(self, response):
         # Old, more detailed bestseller ranking format
@@ -666,7 +667,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     '\d+.\d+',
                     is_empty(tree.xpath('//div[contains(@class,'
                                '"BVRRRatingNormalImage")]/img/@alt'), ""))
-            , 0))   
+            , 0))
             buyer_reviews['average_rating'] = avg
             stars = tree.xpath(
                 '//span[contains(@class,"BVRRHistAbsLabel")]/text()')
@@ -859,7 +860,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             brand = is_empty(response.xpath(
                 ".//*[@id='WMItemBrandLnk']//*[@itemprop='brand']/text()").extract())
         if not brand:
-            brand = guess_brand_from_first_words(product.get('title', '').replace(u'®', ''))
+            brand = guess_brand_from_first_words(product.get('title', '').replace(u'Â®', ''))
             brand = [brand]
         if '&amp;' in brand:
             brand=brand.replace('&amp;', "&")
@@ -1081,7 +1082,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 meta={'product': response.meta['product']},
                 callback=self._parse_all_questions_and_answers
             )
-        # TODO: we can replace it with a setting store in cookies
         if response.status != 200:
             # walmart's unofficial API returned bad code - site change?
             self.log('Unofficial API returned code [%s], URL: %s' % (
@@ -1123,15 +1123,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                         INFO
                     )
         yield self._start_related(response)
-
-    # opts = data.get('buyingOptions', {})
-    # if opts is None:
-    #     # product "no longer available"?
-    #     self.log('buyingOptions are None: %s' % response.url, WARNING)
-    #     prod.update({"no_longer_available": True})
-    @staticmethod
-    def _parse_no_longer_available(variants):
-        return bool(variants.get('buyingOptions'))
 
     def _populate_from_js(self, response, product):
         data = {}
