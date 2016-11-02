@@ -102,25 +102,17 @@ class WalmartRetryMiddleware(RedirectMiddleware):
 
 class LuminatiProxy(object):
     def __init__(self, settings):
-        self.username = 'lum-customer-CUSTOMER-zone-YOURZONE'
-        self.password = 'YOURPASS'
-        self.port = 22225
-        self.session_id = random.random()
+        self.squid_proxy = "52.200.249.157:7708"
+        self.squid_proxy_connector = "10.0.5.241:7708"
 
     @classmethod
     def from_crawler(cls, crawler):
         return cls(crawler.settings)
 
     def _insert_proxy_into_request(self, request):
-        # Actual Luminati proxy
-        super_proxy_url = 'http://{}-country-us-session-{}:{}@zproxy.luminati.io:{}'.format(
-        self.username, self.session_id, self.password, self.port)
-        # Debug proxies
-        # super_proxy_url = 'http://127.0.0.1:8123'
-        # super_proxy_url = "http://107.189.36.34:3128"
-        request.meta['proxy'] = super_proxy_url
+        request.meta['proxy'] = self.squid_proxy
         # Debug
-        log.msg('Using Luminati proxy {}'.format(super_proxy_url))
+        log.msg('Using Luminati proxy via Squid {}'.format(self.squid_proxy))
 
     def process_request(self, request, spider):
         # Don't overwrite existing
@@ -130,5 +122,4 @@ class LuminatiProxy(object):
 
     def process_exception(self, request, exception, spider):
         log.msg('Error {} getting url {} using Luminati proxy, changing session'.format(exception, request.url))
-        self.session_id = random.random()
-        self._insert_proxy_into_request(request)
+
