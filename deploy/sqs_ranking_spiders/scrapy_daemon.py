@@ -73,9 +73,6 @@ from cache_layer import REDIS_HOST, REDIS_PORT, INSTANCES_COUNTER_REDIS_KEY, \
     JOBS_STATS_REDIS_KEY, JOBS_COUNTER_REDIS_KEY
 
 
-from pudb import set_trace
-
-
 TEST_MODE = False  # if we should perform local file tests
 
 logger = logging.getLogger('main_log')
@@ -87,15 +84,15 @@ FOLDERS_PATH = None
 CONVERT_TO_CSV = True
 
 # Connect to S3
-# S3_CONN = boto.connect_s3(is_secure=False)
+S3_CONN = boto.connect_s3(is_secure=False)
 # uncomment if you are not using ssl
 
 # Get current bucket
-# S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
+S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
 
 # settings
 MAX_CONCURRENT_TASKS = 16  # tasks per instance, all with same git branch
-MAX_TRIES_TO_GET_TASK = 5  # tries to get max tasks for same branch
+MAX_TRIES_TO_GET_TASK = 100  # tries to get max tasks for same branch
 LISTENER_ADDRESS = ('localhost', 9070)  # address to listen for signals
 # SCRAPY_LOGS_DIR = ''  # where to put log files
 # SCRAPY_DATA_DIR = ''  # where to put scraped data files
@@ -1602,7 +1599,6 @@ def main():
         MAX_CONCURRENT_TASKS = options.get('MAX_CONCURRENT_TASKS')
         TASK_QUEUE_NAME = options.get('TASK_QUEUE_NAME')
         skip_first_getting_task = True
-    set_trace()
     try:
         listener = Listener(LISTENER_ADDRESS)
     except AuthenticationError:
@@ -1665,7 +1661,6 @@ def main():
         if not skip_first_getting_task or \
                 not task_data:
             TASK_QUEUE_NAME = QUEUES_LIST[q_keys[q_ind]]
-            set_trace()
             logger.info('Trying to get task from %s, try #%s',
                         TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
             if TEST_MODE:
@@ -1748,7 +1743,6 @@ def main():
                 options['branch'] = branch
                 options['task_data'] = task_data
                 options['queue'] = store_queue_for_restart(queue)
-                set_trace()
                 if branch and \
                         get_actual_branch_from_cache() != branch and \
                         ENABLE_TO_RESTART_DAEMON:
@@ -1759,7 +1753,6 @@ def main():
             # make sure all tasks are in same branch
             queue.reset_message()
             continue
-        set_trace()
         # Store jobs metrics
         store_tasks_metrics(task_data, redis_db)
         # start task
@@ -1833,20 +1826,17 @@ def prepare_test_data():
     # only for local-filesystem tests!
     # prepare incoming tasks
     tasks = [dict(
-    #     task_id=4443, site='walmart', searchterms_str='iphone',
-    #     server_name='test_server_name', with_best_seller_ranking=True,
-    #     cmd_args={'quantity': 50}, branch_name='Bug11923DaemonBranch',
-    #     attributes={'SentTimestamp': '1443426145373'}
-    # ), dict(
-    #     task_id=4444, site='amazon', searchterms_str='iphone',
-    #     server_name='test_server_name', with_best_seller_ranking=True,
-    #     cmd_args={'quantity': 1}, branch_name='Bug11923DaemonBranch',
-    #     attributes={'SentTimestamp': '1443426145373'}
-    # ), dict(
-        task_id=4445, site='ah', searchterms_str='iphone',
+        task_id=4443, site='walmart', searchterms_str='iphone',
         server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 50}, branch_name='Bug11923DaemonBranch',
-        attributes={'SentTimestamp': '1443426145373'}
+        cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
+    ), dict(
+        task_id=4444, site='amazon', searchterms_str='iphone',
+        server_name='test_server_name', with_best_seller_ranking=True,
+        cmd_args={'quantity': 1}, attributes={'SentTimestamp': '1443426145373'}
+    ), dict(
+        task_id=4445, site='target', searchterms_str='iphone',
+        server_name='test_server_name', with_best_seller_ranking=True,
+        cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
     )]
     files = [open('/tmp/' + q, 'w') for q in QUEUES_LIST.itervalues()]
     for fh in files:
