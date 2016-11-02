@@ -43,6 +43,8 @@ ITEM_PIPELINES = {
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'product_ranking (+http://www.yourdomain.com)'
 
+RANDOM_UA_PER_PROXY = True
+
 # Delay between requests not to be blocked (seconds).
 DOWNLOAD_DELAY = 0.5
 

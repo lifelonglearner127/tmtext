@@ -126,8 +126,8 @@ class LuminatiProxy(object):
 
 class ProxyrainProxy(object):
     def __init__(self, settings):
-        self.rain_proxy = "http://proxy-002.proxyrain.net:80"
-        self.squid_proxy_connector = "10.0.5.241:7708"
+        self.rain_proxy = "https://proxy-002.proxyrain.net:80"
+        self.squid_proxy_connector = "https://10.0.5.241:7708"
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -135,6 +135,7 @@ class ProxyrainProxy(object):
 
     def _insert_proxy_into_request(self, request):
         request.meta['proxy'] = self.rain_proxy
+        #request.meta['proxy'] = self.squid_proxy_connector
         # Debug
         log.msg('Using Proxyrain proxy via Squid {}'.format(self.rain_proxy))
 
