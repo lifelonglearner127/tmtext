@@ -35,7 +35,8 @@ queue_names = {
     "Walmartondemand": "walmart-ondemand_scrape",
     "WalmartMPHome": "walmart-mp_home_scrape",
     "WalmartScrapeTO": "walmart-mp_scrapeto",
-    "Productioncustomer": "production_customer_scrape"
+    "Productioncustomer": "production_customer_scrape",
+    "wm_production_scrape": "wm_production_scrape"
 }
 
 INDEX_ERROR = "IndexError : The queue was really out of items, but the count was lagging so it tried to run again."
