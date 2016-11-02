@@ -51,6 +51,8 @@ class WalmartScraper(Scraper):
     # base URL for product API
     BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
 
+    CRAWLERA_APIKEY = '5991a374f89f4bc8b81d16046b1e1065'
+
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
@@ -127,19 +129,13 @@ class WalmartScraper(Scraper):
 
         self.proxy_host = "proxy.crawlera.com"
         self.proxy_port = "8010"
-        self.CRAWLERA_APIKEYS = [self.CRAWLERA_APIKEY, self.CRAWLERA_APIKEY_ALT]
-        random.shuffle(self.CRAWLERA_APIKEYS)
-        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEYS[0], "")
+        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
         self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
                         "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
         self.proxies_enabled = True
-        self.try_alternate_apikey = False
 
     def _request(self, url, headers=None):
-        if self.try_alternate_apikey:
-            self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEYS[1], "")
-
         if self.proxies_enabled and 'walmart.com' in url:
             return requests.get(url, \
                     proxies=self.proxies, auth=self.proxy_auth, \
@@ -161,13 +157,9 @@ class WalmartScraper(Scraper):
                     print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
 
                     if resp.status_code == 429:
-                        if try_alternate_apikey:
-                            self.is_timeout = True
-                            self.ERROR_RESPONSE["failure_type"] = "429"
-                            return
-                        else:
-                            self.try_alternate_apikey = True
-                            continue
+                        self.is_timeout = True
+                        self.ERROR_RESPONSE["failure_type"] = "429"
+                        return
 
                     break
 
