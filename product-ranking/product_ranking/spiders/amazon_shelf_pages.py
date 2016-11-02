@@ -253,7 +253,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                     }
                 ), prod
 
-                break
+                # break
 
             if ul:
                 return
@@ -261,7 +261,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         if not links:
             self.log("Found no product links.", WARNING)
             # from scrapy.shell import inspect_response
-            # inspect_response(resp        onse, self)
+            # inspect_response(response, self)
 
         if links:
             for link, is_prime, is_prime_pantry, is_sponsored in links:
