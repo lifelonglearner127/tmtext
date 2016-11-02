@@ -156,19 +156,55 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
-        # TODO implement getting proxy config from bucket here, self._get_proxy_config
-        proxy_config = self._get_proxy_config()
-        crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
-        settings.overrides['CRAWLERA_APIKEY'] = random.choice(crawlera_keys)
+
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
-        settings.overrides['CRAWLERA_ENABLED'] = False
-        settings.overrides['CONCURRENT_REQUESTS'] = 1
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
-        settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+        settings.overrides['CONCURRENT_REQUESTS'] = 1
+
+        # crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
+        #
+        # proxy_config = self._get_proxy_config()
+        # Local override for debugging
+        # proxy_config = {
+        #     "Crawlera1": False,
+        #     "Crawlera2": False,
+        #     "Luminati": True,
+        #     "Proxyrain": False
+        # }
+        # TODO Finish proxy switch after everything will be tested
+        # if proxy_config.get("Luminati") and not proxy_config.get(
+        #         "Proxyrain") and not proxy_config.get("Crawlera1") or proxy_config.get("Crawlera2"):
+        #     middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+        #     middlewares['product_ranking.randomproxy.RandomProxy'] = None
+        #     middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
+        #     settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+        # elif proxy_config.get("Proxyrain") and not proxy_config.get(
+        #         "Luminati") and not proxy_config.get("Crawlera1") and not proxy_config.get("Crawlera2"):
+        #     middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+        #     middlewares['product_ranking.randomproxy.RandomProxy'] = None
+        #     middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
+        # elif proxy_config.get("Crawlera1") and not proxy_config.get(
+        #         "Crawlera2") and not proxy_config.get("Proxyrain") and not proxy_config.get("Luminati"):
+        #     settings.overrides['CRAWLERA_APIKEY'] = crawlera_keys[0]
+        #     settings.overrides['CRAWLERA_ENABLED'] = False
+        #
+        #     settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+        # elif proxy_config.get("Crawlera2") and not proxy_config.get(
+        #         "Crawlera1") and not proxy_config.get("Proxyrain") and not proxy_config.get("Luminati"):
+        #     settings.overrides['CRAWLERA_APIKEY'] = crawlera_keys[1]
+        #     settings.overrides['CRAWLERA_ENABLED'] = False
+        #     settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+        # else:
+        #     settings.overrides['CRAWLERA_APIKEY'] = random.choice(crawlera_keys)
+        #     settings.overrides['CRAWLERA_ENABLED'] = False
+        #     settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
-        middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
+        # middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
+        middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+
         self.scrape_questions = kwargs.get('scrape_questions', None)
         if self.scrape_questions not in ('1', 1, True, 'true'):
             self.scrape_questions = False

@@ -102,8 +102,8 @@ class WalmartRetryMiddleware(RedirectMiddleware):
 
 class LuminatiProxy(object):
     def __init__(self, settings):
-        self.squid_proxy = "52.200.249.157:7708"
-        self.squid_proxy_connector = "10.0.5.241:7708"
+        self.squid_proxy = "http://52.200.249.157:7708"
+        self.squid_proxy_connector = "http://10.0.5.241:7708"
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -112,7 +112,7 @@ class LuminatiProxy(object):
     def _insert_proxy_into_request(self, request):
         request.meta['proxy'] = self.squid_proxy
         # Debug
-        log.msg('Using Luminati proxy via Squid {}'.format(self.squid_proxy))
+        log.msg('Using Luminati proxy via Squid {}'.format(self.squid_proxy_connector))
 
     def process_request(self, request, spider):
         # Don't overwrite existing
@@ -121,5 +121,29 @@ class LuminatiProxy(object):
         self._insert_proxy_into_request(request)
 
     def process_exception(self, request, exception, spider):
-        log.msg('Error {} getting url {} using Luminati proxy, changing session'.format(exception, request.url))
+        log.msg('Error {} getting url {} using Luminati proxy'.format(exception, request.url))
+
+
+class ProxyrainProxy(object):
+    def __init__(self, settings):
+        self.rain_proxy = "http://proxy-002.proxyrain.net:80"
+        self.squid_proxy_connector = "10.0.5.241:7708"
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler.settings)
+
+    def _insert_proxy_into_request(self, request):
+        request.meta['proxy'] = self.rain_proxy
+        # Debug
+        log.msg('Using Proxyrain proxy via Squid {}'.format(self.rain_proxy))
+
+    def process_request(self, request, spider):
+        # Don't overwrite existing
+        if 'proxy' in request.meta:
+            return
+        self._insert_proxy_into_request(request)
+
+    def process_exception(self, request, exception, spider):
+        log.msg('Error {} getting url {} using Proxyrain proxy'.format(exception, request.url))
 
