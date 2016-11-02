@@ -161,7 +161,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['CRAWLERA_ENABLED'] = True
         settings.overrides['CONCURRENT_REQUESTS'] = 1
-        settings.overrides['DOWNLOAD_TIMEOUT'] = 160
+        settings.overrides['DOWNLOAD_TIMEOUT'] = 300
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
         settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
