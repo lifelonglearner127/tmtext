@@ -161,6 +161,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['CRAWLERA_ENABLED'] = True
         settings.overrides['CONCURRENT_REQUESTS'] = 1
+        settings.overrides['DOWNLOAD_TIMEOUT'] = 160
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
         settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
@@ -198,9 +199,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 "&clientId=walmart_us_desktop_backfill_search" \
                 "&channel=ch_8,backfill" % (st,)
             yield Request(
-                url=url, 
+                url=url,
                 callback=self.get_sponsored_links,
-                dont_filter=True, 
+                dont_filter=True,
                 meta={"handle_httpstatus_list": [404, 502]},
             )
         """
@@ -660,7 +661,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     '\d+.\d+',
                     is_empty(tree.xpath('//div[contains(@class,'
                                '"BVRRRatingNormalImage")]/img/@alt'), ""))
-            , 0))   
+            , 0))
             buyer_reviews['average_rating'] = avg
             stars = tree.xpath(
                 '//span[contains(@class,"BVRRHistAbsLabel")]/text()')
