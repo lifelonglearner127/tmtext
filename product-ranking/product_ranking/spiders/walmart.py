@@ -203,6 +203,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
         # middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
         middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
+        middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
+        middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
+
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
 
         self.scrape_questions = kwargs.get('scrape_questions', None)
