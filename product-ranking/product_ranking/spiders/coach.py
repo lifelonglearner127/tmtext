@@ -168,7 +168,11 @@ class CoachSpider(BaseProductsSpider):
         prod = response.meta['product']
         # populate_from_open_graph not awailable cause no type=product
         metadata = _extract_open_graph_metadata(response)
-        cond_set_value(prod, 'description', metadata.get('description'))
+        description = response.xpath('//p[@itemprop="description"]//text()').extract()
+        if description:
+            cond_set_value(prod, 'description', description[0])
+        else:
+            cond_set_value(prod, 'description', metadata.get('description'))
         cond_set_value(prod, 'title', metadata.get('title'))
         cond_replace_value(prod, 'url', metadata.get('url'))
 
