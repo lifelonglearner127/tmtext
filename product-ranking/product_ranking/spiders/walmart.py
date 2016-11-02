@@ -264,9 +264,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 "&clientId=walmart_us_desktop_backfill_search" \
                 "&channel=ch_8,backfill" % (st,)
             yield Request(
-                url=url, 
+                url=url,
                 callback=self.get_sponsored_links,
-                dont_filter=True, 
+                dont_filter=True,
                 meta={"handle_httpstatus_list": [404, 502]},
             )
         """
@@ -726,7 +726,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     '\d+.\d+',
                     is_empty(tree.xpath('//div[contains(@class,'
                                '"BVRRRatingNormalImage")]/img/@alt'), ""))
-            , 0))   
+            , 0))
             buyer_reviews['average_rating'] = avg
             stars = tree.xpath(
                 '//span[contains(@class,"BVRRHistAbsLabel")]/text()')

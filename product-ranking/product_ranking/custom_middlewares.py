@@ -134,7 +134,7 @@ class ProxyrainProxy(object):
         return cls(crawler.settings)
 
     def _insert_proxy_into_request(self, request):
-        request.meta['proxy'] = self.rain_proxy
+        request.meta['proxy'] = self.squid_proxy_connector
         #request.meta['proxy'] = self.squid_proxy_connector
         # Debug
         log.msg('Using Proxyrain proxy via Squid {}'.format(self.rain_proxy))
