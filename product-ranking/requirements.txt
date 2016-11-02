@@ -36,3 +36,4 @@ wheel==0.24.0
 zope.interface==4.1.2
 python-dateutil
 psutil
+fake_useragent
