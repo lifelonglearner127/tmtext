@@ -156,14 +156,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
-        # crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
-        # settings.overrides['CRAWLERA_APIKEY'] = random.choice(crawlera_keys)
-        # settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
-        # settings.overrides['CRAWLERA_ENABLED'] = True
-        # settings.overrides['CONCURRENT_REQUESTS'] = 1
-        # settings.overrides['DOWNLOAD_TIMEOUT'] = 300
-        # settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
-        # settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+        crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
+        settings.overrides['CRAWLERA_APIKEY'] = random.choice(crawlera_keys)
+        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
+        settings.overrides['CRAWLERA_ENABLED'] = True
+        settings.overrides['CONCURRENT_REQUESTS'] = 1
+        settings.overrides['DOWNLOAD_TIMEOUT'] = 300
+        settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
+        settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
@@ -860,7 +860,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             brand = is_empty(response.xpath(
                 ".//*[@id='WMItemBrandLnk']//*[@itemprop='brand']/text()").extract())
         if not brand:
-            brand = guess_brand_from_first_words(product.get('title', '').replace(u'Â®', ''))
+            brand = guess_brand_from_first_words(product.get('title', '').replace(u'®', ''))
             brand = [brand]
         if '&amp;' in brand:
             brand=brand.replace('&amp;', "&")
