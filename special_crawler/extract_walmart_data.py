@@ -144,7 +144,7 @@ class WalmartScraper(Scraper):
             return requests.get(url, \
                     proxies=self.proxies, auth=self.proxy_auth, \
                     verify=False, \
-                    timeout=160)
+                    timeout=300)
         else:
             return requests.get(url, timeout=10)
 
