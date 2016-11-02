@@ -294,6 +294,8 @@ class SiteProductItem(Item):
     tcin = Field()  # Target.com online item number, for example - Online Item #: 16390220
     origin = Field()  # Target.com origin field, describes if item is imported or not
 
+    temporary_unavailable = Field()  # 12696, returns true if 'We're having technical difficulties..' text on the page
+
 
 class DiscountCoupon(Item):
     # Search metadata.
