@@ -51,7 +51,7 @@ class WalmartScraper(Scraper):
     # base URL for product API
     BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
 
-    CRAWLERA_APIKEY = '5991a374f89f4bc8b81d16046b1e1065'
+    CRAWLERA_APIKEY = '4810848337264489a1d2f2230da5c981'
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
@@ -152,6 +152,9 @@ class WalmartScraper(Scraper):
         for i in range(5):
             try:
                 resp = self._request(self.product_page_url)
+
+                if resp.url != self.product_page_url:
+                    print 'REDIRECTED', resp.url, self.product_page_url
 
                 if resp.status_code != 200:
                     print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
