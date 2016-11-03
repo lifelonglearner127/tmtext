@@ -488,6 +488,18 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
+
+
+        m = re.search(
+            self._JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
+        if m:
+            text = m.group(1)
+            try:
+                data = json.loads(text)
+                self._on_dynamic_api_response(response, data)
+            except ValueError:
+                pass
+
         if self.scrape_questions:
             return Request(  # make another call - to scrape questions/answers
                 self.ALL_QA_URL % (
@@ -1079,55 +1091,37 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             meta=response.meta
         )
 
-    def _on_dynamic_api_response(self, response):
-        if self.scrape_questions:
-            yield Request(  # make another call - to scrape questions/answers
-                self.ALL_QA_URL % (
-                    get_walmart_id_from_url(response.meta['product']['url']), 1),
-                meta={'product': response.meta['product']},
-                callback=self._parse_all_questions_and_answers
-            )
-        if response.status != 200:
-            # walmart's unofficial API returned bad code - site change?
-            self.log('Unofficial API returned code [%s], URL: %s' % (
-                response.status, response.url), ERROR)
-        else:
-            data = None
-            try:
-                data = json.loads(response.body_as_unicode())
-            except Exception as e:
-                self.log('Could not load JSON at %s' % response.url, ERROR)
-            if data:
-                prod = response.meta['product']
-                opts = data.get('buyingOptions', {})
-                if opts is None:
-                    # product "no longer available"?
-                    self.log('buyingOptions are None: %s' % response.url, WARNING)
-                    prod.update({"no_longer_available": True})
-                else:
-                    prod['is_out_of_stock'] = not opts.get('available', False)
-                    # In stock if at least one of variants in stock
-                    # see bugzilla #12076
-                    try:
-                        variants_ = data['variantInformation']['variantTypes'][0]['variants']
-                        variants_instock = any([v.get('available') for v in variants_])
-                        prod['is_out_of_stock'] = not variants_instock
-                    except Exception as e:
-                        self.log('Could not load JSON at %s' % response.url, e)
-                    if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
-                        prod['shipping'] = False
-                    prod['is_in_store_only'] = opts.get('storeOnlyItem', None)
-                    if 'price' in opts and 'displayPrice' in opts['price']:
-                        if opts['price']['displayPrice']:
-                            prod['price'] = Price(
-                                priceCurrency='USD',
-                                price=opts['price']['displayPrice'].replace('$', '')
-                            )
-                    self.log(
-                        'Scraped and parsed unofficial APIs from %s' % response.url,
-                        INFO
-                    )
-        yield self._start_related(response)
+    def _on_dynamic_api_response(self, response, data):
+        if data:
+            prod = response.meta['product']
+            opts = data.get('buyingOptions', {})
+            if opts is None:
+                # product "no longer available"?
+                self.log('buyingOptions are None: %s' % response.url, WARNING)
+                prod.update({"no_longer_available": True})
+            else:
+                prod['is_out_of_stock'] = not opts.get('available', False)
+                # In stock if at least one of variants in stock
+                # see bugzilla #12076
+                try:
+                    variants_ = data['variantInformation']['variantTypes'][0]['variants']
+                    variants_instock = any([v.get('available') for v in variants_])
+                    prod['is_out_of_stock'] = not variants_instock
+                except Exception as e:
+                    self.log('Could not load JSON at %s' % response.url, e)
+                if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
+                    prod['shipping'] = False
+                prod['is_in_store_only'] = opts.get('storeOnlyItem', None)
+                if 'price' in opts and 'displayPrice' in opts['price']:
+                    if opts['price']['displayPrice']:
+                        prod['price'] = Price(
+                            priceCurrency='USD',
+                            price=opts['price']['displayPrice'].replace('$', '')
+                        )
+                self.log(
+                    'Scraped and parsed unofficial APIs from %s' % response.url,
+                    INFO
+                )
 
     def _populate_from_js(self, response, product):
         data = {}
