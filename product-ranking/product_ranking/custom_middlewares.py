@@ -102,15 +102,15 @@ class WalmartRetryMiddleware(RedirectMiddleware):
 
 class LuminatiProxy(object):
     def __init__(self, settings):
-        self.squid_proxy = "http://52.200.249.157:7708"
-        self.squid_proxy_connector = "http://10.0.5.241:7708"
+        self.squid_proxy_internal = "http:// 52.201.198.254:7708"
+        self.squid_proxy_connector = "http://10.0.5.78:7708"
 
     @classmethod
     def from_crawler(cls, crawler):
         return cls(crawler.settings)
 
     def _insert_proxy_into_request(self, request):
-        request.meta['proxy'] = self.squid_proxy
+        request.meta['proxy'] = self.squid_proxy_connector
         # Debug
         log.msg('Using Luminati proxy via Squid {}'.format(self.squid_proxy_connector))
 
@@ -126,18 +126,18 @@ class LuminatiProxy(object):
 
 class ProxyrainProxy(object):
     def __init__(self, settings):
-        self.rain_proxy = "https://proxy-002.proxyrain.net:80"
-        self.squid_proxy_connector = "https://10.0.5.241:7708"
+        self.rain_proxy = "http://52.200.249.157:7708"
+        self.squid_proxy_connector = "http://10.0.5.241:7708"
 
     @classmethod
     def from_crawler(cls, crawler):
         return cls(crawler.settings)
 
     def _insert_proxy_into_request(self, request):
-        request.meta['proxy'] = self.rain_proxy
+        request.meta['proxy'] = self.squid_proxy_connector
         #request.meta['proxy'] = self.squid_proxy_connector
         # Debug
-        log.msg('Using Proxyrain proxy via Squid {}'.format(self.rain_proxy))
+        log.msg('Using Proxyrain proxy via Squid {}'.format(self.squid_proxy_connector))
 
     def process_request(self, request, spider):
         # Don't overwrite existing
