@@ -123,8 +123,6 @@ class Command(BaseCommand):
         if should_update_size:
             self._save_group_sizes()
 
-        assert False, 'sizes saved'
-
         # restore groups sizes if needed (sizes may equal to 0 due to some errors in deploy)
         for autoscale_group, items in get_max_instances_in_groups().items():
             max_size = items['max_size']
