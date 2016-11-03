@@ -173,14 +173,29 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         #     "Proxyrain": False
         # }
 
-        random_proxy_provider = random.randint(1, 4)
-        # Force to test
-        random_proxy_provider = 4
+        # random_proxy_provider = random.randint(1, 4)
+        # Force crawlera
+        random_proxy_provider = 1
+
+        self.force_proxy_provider = kwargs.get('force_proxy_provider', "crawleraeu")
+        if self.force_proxy_provider:
+            if "crawleraeu" in ''.join(self.force_proxy_provider).lower():
+                random_proxy_provider = 1
+            elif "luminati" in ''.join(self.force_proxy_provider).lower():
+                random_proxy_provider = 2
+            elif "proxyrain" in ''.join(self.force_proxy_provider).lower():
+                random_proxy_provider = 3
+            elif "shaderio" in ''.join(self.force_proxy_provider).lower():
+                random_proxy_provider = 4
+            elif "random" in ''.join(self.force_proxy_provider).lower():
+                random_proxy_provider = random.randint(1, 4)
+
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
         if random_proxy_provider == 1:
             self.log('*** Using CrawleraEU', level=INFO)
+            settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
             settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
             settings.overrides['CRAWLERA_ENABLED'] = True
             settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
@@ -212,7 +227,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def _get_download_delay(self):
         amazon_bucket_name = "sc-settings"
         config_filename = "walmart_download_delay.cfg"
-        default_download_delay = 1.0
+        default_download_delay = 2.0
         try:
             S3_CONN = boto.connect_s3(is_secure=False)
             S3_BUCKET = S3_CONN.get_bucket(amazon_bucket_name, validate=False)
