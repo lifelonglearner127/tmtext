@@ -159,7 +159,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
-        settings.overrides['CONCURRENT_REQUESTS'] = 1
+        settings.overrides['CONCURRENT_REQUESTS'] = 2
 
 
         # proxy_config = self._get_proxy_config()
@@ -183,16 +183,20 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
         if random_proxy_provider == 1:
+            self.log('*** Using Crawlera1', level=INFO)
             settings.overrides['CRAWLERA_APIKEY'] = crawlera_keys[0]
             settings.overrides['CRAWLERA_ENABLED'] = True
             settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
         elif random_proxy_provider == 2:
+            self.log('*** Using Crawlera2', level=INFO)
             settings.overrides['CRAWLERA_APIKEY'] = crawlera_keys[1]
             settings.overrides['CRAWLERA_ENABLED'] = True
             settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
         elif random_proxy_provider == 3:
+            self.log('*** Using Luminati', level=INFO)
             middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
         else:
+            self.log('*** Using Proxyrain', level=INFO)
             middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
 
         middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400

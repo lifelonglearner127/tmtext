@@ -112,7 +112,7 @@ class LuminatiProxy(object):
     def _insert_proxy_into_request(self, request):
         request.meta['proxy'] = self.squid_proxy_connector
         # Debug
-        log.msg('Using Luminati proxy via Squid {}'.format(self.squid_proxy_connector))
+        # log.msg('Using Luminati proxy via Squid {}'.format(self.squid_proxy_connector))
 
     def process_request(self, request, spider):
         # Don't overwrite existing
@@ -137,7 +137,7 @@ class ProxyrainProxy(object):
         request.meta['proxy'] = self.squid_proxy_connector
         #request.meta['proxy'] = self.squid_proxy_connector
         # Debug
-        log.msg('Using Proxyrain proxy via Squid {}'.format(self.squid_proxy_connector))
+        # log.msg('Using Proxyrain proxy via Squid {}'.format(self.squid_proxy_connector))
 
     def process_request(self, request, spider):
         # Don't overwrite existing
