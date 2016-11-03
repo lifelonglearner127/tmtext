@@ -135,7 +135,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
-        
+
         # DO NOT UNCOMMENT THOSE, its potentially dangerous
         # middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         # middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
@@ -173,9 +173,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         #     "Proxyrain": False
         # }
 
-        random_proxy_provider = random.randint(1, 3)
+        random_proxy_provider = random.randint(1, 4)
         # Force to test
-        random_proxy_provider = 2
+        random_proxy_provider = 4
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
@@ -189,9 +189,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
             middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
             middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
-        else:
+        elif random_proxy_provider == 3:
             self.log('*** Using Proxyrain', level=INFO)
             middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
+            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
+            middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
+        else:
+            self.log('*** Using Shader.io', level=INFO)
+            middlewares['product_ranking.custom_middlewares.ShaderioProxy'] = 750
             middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
             middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
 

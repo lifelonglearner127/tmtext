@@ -148,3 +148,23 @@ class ProxyrainProxy(object):
     def process_exception(self, request, exception, spider):
         log.msg('Error {} getting url {} using Proxyrain proxy'.format(exception, request.url))
 
+class ShaderioProxy(object):
+    def __init__(self, settings):
+        self.squid_proxy_connector = "http://10.0.5.12:7708"
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler.settings)
+
+    def _insert_proxy_into_request(self, request):
+        request.meta['proxy'] = self.squid_proxy_connector
+
+    def process_request(self, request, spider):
+        # Don't overwrite existing
+        if 'proxy' in request.meta:
+            return
+        self._insert_proxy_into_request(request)
+
+    def process_exception(self, request, exception, spider):
+        log.msg('Error {} getting url {} using Shader.io proxy'.format(exception, request.url))
+
