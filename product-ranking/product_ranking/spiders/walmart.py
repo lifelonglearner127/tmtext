@@ -161,8 +161,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
         settings.overrides['CONCURRENT_REQUESTS'] = 1
 
-        # crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
-        #
+
         # proxy_config = self._get_proxy_config()
         # Local override for debugging
         # proxy_config = {
@@ -199,10 +198,30 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         #     settings.overrides['CRAWLERA_ENABLED'] = False
         #     settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
 
+        crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
+        # 1 - crawlera1
+        # 2 - crawlera2
+        # 3 - Luminati
+        # 4 - Proxyrain
+        random_proxy_provider = random.randint(0, 4)
+        # Force to test
+        random_proxy_provider = 3
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
-        # middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
-        middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
+
+        if random_proxy_provider == 1:
+            settings.overrides['CRAWLERA_APIKEY'] = crawlera_keys[0]
+            settings.overrides['CRAWLERA_ENABLED'] = True
+            settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+        elif random_proxy_provider == 2:
+            settings.overrides['CRAWLERA_APIKEY'] = crawlera_keys[1]
+            settings.overrides['CRAWLERA_ENABLED'] = True
+            settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+        elif random_proxy_provider == 3:
+            middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
+        else:
+            middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
+
         middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
         middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
 
