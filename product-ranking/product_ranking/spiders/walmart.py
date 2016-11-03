@@ -159,7 +159,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
-        settings.overrides['CONCURRENT_REQUESTS'] = 1
+        settings.overrides['CONCURRENT_REQUESTS'] = 6
 
 
         # proxy_config = self._get_proxy_config()
