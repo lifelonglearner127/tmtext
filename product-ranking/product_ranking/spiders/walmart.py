@@ -178,7 +178,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         # 4 - Proxyrain
         random_proxy_provider = random.randint(0, 4)
         # Force to test
-        random_proxy_provider = 4
+        random_proxy_provider = 2
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
