@@ -51,7 +51,7 @@ class WalmartScraper(Scraper):
     # base URL for product API
     BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
 
-    CRAWLERA_APIKEY = '4810848337264489a1d2f2230da5c981'
+    CRAWLERA_APIKEY = '6b7c3e13db4e440db31d457bc10e6be8'
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
