@@ -138,8 +138,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         # middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         # middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
         # middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
-        #
         # settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+
         global SiteProductItem
         if zip_code:
             self.zip_code = zip_code
@@ -156,8 +156,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
-        crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
-        settings.overrides['CRAWLERA_APIKEY'] = random.choice(crawlera_keys)
+        # crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
+        # settings.overrides['CRAWLERA_APIKEY'] = random.choice(crawlera_keys)
+        settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['CRAWLERA_ENABLED'] = True
         settings.overrides['CONCURRENT_REQUESTS'] = 1
@@ -165,6 +166,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
         settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+
+        middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
+        middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
+
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
         self.scrape_questions = kwargs.get('scrape_questions', None)
