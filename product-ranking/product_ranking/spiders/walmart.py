@@ -135,6 +135,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
+        
+        # DO NOT UNCOMMENT THOSE, its potentially dangerous
         # middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         # middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
         # middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
@@ -182,8 +184,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
             settings.overrides['CRAWLERA_ENABLED'] = True
             settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
-            middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
-            middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
         elif random_proxy_provider == 2:
             self.log('*** Using Luminati', level=INFO)
             middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
