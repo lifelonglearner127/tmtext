@@ -169,6 +169,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         #     "Crawlera2": False,
         #     "Luminati": True,
         #     "Proxyrain": False
+        # }
 
         crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
         # 1 - crawlera1
