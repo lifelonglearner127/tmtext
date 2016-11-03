@@ -295,11 +295,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             # reduce quantity to 100 because we're having issues with Walmart now
             #  (it bans us so we're using Crawlera)
-            if not self.quantity or not isinstance(self.quantity, int):
-                self.quantity = 100
-            if self.quantity and isinstance(self.quantity, int):
-                if self.quantity > 100:
-                    self.quantity = 100
+            # TODO UNCOMMENT THOSE, COMMENTED ONY FOR TESTING
+            # if not self.quantity or not isinstance(self.quantity, int):
+            #     self.quantity = 100
+            # if self.quantity and isinstance(self.quantity, int):
+            #     if self.quantity > 100:
+            #         self.quantity = 100
 
             for st in self.searchterms:
                 yield Request(self.SEARCH_URL.format(search_term=st,
