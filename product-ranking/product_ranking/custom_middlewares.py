@@ -86,10 +86,10 @@ class AmazonProxyMiddleware(object):
 
 class WalmartRetryMiddleware(RedirectMiddleware):
     def process_response(self, request, response, spider):
-        if response.status in [301, 302, 307]:
+        if response.status in []:
             location = response.headers.get('Location')
             location = urljoin('https://www.walmart.com/', location)
-            if not location.startswith('https://www.walmart.com/'):
+            if not re.search('^https?://www.walmart.com/', location):
                 log.msg('RETRY: {}'.format(request.url))
                 request.dont_filter = True
                 return request
