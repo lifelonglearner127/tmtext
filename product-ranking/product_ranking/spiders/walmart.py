@@ -169,34 +169,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         #     "Crawlera2": False,
         #     "Luminati": True,
         #     "Proxyrain": False
-        # }
-        # TODO Finish proxy switch after everything will be tested
-        # if proxy_config.get("Luminati") and not proxy_config.get(
-        #         "Proxyrain") and not proxy_config.get("Crawlera1") or proxy_config.get("Crawlera2"):
-        #     middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
-        #     middlewares['product_ranking.randomproxy.RandomProxy'] = None
-        #     middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
-        #     settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
-        # elif proxy_config.get("Proxyrain") and not proxy_config.get(
-        #         "Luminati") and not proxy_config.get("Crawlera1") and not proxy_config.get("Crawlera2"):
-        #     middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
-        #     middlewares['product_ranking.randomproxy.RandomProxy'] = None
-        #     middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
-        # elif proxy_config.get("Crawlera1") and not proxy_config.get(
-        #         "Crawlera2") and not proxy_config.get("Proxyrain") and not proxy_config.get("Luminati"):
-        #     settings.overrides['CRAWLERA_APIKEY'] = crawlera_keys[0]
-        #     settings.overrides['CRAWLERA_ENABLED'] = False
-        #
-        #     settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
-        # elif proxy_config.get("Crawlera2") and not proxy_config.get(
-        #         "Crawlera1") and not proxy_config.get("Proxyrain") and not proxy_config.get("Luminati"):
-        #     settings.overrides['CRAWLERA_APIKEY'] = crawlera_keys[1]
-        #     settings.overrides['CRAWLERA_ENABLED'] = False
-        #     settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
-        # else:
-        #     settings.overrides['CRAWLERA_APIKEY'] = random.choice(crawlera_keys)
-        #     settings.overrides['CRAWLERA_ENABLED'] = False
-        #     settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
 
         crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
         # 1 - crawlera1
@@ -251,7 +223,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             return default_download_delay
 
     def _get_proxy_config(self):
-        # TODO finish this, see bz #12649
         # This gets proxy service configuration (crawlera1, crawlera2, Luminati or Proxyrain)
         amazon_bucket_name = "sc-settings"
         config_filename = "walmart_proxy_config.cfg"
