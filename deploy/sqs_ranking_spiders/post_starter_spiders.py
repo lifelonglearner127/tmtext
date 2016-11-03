@@ -12,7 +12,7 @@ INSTALL_PACKAGES = [
     'workerpool', 'sqlalchemy', 'psycopg2', 'hjson', 'pyyaml',
     'python-dateutil', 'psutil', 'service_identity', 'mmh3', 'flask',
     'selenium', 'pyvirtualdisplay', 'scrapy_crawlera', 'grequests',
-    'python-apt', 'fake_useragent', 'scrapy==0.24.6'
+    'python-apt', 'fake_useragent', 'Twisted==14.0.0'
 ]
 
 
