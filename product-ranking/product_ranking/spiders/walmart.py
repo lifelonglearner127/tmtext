@@ -178,6 +178,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         random_proxy_provider = 1
 
         self.force_proxy_provider = kwargs.get('force_proxy_provider', "crawleraeu")
+        print "Proxy provider: {}".format(self.force_proxy_provider)
         if self.force_proxy_provider:
             if "crawleraeu" in ''.join(self.force_proxy_provider).lower():
                 random_proxy_provider = 1
@@ -189,28 +190,29 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 random_proxy_provider = 4
             elif "random" in ''.join(self.force_proxy_provider).lower():
                 random_proxy_provider = random.randint(1, 4)
+        print "Proxy provider selected: {}".format(random_proxy_provider)
 
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
         if random_proxy_provider == 1:
-            self.log('*** Using CrawleraEU', level=INFO)
+            self.log('*** Using CrawleraEU', level=WARNING)
             settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
             settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
             settings.overrides['CRAWLERA_ENABLED'] = True
             settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
         elif random_proxy_provider == 2:
-            self.log('*** Using Luminati', level=INFO)
+            self.log('*** Using Luminati', level=WARNING)
             middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
             middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
             middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
         elif random_proxy_provider == 3:
-            self.log('*** Using Proxyrain', level=INFO)
+            self.log('*** Using Proxyrain', level=WARNING)
             middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
             middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
             middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
         else:
-            self.log('*** Using Shader.io', level=INFO)
+            self.log('*** Using Shader.io', level=WARNING)
             middlewares['product_ranking.custom_middlewares.ShaderioProxy'] = 750
             middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
             middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
