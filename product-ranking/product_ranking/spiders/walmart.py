@@ -171,47 +171,29 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         #     "Proxyrain": False
         # }
 
-        crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c'
-            ,"2057fdfe294b4af1bdf8868279800282", "4810848337264489a1d2f2230da5c981"]
-        # 1 - crawlera1
-        # 2 - crawlera2
-        # 3 - Luminati
-        # 4 - Proxyrain
-        random_proxy_provider = random.randint(1, 6)
+        random_proxy_provider = random.randint(1, 3)
         # Force to test
-        random_proxy_provider = 5
+        random_proxy_provider = 3
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
         if random_proxy_provider == 1:
-            self.log('*** Using Crawlera1', level=INFO)
-            settings.overrides['CRAWLERA_APIKEY'] = crawlera_keys[0]
+            self.log('*** Using CrawleraEU', level=INFO)
+            settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
             settings.overrides['CRAWLERA_ENABLED'] = True
             settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+            middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
+            middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
         elif random_proxy_provider == 2:
-            self.log('*** Using Crawlera2', level=INFO)
-            settings.overrides['CRAWLERA_APIKEY'] = crawlera_keys[1]
-            settings.overrides['CRAWLERA_ENABLED'] = True
-            settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
-        elif random_proxy_provider == 3:
-            self.log('*** Using Crawlera3', level=INFO)
-            settings.overrides['CRAWLERA_APIKEY'] = crawlera_keys[2]
-            settings.overrides['CRAWLERA_ENABLED'] = True
-            settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
-        elif random_proxy_provider == 4:
-            self.log('*** Using Crawlera4', level=INFO)
-            settings.overrides['CRAWLERA_APIKEY'] = crawlera_keys[3]
-            settings.overrides['CRAWLERA_ENABLED'] = True
-            settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
-        elif random_proxy_provider == 5:
             self.log('*** Using Luminati', level=INFO)
             middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
+            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
+            middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
         else:
             self.log('*** Using Proxyrain', level=INFO)
             middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
-
-        middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
-        middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
+            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
+            middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
 
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
 
