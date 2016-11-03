@@ -159,7 +159,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
-        settings.overrides['CONCURRENT_REQUESTS'] = 2
+        settings.overrides['CONCURRENT_REQUESTS'] = 1
 
 
         # proxy_config = self._get_proxy_config()
@@ -171,14 +171,15 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         #     "Proxyrain": False
         # }
 
-        crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c', "4810848337264489a1d2f2230da5c981"]
+        crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c'
+            ,"2057fdfe294b4af1bdf8868279800282", "4810848337264489a1d2f2230da5c981"]
         # 1 - crawlera1
         # 2 - crawlera2
         # 3 - Luminati
         # 4 - Proxyrain
-        random_proxy_provider = random.randint(1, 5)
+        random_proxy_provider = random.randint(1, 6)
         # Force to test
-        random_proxy_provider = 3
+        random_proxy_provider = 5
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
@@ -196,8 +197,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             self.log('*** Using Crawlera3', level=INFO)
             settings.overrides['CRAWLERA_APIKEY'] = crawlera_keys[2]
             settings.overrides['CRAWLERA_ENABLED'] = True
-            # settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+            settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
         elif random_proxy_provider == 4:
+            self.log('*** Using Crawlera4', level=INFO)
+            settings.overrides['CRAWLERA_APIKEY'] = crawlera_keys[3]
+            settings.overrides['CRAWLERA_ENABLED'] = True
+            settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+        elif random_proxy_provider == 5:
             self.log('*** Using Luminati', level=INFO)
             middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
         else:
