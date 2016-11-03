@@ -159,7 +159,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
-        settings.overrides['CONCURRENT_REQUESTS'] = 6
+        settings.overrides['CONCURRENT_REQUESTS'] = 1
 
 
         # proxy_config = self._get_proxy_config()
@@ -173,7 +173,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         random_proxy_provider = random.randint(1, 3)
         # Force to test
-        random_proxy_provider = 3
+        random_proxy_provider = 2
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
