@@ -188,8 +188,8 @@ class StaplesadvantageProductsSpider(ProductsSpider):
                  unicode.strip)
 
     def _populate_from_html(self, response, product):
-        title = response.xpath('//p[contains(@class, "search-prod-desc")]'
-            '/@title'
+        title = response.xpath('//h1[contains(@class, "search-prod-desc")]/text()'
+            #'/@title'
             ).extract()
         cond_set(product, 'title', title)
         xpath = '//div[@id="dotcombrand"]/../preceding-sibling::li[1]/text()'
@@ -205,15 +205,14 @@ class StaplesadvantageProductsSpider(ProductsSpider):
                 else:
                     brand = [brand[1]]
         cond_set(product, 'brand', brand)
-        xpath = '//div[@class="tabs_instead_title" and text()="Description"]' \
-                '/following-sibling::*/node()[normalize-space()] |' \
+        xpath = '//h3[text()="Description"]' \
+                '/following-sibling::p[normalize-space()] |' \
                 '//div[contains(@class, "product-details-desc")]'
         desc = response.xpath(xpath).extract()
         cond_set(product, 'description', desc)
-        cond_set(product, 'image_url',
-                 response.css('#enlImage::attr(src)').extract(),
-                 lambda url: urljoin(response.url, url))
-        model = re.findall('var pr_page_id="(\d+)"', response.body)
+        image_url = re.findall("enlargedImageURL = '([^']*)'", response.body)
+        cond_set(product, 'image_url', image_url)
+        model = re.findall('"model" : "([^"]*)"', response.body)
         cond_set(product, 'model', model)
         self._populate_related_products(response, product)
 
