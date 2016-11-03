@@ -149,12 +149,13 @@ class WalmartScraper(Scraper):
         if re.match('http://', self.product_page_url):
             self.product_page_url = 'https://' + re.match('http://(.+)', self.product_page_url).group(1)
 
-        for i in range(5):
+        for i in range(3):
             try:
                 resp = self._request(self.product_page_url)
 
                 if resp.url != self.product_page_url:
                     print 'REDIRECTED', resp.url, self.product_page_url
+                    continue
 
                 if resp.status_code != 200:
                     print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
