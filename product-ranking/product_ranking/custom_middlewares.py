@@ -103,7 +103,7 @@ class WalmartRetryMiddleware(RedirectMiddleware):
 class LuminatiProxy(object):
     def __init__(self, settings):
         self.squid_proxy_internal = "http:// 52.201.198.254:7708"
-        self.squid_proxy_connector = "https://10.0.5.78:7708"
+        self.squid_proxy_connector = "http://10.0.5.78:7708"
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -127,7 +127,7 @@ class LuminatiProxy(object):
 class ProxyrainProxy(object):
     def __init__(self, settings):
         self.rain_proxy = "http://52.200.249.157:7708"
-        self.squid_proxy_connector = "https://10.0.5.241:7708"
+        self.squid_proxy_connector = "http://10.0.5.241:7708"
 
     @classmethod
     def from_crawler(cls, crawler):
