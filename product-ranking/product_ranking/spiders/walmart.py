@@ -161,7 +161,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
-        settings.overrides['CONCURRENT_REQUESTS'] = 1
+        settings.overrides['CONCURRENT_REQUESTS'] = 50
 
 
         # proxy_config = self._get_proxy_config()
@@ -229,7 +229,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def _get_download_delay(self):
         amazon_bucket_name = "sc-settings"
         config_filename = "walmart_download_delay.cfg"
-        default_download_delay = 2.0
+        default_download_delay = 1.0
         try:
             S3_CONN = boto.connect_s3(is_secure=False)
             S3_BUCKET = S3_CONN.get_bucket(amazon_bucket_name, validate=False)
