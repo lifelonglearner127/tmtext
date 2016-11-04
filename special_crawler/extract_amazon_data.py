@@ -431,6 +431,19 @@ class AmazonScraper(Scraper):
             return None
         return d2
 
+    def _exclude_images_from_description(self, block):
+        all_items_list = block.xpath(".//*")
+        remove_candidates = []
+
+        for item in all_items_list:
+            if item.tag == "img":
+                remove_candidates.append(item)
+
+            if item.xpath("./@style") and ('border-top' in item.xpath("./@style")[0] or 'border-bottom' in item.xpath("./@style")[0]):
+                remove_candidates.append(item)
+
+        for item in remove_candidates:
+            item.getparent().remove(item)
 
     def _long_description_helper(self):
         try:
@@ -455,6 +468,19 @@ class AmazonScraper(Scraper):
                 description = description + html.tostring(item)
 
             description = self._clean_text(self._exclude_javascript_from_description(description))
+
+            if description is not None and len(description) > 5:
+                return description
+        except:
+            pass
+
+        try:
+            description = ""
+            children = self.tree_html.xpath("//div[@id='productDescription']/child::*[not(@class='disclaim') and not(name()='script') and not(name()='style')]")
+
+            for child in children:
+                self._exclude_images_from_description(child)
+                description += self._clean_text(self._exclude_javascript_from_description(html.tostring(child)))
 
             if description is not None and len(description) > 5:
                 return description
