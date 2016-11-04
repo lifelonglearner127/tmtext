@@ -475,6 +475,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     display_price = display_price.group()
                     price_amount = float(display_price)
                     product['price'] = Price(price=price_amount, priceCurrency="USD")
+
+        # randomly walmart respond with a different JS data, so we should make this extra request
         if not product.get('price'):
             cond_set_value(product, 'url', response.url)
             return self._gen_location_request(response)
