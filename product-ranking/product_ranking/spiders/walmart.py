@@ -179,6 +179,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             chosen_proxy_provider = self.force_proxy_provider
         else:
             chosen_proxy_provider = self._weighted_choice(proxy_config)
+            logger.warning("*** Proxy provider will be chosen randomly from: {}".format(proxy_config))
+            logger.warning("*** Chosen : {}".format(chosen_proxy_provider))
 
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
 
@@ -270,9 +272,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             # Save config to file
             with open(local_filename, "w") as conf_file:
                 conf_file.write(value)
-            # logging.info('Retrieved proxy config: {}'.format(value))
         except Exception as e:
             logging.error(e)
+        else:
+            logging.info('Retrieved proxy config from bucket: {}'.format(value))
+            logging.info('Saved to file: {}'.format(local_filename))
         return proxy_config
 
     @staticmethod
@@ -283,6 +287,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 proxy_config = json.load(conf_file)
         except Exception as e:
             logging.error(e)
+        else:
+            logging.info('Retrieved proxy config from file: {}'.format(proxy_config))
         return proxy_config
 
     def start_requests(self):
