@@ -186,7 +186,7 @@ class WalmartScraper(Scraper):
             except Exception, e:
                 print 'Error extracting', self.product_page_url, type(e), e
 
-                if str(e) == "('Cannot connect to proxy.', error(104, 'Connection reset by peer'))":
+                if str(e) == "('Cannot connect to proxy.', error(104, 'Connection reset by peer'))" or re.search('Max retries exceeded', str(e)):
                     max_retries = 100
                     time.sleep(1)
 

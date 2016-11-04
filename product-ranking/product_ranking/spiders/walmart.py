@@ -156,8 +156,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
-        # crawlera_keys = ['1c946889036f48a6b97cc2a0fbe8ac79', '1b2f4395570e401a8fbdaecefbdd390c']
-        # settings.overrides['CRAWLERA_APIKEY'] = random.choice(crawlera_keys)
         settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['CRAWLERA_ENABLED'] = True
@@ -1517,3 +1515,4 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             request = self._get_next_products_page(response, prods_count)
             if request is not None:
                 yield request
+
