@@ -1609,7 +1609,7 @@ def main():
         if task.get_cached_result(TASK_QUEUE_NAME):
             # if found response in cache, upload data, delete task from sqs
             task.queue.task_done()
-            #notify_cache(task.task_data, is_from_cache=True)
+            notify_cache(task.task_data, is_from_cache=True)
             del task
             continue
         if task.start():
@@ -1621,7 +1621,7 @@ def main():
             if task.is_screenshot_job():
                 task.start_screenshot_job_if_needed()
             task.queue.task_done()
-            #notify_cache(task.task_data, is_from_cache=False)
+            notify_cache(task.task_data, is_from_cache=False)
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
                          task.task_data.get('task_id', 0))
