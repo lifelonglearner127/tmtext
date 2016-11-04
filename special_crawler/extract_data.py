@@ -56,6 +56,8 @@ class Scraper():
     # number of retries for fetching product page source before giving up
     MAX_RETRIES = 3
 
+    CRAWLERA_HOST = 'content.crawlera.com'
+    CRAWLERA_PORT = '8010'
     CRAWLERA_APIKEY = "3b1bf5856b2142a799faf2d35b504383"
 
     # List containing all data types returned by the crawler (that will appear in responses of requests to service in crawler_service.py)

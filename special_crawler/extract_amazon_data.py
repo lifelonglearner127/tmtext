@@ -56,8 +56,8 @@ class AmazonScraper(Scraper):
         self.variants = None
         self.no_image_available = 0
 
-        self.proxy_host = "proxy.crawlera.com"
-        self.proxy_port = "8010"
+        self.proxy_host = self.CRAWLERA_HOST
+        self.proxy_port = self.CRAWLERA_PORT
         self.proxy_auth = (self.CRAWLERA_APIKEY, "")
         self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
                         "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
