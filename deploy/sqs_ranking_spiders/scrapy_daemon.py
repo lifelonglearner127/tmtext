@@ -1135,7 +1135,7 @@ class ScrapyTask(object):
             self._push_simmetrica_events()
             first_signal = self._get_next_signal(start_time)
         except Exception as ex:
-            logger.warning('Error occured while starting scrapy: %s', ex)
+            logger.warning('Error occurred while starting scrapy: %s', ex)
             return False
         try:
             self._run_signal(first_signal, start_time)
@@ -1339,6 +1339,9 @@ def log_failed_task(task):
 def notify_cache(task, is_from_cache=False):
     """send request to cache (for statistics)"""
     url = CACHE_HOST + CACHE_URL_STATS
+    json_task = json.dumps(task)
+    logger.info('Notify cache task: %s', json_task)
+    data = dict(task=json_task, is_from_cache=json.dumps(is_from_cache))
     if 'start_time' in task and task['start_time']:
         if ('finish_time' in task and not task['finish_time']) or \
                 'finish_time' not in task:
@@ -1416,6 +1419,36 @@ def get_instance_billing_limit_time():
                        'time limit from redis cache. Limitation is disabled.'
                        ' ERROR: %s.', str(e))
     return 0
+
+
+def shut_down_instance_if_swap_used():
+    """ Shuts down the instance of swap file is used heavily
+    :return:
+    """
+    stats = statistics.report_statistics()
+    swap_usage_total = stats.get('swap_usage_total', None)
+    ram_usage_total = stats.get('ram_usage_total', None)
+
+    logger.info('Checking swap and RAM usage...')
+
+    if swap_usage_total and ram_usage_total:
+        try:
+            swap_usage_total = float(ram_usage_total)
+            ram_usage_total = float(ram_usage_total)
+        except:
+            logger.error('Swap and RAM usage check failed during float() conversion')
+            return
+
+        if ram_usage_total > 70:
+            if swap_usage_total > 10:
+                # we're swapping very badly!
+                logger.error('Swap and RAM usage is too high! Terminating instance')
+                try:
+                    conn = boto.connect_ec2()
+                    instance_id = get_instance_metadata()['instance-id']
+                    conn.terminate_instances(instance_id, decrement_capacity=True)
+                except Exception as e:
+                    logger.error('Failed to terminate instance, exception: %s' % str(e))
 
 
 def main():
@@ -1576,7 +1609,7 @@ def main():
         if task.get_cached_result(TASK_QUEUE_NAME):
             # if found response in cache, upload data, delete task from sqs
             task.queue.task_done()
-            notify_cache(task.task_data, is_from_cache=True)
+            #notify_cache(task.task_data, is_from_cache=True)
             del task
             continue
         if task.start():
@@ -1588,7 +1621,7 @@ def main():
             if task.is_screenshot_job():
                 task.start_screenshot_job_if_needed()
             task.queue.task_done()
-            notify_cache(task.task_data, is_from_cache=False)
+            #notify_cache(task.task_data, is_from_cache=False)
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
                          task.task_data.get('task_id', 0))
@@ -1620,6 +1653,7 @@ def main():
             send_tasks_status(tasks_taken)
             time.sleep(step_time)
             logger.info('Server statistics: ' + str(statistics.report_statistics()))
+            shut_down_instance_if_swap_used()
         else:
             logger.error('Some of the tasks not finished in allowed time, '
                          'stopping them.')

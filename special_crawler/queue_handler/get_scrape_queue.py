@@ -35,7 +35,8 @@ queue_names = {
     "Walmartondemand": "walmart-ondemand_scrape",
     "WalmartMPHome": "walmart-mp_home_scrape",
     "WalmartScrapeTO": "walmart-mp_scrapeto",
-    "Productioncustomer": "production_customer_scrape"
+    "Productioncustomer": "production_customer_scrape",
+    "wm_production_scrape": "wm_production_scrape"
 }
 
 INDEX_ERROR = "IndexError : The queue was really out of items, but the count was lagging so it tried to run again."
@@ -91,6 +92,7 @@ def main( environment, scrape_queue_name, thread_id):
                     try:
                         output_json = json.loads(output_text)
                     except Exception as e:
+                        logger.info(output_text)
                         output_json = {
                             "error":str(e),
                             "date":datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
@@ -110,7 +112,7 @@ def main( environment, scrape_queue_name, thread_id):
 
                 # Add the scraped page to the processing queue ...
                 sqs_process = SQS_Queue('%s_process'%server_name)
-                sqs_process.put( output_message)
+                sqs_process.put( output_message, url)
                 # ... and remove it from the scrape queue
                 sqs_scrape.task_done()
                 

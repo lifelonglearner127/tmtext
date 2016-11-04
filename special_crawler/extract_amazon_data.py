@@ -15,6 +15,7 @@ from PIL import Image
 import cookielib
 import cStringIO # *much* faster than StringIO
 from pytesseract import image_to_string
+from requests.auth import HTTPProxyAuth
 
 sys.path.append(os.path.abspath('../search'))
 import captcha_solver
@@ -57,8 +58,9 @@ class AmazonScraper(Scraper):
 
         self.proxy_host = "proxy.crawlera.com"
         self.proxy_port = "8010"
-        self.proxy_auth = ("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
-        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+        self.proxy_auth = (self.CRAWLERA_APIKEY, "")
+        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
+                        "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
         self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
 
         self.proxies_enabled = False  # first, they are OFF to save allowed requests
@@ -997,7 +999,8 @@ class AmazonScraper(Scraper):
         return temp#",".join(temp)
 
     def _video_count(self):
-        if self._video_urls()==None: return 0
+        if self._video_urls()==None:
+            return len(self.tree_html.xpath('//*[@id="cr-video-swf-url"]'))
         return len(self._video_urls())#.split(','))
 
     # return one element containing the PDF
@@ -1030,7 +1033,7 @@ class AmazonScraper(Scraper):
         related_product_url_list = []
 
         for variant in variants:
-            if variant["url"] and variant["url"] != self.product_page_url:
+            if variant["url"] and variant["url"] != self.product_page_url.split('?')[0]:
                 related_product_url_list.append(variant["url"])
 
         if related_product_url_list:
