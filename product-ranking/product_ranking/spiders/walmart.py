@@ -1515,4 +1515,3 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             request = self._get_next_products_page(response, prods_count)
             if request is not None:
                 yield request
-
