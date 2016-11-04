@@ -79,13 +79,18 @@ def main( environment, scrape_queue_name, thread_id):
                 server_name = message_json['server_name']
                 product_id = message_json['product_id']
                 event = message_json['event']
+                additional_requests = message_json.get('additional_requests', None)
                 
                 logger.info("Received: thread %d server %s url %s" % ( thread_id, server_name, url))
 
                 for i in range(3):
                     # Scrape the page using the scraper running on localhost
                     get_start = time.time()
-                    output_text = requests.get(base%(urllib.quote(url))).text
+                    tmp_url = base%(urllib.quote(url))
+                    if additional_requests:
+                        tmp_url += '&additional_requests=' + str(additional_requests)
+                    logger.info('REQUESTING %s' % tmp_url)
+                    output_text = requests.get(tmp_url).text
                     get_end = time.time()
 
                     # Add the processing fields to the return object and re-serialize it
