@@ -481,6 +481,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     display_price = display_price.group()
                     price_amount = float(display_price)
                     product['price'] = Price(price=price_amount, priceCurrency="USD")
+        if not product.get('price'):
+            cond_set_value(product, 'url', response.url)
+            return self._gen_location_request(response)
 
         _na_text = response.xpath(
             '//*[contains(@class, "NotAvailable")]'
@@ -494,7 +497,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
-
 
         m = re.search(
             self._JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
@@ -1090,12 +1092,26 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         self._populate_from_html(response, product)
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
-        return Request(
-            self.LOCATION_PROD_URL.format(
-                product_id=response.meta['product_id'], zip_code=self.zip_code),
-            callback=self._on_dynamic_api_response,
-            meta=response.meta
-        )
+
+        m = re.search(
+            self._JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
+        if m:
+            text = m.group(1)
+            try:
+                data = json.loads(text)
+                self._on_dynamic_api_response(response, data)
+            except ValueError:
+                pass
+
+        if self.scrape_questions:
+            return Request(  # make another call - to scrape questions/answers
+                self.ALL_QA_URL % (
+                    get_walmart_id_from_url(product['url']), 1),
+                meta={'product': response.meta['product']},
+                callback=self._parse_all_questions_and_answers
+            )
+        else:
+            return product
 
     def _on_dynamic_api_response(self, response, data):
         if data:
