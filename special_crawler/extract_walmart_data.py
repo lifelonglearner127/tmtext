@@ -3,6 +3,7 @@
 import re
 import sys
 import json
+import time
 
 from lxml import html, etree
 import lxml
@@ -149,7 +150,15 @@ class WalmartScraper(Scraper):
         if re.match('http://', self.product_page_url):
             self.product_page_url = 'https://' + re.match('http://(.+)', self.product_page_url).group(1)
 
-        for i in range(3):
+        max_retries = 5
+
+        for i in range(100):
+
+            if i > max_retries:
+                break
+
+            max_retries = 5
+
             try:
                 resp = self._request(self.product_page_url)
 
@@ -175,7 +184,11 @@ class WalmartScraper(Scraper):
 
                 return
             except Exception, e:
-                print 'Error extracting', self.product_page_url, e
+                print 'Error extracting', self.product_page_url, type(e), e
+
+                if str(e) == "('Cannot connect to proxy.', error(104, 'Connection reset by peer'))" or re.search('Max retries exceeded', str(e)):
+                    max_retries = 100
+                    time.sleep(1)
 
         self.is_timeout = True
         self.ERROR_RESPONSE["failure_type"] = "Timeout"

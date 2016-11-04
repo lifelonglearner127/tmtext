@@ -5,6 +5,7 @@ import re
 
 from datetime import datetime
 from scrapy import Request
+from scrapy.log import ERROR
 
 from product_ranking.amazon_tests import AmazonTests
 from product_ranking.amazon_base_class import AmazonBaseClass
@@ -61,7 +62,11 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
             try:
                 d = datetime.strptime(date, '%B %d %Y')
             except ValueError:
-                d = datetime.strptime(date, '%b %d %Y')
+                try:
+                    d = datetime.strptime(date, '%b %d %Y')
+                except ValueError as e:
+                    self.log('Cant\'t parse date. ERROR: %s.' % str(e), ERROR)
+                    d = None
 
             return d
 
@@ -162,7 +167,9 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 url = re.sub('/\d+$', "/%d" % (current_page + 1), response.url)
                 reqs.append(
                     Request(url, callback=self._parse_recent_questions, dont_filter=True))
-            except:
+            except Exception as e:
+                self.log('Error while parse question page. ERROR: %s.' %
+                         str(e), ERROR)
                 pass
 
         if reqs:

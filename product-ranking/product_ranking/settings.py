@@ -105,8 +105,8 @@ DOWNLOADER_MIDDLEWARES = {
 
 
 CRAWLERA_ENABLED = False  # false by default
-CRAWLERA_APIKEY = 'eff4d75f7d3a4d1e89115c0b59fab9b2'
-
+CRAWLERA_APIKEY = '0dc1db337be04e8fb52091b812070ccf'
+CRAWLERA_URL = 'http://content.crawlera.com:8010'
 
 _args_names = [arg.split('=')[0] if '=' in arg else arg for arg in sys.argv]
 if 'validate' in _args_names:

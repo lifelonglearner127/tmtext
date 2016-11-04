@@ -64,7 +64,9 @@ class DockersScraper(Scraper):
         try:
             itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
 
-            if itemtype != "product":
+            if itemtype == 'website':
+                pass
+            elif itemtype != "product":
                 raise Exception()
 
             self._extract_product_json()
@@ -181,6 +183,13 @@ class DockersScraper(Scraper):
 
     def _swatches(self):
         return self.dk._swatches()
+
+    def _no_longer_available(self):
+        itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
+
+        if itemtype == 'website':
+            return 1
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -436,6 +445,7 @@ class DockersScraper(Scraper):
         "long_description" : _long_description, \
         "variants": _variants, \
         "swatches": _swatches, \
+        "no_longer_available": _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
