@@ -34,8 +34,8 @@ class LeviScraper(Scraper):
         self.rev_list = None
         self.is_review_checked = False
         self.lv = LeviVariants()
-        self.proxy_host = "proxy.crawlera.com"
-        self.proxy_port = "8010"
+        self.proxy_host = self.CRAWLERA_HOST
+        self.proxy_port = self.CRAWLERA_PORT
         self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
         self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
         self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}

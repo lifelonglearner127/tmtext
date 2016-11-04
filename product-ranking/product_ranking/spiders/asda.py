@@ -142,6 +142,7 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
             prod = SiteProductItem()
             prod['title'] = item['itemName']
             prod['brand'] = item['brandName']
+            prod['site'] = 'http://www.asda.com/'
 
             # Hardcoded, store seems not to have out of stock products
             prod['is_out_of_stock'] = False

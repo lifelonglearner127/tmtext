@@ -156,7 +156,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
-        settings.overrides['CONCURRENT_REQUESTS'] = 50
+        settings.overrides['CONCURRENT_REQUESTS'] = 1
 
         local_filename = "/tmp/_proxy_providers_settings.cfg"
 
@@ -414,6 +414,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def parse_product(self, response):
         product = response.meta.get("product")
 
+        if self._parse_temporary_unavailable(response):
+            product['temporary_unavailable'] = True
+            return product
+        else:
+            product['temporary_unavailable'] = False
+
         product['_subitem'] = True
 
         if "we can't find the product you are looking for" \
@@ -568,6 +574,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     price_amount = float(display_price)
                     product['price'] = Price(price=price_amount, priceCurrency="USD")
 
+        # randomly walmart respond with a different JS data, so we should make this extra request
+        if not product.get('price'):
+            cond_set_value(product, 'url', response.url)
+            return self._gen_location_request(response)
+
         _na_text = response.xpath(
             '//*[contains(@class, "NotAvailable")]'
             '[contains(@style, "block")]/text()'
@@ -580,7 +591,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
-
 
         m = re.search(
             self._JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
@@ -1176,12 +1186,26 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         self._populate_from_html(response, product)
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
-        return Request(
-            self.LOCATION_PROD_URL.format(
-                product_id=response.meta['product_id'], zip_code=self.zip_code),
-            callback=self._on_dynamic_api_response,
-            meta=response.meta
-        )
+
+        m = re.search(
+            self._JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
+        if m:
+            text = m.group(1)
+            try:
+                data = json.loads(text)
+                self._on_dynamic_api_response(response, data)
+            except ValueError:
+                pass
+
+        if self.scrape_questions:
+            return Request(  # make another call - to scrape questions/answers
+                self.ALL_QA_URL % (
+                    get_walmart_id_from_url(product['url']), 1),
+                meta={'product': response.meta['product']},
+                callback=self._parse_all_questions_and_answers
+            )
+        else:
+            return product
 
     def _on_dynamic_api_response(self, response, data):
         if data:
@@ -1548,3 +1572,42 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             product['last_buyer_review_date'] = lbrd.strftime('%d-%m-%Y')
 
         return product
+
+    def _parse_temporary_unavailable(self, response):
+        condition = response.xpath(
+            '//p[contains(@class, "error-page-message-details text-center") '
+            'and contains(text(), "We\'re having technical difficulties and are looking into the problem now.")]')
+        return bool(condition)
+
+    def parse(self, response):
+        # call the appropriate method for the code. It'll only work if you set
+        #  `handle_httpstatus_list = [502, 503, 504]` in the spider
+        if hasattr(self, 'handle_httpstatus_list'):
+            for _code in self.handle_httpstatus_list:
+                if response.status == _code:
+                    _callable = getattr(self, 'parse_' + str(_code), None)
+                    if callable(_callable):
+                        yield _callable()
+
+        if self._search_page_error(response):
+            remaining = response.meta['remaining']
+            search_term = response.meta['search_term']
+
+            self.log("For search term '%s' with %d items remaining,"
+                     " failed to retrieve search page: %s"
+                     % (search_term, remaining, response.request.url),
+                     WARNING)
+        elif self._parse_temporary_unavailable(response):
+            item = SiteProductItem()
+            item['temporary_unavailable'] = True
+            yield item
+        else:
+            prods_count = -1  # Also used after the loop.
+            for prods_count, request_or_prod in enumerate(
+                    self._get_products(response)):
+                yield request_or_prod
+            prods_count += 1  # Fix counter.
+
+            request = self._get_next_products_page(response, prods_count)
+            if request is not None:
+                yield request
