@@ -407,8 +407,13 @@ def get_data():
             else:
                 url += '?ppw=' + request_arguments.get('ppw')[0]
 
+    if 'additional_requests' in request_arguments:
+        additional_requests = request_arguments['additional_requests'][0]
+    else:
+        additional_requests = None
+
     # create scraper class for requested site
-    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot)
+    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot, additional_requests=additional_requests)
 
     # validate parameter values
     # url

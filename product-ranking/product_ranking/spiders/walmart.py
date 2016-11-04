@@ -140,8 +140,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         # middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
         # middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
         # middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
-        #
         # settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+
         global SiteProductItem
         if zip_code:
             self.zip_code = zip_code
@@ -193,6 +193,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         print "Proxy provider selected: {}".format(random_proxy_provider)
 
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+
+        middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
+        middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
+
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
         if random_proxy_provider == 1:

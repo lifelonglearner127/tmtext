@@ -5,6 +5,7 @@ import hashlib
 import time
 import datetime
 import subprocess
+import json
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -57,6 +58,20 @@ class Command(BaseCommand):
     repo_dir = '/tmp/_repo/tmtext'
     git_log_file = '/tmp/_git_log_file'
 
+    def _save_group_sizes(self, fname='/tmp/_group_sizes.json'):
+        """ Stores autoscale groups sizes locally """
+        global AUTOSCALE_GROUPS
+        result = {}
+        for autoscale_group, items in get_max_instances_in_groups().items():
+            result[autoscale_group] = items['max_size']
+        with open(fname, 'w') as fh:
+            fh.write(json.dumps(result))
+
+    def _load_group_sizes(self, fname='/tmp/_group_sizes.json'):
+        """ Stores autoscale groups sizes locally """
+        with open(fname, 'r') as fh:
+            return json.loads(fh.read())
+
     def _clone_repo(self, branch):
         old_dir = os.getcwd()
         if os.path.exists(self.repo_dir):
@@ -88,20 +103,30 @@ class Command(BaseCommand):
         for group in AUTOSCALE_GROUPS:
             set_autoscale_group_capacity(group, 0, attributes=('max_size', 'desired_capacity'))
 
-    def _set_autoscale_max_instances(self, max_instances=100):
-        global AUTOSCALE_GROUPS
-        for group in AUTOSCALE_GROUPS:
-            set_autoscale_group_capacity(group, max_instances, attributes=('max_size',))
+    def _set_autoscale_max_instances(self):
+        groups = self._load_group_sizes()
+        for group, size in groups.items():
+            set_autoscale_group_capacity(group, size, attributes=('max_size',))
 
     def handle(self, *args, **options):
         if num_of_running_instances('check_branch_and_kill') > 1:
             print 'another instance of the script is already running - exit'
             sys.exit()
 
-        # check that the group size is not zero due to possible previous exception
+        # check if we need to update the config file that contains sizes of all groups
+        should_update_size = True
         for autoscale_group, items in get_max_instances_in_groups().items():
             max_size = items['max_size']
-            if not max_size or max_size < 100:
+            if not max_size or max_size == 0:
+                should_update_size = False
+
+        if should_update_size:
+            self._save_group_sizes()
+
+        # restore groups sizes if needed (sizes may equal to 0 due to some errors in deploy)
+        for autoscale_group, items in get_max_instances_in_groups().items():
+            max_size = items['max_size']
+            if not max_size or max_size == 0:
                 self._set_autoscale_max_instances()
 
         branch = ProductionBranchUpdate.branch_to_track
