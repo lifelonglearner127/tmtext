@@ -175,7 +175,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         self.force_proxy_provider = kwargs.get('force_proxy_provider', None)
         if self.force_proxy_provider:
             logger.log("*** Proxy provider forced via command line: {}".format(
-                self.force_proxy_provider), level=WARNING)
+                self.force_proxy_provider))
             chosen_proxy_provider = self.force_proxy_provider
         else:
             chosen_proxy_provider = self._weighted_choice(proxy_config)
@@ -189,23 +189,23 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
         if chosen_proxy_provider == "crawleraeu":
-            logger.log('*** Using CrawleraEU', level=WARNING)
+            logger.log('*** Using CrawleraEU')
             settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
             settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
             settings.overrides['CRAWLERA_ENABLED'] = True
             settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
         elif chosen_proxy_provider == "luminati":
-            logger.log('*** Using Luminati', level=WARNING)
+            logger.log('*** Using Luminati')
             middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
             middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
             middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
         elif chosen_proxy_provider == "proxyrain":
-            logger.log('*** Using Proxyrain', level=WARNING)
+            logger.log('*** Using Proxyrain')
             middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
             middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
             middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
         elif chosen_proxy_provider == "shaderio":
-            logger.log('*** Using Shader.io', level=WARNING)
+            logger.log('*** Using Shader.io')
             middlewares['product_ranking.custom_middlewares.ShaderioProxy'] = 750
             middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
             middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
