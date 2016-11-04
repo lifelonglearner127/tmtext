@@ -324,7 +324,7 @@ class PriceDataViewSet(viewsets.ModelViewSet):
 
         if search_term_group_id:
             sql_query = """
-                        select distinct on(rsri.url_id) st.title as search_term, pu.url as url, rsri.title as title, rsri.price as price, rsri.currency as currency
+                        select distinct on(rsri.url_id) st.title as search_term, pu.url as url, pu.title as title, rsri.price as price, rsri.currency as currency
                         from ranking_search_results_items rsri
                         join search_terms_brands_relation stbr on stbr.id = rsri.search_items_brands_relation_id
                         join search_terms st on st.id = stbr.search_term_id
@@ -334,7 +334,7 @@ class PriceDataViewSet(viewsets.ModelViewSet):
 
         if search_term_id:
             sql_query = """
-                        select distinct on(rsri.url_id) pu.url as url, rsri.title as title, rsri.price as price, rsri.currency as currency
+                        select distinct on(rsri.url_id) pu.url as url, pu.title as title, rsri.price as price, rsri.currency as currency
                         from ranking_search_results_items rsri
                         join search_terms_brands_relation stbr on stbr.id = rsri.search_items_brands_relation_id
                         join product_url pu on pu.id = rsri.url_id
@@ -343,7 +343,7 @@ class PriceDataViewSet(viewsets.ModelViewSet):
 
         if product_list_id:
             sql_query = """
-                        select distinct on(rsri.url_id) pu.url as url, rsri.title as title, rsri.price as price, rsri.currency as currency
+                        select distinct on(rsri.url_id) pu.url as url, pu.title as title, rsri.price as price, rsri.currency as currency
                         from ranking_search_results_items rsri
                         join product_url pu on pu.id = rsri.url_id
                         join product_list_items pli on pli.product_url_id = rsri.url_id
@@ -385,7 +385,7 @@ class RankingDataViewSet(viewsets.ModelViewSet):
             sql_query = """
                         select distinct on(rsri.url_id) st.title as search_term
                         , rsri.site_id as site_id, pu.url as url,
-                         rsri.title as title, rsri.ranking  as ranking
+                         pu.title as title, rsri.ranking  as ranking
                         from ranking_search_results_items rsri
                         join search_terms_brands_relation stbr
                             on stbr.id = rsri.search_items_brands_relation_id
@@ -398,7 +398,7 @@ class RankingDataViewSet(viewsets.ModelViewSet):
         if search_term_id:
             sql_query = """
                         select distinct on(rsri.url_id) rsri.site_id, pu.url
-                        , rsri.title, rsri.ranking
+                        , pu.title, rsri.ranking
                         from ranking_search_results_items rsri
                         join search_terms_brands_relation stbr
                             on stbr.id = rsri.search_items_brands_relation_id
@@ -443,7 +443,7 @@ class OutOfStockDataViewSet(viewsets.ModelViewSet):
             sql_query = """
                         select distinct on(rsri.url_id) st.title as search_term
                             , rsri.site_id as site_id, pu.url as url,
-                            rsri.title as title, rsri.is_out_of_stock
+                            pu.title as title, rsri.is_out_of_stock
                             as is_out_of_stock, rsri.no_longer_available
                             as no_longer_available
                         from ranking_search_results_items rsri
@@ -459,7 +459,7 @@ class OutOfStockDataViewSet(viewsets.ModelViewSet):
             sql_query = """
                         select distinct on(rsri.url_id) rsri.site_id
                             as site_id, pu.url as url,
-                            rsri.title as title, rsri.is_out_of_stock
+                            pu.title as title, rsri.is_out_of_stock
                             as is_out_of_stock, rsri.no_longer_available
                             as no_longer_available
                         from ranking_search_results_items rsri
@@ -473,7 +473,7 @@ class OutOfStockDataViewSet(viewsets.ModelViewSet):
         if product_list_id:
             sql_query = """
                         select distinct on(rsri.url_id) pu.url as url,
-                            rsri.title as title, rsri.is_out_of_stock
+                            pu.title as title, rsri.is_out_of_stock
                             as is_out_of_stock, rsri.no_longer_available
                             as no_longer_available
                         from ranking_search_results_items rsri
@@ -518,7 +518,7 @@ class BuyBoxDataViewSet(viewsets.ModelViewSet):
             sql_query = """
                         select distinct on(rsri.url_id) st.title as
                             search_term, rsri.site_id as site_id, pu.url as url
-                            , rsri.title as title, m.name as marketplace,
+                            , pu.title as title, m.name as marketplace,
                             rsri.is_out_of_stock as is_out_of_stock,
                             rsri.no_longer_available as no_longer_available,
                             pm.first_party_owned as first_party_owned
@@ -538,7 +538,7 @@ class BuyBoxDataViewSet(viewsets.ModelViewSet):
             sql_query = """
                         select distinct on(rsri.url_id) rsri.site_id
                             as site_id, pu.url as url
-                            , rsri.title as title, m.name as marketplace,
+                            , pu.title as title, m.name as marketplace,
                             rsri.is_out_of_stock as is_out_of_stock,
                             rsri.no_longer_available as no_longer_available,
                             pm.first_party_owned as first_party_owned
@@ -556,7 +556,7 @@ class BuyBoxDataViewSet(viewsets.ModelViewSet):
         if product_list_id:
             sql_query = """
                         select distinct on(rsri.url_id) pu.url as url
-                            , rsri.title as title, m.name as marketplace,
+                            , pu.title as title, m.name as marketplace,
                             rsri.is_out_of_stock as is_out_of_stock,
                             rsri.no_longer_available as no_longer_available,
                             pm.first_party_owned as first_party_owned
@@ -607,7 +607,7 @@ class ReviewDataViewSet(viewsets.ModelViewSet):
             sql_query = """
                         select distinct on(rsri.url_id) st.title as search_term
                             , rsri.site_id as site_id, pu.url as url
-                            , rsri.title as title, rbri.average_num
+                            , pu.title as title, rbri.average_num
                             as average_num, rbri.total_count as total_count,
                             rbri.five_star as five_star, rbri.four_star
                             as four_star, rbri.three_star as three_star,
@@ -627,7 +627,7 @@ class ReviewDataViewSet(viewsets.ModelViewSet):
         if search_term_id:
             sql_query = """
                         select distinct on(rsri.url_id) rsri.site_id as site_id
-                            , pu.url as url, rsri.title as title,
+                            , pu.url as url, pu.title as title,
                             rbri.average_num as average_num, rbri.total_count
                             as total_count, rbri.five_star as five_star,
                             rbri.four_star as four_star, rbri.three_star
@@ -646,7 +646,7 @@ class ReviewDataViewSet(viewsets.ModelViewSet):
         if product_list_id:
             sql_query = """
                         select distinct on(rsri.url_id) pu.url as url,
-                            rsri.title as title,
+                            pu.title as title,
                             rbri.average_num as average_num, rbri.total_count
                             as total_count, rbri.five_star as five_star,
                             rbri.four_star as four_star, rbri.three_star

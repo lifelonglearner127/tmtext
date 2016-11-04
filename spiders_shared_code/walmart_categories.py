@@ -27,8 +27,13 @@ class WalmartCategoryParser:
             url = a.xpath('./@href')[0]
             if not url.startswith('http'):
                 url = urlparse.urljoin('http://'+domain, url)
+            arr = a.xpath('.//*//text()')
+            if len(arr) > 0:
+                name = arr[0]
+            else:
+                name = ''
             result.append({
-                'name': a.xpath('.//*//text()')[0],
+                'name': name,
                 'url': url
             })
         return result

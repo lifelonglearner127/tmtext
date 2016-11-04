@@ -1135,7 +1135,7 @@ class ScrapyTask(object):
             self._push_simmetrica_events()
             first_signal = self._get_next_signal(start_time)
         except Exception as ex:
-            logger.warning('Error occured while starting scrapy: %s', ex)
+            logger.warning('Error occurred while starting scrapy: %s', ex)
             return False
         try:
             self._run_signal(first_signal, start_time)
@@ -1339,6 +1339,9 @@ def log_failed_task(task):
 def notify_cache(task, is_from_cache=False):
     """send request to cache (for statistics)"""
     url = CACHE_HOST + CACHE_URL_STATS
+    json_task = json.dumps(task)
+    logger.info('Notify cache task: %s', json_task)
+    data = dict(task=json_task, is_from_cache=json.dumps(is_from_cache))
     if 'start_time' in task and task['start_time']:
         if ('finish_time' in task and not task['finish_time']) or \
                 'finish_time' not in task:
@@ -1606,7 +1609,7 @@ def main():
         if task.get_cached_result(TASK_QUEUE_NAME):
             # if found response in cache, upload data, delete task from sqs
             task.queue.task_done()
-            notify_cache(task.task_data, is_from_cache=True)
+            #notify_cache(task.task_data, is_from_cache=True)
             del task
             continue
         if task.start():
@@ -1618,7 +1621,7 @@ def main():
             if task.is_screenshot_job():
                 task.start_screenshot_job_if_needed()
             task.queue.task_done()
-            notify_cache(task.task_data, is_from_cache=False)
+            #notify_cache(task.task_data, is_from_cache=False)
         else:
             logger.error('Task #%s failed to start. Leaving it in the queue.',
                          task.task_data.get('task_id', 0))
