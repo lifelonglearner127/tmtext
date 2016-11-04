@@ -12,6 +12,7 @@ import string
 from datetime import datetime
 import lxml.html
 
+import os
 import logging
 logger = logging.getLogger(__name__)
 import boto
@@ -136,12 +137,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
 
-        # DO NOT UNCOMMENT THOSE, its potentially dangerous
-        # middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
-        # middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
-        # middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
-        # settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
-
         global SiteProductItem
         if zip_code:
             self.zip_code = zip_code
@@ -163,60 +158,54 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
         settings.overrides['CONCURRENT_REQUESTS'] = 50
 
+        local_filename = "/tmp/_proxy_providers_settings.cfg"
 
-        # proxy_config = self._get_proxy_config()
-        # Local override for debugging
-        # proxy_config = {
-        #     "Crawlera1": False,
-        #     "Crawlera2": False,
-        #     "Luminati": True,
-        #     "Proxyrain": False
-        # }
+        if os.path.isfile(local_filename) or random.randint(0, 30) == 0:
+            proxy_config = self._parse_proxy_config_file(local_filename)
+        else:
+            proxy_config = self._download_and_parse_proxy_config_file(local_filename)
+        if not proxy_config:
+            proxy_config = {
+                            "crawlera": 100,
+                            "luminati": 0,
+                            "proxyrain": 0,
+                            "shaderio": 0,
+                            }
 
-        # random_proxy_provider = random.randint(1, 4)
-        # Force crawlera
-        random_proxy_provider = 1
-
-        self.force_proxy_provider = kwargs.get('force_proxy_provider', "crawleraeu")
-        print "Proxy provider: {}".format(self.force_proxy_provider)
+        self.force_proxy_provider = kwargs.get('force_proxy_provider', None)
         if self.force_proxy_provider:
-            if "crawleraeu" in ''.join(self.force_proxy_provider).lower():
-                random_proxy_provider = 1
-            elif "luminati" in ''.join(self.force_proxy_provider).lower():
-                random_proxy_provider = 2
-            elif "proxyrain" in ''.join(self.force_proxy_provider).lower():
-                random_proxy_provider = 3
-            elif "shaderio" in ''.join(self.force_proxy_provider).lower():
-                random_proxy_provider = 4
-            elif "random" in ''.join(self.force_proxy_provider).lower():
-                random_proxy_provider = random.randint(1, 4)
-        print "Proxy provider selected: {}".format(random_proxy_provider)
+            logger.log("*** Proxy provider forced via command line: {}".format(
+                self.force_proxy_provider), level=WARNING)
+            chosen_proxy_provider = self.force_proxy_provider
+        else:
+            chosen_proxy_provider = self._weighted_choice(proxy_config)
 
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
 
+        # To not redirect randomly
         middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
         middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
 
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
-        if random_proxy_provider == 1:
-            self.log('*** Using CrawleraEU', level=WARNING)
+        if chosen_proxy_provider == "crawleraeu":
+            logger.log('*** Using CrawleraEU', level=WARNING)
             settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
             settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
             settings.overrides['CRAWLERA_ENABLED'] = True
             settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
-        elif random_proxy_provider == 2:
-            self.log('*** Using Luminati', level=WARNING)
+        elif chosen_proxy_provider == "luminati":
+            logger.log('*** Using Luminati', level=WARNING)
             middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
             middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
             middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
-        elif random_proxy_provider == 3:
-            self.log('*** Using Proxyrain', level=WARNING)
+        elif chosen_proxy_provider == "proxyrain":
+            logger.log('*** Using Proxyrain', level=WARNING)
             middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
             middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
             middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
-        else:
-            self.log('*** Using Shader.io', level=WARNING)
+        elif chosen_proxy_provider == "shaderio":
+            logger.log('*** Using Shader.io', level=WARNING)
             middlewares['product_ranking.custom_middlewares.ShaderioProxy'] = 750
             middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
             middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
@@ -235,6 +224,20 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         self.cookies['PSID'] = '2648'
         self.cookies['NSID'] = '2648'
 
+    def _weighted_choice(self, choices_dict):
+        choices = [(key, value) for (key, value) in choices_dict.iteritems()]
+        # Accept dict, converts to list
+        # of iterables in following format
+        # [("choice1", 0.6), ("choice2", 0.2), ("choice3", 0.3)]
+        # Returns chosen variant
+        total = sum(w for c, w in choices)
+        r = random.uniform(0, total)
+        upto = 0
+        for c, w in choices:
+            if upto + w >= r:
+                return c
+            upto += w
+
     def _get_download_delay(self):
         amazon_bucket_name = "sc-settings"
         config_filename = "walmart_download_delay.cfg"
@@ -247,32 +250,40 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             value = k.get_contents_as_string()
             logging.info('Retrieved download_delay={}'.format(value))
             return float(value)
-        except Exception, e:
+        except Exception as e:
             logging.error(e)
             return default_download_delay
 
-    def _get_proxy_config(self):
-        # This gets proxy service configuration (crawlera1, crawlera2, Luminati or Proxyrain)
+    @staticmethod
+    def _download_and_parse_proxy_config_file(local_filename):
         amazon_bucket_name = "sc-settings"
-        config_filename = "walmart_proxy_config.cfg"
-        default_proxy_config = {
-            "Crawlera1": True,
-            "Crawlera2": True,
-            "Luminati": False,
-            "Proxyrain": False
-        }
+        bucket_config_filename = "walmart_proxy_config.cfg"
+        # local_filename = "/tmp/_proxy_providers_settings.cfg"
+        proxy_config = None
         try:
             S3_CONN = boto.connect_s3(is_secure=False)
             S3_BUCKET = S3_CONN.get_bucket(amazon_bucket_name, validate=False)
             k = Key(S3_BUCKET)
-            k.key = config_filename
+            k.key = bucket_config_filename
             value = k.get_contents_as_string()
             proxy_config = json.loads(value)
-            logging.info('Retrieved proxy config: {}'.format(value))
-            return proxy_config
-        except Exception, e:
+            # Save config to file
+            with open(local_filename, "w") as conf_file:
+                conf_file.write(value)
+            # logging.info('Retrieved proxy config: {}'.format(value))
+        except Exception as e:
             logging.error(e)
-            return default_proxy_config
+        return proxy_config
+
+    @staticmethod
+    def _parse_proxy_config_file(local_filename):
+        proxy_config = None
+        try:
+            with open(local_filename) as conf_file:
+                proxy_config = json.load(conf_file)
+        except Exception as e:
+            logging.error(e)
+        return proxy_config
 
     def start_requests(self):
         # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
@@ -305,12 +316,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             # reduce quantity to 100 because we're having issues with Walmart now
             #  (it bans us so we're using Crawlera)
-            # TODO UNCOMMENT THOSE, COMMENTED ONY FOR TESTING
-            # if not self.quantity or not isinstance(self.quantity, int):
-            #     self.quantity = 100
-            # if self.quantity and isinstance(self.quantity, int):
-            #     if self.quantity > 100:
-            #         self.quantity = 100
+            # TODO COMMENT THOSE, IF MORE THAN 100 products per job needed
+            if not self.quantity or not isinstance(self.quantity, int):
+                self.quantity = 100
+            if self.quantity and isinstance(self.quantity, int):
+                if self.quantity > 100:
+                    self.quantity = 100
 
             for st in self.searchterms:
                 yield Request(self.SEARCH_URL.format(search_term=st,
