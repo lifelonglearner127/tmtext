@@ -2637,7 +2637,7 @@ class WalmartScraper(Scraper):
                     if self.product_info_json["buyingOptions"]["displayArrivalDate"].lower() == "see dates in checkout":
                         return 0
 
-                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False:
+                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False and self.product_info_json.get('analyticsData').get('inStock'):
                         return 0
 
                     if self.product_info_json['buyingOptions'].get('available') == True:
