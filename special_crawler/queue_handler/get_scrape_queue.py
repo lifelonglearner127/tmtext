@@ -15,6 +15,10 @@ import threading
 import urllib
 from datetime import datetime
 
+import boto
+from boto.s3.key import Key
+from boto.s3.connection import S3Connection
+
 # initialize the logger
 logger = logging.getLogger('basic_logger')
 logger.setLevel(logging.DEBUG)
@@ -41,11 +45,15 @@ queue_names = {
 
 INDEX_ERROR = "IndexError : The queue was really out of items, but the count was lagging so it tried to run again."
 
+FETCH_FREQUENCY = 60
+
 def main( environment, scrape_queue_name, thread_id):
     logger.info( "Starting thread %d" % thread_id)
     # establish the scrape queue
     sqs_scrape = SQS_Queue( scrape_queue_name)
     base = "http://localhost/get_data?url=%s"
+
+    last_fetch = datetime.min
 
     # Continually pull off the SQS Scrape Queue
     while True:
@@ -80,8 +88,27 @@ def main( environment, scrape_queue_name, thread_id):
                 product_id = message_json['product_id']
                 event = message_json['event']
                 additional_requests = message_json.get('additional_requests', None)
-                
+
                 logger.info("Received: thread %d server %s url %s" % ( thread_id, server_name, url))
+
+                api_key = None
+
+                if (datetime.now() - last_fetch).seconds > FETCH_FREQUENCY:
+                    amazon_bucket_name = 'ch-settings'
+                    key_file = 'crawlera_apikeys.cfg'
+
+                    try:
+                        S3_CONN = boto.connect_s3(is_secure=False)
+                        S3_BUCKET = S3_CONN.get_bucket(amazon_bucket_name, validate=False)
+                        k = Key(S3_BUCKET)
+                        k.key = key_file
+                        key_dict = json.loads(k.get_contents_as_string())
+                        api_key = key_dict['Walmart']
+                        logger.info('GOT API KEY %s' % api_key)
+                        last_fetch = datetime.now()
+                    except Exception, e:
+                        logger.info(str(e))
+                        logger.info('FAILED TO GET API KEY')
 
                 for i in range(3):
                     # Scrape the page using the scraper running on localhost
@@ -89,6 +116,8 @@ def main( environment, scrape_queue_name, thread_id):
                     tmp_url = base%(urllib.quote(url))
                     if additional_requests:
                         tmp_url += '&additional_requests=' + str(additional_requests)
+                    if api_key:
+                        tmp_url += '&api_key=' + api_key
                     logger.info('REQUESTING %s' % tmp_url)
                     output_text = requests.get(tmp_url).text
                     get_end = time.time()

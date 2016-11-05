@@ -412,8 +412,13 @@ def get_data():
     else:
         additional_requests = None
 
+    if 'api_key' in request_arguments:
+        api_key = request_arguments['api_key'][0]
+    else:
+        api_key = None
+
     # create scraper class for requested site
-    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot, additional_requests=additional_requests)
+    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot, additional_requests=additional_requests, api_key=api_key)
 
     # validate parameter values
     # url
