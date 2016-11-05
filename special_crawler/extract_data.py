@@ -111,6 +111,7 @@ class Scraper():
             "shipping",
             "free_pickup_today",
             "no_longer_available",
+            "assembled_size",
             "variants", # list of variants
             "swatches", # list of swatches
             "related_products_urls",
