@@ -35,7 +35,8 @@ queue_names = {
     "Walmartondemand": "walmart-ondemand_scrape",
     "WalmartMPHome": "walmart-mp_home_scrape",
     "WalmartScrapeTO": "walmart-mp_scrapeto",
-    "Productioncustomer": "production_customer_scrape"
+    "Productioncustomer": "production_customer_scrape",
+    "wm_production_scrape": "wm_production_scrape"
 }
 
 INDEX_ERROR = "IndexError : The queue was really out of items, but the count was lagging so it tried to run again."
@@ -78,19 +79,25 @@ def main( environment, scrape_queue_name, thread_id):
                 server_name = message_json['server_name']
                 product_id = message_json['product_id']
                 event = message_json['event']
+                additional_requests = message_json.get('additional_requests', None)
                 
                 logger.info("Received: thread %d server %s url %s" % ( thread_id, server_name, url))
 
                 for i in range(3):
                     # Scrape the page using the scraper running on localhost
                     get_start = time.time()
-                    output_text = requests.get(base%(urllib.quote(url))).text
+                    tmp_url = base%(urllib.quote(url))
+                    if additional_requests:
+                        tmp_url += '&additional_requests=' + str(additional_requests)
+                    logger.info('REQUESTING %s' % tmp_url)
+                    output_text = requests.get(tmp_url).text
                     get_end = time.time()
 
                     # Add the processing fields to the return object and re-serialize it
                     try:
                         output_json = json.loads(output_text)
                     except Exception as e:
+                        logger.info(output_text)
                         output_json = {
                             "error":str(e),
                             "date":datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
@@ -110,7 +117,7 @@ def main( environment, scrape_queue_name, thread_id):
 
                 # Add the scraped page to the processing queue ...
                 sqs_process = SQS_Queue('%s_process'%server_name)
-                sqs_process.put( output_message)
+                sqs_process.put( output_message, url)
                 # ... and remove it from the scrape queue
                 sqs_scrape.task_done()
                 

@@ -198,8 +198,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         response.meta['total'] = is_empty(
             re.findall(r'var totalReviewsValue=(\d+)', response.body_as_unicode()))
 
-        if 'sorry, that item is no longer available' \
-                in response.body_as_unicode().lower():
+        if 'sorry, that item is no longer available' in response.body_as_unicode().lower() \
+                or 'product not available' in response.body_as_unicode().lower():
             prod['not_found'] = True
             return prod
 
@@ -461,7 +461,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     def _populate_from_v3(self, product, item_info):
         item = item_info.get('item')
-        if not 'Unauthorized' in item.get('message', ''):
+        if not 'Unauthorized' in item.get('message', '') and not 'Forbidden' in item.get('message', ''):
             product['title'] = item.get('product_description').get('title')
             product['tcin'] = item.get('tcin')
             product['description'] = item.get('product_description').get('downstream_description', '')
@@ -496,6 +496,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 product['is_in_store_only'] = self._item_info_v3_store_only(item_info)
         else:
             product['not_found'] = True
+            product['no_longer_available'] = True
 
     @staticmethod
     def _get_price_v2(item_info):

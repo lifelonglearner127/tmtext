@@ -26,22 +26,22 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
 
     settings = AsdaValidatorSettings
 
-    SEARCH_URL = "http://groceries.asda.com/api/items/search" \
+    SEARCH_URL = "https://groceries.asda.com/api/items/search" \
         "?pagenum={pagenum}&productperpage={prods_per_page}" \
         "&keyword={search_term}&contentid=New_IM_Search_WithResults_promo_1" \
         "&htmlassociationtype=0&listType=12&sortby=relevance+desc" \
         "&cacheable=true&fromgi=gi&requestorigin=gi"
 
-    PRODUCT_LINK = "http://groceries.asda.com/asda-webstore/landing" \
+    PRODUCT_LINK = "https://groceries.asda.com/asda-webstore/landing" \
                    "/home.shtml?cmpid=ahc-_-ghs-d1-_-asdacom-dsk-_-hp" \
                    "/search/%s#/product/%s"
 
-    API_URL = "http://groceries.asda.com/api/items/view?" \
+    API_URL = "https://groceries.asda.com/api/items/view?" \
               "itemid={id}&" \
               "responsegroup=extended&cacheable=true&" \
               "shipdate=currentDate&requestorigin=gi"
 
-    REVIEW_URL = "http://groceries.asda.com/review/reviews.json?" \
+    REVIEW_URL = "https://groceries.asda.com/review/reviews.json?" \
                  "Filter=ProductId:%s&" \
                  "Sort=SubmissionTime:desc&" \
                  "apiversion=5.4&" \
@@ -64,8 +64,15 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
 
         if self.product_url:
             pId = is_empty(re.findall("product/(\d+)", self.product_url))
-            url = "http://groceries.asda.com/api/items/view?" \
-                "itemid=" + pId + "&responsegroup=extended" \
+            if pId is None:
+                try:
+                    pId = int(self.product_url.strip('/').split('/')[-1])
+                except (ValueError, TypeError) as e:
+                    self.log('Error while parse item id. ERROR: %s.' % str(e),
+                             ERROR)
+                    return
+            url = "https://groceries.asda.com/api/items/view?" \
+                "itemid=" + str(pId) + "&responsegroup=extended" \
                 "&cacheable=true&shipdate=currentDate" \
                 "&requestorigin=gi"
 
@@ -135,6 +142,7 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
             prod = SiteProductItem()
             prod['title'] = item['itemName']
             prod['brand'] = item['brandName']
+            prod['site'] = 'http://www.asda.com/'
 
             # Hardcoded, store seems not to have out of stock products
             prod['is_out_of_stock'] = False
