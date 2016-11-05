@@ -347,6 +347,9 @@ class KohlsScraper(Scraper):
             if video_urls:
                 self.video_urls.extend([video_urls[0]])
 
+        if not video_urls:
+            video_urls.extend(self.tree_html.xpath('//a[starts-with(@href, "http://netstorage.kohls.com/product_video")]/@href'))
+
         return self.video_urls if self.video_urls else None
 
     def _video_count(self):
