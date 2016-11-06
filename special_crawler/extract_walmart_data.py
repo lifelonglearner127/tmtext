@@ -735,7 +735,6 @@ class WalmartScraper(Scraper):
             return 0
 
     # extract product name from its product page tree
-    # ! may throw exception if not found
     # TODO: improve, filter by tag class or something
     def _product_name_from_tree(self):
         """Extracts product name.
@@ -743,21 +742,24 @@ class WalmartScraper(Scraper):
         Returns:
             string containing product name, or None
         """
+        try:
+            if self._is_collection_url():
+                try:
+                    return re.search('"productName":"(.+?)"', self.page_raw_text).group(1)
+                except:
+                    return self.tree_html.xpath('//*[contains(@class,"prod-ProductTitle")]/div/text()')[0]
 
-        if self._is_collection_url():
-            try:
-                return re.search('"productName":"(.+?)"', self.page_raw_text).group(1)
-            except:
-                return self.tree_html.xpath('//*[contains(@class,"prod-ProductTitle")]/div/text()')[0]
+            # assume new design
+            product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
 
-        # assume new design
-        product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
+            if not product_name_node:
+                # assume old design
+                product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
 
-        if not product_name_node:
-            # assume old design
-            product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
-
-        return product_name_node[0].text_content().strip()
+            if product_name_node:
+                return product_name_node[0].text_content().strip()
+        except Exception, e:
+            print 'Error extracting product name', self.product_page_url, e
 
     # extract walmart no
     def _site_id(self):
