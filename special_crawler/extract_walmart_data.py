@@ -135,7 +135,7 @@ class WalmartScraper(Scraper):
         self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
                         "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
-        self.proxies_enabled = True
+        self.proxies_enabled = False
 
     def _request(self, url, headers=None):
         if self.proxies_enabled and 'walmart.com' in url:
@@ -164,8 +164,10 @@ class WalmartScraper(Scraper):
                 resp = self._request(self.product_page_url)
 
                 if resp.url != self.product_page_url:
-                    print 'REDIRECTED', resp.url, self.product_page_url
-                    continue
+                    print 'REDIRECTED', self.product_page_url, resp.url
+
+                    if re.match(resp.url, '.*walmart\.com\.'):
+                        continue
 
                 if resp.status_code != 200:
                     print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
