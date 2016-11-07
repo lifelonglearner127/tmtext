@@ -191,7 +191,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
         if chosen_proxy_provider == "crawlera":
-            logger.warning('*** Using CrawleraEU ***')
+            logger.warning('*** Using Crawlera ***')
             settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
             settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
             settings.overrides['CRAWLERA_ENABLED'] = True
