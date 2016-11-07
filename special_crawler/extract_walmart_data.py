@@ -131,6 +131,7 @@ class WalmartScraper(Scraper):
         self.is_legacy_review = False
         self.wv = WalmartVariants()
         self.is_bundle_product = False
+        self.temporary_unavailable = 0
 
         print 'using API KEY', self.CRAWLERA_APIKEY
 
@@ -175,12 +176,22 @@ class WalmartScraper(Scraper):
                 if resp.status_code != 200:
                     print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
 
-                    if resp.status_code == 429:
-                        self.is_timeout = True
-                        self.ERROR_RESPONSE["failure_type"] = "429"
-                        return
+                    if resp.status_code == 520:
+                        # if response is 520, consider that 'temporarily unavailable'
+                        self.temporary_unavailable = 1
 
-                    break
+                    else:
+                        if resp.status_code == 404:
+                            self.is_timeout = True
+                            self.ERROR_RESPONSE['failure_type'] = '404 Not Found'
+                            return
+
+                        elif resp.status_code == 429:
+                            self.is_timeout = True
+                            self.ERROR_RESPONSE['failure_type'] = '429'
+                            return
+
+                        break
 
                 contents = self._clean_null(resp.text)
                 self.page_raw_text = contents
@@ -1809,6 +1820,9 @@ class WalmartScraper(Scraper):
 
         return False
 
+    def _temporary_unavailable(self):
+        return self.temporary_unavailable
+
     def _shipping(self):
         flag = 'not available'
 
@@ -2671,6 +2685,10 @@ class WalmartScraper(Scraper):
         return None
 
     def _failure_type(self):
+        # if page is temporarily unavailable, do not consider that a failure
+        if self.temporary_unavailable:
+            return None
+
         # we ignore bundle product
         if self.tree_html.xpath("//div[@class='js-about-bundle-wrapper']") or \
                         "WalmartMainBody DynamicMode wmBundleItemPage" in self.page_raw_text:
@@ -3274,6 +3292,7 @@ class WalmartScraper(Scraper):
         "min_review": _min_review, \
         "reviews": _reviews, \
         "no_longer_available": _no_longer_available, \
+        "temporary_unavailable": _temporary_unavailable, \
         # video needs both page source and separate requests
         "video_count": _video_count, \
         "video_urls": _video_urls, \
