@@ -352,6 +352,9 @@ class Scraper():
         self.bot_type = kwargs['bot']
         self.is_timeout = False
 
+        if kwargs.get('api_key'):
+            self.CRAWLERA_APIKEY = kwargs.get('api_key')
+
         # Set generic fields
         # directly (don't need to be computed by the scrapers)
 

@@ -64,6 +64,9 @@ class WalmartScraper(Scraper):
             self.additional_requests = kwargs.get('additional_requests') == '1'
         print 'Additional requests', self.product_page_url, self.additional_requests
 
+        if kwargs.get('walmart_api_key'):
+            self.CRAWLERA_APIKEY = kwargs.get('walmart_api_key')
+
         # whether product has any webcollage media
         self.has_webcollage_media = False
         # whether product has any sellpoints media
@@ -128,6 +131,8 @@ class WalmartScraper(Scraper):
         self.is_legacy_review = False
         self.wv = WalmartVariants()
         self.is_bundle_product = False
+
+        print 'using API KEY', self.CRAWLERA_APIKEY
 
         self.proxy_host = "content.crawlera.com"
         self.proxy_port = "8010"
