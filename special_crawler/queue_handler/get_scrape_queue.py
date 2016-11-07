@@ -91,12 +91,14 @@ def main( environment, scrape_queue_name, thread_id):
 
                 logger.info("Received: thread %d server %s url %s" % ( thread_id, server_name, url))
 
+                proxy = None
+                walmart_proxy = None
                 api_key = None
                 walmart_api_key = None
 
                 if (datetime.now() - last_fetch).seconds > FETCH_FREQUENCY:
                     amazon_bucket_name = 'ch-settings'
-                    key_file = 'crawlera_apikeys.cfg'
+                    key_file = 'proxy_settings.cfg'
 
                     try:
                         S3_CONN = boto.connect_s3(is_secure=False)
@@ -104,6 +106,10 @@ def main( environment, scrape_queue_name, thread_id):
                         k = Key(S3_BUCKET)
                         k.key = key_file
                         key_dict = json.loads(k.get_contents_as_string())
+                        proxy = key_dict['default']
+                        walmart_proxy = key_dict['walmart']
+                        logger.info('PROXY %s' % proxy)
+                        logger.info('WALMART PROXY %s' % walmart_proxy)
                         api_key = key_dict['crawlera']['api_keys']['default']
                         walmart_api_key = key_dict['crawlera']['api_keys']['walmart']
                         logger.info('GOT API KEY %s' % api_key)
@@ -119,6 +125,10 @@ def main( environment, scrape_queue_name, thread_id):
                     tmp_url = base%(urllib.quote(url))
                     if additional_requests:
                         tmp_url += '&additional_requests=' + str(additional_requests)
+                    if proxy:
+                        tmp_url += '&proxy=' + proxy
+                    if walmart_proxy:
+                        tmp_url += '&walmart_proxy=' + walmart_proxy
                     if api_key:
                         tmp_url += '&api_key=' + api_key
                     if walmart_api_key:

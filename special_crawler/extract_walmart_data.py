@@ -64,6 +64,9 @@ class WalmartScraper(Scraper):
             self.additional_requests = kwargs.get('additional_requests') == '1'
         print 'Additional requests', self.product_page_url, self.additional_requests
 
+        if kwargs.get('walmart_proxy'):
+            self.PROXY = kwargs.get('walmart_proxy')
+
         if kwargs.get('walmart_api_key'):
             self.CRAWLERA_APIKEY = kwargs.get('walmart_api_key')
 
@@ -132,20 +135,39 @@ class WalmartScraper(Scraper):
         self.wv = WalmartVariants()
         self.is_bundle_product = False
 
-        print 'using API KEY', self.CRAWLERA_APIKEY
+        if self.PROXY == 'crawlera':
+            print 'Using Crawlera with API KEY', self.product_page_url, self.CRAWLERA_APIKEY
 
-        self.proxy_host = "content.crawlera.com"
-        self.proxy_port = "8010"
-        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
-        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
-                        "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
+            self.proxy_host = "content.crawlera.com"
+            self.proxy_port = "8010"
+            self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
+                            "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
+
+        elif self.PROXY == 'proxyrain':
+            print 'Using proxyRAIN', self.product_page_url
+
+            self.proxy_host = random.choice(['proxy-001.proxyrain.net', 'proxy-001.proxyrain.net'])
+            self.http_proxy_port = "80"
+            self.https_proxy_port = "8080"
+            # Use port 80 for https
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.http_proxy_port), \
+                "https": "https://{}:{}/".format(self.proxy_host, self.https_proxy_port)}
+            self.proxy_auth = None
 
         self.proxies_enabled = True
 
     def _request(self, url, headers=None):
         if self.proxies_enabled and 'walmart.com' in url:
+            if self.PROXY == 'proxyrain':
+                headers = {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Cache-Control': 'no-cache',
+                    'DNT': '1'}
+
             return requests.get(url, \
-                    proxies=self.proxies, auth=self.proxy_auth, \
+                    headers=headers, \
+                    proxies=self.proxies, \
+                    auth=self.proxy_auth, \
                     verify=False, \
                     timeout=300)
         else:

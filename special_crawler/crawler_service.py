@@ -412,6 +412,16 @@ def get_data():
     else:
         additional_requests = None
 
+    if 'proxy' in request_arguments:
+        proxy = request_arguments['proxy'][0]
+    else:
+        proxy = None
+
+    if 'walmart_proxy' in request_arguments:
+        walmart_proxy = request_arguments['walmart_proxy'][0]
+    else:
+        walmart_proxy = None
+
     if 'api_key' in request_arguments:
         api_key = request_arguments['api_key'][0]
     else:
@@ -423,7 +433,13 @@ def get_data():
         walmart_api_key = None
 
     # create scraper class for requested site
-    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot, additional_requests=additional_requests, api_key=api_key, walmart_api_key=walmart_api_key)
+    site_scraper = SUPPORTED_SITES[site](url=url, \
+        bot=bot, \
+        additional_requests=additional_requests, \
+        api_key=api_key, \
+        walmart_api_key=walmart_api_key, \
+        proxy=proxy,
+        walmart_proxy=walmart_proxy)
 
     # validate parameter values
     # url
