@@ -160,7 +160,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         local_filename = "/tmp/_proxy_providers_settings.cfg"
 
-        if os.path.isfile(local_filename) or random.randint(0, 30) == 0:
+        if os.path.isfile(local_filename) or random.randint(0, 5) == 0:
             proxy_config = self._parse_proxy_config_file(local_filename)
         else:
             proxy_config = self._download_and_parse_proxy_config_file(local_filename)
