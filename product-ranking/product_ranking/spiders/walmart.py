@@ -1130,7 +1130,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_upc_alternative(selected_product):
-        return selected_product.get('productAttributes', {}).get('upc')
+        return selected_product.get('upc')
 
     @staticmethod
     def _parse_out_of_stock_alternative(marketplaces):
