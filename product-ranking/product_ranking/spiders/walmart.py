@@ -1064,7 +1064,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def _populate_from_js_alternative(self, response, product):
         data = self._extract_product_info_json_alternative(response)
         if data:
-            print 'lol'
             # Parse selected product
             selected_product = self._parse_selected_product_alternative(data)
 
@@ -1104,9 +1103,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             buyer_reviews = self._parse_buyer_reviews_alternative(data)
             cond_set_value(product, 'buyer_reviews', buyer_reviews)
 
-            # _parse_bestseller_rank_alternative
+            # Parse bestseller rank
             bestseller_rank = self._parse_bestseller_rank_alternative(selected_product)
             cond_set_value(product, 'bestseller_rank', bestseller_rank)
+
+            # Parse upc
+            upc = self._parse_upc_alternative(selected_product)
+            cond_set_value(product, 'upc', upc)
 
     @staticmethod
     def _parse_selected_product_alternative(data):
@@ -1119,15 +1122,15 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_brand_alternative(selected_product):
-        return selected_product.get('productAttributes').get('brand')
+        return selected_product.get('productAttributes', {}).get('brand')
 
     @staticmethod
     def _parse_title_alternative(selected_product):
-        return selected_product.get('productAttributes').get('productName')
+        return selected_product.get('productAttributes', {}).get('productName')
 
     @staticmethod
     def _parse_upc_alternative(selected_product):
-        return selected_product.get('productAttributes').get('upc')
+        return selected_product.get('productAttributes', {}).get('upc')
 
     @staticmethod
     def _parse_out_of_stock_alternative(marketplaces):
@@ -1145,7 +1148,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_description_alternative(selected_product):
-        return selected_product.get('productAttributes').get('detailedDescription')
+        return selected_product.get('productAttributes', {}).get('detailedDescription')
 
     @staticmethod
     def _parse_image_url_alternative(data):
@@ -1184,7 +1187,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         selected = data.get('product', {}).get('primaryProduct')
         review_data = data.get('product').get('reviews').get(selected)
         num_of_reviews = review_data.get('totalReviewCount')
-        average_rating = review_data.get('review_data')
+        average_rating = review_data.get('averageOverallRating')
         rating_by_star = {1: review_data.get('percentageOneCount', 0),
                         2: review_data.get('percentageTwoCount', 0),
                         3: review_data.get('percentageThreeCount', 0),
