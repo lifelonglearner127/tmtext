@@ -1,6 +1,7 @@
 import re
 import urlparse
 import json
+import hjson
 
 import requests
 from lxml import html
@@ -91,6 +92,8 @@ class ToysrusShelfPagesSpider(ToysrusProductsSpider):
             if shelf_categories:
                 item['shelf_path'] = shelf_categories
 
+
+            # top sections except for  Toy BOx Favorites
             Resonance_URL = "http://www.res-x.com/ws/r2/Resonance.aspx?appid=toysrus01" \
                             "&tk=91392014501448&ss=549026946524962&sg=1&pg=27185259054672" \
                             "&vr=5.5x&bx=true&sc=thome_rr&sc=thome2_rr&sc=thome3_rr" \
@@ -105,10 +108,10 @@ class ToysrusShelfPagesSpider(ToysrusProductsSpider):
                 content = requests.get(
                     Resonance_URL,
                     headers={'User-Agent': self.user_agent_googlebot}).content
-                html_txt = re.findall(r'certonaResx\.showResponse\((.*?)\);', content)
+                html_txt = re.findall(r'certonaResx\.showResponse\((.*?\})\);', content)
 
                 if len(html_txt) > 0:
-                    data = json.loads(html_txt[0])
+                    data = hjson.loads(html_txt[0])
                     schemes = [
                         'thome_rr', 'thome2_rr', 'thome3_rr',
                         'tcategory_rr',
@@ -124,6 +127,28 @@ class ToysrusShelfPagesSpider(ToysrusProductsSpider):
                                         '//li[contains(@class,"prodBox")]//a[contains(@class,"prodtitle")]/@href'
                                     )
                                     urls += scheme_urls
+
+            # Toy Box Favorites section
+            ToyBoxFavorites_URL = "http://www.hlserve.com/delivery/api/taxonomy?taxonomy=home" \
+                            "&hlpt=H&pubpagetype=home&usestate=1&platform=web&_=51331231450" \
+                            "&~uid=c718db2c-bad3-4eea-8df4-ad5e2cdce6c0" \
+                            "&puserid=%5BCS%5Dv1%7C2C0AAD9705010DBF-60000102600716CA%5BCE%5D" \
+                            "&creative=780x450_B-C-OG_TI_4-4_Homepage&minmes=4&maxmes=4&minorganic=0" \
+                            "&~it=js&json=hl_c7365396&apiKey=DB1D4221-1C70-46F9-8F5E-26D0B09A40C7"
+            content = requests.get(
+                ToyBoxFavorites_URL,
+                headers={'User-Agent': self.user_agent_googlebot}).content
+            html_txt = re.findall(r'\((\{\"ProductAd\"\:.*?\"\})\)', content)
+
+            if len(html_txt) > 0:
+                data = hjson.loads(html_txt[0])
+                try:
+                    for entry in data['ProductAd']:
+                        a_url = "http://www.toysrus.com/product/index.jsp?productId=%s" % entry['ProductSKU']
+                        urls += [a_url]
+                except:
+                    pass
+
             if len(urls) > 0:
                 for url in urls:
                     item = SiteProductItem()
