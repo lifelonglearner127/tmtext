@@ -417,8 +417,13 @@ def get_data():
     else:
         api_key = None
 
+    if 'walmart_api_key' in request_arguments:
+        walmart_api_key = request_arguments['walmart_api_key'][0]
+    else:
+        walmart_api_key = None
+
     # create scraper class for requested site
-    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot, additional_requests=additional_requests, api_key=api_key)
+    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot, additional_requests=additional_requests, api_key=api_key, walmart_api_key=walmart_api_key)
 
     # validate parameter values
     # url
