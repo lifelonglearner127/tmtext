@@ -190,7 +190,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
 
-        if chosen_proxy_provider == "crawleraeu":
+        if chosen_proxy_provider == "crawlera":
             logger.warning('*** Using CrawleraEU ***')
             settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
             settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
@@ -227,18 +227,21 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         self.cookies['NSID'] = '2648'
 
     def _weighted_choice(self, choices_dict):
-        choices = [(key, value) for (key, value) in choices_dict.iteritems()]
-        # Accept dict, converts to list
-        # of iterables in following format
-        # [("choice1", 0.6), ("choice2", 0.2), ("choice3", 0.3)]
-        # Returns chosen variant
-        total = sum(w for c, w in choices)
-        r = random.uniform(0, total)
-        upto = 0
-        for c, w in choices:
-            if upto + w >= r:
-                return c
-            upto += w
+        try:
+            choices = [(key, value) for (key, value) in choices_dict.iteritems()]
+            # Accept dict, converts to list
+            # of iterables in following format
+            # [("choice1", 0.6), ("choice2", 0.2), ("choice3", 0.3)]
+            # Returns chosen variant
+            total = sum(w for c, w in choices)
+            r = random.uniform(0, total)
+            upto = 0
+            for c, w in choices:
+                if upto + w >= r:
+                    return c
+                upto += w
+        except Exception as e:
+            return "crawlera"
 
     def _get_download_delay(self):
         amazon_bucket_name = "sc-settings"
