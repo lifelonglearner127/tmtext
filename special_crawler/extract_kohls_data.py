@@ -340,12 +340,19 @@ class KohlsScraper(Scraper):
 
         self._extract_webcollage_contents()
 
-        if self.product_info_json["productItem"]["media"].get("videoURL", None):
-            video_page_html = html.fromstring(self.load_page_from_url_with_number_of_retries(self.product_info_json["productItem"]["media"]["videoURL"]))
+        video_url = self.product_info_json["productItem"]["media"].get("videoURL")
+
+        if video_url:
+            if re.match('//www', video_url):
+                video_url = 'http:' + video_url
+
+            video_page_html = html.fromstring(self.load_page_from_url_with_number_of_retries(video_url))
             video_urls = video_page_html.xpath("//video[@id='product-video']/source[contains(@type, 'video')]/@src")
 
             if video_urls:
                 self.video_urls.extend([video_urls[0]])
+            else:
+                self.video_urls.append(video_url)
 
         return self.video_urls if self.video_urls else None
 
