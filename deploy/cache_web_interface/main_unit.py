@@ -143,7 +143,8 @@ def stats():
         context['running_instances'] = sum(instances.itervalues())
         context['running_instances_info'] = instances
         context['today_instances'] = cache.get_today_instances()
-        context['today_jobs'] = cache.get_jobs_stats()
+        context['today_jobs'], context['today_jobs_by_site'] = \
+            cache.get_jobs_stats(with_by_site=True)
         context['today_executed_tasks'] = cache.get_executed_tasks_count()
         context['today_requests_count'] = cache.get_today_requests()
         if context['today_requests_count'] is None:
@@ -165,7 +166,8 @@ def stats():
         context['left_tasks'] = [
             (q.split('_')[-1], sqs_conn.get_queue(q).count())
             for q in CACHE_QUEUES_LIST.itervalues()]
-        context['left_tasks_total'] = sum([q[1] for q in context['left_tasks']])
+        context['left_tasks_total'] = \
+            sum([q[1] for q in context['left_tasks']])
         cur_hour = datetime.datetime.now().hour
         context['avg_hour_task'] = '{0:.2f}'.format(
             context['today_executed_tasks'] / (cur_hour + 1))
