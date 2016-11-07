@@ -62,7 +62,8 @@ class WalmartShelfPagesSpider(WalmartProductsSpider):
 
     def start_requests(self):
         yield Request(url=self.valid_url(self.product_url),
-                      meta=self._setup_meta_compatibility())  # meta is for SC baseclass compatibility
+                      meta=self._setup_meta_compatibility(),
+                      cookies=self.cookies)  # meta is for SC baseclass compatibility
 
     def _scrape_product_links(self, response):
         item = response.meta.get('product', SiteProductItem())

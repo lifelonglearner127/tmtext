@@ -3,6 +3,7 @@
 import re
 import sys
 import json
+import time
 
 from lxml import html, etree
 import lxml
@@ -51,6 +52,8 @@ class WalmartScraper(Scraper):
     # base URL for product API
     BASE_URL_PRODUCT_API = "http://www.walmart.com/product/api/{0}"
 
+    CRAWLERA_APIKEY = '6b7c3e13db4e440db31d457bc10e6be8'
+
     INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
@@ -58,7 +61,11 @@ class WalmartScraper(Scraper):
 
         self.additional_requests = False
         if kwargs.get('additional_requests'):
-            self.additional_requests = kwargs.get('additional_requests') == 'true'
+            self.additional_requests = kwargs.get('additional_requests') == '1'
+        print 'Additional requests', self.product_page_url, self.additional_requests
+
+        if kwargs.get('walmart_api_key'):
+            self.CRAWLERA_APIKEY = kwargs.get('walmart_api_key')
 
         # whether product has any webcollage media
         self.has_webcollage_media = False
@@ -126,26 +133,22 @@ class WalmartScraper(Scraper):
         self.is_bundle_product = False
         self.temporary_unavailable = 0
 
-        self.proxy_host = "proxy.crawlera.com"
+        print 'using API KEY', self.CRAWLERA_APIKEY
+
+        self.proxy_host = "content.crawlera.com"
         self.proxy_port = "8010"
-        self.CRAWLERA_APIKEYS = [self.CRAWLERA_APIKEY, self.CRAWLERA_APIKEY_ALT]
-        random.shuffle(self.CRAWLERA_APIKEYS)
-        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEYS[0], "")
+        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
         self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
                         "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
         self.proxies_enabled = True
-        self.try_alternate_apikey = False
 
     def _request(self, url, headers=None):
-        if self.try_alternate_apikey:
-            self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEYS[1], "")
-
         if self.proxies_enabled and 'walmart.com' in url:
             return requests.get(url, \
                     proxies=self.proxies, auth=self.proxy_auth, \
                     verify=False, \
-                    timeout=160)
+                    timeout=300)
         else:
             return requests.get(url, timeout=10)
 
@@ -154,9 +157,21 @@ class WalmartScraper(Scraper):
         if re.match('http://', self.product_page_url):
             self.product_page_url = 'https://' + re.match('http://(.+)', self.product_page_url).group(1)
 
-        for i in range(5):
+        max_retries = 5
+
+        for i in range(100):
+
+            if i > max_retries:
+                break
+
+            max_retries = 5
+
             try:
                 resp = self._request(self.product_page_url)
+
+                if resp.url != self.product_page_url:
+                    print 'REDIRECTED', resp.url, self.product_page_url
+                    continue
 
                 if resp.status_code != 200:
                     print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
@@ -172,13 +187,9 @@ class WalmartScraper(Scraper):
                             return
 
                         elif resp.status_code == 429:
-                            if try_alternate_apikey:
-                                self.is_timeout = True
-                                self.ERROR_RESPONSE['failure_type'] = '429'
-                                return
-                            else:
-                                self.try_alternate_apikey = True
-                                continue
+                            self.is_timeout = True
+                            self.ERROR_RESPONSE['failure_type'] = '429'
+                            return
 
                         break
 
@@ -190,7 +201,11 @@ class WalmartScraper(Scraper):
 
                 return
             except Exception, e:
-                print 'Error extracting', self.product_page_url, e
+                print 'Error extracting', self.product_page_url, type(e), e
+
+                if str(e) == "('Cannot connect to proxy.', error(104, 'Connection reset by peer'))" or re.search('Max retries exceeded', str(e)):
+                    max_retries = 100
+                    time.sleep(1)
 
         self.is_timeout = True
         self.ERROR_RESPONSE["failure_type"] = "Timeout"
@@ -736,7 +751,6 @@ class WalmartScraper(Scraper):
             return 0
 
     # extract product name from its product page tree
-    # ! may throw exception if not found
     # TODO: improve, filter by tag class or something
     def _product_name_from_tree(self):
         """Extracts product name.
@@ -744,21 +758,24 @@ class WalmartScraper(Scraper):
         Returns:
             string containing product name, or None
         """
+        try:
+            if self._is_collection_url():
+                try:
+                    return re.search('"productName":"(.+?)"', self.page_raw_text).group(1)
+                except:
+                    return self.tree_html.xpath('//*[contains(@class,"prod-ProductTitle")]/div/text()')[0]
 
-        if self._is_collection_url():
-            try:
-                return re.search('"productName":"(.+?)"', self.page_raw_text).group(1)
-            except:
-                return self.tree_html.xpath('//*[contains(@class,"prod-ProductTitle")]/div/text()')[0]
+            # assume new design
+            product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
 
-        # assume new design
-        product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
+            if not product_name_node:
+                # assume old design
+                product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
 
-        if not product_name_node:
-            # assume old design
-            product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
-
-        return product_name_node[0].text_content().strip()
+            if product_name_node:
+                return product_name_node[0].text_content().strip()
+        except Exception, e:
+            print 'Error extracting product name', self.product_page_url, e
 
     # extract walmart no
     def _site_id(self):
@@ -1611,22 +1628,21 @@ class WalmartScraper(Scraper):
             return self._filter_key_fields("upc", self._find_between(html.tostring(self.tree_html), "upc: '", "'").strip())
 
         if self._version() == "Walmart v2":
+            product_info_json = self._extract_product_info_json()
+
+            upc = product_info_json.get("analyticsData", {}).get("upc")
+
+            if upc:
+                return upc
+
+            upc = self.product_choice_info_json.get("product", {}).get("wupc")
+
+            if upc:
+                return upc
+
             if self.is_bundle_product:
-                product_info_json = self._extract_product_info_json()
-
-                upc = product_info_json.get("analyticsData", {}).get("upc")
-
-                if upc:
-                    return upc
-
-                upc = self.product_choice_info_json.get("product", {}).get("wupc")
-
-                if upc:
-                    return upc
-
                 return self._filter_key_fields("upc", None)
             else:
-
                 upc_info = self.tree_html.xpath("//meta[@property='og:upc']/@content")
                 upc = upc_info[0] if len(upc_info) > 0 else None
 
@@ -2642,7 +2658,7 @@ class WalmartScraper(Scraper):
                     if self.product_info_json["buyingOptions"]["displayArrivalDate"].lower() == "see dates in checkout":
                         return 0
 
-                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False:
+                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False and self.product_info_json.get('analyticsData').get('inStock'):
                         return 0
 
                     if self.product_info_json['buyingOptions'].get('available') == True:
@@ -2716,6 +2732,11 @@ class WalmartScraper(Scraper):
         # If there is no product name, return failure
         if not self._is_collection_url() and not self._product_name_from_tree():
             self.failure_type = "No product name"
+
+        # If product is available but has no descriptions
+        if not self._no_longer_available():
+            if not self._short_description_wrapper() and not self._long_description_wrapper():
+                self.failure_type = "No description"
 
         return self.failure_type
 

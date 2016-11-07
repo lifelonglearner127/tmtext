@@ -59,8 +59,8 @@ class AmazonProxyMiddleware(object):
         request.meta['503_retry'] = request.meta.get('503_retry', 0)
         if request.meta['503_retry'] < 10:
             log.msg('PROXY {}'.format(request.url))
-            proxy_address = 'http://proxy.crawlera.com:8010'
-            proxy_user_pass = 'eff4d75f7d3a4d1e89115c0b59fab9b2:'
+            proxy_address = 'http://content.crawlera.com:8010'
+            proxy_user_pass = '0dc1db337be04e8fb52091b812070ccf:'
             request.meta['503_retry'] += 1
             request.meta['proxy'] = proxy_address
             basic_auth = 'Basic ' + base64.encodestring(proxy_user_pass)
@@ -89,7 +89,7 @@ class WalmartRetryMiddleware(RedirectMiddleware):
         if response.status in [301, 302, 307]:
             location = response.headers.get('Location')
             location = urljoin('https://www.walmart.com/', location)
-            if not location.startswith('https://www.walmart.com/'):
+            if not re.search('^https?://www.walmart.com/', location):
                 log.msg('RETRY: {}'.format(request.url))
                 request.dont_filter = True
                 return request

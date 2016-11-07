@@ -56,8 +56,9 @@ class Scraper():
     # number of retries for fetching product page source before giving up
     MAX_RETRIES = 3
 
-    CRAWLERA_APIKEY = "4c1e7c0bb0f14695a8e198f08d80e3df"
-    CRAWLERA_APIKEY_ALT = "4c1e7c0bb0f14695a8e198f08d80e3df"
+    CRAWLERA_HOST = 'content.crawlera.com'
+    CRAWLERA_PORT = '8010'
+    CRAWLERA_APIKEY = "3b1bf5856b2142a799faf2d35b504383"
 
     # List containing all data types returned by the crawler (that will appear in responses of requests to service in crawler_service.py)
     # In practice, all returned data types for all crawlers should be defined here
@@ -351,6 +352,9 @@ class Scraper():
         self.product_page_url = kwargs['url']
         self.bot_type = kwargs['bot']
         self.is_timeout = False
+
+        if kwargs.get('api_key'):
+            self.CRAWLERA_APIKEY = kwargs.get('api_key')
 
         # Set generic fields
         # directly (don't need to be computed by the scrapers)

@@ -37,8 +37,8 @@ class NikeScraper(Scraper):
         self.nv = NikeVariants()
         self.variants = None
         self.is_variant_checked = False
-        self.proxy_host = "proxy.crawlera.com"
-        self.proxy_port = "8010"
+        self.proxy_host = self.CRAWLERA_HOST
+        self.proxy_port = self.CRAWLERA_PORT
         self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
         self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
         self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
@@ -257,7 +257,7 @@ class NikeScraper(Scraper):
 
     def _no_image(self):
         return None
-    
+
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
@@ -377,7 +377,7 @@ class NikeScraper(Scraper):
 
     def _category_name(self):
         return self._categories()[-1]
-    
+
     def _brand(self):
         return None
 

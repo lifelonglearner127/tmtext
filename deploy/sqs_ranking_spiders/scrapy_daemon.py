@@ -18,6 +18,7 @@ from threading import Thread
 from multiprocessing.connection import Listener, AuthenticationError, Client
 from subprocess import Popen, PIPE, check_output, CalledProcessError, STDOUT
 
+
 # list of all available incoming SQS with tasks
 OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
 PROGRESS_QUEUE_NAME = 'sqs_ranking_spiders_progress'  # progress reports
@@ -58,20 +59,18 @@ try:
     from sqs_ranking_spiders.remote_instance_starter import REPO_BASE_PATH,\
         logging, AMAZON_BUCKET_NAME
     from sqs_ranking_spiders import QUEUES_LIST
-    from product_ranking import statistics
 except ImportError:
     # we're in /home/spiders/repo
     from repo.remote_instance_starter import REPO_BASE_PATH, logging, \
         AMAZON_BUCKET_NAME
     from repo.remote_instance_starter import QUEUES_LIST
-    from product_ranking import statistics
+from product_ranking import statistics
 sys.path.insert(
     3, os.path.join(REPO_BASE_PATH, 'deploy', 'sqs_ranking_spiders'))
 from sqs_queue import SQS_Queue
 from libs import convert_json_to_csv
 from cache_layer import REDIS_HOST, REDIS_PORT, INSTANCES_COUNTER_REDIS_KEY, \
-    TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET, JOBS_STATS_REDIS_KEY, \
-    JOBS_COUNTER_REDIS_KEY
+    JOBS_STATS_REDIS_KEY, JOBS_COUNTER_REDIS_KEY
 
 
 TEST_MODE = False  # if we should perform local file tests
@@ -85,7 +84,8 @@ FOLDERS_PATH = None
 CONVERT_TO_CSV = True
 
 # Connect to S3
-S3_CONN = boto.connect_s3(is_secure=False)  # uncomment if you are not using ssl
+S3_CONN = boto.connect_s3(is_secure=False)
+# uncomment if you are not using ssl
 
 # Get current bucket
 S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
@@ -133,6 +133,11 @@ CACHE_GET_IGNORE_KEY = 'sqs_cache_get_ignore'
 # key in task data to not save cached result
 # if True, result will not be saved to cache
 CACHE_SAVE_IGNORE_KEY = 'sqs_cache_save_ignore'
+
+# File with required parameters for restarting scrapy daemon.
+OPTION_FILE_FOR_RESTART = '/tmp/scrapy_daemon_option_file.json'
+# Allow to restart scrapy daemon
+ENABLE_TO_RESTART_DAEMON = True
 
 
 # custom exceptions
@@ -1135,7 +1140,7 @@ class ScrapyTask(object):
             self._push_simmetrica_events()
             first_signal = self._get_next_signal(start_time)
         except Exception as ex:
-            logger.warning('Error occured while starting scrapy: %s', ex)
+            logger.warning('Error occurred while starting scrapy: %s', ex)
             return False
         try:
             self._run_signal(first_signal, start_time)
@@ -1339,6 +1344,9 @@ def log_failed_task(task):
 def notify_cache(task, is_from_cache=False):
     """send request to cache (for statistics)"""
     url = CACHE_HOST + CACHE_URL_STATS
+    json_task = json.dumps(task)
+    logger.info('Notify cache task: %s', json_task)
+    data = dict(task=json_task, is_from_cache=json.dumps(is_from_cache))
     if 'start_time' in task and task['start_time']:
         if ('finish_time' in task and not task['finish_time']) or \
                 'finish_time' not in task:
@@ -1448,6 +1456,119 @@ def shut_down_instance_if_swap_used():
                     logger.error('Failed to terminate instance, exception: %s' % str(e))
 
 
+def get_uptime():
+    """
+    Get instance billing time.
+    """
+    output = Popen('cat /proc/uptime', shell=True, stdout=PIPE)
+    return float(output.communicate()[0].split()[0])
+
+
+def restart_scrapy_daemon():
+    """
+    Restart this script after update source code.
+    """
+    logger.info('Scrapy daemon restarting...')
+    arguments = ['python'] + sys.argv
+    if 'restarted' not in arguments:
+        arguments += ['restarted']
+    else:
+        logger.error('Error while restarting scrapy daemon. '
+                     'Already restarted.')
+        return
+    os.execv(sys.executable, arguments)
+
+
+def daemon_is_restarted():
+    """
+    Check this script is restarted copy or not.
+    """
+    return 'restarted' in sys.argv
+
+
+def load_options_after_restart():
+    """
+    Load previous script options.
+    """
+    try:
+        with open(OPTION_FILE_FOR_RESTART, 'r') as f:
+            options = f.read()
+            print '\n\n', options, '\n\n'
+        os.remove(OPTION_FILE_FOR_RESTART)
+        return json.loads(options)
+    except Exception as e:
+        logger.error('Error while load old options for scrapy daemon. '
+                     'ERROR: %s' % str(e))
+    return {}
+
+
+def save_options_for_restart(options):
+    """
+    Save script options for another copy.
+    """
+    try:
+        options = json.dumps(options)
+        with open(OPTION_FILE_FOR_RESTART, 'w') as f:
+            f.write(options)
+    except Exception as e:
+        logger.error('Error while save options for scrapy daemon. '
+                     'ERROR: %s' % str(e))
+
+
+def prepare_queue_after_restart(options):
+    """
+    Load queue and message from disk after restart.
+    """
+    if TEST_MODE:
+        global task_number
+        try:
+            task_number
+        except NameError:
+            task_number = -1
+        task_number += 1
+        fake_class = SQS_Queue(options['queue']['name'])
+        return options['task_data'], fake_class
+    # Connection to SQS
+    queue = SQS_Queue(
+        name=options['queue']['queue_name'],
+        region=options['queue']['conn_region']
+    )
+    # Create a new message
+    queue.currentM = queue.q.message_class()
+    # Fill message
+    queue.currentM.body = options['queue']['body']
+    queue.currentM.attributes = options['queue']['attributes']
+    queue.currentM.md5_message_attributes = \
+        options['queue']['md5_message_attributes']
+    queue.currentM.message_attributes = options['queue']['message_attributes']
+    queue.currentM.receipt_handle = options['queue']['receipt_handle']
+    queue.currentM.id = options['queue']['id']
+    queue.currentM.md5 = options['queue']['md5']
+    return options['task_data'], queue
+
+
+def store_queue_for_restart(queue):
+    """
+    Save queue options and message to disk for load after restart.
+    """
+    if TEST_MODE:
+        return queue.__dict__
+    if not queue.currentM:
+        logger.error('Message was not found in queue for restart daemon.')
+        return None
+    return {
+        'conn_region': queue.conn.region.name,
+        'queue_name': queue.q.name,
+        'body': queue.currentM.get_body(),
+        'attributes': queue.currentM.attributes,
+        'md5_message_attributes': queue.currentM.md5_message_attributes,
+        'message_attributes': queue.currentM.message_attributes,
+        'receipt_handle': queue.currentM.receipt_handle,
+        'id': queue.currentM.id,
+        'md5': queue.currentM.md5
+    }
+
+
 def main():
     if not TEST_MODE:
         instance_meta = get_instance_metadata()
@@ -1457,12 +1578,30 @@ def main():
     set_global_variables_from_data_file()
     redis_db = connect_to_redis_database(redis_host=REDIS_HOST,
                                          redis_port=REDIS_PORT)
-    # increment quantity of instances spinned up during the day.
-    increment_metric_counter(INSTANCES_COUNTER_REDIS_KEY, redis_db)
-    max_tries = MAX_TRIES_TO_GET_TASK
+    global MAX_CONCURRENT_TASKS
     tasks_taken = []
-    branch = None
-
+    options = {}
+    if not daemon_is_restarted():
+        # increment quantity of instances spinned up during the day.
+        increment_metric_counter(INSTANCES_COUNTER_REDIS_KEY, redis_db)
+        max_tries = MAX_TRIES_TO_GET_TASK
+        branch = None
+        task_data = None
+        queue = None
+        skip_first_getting_task = False
+    else:
+        options = load_options_after_restart()
+        try:
+            max_tries = int(options.get('max_tries', MAX_TRIES_TO_GET_TASK))
+        except Exception as e:
+            logger.warning('Error while load `max_tries` from old options. '
+                           'ERROR: %s' % str(e))
+            max_tries = MAX_TRIES_TO_GET_TASK
+        branch = options.get('branch')
+        task_data, queue = prepare_queue_after_restart(options)
+        MAX_CONCURRENT_TASKS = options.get('MAX_CONCURRENT_TASKS')
+        TASK_QUEUE_NAME = options.get('TASK_QUEUE_NAME')
+        skip_first_getting_task = True
     try:
         listener = Listener(LISTENER_ADDRESS)
     except AuthenticationError:
@@ -1478,10 +1617,8 @@ def main():
         os.makedirs(os.path.expanduser(JOB_OUTPUT_PATH))
 
     def is_end_billing_instance_time():
-        if not instance_start_time or \
-                not get_instance_billing_limit_time() or \
-                not ((time.time() - instance_start_time) >
-                     get_instance_billing_limit_time()):
+        if not get_instance_billing_limit_time() or \
+                get_uptime() > get_instance_billing_limit_time():
             return False
         logger.info('Instance execution time limit.')
         return True
@@ -1517,30 +1654,42 @@ def main():
     # names of the queues in SQS, ordered by priority
     q_keys = ['urgent', 'production', 'test', 'dev']
     q_ind = 0  # index of current queue
-    global MAX_CONCURRENT_TASKS
     # try to get tasks, untill max number of tasks is reached or
     # max number of tries to get tasks is reached
     while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries and \
             not is_end_billing_instance_time():
-        TASK_QUEUE_NAME = QUEUES_LIST[q_keys[q_ind]]
-        logger.info('Trying to get task from %s, try #%s',
-                    TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
-        if TEST_MODE:
-            msg = test_read_msg_from_fs(TASK_QUEUE_NAME)
-        else:
-            msg = read_msg_from_sqs(
-                TASK_QUEUE_NAME, max_tries+add_timeout, attributes)
-        max_tries -= 1
-        if msg is None:  # no task
-            # if failed to get task from current queue,
-            # then change it to the following value in a circle
-            if q_ind < len(q_keys) - 1:
-                q_ind += 1
+        # Skip if needed getting first task. After restarting task
+        # in old options. For work scrapy daemon with a new source code
+        # from new branch and with old task.
+        if not skip_first_getting_task or \
+                not task_data:
+            TASK_QUEUE_NAME = QUEUES_LIST[q_keys[q_ind]]
+            logger.info('Trying to get task from %s, try #%s',
+                        TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
+            if TEST_MODE:
+                msg = test_read_msg_from_fs(TASK_QUEUE_NAME)
             else:
-                q_ind = 0
-            time.sleep(3)
+                msg = read_msg_from_sqs(
+                    TASK_QUEUE_NAME, max_tries+add_timeout, attributes)
+            max_tries -= 1
+            if msg is None:  # no task
+                # if failed to get task from current queue,
+                # then change it to the following value in a circle
+                if q_ind < len(q_keys) - 1:
+                    q_ind += 1
+                else:
+                    q_ind = 0
+                time.sleep(3)
+                continue
+            task_data, queue = msg
+        else:
+            skip_first_getting_task = False
+        if not task_data or not queue:
             continue
-        task_data, queue = msg
+        if not tasks_taken and ENABLE_TO_RESTART_DAEMON:
+            options['MAX_CONCURRENT_TASKS'] = MAX_CONCURRENT_TASKS
+            options['max_tries'] = max_tries
+            options['TASK_QUEUE_NAME'] = TASK_QUEUE_NAME
         if 'url' in task_data and 'searchterms_str' not in task_data \
                 and not 'checkout' in task_data['site']:
             if MAX_CONCURRENT_TASKS < 70:  # increase num of parallel jobs
@@ -1591,8 +1740,18 @@ def main():
         if not tasks_taken:
             # get git branch from first task, all tasks should
             # be in the same branch
-            branch = get_branch_for_task(task_data)
-            switch_branch_if_required(task_data)
+            if not daemon_is_restarted():
+                branch = get_branch_for_task(task_data)
+                switch_branch_if_required(task_data)
+                options['branch'] = branch
+                options['task_data'] = task_data
+                options['queue'] = store_queue_for_restart(queue)
+                if branch and \
+                        get_actual_branch_from_cache() != branch and \
+                        ENABLE_TO_RESTART_DAEMON:
+                    save_options_for_restart(options)
+                    listener.close()
+                    restart_scrapy_daemon()
         elif not is_same_branch(get_branch_for_task(task_data), branch):
             # make sure all tasks are in same branch
             queue.reset_message()
@@ -1703,6 +1862,8 @@ def log_free_disk_space():
 
 
 if __name__ == '__main__':
+    if daemon_is_restarted():
+        logger.info('Scrapy daemon is restarted.')
     if 'test' in [a.lower().strip() for a in sys.argv]:
         TEST_MODE = True
         prepare_test_data()
@@ -1715,8 +1876,6 @@ if __name__ == '__main__':
         logger.debug('TEST MODE ON')
         logger.debug('Faking the SQS_Queue class')
 
-    instance_start_time = time.time()
-
     try:
         main()
         log_free_disk_space()
@@ -1724,8 +1883,6 @@ if __name__ == '__main__':
         log_free_disk_space()
         logger.exception(e)
         logger.error('Finished with error.')  # write fail finish marker
-        logger.debug('Instance working time: %s sec.',
-                     time.time() - instance_start_time)
         try:
             os.killpg(os.getpgid(os.getpid()), 9)
         except:
