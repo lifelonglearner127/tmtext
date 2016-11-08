@@ -172,8 +172,10 @@ class WalmartScraper(Scraper):
                 if resp.url != self.product_page_url:
                     print 'REDIRECTED', self.product_page_url, resp.url
 
-                    if re.match(resp.url, '.*walmart\.com\.'):
-                        continue
+                    if not re.match(resp.url, '.*walmart\.com\.'):
+                        self.product_page_url = resp.url
+
+                    continue
 
                 if resp.status_code != 200:
                     print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
