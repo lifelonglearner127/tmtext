@@ -1222,12 +1222,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 prod['is_out_of_stock'] = not opts.get('available', False)
                 # In stock if at least one of variants in stock
                 # see bugzilla #12076
-                try:
-                    variants_ = data['variantInformation']['variantTypes'][0]['variants']
-                    variants_instock = any([v.get('available') for v in variants_])
-                    prod['is_out_of_stock'] = not variants_instock
-                except Exception as e:
-                    self.log('Could not load JSON at %s' % response.url, e)
+                if prod.get("variants"):
+                    variants_instock = any([v.get('in_stock') for v in prod.get('variants', [])])
+                    if variants_instock:
+                        prod['is_out_of_stock'] = False
+
                 if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
                     prod['shipping'] = False
                 prod['is_in_store_only'] = opts.get('storeOnlyItem', None)
@@ -1268,12 +1267,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             )
             # In stock if at least one of variants in stock
             # see bugzilla #12076
-            try:
-                variants_ = data['variantInformation']['variantTypes'][0]['variants']
-                variants_instock = any([v.get('available') for v in variants_])
-                product['is_out_of_stock'] = not variants_instock
-            except Exception as e:
-                self.log('Could not load JSON at %s' % response.url, e)
+
+            if product.get("variants"):
+                variants_instock = any([v.get('in_stock') for v in product.get('variants', [])])
+                if variants_instock:
+                    product['is_out_of_stock'] = False
             # the next 2 lines of code should not be uncommented, see BZ #1459
             #if response.xpath('//button[@id="WMItemAddToCartBtn"]').extract():
             #    product['is_out_of_stock'] = False
