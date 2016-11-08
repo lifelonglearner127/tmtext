@@ -143,7 +143,7 @@ if 'enable_cache' in _args_names:  # for local development purposes only!
 EXTENSIONS['product_ranking.extensions.SignalsExtension'] = 100
 
 try:
-    from settings_local import *
+    from settings_local import *  # noqa:F401
 except ImportError:
     pass
 

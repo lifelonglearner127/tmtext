@@ -2,14 +2,12 @@ import os
 import sys
 
 from django.db import models
-from django.utils import timezone
 from django.core.urlresolvers import reverse_lazy
 
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD,  '..', '..', '..',
                              'deploy'))
-from sqs_ranking_spiders import QUEUES_LIST
 
 import settings
 

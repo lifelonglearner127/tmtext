@@ -3,8 +3,6 @@ import collections
 import ast
 import itertools
 import re
-import copy
-import requests
 import lxml.html
 
 

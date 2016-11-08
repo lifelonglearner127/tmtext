@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import json
 import re
@@ -231,7 +230,7 @@ class TescoProductsSpider(BaseProductsSpider):
             product["url"] = "http://www.tesco.com/groceries/product/details/"\
                 "?id=" + str(productdata["productId"])
             product["price"] = Price(
-                price=productdata["price"], 
+                price=productdata["price"],
                 priceCurrency="GBP"
             )
             product["image_url"] = productdata["mediumImage"]
