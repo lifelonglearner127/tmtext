@@ -111,6 +111,7 @@ class Scraper():
             "shipping",
             "free_pickup_today",
             "no_longer_available",
+            "temporary_unavailable",
             "variants", # list of variants
             "swatches", # list of swatches
             "related_products_urls",
@@ -256,7 +257,7 @@ class Scraper():
                         "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "details", "mta", \
                         "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5",
                         "usage", "directions", "warnings", "indications", "amazon_ingredients",
-                            "specs"],
+                            "specs", "temporary_unavailable"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_alt_text", "image_alt_text_len", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags", "meta_tag_count", "meta_description_count", \
@@ -351,6 +352,9 @@ class Scraper():
         self.product_page_url = kwargs['url']
         self.bot_type = kwargs['bot']
         self.is_timeout = False
+
+        if kwargs.get('api_key'):
+            self.CRAWLERA_APIKEY = kwargs.get('api_key')
 
         # Set generic fields
         # directly (don't need to be computed by the scrapers)

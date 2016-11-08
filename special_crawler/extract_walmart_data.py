@@ -64,6 +64,9 @@ class WalmartScraper(Scraper):
             self.additional_requests = kwargs.get('additional_requests') == '1'
         print 'Additional requests', self.product_page_url, self.additional_requests
 
+        if kwargs.get('walmart_api_key'):
+            self.CRAWLERA_APIKEY = kwargs.get('walmart_api_key')
+
         # whether product has any webcollage media
         self.has_webcollage_media = False
         # whether product has any sellpoints media
@@ -128,6 +131,9 @@ class WalmartScraper(Scraper):
         self.is_legacy_review = False
         self.wv = WalmartVariants()
         self.is_bundle_product = False
+        self.temporary_unavailable = 0
+
+        print 'using API KEY', self.CRAWLERA_APIKEY
 
         self.proxy_host = "content.crawlera.com"
         self.proxy_port = "8010"
@@ -170,12 +176,22 @@ class WalmartScraper(Scraper):
                 if resp.status_code != 200:
                     print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
 
-                    if resp.status_code == 429:
-                        self.is_timeout = True
-                        self.ERROR_RESPONSE["failure_type"] = "429"
-                        return
+                    if resp.status_code == 520:
+                        # if response is 520, consider that 'temporarily unavailable'
+                        self.temporary_unavailable = 1
 
-                    break
+                    else:
+                        if resp.status_code == 404:
+                            self.is_timeout = True
+                            self.ERROR_RESPONSE['failure_type'] = '404 Not Found'
+                            return
+
+                        elif resp.status_code == 429:
+                            self.is_timeout = True
+                            self.ERROR_RESPONSE['failure_type'] = '429'
+                            return
+
+                        break
 
                 contents = self._clean_null(resp.text)
                 self.page_raw_text = contents
@@ -735,7 +751,6 @@ class WalmartScraper(Scraper):
             return 0
 
     # extract product name from its product page tree
-    # ! may throw exception if not found
     # TODO: improve, filter by tag class or something
     def _product_name_from_tree(self):
         """Extracts product name.
@@ -743,21 +758,24 @@ class WalmartScraper(Scraper):
         Returns:
             string containing product name, or None
         """
+        try:
+            if self._is_collection_url():
+                try:
+                    return re.search('"productName":"(.+?)"', self.page_raw_text).group(1)
+                except:
+                    return self.tree_html.xpath('//*[contains(@class,"prod-ProductTitle")]/div/text()')[0]
 
-        if self._is_collection_url():
-            try:
-                return re.search('"productName":"(.+?)"', self.page_raw_text).group(1)
-            except:
-                return self.tree_html.xpath('//*[contains(@class,"prod-ProductTitle")]/div/text()')[0]
+            # assume new design
+            product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
 
-        # assume new design
-        product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
+            if not product_name_node:
+                # assume old design
+                product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
 
-        if not product_name_node:
-            # assume old design
-            product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
-
-        return product_name_node[0].text_content().strip()
+            if product_name_node:
+                return product_name_node[0].text_content().strip()
+        except Exception, e:
+            print 'Error extracting product name', self.product_page_url, e
 
     # extract walmart no
     def _site_id(self):
@@ -1802,6 +1820,9 @@ class WalmartScraper(Scraper):
 
         return False
 
+    def _temporary_unavailable(self):
+        return self.temporary_unavailable
+
     def _shipping(self):
         flag = 'not available'
 
@@ -2637,7 +2658,7 @@ class WalmartScraper(Scraper):
                     if self.product_info_json["buyingOptions"]["displayArrivalDate"].lower() == "see dates in checkout":
                         return 0
 
-                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False:
+                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False and self.product_info_json.get('analyticsData').get('inStock'):
                         return 0
 
                     if self.product_info_json['buyingOptions'].get('available') == True:
@@ -2664,6 +2685,10 @@ class WalmartScraper(Scraper):
         return None
 
     def _failure_type(self):
+        # if page is temporarily unavailable, do not consider that a failure
+        if self.temporary_unavailable:
+            return None
+
         # we ignore bundle product
         if self.tree_html.xpath("//div[@class='js-about-bundle-wrapper']") or \
                         "WalmartMainBody DynamicMode wmBundleItemPage" in self.page_raw_text:
@@ -2707,6 +2732,11 @@ class WalmartScraper(Scraper):
         # If there is no product name, return failure
         if not self._is_collection_url() and not self._product_name_from_tree():
             self.failure_type = "No product name"
+
+        # If product is available but has no descriptions
+        if not self._no_longer_available():
+            if not self._short_description_wrapper() and not self._long_description_wrapper():
+                self.failure_type = "No description"
 
         return self.failure_type
 
@@ -3262,6 +3292,7 @@ class WalmartScraper(Scraper):
         "min_review": _min_review, \
         "reviews": _reviews, \
         "no_longer_available": _no_longer_available, \
+        "temporary_unavailable": _temporary_unavailable, \
         # video needs both page source and separate requests
         "video_count": _video_count, \
         "video_urls": _video_urls, \
