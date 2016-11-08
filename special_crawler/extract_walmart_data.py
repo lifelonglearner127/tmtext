@@ -140,7 +140,7 @@ class WalmartScraper(Scraper):
         self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
                         "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
-        self.proxies_enabled = False
+        self.proxies_enabled = True
 
     def _request(self, url, headers=None):
         if self.proxies_enabled and 'walmart.com' in url:
@@ -2718,8 +2718,11 @@ class WalmartScraper(Scraper):
             self.failure_type = "No product name"
 
         # If product is available but has no descriptions
-        if not self._no_longer_available():
-            if not self._short_description_wrapper() and not self._long_description_wrapper():
+        elif not self._no_longer_available():
+            try:
+                if not self._short_description_wrapper() and not self._long_description_wrapper():
+                    self.failure_type = "No description"
+            except:
                 self.failure_type = "No description"
 
         return self.failure_type
