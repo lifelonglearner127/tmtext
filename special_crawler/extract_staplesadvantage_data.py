@@ -75,14 +75,14 @@ class StaplesAdvantageScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        product_name = " ".join(self.tree_html.xpath("//h1[contains(@class,'search-prod-desc')]//text()")[0])
+        product_name = self.tree_html.xpath("//h1[contains(@class,'search-prod-desc')]//text()[normalize-space()!='']")[0]
         return product_name
 
     def _product_title(self):
-        return " ".join(self.tree_html.xpath("//h1[contains(@class,'search-prod-desc')]//text()")[0])
+        return self.tree_html.xpath("//h1[contains(@class,'search-prod-desc')]//text()[normalize-space()!='']")[0]
 
     def _title_seo(self):
-        return " ".join(self.tree_html.xpath("//h1[contains(@class,'search-prod-desc')]//text()")[0])
+        return self.tree_html.xpath("//h1[contains(@class,'search-prod-desc')]//text()[normalize-space()!='']")[0]
     
     def _model(self):
         return None
