@@ -194,6 +194,29 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
 
         links += links2
 
+        try:
+            if not links:
+                links2 = []
+                items = response.xpath('//div[@id="zg"]//div[contains(@class,"zg_itemImmersion")]')
+                for item in items:
+                    urls = item.xpath(
+                        './/a/@href'
+                    ).extract()
+                    urls = list(set([r.strip() for r in urls if len(r.strip())>0 and '/dp/' in r]))
+                    if len(urls) > 0:
+                        is_prime = \
+                            bool(item.xpath('.//i[contains(@class,"a-icon-prime")]'))
+                        is_prime_pantry = False
+                        is_sponsored = False
+                        link = 'http://' + self.allowed_domains[0] + '/' + \
+                               urls[0]
+                        links2.append((link, is_prime, is_prime_pantry,
+                                       is_sponsored))
+        except Exception as e:
+            self.log('Links2 is fail. ERROR: %s.' % str(e), ERROR)
+
+        links += links2
+
         if not links:
             ul = response.xpath('//div[@id="zg_centerListWrapper"]/'
                                 'div[@class="zg_itemImmersion"]')
@@ -262,7 +285,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             self.log("Found no product links.", WARNING)
             # from scrapy.shell import inspect_response
             # inspect_response(response, self)
-
+        return
         if links:
             for link, is_prime, is_prime_pantry, is_sponsored in links:
                 prime = None
