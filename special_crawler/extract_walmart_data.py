@@ -64,9 +64,6 @@ class WalmartScraper(Scraper):
             self.additional_requests = kwargs.get('additional_requests') == '1'
         print 'Additional requests', self.product_page_url, self.additional_requests
 
-        if kwargs.get('walmart_proxy'):
-            self.PROXY = kwargs.get('walmart_proxy')
-
         if kwargs.get('walmart_api_key'):
             self.CRAWLERA_APIKEY = kwargs.get('walmart_api_key')
 
@@ -135,7 +132,15 @@ class WalmartScraper(Scraper):
         self.wv = WalmartVariants()
         self.is_bundle_product = False
 
-        if self.PROXY == 'crawlera':
+        n = random.randint(1, 100)
+
+        walmart_proxy_crawlera = kwargs.get('walmart_proxy_crawlera') or 0
+        walmart_proxy_proxyrain = kwargs.get('walmart_proxy_proxyrain') or 0
+        walmart_proxy_shaderio = kwargs.get('walmart_proxy_shaderio') or 0
+        walmart_proxy_luminati = kwargs.get('walmart_proxy_luminati') or 0
+
+        if n <= walmart_proxy_crawlera:
+            self.PROXY = 'crawlera'
             print 'Using Crawlera with API KEY', self.product_page_url, self.CRAWLERA_APIKEY
 
             self.proxy_host = "content.crawlera.com"
@@ -144,15 +149,31 @@ class WalmartScraper(Scraper):
             self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
                             "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
-        elif self.PROXY == 'proxyrain':
+        elif n <= walmart_proxy_crawlera + walmart_proxy_proxyrain:
+            self.PROXY = 'proxyrain'
             print 'Using proxyRAIN', self.product_page_url
 
-            self.proxy_host = random.choice(['proxy-001.proxyrain.net', 'proxy-001.proxyrain.net'])
-            self.http_proxy_port = "80"
-            self.https_proxy_port = "8080"
-            # Use port 80 for https
-            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.http_proxy_port), \
-                "https": "https://{}:{}/".format(self.proxy_host, self.https_proxy_port)}
+            self.proxy_host = "10.0.5.241"
+            self.proxy_port = "7708"
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+            self.proxy_auth = None
+
+        elif n <= walmart_proxy_crawlera + walmart_proxy_proxyrain + walmart_proxy_shaderio:
+            self.PROXY = 'shaderio'
+            print 'Using shader.io', self.product_page_url
+
+            self.proxy_host = "10.0.5.12"
+            self.proxy_port = "7708"
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+            self.proxy_auth = None
+
+        else:
+            self.PROXY = 'luminati'
+            print 'Using luminati', self.product_page_url
+
+            self.proxy_host = "10.0.5.78"
+            self.proxy_port = "7708"
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
             self.proxy_auth = None
 
         self.proxies_enabled = True
