@@ -914,7 +914,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             })
 
         if marketplaces:
-            product["marketplace"] = marketplaces
+            cond_set_value(product, 'marketplace', marketplaces)
         else:
             name = is_empty(response.xpath(
                 '//div[@class="product-seller"]/div/span/b/text() |'
@@ -945,7 +945,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     "price": float(price_amount) if price_amount else 0.00,
                     "name": name
                 })
-            product["marketplace"] = marketplaces
+            cond_set_value(product, 'marketplace', marketplaces)
 
     def _populate_from_html(self, response, product):
         cond_set_value(product, 'url', response.url)
@@ -1025,10 +1025,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 )
                 seller = seller_all.xpath('b/text()').extract()
             if seller and "price" in product:
-                product["marketplace"] = [{
+                cond_set_value(product, 'marketplace', [{
                     "price": product["price"],
                     "name": is_empty(seller)
-                }]
+                }])
 
         also_considered = self._build_related_products(
             response.url,
@@ -1257,6 +1257,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             self.log("No JS matched in %r." % response.url, WARNING)
             return
         try:
+            # Parse marketplace
+            marketplace = self._parse_marketplace_from_js(data)
+            cond_set_value(product, 'marketplace', marketplace)
+
             response.meta['productid'] = str(data['buyingOptions']['usItemId'])
             title = is_empty(Selector(text=data['productName']).xpath(
                 'string()').extract())
@@ -1614,3 +1618,16 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             request = self._get_next_products_page(response, prods_count)
             if request is not None:
                 yield request
+
+    @staticmethod
+    def _parse_marketplace_from_js(data):
+        marketplaces = []
+        marketplaces_data = data.get('buyingOptions', {}).get('marketplaceOptions', [])
+        for marketplace in marketplaces_data:
+            price = marketplace.get('price', {}).get('currencyAmount')
+            currency = marketplace.get('price', {}).get('currencyUnit')
+            name = marketplace.get('seller', {}).get('displayName')
+            marketplaces.append({'price': price,
+                                 'currency': currency,
+                                 'name': name})
+        return marketplaces
