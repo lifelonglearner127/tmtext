@@ -139,7 +139,36 @@ class WalmartScraper(Scraper):
         walmart_proxy_shaderio = kwargs.get('walmart_proxy_shaderio') or 0
         walmart_proxy_luminati = kwargs.get('walmart_proxy_luminati') or 0
 
-        if n <= walmart_proxy_crawlera:
+
+
+        if n <= walmart_proxy_proxyrain:
+            self.PROXY = 'proxyrain'
+            print 'Using proxyRAIN', self.product_page_url
+
+            self.proxy_host = "10.0.5.241"
+            self.proxy_port = "7708"
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+            self.proxy_auth = None
+
+        elif n <= walmart_proxy_proxyrain + walmart_proxy_shaderio:
+            self.PROXY = 'shaderio'
+            print 'Using shader.io', self.product_page_url
+
+            self.proxy_host = "10.0.5.12"
+            self.proxy_port = "7708"
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+            self.proxy_auth = None
+
+        elif n <= walmart_proxy_proxyrain + walmart_proxy_shaderio + walmart_proxy_luminati:
+            self.PROXY = 'luminati'
+            print 'Using luminati', self.product_page_url
+
+            self.proxy_host = "10.0.5.78"
+            self.proxy_port = "7708"
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+            self.proxy_auth = None
+
+        else:
             self.PROXY = 'crawlera'
             print 'Using Crawlera with API KEY', self.product_page_url, self.CRAWLERA_APIKEY
 
@@ -149,34 +178,10 @@ class WalmartScraper(Scraper):
             self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
                             "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
-        elif n <= walmart_proxy_crawlera + walmart_proxy_proxyrain:
-            self.PROXY = 'proxyrain'
-            print 'Using proxyRAIN', self.product_page_url
-
-            self.proxy_host = "10.0.5.241"
-            self.proxy_port = "7708"
-            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
-            self.proxy_auth = None
-
-        elif n <= walmart_proxy_crawlera + walmart_proxy_proxyrain + walmart_proxy_shaderio:
-            self.PROXY = 'shaderio'
-            print 'Using shader.io', self.product_page_url
-
-            self.proxy_host = "10.0.5.12"
-            self.proxy_port = "7708"
-            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
-            self.proxy_auth = None
-
-        else:
-            self.PROXY = 'luminati'
-            print 'Using luminati', self.product_page_url
-
-            self.proxy_host = "10.0.5.78"
-            self.proxy_port = "7708"
-            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
-            self.proxy_auth = None
-
         self.proxies_enabled = True
+
+    def _proxy_service(self):
+        return self.PROXY
 
     def _request(self, url, headers=None):
         if self.proxies_enabled and 'walmart.com' in url:
@@ -3250,6 +3255,7 @@ class WalmartScraper(Scraper):
     """
 
     DATA_TYPES = { \
+        "proxy_service": _proxy_service, \
         # Info extracted from product page
         "upc": _upc_from_tree, \
         "product_name": _product_name_from_tree, \

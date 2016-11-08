@@ -78,6 +78,7 @@ class Scraper():
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
                        # Only implemented for walmart. Possible values: "Walmart v1" or "Walmart v2"
+            "proxy_service",
 
             # product_info
             "product_name", # name of product, string

@@ -409,10 +409,10 @@ def get_data():
 
     config_dict = {'additional_requests': None,
         'proxy': None,
-        'walmart_proxy_crawlera': None,
-        'walmart_proxy_proxyrain': None,
-        'walmart_proxy_shaderio': None,
-        'walmart_proxy_luminati': None,
+        'walmart_proxy_crawlera': 0,
+        'walmart_proxy_proxyrain': 0,
+        'walmart_proxy_shaderio': 0,
+        'walmart_proxy_luminati': 0,
         'api_key': None,
         'walmart_api_key': None}
 
