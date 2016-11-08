@@ -389,7 +389,6 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
     #     self.total_items_scraped += prods_per_page
 
     def _scrape_next_results_page_link(self, response):
-        return
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1
