@@ -1224,7 +1224,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 # see bugzilla #12076
                 if prod.get("variants"):
                     variants_instock = any([v.get('in_stock') for v in prod.get('variants', [])])
-                    print "^^^^^^^^^^^^^^^^^^^^^^^^^^^", variants_instock
                     if variants_instock:
                         prod['is_out_of_stock'] = False
 
