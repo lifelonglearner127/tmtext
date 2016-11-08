@@ -6,7 +6,6 @@ import urllib
 from scrapy.selector import Selector
 from scrapy.log import ERROR
 from scrapy.http import Request
-from scrapy.conf import settings
 from product_ranking.items import SiteProductItem, Price, RelatedProduct, \
     BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE

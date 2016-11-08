@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-#
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
 import string
@@ -13,7 +12,6 @@ import requests
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider
-from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
 from scrapy.http import Request, FormRequest
 from scrapy.log import DEBUG, ERROR, WARNING

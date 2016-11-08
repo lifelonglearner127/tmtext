@@ -1,20 +1,17 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import string
 import urlparse
 import re
 import json
-import urllib
 
 from scrapy.log import ERROR, DEBUG, WARNING
-from scrapy.http import FormRequest, Request
+from scrapy.http import Request
 
 from product_ranking.items import SiteProductItem, RelatedProduct, \
                                     Price, BuyerReviews
 from product_ranking.spiders import (BaseProductsSpider, cond_set,
-                                     FormatterWithDefaults, cond_set_value,
-                                    _extract_open_graph_metadata, FLOATING_POINT_RGEX)
+                                     FormatterWithDefaults)
 
 
 def clear_text(l):

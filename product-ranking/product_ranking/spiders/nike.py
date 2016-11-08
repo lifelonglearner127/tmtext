@@ -1,24 +1,21 @@
 from __future__ import division, absolute_import, unicode_literals
 
-import os
 import json
 import re
 import time
 import urlparse
 import socket
-import random
 
 from scrapy import Request
 from scrapy.log import ERROR, WARNING
 from pyvirtualdisplay import Display
 
-from product_ranking.items import RelatedProduct, BuyerReviews
+from product_ranking.items import BuyerReviews
 from product_ranking.items import SiteProductItem, Price
-from product_ranking.settings import ZERO_REVIEWS_VALUE, CRAWLERA_APIKEY
+from product_ranking.settings import CRAWLERA_APIKEY
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
-from product_ranking.spiders import FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set_value, populate_from_open_graph
+from product_ranking.spiders import cond_set_value
 from spiders_shared_code.nike_variants import NikeVariants
 
 

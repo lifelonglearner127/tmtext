@@ -17,7 +17,7 @@ import datetime
 import scrapy
 from scrapy.conf import settings
 from scrapy.http import Request, FormRequest
-from scrapy.log import INFO, WARNING, ERROR, DEBUG
+from scrapy.log import INFO, WARNING, ERROR
 import lxml.html
 try:
     from pyvirtualdisplay import Display

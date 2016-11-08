@@ -7,7 +7,6 @@ import urllib
 
 import requests
 from scrapy.http import Request
-from scrapy.conf import settings
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
@@ -228,7 +227,7 @@ class UltaProductSpider(BaseProductsSpider):
                     url = requests.get(links[j], timeout=5).url or links[j]
                     products.append(RelatedProduct(titles[j].strip(), url))
                 except Exception:
-                    self.log("Can't get related product!!!")                
+                    self.log("Can't get related product!!!")
             related_products[key] = products
         product['related_products'] = related_products
 

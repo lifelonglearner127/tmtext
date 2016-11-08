@@ -8,7 +8,6 @@ import urlparse
 import hashlib
 import random
 import re
-import string
 from datetime import datetime
 import lxml.html
 
@@ -21,7 +20,6 @@ from scrapy.conf import settings
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
-from scrapy.conf import settings as scrapy_settings
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
