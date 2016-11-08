@@ -64,6 +64,9 @@ class WalmartScraper(Scraper):
             self.additional_requests = kwargs.get('additional_requests') == '1'
         print 'Additional requests', self.product_page_url, self.additional_requests
 
+        if kwargs.get('walmart_api_key'):
+            self.CRAWLERA_APIKEY = kwargs.get('walmart_api_key')
+
         # whether product has any webcollage media
         self.has_webcollage_media = False
         # whether product has any sellpoints media
@@ -128,6 +131,8 @@ class WalmartScraper(Scraper):
         self.is_legacy_review = False
         self.wv = WalmartVariants()
         self.is_bundle_product = False
+
+        print 'using API KEY', self.CRAWLERA_APIKEY
 
         self.proxy_host = "content.crawlera.com"
         self.proxy_port = "8010"
@@ -2641,7 +2646,7 @@ class WalmartScraper(Scraper):
                     if self.product_info_json["buyingOptions"]["displayArrivalDate"].lower() == "see dates in checkout":
                         return 0
 
-                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False:
+                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False and self.product_info_json.get('analyticsData').get('inStock'):
                         return 0
 
                     if self.product_info_json['buyingOptions'].get('available') == True:
@@ -2711,6 +2716,11 @@ class WalmartScraper(Scraper):
         # If there is no product name, return failure
         if not self._is_collection_url() and not self._product_name_from_tree():
             self.failure_type = "No product name"
+
+        # If product is available but has no descriptions
+        if not self._no_longer_available():
+            if not self._short_description_wrapper() and not self._long_description_wrapper():
+                self.failure_type = "No description"
 
         return self.failure_type
 
