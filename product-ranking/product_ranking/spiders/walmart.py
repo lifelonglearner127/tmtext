@@ -12,6 +12,7 @@ import string
 from datetime import datetime
 import lxml.html
 
+import os
 import logging
 logger = logging.getLogger(__name__)
 import boto
@@ -135,10 +136,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
-        # middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
-        # middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
-        # middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
-        # settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
 
         global SiteProductItem
         if zip_code:
@@ -156,20 +153,67 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 search_sort=self._SEARCH_SORT[search_sort]
             ),
             *args, **kwargs)
-        settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
+
         settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
-        settings.overrides['CRAWLERA_ENABLED'] = True
-        settings.overrides['CONCURRENT_REQUESTS'] = 1
-        settings.overrides['DOWNLOAD_TIMEOUT'] = 300
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
-        settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+        settings.overrides['CONCURRENT_REQUESTS'] = 1
+
+        local_filename = "/tmp/_proxy_providers_settings.cfg"
+
+        if os.path.isfile(local_filename) or random.randint(0, 5) == 0:
+            proxy_config = self._parse_proxy_config_file(local_filename)
+        else:
+            proxy_config = self._download_and_parse_proxy_config_file(local_filename)
+        if not proxy_config:
+            proxy_config = {
+                            "crawlera": 100,
+                            "luminati": 0,
+                            "proxyrain": 0,
+                            "shaderio": 0,
+                            }
+
+        self.force_proxy_provider = kwargs.get('force_proxy_provider', None)
+        if self.force_proxy_provider:
+            logger.warning("*** Proxy provider forced via command line: {} ***".format(
+                self.force_proxy_provider))
+            chosen_proxy_provider = self.force_proxy_provider
+        else:
+            chosen_proxy_provider = self._weighted_choice(proxy_config)
+            logger.warning("*** Proxy provider will be chosen randomly from: {} ***".format(proxy_config))
+            logger.warning("*** Chosen : {} ***".format(chosen_proxy_provider))
+
         middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
 
+        # To not redirect randomly
         middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
         middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
 
         middlewares['product_ranking.randomproxy.RandomProxy'] = None
+
+        if chosen_proxy_provider == "crawlera":
+            logger.warning('*** Using Crawlera ***')
+            settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
+            settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
+            settings.overrides['CRAWLERA_ENABLED'] = True
+            settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+        elif chosen_proxy_provider == "luminati":
+            logger.warning('*** Using Luminati ***')
+            middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
+            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
+            middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
+        elif chosen_proxy_provider == "proxyrain":
+            logger.warning('*** Using Proxyrain ***')
+            middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
+            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
+            middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
+        elif chosen_proxy_provider == "shaderio":
+            logger.warning('*** Using Shader.io ***')
+            middlewares['product_ranking.custom_middlewares.ShaderioProxy'] = 750
+            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
+            middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
+
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+
         self.scrape_questions = kwargs.get('scrape_questions', None)
         if self.scrape_questions not in ('1', 1, True, 'true'):
             self.scrape_questions = False
@@ -181,6 +225,23 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             'prefper'] = 'PREFSTORE~12648~2PREFCITY~1San%20Leandro~2PREFFULLSTREET~11919%20Davis%20St~2PREFSTATE~1CA~2PREFZIP~194117'
         self.cookies['PSID'] = '2648'
         self.cookies['NSID'] = '2648'
+
+    def _weighted_choice(self, choices_dict):
+        try:
+            choices = [(key, value) for (key, value) in choices_dict.iteritems()]
+            # Accept dict, converts to list
+            # of iterables in following format
+            # [("choice1", 0.6), ("choice2", 0.2), ("choice3", 0.3)]
+            # Returns chosen variant
+            total = sum(w for c, w in choices)
+            r = random.uniform(0, total)
+            upto = 0
+            for c, w in choices:
+                if upto + w >= r:
+                    return c
+                upto += w
+        except Exception as e:
+            return "crawlera"
 
     def _get_download_delay(self):
         amazon_bucket_name = "sc-settings"
@@ -194,9 +255,44 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             value = k.get_contents_as_string()
             logging.info('Retrieved download_delay={}'.format(value))
             return float(value)
-        except Exception, e:
+        except Exception as e:
             logging.error(e)
             return default_download_delay
+
+    @staticmethod
+    def _download_and_parse_proxy_config_file(local_filename):
+        amazon_bucket_name = "sc-settings"
+        bucket_config_filename = "walmart_proxy_config.cfg"
+        # local_filename = "/tmp/_proxy_providers_settings.cfg"
+        proxy_config = None
+        try:
+            S3_CONN = boto.connect_s3(is_secure=False)
+            S3_BUCKET = S3_CONN.get_bucket(amazon_bucket_name, validate=False)
+            k = Key(S3_BUCKET)
+            k.key = bucket_config_filename
+            value = k.get_contents_as_string()
+            proxy_config = json.loads(value)
+            # Save config to file
+            with open(local_filename, "w") as conf_file:
+                conf_file.write(value)
+        except Exception as e:
+            logger.error(e)
+        else:
+            logger.info('Retrieved proxy config from bucket: {}'.format(value))
+            logger.info('Saved to file: {}'.format(local_filename))
+        return proxy_config
+
+    @staticmethod
+    def _parse_proxy_config_file(local_filename):
+        proxy_config = None
+        try:
+            with open(local_filename) as conf_file:
+                proxy_config = json.load(conf_file)
+        except Exception as e:
+            logger.error(e)
+        else:
+            logger.info('Retrieved proxy config from file: {}'.format(proxy_config))
+        return proxy_config
 
     def start_requests(self):
         # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
@@ -229,6 +325,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             # reduce quantity to 100 because we're having issues with Walmart now
             #  (it bans us so we're using Crawlera)
+            # TODO COMMENT THOSE, IF MORE THAN 100 products per job needed
             if not self.quantity or not isinstance(self.quantity, int):
                 self.quantity = 100
             if self.quantity and isinstance(self.quantity, int):
@@ -358,7 +455,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         self._populate_from_html(response, product)
         buyer_reviews = self._build_buyer_reviews(response)
         if buyer_reviews:
-            cond_set_value(product, 'buyer_reviews', 'buyer_reviews')
+            cond_set_value(product, 'buyer_reviews', buyer_reviews)
         else:
             cond_set_value(product, 'buyer_reviews', 0)
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
@@ -566,6 +663,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             not_available = True
         if response.xpath('//*[contains(@class, "heading")'
                           ' and contains(text(), "nformation unavailable")]'):
+            not_available = True
+        if response.xpath('.//div[contains(text(), "This Item is no longer available")]'):
             not_available = True
         return not_available
 
@@ -1245,6 +1344,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _reload_page(self, response):
         product = response.meta['product']
+        self._populate_from_js_alternative(response, product)
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
         _meta = response.meta
@@ -1282,12 +1382,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 prod['is_out_of_stock'] = not opts.get('available', False)
                 # In stock if at least one of variants in stock
                 # see bugzilla #12076
-                try:
-                    variants_ = data['variantInformation']['variantTypes'][0]['variants']
-                    variants_instock = any([v.get('available') for v in variants_])
-                    prod['is_out_of_stock'] = not variants_instock
-                except Exception as e:
-                    self.log('Could not load JSON at %s' % response.url, e)
+                if prod.get("variants"):
+                    variants_instock = any([v.get('in_stock') for v in prod.get('variants', [])])
+                    if variants_instock:
+                        prod['is_out_of_stock'] = False
+
                 if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
                     prod['shipping'] = False
                 prod['is_in_store_only'] = opts.get('storeOnlyItem', None)
@@ -1328,12 +1427,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             )
             # In stock if at least one of variants in stock
             # see bugzilla #12076
-            try:
-                variants_ = data['variantInformation']['variantTypes'][0]['variants']
-                variants_instock = any([v.get('available') for v in variants_])
-                cond_set_value(product, 'is_out_of_stock', not variants_instock)
-            except Exception as e:
-                self.log('Could not load JSON at %s' % response.url, e)
+            if product.get("variants"):
+                variants_instock = any([v.get('in_stock') for v in product.get('variants', [])])
+                if variants_instock:
+                    product['is_out_of_stock'] = False
             # the next 2 lines of code should not be uncommented, see BZ #1459
             #if response.xpath('//button[@id="WMItemAddToCartBtn"]').extract():
             #    product['is_out_of_stock'] = False

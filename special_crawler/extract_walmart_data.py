@@ -2733,11 +2733,6 @@ class WalmartScraper(Scraper):
         if not self._is_collection_url() and not self._product_name_from_tree():
             self.failure_type = "No product name"
 
-        # If product is available but has no descriptions
-        if not self._no_longer_available():
-            if not self._short_description_wrapper() and not self._long_description_wrapper():
-                self.failure_type = "No description"
-
         return self.failure_type
 
     def _version(self):
