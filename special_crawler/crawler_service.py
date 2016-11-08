@@ -97,6 +97,7 @@ from extract_walmartgrocery_data import WalmartGroceryScraper
 from extract_autozone_data import AutozoneScraper
 from extract_sears_data import SearsScraper
 from extract_jet_data import JetScraper
+from extract_westmarine_data import WestmarineScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -205,6 +206,7 @@ SUPPORTED_SITES = {
                     "shopritedelivers": ShopritedeliversScraper,
                     "autozone" : AutozoneScraper,
                     "sears" : SearsScraper,
+                    "westmarine" : WestmarineScraper,
                     "jet" : JetScraper
                     }
 
