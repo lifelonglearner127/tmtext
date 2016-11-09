@@ -247,20 +247,20 @@ class WalmartScraper(Scraper):
 
                 return
 
-            except requests.exceptions.ConnectionError, e:
-                print 'Error extracting', self.product_page_url, type(e), e
-
-                if 'Max retries exceeded with url' in str(e):
-                    self.is_timeout = True
-                    self.ERROR_RESPONSE['failure_type'] = 'connection'
-                    return
-
             except requests.exceptions.ProxyError, e:
                 print 'Error extracting', self.product_page_url, type(e), e
 
                 self.is_timeout = True
                 self.ERROR_RESPONSE['failure_type'] = 'proxy'
                 return
+
+            except requests.exceptions.ConnectionError, e:
+                print 'Error extracting', self.product_page_url, type(e), e
+
+                if 'Max retries exceeded' in str(e):
+                    self.is_timeout = True
+                    self.ERROR_RESPONSE['failure_type'] = 'max_retries'
+                    return
 
             except Exception, e:
                 print 'Error extracting', self.product_page_url, type(e), e

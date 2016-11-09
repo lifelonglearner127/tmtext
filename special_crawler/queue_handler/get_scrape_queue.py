@@ -153,7 +153,8 @@ def main( environment, scrape_queue_name, thread_id):
                         break
 
                     # If failure was due to proxies
-                    if output_json.get('failure_type') in ['connection', 'proxy']:
+                    if output_json.get('failure_type') in ['max_retries', 'proxy']:
+                        print 'GOT FAILURE TYPE %s for %s - RETRY %s' % (output_json.get('failure_type'), url, i)
                         # back off incrementally
                         time.sleep(60*i)
                     else:
