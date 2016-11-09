@@ -153,7 +153,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
             # middlewares['product_ranking.randomproxy.RandomProxy'] = None
             # settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
             # self.code_200_required = True
-            # crawlera_apikey = "4810848337264489a1d2f2230da5c981"
+            crawlera_apikey = "4810848337264489a1d2f2230da5c981"
 
             # Crawlera auth for phantomjs
             # self._proxy_auth = "{}:''".format(crawlera_apikey)
@@ -167,8 +167,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self.proxy = "10.0.5.36:7708"
             self.proxy_type = 'http'
 
-            # settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
-            # settings.overrides['CRAWLERA_APIKEY'] = crawlera_apikey
+            settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
+            settings.overrides['CRAWLERA_APIKEY'] = crawlera_apikey
             settings.overrides['CRAWLERA_ENABLED'] = True
             self._site_settings_activated_for = domain
             self.log('Site-specified settings activated for: %s' % domain)
