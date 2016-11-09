@@ -7,11 +7,11 @@ import time
 import urllib
 import urlparse
 import datetime
-from scrapy import Request, FormRequest, Selector
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy import Request, Selector
+from scrapy.log import WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews, scrapy_price_serializer
+    BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words

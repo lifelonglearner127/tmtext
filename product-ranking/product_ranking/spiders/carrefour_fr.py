@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
-import re
 import string
 
 from scrapy.log import ERROR, DEBUG
@@ -172,5 +170,5 @@ class CarrefourProductsSpider(BaseProductsSpider):
                             '€', '').strip()),
                         priceCurrency='EUR'
                     )
-                    
+
         return product

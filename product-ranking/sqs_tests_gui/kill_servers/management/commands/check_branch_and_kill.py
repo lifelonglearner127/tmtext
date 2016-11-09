@@ -7,13 +7,13 @@ import datetime
 import subprocess
 import json
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 #sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
 
 from kill_servers.models import ProductionBranchUpdate, ServerKill
-from sqs_stats import AUTOSCALE_GROUPS, set_autoscale_group_capacity,\
+from sqs_stats import set_autoscale_group_capacity,\
     get_number_of_instances_in_autoscale_groups, get_max_instances_in_groups
 
 

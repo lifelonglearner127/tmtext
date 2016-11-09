@@ -3,7 +3,6 @@ import urlparse
 from product_ranking.items import SiteProductItem
 from .homedepot import HomedepotProductsSpider
 from scrapy import Request
-from scrapy.conf import settings
 from scrapy.log import DEBUG
 
 

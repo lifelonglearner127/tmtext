@@ -4,7 +4,6 @@ from __future__ import division, absolute_import, unicode_literals
 from itertools import islice
 import json
 import re
-import string
 import urllib
 import urllib2
 import urlparse

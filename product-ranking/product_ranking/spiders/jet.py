@@ -3,10 +3,8 @@ from __future__ import division, absolute_import, unicode_literals
 
 import re
 import json
-import urllib
 import urlparse
 import unicodedata
-from scrapy.conf import settings
 
 from scrapy.http import Request
 
@@ -202,7 +200,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, "sku", prod_data.get('sku'))
 
             # Needed for shelf spider
-            
+
             # Construct product url
             prod_id = prod_data.get('retailSkuId')
             prod_name = product.get('title')

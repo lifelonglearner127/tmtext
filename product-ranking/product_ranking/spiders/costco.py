@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
 
@@ -7,7 +6,7 @@ from scrapy.log import ERROR
 from scrapy import Request
 
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 

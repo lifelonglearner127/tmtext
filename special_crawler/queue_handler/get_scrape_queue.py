@@ -55,6 +55,15 @@ def main( environment, scrape_queue_name, thread_id):
 
     last_fetch = datetime.min
 
+    config_dict = {'additional_requests': None,
+        'proxy': None,
+        'walmart_proxy_crawlera': None,
+        'walmart_proxy_proxyrain': None,
+        'walmart_proxy_shaderio': None,
+        'walmart_proxy_luminati': None,
+        'api_key': None,
+        'walmart_api_key': None}
+
     # Continually pull off the SQS Scrape Queue
     while True:
         go_to_sleep = False
@@ -87,16 +96,13 @@ def main( environment, scrape_queue_name, thread_id):
                 server_name = message_json['server_name']
                 product_id = message_json['product_id']
                 event = message_json['event']
-                additional_requests = message_json.get('additional_requests', None)
+                config_dict['additional_requests'] = message_json.get('additional_requests')
 
                 logger.info("Received: thread %d server %s url %s" % ( thread_id, server_name, url))
 
-                api_key = None
-                walmart_api_key = None
-
                 if (datetime.now() - last_fetch).seconds > FETCH_FREQUENCY:
                     amazon_bucket_name = 'ch-settings'
-                    key_file = 'crawlera_apikeys.cfg'
+                    key_file = 'proxy_settings.cfg'
 
                     try:
                         S3_CONN = boto.connect_s3(is_secure=False)
@@ -104,25 +110,26 @@ def main( environment, scrape_queue_name, thread_id):
                         k = Key(S3_BUCKET)
                         k.key = key_file
                         key_dict = json.loads(k.get_contents_as_string())
-                        api_key = key_dict['crawlera']['api_keys']['default']
-                        walmart_api_key = key_dict['crawlera']['api_keys']['walmart']
-                        logger.info('GOT API KEY %s' % api_key)
-                        logger.info('GOT WALMART API KEY %s' % walmart_api_key)
+                        config_dict['proxy'] = key_dict['default']
+                        config_dict['walmart_proxy_crawlera'] = key_dict['walmart']['crawlera']
+                        config_dict['walmart_proxy_proxyrain'] = key_dict['walmart']['proxyrain']
+                        config_dict['walmart_proxy_shaderio'] = key_dict['walmart']['shaderio']
+                        config_dict['walmart_proxy_luminati'] = key_dict['walmart']['luminati']
+                        config_dict['api_key'] = key_dict['crawlera']['api_keys']['default']
+                        config_dict['walmart_api_key'] = key_dict['crawlera']['api_keys']['walmart']
+                        logger.info('FETCHED PROXY CONFIG')
                         last_fetch = datetime.now()
                     except Exception, e:
                         logger.info(str(e))
-                        logger.info('FAILED TO GET API KEYS')
+                        logger.info('FAILED TO FETCH PROXY CONFIG')
 
                 for i in range(3):
                     # Scrape the page using the scraper running on localhost
                     get_start = time.time()
                     tmp_url = base%(urllib.quote(url))
-                    if additional_requests:
-                        tmp_url += '&additional_requests=' + str(additional_requests)
-                    if api_key:
-                        tmp_url += '&api_key=' + api_key
-                    if walmart_api_key:
-                        tmp_url += '&walmart_api_key=' + walmart_api_key
+                    for k,v in config_dict.items():
+                        if v is not None:
+                            tmp_url += '&%s=%s' % (k, v)
                     logger.info('REQUESTING %s' % tmp_url)
                     output_text = requests.get(tmp_url).text
                     get_end = time.time()

@@ -8,7 +8,6 @@ import urlparse
 import hashlib
 import random
 import re
-import string
 from datetime import datetime
 import lxml.html
 
@@ -21,7 +20,6 @@ from scrapy.conf import settings
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
-from scrapy.conf import settings as scrapy_settings
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
@@ -987,10 +985,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 ".//*[@id='WMItemBrandLnk']//*[@itemprop='brand']/text()").extract())
         if not brand:
             brand = guess_brand_from_first_words(product.get('title', '').replace(u'®', ''))
-            brand = [brand]
         if '&amp;' in brand:
-            brand=brand.replace('&amp;', "&")
-        cond_set(product, 'brand', brand)
+            brand = brand.replace('&amp;', "&")
+        cond_set_value(product, 'brand', brand)
 
         try:
             cond_set(
@@ -1415,6 +1412,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             self.log("No JS matched in %r." % response.url, WARNING)
             return
         try:
+            # Parse marketplace
+            marketplace = self._parse_marketplace_from_js(data)
+            cond_set_value(product, 'marketplace', marketplace)
+
             response.meta['productid'] = str(data['buyingOptions']['usItemId'])
             title = is_empty(Selector(text=data['productName']).xpath(
                 'string()').extract())
@@ -1771,3 +1772,16 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             request = self._get_next_products_page(response, prods_count)
             if request is not None:
                 yield request
+
+    @staticmethod
+    def _parse_marketplace_from_js(data):
+        marketplaces = []
+        marketplaces_data = data.get('buyingOptions', {}).get('marketplaceOptions', [])
+        for marketplace in marketplaces_data:
+            price = marketplace.get('price', {}).get('currencyAmount')
+            currency = marketplace.get('price', {}).get('currencyUnit')
+            name = marketplace.get('seller', {}).get('displayName')
+            marketplaces.append({'price': price,
+                                 'currency': currency,
+                                 'name': name})
+        return marketplaces

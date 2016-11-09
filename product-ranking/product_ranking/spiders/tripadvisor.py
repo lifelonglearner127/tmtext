@@ -7,8 +7,8 @@ import urlparse
 
 import scrapy
 from scrapy.conf import settings
-from scrapy.http import Request, FormRequest
-from scrapy.log import INFO, WARNING, ERROR, DEBUG
+from scrapy.http import Request
+from scrapy.log import INFO
 from dateutil.parser import parse as parse_date
 
 
