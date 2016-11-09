@@ -149,15 +149,16 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self.log('Site-specified settings activated for: %s' % domain)
             self.check_bad_results_function = _check_bad_results_macys
         if domain == 'walmart.com':
-            middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
-            middlewares['product_ranking.randomproxy.RandomProxy'] = None
-            settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+            # middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+            # middlewares['product_ranking.randomproxy.RandomProxy'] = None
+            # settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
             # self.code_200_required = True
             crawlera_apikey = "4810848337264489a1d2f2230da5c981"
 
             # Crawlera auth for phantomjs
             self._proxy_auth = "{}:''".format(crawlera_apikey)
             self.driver = "phantomjs"
+            self.make_screenshot = self.make_screenshot_for_macys
 
             self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
             self.proxy = "content.crawlera.com:8010"
