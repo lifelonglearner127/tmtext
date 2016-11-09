@@ -124,8 +124,6 @@ def main( environment, scrape_queue_name, thread_id):
                         logger.info('FAILED TO FETCH PROXY CONFIG')
 
                 for i in range(1,10):
-                    proxy_failure = False
-
                     # Scrape the page using the scraper running on localhost
                     get_start = time.time()
                     tmp_url = base%(urllib.quote(url))
@@ -156,17 +154,11 @@ def main( environment, scrape_queue_name, thread_id):
 
                     # If failure was due to proxies
                     if output_json.get('failure_type') in ['connection', 'proxy']:
-                        proxy_failure = True
-
-                    # Only retry 3 times if other failure type
-                    if not proxy_failure and i >= 3:
-                        break
-
-                    # Back off incrementally if proxy failure
-                    if proxy_failure:
+                        # back off incrementally
                         time.sleep(60*i)
                     else:
-                        time.sleep(1)
+                        # do not retry other failure type
+                        break
 
                 output_json['url'] = url
                 output_json['site_id'] = site_id
