@@ -153,19 +153,20 @@ class URL2ScreenshotSpider(scrapy.Spider):
             # middlewares['product_ranking.randomproxy.RandomProxy'] = None
             # settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
             # self.code_200_required = True
-            # crawlera_apikey = "4810848337264489a1d2f2230da5c981"
+            crawlera_apikey = "4810848337264489a1d2f2230da5c981"
 
             # Crawlera auth for phantomjs
-            # self._proxy_auth = "{}:''".format(crawlera_apikey)
+            self._proxy_auth = "{}:''".format(crawlera_apikey)
             # self.driver = "phantomjs"
 
-            # self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
-            # self.proxy = "content.crawlera.com:8010"
-            # self.proxy_type = 'http'
+            self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
+            self.proxy = "content.crawlera.com:8010"
+            self.proxy_type = 'http'
 
             # Using Luminati temporary
-            self.proxy = "10.0.5.12:7708"
-            self.proxy_type = 'http'
+            # self.proxy = "10.0.5.12:7708"
+            # self.proxy_type = 'http'
+            self.make_screenshot = self.make_screenshot_for_macys
 
             # settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
             # settings.overrides['CRAWLERA_APIKEY'] = crawlera_apikey
@@ -435,6 +436,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
         if self.proxy:
             r_session.proxies = {"http": "{}://{}".format(self.proxy_type, self.proxy), \
                             "https": "{}://{}".format(self.proxy_type, self.proxy)}
+            r_session.auth = self.proxy_auth
+
 
         if self.user_agent:
             r_session.headers = {'User-Agent': self.user_agent}
