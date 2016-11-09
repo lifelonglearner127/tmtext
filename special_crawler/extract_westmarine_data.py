@@ -139,18 +139,35 @@ class WestmarineScraper(Scraper):
         return None
 
     def _description(self):
-        short_description = self.tree_html.xpath(
-            "//div[@id='tab-details']//div[contains(@class,'productDescription')]//text()"
-        )[0].strip()
+        arr = self.tree_html.xpath(
+            "//div[contains(@class,'pdp_warranty_options')]//text()"
+        )
+        arr = [r.strip() for r in arr if len(r.strip())>0]
+        short_description = " ".join(arr)
 
         if short_description:
             return short_description
+        else:
+            return self.long_description_help()
+
+    def long_description_help(self):
+        arr = self.tree_html.xpath(
+            "//div[@id='tab-details']"
+            "//div[contains(@class,'productDescription')]//text()"
+        )
+        arr = [r.strip() for r in arr if len(r.strip())>0]
+        long_description = " ".join(arr)
+
+        if long_description:
+            return long_description
 
         return None
 
     def _long_description(self):
-        return None
-
+        if self._description() == self.long_description_help():
+            return None
+        else:
+            return self.long_description_help()
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -169,12 +186,9 @@ class WestmarineScraper(Scraper):
             return len(self._image_urls())
 
         return 0
-#by here
-    def _video_urls(self):
-        video_list = self.tree_html.xpath("//video[@id='InvodoVideo_Html5Video_InvodoInPlayer_player1_LeftContainer']/@src")
 
-        for index, url in video_list:
-            video_list[index] = "http:" + video_list[index]
+    def _video_urls(self):
+        video_list = self.tree_html.xpath("//video[contains(@class,'span-video')]/a[contains(@class,'video-colorbox')]/@src")
 
         if not video_list:
             video_list = []
@@ -361,7 +375,7 @@ class WestmarineScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return "$" + self._find_between(html.tostring(self.tree_html), "trusJspVariables.productPrice = ", ";").strip()
+        return self.tree_html.xpath("//div[contains(@class,'price-info-block')]//p[contains(@class,'regularPrice')]//text()")[0].strip()
 
     def _price_amount(self):
         return float(self._price()[1:])
@@ -401,7 +415,7 @@ class WestmarineScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        categories = self.tree_html.xpath("//div[@id='breadCrumbs']/a/text()")
+        categories = self.tree_html.xpath("//div[@id='breadcrumb']//li/a/text()")
 
         return categories[1:]
 
@@ -409,7 +423,14 @@ class WestmarineScraper(Scraper):
         return self._categories()[-1]
     
     def _brand(self):
-        return None
+        try:
+            data = json.loads(
+                self.tree_html.xpath("//script[contains(@type, 'application/ld+json')]//text()")[0]
+            )
+            brand = data["brand"]["name"]
+            return brand
+        except:
+            return None
 
 
     ##########################################
