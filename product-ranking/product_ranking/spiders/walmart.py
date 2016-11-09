@@ -1284,11 +1284,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         review_data = data.get('product', {}).get('reviews', {}).get(selected, {})
         num_of_reviews = review_data.get('totalReviewCount')
         average_rating = review_data.get('averageOverallRating')
-        rating_by_star = {1: review_data.get('percentageOneCount', 0),
-                        2: review_data.get('percentageTwoCount', 0),
-                        3: review_data.get('percentageThreeCount', 0),
-                        4: review_data.get('ratingValueFourCount', 0),
-                        5: review_data.get('ratingValueFiveCount', 0)}
+        rating_by_star = {
+            1: review_data.get('ratingValueOneCount', 0),
+            2: review_data.get('ratingValueTwoCount', 0),
+            3: review_data.get('ratingValueThreeCount', 0),
+            4: review_data.get('ratingValueFourCount', 0),
+            5: review_data.get('ratingValueFiveCount', 0)
+        }
         buyer_reviews = {'rating_by_star': rating_by_star,
                          'average_rating': average_rating,
                          'num_of_reviews': num_of_reviews}
