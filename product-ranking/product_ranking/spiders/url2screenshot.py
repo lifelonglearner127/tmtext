@@ -146,6 +146,15 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self._site_settings_activated_for = domain
             self.log('Site-specified settings activated for: %s' % domain)
             self.check_bad_results_function = _check_bad_results_macys
+        if domain == 'walmart.com':
+            self.code_200_required = False
+            self.proxy = _get_random_proxy()
+            self.proxy_type = 'http'
+            settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
+            settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
+            settings.overrides['CRAWLERA_ENABLED'] = True
+            self._site_settings_activated_for = domain
+            self.log('Site-specified settings activated for: %s' % domain)
 
     def make_screenshot_for_macys(self, driver, output_fname):
         #time.sleep(7*60)  # delay for PhantomJS2 unpacking?
@@ -405,9 +414,10 @@ class URL2ScreenshotSpider(scrapy.Spider):
         if self.timeout:
             self.timeout = int(self.timeout)
         r_session.timeout = self.timeout
-        #if self.proxy:
-        #    r_session.proxies = {'http': self.proxy_type+'://'+self.proxy,
-        #                         'https': self.proxy_type+'://'+self.proxy}
+        # Proxies activated again because of walmart bans
+        if self.proxy:
+           r_session.proxies = {'http': self.proxy_type+'://'+self.proxy,
+                                'https': self.proxy_type+'://'+self.proxy}
         if self.user_agent:
             r_session.headers = {'User-Agent': self.user_agent}
 
