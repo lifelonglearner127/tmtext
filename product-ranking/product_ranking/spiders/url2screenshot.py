@@ -118,6 +118,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         # proxy support has been dropped after we switched to Chrome
         self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
         self.proxy_auth = None
+        self.requests_proxy = None
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
         self.code_200_required = kwargs.get('code_200_required', True)
         self.close_popups = kwargs.get('close_popups', kwargs.get('close_popup', None))
@@ -153,22 +154,22 @@ class URL2ScreenshotSpider(scrapy.Spider):
             # middlewares['product_ranking.randomproxy.RandomProxy'] = None
             # settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
             # self.code_200_required = True
-            # crawlera_apikey = "4810848337264489a1d2f2230da5c981"
+            crawlera_apikey = "4810848337264489a1d2f2230da5c981"
 
             # Crawlera auth for phantomjs
             # self._proxy_auth = "{}:''".format(crawlera_apikey)
             # self.driver = "phantomjs"
 
-            # self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
-            # self.proxy = "content.crawlera.com:8010"
-            # self.proxy_type = 'http'
-
-            # Using special squid connector
-            self.proxy = "10.0.5.36:7708"
+            self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
+            self.requests_proxy = "content.crawlera.com:8010"
             self.proxy_type = 'http'
 
-            # settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
-            # settings.overrides['CRAWLERA_APIKEY'] = crawlera_apikey
+            # Using special squid connector
+            # self.proxy = "10.0.5.36:7708"
+            # self.proxy_type = 'http'
+
+            settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
+            settings.overrides['CRAWLERA_APIKEY'] = crawlera_apikey
             settings.overrides['CRAWLERA_ENABLED'] = True
             self._site_settings_activated_for = domain
             self.log('Site-specified settings activated for: %s' % domain)
@@ -431,10 +432,11 @@ class URL2ScreenshotSpider(scrapy.Spider):
         if self.timeout:
             self.timeout = int(self.timeout)
         r_session.timeout = self.timeout
-        # Proxies activated again because of walmart bans
-        if self.proxy:
+        # Proxies activated again only for requests because of walmart bans
+        if self.requests_proxy:
             r_session.proxies = {"http": "{}://{}".format(self.proxy_type, self.proxy), \
                             "https": "{}://{}".format(self.proxy_type, self.proxy)}
+            r_session.auth = self.proxy_auth
 
         if self.user_agent:
             r_session.headers = {'User-Agent': self.user_agent}
