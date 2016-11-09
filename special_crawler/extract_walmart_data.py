@@ -140,8 +140,6 @@ class WalmartScraper(Scraper):
         walmart_proxy_shaderio = kwargs.get('walmart_proxy_shaderio') or 0
         walmart_proxy_luminati = kwargs.get('walmart_proxy_luminati') or 0
 
-
-
         if n <= walmart_proxy_proxyrain:
             self.PROXY = 'proxyrain'
             print 'Using proxyRAIN', self.product_page_url
@@ -248,12 +246,24 @@ class WalmartScraper(Scraper):
                 self._failure_type()
 
                 return
-            except Exception, e:
+
+            except requests.exceptions.ProxyError, e:
                 print 'Error extracting', self.product_page_url, type(e), e
 
-                if str(e) == "('Cannot connect to proxy.', error(104, 'Connection reset by peer'))" or re.search('Max retries exceeded', str(e)):
-                    max_retries = 100
-                    time.sleep(1)
+                self.is_timeout = True
+                self.ERROR_RESPONSE['failure_type'] = 'proxy'
+                return
+
+            except requests.exceptions.ConnectionError, e:
+                print 'Error extracting', self.product_page_url, type(e), e
+
+                if 'Max retries exceeded' in str(e):
+                    self.is_timeout = True
+                    self.ERROR_RESPONSE['failure_type'] = 'max_retries'
+                    return
+
+            except Exception, e:
+                print 'Error extracting', self.product_page_url, type(e), e
 
         self.is_timeout = True
         self.ERROR_RESPONSE["failure_type"] = "Timeout"
