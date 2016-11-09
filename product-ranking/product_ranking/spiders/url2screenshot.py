@@ -13,6 +13,7 @@ import re
 import urlparse
 import shutil
 import datetime
+from requests.auth import HTTPProxyAuth
 
 import scrapy
 from scrapy.conf import settings
@@ -116,6 +117,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.remove_img = kwargs.get('remove_img', True)
         # proxy support has been dropped after we switched to Chrome
         self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
+        self.proxy_auth = None
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
         self.code_200_required = kwargs.get('code_200_required', True)
         self.close_popups = kwargs.get('close_popups', kwargs.get('close_popup', None))
@@ -147,8 +149,9 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self.log('Site-specified settings activated for: %s' % domain)
             self.check_bad_results_function = _check_bad_results_macys
         if domain == 'walmart.com':
-            self.code_200_required = False
-            self.proxy = _get_random_proxy()
+            self.code_200_required = True
+            self.proxy_auth = HTTPProxyAuth("4810848337264489a1d2f2230da5c981", "")
+            self.proxy = "content.crawlera.com:8010/"
             self.proxy_type = 'http'
             settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
             settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
@@ -416,8 +419,10 @@ class URL2ScreenshotSpider(scrapy.Spider):
         r_session.timeout = self.timeout
         # Proxies activated again because of walmart bans
         if self.proxy:
-           r_session.proxies = {'http': self.proxy_type+'://'+self.proxy,
+            r_session.proxies = {'http': self.proxy_type+'://'+self.proxy,
                                 'https': self.proxy_type+'://'+self.proxy}
+            r_session.auth = self.proxy_auth
+
         if self.user_agent:
             r_session.headers = {'User-Agent': self.user_agent}
 
