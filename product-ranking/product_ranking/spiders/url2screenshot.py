@@ -153,13 +153,13 @@ class URL2ScreenshotSpider(scrapy.Spider):
             # middlewares['product_ranking.randomproxy.RandomProxy'] = None
             # settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
             # self.code_200_required = True
-            crawlera_apikey = "4810848337264489a1d2f2230da5c981"
+            # crawlera_apikey = "4810848337264489a1d2f2230da5c981"
 
             # Crawlera auth for phantomjs
             # self._proxy_auth = "{}:''".format(crawlera_apikey)
             # self.driver = "phantomjs"
 
-            self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
+            # self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
             # self.proxy = "content.crawlera.com:8010"
             # self.proxy_type = 'http'
 
@@ -433,9 +433,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
         r_session.timeout = self.timeout
         # Proxies activated again because of walmart bans
         if self.proxy:
-            r_session.proxies = {"http": "http://content.crawlera.com:8010/", \
-                            "https": "http://content.crawlera.com:8010/"}
-            r_session.auth = self.proxy_auth
+            r_session.proxies = {"http": "{}://{}".format(self.proxy_type, self.proxy), \
+                            "https": "{}://{}".format(self.proxy_type, self.proxy)}
 
         if self.user_agent:
             r_session.headers = {'User-Agent': self.user_agent}
