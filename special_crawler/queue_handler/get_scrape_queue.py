@@ -123,7 +123,9 @@ def main( environment, scrape_queue_name, thread_id):
                         logger.info(str(e))
                         logger.info('FAILED TO FETCH PROXY CONFIG')
 
-                for i in range(3):
+                for i in range(1,10):
+                    proxy_failure = False
+
                     # Scrape the page using the scraper running on localhost
                     get_start = time.time()
                     tmp_url = base%(urllib.quote(url))
@@ -137,6 +139,7 @@ def main( environment, scrape_queue_name, thread_id):
                     # Add the processing fields to the return object and re-serialize it
                     try:
                         output_json = json.loads(output_text)
+
                     except Exception as e:
                         logger.info(output_text)
                         output_json = {
@@ -144,10 +147,26 @@ def main( environment, scrape_queue_name, thread_id):
                             "date":datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
                             "status":"failure",
                             "page_attributes":{"loaded_in_seconds":round(get_end-get_start,2)}}
-                    output_json['attempt'] = i+1
-                    if not "error" in output_json:
+
+                    output_json['attempt'] = i
+
+                    # If scraper response was successful, we're done
+                    if not output_json.get('status') == 'failure':
                         break
-                    time.sleep( 1)
+
+                    # If failure was due to proxies
+                    if output_json.get('failure_type') in ['connection', 'proxy']:
+                        proxy_failure = True
+
+                    # Only retry 3 times if other failure type
+                    if not proxy_failure and i >= 3:
+                        break
+
+                    # Back off incrementally if proxy failure
+                    if proxy_failure:
+                        time.sleep(60*i)
+                    else:
+                        time.sleep(1)
 
                 output_json['url'] = url
                 output_json['site_id'] = site_id
