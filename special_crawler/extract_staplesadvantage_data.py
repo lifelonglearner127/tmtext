@@ -172,17 +172,18 @@ class StaplesAdvantageScraper(Scraper):
             return self.long_description
 
     def _description_helper(self):
-        headline = self.tree_html.xpath("//div[contains(@class,'product-details')]//p[contains(@class, 'headliner')]//text()")[0]
-        expanded_descr = self.tree_html.xpath("//div[contains(@class,'product-details')]//p[contains(@class, 'whyBuyProductDetailPage')]//text()")[0]
-        bullet_list = self.tree_html.xpath("//div[contains(@class,'product-details-desc')]//ul/li//text()")
-        bullet_list = [r for r in bullet_list if len(self._clean_text(r)) > 0]
-        if len(bullet_list) < 1:
-            return None
-        bullet_list = "\n".join(bullet_list)
+        if not self.description or not self.shelf_description or self.long_description:
+            headline = self.tree_html.xpath("//div[contains(@class,'product-details')]//p[contains(@class, 'headliner')]//text()")[0]
+            expanded_descr = self.tree_html.xpath("//div[contains(@class,'product-details')]//p[contains(@class, 'whyBuyProductDetailPage')]//text()")[0]
+            bullet_list = self.tree_html.xpath("//div[contains(@class,'product-details-desc')]//ul/li//text()")
+            bullet_list = [r for r in bullet_list if len(self._clean_text(r)) > 0]
+            if len(bullet_list) < 1:
+                return None
+            bullet_list = "\n".join(bullet_list)
 
-        self.description = headline
-        self.shelf_description = expanded_descr
-        self.long_description = headline + "\n" + expanded_descr + "\n" + bullet_list
+            self.description = headline
+            self.shelf_description = expanded_descr
+            self.long_description = headline + "\n" + expanded_descr + "\n" + bullet_list
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -354,43 +355,33 @@ class StaplesAdvantageScraper(Scraper):
     ##########################################
     #populate the reviews_tree variable for use by other functions
     def _load_reviews(self):
-        if not self.max_score or not self.min_score:
-            txt = self.tree_html.xpath("//div[contains(@class,'pr_snippet_product')]//div[@class='pr-snippet-stars']//div[contains(@data-histogram,'noOfReviews')]/@data-histogram")[0].strip()
-            # ["{'noOfReviews':7,'numOfFives':4,'numOfFours':3,'numOfThrees':0,'numOfTwos':0,'numOfOnes':0}"]
-            rows = []
-            cnt_tmp = int(re.findall(r"numOfFives'\:(\d+)", txt)[0].strip())
-            rows.append(cnt_tmp)
-            cnt_tmp = int(re.findall(r"numOfFours'\:(\d+)", txt)[0].strip())
-            rows.append(cnt_tmp)
-            cnt_tmp = int(re.findall(r"numOfThrees'\:(\d+)", txt)[0].strip())
-            rows.append(cnt_tmp)
-            cnt_tmp = int(re.findall(r"numOfTwos'\:(\d+)", txt)[0].strip())
-            rows.append(cnt_tmp)
-            cnt_tmp = int(re.findall(r"numOfOnes'\:(\d+)", txt)[0].strip())
-            rows.append(cnt_tmp)
 
-            self.reviews = []
-            idx = 5
+        if not self.review_count or self.average_review or self.max_score or not self.min_score:
+            prod_id = self._product_id()
+            url = "https://yotpo.staplesadvantage.com/v1/widget/RP5gD6RV7AVy75jjXQPUI1AOChyNNClZqkm94Ttb/products/" + prod_id + "/reviews.json?per_page=10&page=1&sort=votes_up&direction=desc&fromAjax=Y"
+            product_json = json.loads(self.load_page_from_url_with_number_of_retries(
+                url))
+            review_info = product_json["response"]["bottomline"]
+
+            self.review_count = review_info["total_review"]
+            self.average_review = review_info["average_score"]
+            self.reviews = review_info["star_distribution"]
+
             rv_scores = []
-            for cnt in rows:
+            for score, cnt in self.reviews.iteritems():
                 if cnt > 0:
-                    self.reviews.append([idx, cnt])
-                    rv_scores.append(idx)
-                idx -= 1
-                if idx < 1:
-                    break
+                    rv_scores.append(score)
+
             self.max_score = max(rv_scores)
             self.min_score = min(rv_scores)
 
     def _average_review(self):
-        txt = self.tree_html.xpath("//div[contains(@class,'pr_snippet_product')]//div[@class='pr-snippet-stars']//span[contains(@class,'pr-snippet-rating-decimal')]//text()")[0].strip()
-        avg_review = re.findall(r"^(.*?) of", txt)[0].strip()
-        avg_review = round(float(avg_review), 2)
-        return avg_review
+        self._load_reviews()
+        return self.average_review
 
     def _review_count(self):
-        review_cnt = self.tree_html.xpath("//p[contains(@class,'pr-snippet-review-count')]//a[contains(@class,'pr-snippet-link')]//text()")[0].strip()
-        return int(review_cnt)
+        self._load_reviews()
+        return self.review_count
 
     def _max_review(self):
         self._load_reviews()
