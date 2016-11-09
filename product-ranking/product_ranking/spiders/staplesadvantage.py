@@ -232,14 +232,12 @@ class StaplesadvantageProductsSpider(ProductsSpider):
                        {'More product options': products})
 
     def _request_buyer_reviews(self, response):
-        prod_id = re.search('var pr_page_id="(\d+)"', response.body)
-        if not prod_id:
-            return
-        prod_id = prod_id.group(1)
-        CH = sum((ord(c) * abs(255 - ord(c)) for c in str(prod_id)))
-        CH = str(CH % 1023).rjust(4, '0')
-        CH = '%s/%s' % (CH[:2], CH[2:])
-        url = "http://www.staplesadvantage.com/pwr/content/%s/contents.js" % CH
+        try:
+            prod_id = response.xpath("//div[@class='maindetailitem']//input[@name='currentSKUNumber']/@value")[0].extract()
+        except IndexError:
+            prod_id = response.xpath("//input[@name='currentSKUNumber']/@value")[0].extract()
+
+        url = "https://yotpo.staplesadvantage.com/v1/widget/RP5gD6RV7AVy75jjXQPUI1AOChyNNClZqkm94Ttb/products/" + prod_id + "/reviews.json?per_page=10&page=1&sort=votes_up&direction=desc&fromAjax=Y"
         meta = response.meta.copy()
         meta['prod_id'] = prod_id
         meta['field'] = 'buyer_reviews'
@@ -248,23 +246,16 @@ class StaplesadvantageProductsSpider(ProductsSpider):
 
     def _parse_buyer_reviews(self, response):
         product = response.meta['product']
-        json_str = re.search("POWERREVIEWS\.common\.gResult"
-                             "\['content/\d+/\d+/contents.js'\] = (.+);",
-                             response.body)
-        if not json_str:
-            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
-            return
-        data = json.loads(json_str.group(1))
+        data = json.loads(response.body)
+
         try:
-            data = data['locales']['en_US'][
-                'p' + str(response.meta['prod_id'])]
-            data = data['reviews']
+            data = data["response"]["bottomline"]
         except KeyError:
             cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             return
-        ratings = {i + 1: val for i, val in enumerate(data['review_ratings'])}
-        avg = float(data['avg'])
-        total = data['review_count']
+        ratings = data['star_distribution']
+        avg = float(data['average_score'])
+        total = data['total_review']
         cond_set_value(response.meta['product'], 'buyer_reviews',
                        BuyerReviews(total, avg,
                                     ratings) if total else ZERO_REVIEWS_VALUE)
