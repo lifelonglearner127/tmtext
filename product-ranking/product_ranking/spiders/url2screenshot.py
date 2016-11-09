@@ -154,11 +154,19 @@ class URL2ScreenshotSpider(scrapy.Spider):
             settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
             # self.code_200_required = True
             crawlera_apikey = "4810848337264489a1d2f2230da5c981"
-            self.driver = "phantomjs"
-            self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
-            self.proxy = "content.crawlera.com:8010"
+
+            # Crawlera auth for phantomjs
+            # self._proxy_auth = "{}:''".format(crawlera_apikey)
+            # self.driver = "phantomjs"
+
+            # self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
+            # self.proxy = "content.crawlera.com:8010"
+            # self.proxy_type = 'http'
+
+            # Using Luminati temporary
+            self.proxy = "10.0.5.78:7708"
             self.proxy_type = 'http'
-            self._proxy_auth = "{}:''".format(crawlera_apikey)
+
             settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
             settings.overrides['CRAWLERA_APIKEY'] = crawlera_apikey
             settings.overrides['CRAWLERA_ENABLED'] = True
