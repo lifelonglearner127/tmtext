@@ -407,7 +407,9 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
     @staticmethod
     def _get_proxy_ip(driver):
-        driver.get('http://icanhazip.com')
+        # This website acn be down
+        # driver.get('http://icanhazip.com')
+        driver.get('https://api.ipify.org/')
         ip = re.search('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', driver.page_source)
         if ip:
             ip = ip.group(1)
