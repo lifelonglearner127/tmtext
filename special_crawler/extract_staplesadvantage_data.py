@@ -25,6 +25,9 @@ class StaplesAdvantageScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is https://www\.staplesadvantage\.com/webapp/wcs/stores/servlet/StplShowItem\?(.*)"
 
+    description = None
+    long_description = None
+    shelf_description = None
     reviews_tree = None
     max_score = None
     min_score = None
@@ -151,54 +154,35 @@ class StaplesAdvantageScraper(Scraper):
         return None
 
     def _description(self):
-        description = self._description_helper()
-        if description is None or len(description) < 1:
-            return self._long_description_helper()
-        return description
+        self._description_helper()
 
-    def _description_helper(self):
-        line_txts = self.tree_html.xpath("//div[contains(@class,'product-details-desc')]//ul//text()")
-        line_txts = [r for r in line_txts if len(self._clean_text(r)) > 0]
-        if len(line_txts) < 1:
-            return None
-        description = "\n".join(line_txts)
-        return description
+        if self.description:
+            return self.description
+
+    def _shelf_description(self):
+        self._description_helper()
+
+        if self.shelf_description:
+            return self.shelf_description
 
     def _long_description(self):
-        description = self._description_helper()
-        if description is None or len(description) < 1:
-            return None
-        return self._long_description_helper()
+        self._description_helper()
 
-    def _long_description_helper(self):
-        line_txts = []
-        # https://scontent.webcollage.net/stapleslink-en/sb-for-ppp?ird=true&channel-product-id=957754
-        url = "https://scontent.webcollage.net/stapleslink-en/sb-for-ppp?ird=true&channel-product-id=%s" % self._product_id()
-        contents = urllib.urlopen(url).read()
-        # wcsb:url=\"http:\/\/content.webcollage.net\/stapleslink-en\/product-content-page?channel-product-id=957754&amp;wcpid=lysol-1358965925135&amp;report-event=product-button-click&amp;usemap=0\"
-        # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
-        m = re.findall(r'wcsb:url="(.*?)"', contents.replace("\\",""), re.DOTALL)
-        if len(m) > 0:
-            url_wc = m[0]
-            contents_wc = urllib.urlopen(url_wc).read()
-            # document.location.replace('
-            m_wc = re.findall(r'document.location.replace\(\'(.*?)\'\);', contents_wc.replace("\\",""), re.DOTALL)
-            if len(m_wc) > 0:
-                url_wc2 = m_wc[0]
-                contents_wc2 = urllib.urlopen(url_wc2).read()
-                tree = html.fromstring(contents_wc2)
-                rows = tree.xpath("//div[contains(@class,'wc-pc-tabs')]//li")
-                for row in rows:
-                    txt = " ".join(row.xpath(".//text()"))
-                    if "Overview" in txt:
-                        url_wc3 = "http://content.webcollage.net%s" % row.xpath(".//a/@href")[0].strip()
-                        contents_wc3 = urllib.urlopen(url_wc3).read()
-                        tree3 = html.fromstring(contents_wc3)
-                        rows = tree3.xpath("//div[@class='wc-pc-content']//ul//text()")
-                        line_txts = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
-        if len(line_txts) < 1:
+        if self.long_description:
+            return self.long_description
+
+    def _description_helper(self):
+        headline = self.tree_html.xpath("//div[contains(@class,'product-details')]//p[contains(@class, 'headliner')]//text()")[0]
+        expanded_descr = self.tree_html.xpath("//div[contains(@class,'product-details')]//p[contains(@class, 'whyBuyProductDetailPage')]//text()")[0]
+        bullet_list = self.tree_html.xpath("//div[contains(@class,'product-details-desc')]//ul/li//text()")
+        bullet_list = [r for r in bullet_list if len(self._clean_text(r)) > 0]
+        if len(bullet_list) < 1:
             return None
-        return "\n".join(line_txts)
+        bullet_list = "\n".join(bullet_list)
+
+        self.description = headline
+        self.shelf_description = expanded_descr
+        self.long_description = headline + "\n" + expanded_descr + "\n" + bullet_list
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -588,6 +572,7 @@ class StaplesAdvantageScraper(Scraper):
     DATA_TYPES_SPECIAL = { \
         # CONTAINER : PRODUCT_INFO
         "description" : _description, \
+        "shelf_description" : _shelf_description, \
         "long_description" : _long_description, \
 
         # CONTAINER : PRODUCT_INFO
