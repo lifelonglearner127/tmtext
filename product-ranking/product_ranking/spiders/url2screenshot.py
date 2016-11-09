@@ -33,7 +33,7 @@ except ImportError:
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', '..'))
 
-DEBUG_MODE = False  # TODO! fix
+DEBUG_MODE = True  # TODO! fix
 
 try:
     from search.captcha_solver import CaptchaBreakerWrapper
@@ -149,12 +149,15 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self.log('Site-specified settings activated for: %s' % domain)
             self.check_bad_results_function = _check_bad_results_macys
         if domain == 'walmart.com':
-            self.code_200_required = True
-            self.proxy_auth = HTTPProxyAuth("4810848337264489a1d2f2230da5c981", "")
-            self.proxy = "content.crawlera.com:8010/"
+            # self.code_200_required = True
+            crawlera_apikey = "4810848337264489a1d2f2230da5c981"
+            self.driver = "phantomjs"
+            self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
+            self.proxy = "content.crawlera.com:8010"
             self.proxy_type = 'http'
+            self._proxy_auth = "{}:''".format(crawlera_apikey)
             settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
-            settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
+            settings.overrides['CRAWLERA_APIKEY'] = crawlera_apikey
             settings.overrides['CRAWLERA_ENABLED'] = True
             self._site_settings_activated_for = domain
             self.log('Site-specified settings activated for: %s' % domain)
@@ -419,8 +422,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
         r_session.timeout = self.timeout
         # Proxies activated again because of walmart bans
         if self.proxy:
-            r_session.proxies = {'http': self.proxy_type+'://'+self.proxy,
-                                'https': self.proxy_type+'://'+self.proxy}
+            r_session.proxies = {"http": "http://content.crawlera.com:8010/", \
+                            "https": "http://content.crawlera.com:8010/"}
             r_session.auth = self.proxy_auth
 
         if self.user_agent:
