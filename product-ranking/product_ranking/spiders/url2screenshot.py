@@ -164,7 +164,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
             # self.proxy_type = 'http'
 
             # Using Luminati temporary
-            self.proxy = "10.0.5.78:7708"
+            self.proxy = "10.0.5.12:7708"
             self.proxy_type = 'http'
 
             settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
