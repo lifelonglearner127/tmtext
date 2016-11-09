@@ -1280,10 +1280,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_buyer_reviews_alternative(data):
-        selected = data.get('product', {}).get('primaryProduct')
+        selected = data.get('product', {}).get('selected', {}).get('product')
         review_data = data.get('product', {}).get('reviews', {}).get(selected, {})
-        num_of_reviews = review_data.get('totalReviewCount')
-        average_rating = review_data.get('averageOverallRating')
+        num_of_reviews = review_data.get('totalReviewCount', 0)
+        average_rating = review_data.get('averageOverallRating', 0)
         rating_by_star = {
             1: review_data.get('ratingValueOneCount', 0),
             2: review_data.get('ratingValueTwoCount', 0),
