@@ -94,9 +94,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     default_hhl = [404, 500, 502, 520]
 
-    SEARCH_URL = "https://www.walmart.com/search/search-ng.do?Find=Find" \
-        "&_refineresult=true&ic=16_0&search_constraint=0" \
-        "&search_query={search_term}&sort={search_sort}"
+    SEARCH_URL = "https://www.walmart.com/search/?query={search_term}"
 
     LOCATION_URL = "https://www.walmart.com/location"
     LOCATION_PROD_URL = "https://www.walmart.com/product/dynamic/{product_id}?" \
@@ -138,6 +136,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         global SiteProductItem
         if zip_code:
             self.zip_code = zip_code
+        if search_sort != 'best_match':
+            self.SEARCH_URL += "&sort={search_sort}"
         if search_sort == 'best_sellers':
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         # avoid tons of 'items' in logs
