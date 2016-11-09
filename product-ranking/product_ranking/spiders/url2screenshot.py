@@ -33,7 +33,7 @@ except ImportError:
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', '..'))
 
-DEBUG_MODE = True  # TODO! fix
+DEBUG_MODE = False  # TODO! fix
 
 try:
     from search.captcha_solver import CaptchaBreakerWrapper
