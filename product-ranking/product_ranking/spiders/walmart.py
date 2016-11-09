@@ -985,7 +985,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 ".//*[@id='WMItemBrandLnk']//*[@itemprop='brand']/text()").extract())
         if not brand:
             brand = guess_brand_from_first_words(product.get('title', '').replace(u'®', ''))
-        if '&amp;' in brand:
+        if brand and '&amp;' in brand:
             brand = brand.replace('&amp;', "&")
         cond_set_value(product, 'brand', brand)
 
