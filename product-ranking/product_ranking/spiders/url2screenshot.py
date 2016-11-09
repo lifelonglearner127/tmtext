@@ -119,6 +119,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
         self.proxy_auth = None
         self.requests_proxy = None
+        self.requests_proxy_type = None
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
         self.code_200_required = kwargs.get('code_200_required', True)
         self.close_popups = kwargs.get('close_popups', kwargs.get('close_popup', None))
@@ -162,7 +163,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
             self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
             self.requests_proxy = "content.crawlera.com:8010"
-            self.proxy_type = 'http'
+            self.requests_proxy_type = 'http'
+            self.proxy = None
 
             # Using special squid connector
             # self.proxy = "10.0.5.36:7708"
@@ -434,8 +436,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
         r_session.timeout = self.timeout
         # Proxies activated again only for requests because of walmart bans
         if self.requests_proxy:
-            r_session.proxies = {"http": "{}://{}".format(self.proxy_type, self.proxy), \
-                            "https": "{}://{}".format(self.proxy_type, self.proxy)}
+            r_session.proxies = {"http": "{}://{}".format(self.requests_proxy_type, self.requests_proxy), \
+                            "https": "{}://{}".format(self.requests_proxy_type, self.requests_proxy)}
             r_session.auth = self.proxy_auth
 
         if self.user_agent:
