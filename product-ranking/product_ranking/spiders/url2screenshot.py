@@ -157,7 +157,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
             # Crawlera auth for phantomjs
             self._proxy_auth = "{}:''".format(crawlera_apikey)
-            # self.driver = "phantomjs"
+            self.driver = "phantomjs"
 
             self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
             self.proxy = "content.crawlera.com:8010"
@@ -166,7 +166,6 @@ class URL2ScreenshotSpider(scrapy.Spider):
             # Using Luminati temporary
             # self.proxy = "10.0.5.12:7708"
             # self.proxy_type = 'http'
-            self.make_screenshot = self.make_screenshot_for_macys
 
             # settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
             # settings.overrides['CRAWLERA_APIKEY'] = crawlera_apikey
