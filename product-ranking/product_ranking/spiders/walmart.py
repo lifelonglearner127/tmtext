@@ -10,6 +10,7 @@ import random
 import re
 from datetime import datetime
 import lxml.html
+import urllib
 
 import os
 import logging
@@ -142,7 +143,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         # avoid tons of 'items' in logs
         self.search_sort = search_sort
-        SiteProductItem.__repr__ = lambda _: '[product item]'
+        # SiteProductItem.__repr__ = lambda _: '[product item]'
         self.use_data_from_redirect_url = kwargs.get('use_data_from_redirect_url', False)
         self.username = kwargs.get('username', None)
         super(WalmartProductsSpider, self).__init__(
@@ -152,7 +153,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             ),
             *args, **kwargs)
 
-        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
+        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429, 520]
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
         settings.overrides['CONCURRENT_REQUESTS'] = 1
 
@@ -223,6 +224,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             'prefper'] = 'PREFSTORE~12648~2PREFCITY~1San%20Leandro~2PREFFULLSTREET~11919%20Davis%20St~2PREFSTATE~1CA~2PREFZIP~194117'
         self.cookies['PSID'] = '2648'
         self.cookies['NSID'] = '2648'
+
+        self.visited_links = {}
 
     def _weighted_choice(self, choices_dict):
         try:
@@ -331,7 +334,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     self.quantity = 100
 
             for st in self.searchterms:
-                yield Request(self.SEARCH_URL.format(search_term=st,
+                self.visited_links[st] = []
+                yield Request(self.SEARCH_URL.format(search_term=urllib.quote_plus(st.encode('utf-8')),
                                                      search_sort=self._SEARCH_SORT[self.search_sort]),
                               #self._parse_single_product,
                               meta={'handle_httpstatus_list': [404, 502, 520],
@@ -1240,6 +1244,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         prices = [marketplace.get('pricesInfo', {}).get('priceMap', {}).get('CURRENT', {}).get('price')
                   for marketplace in marketplaces]
         price = min(prices)
+        try:
+            price = float(price)
+        except ValueError:
+            price = 0
         return Price(priceCurrency='USD', price=price)
 
     @staticmethod
@@ -1534,7 +1542,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         items = response.xpath(
-            '//div[@class="js-tile tile-landscape"] | '
             '//div[contains(@class, "js-tile js-tile-landscape")]'
         )
         if not items:
@@ -1545,6 +1552,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         for item in items:
             link = item.css('a.js-product-title ::attr(href)')[0].extract()
+            if link in self.visited_links.get(response.meta.get('search_term'), []):
+                continue
+            else:
+                self.visited_links.get(response.meta.get('search_term'), []).append(link)
 
             title = ''.join(item.xpath(
                 'div/div/h4[contains(@class, "tile-heading")]/a/node()'
