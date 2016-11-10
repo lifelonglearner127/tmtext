@@ -1210,7 +1210,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     @staticmethod
     def _parse_selected_product_alternative(data):
         selected = data.get('product', {}).get('selected', {}).get('product')
-        return data.get('product', {}).get('products', {}).get(selected)
+        return data.get('product', {}).get('products', {}).get(selected, {})
 
     @staticmethod
     def _parse_marketplaces_data_alternative(data):
