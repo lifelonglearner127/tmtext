@@ -76,7 +76,7 @@ class AmazonScraper(Scraper):
         self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
                         "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
-        self.proxies_enabled = True # first, they are OFF to save allowed requests
+        self.proxies_enabled = False # first, they are OFF to save allowed requests
 
     @handle_badstatusline
     def _request(self, url, data=None, allow_redirects=True):
