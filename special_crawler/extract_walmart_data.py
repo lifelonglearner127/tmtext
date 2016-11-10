@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import functools
 import re
 import sys
 import json
@@ -16,6 +17,23 @@ from requests.auth import HTTPProxyAuth
 from extract_data import Scraper
 from compare_images import compare_images
 from spiders_shared_code.walmart_variants import WalmartVariants
+
+
+def handle_badstatusline(f):
+    """https://github.com/mikem23/keepalive-race
+    """
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        for _ in range(2):
+            try:
+                return f(*args, **kwargs)
+            except requests.exceptions.ConnectionError as e:
+                if 'httplib.BadStatusLine' in e.message:
+                    continue
+                raise
+        else:
+            raise
+    return wrapper
 
 
 class WalmartScraper(Scraper):
@@ -183,6 +201,7 @@ class WalmartScraper(Scraper):
     def _proxy_service(self):
         return self.PROXY
 
+    @handle_badstatusline
     def _request(self, url, headers=None, allow_redirects=True):
         if self.proxies_enabled and 'walmart.com' in url:
             if self.PROXY == 'proxyrain':
