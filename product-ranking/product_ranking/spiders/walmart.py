@@ -1369,6 +1369,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             return product
 
+    @staticmethod
+    def _parse_is_out_of_stock(data):
+        return not data.get('analyticsData', {}).get('inStock')
+
     def _on_dynamic_api_response(self, response, data):
         if data:
             prod = response.meta['product']
@@ -1385,6 +1389,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     variants_instock = any([v.get('in_stock') for v in prod.get('variants', [])])
                     if variants_instock:
                         prod['is_out_of_stock'] = False
+                prod['is_out_of_stock'] = self._parse_is_out_of_stock(data)
 
                 if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
                     prod['shipping'] = False
