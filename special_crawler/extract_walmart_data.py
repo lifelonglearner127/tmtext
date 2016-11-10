@@ -17,6 +17,7 @@ from extract_data import Scraper
 from compare_images import compare_images
 from spiders_shared_code.walmart_variants import WalmartVariants
 
+
 class WalmartScraper(Scraper):
 
     """Implements methods that each extract an individual piece of data for walmart.com
@@ -182,7 +183,7 @@ class WalmartScraper(Scraper):
     def _proxy_service(self):
         return self.PROXY
 
-    def _request(self, url, headers=None):
+    def _request(self, url, headers=None, allow_redirects=True):
         if self.proxies_enabled and 'walmart.com' in url:
             if self.PROXY == 'proxyrain':
                 headers = {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -194,7 +195,8 @@ class WalmartScraper(Scraper):
                     proxies=self.proxies, \
                     auth=self.proxy_auth, \
                     verify=False, \
-                    timeout=300)
+                    timeout=300,
+                    allow_redirects=allow_redirects)
         else:
             return requests.get(url, timeout=10)
 
@@ -213,11 +215,22 @@ class WalmartScraper(Scraper):
             max_retries = 5
 
             try:
-                resp = self._request(self.product_page_url)
+                resp = self._request(self.product_page_url,
+                                     allow_redirects=False)
 
-                if resp.url != self.product_page_url:
-                    print 'REDIRECTED', resp.url, self.product_page_url
-                    continue
+                # 3xx are redirections.
+                while str(resp.status_code).startswith('3'):
+                    print 'REDIRECTED {code}: {url}'.format(
+                        code=resp.status_code,
+                        url=resp.request.url
+                    )
+                    if 'location' not in resp.headers:
+                        self.ERROR_RESPONSE['failure_type'] = \
+                            '3xx location not found'
+                        return
+
+                    url = resp.headers['location']
+                    resp = self._request(url, allow_redirects=False)
 
                 if resp.status_code != 200:
                     print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
