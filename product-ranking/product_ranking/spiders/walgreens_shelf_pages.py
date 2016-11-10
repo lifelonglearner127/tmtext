@@ -1,17 +1,11 @@
-import os.path
 import re
 import urlparse
 import copy
-import requests
 import json
 
-import scrapy
-from scrapy.log import WARNING, ERROR
-from scrapy.http import Request, FormRequest
-from scrapy import Selector
+from scrapy.http import FormRequest
 
 from product_ranking.items import SiteProductItem
-from spiders_shared_code.walmart_categories import WalmartCategoryParser
 
 is_empty = lambda x: x[0] if x else None
 

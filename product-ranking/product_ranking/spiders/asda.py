@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
 import json
@@ -13,7 +12,6 @@ from scrapy.log import WARNING, ERROR
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 from product_ranking.validation import BaseValidator
-from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.validators.asda_validator import AsdaValidatorSettings
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -85,7 +83,7 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
-        
+
         try:
             data = json.loads(response.body_as_unicode())
             item = data['items'][0]
@@ -142,6 +140,7 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
             prod = SiteProductItem()
             prod['title'] = item['itemName']
             prod['brand'] = item['brandName']
+            prod['site'] = 'http://www.asda.com/'
 
             # Hardcoded, store seems not to have out of stock products
             prod['is_out_of_stock'] = False

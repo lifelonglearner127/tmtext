@@ -96,6 +96,7 @@ from extract_petsmart_data import PetsmartScraper
 from extract_walmartgrocery_data import WalmartGroceryScraper
 from extract_autozone_data import AutozoneScraper
 from extract_sears_data import SearsScraper
+from extract_jet_data import JetScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -204,7 +205,8 @@ SUPPORTED_SITES = {
                     "walmartgrocery" : WalmartGroceryScraper,
                     "shopritedelivers": ShopritedeliversScraper,
                     "autozone" : AutozoneScraper,
-                    "sears" : SearsScraper
+                    "sears" : SearsScraper,
+                    "jet" : JetScraper
                     }
 
 # add logger
@@ -306,6 +308,8 @@ def extract_domain(url):
         return "nike"
     if 'grocery.walmart.com' in url:
         return 'walmartgrocery'
+    if 'jet.com' in url:
+        return 'jet'
 
     m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:
@@ -404,8 +408,30 @@ def get_data():
             else:
                 url += '?ppw=' + request_arguments.get('ppw')[0]
 
+    config_dict = {'additional_requests': None,
+        'proxy': None,
+        'walmart_proxy_crawlera': 0,
+        'walmart_proxy_proxyrain': 0,
+        'walmart_proxy_shaderio': 0,
+        'walmart_proxy_luminati': 0,
+        'api_key': None,
+        'walmart_api_key': None}
+
+    for k in config_dict.keys():
+        if k in request_arguments:
+            config_dict[k] = request_arguments[k][0]
+
     # create scraper class for requested site
-    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot)
+    site_scraper = SUPPORTED_SITES[site](url=url,
+        bot=bot,
+        additional_requests = config_dict['additional_requests'],
+        api_key = config_dict['api_key'],
+        walmart_api_key = config_dict['walmart_api_key'],
+        proxy = config_dict['proxy'],
+        walmart_proxy_crawlera = int(config_dict['walmart_proxy_crawlera']),
+        walmart_proxy_proxyrain = int(config_dict['walmart_proxy_proxyrain']),
+        walmart_proxy_shaderio = int(config_dict['walmart_proxy_shaderio']),
+        walmart_proxy_luminati = int(config_dict['walmart_proxy_luminati']))
 
     # validate parameter values
     # url

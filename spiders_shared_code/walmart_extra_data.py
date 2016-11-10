@@ -11,8 +11,6 @@ from io import BytesIO
 from StringIO import StringIO
 import requests
 
-from special_crawler.extract_data import Scraper
-
 
 def fetch_bytes(url):
     # TODO: fix this - remove if this method is not neeeded anymore

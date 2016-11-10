@@ -1,6 +1,5 @@
 import json
 import re
-import urllib
 from urllib import unquote, urlencode
 from urlparse import urljoin
 
@@ -170,7 +169,7 @@ class MothercareProductsSpider(ProductsSpider):
             pref = 'http://www.mothercare.com/on/demandware.store' \
                    '/Sites-MCENGB-Site/default/Search-Show?q={search_term}' \
                 .format(search_term=response.meta['search_term'])
-        
+
         data = {
             'a': api_key,
             'chi': '|%s' % chi,

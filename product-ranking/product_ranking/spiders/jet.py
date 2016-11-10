@@ -3,10 +3,8 @@ from __future__ import division, absolute_import, unicode_literals
 
 import re
 import json
-import urllib
 import urlparse
 import unicodedata
-from scrapy.conf import settings
 
 from scrapy.http import Request
 
@@ -112,13 +110,17 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
         elif self.product_url:
             prod_id = self.product_url.split('/')[-1]
             prod_id = prod_id.replace("#","") if prod_id else None
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            prod['url'] = self.product_url
+            prod['search_term'] = ''
             yield Request(
                 url=self.PROD_URL,
-                callback=self.parse_product,
+                callback=self._parse_single_product,
                 method="POST",
                 body=json.dumps({"sku": prod_id, "origination": "none"}),
                 meta={
-                    "product": SiteProductItem(),
+                    "product": prod,
                     'search_term': st,
                     'remaining': self.quantity,
                     'csrf': csrf
@@ -136,13 +138,16 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
             urls = self.products_url.split('||||')
             for url in urls:
                 prod_id = url.split('/')[-1]
+                prod = SiteProductItem()
+                prod['url'] = self.product_url
+                prod['search_term'] = ''
                 yield Request(
                     url=self.PROD_URL,
-                    callback=self.parse_product,
+                    callback=self._parse_single_product,
                     method="POST",
                     body=json.dumps({"sku": prod_id, "origination": "none"}),
                     meta={
-                        "product": SiteProductItem(),
+                        "product": prod,
                         'search_term': st,
                         'remaining': self.quantity,
                         'csrf': csrf
@@ -195,7 +200,7 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, "sku", prod_data.get('sku'))
 
             # Needed for shelf spider
-            
+
             # Construct product url
             prod_id = prod_data.get('retailSkuId')
             prod_name = product.get('title')
