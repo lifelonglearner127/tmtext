@@ -1218,7 +1218,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_marketplaces_data_alternative(data):
-        return data.get('product', {}).get('offers').values()
+        return data.get('product', {}).get('offers', {}).values()
 
     @staticmethod
     def _parse_brand_alternative(selected_product):
