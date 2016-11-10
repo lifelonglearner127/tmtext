@@ -1383,12 +1383,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 prod.update({"no_longer_available": True})
             else:
                 prod['is_out_of_stock'] = not opts.get('available', False)
-                # In stock if at least one of variants in stock
-                # see bugzilla #12076
-                if prod.get("variants"):
-                    variants_instock = any([v.get('in_stock') for v in prod.get('variants', [])])
-                    if variants_instock:
-                        prod['is_out_of_stock'] = False
+
                 prod['is_out_of_stock'] = self._parse_is_out_of_stock(data)
 
                 if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
