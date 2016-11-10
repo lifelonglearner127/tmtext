@@ -17,7 +17,6 @@ from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.guess_brand import guess_brand_from_first_words
 from spiders_shared_code.macys_variants import MacysVariants
 from .macys import MacysProductsSpider
-from scrapy.log import INFO
 
 is_empty = lambda x: x[0] if x else None
 

@@ -4,20 +4,11 @@ from __future__ import division, absolute_import, unicode_literals
 import re
 import json
 import urllib
-import urlparse
-import unicodedata
-from scrapy.conf import settings
 
 from scrapy.http import Request
 
-from itertools import islice
-from scrapy.log import ERROR, WARNING, INFO
-from product_ranking.items import Price
+from scrapy.log import WARNING
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set, cond_set_value
-from spiders_shared_code.jet_variants import JetVariants
-from product_ranking.validators.jet_validator import JetValidatorSettings
 from .jet import JetProductsSpider
 
 is_empty = lambda x, y=None: x[0] if x else y

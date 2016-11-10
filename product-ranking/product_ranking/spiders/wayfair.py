@@ -5,15 +5,13 @@ import re
 import string
 import collections
 import itertools
-import urllib
 
-from scrapy.http import FormRequest, Request
+from scrapy.http import Request
 from scrapy.log import ERROR, INFO, WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
-    cond_set_value
+from product_ranking.spiders import BaseProductsSpider, cond_set_value
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 
 is_empty = lambda x, y=None: x[0] if x else y

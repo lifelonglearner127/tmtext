@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
-from datetime import datetime
 import json
 import re
-import urlparse
 
 from product_ranking.items import Price
 from product_ranking.items import SiteProductItem, RelatedProduct, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set, cond_set_value, dump_url_to_file
+from product_ranking.spiders import cond_set_value, dump_url_to_file
 from scrapy.http import Request
 from scrapy.log import DEBUG
 
@@ -21,7 +18,7 @@ class PlayProductsSpider(BaseProductsSpider):
     allowed_domains = ["play.com", "rakuten.co.uk"]
     start_urls = []
     SEARCH_URL = "http://www.rakuten.co.uk" \
-        "/search/{search_term}/?l-id=gb_category_search"       
+        "/search/{search_term}/?l-id=gb_category_search"
 
     SORT_MODES = {
         'relevance': '1',
@@ -116,8 +113,8 @@ class PlayProductsSpider(BaseProductsSpider):
                     "&item_id=%s" \
                     "&shop_id=%s" % (catId, data["item_id"], sid)
                 return Request(
-                    url=url, 
-                    callback=self._related_parse, 
+                    url=url,
+                    callback=self._related_parse,
                     meta={"product": product}
                 )
         return product

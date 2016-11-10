@@ -14,7 +14,7 @@ from scrapy import Request
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    FLOATING_POINT_RGEX, cond_set_value
+    cond_set_value
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
 from datetime import datetime

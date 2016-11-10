@@ -407,23 +407,30 @@ def get_data():
             else:
                 url += '?ppw=' + request_arguments.get('ppw')[0]
 
-    if 'additional_requests' in request_arguments:
-        additional_requests = request_arguments['additional_requests'][0]
-    else:
-        additional_requests = None
+    config_dict = {'additional_requests': None,
+        'proxy': None,
+        'walmart_proxy_crawlera': 0,
+        'walmart_proxy_proxyrain': 0,
+        'walmart_proxy_shaderio': 0,
+        'walmart_proxy_luminati': 0,
+        'api_key': None,
+        'walmart_api_key': None}
 
-    if 'api_key' in request_arguments:
-        api_key = request_arguments['api_key'][0]
-    else:
-        api_key = None
-
-    if 'walmart_api_key' in request_arguments:
-        walmart_api_key = request_arguments['walmart_api_key'][0]
-    else:
-        walmart_api_key = None
+    for k in config_dict.keys():
+        if k in request_arguments:
+            config_dict[k] = request_arguments[k][0]
 
     # create scraper class for requested site
-    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot, additional_requests=additional_requests, api_key=api_key, walmart_api_key=walmart_api_key)
+    site_scraper = SUPPORTED_SITES[site](url=url,
+        bot=bot,
+        additional_requests = config_dict['additional_requests'],
+        api_key = config_dict['api_key'],
+        walmart_api_key = config_dict['walmart_api_key'],
+        proxy = config_dict['proxy'],
+        walmart_proxy_crawlera = int(config_dict['walmart_proxy_crawlera']),
+        walmart_proxy_proxyrain = int(config_dict['walmart_proxy_proxyrain']),
+        walmart_proxy_shaderio = int(config_dict['walmart_proxy_shaderio']),
+        walmart_proxy_luminati = int(config_dict['walmart_proxy_luminati']))
 
     # validate parameter values
     # url

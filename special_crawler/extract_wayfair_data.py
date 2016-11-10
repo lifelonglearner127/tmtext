@@ -74,7 +74,7 @@ class WayfairScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return "product name" #self.tree_html.xpath('//span[contains(@class,"js-product-title-name")]//text()')[0].strip()
+        return self.tree_html.xpath('//span[contains(@class,"js-product-title-name")]//text()')[0].strip()
 
     def _product_title(self):
         return self.tree_html.xpath('//span[contains(@class,"js-product-title-name")]//text()')[0].strip()
@@ -86,7 +86,7 @@ class WayfairScraper(Scraper):
         return None
 
     def _upc(self):
-        return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
+        return None
 
     def _features(self):
         features = self.tree_html.xpath("//ul[preceding-sibling::p/text()='Features']/li/text()")
@@ -146,7 +146,9 @@ class WayfairScraper(Scraper):
         pass
 
     def _image_urls(self):
-        image_urls = self.tree_html.xpath("//div[contains(@class, 'product__nova__images_thumbnails')]//img/@src")
+        image_urls = self.tree_html.xpath(
+            "//div[contains(@class, 'ProductDetailImagesThumbnails-content')]//img/@src"
+        )
 
         if not image_urls:
             return None

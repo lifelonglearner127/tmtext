@@ -6,8 +6,6 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
-from selenium.common.exceptions import WebDriverException
-from product_ranking.items import CheckoutProductItem
 
 import scrapy
 

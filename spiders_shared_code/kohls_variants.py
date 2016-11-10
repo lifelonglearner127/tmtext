@@ -5,7 +5,6 @@ import lxml.html
 import itertools
 import json
 
-from lxml import html, etree
 
 is_empty = lambda x, y="": x[0] if x else y
 
