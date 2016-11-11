@@ -592,7 +592,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if _na_text:
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
-                print "%%%%parse_product%%%%", product['is_out_of_stock']
 
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
@@ -1179,7 +1178,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
             # Parse out of stock
             is_out_of_stock = self._parse_out_of_stock_alternative(marketplaces_data)
-            print "%%%_populate_from_js_alternative%%%%%", is_out_of_stock
             cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
 
             # Parse price
@@ -1390,7 +1388,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_is_out_of_stock(data):
-        print "%%%%_parse_is_out_of_stock%%%%", not data.get('analyticsData', {}).get('inStock')
         return not data.get('analyticsData', {}).get('inStock')
 
     def _on_dynamic_api_response(self, response, data):
@@ -1405,7 +1402,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 prod['is_out_of_stock'] = not opts.get('available', False)
 
                 prod['is_out_of_stock'] = self._parse_is_out_of_stock(data)
-                print "%%%%_on_dynamic_api_response%%%%", prod['is_out_of_stock']
 
                 if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
                     prod['shipping'] = False
@@ -1444,7 +1440,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 'string()').extract())
             cond_set_value(product, 'title', title)
             available = data['buyingOptions']['available']
-            print "%%%_populate_from_js%%%%%", not available
             cond_set_value(
                 product,
                 'is_out_of_stock',
@@ -1456,7 +1451,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 variants_instock = any([v.get('in_stock') for v in product.get('variants', [])])
                 if variants_instock:
                     product['is_out_of_stock'] = False
-                    print "%%%%variants_instock%%%%", product['is_out_of_stock']
             # the next 2 lines of code should not be uncommented, see BZ #1459
             #if response.xpath('//button[@id="WMItemAddToCartBtn"]').extract():
             #    product['is_out_of_stock'] = False
