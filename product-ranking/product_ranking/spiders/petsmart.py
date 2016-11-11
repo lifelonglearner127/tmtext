@@ -48,9 +48,9 @@ class PetsmartProductsSpider(ProductsSpider):
             'variants': '//li[contains(@class, "ws-variation-list-item")]/@data-sku',
         },
         'search': {
-            'total_matches': '//h1[@class="ws-heading"]',
-            'next_page': '//li[contains(@class, "pagination-list-next-page")]/a/@href',
-            'prod_links': '//li[@data-product]//a[contains(@class, "url") and h4]/@href',
+            'total_matches': '//div[@class="results-hits"]',
+            'next_page': '//li[@class="current-page"]/following-sibling::li/a/@href',
+            'prod_links': '//ul[contains(@class,"search-result-items")]/li/a/@href',
         },
     }
 
