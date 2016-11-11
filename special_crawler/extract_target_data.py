@@ -56,7 +56,7 @@ class TargetScraper(Scraper):
 
     def check_url_format(self):
         # for ex: http://www.target.com/p/skyline-custom-upholstered-swoop-arm-chair/-/A-15186757#prodSlot=_1_1
-        m = re.match(r"^http://(www|intl)\.target\.com/p/(([a-zA-Z0-9\-]+)/)?-/A-([0-9A-Za-z]+)", self.product_page_url)
+        m = re.match(r"^(http|https)://(www|intl)\.target\.com/p/(([a-zA-Z0-9\-]+)/)?-/A-([0-9A-Za-z]+)", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -206,7 +206,10 @@ class TargetScraper(Scraper):
 
     def _description(self):
         if self.version == 2:
-            return self.item_info['item']['product_description']['downstream_description']
+            if 'downstream_description' in self.item_info['item']['product_description']:
+                return self.item_info['item']['product_description']['downstream_description']
+            else:
+                return ''
 
         description = "".join(self.tree_html.xpath("//span[@itemprop='description']//text()")).strip()
         description_copy = "".join(self.tree_html.xpath("//div[@class='details-copy']//text()")).strip()
@@ -574,9 +577,10 @@ class TargetScraper(Scraper):
                     return 1
             except:
                 # if any child product is out of stock, this product is out of stock
-                for child in self.item_info['item']['child_items']:
-                    if child['available_to_promise_store']['products'][0]['availability'] == 'AVAILABLE':
-                        return 1
+                if 'child_items' in self.item_info['item']:
+                    for child in self.item_info['item']['child_items']:
+                        if child['available_to_promise_store']['products'][0]['availability'] == 'AVAILABLE':
+                            return 1
             return 0
 
         if self.product_json:
@@ -671,9 +675,10 @@ class TargetScraper(Scraper):
                         return 0
                 except:
                     # if any child product is NOT out of stock, this product is NOT out of stock
-                    for child in self.item_info['item']['child_items']:
-                        if child['available_to_promise_store']['products'][0]['availability_status'] != 'OUT_OF_STOCK':
-                            return 0
+                    if 'child_items' in self.item_info['item']:
+                        for child in self.item_info['item']['child_items']:
+                            if child['available_to_promise_store']['products'][0]['availability_status'] != 'OUT_OF_STOCK':
+                                return 0
                 return 1
 
             else:
