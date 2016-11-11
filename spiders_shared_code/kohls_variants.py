@@ -89,15 +89,11 @@ class KohlsVariants(object):
                         property["color"] = variant_sku["color"]
                         if default_color == property["color"]:
                             selected = True
-                        else:
-                            selected = False
 
                     if "size" in attribute_name_list:
                         property["size"] = variant_sku["size2"]
                         if default_size == property["size"]:
                             selected = True
-                        else:
-                            selected = False
 
                     obj = {
                         "skuId": variant_sku["skuId"],
