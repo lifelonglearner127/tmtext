@@ -142,7 +142,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         # avoid tons of 'items' in logs
         self.search_sort = search_sort
-        SiteProductItem.__repr__ = lambda _: '[product item]'
+        # SiteProductItem.__repr__ = lambda _: '[product item]'
         self.use_data_from_redirect_url = kwargs.get('use_data_from_redirect_url', False)
         self.username = kwargs.get('username', None)
         super(WalmartProductsSpider, self).__init__(
@@ -448,7 +448,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if self.sponsored_links:
             product["sponsored_links"] = self.sponsored_links
 
-        self._populate_from_js_alternative(response, product)
+        # TODO fix this there was exceptions.AttributeError: while parsing
+        # https://www.walmart.com/nco/Better-Homes-and-Gardens-Bankston-5-Piece-Dining-Set-Mocha/35871841
+        # self._populate_from_js_alternative(response, product)
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
         buyer_reviews = self._build_buyer_reviews(response)
@@ -590,6 +592,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if _na_text:
             if 'not available' in _na_text[0].lower():
                 product['is_out_of_stock'] = True
+                print "%%%%parse_product%%%%", product['is_out_of_stock']
 
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
@@ -1176,6 +1179,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
             # Parse out of stock
             is_out_of_stock = self._parse_out_of_stock_alternative(marketplaces_data)
+            print "%%%_populate_from_js_alternative%%%%%", is_out_of_stock
             cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
 
             # Parse price
@@ -1191,7 +1195,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, 'image_url', image_url)
 
             # Parse marketplaces
-            marketplaces_names = self._parse_marketplaces_names(data)
+            # marketplaces_names = self._parse_marketplaces_names(data)
             # marketplace = self._parse_marketplaces_alternative(marketplaces_data, marketplaces_names)
             # cond_set_value(product, 'marketplace', marketplace)
 
@@ -1210,11 +1214,21 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     @staticmethod
     def _parse_selected_product_alternative(data):
         selected = data.get('product', {}).get('selected', {}).get('product')
-        return data.get('product', {}).get('products', {}).get(selected, {})
+        if selected:
+            return data.get('product', {}).get('products', {}).get(selected, {})
+        else:
+            return data.get('product', {}).get('primaryProduct', {})
 
     @staticmethod
     def _parse_marketplaces_data_alternative(data):
-        return data.get('product', {}).get('offers').values()
+        # if there is one seller, structure of json is different
+        needed_data = data.get('product', {}).get('offers')
+        if needed_data.get("availabilityStatus"):
+            # pprint.pprint([needed_data])
+            return [needed_data]
+        else:
+            # pprint.pprint(needed_data.values())
+            return needed_data.values()
 
     @staticmethod
     def _parse_brand_alternative(selected_product):
@@ -1230,9 +1244,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_out_of_stock_alternative(marketplaces):
-        for offer in marketplaces:
-            if offer.get('productAvailability', {}).get('availabilityStatus') == "IN_STOCK":
-                return False
+        if len(marketplaces) == 1:
+            for offer in marketplaces:
+                if offer.get('availabilityStatus') == "IN_STOCK":
+                    return False
+        else:
+            for offer in marketplaces:
+                if offer.get('productAvailability', {}).get('availabilityStatus') == "IN_STOCK":
+                    return False
         return True
 
     @staticmethod
@@ -1371,6 +1390,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_is_out_of_stock(data):
+        print "%%%%_parse_is_out_of_stock%%%%", not data.get('analyticsData', {}).get('inStock')
         return not data.get('analyticsData', {}).get('inStock')
 
     def _on_dynamic_api_response(self, response, data):
@@ -1385,6 +1405,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 prod['is_out_of_stock'] = not opts.get('available', False)
 
                 prod['is_out_of_stock'] = self._parse_is_out_of_stock(data)
+                print "%%%%_on_dynamic_api_response%%%%", prod['is_out_of_stock']
 
                 if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
                     prod['shipping'] = False
@@ -1423,6 +1444,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 'string()').extract())
             cond_set_value(product, 'title', title)
             available = data['buyingOptions']['available']
+            print "%%%_populate_from_js%%%%%", not available
             cond_set_value(
                 product,
                 'is_out_of_stock',
@@ -1434,6 +1456,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 variants_instock = any([v.get('in_stock') for v in product.get('variants', [])])
                 if variants_instock:
                     product['is_out_of_stock'] = False
+                    print "%%%%variants_instock%%%%", product['is_out_of_stock']
             # the next 2 lines of code should not be uncommented, see BZ #1459
             #if response.xpath('//button[@id="WMItemAddToCartBtn"]').extract():
             #    product['is_out_of_stock'] = False
