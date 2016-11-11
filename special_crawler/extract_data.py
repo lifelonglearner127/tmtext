@@ -56,6 +56,8 @@ class Scraper():
     # number of retries for fetching product page source before giving up
     MAX_RETRIES = 3
 
+    PROXY = 'crawlera'
+
     CRAWLERA_HOST = 'content.crawlera.com'
     CRAWLERA_PORT = '8010'
     CRAWLERA_APIKEY = "3b1bf5856b2142a799faf2d35b504383"
@@ -76,6 +78,7 @@ class Scraper():
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
                        # Only implemented for walmart. Possible values: "Walmart v1" or "Walmart v2"
+            "proxy_service",
 
             # product_info
             "product_name", # name of product, string
@@ -352,6 +355,9 @@ class Scraper():
         self.product_page_url = kwargs['url']
         self.bot_type = kwargs['bot']
         self.is_timeout = False
+
+        if kwargs.get('proxy'):
+            self.PROXY = kwargs.get('proxy')
 
         if kwargs.get('api_key'):
             self.CRAWLERA_APIKEY = kwargs.get('api_key')

@@ -2,7 +2,7 @@ import os
 import sys
 import json
 
-from django.views.generic import TemplateView, FormView, View
+from django.views.generic import FormView, View
 from django.http import HttpResponse
 from django.core.urlresolvers import reverse_lazy
 from django.contrib.sites.models import Site
@@ -13,7 +13,6 @@ from fcgi.views import AuthViewMixin
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', 's3_reports'))
 
-from jobs_per_server_per_site import dump_reports
 from forms import ReportDateForm
 from utils import run_report_generation, get_report_fname, dicts_to_ordered_lists, \
     report_to_csv, encrypt, decrypt

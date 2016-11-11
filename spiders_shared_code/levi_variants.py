@@ -1,10 +1,7 @@
 import lxml.html
-from itertools import product
 import json
 import re
-from lxml import html, etree
 import itertools
-import yaml
 
 
 class LeviVariants(object):

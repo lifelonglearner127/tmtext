@@ -1,11 +1,10 @@
 # Run from superuser!
 
 import os
-import sys
 import datetime
 import shutil
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 
 OLDER_THAN = 10  # days

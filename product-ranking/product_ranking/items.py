@@ -2,7 +2,6 @@
 
 import collections
 import decimal
-import re
 
 from scrapy.item import Item, Field
 

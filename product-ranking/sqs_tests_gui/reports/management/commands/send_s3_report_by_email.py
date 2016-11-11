@@ -7,8 +7,7 @@ import sys
 import json
 import datetime
 
-from django.core.management.base import BaseCommand, CommandError
-from django.core.mail import send_mail
+from django.core.management.base import BaseCommand
 from reports.email_utils import SESMessage
 from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse_lazy
@@ -18,9 +17,8 @@ from django.contrib.sites.models import Site
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', 's3_reports'))
 
-from jobs_per_server_per_site import dump_reports
 from reports.utils import run_report_generation, get_report_fname, dicts_to_ordered_lists,\
-    encrypt, decrypt, report_to_csv
+    encrypt, report_to_csv
 
 
 SCRIPT_DIR = REPORTS_DIR = os.path.join(CWD, '..', '..', 's3_reports')
