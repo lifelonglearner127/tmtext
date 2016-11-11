@@ -247,10 +247,22 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         return title
 
     def parse_description(self, response):
-        description = is_empty(response.xpath(
-            '//div[@class="prod_description1"]/'
-            'div[@class="Bdescription"]/p/text() | '
-            '//meta[@name="description"][string-length(@content)>0]/@content').extract())
+        try:
+            product_info_json = \
+                response.xpath("//script[contains(text(), 'var productJsonData = {')]/text()").extract()
+            product_info_json = product_info_json[0].strip() if product_info_json else ''
+            start_index = product_info_json.find("var productJsonData = ") + len("var productJsonData = ")
+            end_index = product_info_json.rfind(";")
+            product_info_json = product_info_json[start_index:end_index].strip()
+            product_info_json = json.loads(product_info_json)
+
+            description = product_info_json["productItem"]["accordions"]["productDetails"]["content"]
+            search = re.search(r'<(p).*?>(.*?)</\1>.*?', description)
+            if search:
+                description = search.group(2)
+        except:
+            description = is_empty(response.xpath(
+                '//meta[@name="description"][string-length(@content)>0]/@content').extract())
 
         return description
 
