@@ -209,7 +209,7 @@ class TargetScraper(Scraper):
             if 'downstream_description' in self.item_info['item']['product_description']:
                 return self.item_info['item']['product_description']['downstream_description']
             else:
-                return ''
+                return None
 
         description = "".join(self.tree_html.xpath("//span[@itemprop='description']//text()")).strip()
         description_copy = "".join(self.tree_html.xpath("//div[@class='details-copy']//text()")).strip()
