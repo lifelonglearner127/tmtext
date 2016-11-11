@@ -80,6 +80,7 @@ class AmazonScraper(Scraper):
 
     @handle_badstatusline
     def _request(self, url, data=None, allow_redirects=True):
+        #print 'REQUESTING %s WITH PROXIES %s' % (url, self.proxies_enabled)
         if self.proxies_enabled and 'amazon.com' in url:
             return requests.get(url, \
                     data=data, \
@@ -90,7 +91,7 @@ class AmazonScraper(Scraper):
                     allow_redirects=allow_redirects)
         else:
             headers = {'User-Agent': self.select_browser_agents_randomly()}
-            return requests.get(url, data=data, headers=headers, timeout=10)
+            return requests.get(url, data=data, headers=headers, timeout=20)
 
     def _extract_page_tree(self, retry=0, proxy_retry=0, captcha_data=None):
         # request https instead of http
@@ -158,6 +159,9 @@ class AmazonScraper(Scraper):
                 self.ERROR_RESPONSE['failure_type'] = 'max_retries'
                 return
 
+            self.is_timeout = True
+            self.ERROR_RESPONSE['failure_type'] = str(e)
+
         except Exception, e:
             print 'Error extracting', self.product_page_url, type(e), e
 
@@ -169,6 +173,9 @@ class AmazonScraper(Scraper):
                 return
             else:
                 if self.proxies_enabled:
+                    return self._extract_page_tree(retry, proxy_retry+1)
+                elif retry == self.MAX_RETRIES - 1:
+                    self.proxies_enabled = True
                     return self._extract_page_tree(retry, proxy_retry+1)
                 else:
                     return self._extract_page_tree(retry+1)
@@ -187,6 +194,7 @@ class AmazonScraper(Scraper):
 
         # it's a captcha page
         if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
+            print 'GOT CAPTCHA for', self.product_page_url
             if retry < self.MAX_RETRIES - 1:
                 image = self.tree_html.xpath(".//img/@src")
                 if image:
