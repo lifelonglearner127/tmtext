@@ -176,7 +176,7 @@ class StaplesScraper(Scraper):
     def _model_meta(self):
         return None
 
-    def _description(self):
+    def _shelf_description(self):
         self._get_long_and_short_description()
 
         if self.description:
@@ -188,7 +188,7 @@ class StaplesScraper(Scraper):
         if self.long_description and not self.long_description == self.description:
             return self.long_description
 
-    def _bullets(self):
+    def _description(self):
         self._get_long_and_short_description()
 
         if self.bullet_list:
@@ -527,7 +527,7 @@ class StaplesScraper(Scraper):
         "model" : _model, \
         "upc" : _upc, \
         "long_description" : _long_description, \
-        "bullets" : _bullets, \
+        "shelf_description": _shelf_description, \
         "variants" : _variants, \
         "no_longer_available" : _no_longer_available, \
 
