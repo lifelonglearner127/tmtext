@@ -1163,6 +1163,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             # Parse selected product
             selected_product = self._parse_selected_product_alternative(data)
 
+            # Parse selected product offers
+            selected_product_offers = self._parse_selected_product_offers(selected_product)
+
             # Parse marketplaces
             marketplaces_data = self._parse_marketplaces_data_alternative(data)
 
@@ -1175,7 +1178,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, 'title', title)
 
             # Parse out of stock
-            is_out_of_stock = self._parse_out_of_stock_alternative(marketplaces_data)
+            is_out_of_stock = self._parse_out_of_stock_alternative(marketplaces_data, selected_product_offers)
             cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
 
             # Parse price
@@ -1191,7 +1194,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, 'image_url', image_url)
 
             # Parse marketplaces
-            marketplaces_names = self._parse_marketplaces_names(data)
+            # marketplaces_names = self._parse_marketplaces_names(data)
             # marketplace = self._parse_marketplaces_alternative(marketplaces_data, marketplaces_names)
             # cond_set_value(product, 'marketplace', marketplace)
 
@@ -1206,6 +1209,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             # Parse upc
             upc = self._parse_upc_alternative(selected_product)
             cond_set_value(product, 'upc', upc)
+
+    @staticmethod
+    def _parse_selected_product_offers(selected_product):
+        return selected_product.get('offers', [])
 
     @staticmethod
     def _parse_selected_product_alternative(data):
@@ -1229,9 +1236,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         return selected_product.get('upc')
 
     @staticmethod
-    def _parse_out_of_stock_alternative(marketplaces):
+    def _parse_out_of_stock_alternative(marketplaces, selected_product_offers):
         for offer in marketplaces:
-            if offer.get('productAvailability', {}).get('availabilityStatus') == "IN_STOCK":
+            offer_id = offer.get('id')
+            if offer_id in selected_product_offers\
+                    and offer.get('productAvailability', {}).get('availabilityStatus') == "IN_STOCK":
                 return False
         return True
 
@@ -1239,7 +1248,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def _parse_price_alternative(marketplaces):
         prices = [marketplace.get('pricesInfo', {}).get('priceMap', {}).get('CURRENT', {}).get('price')
                   for marketplace in marketplaces]
-        price = min(prices)
+        try:
+            price = min(prices)
+        except:
+            price = 0
         return Price(priceCurrency='USD', price=price)
 
     @staticmethod
