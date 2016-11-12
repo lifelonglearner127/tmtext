@@ -275,7 +275,8 @@ class WalmartScraper(Scraper):
                 self.page_raw_text = contents
                 self.tree_html = html.fromstring(contents)
 
-                self._failure_type()
+                if self._failure_type() == 'No product name':
+                    continue
 
                 return
 
