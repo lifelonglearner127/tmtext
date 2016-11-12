@@ -265,7 +265,8 @@ class KohlsScraper(Scraper):
                     features_ul = 1
 
                 if features_ul == 1:
-                    long_description += html.tostring(element_block)
+                    if len(element_block.xpath('./em')) == 0:
+                        long_description += html.tostring(element_block)
         else:
             is_long_description = False
 
