@@ -142,7 +142,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         # avoid tons of 'items' in logs
         self.search_sort = search_sort
-        # SiteProductItem.__repr__ = lambda _: '[product item]'
+        SiteProductItem.__repr__ = lambda _: '[product item]'
         self.use_data_from_redirect_url = kwargs.get('use_data_from_redirect_url', False)
         self.username = kwargs.get('username', None)
         super(WalmartProductsSpider, self).__init__(
@@ -450,7 +450,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         # TODO fix this there was exceptions.AttributeError: while parsing
         # https://www.walmart.com/nco/Better-Homes-and-Gardens-Bankston-5-Piece-Dining-Set-Mocha/35871841
-        # self._populate_from_js_alternative(response, product)
+        self._populate_from_js_alternative(response, product)
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
         buyer_reviews = self._build_buyer_reviews(response)
@@ -460,7 +460,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, 'buyer_reviews', 0)
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
         if 'brand' not in product:
-            cond_set_value(product, 'brand', u'NO BRAND')
+            cond_set_value(product, 'brand', None)
         if self.scrape_related_products:
             self._gen_related_req(response)
 
