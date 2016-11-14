@@ -1249,7 +1249,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         prices = [marketplace.get('pricesInfo', {}).get('priceMap', {}).get('CURRENT', {}).get('price')
                   for marketplace in marketplaces]
         try:
-            price = min(prices)
+            price = float(min(prices))
         except:
             price = 0
         return Price(priceCurrency='USD', price=price)
