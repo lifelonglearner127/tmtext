@@ -143,7 +143,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         # avoid tons of 'items' in logs
         self.search_sort = search_sort
-        # SiteProductItem.__repr__ = lambda _: '[product item]'
+        SiteProductItem.__repr__ = lambda _: '[product item]'
         self.use_data_from_redirect_url = kwargs.get('use_data_from_redirect_url', False)
         self.username = kwargs.get('username', None)
         super(WalmartProductsSpider, self).__init__(
