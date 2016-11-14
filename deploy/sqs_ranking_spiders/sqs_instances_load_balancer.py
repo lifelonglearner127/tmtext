@@ -55,8 +55,8 @@ def scale_instances(tasks_per_instance, group_name, total_groups):
 
 
 if __name__ == '__main__':
-    groups_names = ('SCCluster1', 'SCCluster2', 'SCCluster3', 'SCCluster4')
+    groups_names = ('SCCluster3', 'SCCluster4')  # contact Alex Kondratiev before changing this!
     for group_name in groups_names:
         logger.info('PROCESSING QUEUE %s', group_name)
-        scale_instances(tasks_per_instance=32, group_name=group_name,
+        scale_instances(tasks_per_instance=16, group_name=group_name,
                         total_groups=len(groups_names))
