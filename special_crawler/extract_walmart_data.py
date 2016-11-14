@@ -19,7 +19,6 @@ from extract_data import Scraper
 from compare_images import compare_images
 from spiders_shared_code.walmart_variants import WalmartVariants
 
-
 def handle_badstatusline(f):
     """https://github.com/mikem23/keepalive-race
     """
@@ -877,6 +876,9 @@ class WalmartScraper(Scraper):
 
             if not product_name_node:
                 product_name_node = self.tree_html.xpath("//h1[@itemprop='name']/span")
+
+            if not product_name_node:
+                product_name_node = self.tree_html.xpath("//h2[contains(@class, 'prod-ProductTitle')]/div")
 
             if product_name_node:
                 return product_name_node[0].text_content().strip()
