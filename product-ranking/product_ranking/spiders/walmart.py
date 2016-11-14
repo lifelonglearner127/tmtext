@@ -1182,8 +1182,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
 
             # Parse price
-            price = self._parse_price_alternative(marketplaces_data)
-            cond_set_value(product, 'price', price)
+            price = self._parse_price_alternative(marketplaces_data, selected_product_offers)
+            cond_set_value(product, 'price', Price(priceCurrency='USD', price=price))
 
             # Parse description
             description = self._parse_description_alternative(selected_product)
@@ -1209,6 +1209,55 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             # Parse upc
             upc = self._parse_upc_alternative(selected_product)
             cond_set_value(product, 'upc', upc)
+
+            # Parse products
+            products = self._parse_products_alternative(data)
+
+            # Parse variants
+            variants = self._parse_variants_alternative(response, marketplaces_data, data, products, selected_product)
+            cond_set_value(product, 'variants', variants)
+
+    @staticmethod
+    def _parse_products_alternative(data):
+        return data.get('product', {}).get('products', {})
+
+    def _parse_variants_alternative(self, response, marketplaces, data, products, selected_product):
+        variants = []
+        primary_product_id = data.get('product', {}).get('primaryProduct')
+        variants_map = data.get('product', {}).get('variantCategoriesMap').get(primary_product_id, {})
+        for product in products.values():
+            selected_product_offers = self._parse_selected_product_offers(product)
+            price = self._parse_price_alternative(marketplaces, selected_product_offers)
+            variant = {}
+            properties = product.get('variants', {})
+            variant_id = product.get('usItemId')
+            url = urlparse.urljoin(response.url, '/ip/{}'.format(variant_id))
+            selected_id = selected_product.get('usItemId')
+            selected = selected_id == variant_id
+            variant['selected'] = selected
+            variant['url'] = url
+            variant['price'] = price
+            properties = self._parse_variant_properties_alternative(variant, variants_map, properties)
+            variant['properties'] = properties
+            variants.append(variant)
+        return variants if len(variants) > 1 else None
+
+    @staticmethod
+    def _parse_variant_properties_alternative(variant, variants_map, properties):
+        property_data = {}
+        for property_name, property_value in properties.items():
+            variant_data = variants_map.get(
+                property_name).get('variants', {}).get(property_value)
+            name = variant_data.get('name')
+            in_stock = variant_data.get('availabilityStatus') == 'AVAILABLE'
+            variant['in_stock'] = in_stock
+            if 'color' in property_name:
+                property_data['color'] = name
+            elif 'size' in property_name:
+                property_data['size'] = name
+            elif 'number_of_pieces' in property_name:
+                property_data['count'] = name
+        return property_data
 
     @staticmethod
     def _parse_selected_product_offers(selected_product):
@@ -1245,14 +1294,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         return True
 
     @staticmethod
-    def _parse_price_alternative(marketplaces):
+    def _parse_price_alternative(marketplaces, offers):
         prices = [marketplace.get('pricesInfo', {}).get('priceMap', {}).get('CURRENT', {}).get('price')
-                  for marketplace in marketplaces]
+                  for marketplace in marketplaces if marketplace.get('id') in offers]
         try:
-            price = min(prices)
+            price = float(min(prices))
         except:
             price = 0
-        return Price(priceCurrency='USD', price=price)
+        return price
 
     @staticmethod
     def _parse_description_alternative(selected_product):
