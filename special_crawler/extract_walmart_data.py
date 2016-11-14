@@ -13,6 +13,7 @@ import requests
 import random
 import yaml
 from requests.auth import HTTPProxyAuth
+from HTMLParser import HTMLParser
 
 from extract_data import Scraper
 from compare_images import compare_images
@@ -275,7 +276,17 @@ class WalmartScraper(Scraper):
                 self.page_raw_text = contents
                 self.tree_html = html.fromstring(contents)
 
-                if self._failure_type() == 'No product name':
+                # Retry some failure types
+                try:
+                    self._failure_type()
+                    if self.failure_type in ['No product name', 'Replacement unicode character']:
+                        print 'GOT FAILURE TYPE %s for %s' % (self.failure_type, \
+                            self.product_page_url)
+                        self.is_timeout = True
+                        self.ERROR_RESPONSE['failure_type'] = self.failure_type
+                        continue
+                except Exception, e:
+                    print 'Error getting failure type', self.product_page_url, e
                     continue
 
                 return
@@ -299,7 +310,8 @@ class WalmartScraper(Scraper):
                 print 'Error extracting', self.product_page_url, type(e), e
 
         self.is_timeout = True
-        self.ERROR_RESPONSE["failure_type"] = "Timeout"
+        if not self.ERROR_RESPONSE['failure_type']:
+            self.ERROR_RESPONSE['failure_type'] = 'Timeout'
 
     # checks input format
     def check_url_format(self):
@@ -863,6 +875,9 @@ class WalmartScraper(Scraper):
                 # assume old design
                 product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
 
+            if not product_name_node:
+                product_name_node = self.tree_html.xpath("//h1[@itemprop='name']/span")
+
             if product_name_node:
                 return product_name_node[0].text_content().strip()
         except Exception, e:
@@ -1247,7 +1262,7 @@ class WalmartScraper(Scraper):
             shelf_description_html = shelf_description_html[:shelf_description_html.rfind("</div>")]
 
             if shelf_description_html and shelf_description_html.strip():
-                return shelf_description_html.strip()
+                return HTMLParser().unescape(shelf_description_html.strip())
 
         return None
 
@@ -2820,9 +2835,20 @@ class WalmartScraper(Scraper):
         if "We can't find the product you are looking for, but we have similar items for you to consider." in text_contents:
             self.failure_type = "404 Error"
 
+        product_name = self._product_name_from_tree()
+
         # If there is no product name, return failure
-        if not self._is_collection_url() and not self._product_name_from_tree():
+        if not self._is_collection_url() and not product_name:
             self.failure_type = "No product name"
+            return self.failure_type
+
+        shelf_description = self._shelf_description()
+
+        if u'\xef\xbf\xbd' in product_name \
+            or u'\ufffd' in product_name \
+            or u'\xef\xbf\xbd' in shelf_description \
+            or u'\ufffd' in shelf_description:
+            self.failure_type = "Replacement unicode character"
 
         return self.failure_type
 
