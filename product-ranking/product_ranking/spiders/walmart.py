@@ -452,6 +452,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if self.sponsored_links:
             product["sponsored_links"] = self.sponsored_links
 
+        # TODO fix this there was exceptions.AttributeError: while parsing
+        # https://www.walmart.com/nco/Better-Homes-and-Gardens-Bankston-5-Piece-Dining-Set-Mocha/35871841
         self._populate_from_js_alternative(response, product)
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
@@ -462,7 +464,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, 'buyer_reviews', 0)
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
         if 'brand' not in product:
-            cond_set_value(product, 'brand', u'NO BRAND')
+            cond_set_value(product, 'brand', None)
         if self.scrape_related_products:
             self._gen_related_req(response)
 
@@ -989,7 +991,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 ".//*[@id='WMItemBrandLnk']//*[@itemprop='brand']/text()").extract())
         if not brand:
             brand = guess_brand_from_first_words(product.get('title', '').replace(u'®', ''))
-        if brand and '&amp;' in brand:
+        elif '&amp;' in brand:
             brand = brand.replace('&amp;', "&")
         cond_set_value(product, 'brand', brand)
 
@@ -1195,7 +1197,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, 'image_url', image_url)
 
             # Parse marketplaces
-            marketplaces_names = self._parse_marketplaces_names(data)
+            # marketplaces_names = self._parse_marketplaces_names(data)
             # marketplace = self._parse_marketplaces_alternative(marketplaces_data, marketplaces_names)
             # cond_set_value(product, 'marketplace', marketplace)
 
@@ -1214,11 +1216,21 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     @staticmethod
     def _parse_selected_product_alternative(data):
         selected = data.get('product', {}).get('selected', {}).get('product')
-        return data.get('product', {}).get('products', {}).get(selected, {})
+        if selected:
+            return data.get('product', {}).get('products', {}).get(selected, {})
+        else:
+            return data.get('product', {}).get('primaryProduct', {})
 
     @staticmethod
     def _parse_marketplaces_data_alternative(data):
-        return data.get('product', {}).get('offers', {}).values()
+        # if there is one seller, structure of json is different
+        needed_data = data.get('product', {}).get('offers')
+        if needed_data.get("availabilityStatus"):
+            # pprint.pprint([needed_data])
+            return [needed_data]
+        else:
+            # pprint.pprint(needed_data.values())
+            return needed_data.values()
 
     @staticmethod
     def _parse_brand_alternative(selected_product):
@@ -1234,9 +1246,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_out_of_stock_alternative(marketplaces):
-        for offer in marketplaces:
-            if offer.get('productAvailability', {}).get('availabilityStatus') == "IN_STOCK":
-                return False
+        if len(marketplaces) == 1:
+            for offer in marketplaces:
+                if offer.get('availabilityStatus') == "IN_STOCK":
+                    return False
+        else:
+            for offer in marketplaces:
+                if offer.get('productAvailability', {}).get('availabilityStatus') == "IN_STOCK":
+                    return False
         return True
 
     @staticmethod
