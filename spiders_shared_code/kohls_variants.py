@@ -5,6 +5,7 @@ import lxml.html
 import itertools
 import json
 
+from lxml import html, etree
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -43,6 +44,7 @@ class KohlsVariants(object):
         if product_info_json and product_info_json["productItem"].get("variants", None):
             variants_list = []
             color_value_list = size_value_list = None
+            default_color = default_size = None
 
             if product_info_json["productItem"]["variants"].get("colorList", None):
                 color_value_list = product_info_json["productItem"]["variants"]["colorList"]
@@ -55,6 +57,12 @@ class KohlsVariants(object):
 
                 if product_info_json["productItem"]["variants"].get("noInventorySizes", None):
                     size_value_list = list(set(size_value_list) - set(product_info_json["productItem"]["variants"]["noInventorySizes"]))
+
+            if product_info_json["productItem"]["variants"].get("preSelectedColor", None):
+                default_color = product_info_json["productItem"]["variants"]["preSelectedColor"]
+
+            if product_info_json["productItem"]["variants"].get("preSelectedSize", None):
+                default_size = product_info_json["productItem"]["variants"]["preSelectedSize"]
 
             attribute_values_list = []
             attribute_name_list = []
@@ -75,12 +83,17 @@ class KohlsVariants(object):
                     price = re.findall(r"\d*\.\d+|\d+", price.replace(",", ""))
                     price = float(price[0])
                     property = {}
+                    selected = False
 
                     if "color" in attribute_name_list:
                         property["color"] = variant_sku["color"]
+                        if default_color == property["color"]:
+                            selected = True
 
                     if "size" in attribute_name_list:
                         property["size"] = variant_sku["size2"]
+                        if default_size == property["size"]:
+                            selected = True
 
                     obj = {
                         "skuId": variant_sku["skuId"],
@@ -88,7 +101,7 @@ class KohlsVariants(object):
                         "price": price,
                         "in_stock": variant_sku["inventoryStatus"],
                         "properties": property,
-                        "selected": False
+                        "selected": selected
                     }
 
                     variants_list.append(obj)
