@@ -2,7 +2,6 @@ import lxml.html
 # import requests
 import re
 from urlparse import urljoin
-from itertools import product
 
 
 class BestBuyVariants(object):
@@ -28,7 +27,7 @@ class BestBuyVariants(object):
                     try:
                         skuId = re.search('skuId=(.*)', swatch.xpath('@data-refresh-url')[0]).group(1)
                         # Get variations of default skelt
-                        vr = in_stock_variations.get(skuId, {'skuId': skuId, 
+                        vr = in_stock_variations.get(skuId, {'skuId': skuId,
                                                              'properties':{},
                                                              'url':urljoin(self.product_page_url, swatch.xpath('@href')[0]),
                                                              'in_stock': True})

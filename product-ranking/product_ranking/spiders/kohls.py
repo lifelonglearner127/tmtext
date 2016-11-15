@@ -3,13 +3,11 @@ from __future__ import division, absolute_import, unicode_literals
 
 import re
 import json
-import string
 import urllib
 
 from scrapy.http import Request
 from scrapy import Selector
-from scrapy.log import ERROR, INFO, WARNING
-from scrapy.conf import settings
+from scrapy.log import WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews

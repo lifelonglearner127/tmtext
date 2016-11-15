@@ -1468,14 +1468,16 @@ def restart_scrapy_daemon():
     """
     Restart this script after update source code.
     """
+    global REPO_BASE_PATH
     logger.info('Scrapy daemon restarting...')
-    arguments = ['python'] + sys.argv
+    arguments = ['python'] + [REPO_BASE_PATH+'/deploy/sqs_ranking_spiders/scrapy_daemon.py'] + sys.argv[1:]
     if 'restarted' not in arguments:
         arguments += ['restarted']
     else:
         logger.error('Error while restarting scrapy daemon. '
                      'Already restarted.')
         return
+    logging.info('Starting %s with args %s' % (sys.executable, arguments))
     os.execv(sys.executable, arguments)
 
 

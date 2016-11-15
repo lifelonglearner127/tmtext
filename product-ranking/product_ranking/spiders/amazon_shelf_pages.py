@@ -15,7 +15,6 @@ from .amazon import AmazonProductsSpider
 try:
     from captcha_solver import CaptchaBreakerWrapper
 except ImportError as e:
-    import sys
     print(
         "### Failed to import CaptchaBreaker.",
         "Will continue without solving captchas:",

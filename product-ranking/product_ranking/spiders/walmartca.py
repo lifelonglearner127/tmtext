@@ -12,15 +12,13 @@ from datetime import datetime
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
-from scrapy import signals
-from scrapy.xlib.pydispatch import dispatcher
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
                                    BuyerReviews, Price)
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
-    cond_set, cond_set_value, FLOATING_POINT_RGEX
+    cond_set, cond_set_value
 from product_ranking.validation import BaseValidator
 from product_ranking.walmartca_related_product import RR
 
@@ -175,7 +173,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                 yield Request(url,
                               self._parse_single_product,
                               meta={'product': prod})
-    
+
     def set_cookie(self, response):
         """This function create same Request for setting right Cookie."""
         return Request(
@@ -189,7 +187,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         """
         Main parsing product method
         """
-        
+
         reqs = []
         product = response.meta['product']
 
@@ -215,7 +213,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                 "productid": product_id,
                 "skus": [skus]
             }]
-        
+
             request_data = json.dumps(request_data).replace(' ', '')
 
             reqs.append(FormRequest(
@@ -504,7 +502,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         if title:
             title = Selector(text=title).xpath('string()').extract()
             product["title"] = is_empty(title, "").strip()
-        
+
         # Get price
         price = response.xpath('//div[contains(@class, "microdata-price")]/'
                                '*[@itemprop="price"]/text() |'
@@ -651,7 +649,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         try:
             special_price = product_data['baseProdInfo']['price_store_was_price']
             online_status = product_data['baseProdInfo']['online_status'][0]
-            
+
             if online_status != u'90':
                 cond_set_value(product, 'special_pricing', True)
             else:
@@ -683,10 +681,10 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                         price = price.replace(',', '')
                         price = format(float(price), '.2f')
                     variant['price'] = price
-                    
+
                     color = is_empty(var.get('variantKey_en_Colour', []))
                     size = is_empty(var.get('variantKey_en_Size', []))
-                    waist_size = is_empty(var.get('variantKey_en_Waist_size_-_inches'),[])                   
+                    waist_size = is_empty(var.get('variantKey_en_Waist_size_-_inches'),[])
                     if size:
                         properties['size'] = size
                     if color:
@@ -694,7 +692,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                     if waist_size:
                         properties['waist_size'] = waist_size
                     variant['properties'] = properties
-                    
+
                     variants[sku_id] = variant
             except (KeyError, ValueError):
                 variants = []
@@ -742,7 +740,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         data = json.loads(
             response.body_as_unicode()
         )
-        
+
         try:
             product_info = data['products'][0]
             variants_info = product_info['skus']
@@ -750,7 +748,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             final_variants = []
             list_out_of_stock = ['70', '80', '85', '87', '90']
             list_not_sold_online = ['85', '87', '90']
-            
+
             # Set limited status for main product
             availability = product_info['availability']
             product['is_out_of_stock'] = availability in list_out_of_stock
@@ -760,7 +758,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                 product['limited_stock'] = True
             else:
                 product['limited_stock'] = False
-            
+
             #Taking right amount of price and availability status
             try:
                 currency = re.findall('priceCurrency=(.*?),',str(product['price']))[0]
@@ -780,9 +778,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                     callback=self._parse_store_status,
                     headers={'X-Requested-With': 'XMLHttpRequest'}
                 ))
-            else: 
+            else:
                 product['price'] = Price(priceCurrency=currency, price=price)
-               
+
             # Set limited status for product variants
             if variants:
                 for var in variants_info:
@@ -791,7 +789,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                     availability = var['availability']
                     variants[sku_id]['is_out_of_stock'] = availability in list_out_of_stock
                     variants[sku_id]['is_in_store_only'] = availability in list_not_sold_online
-                    
+
                     final_variants.append(variants[sku_id])
 
                 product['variants'] = final_variants
@@ -799,7 +797,7 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             self.log(
                 "Failed to extract limited stock info from %r." % response.url, WARNING
             )
-        
+
         if reqs:
             return self.send_next_request(reqs, response)
 
@@ -897,13 +895,13 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             if price:
                 product['price'] = Price(priceCurrency=currency, price=str(price))
                 break
-                         
-        if price:            
+
+        if price:
             if product['is_out_of_stock']:
                     product['is_in_store_only'] = True
         else:
             product['is_in_store_only'] = False
-                
+
         if reqs:
             return self.send_next_request(reqs, response)
 

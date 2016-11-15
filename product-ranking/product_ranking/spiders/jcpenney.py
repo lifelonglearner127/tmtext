@@ -10,7 +10,7 @@ import random
 import urlparse
 
 import requests
-from scrapy.http import Request, FormRequest
+from scrapy.http import Request
 from scrapy import Selector
 from scrapy.log import WARNING
 

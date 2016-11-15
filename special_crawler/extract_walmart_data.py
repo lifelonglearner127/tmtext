@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import functools
 import re
 import sys
 import json
@@ -16,6 +17,24 @@ from requests.auth import HTTPProxyAuth
 from extract_data import Scraper
 from compare_images import compare_images
 from spiders_shared_code.walmart_variants import WalmartVariants
+
+
+def handle_badstatusline(f):
+    """https://github.com/mikem23/keepalive-race
+    """
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        for _ in range(2):
+            try:
+                return f(*args, **kwargs)
+            except requests.exceptions.ConnectionError as e:
+                if 'httplib.BadStatusLine' in e.message:
+                    continue
+                raise
+        else:
+            raise
+    return wrapper
+
 
 class WalmartScraper(Scraper):
 
@@ -63,6 +82,9 @@ class WalmartScraper(Scraper):
         if kwargs.get('additional_requests'):
             self.additional_requests = kwargs.get('additional_requests') == '1'
         print 'Additional requests', self.product_page_url, self.additional_requests
+
+        if kwargs.get('walmart_api_key'):
+            self.CRAWLERA_APIKEY = kwargs.get('walmart_api_key')
 
         # whether product has any webcollage media
         self.has_webcollage_media = False
@@ -128,21 +150,72 @@ class WalmartScraper(Scraper):
         self.is_legacy_review = False
         self.wv = WalmartVariants()
         self.is_bundle_product = False
+        self.temporary_unavailable = 0
 
-        self.proxy_host = "content.crawlera.com"
-        self.proxy_port = "8010"
-        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
-        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
-                        "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
+        n = random.randint(1, 100)
+
+        walmart_proxy_crawlera = kwargs.get('walmart_proxy_crawlera') or 0
+        walmart_proxy_proxyrain = kwargs.get('walmart_proxy_proxyrain') or 0
+        walmart_proxy_shaderio = kwargs.get('walmart_proxy_shaderio') or 0
+        walmart_proxy_luminati = kwargs.get('walmart_proxy_luminati') or 0
+
+        if n <= walmart_proxy_proxyrain:
+            self.PROXY = 'proxyrain'
+            print 'Using proxyRAIN', self.product_page_url
+
+            self.proxy_host = "10.0.5.241"
+            self.proxy_port = "7708"
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+            self.proxy_auth = None
+
+        elif n <= walmart_proxy_proxyrain + walmart_proxy_shaderio:
+            self.PROXY = 'shaderio'
+            print 'Using shader.io', self.product_page_url
+
+            self.proxy_host = "10.0.5.12"
+            self.proxy_port = "7708"
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+            self.proxy_auth = None
+
+        elif n <= walmart_proxy_proxyrain + walmart_proxy_shaderio + walmart_proxy_luminati:
+            self.PROXY = 'luminati'
+            print 'Using luminati', self.product_page_url
+
+            self.proxy_host = "10.0.5.78"
+            self.proxy_port = "7708"
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+            self.proxy_auth = None
+
+        else:
+            self.PROXY = 'crawlera'
+            print 'Using Crawlera with API KEY', self.product_page_url, self.CRAWLERA_APIKEY
+
+            self.proxy_host = "content.crawlera.com"
+            self.proxy_port = "8010"
+            self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
+                            "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
         self.proxies_enabled = True
 
-    def _request(self, url, headers=None):
+    def _proxy_service(self):
+        return self.PROXY
+
+    @handle_badstatusline
+    def _request(self, url, headers=None, allow_redirects=True):
         if self.proxies_enabled and 'walmart.com' in url:
+            if self.PROXY == 'proxyrain':
+                headers = {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Cache-Control': 'no-cache',
+                    'DNT': '1'}
+
             return requests.get(url, \
-                    proxies=self.proxies, auth=self.proxy_auth, \
+                    headers=headers, \
+                    proxies=self.proxies, \
+                    auth=self.proxy_auth, \
                     verify=False, \
-                    timeout=300)
+                    timeout=300,
+                    allow_redirects=allow_redirects)
         else:
             return requests.get(url, timeout=10)
 
@@ -161,35 +234,69 @@ class WalmartScraper(Scraper):
             max_retries = 5
 
             try:
-                resp = self._request(self.product_page_url)
+                resp = self._request(self.product_page_url,
+                                     allow_redirects=False)
 
-                if resp.url != self.product_page_url:
-                    print 'REDIRECTED', resp.url, self.product_page_url
-                    continue
+                # 3xx are redirections.
+                while str(resp.status_code).startswith('3'):
+                    print 'REDIRECTED {code}: {url}'.format(
+                        code=resp.status_code,
+                        url=resp.request.url
+                    )
+                    if 'location' not in resp.headers:
+                        self.ERROR_RESPONSE['failure_type'] = \
+                            '3xx location not found'
+                        return
+
+                    url = resp.headers['location']
+                    resp = self._request(url, allow_redirects=False)
 
                 if resp.status_code != 200:
                     print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
 
-                    if resp.status_code == 429:
-                        self.is_timeout = True
-                        self.ERROR_RESPONSE["failure_type"] = "429"
-                        return
+                    if resp.status_code == 520:
+                        # if response is 520, consider that 'temporarily unavailable'
+                        self.temporary_unavailable = 1
 
-                    break
+                    else:
+                        if resp.status_code == 404:
+                            self.is_timeout = True
+                            self.ERROR_RESPONSE['failure_type'] = '404 Not Found'
+                            return
+
+                        elif resp.status_code == 429:
+                            self.is_timeout = True
+                            self.ERROR_RESPONSE['failure_type'] = '429'
+                            return
+
+                        break
 
                 contents = self._clean_null(resp.text)
                 self.page_raw_text = contents
                 self.tree_html = html.fromstring(contents)
 
-                self._failure_type()
+                if self._failure_type() == 'No product name':
+                    continue
 
                 return
-            except Exception, e:
+
+            except requests.exceptions.ProxyError, e:
                 print 'Error extracting', self.product_page_url, type(e), e
 
-                if str(e) == "('Cannot connect to proxy.', error(104, 'Connection reset by peer'))" or re.search('Max retries exceeded', str(e)):
-                    max_retries = 100
-                    time.sleep(1)
+                self.is_timeout = True
+                self.ERROR_RESPONSE['failure_type'] = 'proxy'
+                return
+
+            except requests.exceptions.ConnectionError, e:
+                print 'Error extracting', self.product_page_url, type(e), e
+
+                if 'Max retries exceeded' in str(e):
+                    self.is_timeout = True
+                    self.ERROR_RESPONSE['failure_type'] = 'max_retries'
+                    return
+
+            except Exception, e:
+                print 'Error extracting', self.product_page_url, type(e), e
 
         self.is_timeout = True
         self.ERROR_RESPONSE["failure_type"] = "Timeout"
@@ -735,7 +842,6 @@ class WalmartScraper(Scraper):
             return 0
 
     # extract product name from its product page tree
-    # ! may throw exception if not found
     # TODO: improve, filter by tag class or something
     def _product_name_from_tree(self):
         """Extracts product name.
@@ -743,21 +849,24 @@ class WalmartScraper(Scraper):
         Returns:
             string containing product name, or None
         """
+        try:
+            if self._is_collection_url():
+                try:
+                    return re.search('"productName":"(.+?)"', self.page_raw_text).group(1)
+                except:
+                    return self.tree_html.xpath('//*[contains(@class,"prod-ProductTitle")]/div/text()')[0]
 
-        if self._is_collection_url():
-            try:
-                return re.search('"productName":"(.+?)"', self.page_raw_text).group(1)
-            except:
-                return self.tree_html.xpath('//*[contains(@class,"prod-ProductTitle")]/div/text()')[0]
+            # assume new design
+            product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
 
-        # assume new design
-        product_name_node = self.tree_html.xpath("//h1[contains(@class, 'product-name')]")
+            if not product_name_node:
+                # assume old design
+                product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
 
-        if not product_name_node:
-            # assume old design
-            product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
-
-        return product_name_node[0].text_content().strip()
+            if product_name_node:
+                return product_name_node[0].text_content().strip()
+        except Exception, e:
+            print 'Error extracting product name', self.product_page_url, e
 
     # extract walmart no
     def _site_id(self):
@@ -1802,6 +1911,9 @@ class WalmartScraper(Scraper):
 
         return False
 
+    def _temporary_unavailable(self):
+        return self.temporary_unavailable
+
     def _shipping(self):
         flag = 'not available'
 
@@ -2637,7 +2749,7 @@ class WalmartScraper(Scraper):
                     if self.product_info_json["buyingOptions"]["displayArrivalDate"].lower() == "see dates in checkout":
                         return 0
 
-                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False:
+                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False and self.product_info_json.get('analyticsData').get('inStock'):
                         return 0
 
                     if self.product_info_json['buyingOptions'].get('available') == True:
@@ -2664,6 +2776,10 @@ class WalmartScraper(Scraper):
         return None
 
     def _failure_type(self):
+        # if page is temporarily unavailable, do not consider that a failure
+        if self.temporary_unavailable:
+            return None
+
         # we ignore bundle product
         if self.tree_html.xpath("//div[@class='js-about-bundle-wrapper']") or \
                         "WalmartMainBody DynamicMode wmBundleItemPage" in self.page_raw_text:
@@ -3195,6 +3311,7 @@ class WalmartScraper(Scraper):
     """
 
     DATA_TYPES = { \
+        "proxy_service": _proxy_service, \
         # Info extracted from product page
         "upc": _upc_from_tree, \
         "product_name": _product_name_from_tree, \
@@ -3262,6 +3379,7 @@ class WalmartScraper(Scraper):
         "min_review": _min_review, \
         "reviews": _reviews, \
         "no_longer_available": _no_longer_available, \
+        "temporary_unavailable": _temporary_unavailable, \
         # video needs both page source and separate requests
         "video_count": _video_count, \
         "video_urls": _video_urls, \
