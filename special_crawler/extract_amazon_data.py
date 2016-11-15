@@ -722,17 +722,22 @@ class AmazonScraper(Scraper):
         if important_information:
             important_information = html.tostring( self.tree_html.xpath('//div[@id="importantInformation"]/div/div')[0])
 
-            name_index = important_information.find('<b>' + name)
+            tags = ['<b>', '<h5>']
+            tail_tags = ['</b>', '</h5>']
+            idx = 0
+            for t in tags:
+                name_index = important_information.find(t + name)
 
-            if name_index == -1:
-                return None
+                if name_index == -1:
+                    idx += 1
+                    continue
 
-            start_index = important_information.find('</b>', name_index) + 4
+                start_index = important_information.find(tail_tags[idx], name_index) + len(tail_tags[idx])
 
-            # end at the next bold element
-            end_index = important_information.find('<b>', start_index + 1)
+                # end at the next bold element
+                end_index = important_information.find(t, start_index + 1)
 
-            return important_information[start_index : end_index]
+                return important_information[start_index : end_index]
 
     def _amazon_ingredients(self):
         return self._important_information_helper('Ingredients')
