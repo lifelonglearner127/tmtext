@@ -442,6 +442,13 @@ class AmazonScraper(Scraper):
         if bullets and len(bullets) > 4:
             return self._clean_text(bullets[4].text_content())
 
+    def _bullets(self):
+        bullets = self.tree_html.xpath("//div[@id='feature-bullets']//li//text()")
+        bullets = [self._clean_text(r) for r in bullets if len(self._clean_text(r))>0]
+        if len(bullets) > 0:
+            return "\n".join(bullets)
+        return None
+
     def _seller_ranking(self):
         seller_ranking = []
 
@@ -1635,6 +1642,7 @@ class AmazonScraper(Scraper):
         "bullet_feature_3": _bullet_feature_3, \
         "bullet_feature_4": _bullet_feature_4, \
         "bullet_feature_5": _bullet_feature_5, \
+        "bullets": _bullets, \
         "usage": _usage, \
         "directions": _directions, \
         "warnings": _warnings, \
