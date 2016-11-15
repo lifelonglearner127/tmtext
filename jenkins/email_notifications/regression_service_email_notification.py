@@ -24,7 +24,7 @@ cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 today = date.today()
 
 fromaddr = "jenkins@contentanalyticsinc.com"
-toaddrs = ["adriana@contentanalyticsinc.com", "support@contentanalyticsinc.com", "no.andrey@gmail.com", "alex@contentanalyticsinc.com"]  # must be a list
+toaddrs = ["qa@contentanalyticsinc.com"]  # must be a list
 subject = "Regression Service Summary Report: {0}".format(today.isoformat())
 msg = MIMEMultipart(
         From=fromaddr,
