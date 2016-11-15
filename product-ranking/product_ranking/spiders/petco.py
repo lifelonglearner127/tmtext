@@ -2,6 +2,7 @@ import itertools
 import re
 import string
 import urllib
+import json
 
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.items import Price, SiteProductItem
@@ -123,19 +124,23 @@ class PetcoProductsSpider(ProductsSpider):
 
     def _parse_variants(self, response):
         variants = []
-        attributes = {}
-        for attr_value in response.xpath('//*[@name="attrValue"]'):
-            attribute = attr_value.xpath('@id').extract()[0]
-            attributes[attribute] = []
-            for value in attr_value.xpath('./option[position()>1]'):
-                value = value.xpath('@value').extract()[0]
-                attributes[attribute].append(value)
 
-        for prop in dict_product(attributes):
-            if prop:
-                vr = {}
-                vr['properties'] = prop
-                variants.append(vr)
+        try:
+            variants_info = json.loads(response.xpath('//*[contains(@id,"entitledItem_")]/text()').extract()[0])
+        except:
+            variants_info = {}
+
+        for attr_value in variants_info:
+            attributes = {}
+            variant_attribute = attr_value["Attributes"]
+            attributes['price'] = attr_value["RepeatDeliveryPrice"]["price"]
+            attributes['image_url'] = attr_value["ItemImage"]
+            if variant_attribute:
+                attr_text = attr_value["Attributes"].keys()[0].split('_')
+                attributes[attr_text[0]] = attr_text[1]
+
+            variants.append(attributes)
+
         return variants if variants else None
 
     def _parse_is_out_of_stock(self, response):
