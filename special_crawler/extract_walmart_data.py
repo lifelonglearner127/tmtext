@@ -1283,7 +1283,10 @@ class WalmartScraper(Scraper):
             shelf_description_html = shelf_description_html[:shelf_description_html.rfind("</div>")]
 
             if shelf_description_html and shelf_description_html.strip():
-                return HTMLParser().unescape(shelf_description_html.strip())
+                try:
+                    return HTMLParser().unescape(shelf_description_html.strip()).encode('latin_1').decode('utf-8')
+                except:
+                    return HTMLParser().unescape(shelf_description_html.strip())
 
         return None
 
