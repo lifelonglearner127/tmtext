@@ -1283,7 +1283,7 @@ class WalmartScraper(Scraper):
             shelf_description_html = shelf_description_html[:shelf_description_html.rfind("</div>")]
 
             if shelf_description_html and shelf_description_html.strip():
-                return HTMLParser().unescape(shelf_description_html.strip()).encode('utf-8')
+                return HTMLParser().unescape(shelf_description_html.strip())
 
         return None
 
@@ -2869,7 +2869,7 @@ class WalmartScraper(Scraper):
         shelf_description = self._shelf_description()
 
         if shelf_description:
-            if '\xef\xbf\xbd' in shelf_description or '\ufffd' in shelf_description:
+            if u'\xef\xbf\xbd' in shelf_description or u'\ufffd' in shelf_description:
                 self.failure_type = "Replacement unicode character"
 
         return self.failure_type
