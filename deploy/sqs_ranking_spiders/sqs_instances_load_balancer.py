@@ -56,6 +56,8 @@ def scale_instances(tasks_per_instance, group_name, total_groups):
 
 if __name__ == '__main__':
     groups_names = ('SCCluster3', 'SCCluster4')  # contact Alex Kondratiev before changing this!
+    # TODO: discuss with Alex what to do with this script (if we need it at all?)
+    #  if yes - update group configs (S3 key) and specify clearly there whether a group is autoscaled by this script or not
     for group_name in groups_names:
         logger.info('PROCESSING QUEUE %s', group_name)
         scale_instances(tasks_per_instance=16, group_name=group_name,
