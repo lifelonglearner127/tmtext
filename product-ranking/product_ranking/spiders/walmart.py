@@ -1305,7 +1305,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 return False
         if len(marketplaces) == 1:
             for offer in marketplaces:
-                offer_id = offer.get('id')
+                offer_id = offer.get('offerInfo', {}).get('offerId')
                 if offer_id in selected_product_offers and offer.get('availabilityStatus') == "IN_STOCK":
                     return False
         return True
@@ -1506,12 +1506,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 'is_out_of_stock',
                 not available,
             )
-            # In stock if at least one of variants in stock
-            # see bugzilla #12076
-            if product.get("variants"):
-                variants_instock = any([v.get('in_stock') for v in product.get('variants', [])])
-                if variants_instock:
-                    product['is_out_of_stock'] = False
             # the next 2 lines of code should not be uncommented, see BZ #1459
             #if response.xpath('//button[@id="WMItemAddToCartBtn"]').extract():
             #    product['is_out_of_stock'] = False
