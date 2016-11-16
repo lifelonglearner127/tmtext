@@ -670,6 +670,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             not_available = True
         if response.xpath('.//div[contains(text(), "This Item is no longer available")]'):
             not_available = True
+        if response.xpath('.//div[contains(@class, "price-display-oos-color")]'):
+            not_available = True
         return not_available
 
     def _on_api_response(self, response):
@@ -1168,6 +1170,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if data:
             # Parse selected product
             selected_product = self._parse_selected_product_alternative(data)
+            import pprint
+            pprint.pprint(selected_product)
+
 
             # Parse selected product offers
             selected_product_offers = self._parse_selected_product_offers(selected_product)
