@@ -143,7 +143,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         # avoid tons of 'items' in logs
         self.search_sort = search_sort
-        SiteProductItem.__repr__ = lambda _: '[product item]'
+        # SiteProductItem.__repr__ = lambda _: '[product item]'
         self.use_data_from_redirect_url = kwargs.get('use_data_from_redirect_url', False)
         self.username = kwargs.get('username', None)
         super(WalmartProductsSpider, self).__init__(
@@ -669,6 +669,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                           ' and contains(text(), "nformation unavailable")]'):
             not_available = True
         if response.xpath('.//div[contains(text(), "This Item is no longer available")]'):
+            not_available = True
+        if response.xpath('//*[contains(., "This item is no longer available")]'):
             not_available = True
         return not_available
 
@@ -1230,7 +1232,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def _parse_variants_alternative(self, response, marketplaces, data, products, selected_product):
         variants = []
         primary_product_id = data.get('product', {}).get('primaryProduct')
-        variants_map = data.get('product', {}).get('variantCategoriesMap').get(primary_product_id, {})
+        try:
+            variants_map = data.get('product', {}).get('variantCategoriesMap', {}).get(primary_product_id, {})
+        except:
+            variants_map = {}
         for product in products.values():
             selected_product_offers = self._parse_selected_product_offers(product)
             price = self._parse_price_alternative(marketplaces, selected_product_offers)
