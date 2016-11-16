@@ -20,11 +20,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 SECRET_KEY = 'z%qnqx%)je!0*g4$b)n0uc)7xx_13c2d1ew-mhd19l71-rz5ku'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-TEMPLATE_DEBUG = True
+TEMPLATE_DEBUG = DEBUG
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -37,11 +37,13 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_dumpdb',
     'walmart_developer_accounts',
     'nutrition_info_images',
     'statistics',
     'walmart_api',
     'mocked_walmart_api',
+    'fcgi',
 )
 
 REST_FRAMEWORK = {
@@ -62,6 +64,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'rest_apis_content_analytics.auth_middleware.AuthMiddleware'
 )
 
 ROOT_URLCONF = 'rest_apis_content_analytics.urls'
@@ -181,6 +184,7 @@ CACHES = {
 }
 
 SUBMISSION_HISTORY_CACHE_KEY = 'get_submission_history_as_json'
+STATISTICS_CACHE_KEY = 'get_statistics_as_json'
 
 
 if DEBUG and os.path.exists('/tmp/_django_log_sql'):
@@ -188,6 +192,8 @@ if DEBUG and os.path.exists('/tmp/_django_log_sql'):
         'level': 'DEBUG',
         'handlers': ['console'],
     }
+
+FORCE_SCRIPT_NAME = "/"
 
 
 TEMPLATES = [
@@ -210,7 +216,7 @@ TEST_TWEAKS = {
 IS_PRODUCTION = os.path.exists(
     os.path.dirname(__file__) + "/is_walmart_api_production_server")
 
-print "Server production mode? %s" % IS_PRODUCTION
+#print "Server production mode? %s" % IS_PRODUCTION
 
 try:
     from local_settings import *

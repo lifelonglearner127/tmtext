@@ -7,11 +7,11 @@ import time
 import urllib
 import urlparse
 import datetime
-from scrapy import Request, FormRequest, Selector
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy import Request, Selector
+from scrapy.log import WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews, scrapy_price_serializer
+    BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
@@ -29,7 +29,7 @@ class StaplesProductsSpider(BaseProductsSpider):
 
     PAGINATE_URL = "http://www.staples.com/{search_term}/directory_{search_term}?sby=0&pn={nao}"
 
-    CURRENT_NAO = 0
+    CURRENT_NAO = 1
     PAGINATE_BY = 18  # 18 products
     TOTAL_MATCHES = None  # for pagination
 
@@ -56,7 +56,7 @@ class StaplesProductsSpider(BaseProductsSpider):
             site_name=self.allowed_domains[0], *args, **kwargs)
         settings.overrides['CRAWLERA_ENABLED'] = True
         # This may be useful for debug
-        # settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
+        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
@@ -74,6 +74,10 @@ class StaplesProductsSpider(BaseProductsSpider):
         if 'Good thing this is not permanent' in response.body_as_unicode():
             product['not_found'] = True
             return product
+        maintenance_error = response.xpath('.//*[contains(text(), "The site is currently under maintenance.")]')
+        if maintenance_error:
+            self.log("Website under maintenance error, retrying request: {}".format(response.url), WARNING)
+            return Request(response.url, callback=self.parse_product, meta=meta, dont_filter=True)
         try:
             sku_url, js_data = self.parse_js_data(response)
         except Exception as e:
@@ -110,9 +114,10 @@ class StaplesProductsSpider(BaseProductsSpider):
             average_rating=js_data['review']['rating'],
             rating_by_star={'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
         )
-
-        self.parse_data_variant_price(response)
-
+        if self.scrape_variants_with_extra_requests:
+            self.parse_data_variant_price(response)
+        else:
+            product['variants'] = []
         # Parse price, related_product, reviews
         return self.parse_addition_data(response, sku, js_data)
 
@@ -123,12 +128,14 @@ class StaplesProductsSpider(BaseProductsSpider):
             return brand
 
     def parse_js_data(self, response):
-        data = re.findall(r' products\["(.+)"\] = (.+);', response.body_as_unicode())
+        data = response.xpath('.//script[contains(text(), "products[")]/text()').extract()
+        data = data[0] if data else None
         if data:
             try:
+                data = re.findall(r'\s?products\[[\"\'](.+)[\"\']\]\s?=\s?(.+);', data)
                 js_data = json.loads(data[0][1])
                 return data[0], js_data
-            except:
+            except BaseException:
                 return
 
     def clear_text(self, str_result):
@@ -138,35 +145,40 @@ class StaplesProductsSpider(BaseProductsSpider):
         meta = response.meta.copy()
         product = response.meta['product']
         reqs = meta.get('reqs', [])
-
-        jsonresponse = json.loads(response.body_as_unicode())
-        response_selector = Selector(text=self._htmlspecialchars_decode(
-            jsonresponse.get('result')))
         try:
-            num_reviews = response_selector.xpath(
-                '//span[@class="font-color-gray based-on"]/text()').re('\d+')[0]
-        except IndexError:
-            num_reviews = 0
-        try:
-            avg_rating = response_selector.xpath('//span[@class="yotpo-star-digits"]/text()').extract()[0].strip()
-        except IndexError:
-            avg_rating = 0
-        review_stars = response_selector.xpath(
-            '//span[contains(@class, "yotpo-sum-reviews")]/text()').re('\((\d+)\)')[::-1]
-        stars = product['buyer_reviews'].rating_by_star
-        for star_index, star_value in enumerate(review_stars):
-            star_index = str(star_index+1)
-            stars[star_index] = star_value
-        last_date = response_selector.xpath('//label[contains(@class, "yotpo-review-date")]/text()').extract()
+            jsonresponse = json.loads(response.body_as_unicode())
+            response_selector = Selector(text=self._htmlspecialchars_decode(
+                jsonresponse.get('result')))
+            try:
+                num_reviews = response_selector.xpath(
+                    '//span[@class="font-color-gray based-on"]/text()').re('\d+')[0]
+            except IndexError:
+                num_reviews = 0
+            try:
+                avg_rating = response_selector.xpath('//span[@class="yotpo-star-digits"]/text()').extract()[0].strip()
+            except IndexError:
+                avg_rating = 0
+            review_stars = response_selector.xpath(
+                '//span[contains(@class, "yotpo-sum-reviews")]/text()').re('\((\d+)\)')[::-1]
+            stars = product['buyer_reviews'].rating_by_star
+            for star_index, star_value in enumerate(review_stars):
+                star_index = str(star_index+1)
+                stars[star_index] = star_value
+            last_date = response_selector.xpath('//label[contains(@class, "yotpo-review-date")]/text()').extract()
 
-        product['buyer_reviews'] = BuyerReviews(
-            num_of_reviews=num_reviews,
-            average_rating=avg_rating,
-            rating_by_star=stars
-        )
-        if last_date:
-            last_buyer_review_date = datetime.datetime.strptime(last_date[0], '%m/%d/%y')
-            product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d-%m-%Y')
+            product['buyer_reviews'] = BuyerReviews(
+                num_of_reviews=num_reviews,
+                average_rating=avg_rating,
+                rating_by_star=stars
+            )
+            if last_date:
+                last_buyer_review_date = datetime.datetime.strptime(last_date[0], '%m/%d/%y')
+                product['last_buyer_review_date'] = last_buyer_review_date.strftime('%d-%m-%Y')
+        except BaseException as e:
+            self.log("Error extracting buyers reviews - {}".format(e), WARNING)
+            if 'No JSON object could be decoded' in e:
+                self.log("Repeating buyers reviews request", WARNING)
+                reqs.append(Request(response.url, callback=self.get_price_and_stockstatus, meta=meta, dont_filter=True))
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -298,29 +310,30 @@ class StaplesProductsSpider(BaseProductsSpider):
         except Exception as e:
             self.log("Error while forming request for base product data: {}".format(e), WARNING)
         # Get real variants, if any
-        import pprint
-        pprint.pprint(response.meta['product']['variants'])
-        for v in response.meta['product']['variants']:
-            try:
-                reqs.append(
-                    Request(
-                        url=self.PRICE_URL.format(sku=v['partnumber'],
-                                                  metadata__coming_soon_flag=js_data['metadata']['coming_soon_flag'],
-                                                  metadata__price_in_cart_flag=js_data['metadata']['price_in_cart_flag'],
-                                                  prod_doc_key=v['prod_doc_key'],
-                                                  metadata__product_type__id=js_data['metadata']['product_type']['id'],
-                                                  metadata__preorder_flag=js_data['metadata']['preorder_flag'],
-                                                  street_date=time.time(),
-                                                  metadata__channel_availability_for__id=
-                                                  js_data['metadata']['channel_availability_for']['id'],
-                                                  metadata__backorder_flag=js_data['metadata']['backorder_flag']),
-                        dont_filter=True,
-                        callback=self.get_variant_price,
-                        meta=meta,
-                    ))
+        # import pprint
+        # pprint.pprint(response.meta['product']['variants'])
+        if self.scrape_variants_with_extra_requests:
+            for v in response.meta['product']['variants']:
+                try:
+                    reqs.append(
+                        Request(
+                            url=self.PRICE_URL.format(sku=v['partnumber'],
+                                                      metadata__coming_soon_flag=js_data['metadata']['coming_soon_flag'],
+                                                      metadata__price_in_cart_flag=js_data['metadata']['price_in_cart_flag'],
+                                                      prod_doc_key=v['prod_doc_key'],
+                                                      metadata__product_type__id=js_data['metadata']['product_type']['id'],
+                                                      metadata__preorder_flag=js_data['metadata']['preorder_flag'],
+                                                      street_date=time.time(),
+                                                      metadata__channel_availability_for__id=
+                                                      js_data['metadata']['channel_availability_for']['id'],
+                                                      metadata__backorder_flag=js_data['metadata']['backorder_flag']),
+                            dont_filter=True,
+                            callback=self.get_variant_price,
+                            meta=meta,
+                        ))
 
-            except Exception as e:
-                self.log("Error while forming request for variant: {}".format(e), WARNING)
+                except Exception as e:
+                    self.log("Error while forming request for variant: {}".format(e), WARNING)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -343,22 +356,24 @@ class StaplesProductsSpider(BaseProductsSpider):
             #import pdb
             #pdb.set_trace()
             # additionalProductsWarrantyServices
-            new_variants = []
-            if jsonresponse.get('additionalProductsWarrantyServices'):
-                for warranty_variant in jsonresponse.get('additionalProductsWarrantyServices'):
-                    # changed format for variants from price object to simple float
-                    new_price = float(jsonresponse['pricing']['finalPrice']) + float(warranty_variant['price'])
-                    new_variants.append({
-                        'price': new_price,
-                        "partnumber": warranty_variant.get('partnumber',''),
-                        'isWarranty': warranty_variant.get('isWarranty', False),
-                        'warranty': warranty_variant.get('name',''),
-                        "prod_doc_key": warranty_variant.get('product_key_to',''),
-                        'properties': {"variant_name": warranty_variant.get('name',''),},
-                        'is_out_of_stock':product.get('is_out_of_stock'),
-                        'selected': False,
-                    })
-            meta['product']['variants'].extend(new_variants)
+            if self.scrape_variants_with_extra_requests:
+                new_variants = []
+                if jsonresponse.get('additionalProductsWarrantyServices'):
+                    for warranty_variant in jsonresponse.get('additionalProductsWarrantyServices'):
+                        # changed format for variants from price object to simple float
+                        new_price = float(jsonresponse['pricing']['finalPrice']) + float(warranty_variant['price'])
+                        in_stock = not product.get('is_out_of_stock') if product.get('is_out_of_stock') else None
+                        new_variants.append({
+                            'price': new_price,
+                            "partnumber": warranty_variant.get('partnumber',''),
+                            'isWarranty': warranty_variant.get('isWarranty', False),
+                            'warranty': warranty_variant.get('name',''),
+                            "prod_doc_key": warranty_variant.get('product_key_to',''),
+                            'properties': {"variant_name": warranty_variant.get('name',''),},
+                            'in_stock':in_stock,
+                            'selected': False,
+                        })
+                meta['product']['variants'].extend(new_variants)
         except BaseException as e:
             self.log("Error parsing base product data: {}".format(e), WARNING)
             if 'No JSON object could be decoded' in e:
@@ -381,15 +396,15 @@ class StaplesProductsSpider(BaseProductsSpider):
             v = v[0] if v else None
 
             if 'currentlyOutOfStock' in jsonresponse.get('cartAction'):
-                is_out_of_stock = True
+                in_stock = False
             else:
-                is_out_of_stock = False
+                in_stock = True
             new_price = jsonresponse['pricing'].get('finalPrice')
             # If variant exists, set parameters
             if v['prod_doc_key'] == id:
                 v['price'] = new_price
                 v['warranty'] = jsonresponse.get('name','')
-                v['is_out_of_stock'] = is_out_of_stock
+                v['in_stock'] = in_stock
                 v['selected'] = False
             else:
                 # create new variant
@@ -401,7 +416,7 @@ class StaplesProductsSpider(BaseProductsSpider):
                     'warranty': jsonresponse.get('name',''),
                     'isWarranty': False,
                     'properties':{"variant_name": v['properties'].get('variant_name',''),},
-                    'is_out_of_stock': is_out_of_stock,
+                    'in_stock': in_stock,
                     'selected': False,
                 }
                 if new_variant:
@@ -449,14 +464,15 @@ class StaplesProductsSpider(BaseProductsSpider):
         if self.TOTAL_MATCHES is None:
             self.log('No "next result page" link!')
             return
-        if self.CURRENT_NAO > self.TOTAL_MATCHES + self.PAGINATE_BY:
+        if self.CURRENT_NAO * self.PAGINATE_BY >= self.TOTAL_MATCHES:
             return  # it's over
-        self.CURRENT_NAO += self.PAGINATE_BY
+        self.CURRENT_NAO += 1
         return Request(
             self.PAGINATE_URL.format(
                 search_term=response.meta['search_term'],
                 nao=str(self.CURRENT_NAO)),
-            callback=self.parse, meta=response.meta
+            callback=self.parse, meta=response.meta,
+            dont_filter=True
         )
 
     def parse_data_variant_price(self, response):
@@ -488,7 +504,7 @@ class StaplesProductsSpider(BaseProductsSpider):
                 swatch_image = swatch_image.get('collection_image').split('$')[0] if swatch_image else None
                 v_image = swatch_image if not child.get('variant_image', '') else child.get('variant_image', '')
                 meta['product']['variants'].append({
-                                                    'is_out_of_stock':False,
+                                                    'in_stock':True,
                                                     'isWarranty': False,
                                                     'price': 0.0,
                                                     "partnumber": child.get('partnumber',''),

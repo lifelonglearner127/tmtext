@@ -7,7 +7,7 @@ import os
 import re
 import sys
 
-from fabric.api import cd, env, run, local, sudo, settings, prefix, put
+from fabric.api import env, sudo, put
 from fabric.contrib import files
 import cuisine
 

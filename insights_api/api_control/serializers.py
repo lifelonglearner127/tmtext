@@ -45,8 +45,7 @@ class BrandsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Brands
-        fields = ('id', 'name', 'created', 'company_id',
-                  'brand_type', 'parent_id')
+        fields = ('id', 'name', 'image_url')
         depth = 1
 
 class PriceDataSerializer(serializers.ModelSerializer):

@@ -2,8 +2,6 @@ import json
 
 import lxml.html
 import re
-import itertools
-import yaml
 
 class SamsclubVariants(object):
 

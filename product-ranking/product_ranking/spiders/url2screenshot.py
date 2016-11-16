@@ -13,11 +13,12 @@ import re
 import urlparse
 import shutil
 import datetime
+from requests.auth import HTTPProxyAuth
 
 import scrapy
 from scrapy.conf import settings
 from scrapy.http import Request, FormRequest
-from scrapy.log import INFO, WARNING, ERROR, DEBUG
+from scrapy.log import INFO, WARNING, ERROR
 import lxml.html
 try:
     from pyvirtualdisplay import Display
@@ -116,6 +117,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.remove_img = kwargs.get('remove_img', True)
         # proxy support has been dropped after we switched to Chrome
         self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
+        self.proxy_auth = None
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
         self.code_200_required = kwargs.get('code_200_required', True)
         self.close_popups = kwargs.get('close_popups', kwargs.get('close_popup', None))
@@ -146,6 +148,30 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self._site_settings_activated_for = domain
             self.log('Site-specified settings activated for: %s' % domain)
             self.check_bad_results_function = _check_bad_results_macys
+        if domain == 'walmart.com':
+            # middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+            # middlewares['product_ranking.randomproxy.RandomProxy'] = None
+            # settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+            # self.code_200_required = True
+            crawlera_apikey = "4810848337264489a1d2f2230da5c981"
+
+            # Crawlera auth for phantomjs
+            # self._proxy_auth = "{}:''".format(crawlera_apikey)
+            # self.driver = "phantomjs"
+
+            # self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
+            # self.proxy = "content.crawlera.com:8010"
+            # self.proxy_type = 'http'
+
+            # Using special squid connector
+            self.proxy = "10.0.5.36:7708"
+            self.proxy_type = 'http'
+
+            settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
+            settings.overrides['CRAWLERA_APIKEY'] = crawlera_apikey
+            settings.overrides['CRAWLERA_ENABLED'] = True
+            self._site_settings_activated_for = domain
+            self.log('Site-specified settings activated for: %s' % domain)
 
     def make_screenshot_for_macys(self, driver, output_fname):
         #time.sleep(7*60)  # delay for PhantomJS2 unpacking?
@@ -381,7 +407,9 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
     @staticmethod
     def _get_proxy_ip(driver):
-        driver.get('http://icanhazip.com')
+        # This website acn be down
+        # driver.get('http://icanhazip.com')
+        driver.get('https://api.ipify.org/')
         ip = re.search('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', driver.page_source)
         if ip:
             ip = ip.group(1)
@@ -402,10 +430,14 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         # we will use requesocks for checking response code
         r_session = requests.session()
+        if self.timeout:
+            self.timeout = int(self.timeout)
         r_session.timeout = self.timeout
-        #if self.proxy:
-        #    r_session.proxies = {'http': self.proxy_type+'://'+self.proxy,
-        #                         'https': self.proxy_type+'://'+self.proxy}
+        # Proxies activated again because of walmart bans
+        if self.proxy:
+            r_session.proxies = {"http": "{}://{}".format(self.proxy_type, self.proxy), \
+                            "https": "{}://{}".format(self.proxy_type, self.proxy)}
+
         if self.user_agent:
             r_session.headers = {'User-Agent': self.user_agent}
 

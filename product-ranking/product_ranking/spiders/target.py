@@ -4,7 +4,6 @@ from __future__ import division, absolute_import, unicode_literals
 from itertools import islice
 import json
 import re
-import string
 import urllib
 import urllib2
 import urlparse
@@ -19,16 +18,12 @@ from scrapy.log import DEBUG, INFO
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.spiders import BaseProductsSpider, cond_set, FLOATING_POINT_RGEX
+from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set_value, populate_from_open_graph
 from spiders_shared_code.target_variants import TargetVariants
 from product_ranking.validation import BaseValidator
 from product_ranking.validators.target_validator import TargetValidatorSettings
 from product_ranking.guess_brand import guess_brand_from_first_words
-
-
-# TODO: invalid buyer reviews and stock status for http://www.target.com/p/black-decker-2-slice-bread-and-bagel-toaster/-/A-13193088
-
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -83,10 +78,12 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                          '&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_US'
                          '&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US')
 
+    REDSKY_API_URL = 'http://redsky.target.com/v1/pdp/tcin/{}?excludes=taxonomy&storeId={}'
+
     QUESTION_API_URL = "http://api.bazaarvoice.com/data/questions.json" \
-                 "?passkey={apipass}&Offset=0&apiversion=5.4" \
-                 "&Filter=Productid:{product_id}" \
-                 "&Sort=TotalAnswerCount:desc,HasStaffAnswers:desc"
+                       "?passkey={apipass}&Offset=0&apiversion=5.4" \
+                       "&Filter=Productid:{product_id}" \
+                       "&Sort=TotalAnswerCount:desc,HasStaffAnswers:desc"
 
     ANSWER_API_URL = "http://api.bazaarvoice.com/data/answers.json" \
                      "?passkey={apipass}&apiversion=5.4" \
@@ -109,9 +106,10 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                       "&isLeaf=true" \
                       "&parent_category_id={category}"
 
-    RELATED_URL = "{path}?productId={pid}&userId=-1002&min={min}&max={max}&context=placementId,{plid};categoryId,{cid}&callback=jsonCallback"
+    RELATED_URL = "{path}?productId={pid}&userId=-1002&min={min}&max={max}&context=placementId," \
+                  "{plid};categoryId,{cid}&callback=jsonCallback"
 
-    def __init__(self, sort_mode=None, zip_code='94117', *args, **kwargs):
+    def __init__(self, sort_mode=None, store='2768', zip_code='94117', *args, **kwargs):
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
@@ -119,6 +117,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 self.SORTING = self.SORT_MODES[sort_mode.lower()]
 
         self.zip_code = zip_code
+        self.store = store
 
         super(TargetProductSpider, self).__init__(
             site_name=self.allowed_domains[0],
@@ -132,7 +131,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     def _start_search(self, response):
         for request in super(TargetProductSpider, self).start_requests():
-            #request.meta['dont_redirect'] = True
+            # request.meta['dont_redirect'] = True
             request.meta['handle_httpstatus_list'] = [302, 301]
             request.meta['search_start'] = True
             request.headers['User-Agent'] = self.user_agent_override
@@ -193,11 +192,13 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
         response.meta['item_info'] = self._item_info_v2(response)
 
-        response.meta['average'] = is_empty(re.findall(r'var averageRating=  (\d+)', response.body_as_unicode()))
-        response.meta['total'] = is_empty(re.findall(r'var totalReviewsValue=(\d+)', response.body_as_unicode()))
+        response.meta['average'] = is_empty(
+            re.findall(r'var averageRating=  (\d+)', response.body_as_unicode()))
+        response.meta['total'] = is_empty(
+            re.findall(r'var totalReviewsValue=(\d+)', response.body_as_unicode()))
 
-        if 'sorry, that item is no longer available' \
-                in response.body_as_unicode().lower():
+        if 'sorry, that item is no longer available' in response.body_as_unicode().lower() \
+                or 'product not available' in response.body_as_unicode().lower():
             prod['not_found'] = True
             return prod
 
@@ -205,7 +206,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
         tv = TargetVariants()
         tv.setupSC(response, zip_code=self.zip_code, item_info=response.meta['item_info'])
-        prod['variants'] = tv._variants()
+        # prod['variants'] = tv._variants()
         if not prod.get('upc') and prod.get('variants'):
             selected_upc = [v.get('upc') for v in prod.get('variants') if v.get('selected')]
             prod['upc'] = selected_upc[0] if selected_upc else None
@@ -240,9 +241,10 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         populate_from_open_graph(response, prod)
 
         prod['url'] = old_url
-        #cond_set_value(prod, 'url', old_url)
+        # cond_set_value(prod, 'url', old_url)
 
-        self._populate_from_html(response, prod)
+        item_info = self._item_info_v3(response)
+        self._populate_from_v3(prod, item_info)
 
         if not self._is_v1(response):
             # scrape v2 reviews
@@ -345,111 +347,172 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             headers={'User-Agent': self.user_agent_googlebot}).content
 
         item_info = re.match('itemInfoCallback\((.*)\)$', response, re.DOTALL).group(1)
-        return json.loads(item_info)['CatalogEntryView'][0]
+        try:
+            return json.loads(item_info)['CatalogEntryView'][0]
+        except KeyError:
+            return {}
 
     def _item_info_v2(self, response):
         item_info = self._item_info_helper(self._product_id_v2(response))
 
-        if (item_info.get('parentPartNumber') and item_info['parentPartNumber']
-                != self._product_id_v2(response)):
+        if item_info.get('parentPartNumber') \
+                and item_info['parentPartNumber'] != self._product_id_v2(response):
             item_info = self._item_info_helper(item_info['parentPartNumber'])
 
         return item_info
+
+    def _item_info_v3_request(self, tcin):
+        content = requests.get(
+            self.REDSKY_API_URL.format(tcin, self.store)
+        ).content
+        return content
+
+    def _item_info_v3(self, response, tcin=None):
+        if not tcin:
+            tcin = self._get_tcin(response)
+        content = self._item_info_v3_request(tcin)
+        content_json = json.loads(content)
+        parent_tcin = content_json.get('product').get('item').get('parent_items', None)
+        if isinstance(parent_tcin, unicode):
+            return self._item_info_v3(response, parent_tcin)
+        else:
+            return content_json.get('product', None)
+
+    @staticmethod
+    def _item_info_v3_image(image_info):
+        base_url = image_info.get('base_url')
+        image_id = image_info.get('primary')
+        return base_url + image_id
+
+    @staticmethod
+    def _item_info_v3_price(amount, currency='USD'):
+        return Price(priceCurrency=currency, price=amount)
+
+    @staticmethod
+    def _item_info_v3_price_helper(item):
+        amount = item.get(
+            'price').get('offerPrice').get(
+            'formattedPrice', '').replace('$', '').replace(',', '')
+        if not amount or 'see low price in cart' in amount:
+            amount = item.get(
+                'price').get('offerPrice').get('price')
+        try:
+            return float(amount)
+        except ValueError:
+            return 0
+
+    @staticmethod
+    def _item_info_v3_store_only(item):
+        try:
+            return item.get('available_to_promise_network').get(
+                'availability') == 'UNAVAILABLE' and item.get(
+                'available_to_promise_store').get('products')[0].get(
+                'availability') == 'AVAILABLE'
+        except TypeError:
+            return False
+
+    @staticmethod
+    def _item_info_v3_reviews(item_info):
+        tcin = item_info.get('item').get('tcin')
+        rating_review = item_info.get(
+            'rating_and_review_statistics', {}).get('result', {}).get(tcin, {}).get('coreStats', {})
+        average_rating = rating_review.get('AverageOverallRating', 0)
+        num_of_reviews = rating_review.get('TotalReviewCount', 0)
+        rating_distribution = rating_review.get('RatingDistribution', [])
+        rating_by_star = {i: 0 for i in range(1, 6)}
+        rating_new = {i.get('RatingValue'): i.get('Count') for i in rating_distribution}
+        rating_by_star.update(rating_new)
+        reviews = BuyerReviews(int(num_of_reviews), float(average_rating), rating_by_star)
+        return reviews
+
+    @staticmethod
+    def _item_info_v3_availability(item):
+        return item.get('available_to_promise_network').get(
+            'availability') != 'UNAVAILABLE'
+
+    def _item_info_v3_variants(self, item_info):
+        items = item_info.get('item').get('child_items', [])
+        variants = []
+        for number, item in enumerate(items):
+            selected = not bool(number)
+            variant = self._item_info_v3_variant(item, selected)
+            variants.append(variant)
+        return variants
+
+    def _item_info_v3_variant(self, item, selected):
+        variant = {}
+        variant['selected'] = selected
+        variant['dpci'] = item.get('dpci')
+        variant['tcin'] = item.get('tcin')
+        variant['upc'] = item.get('upc')
+        variant['properties'] = {}
+        properties = item.get('variation', [])
+        for attribute in properties:
+            variant['properties'][attribute] = properties.get(attribute)
+        variant['price'] = self._item_info_v3_price_helper(item)
+        image_info = item.get('enrichment').get('images')[0]
+        variant['image_url'] = self._item_info_v3_image(image_info)
+        in_stock = item.get('available_to_promise_network').get(
+            'availability') != 'UNAVAILABLE'
+        variant['is_in_store_only'] = self._item_info_v3_store_only(item)
+        variant['in_stock'] = in_stock or variant['is_in_store_only']
+        return variant
+
+    def _populate_from_v3(self, product, item_info):
+        item = item_info.get('item')
+        if not 'Unauthorized' in item.get('message', '') and not 'Forbidden' in item.get('message', ''):
+            product['title'] = item.get('product_description').get('title')
+            product['tcin'] = item.get('tcin')
+            product['description'] = item.get('product_description').get('downstream_description', '')
+            product['brand'] = item.get('product_brand').get('manufacturer_brand')
+            product['buyer_reviews'] = self._item_info_v3_reviews(item_info)
+            variants = self._item_info_v3_variants(item_info)
+            if variants:
+                product['variants'] = variants
+            product['origin'] = item.get('country_of_origin')
+            try:
+                selected_variant = product.get('variants', [])[0]
+                product['image_url'] = selected_variant.get('image_url')
+                amount = selected_variant.get('price')
+                amount = float(amount) if amount else None
+                product['price'] = self._item_info_v3_price(amount)
+                product['dpci'] = selected_variant.get('dpci')
+                product['upc'] = selected_variant.get('upc')
+                product['image_url'] = selected_variant.get('image_url')
+                product['is_out_of_stock'] = False if selected_variant.get('in_stock') else True
+                product['no_longer_available'] = product['is_out_of_stock']
+                product['is_in_store_only'] = selected_variant.get('is_in_store_only')
+            except IndexError:
+                amount = self._item_info_v3_price_helper(item_info)
+                product['price'] = self._item_info_v3_price(amount)
+                product['dpci'] = item.get('dpci')
+                product['upc'] = item.get('upc')
+                image_info = item.get('enrichment').get('images')[0]
+                product['image_url'] = self._item_info_v3_image(image_info)
+                product['is_out_of_stock'] = False if self._item_info_v3_availability(
+                    item_info) else True
+                product['no_longer_available'] = product['is_out_of_stock']
+                product['is_in_store_only'] = self._item_info_v3_store_only(item_info)
+        else:
+            product['not_found'] = True
+            product['no_longer_available'] = True
 
     @staticmethod
     def _get_price_v2(item_info):
         """ Returns (price, in cart) """
         in_cart = False
         offer = item_info.get('Offers', [{}])[0].get('OfferPrice', [{}])[0]
-        if 'low to display' in offer['formattedPriceValue'].lower():
-            # in-cart pricing
-            offer = item_info.get('Offers', [{}])[0].get('OriginalPrice', [{}])[0]
-            in_cart = True
+        try:
+            if 'low to display' in offer['formattedPriceValue'].lower():
+                # in-cart pricing
+                offer = item_info.get('Offers', [{}])[0].get('OriginalPrice', [{}])[0]
+                in_cart = True
+        except:
+            pass
         price = Price(
-                priceCurrency=offer['currencyCode'],
-                price=offer['formattedPriceValue'].split(' -', 1)[0].replace('$', ''))
+            priceCurrency=offer['currencyCode'],
+            price=offer['formattedPriceValue'].split(' -', 1)[0].replace('$', ''))
         return price, in_cart
-
-    def _populate_from_html(self, response, product):
-        if self._is_v1(response):
-            if 'title' in product and product['title'] == '':
-                del product['title']
-            product['title'] = response.xpath(
-                "//h2[contains(@class,'product-name')]"
-                "/span[@itemprop='name']/text()"
-                "|//h2[contains(@class,'collection-name')]"
-                "/span[@itemprop='name']/text()"
-            ).extract()
-
-            desc = product.get('description')
-            if desc:
-                desc = desc.replace("\n", "")
-                product['description'] = desc
-            desc = response.css(
-                '#item-overview > div > div:nth-child(1)').extract()
-            if desc:
-                desc = desc[0]
-                desc = desc.replace("\n", "")
-                product['description'] = desc
-
-            image = response.xpath(
-                "//img[@itemprop='image']/@src").extract()
-            if image:
-                image = image[0].replace("_100x100.", ".")
-                product['image_url'] = image
-            dpci = response.xpath(
-                './/*[contains(text(), "Store Item Number (DPCI)")]/following-sibling::text()[1]').extract()
-            dpci = dpci[0].strip() if dpci else None
-            product['dpci'] = dpci
-            tcin = response.xpath(
-                './/*[contains(text(), "Online Item #")]/following-sibling::text()[1]').extract()
-            tcin = tcin[0].strip() if tcin else None
-            if not tcin:
-                tcin = response.xpath(
-                    './/*[contains(text(), "TCIN:")]/span/text()').extract()
-                tcin = tcin[0].strip() if tcin else None
-            product['tcin'] = tcin
-            origin = response.xpath(
-                './/*[contains(text(), "Origin:")]/span/text()').extract()
-            origin = origin[0].strip() if origin else None
-            if not origin:
-                origin = response.xpath(
-                    './/h3[@class="heading-small" and contains (text(), "other Info.")]'
-                    '/following-sibling::ul[1]/li[position()=last()]/text()').extract()
-                origin = origin[0].strip() if origin else None
-            product['origin'] = origin
-
-        else:
-            item_info = self._item_info_v2(response)
-            product['title'] = item_info['title']
-            product['upc'] = item_info.get('UPC', None)
-            product['dpci'] = item_info.get('DPCI', None)
-            product['tcin'] = item_info.get('partNumber', None)
-            #product['sku'] = ''  # TODO
-            product['image_url'] = item_info.get('Images', [{}])[0].get('PrimaryImage', [{}])[0].get('image')
-            product['description'] = item_info.get('shortDescription', None)
-            product['brand'] = guess_brand_from_first_words(product['title'])
-            product['price'], product['price_details_in_cart'] = self._get_price_v2(item_info)
-            #product['related_products'] = None  # TODO
-            product['is_out_of_stock'] = not item_info.get('inventoryStatus', '') == 'in stock'
-            origin = item_info.get('ItemAttributes')
-            origin = origin[0].get('Attribute') if origin else None
-            if origin:
-                origin = [atr.get('description') for atr in origin if atr.get('identifier') == "IMPORT_DESIGNATION"]
-                origin = origin[0] if origin else None
-                product['origin'] = origin
-            tv = TargetVariants()
-            if not product['variants']:
-                tv.setupSC(response=response, zip_code=self.zip_code, item_info=item_info)
-                product['variants'] = tv._variants()
-            # Getting upc from variants
-            if not product.get('upc'):
-                selected_upc = [v.get('upc') for v in product.get('variants') if v.get('selected')]
-                product['upc'] = selected_upc[0] if selected_upc else None
-
-            # TODO: shipping and store availability? see "purchasingChannel: Sold Online + in Stores" in item_info; http://www.target.com/p/denizen-from-levi-s-women-s-curvy-bootcut-jeans-denim-blue/-/A-50234669
-            # http://www.target.com/p/black-decker-2-slice-bread-and-bagel-toaster/-/A-13193088
-
 
     def _extract_recomm_urls(self, response):
         script = response.xpath(
@@ -674,7 +737,6 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             if isonline:
                 isonline = isonline[0].strip()
 
-
             # TODO: isonline: u'out of stock online'
             # ==  'out of stock' & 'online'
             price = ci.xpath(
@@ -683,7 +745,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 price = price[0]
             else:
                 price = ci.xpath(
-                    './div[@class="pricecontainer"]/span[@class="map"]/following::p/span/text()')\
+                    './div[@class="pricecontainer"]/span[@class="map"]/following::p/span/text()') \
                     .re(FLOATING_POINT_RGEX)
                 if price:
                     price = price[0]
@@ -882,30 +944,30 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         return None
 
     def _gen_next_request(self, response, next_page, remaining=None):
-            next_page = urllib.unquote(next_page)
-            data = {'formData': next_page,
-                    'stateData': "",
-                    'isDLP': 'false',
-                    'response_group': 'Items'
-                    }
+        next_page = urllib.unquote(next_page)
+        data = {'formData': next_page,
+                'stateData': "",
+                'isDLP': 'false',
+                'response_group': 'Items'
+                }
 
-            new_meta = response.meta.copy()
-            if 'total_matches' not in new_meta:
-                new_meta['total_matches'] = self._scrape_total_matches(response)
-            if remaining and remaining > 0:
-                new_meta['remaining'] = remaining
-            post_url = "http://www.target.com/SoftRefreshProductListView"
-            # new_meta['json'] = True
+        new_meta = response.meta.copy()
+        if 'total_matches' not in new_meta:
+            new_meta['total_matches'] = self._scrape_total_matches(response)
+        if remaining and remaining > 0:
+            new_meta['remaining'] = remaining
+        post_url = "http://www.target.com/SoftRefreshProductListView"
+        # new_meta['json'] = True
 
-            return FormRequest(
-                #return FormRequest.from_response(
-                #response=response,
-                url=post_url,
-                method='POST',
-                formdata=data,
-                callback=self._parse_link_post,
-                meta=new_meta,
-                headers={'User-Agent': self.user_agent_override})
+        return FormRequest(
+            # return FormRequest.from_response(
+            # response=response,
+            url=post_url,
+            method='POST',
+            formdata=data,
+            callback=self._parse_link_post,
+            meta=new_meta,
+            headers={'User-Agent': self.user_agent_override})
 
     def _parse_link_post(self, response):
         jsdata = json.loads(response.body)
@@ -953,7 +1015,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                 url,
                 callback=self.parse_product,
                 meta=new_meta, dont_filter=True,
-                headers={'User-Agent': self.user_agent_override}),)
+                headers={'User-Agent': self.user_agent_override}), )
         return requests
 
     def _scrape_next_results_page_link(self, response):
@@ -976,7 +1038,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         return Request(url, meta=response.meta, headers={'User-Agent': self.user_agent_override})
 
     def _scrape_next_results_page_link_json(self, response):
-        #raw_input(len(list(self._scrape_product_links_json(response))))
+        # raw_input(len(list(self._scrape_product_links_json(response))))
         args = self._json_get_args(self._get_json_data(response))
         current = int(args['currentPage'])
         total = int(args['totalPages'])
@@ -1034,7 +1096,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         data = data.get('FilteredReviewStatistics', {})
         average = data.get('AverageOverallRating')
         total = data.get('TotalReviewCount')
-        #import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         if not average:
             average = response.meta['average']
             total = response.meta['total']
@@ -1043,7 +1105,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             else:
                 fdist = ZERO_REVIEWS_VALUE[-1]
                 if total is None or average is None:
-                    product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+                    # product['buyer_reviews'] = ZERO_REVIEWS_VALUE
                     return product
                 reviews = BuyerReviews(int(total), int(average), fdist)
                 cond_set_value(product, 'buyer_reviews', reviews)
@@ -1092,7 +1154,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
         reqs = []
         if data and data['Results']:
             for question in data['Results']:
-                q={}
+                q = {}
                 q['questionSummary'] = question['QuestionSummary']
                 time = question['SubmissionTime']
                 date = is_empty(time.split('T'))
@@ -1106,7 +1168,7 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
                                                      question_id=q['questionId'])
                     meta = response.meta
                     meta['q'] = q
-                    reqs.append(Request(url, self._parse_answer, meta = meta, dont_filter=True,
+                    reqs.append(Request(url, self._parse_answer, meta=meta, dont_filter=True,
                                         headers={'User-Agent': self.user_agent_override}))
             if reqs:
                 return self.send_next_request(reqs, response)
@@ -1120,14 +1182,14 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
 
     def _parse_answer(self, response):
         product = response.meta['product']
-        reqs = response.meta.get('reqs',[])
+        reqs = response.meta.get('reqs', [])
         all_questions = product.get('all_questions', [])
         q = response.meta['q']
         q['answers'] = []
         data = json.loads(response.body_as_unicode())
         if data['Results']:
             for answer in data['Results']:
-                a={}
+                a = {}
                 a['userNickname'] = answer['UserNickname']
                 a['answerSummary'] = a['answerText'] = answer['AnswerText'].replace('\xa0', '')
                 time = answer['SubmissionTime']
@@ -1142,7 +1204,8 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             product['all_questions'] = all_questions
             product['recent_questions'] = product['all_questions']
             # get date_of_last_question
-            product['date_of_last_question'] = self._get_latest_questions_date(product['all_questions'])
+            product['date_of_last_question'] = self._get_latest_questions_date(
+                product['all_questions'])
             for req in reqs:
                 req.meta['product'] = product
             if reqs:

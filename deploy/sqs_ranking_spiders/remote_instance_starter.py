@@ -118,6 +118,19 @@ def stop_flag_exists_at_s3(bucket_name, key):
         return False
 
 
+def get_actual_branch_from_cache():
+    try:
+        logger.info('Get default branch from redis.')
+        sys.path.append(os.path.join(REPO_BASE_PATH, 'deploy'))
+        from cache_layer.cache_service import SqsCache
+        sqs = SqsCache()
+        branch = sqs.get_settings('remote_instance_branch')
+    except Exception as e:
+        logger.error('Error while get branch. ERROR: %s', str(e))
+        branch = 'sc_production'
+    return branch or 'sc_production'
+
+
 # def stop_flag_exists_at_url(url):
 #     u = urllib.urlopen(url)
 #     if "True" in u.read():
@@ -132,7 +145,7 @@ if __name__ == '__main__':
     # if stop_flag_exists_at_url(FLAG_URL):
         sys.exit()
     mark_as_running()
-    pull_repo('sc_production')
+    pull_repo(get_actual_branch_from_cache())
     wait_until_post_starter_script_executed('post_starter_root.py')
     wait_until_post_starter_script_executed('post_starter_spiders.py')
     start_scrapy_daemon()

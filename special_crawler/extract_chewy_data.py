@@ -142,6 +142,9 @@ class ChewyScraper(Scraper):
         if len(variants) > 1:
             return variants
 
+    def _no_longer_available(self):
+        return 0
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -360,6 +363,7 @@ class ChewyScraper(Scraper):
         "description" : _description, \
         "long_description" : _long_description, \
         "variants" : _variants, \
+        "no_longer_available" : _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "htags" : _htags, \

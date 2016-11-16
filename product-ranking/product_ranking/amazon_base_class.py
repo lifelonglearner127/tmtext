@@ -4,7 +4,6 @@ from __future__ import print_function
 import re
 import urlparse
 from urllib import unquote
-import urllib2
 import json
 import string
 import random
@@ -16,23 +15,22 @@ import lxml.html
 import requests
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, cond_set, \
+from product_ranking.spiders import BaseProductsSpider, \
     cond_set_value, FLOATING_POINT_RGEX, FormatterWithDefaults
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.marketplace import Amazon_marketplace
 from spiders_shared_code.amazon_variants import AmazonVariants
 from product_ranking.amazon_bestsellers import amazon_parse_department
-from product_ranking.amazon_modules import build_categories
 from product_ranking.settings import ZERO_REVIEWS_VALUE
-
+from scrapy.conf import settings
 
 is_empty = lambda x, y="": x[0] if x else y
-
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
 except ImportError as e:
     import sys
+
     print(
         "### Failed to import CaptchaBreaker.",
         "Will continue without solving captchas:",
@@ -40,11 +38,14 @@ except ImportError as e:
         file=sys.stderr
     )
 
+
     class FakeCaptchaBreaker(object):
         @staticmethod
         def solve_captcha(url):
             msg("No CaptchaBreaker to solve: %s" % url, level=WARNING)
             return None
+
+
     CaptchaBreakerWrapper = FakeCaptchaBreaker
 
 
@@ -52,20 +53,21 @@ class AmazonBaseClass(BaseProductsSpider):
     buyer_reviews_stars = ['one_star', 'two_star', 'three_star', 'four_star',
                            'five_star']
 
-    SEARCH_URL = 'http://{domain}/s/ref=nb_sb_noss_1?url=search-alias' \
+    SEARCH_URL = 'https://{domain}/s/ref=nb_sb_noss_1?url=search-alias' \
                  '%3Daps&field-keywords={search_term}'
 
-    REVIEW_DATE_URL = 'http://{domain}/product-reviews/{product_id}/' \
+    REVIEW_DATE_URL = 'https://{domain}/product-reviews/{product_id}/' \
                       'ref=cm_cr_pr_top_recent?ie=UTF8&showViewpoints=0&' \
                       'sortBy=bySubmissionDateDescending'
-    REVIEW_URL_1 = 'http://{domain}/ss/customer-reviews/ajax/reviews/get/' \
+    REVIEW_URL_1 = 'https://{domain}/ss/customer-reviews/ajax/reviews/get/' \
                    'ref=cm_cr_pr_viewopt_sr'
-    REVIEW_URL_2 = 'http://{domain}/product-reviews/{product_id}/' \
+    REVIEW_URL_2 = 'https://{domain}/product-reviews/{product_id}/' \
                    'ref=acr_dpx_see_all?ie=UTF8&showViewpoints=1'
 
     handle_httpstatus_list = [404]
 
-    AMAZON_PRIME_URL = 'http://www.amazon.com/gp/product/du' \
+
+    AMAZON_PRIME_URL = 'https://www.amazon.com/gp/product/du' \
                        '/bbop-ms3-ajax-endpoint.html?ASIN={0}&merchantID={1}' \
                        '&bbopruleID=Acquisition_AddToCart_PrimeBasicFreeTrial' \
                        'UpsellEligible&sbbopruleID=Acquisition_AddToCart_' \
@@ -83,6 +85,13 @@ class AmazonBaseClass(BaseProductsSpider):
     ]
 
     def __init__(self, captcha_retries='10', *args, **kwargs):
+        middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+        middlewares['product_ranking.custom_middlewares.AmazonProxyMiddleware'] = 750
+        middlewares['product_ranking.randomproxy.RandomProxy'] = None
+        settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 504, 400, 403, 404, 408]
+        # this turns off crawlera per-request
+        # settings.overrides['CRAWLERA_ENABLED'] = True
         super(AmazonBaseClass, self).__init__(
             site_name=self.allowed_domains[0],
             url_formatter=FormatterWithDefaults(
@@ -97,6 +106,12 @@ class AmazonBaseClass(BaseProductsSpider):
             self.ignore_variant_data = True
         else:
             self.ignore_variant_data = False
+        # Turned on by default
+        self.ignore_color_variants = kwargs.get('ignore_color_variants', True)
+        if self.ignore_color_variants in ('0', False, 'false', 'False'):
+            self.ignore_color_variants = False
+        else:
+            self.ignore_color_variants = True
 
     def _is_empty(self, x, y=None):
         return x[0] if x else y
@@ -220,6 +235,8 @@ class AmazonBaseClass(BaseProductsSpider):
                 li.xpath('@id').extract()
             )
 
+            is_sponsored = bool(li.xpath('.//h5[contains(text(), "ponsored")]').extract())
+
             try:
                 idx = int(self._is_empty(
                     re.findall(r'\d+', data_asin)
@@ -238,10 +255,9 @@ class AmazonBaseClass(BaseProductsSpider):
                     continue
 
                 if 'slredirect' in link:
-
                     link = 'http://' + self.allowed_domains[0] + '/' + link
 
-                links.append((link, is_prime, is_prime_pantry))
+                links.append((link, is_prime, is_prime_pantry, is_sponsored))
             else:
                 break
 
@@ -251,13 +267,13 @@ class AmazonBaseClass(BaseProductsSpider):
             self.log("Found no product links.", WARNING)
 
         if links:
-            for link, is_prime, is_prime_pantry in links:
+            for link, is_prime, is_prime_pantry, is_sponsored in links:
                 prime = None
                 if is_prime:
                     prime = 'Prime'
                 if is_prime_pantry:
                     prime = 'PrimePantry'
-                prod = SiteProductItem(prime=prime)
+                prod = SiteProductItem(prime=prime, is_sponsored_product=is_sponsored)
                 yield Request(link, callback=self.parse_product,
                               headers={'Referer': None},
                               meta={'product': prod}), prod
@@ -388,10 +404,59 @@ class AmazonBaseClass(BaseProductsSpider):
                                 meta=meta, callback=self._amazon_prime_check)
                     )
 
+        # Parse ASIN
+        asin = response.xpath(
+            './/*[contains(text(), "ASIN")]/following-sibling::td/text()|.//*[contains(text(), "ASIN")]'
+            '/following-sibling::text()[1]').extract()
+        asin = [a.strip() for a in asin if a.strip()]
+        asin = asin[0] if asin else None
+        cond_set_value(product, 'asin', asin)
+
         # Parse variants
         if not self.ignore_variant_data:
             variants = self._parse_variants(response)
             product['variants'] = variants
+            # Nothing to parse here, move along
+            if variants:
+                if self.ignore_color_variants:
+                    # Get default selected color and get prices only for default color
+                    # Getting all variants prices raise performance concerns because of huge amount of added requests
+                    # See bz #11443
+                    try:
+                        default_color = [c['properties'].get('color') for c in variants if c.get('selected')]
+                        default_color = default_color[0] if default_color else None
+                        prc_variants = [v for v in variants if v['properties'].get('color') == default_color]
+                    except Exception as e:
+                        self.log('Error ignoring color variants, getting price for all variants: {}'.format(e), WARNING)
+                        prc_variants = variants
+                else:
+                    prc_variants = variants
+                # Parse variants prices
+                # Turn on only for amazon.com for now
+                if prc_variants and 'amazon.com/' in response.url:
+                    js_text = response.xpath('.//script[contains(text(),"immutableURLPrefix")]/text()').extract()
+                    js_text = js_text[0] if js_text else None
+                    if not js_text:
+                        self.log('js block not found for url'.format(response.url), WARNING)
+                    else:
+                        url_regex = """immutableURLPrefix['"]:['"](.+?)['"]"""
+                        base_url = re.findall(url_regex, js_text)
+                        # print base_url
+                        base_url = base_url[0] if base_url else None
+                        for variant in prc_variants:
+                            # Set default price value
+                            variant['price'] = None
+                            # print(variant)
+                            child_asin = variant.get('asin')
+                            if child_asin:
+                                # Build child variants urls based on parent url
+                                child_url = base_url + "&psc=1&asinList={}&isFlushing=2&dpEnvironment=softlines&id={}&mType=full".format(
+                                    child_asin, child_asin)
+                                req_url = urlparse.urljoin(response.url, child_url)
+                                if req_url:
+                                    req = Request(req_url, meta=meta, callback=self._parse_variants_price)
+                                    reqs.append(req)
+
 
         # Parse buyer reviews
         buyer_reviews = self._parse_buyer_reviews(response)
@@ -401,7 +466,6 @@ class AmazonBaseClass(BaseProductsSpider):
             )
         else:
             product['buyer_reviews'] = buyer_reviews
-
         reqs.append(
             Request(
                 url=self.REVIEW_DATE_URL.format(
@@ -419,27 +483,29 @@ class AmazonBaseClass(BaseProductsSpider):
         if _prod:
             product = _prod
 
-
         _prod, req = self._parse_marketplace_from_static_right_block(response)
         if _prod:
             product = _prod
-        
-        # There are more sellers to extract    
+
+        # There are more sellers to extract
         if req:
             reqs.append(req)
 
         # TODO: fix the block below - it removes previously scraped marketplaces
-        #marketplace_req = self._parse_marketplace(response)
-        #if marketplace_req:
+        # marketplace_req = self._parse_marketplace(response)
+        # if marketplace_req:
         #    reqs.append(marketplace_req)
 
         # Parse category
-        categories = self._parse_category(response)
+        categories_full_info = self._parse_category(response)
         # cond_set_value(product, 'category', category)
+        cond_set_value(product, 'categories_full_info', categories_full_info)
+        # Left old simple format just in case
+        categories = [c.get('name') for c in categories_full_info] if categories_full_info else None
+        cond_set_value(product, 'categories', categories)
 
         # build_categories(product)
         category_rank = self._parse_category_rank(response)
-        cond_set_value(product, 'categories', categories)
         if category_rank:
             # Parse departments and bestseller rank
             department = amazon_parse_department(category_rank)
@@ -459,9 +525,42 @@ class AmazonBaseClass(BaseProductsSpider):
         if any(map((lambda x: x in _avail_lower), ['nichtauflager', 'currentlyunavailable'])):
             product['is_out_of_stock'] = True
 
-        req  = self._parse_questions(response)
+        req = self._parse_questions(response)
         if req:
             reqs.append(req)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    def _parse_variants_price(self, response):
+        meta = response.meta
+        reqs = meta.get('reqs')
+        product = meta['product']
+        child_asin = re.findall(r'asinList=(.+?)&', response.url)
+        child_asin = child_asin[0] if child_asin else None
+        price_regex = """price_feature_div.+?priceblock_ourprice[^_].+?">\$([\d\.]+)"""
+        price = re.findall(price_regex, response.body)
+        # Trying alternative regex
+        if not price:
+            price_regex = """buybox_feature_div.+?a-color-price['"]>\s?.+?([\d\.]+)"""
+            price = re.findall(price_regex, response.body)
+        if not price:
+            fail_var_url = [v.get('url') for v in product["variants"] if v.get('asin')==child_asin]
+            self.log('Unable to find price for variant: {} ASIN {} url {}'.format(
+                response.url, child_asin, fail_var_url), WARNING)
+        else:
+            try:
+                price = float(price[0]) if price else None
+                for variant in product["variants"]:
+                    var_asin = variant.get('asin')
+                    # print(var_asin, child_asin)
+                    if var_asin and var_asin == child_asin:
+                        variant['price'] = price
+                        break
+            except BaseException as e:
+                self.log('Unable to convert price for variant: {}, {}'.format(response.url, e), WARNING)
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -487,17 +586,23 @@ class AmazonBaseClass(BaseProductsSpider):
     def _parse_category(self, response):
         cat = response.xpath(
             '//span[@class="a-list-item"]/'
-            'a[@class="a-link-normal a-color-tertiary"]/text()')
+            'a[@class="a-link-normal a-color-tertiary"]')
         if not cat:
-            cat = response.xpath('//li[@class="breadcrumb"]/a[@class="breadcrumb-link"]/text()')
+            cat = response.xpath('//li[@class="breadcrumb"]/a[@class="breadcrumb-link"]')
+        if not cat:
+            cat = response.xpath('.//*[@id="nav-subnav"]/a[@class="nav-a nav-b"]')
 
-        category = []
+        categories_full_info = []
         for cat_sel in cat:
-            category.append(cat_sel.extract().strip())
+            c_url = cat_sel.xpath("./@href").extract()
+            c_url = urlparse.urljoin(response.url, c_url[0]) if c_url else None
+            c_text = cat_sel.xpath(".//text()").extract()
+            c_text = c_text[0].strip() if c_text else None
+            categories_full_info.append({"url": c_url,
+                                         "name": c_text})
 
-        if category:
-            return category
-
+        if categories_full_info:
+            return categories_full_info
 
     def _parse_title(self, response, add_xpath=None):
         """
@@ -534,6 +639,9 @@ class AmazonBaseClass(BaseProductsSpider):
                 for part in parts:
                     title += part
                 title = [title]
+
+        if not title:
+            title = self._is_empty(response.css('#ebooksProductTitle ::text').extract(), '').strip()
 
         return title
 
@@ -588,7 +696,14 @@ class AmazonBaseClass(BaseProductsSpider):
                 img_data = json.loads(img_jsons[0])
                 image = max(img_data.items(), key=lambda (_, size): size[0])
 
-        if 'base64' in image:
+        if not image:
+            image = response.xpath('//*[contains(@id, "ebooks-img-canvas")]//@src').extract()
+            if image:
+                image = image[0]
+            else:
+                image = None
+
+        if image and 'base64' in image:
             img_jsons = response.xpath(
                 '//*[@id="imgBlkFront"]/@data-a-dynamic-image | '
                 '//*[@id="landingImage"]/@data-a-dynamic-image'
@@ -608,7 +723,6 @@ class AmazonBaseClass(BaseProductsSpider):
         if response.xpath('//*[contains(@id, "outOfStock")]'
                           '//*[contains(text(), "navailable")]'):  # Unavailable or unavailable
             return True
-
 
     def _parse_brand(self, response, add_xpath=None):
         """
@@ -638,11 +752,9 @@ class AmazonBaseClass(BaseProductsSpider):
             brand = brand.replace(u'®', '')
 
         if not brand:
-            brand_logo = self._is_empty(
-                response.xpath('//a[@id="brand"]/@href').extract()
+            brand = self._is_empty(
+                response.xpath('//a[@id="brand"]/@href').re("\/([A-Z].+?)\/b")
             )
-            if brand_logo:
-                brand = brand_logo.split('/')[1]
 
         if not brand and title:
             try:
@@ -788,7 +900,7 @@ class AmazonBaseClass(BaseProductsSpider):
 
         if not model:
             model = self._is_empty(response.xpath('//div[contains(@class, "content")]/ul/li/'
-                                   'b[contains(text(), "ASIN")]/../text()').extract())
+                                                  'b[contains(text(), "ASIN")]/../text()').extract())
 
         if not model:
             spans = response.xpath('//span[@class="a-text-bold"]')
@@ -886,7 +998,7 @@ class AmazonBaseClass(BaseProductsSpider):
 
         # try to scrape the price from another place
         if price == 0.0:
-            price2 = re.search('\|([\d\.]+)\|baseItem"}',response.body)
+            price2 = re.search('\|([\d\.]+)\|baseItem"}', response.body)
             if price2:
                 price2 = price2.group(1)
                 try:
@@ -958,7 +1070,7 @@ class AmazonBaseClass(BaseProductsSpider):
                 '([\d, ]+)'
             )[0]))
             for itm in response.css('.zg_hrsr_item')
-        }
+            }
 
         prim = response.css('#SalesRank::text, #SalesRank .value'
                             '::text').re('#?([\d ,]+) .*in (.+)\(')
@@ -1063,7 +1175,6 @@ class AmazonBaseClass(BaseProductsSpider):
                 response,
                 self._parse_last_buyer_review_date
             )
-
         meta = response.meta.copy()
         product = meta['product']
         reqs = meta.get('reqs')
@@ -1103,10 +1214,17 @@ class AmazonBaseClass(BaseProductsSpider):
                 'string(//div[@id="acr"]/div[@class="txtsmall"]'
                 '/div[contains(@class, "acrCount")])'
             ).re(FLOATING_POINT_RGEX)
+        if not total:
+            total = response.xpath('.//*[contains(@class, "totalReviewCount")]/text()').re(FLOATING_POINT_RGEX)
             if not total:
                 return ZERO_REVIEWS_VALUE
-        buyer_reviews['num_of_reviews'] = int(total[0].replace(',', '').
-                                              replace('.', ''))
+        # For cases when total looks like: [u'4.2', u'5', u'51']
+        if len(total) == 3:
+            buyer_reviews['num_of_reviews'] = int(total[-1].replace(',', '').
+                                                  replace('.', ''))
+        else:
+            buyer_reviews['num_of_reviews'] = int(total[0].replace(',', '').
+                                                  replace('.', ''))
 
         average = response.xpath(
             '//*[@id="summaryStars"]/a/@title')
@@ -1115,9 +1233,13 @@ class AmazonBaseClass(BaseProductsSpider):
                 '//div[@id="acr"]/div[@class="txtsmall"]'
                 '/div[contains(@class, "acrRating")]/text()'
             )
-        average = average.extract()[0].replace('out of 5 stars','')
-        average = average.replace('von 5 Sternen', '').replace('5つ星のうち','')\
-            .replace('平均','').replace(' 星','').replace('étoiles sur 5', '')\
+        if not average:
+            average = response.xpath(
+                ".//*[@id='reviewStarsLinkedCustomerReviews']//span/text()"
+            )
+        average = average.extract()[0].replace('out of 5 stars', '') if average else 0.0
+        average = average.replace('von 5 Sternen', '').replace('5つ星のうち', '') \
+            .replace('平均', '').replace(' 星', '').replace('étoiles sur 5', '') \
             .strip()
         buyer_reviews['average_rating'] = float(average)
 
@@ -1127,10 +1249,11 @@ class AmazonBaseClass(BaseProductsSpider):
         if not buyer_reviews.get('rating_by_star'):
             # scrape new buyer reviews request (that will lead to a new page)
             buyer_rev_link = is_empty(response.xpath(
-                '//div[@id="revSum"]//a[contains(text(), "See all")' \
+                '//div[@id="revSum" or @id="reviewSummary"]//a[contains(text(), "See all")' \
                 ' or contains(text(), "See the customer review")' \
                 ' or contains(text(), "See both customer reviews")]/@href'
             ).extract())
+            buyer_rev_link = urlparse.urljoin(response.url, buyer_rev_link)
             # Amazon started to display broken (404) link - fix
             if buyer_rev_link:
                 buyer_rev_link = re.search(r'.*product-reviews/[a-zA-Z0-9]+/',
@@ -1154,12 +1277,12 @@ class AmazonBaseClass(BaseProductsSpider):
                 self.get_buyer_reviews_from_2nd_page
             )
         product = response.meta["product"]
-        reqs = response.meta.get('reqs',[])
+        reqs = response.meta.get('reqs', [])
         buyer_reviews = {}
         product["buyer_reviews"] = {}
         buyer_reviews["num_of_reviews"] = is_empty(response.xpath(
             '//span[contains(@class, "totalReviewCount")]/text()').extract(),
-        '').replace(",", "")
+                                                   '').replace(",", "")
         if not buyer_reviews['num_of_reviews']:
             buyer_reviews['num_of_reviews'] = ZERO_REVIEWS_VALUE
         average = is_empty(response.xpath(
@@ -1170,15 +1293,19 @@ class AmazonBaseClass(BaseProductsSpider):
             average.replace('out of 5 stars', '')
 
         buyer_reviews["rating_by_star"] = {}
-        buyer_reviews = self.get_rating_by_star(response, buyer_reviews)[0]
+        # buyer_reviews = self.get_rating_by_star(response, buyer_reviews)[0]
 
-        #print('*' * 20, 'parsing buyer reviews from', response.url)
+        # print('*' * 20, 'parsing buyer reviews from', response.url)
+
+        if not buyer_reviews.get('rating_by_star'):
+            response.meta['product']['buyer_reviews'] = buyer_reviews
+            # if still no rating_by_star (probably the rating is percent-based)
+            return self._create_get_requests(response)
 
         if not buyer_reviews.get('rating_by_star'):
             response.meta['product']['buyer_reviews'] = buyer_reviews
             # if still no rating_by_star (probably the rating is percent-based)
             return self._create_post_requests(response)
-            #return
 
         product["buyer_reviews"] = BuyerReviews(**buyer_reviews)
 
@@ -1201,7 +1328,7 @@ class AmazonBaseClass(BaseProductsSpider):
             '//table[@id="histogramTable"]'
             '/tr[@class="a-histogram-row"]')
         if table:
-            for tr in table: #td[last()]//text()').re('\d+')
+            for tr in table:  # td[last()]//text()').re('\d+')
                 rating = is_empty(tr.xpath(
                     'string(.//td[1])').re(FLOATING_POINT_RGEX))
                 number = is_empty(tr.xpath(
@@ -1231,6 +1358,30 @@ class AmazonBaseClass(BaseProductsSpider):
                 )
         return buyer_reviews, table
 
+    def _create_get_requests(self, response):
+        """
+        Method to create request for every star count.
+        """
+        meta = response.meta.copy()
+        meta['_current_star'] = {}
+        asin = meta['product_id']
+        for star in self.buyer_reviews_stars:
+            args = 'ref=cm_cr_arp_d_viewopt_sr?' \
+                   'ie=UTF8&' \
+                   'reviewerType=all_reviews&' \
+                   'showViewpoints=1&' \
+                   'sortBy=recent&' \
+                   'pageNumber=1&' \
+                   'filterByStar={star}'.format(star=star)
+            url = response.url + args
+            meta['_current_star'] = star
+            yield Request(
+                url,
+                meta=meta,
+                callback=self._get_rating_by_star_by_individual_request,
+                dont_filter=True
+            )
+
     def _create_post_requests(self, response):
         """
         Method to create request for every star count.
@@ -1248,7 +1399,6 @@ class AmazonBaseClass(BaseProductsSpider):
                 'scope': 'reviewsAjax0',
             }
             meta['_current_star'] = star
-
             yield FormRequest(
                 url=self.REVIEW_URL_1.format(domain=self.allowed_domains[0]),
                 formdata=args, meta=meta,
@@ -1256,15 +1406,17 @@ class AmazonBaseClass(BaseProductsSpider):
                 dont_filter=True
             )
 
+
+
     def _get_rating_by_star_by_individual_request(self, response):
-        reqs = response.meta.get('reqs',[])
+        reqs = response.meta.get('reqs', [])
         product = response.meta['product']
         mkt_place_link = response.meta.get("mkt_place_link")
         current_star = response.meta['_current_star']
         current_star_int = [
-            i+1 for i, _star in enumerate(self.buyer_reviews_stars)
+            i + 1 for i, _star in enumerate(self.buyer_reviews_stars)
             if _star == current_star
-        ][0]
+            ][0]
         br = product.get('buyer_reviews')
         if br:
             rating_by_star = br.get('rating_by_star')
@@ -1278,7 +1430,7 @@ class AmazonBaseClass(BaseProductsSpider):
             r'Showing .+? of ([\d,\.]+) reviews', response.body)
         if num_of_reviews_for_star:
             num_of_reviews_for_star = num_of_reviews_for_star.group(1)
-            num_of_reviews_for_star = num_of_reviews_for_star\
+            num_of_reviews_for_star = num_of_reviews_for_star \
                 .replace(',', '').replace('.', '')
             rating_by_star[str(current_star_int)] \
                 = int(num_of_reviews_for_star)
@@ -1286,15 +1438,33 @@ class AmazonBaseClass(BaseProductsSpider):
             rating_by_star[str(current_star_int)] = 0
 
         product['buyer_reviews']['rating_by_star'] = rating_by_star
+        # If spider was unable to scrape average rating and num_of reviews, calculate them from rating_by_star
         if len(product['buyer_reviews']['rating_by_star']) >= 5:
-            product['buyer_reviews']['num_of_reviews'] \
-                = int(product['buyer_reviews']['num_of_reviews'])
-            product['buyer_reviews']['average_rating'] \
-                = float(product['buyer_reviews']['average_rating'])
+            try:
+                r_num = product['buyer_reviews']['num_of_reviews']
+                product['buyer_reviews']['num_of_reviews'] \
+                    = int(r_num) if type(r_num) is unicode or type(r_num) is str else sum(rating_by_star.values())
+            except BaseException:
+                self.log("Unable to convert num_of_reviews value to int: #%s#"
+                         % product['buyer_reviews']['num_of_reviews'], level=WARNING)
+                product['buyer_reviews']['num_of_reviews'] = sum(rating_by_star.values())
+            try:
+                arating = product['buyer_reviews']['average_rating']
+                product['buyer_reviews']['average_rating'] \
+                    = float(arating) if type(arating) is unicode or type(arating) is str else None
+            except BaseException:
+                self.log("Unable to convert average_rating value to float: #%s#"
+                         % product['buyer_reviews']['average_rating'], level=WARNING)
+                product['buyer_reviews']['average_rating'] = None
+            if not product['buyer_reviews']['average_rating']:
+                total = 0
+                for key, value in rating_by_star.iteritems():
+                    total += int(key) * int(value)
+                product['buyer_reviews']['average_rating'] = round(float(total) / sum(rating_by_star.values()), 2)
             # ok we collected all marks for all stars - can return the product
             product['buyer_reviews'] = BuyerReviews(**product['buyer_reviews'])
             if mkt_place_link:
-                return self.mkt_request(mkt_place_link, {"product": product})                
+                return self.mkt_request(mkt_place_link, {"product": product})
             elif reqs:
                 return self.send_next_request(reqs, response)
             return product
@@ -1313,7 +1483,16 @@ class AmazonBaseClass(BaseProductsSpider):
 
     # Captcha handling functions.
     def _has_captcha(self, response):
-        return '.images-amazon.com/captcha/' in response.body_as_unicode()
+        is_captcha = response.xpath('.//*[contains(text(), "Enter the characters you see below")]')
+        # DEBUG
+        # is_captcha = True
+        if is_captcha:
+            # This may turn on crawlera for all requests
+            # self.log("Detected captcha, turning on crawlera for all requests", level=WARNING)
+            # self.dont_proxy = False
+            self.log("Detected captcha, using captchabreaker", level=WARNING)
+            return True
+        return False
 
     def _solve_captcha(self, response):
         forms = response.xpath('//form')
@@ -1322,10 +1501,11 @@ class AmazonBaseClass(BaseProductsSpider):
         captcha_img = forms[0].xpath(
             '//img[contains(@src, "/captcha/")]/@src').extract()[0]
 
-        self.log("Extracted capcha url: %s" % captcha_img, level=DEBUG)
+        self.log("Extracted captcha url: %s" % captcha_img, level=DEBUG)
         return self._cbw.solve_captcha(captcha_img)
 
     def _handle_captcha(self, response, callback):
+        # import pdb; pdb.set_trace()
         # FIXME This is untested and wrong.
         captcha_solve_try = response.meta.get('captcha_solve_try', 0)
         url = response.url
@@ -1351,7 +1531,6 @@ class AmazonBaseClass(BaseProductsSpider):
 
             meta = response.meta.copy()
             meta['captcha_solve_try'] = captcha_solve_try + 1
-
             result = FormRequest.from_response(
                 response,
                 formname='',
@@ -1378,7 +1557,7 @@ class AmazonBaseClass(BaseProductsSpider):
             name = name.split('Dispatched from', 1)[0].strip()
             name = name.split('Gift-wrap', 1)[0].strip()
         if ' by ' in name:
-            self.log('Multiple "by" occurrences found', ERROR)
+            self.log('Multiple "by" occurrences found', WARNING)
         if 'Inc. ' in name:
             name = name.split(', Inc.', 1)[0] + ', Inc.'
         if 'Guarantee Delivery' in name:
@@ -1396,11 +1575,10 @@ class AmazonBaseClass(BaseProductsSpider):
         if '(' in name:
             name = name.split('(', 1)[0].strip()
         if 'exclusively for Prime members' in name:
-            name = name.split('exclusively for Prime members',1)[0].strip()
+            name = name.split('exclusively for Prime members', 1)[0].strip()
         if name.endswith('.'):
             name = name[0:-1]
         return name
-
 
     def _parse_marketplace_from_top_block(self, response):
         """ Parses "top block" marketplace ("Sold by ...") """
@@ -1419,7 +1597,7 @@ class AmazonBaseClass(BaseProductsSpider):
             seller_id = seller_id.group(1)
 
         sold_by_str = ''.join(top_block.xpath('.//text()').extract()).strip()
-        sold_by_str = sold_by_str.replace('.com.', '.com').replace('\t', '')\
+        sold_by_str = sold_by_str.replace('.com.', '.com').replace('\t', '') \
             .replace('\n', '').replace('Gift-wrap available', '').replace(' .', '').strip()
         sold_by_whom = sold_by_str.split('by', 1)[1].strip()
         sold_by_whom = self._marketplace_seller_name_parse(sold_by_whom)
@@ -1445,8 +1623,8 @@ class AmazonBaseClass(BaseProductsSpider):
 
     @staticmethod
     def _strip_currency_from_price(val):
-        return val.strip().replace('$', '').replace('£', '')\
-            .replace('CDN', '').replace(u'\uffe5', '').replace('EUR', '')\
+        return val.strip().replace('$', '').replace('£', '') \
+            .replace('CDN', '').replace(u'\uffe5', '').replace('EUR', '') \
             .replace(',', '.').strip()
 
     @staticmethod
@@ -1486,7 +1664,7 @@ class AmazonBaseClass(BaseProductsSpider):
         get_price_url = data_modal.get('url', None)
         if get_price_url.startswith('/') and not get_price_url.startswith('//'):
             domain = urlparse.urlparse(response.url).netloc
-            get_price_url = urlparse.urljoin('http://'+domain, get_price_url)
+            get_price_url = urlparse.urljoin('http://' + domain, get_price_url)
         if get_price_url:
             self.log('Getting "cart" seller price at %s for %s' % (
                 response.url, get_price_url))
@@ -1517,19 +1695,20 @@ class AmazonBaseClass(BaseProductsSpider):
             _name = seller_row.xpath('div[4]//h3//a/text()|div[4]//@alt').extract()
             _price = seller_row.xpath('div[1]//*[contains(@class,"olpOfferPrice")]/text()').extract()
             _price = float(self._strip_currency_from_price(
-                           self._fix_dots_commas(_price[0].strip()))) if _price else None
+                self._fix_dots_commas(_price[0].strip()))) if _price else None
 
-            _seller_id = seller_row.xpath('div[4]//h3//a/@href').re('seller=(.*)\&?') or seller_row.xpath('div[4]//h3//a/@href').re('shops/(.*?)/')
+            _seller_id = seller_row.xpath('div[4]//h3//a/@href').re('seller=(.*)\&?') or seller_row.xpath(
+                'div[4]//h3//a/@href').re('shops/(.*?)/')
             _seller_id = _seller_id[0] if _seller_id else None
 
             if _name:
                 _name = self._marketplace_seller_name_parse(_name[0])
                 _marketplace.append({
-                            'name': _name.replace('\n', '').strip(),
-                            'price': _price,
-                            'currency': _prod_price_currency,
-                            'seller_id': _seller_id
-                        })
+                    'name': _name.replace('\n', '').strip(),
+                    'price': _price,
+                    'currency': _prod_price_currency,
+                    'seller_id': _seller_id
+                })
         if _marketplace:
             product['marketplace'] = _marketplace
         else:
@@ -1541,7 +1720,7 @@ class AmazonBaseClass(BaseProductsSpider):
             return Request(
                 url=urlparse.urljoin(response.url, next_page[0]),
                 callback=self._parse_marketplace_from_static_right_block_more,
-                meta=response.meta,
+                meta=meta,
                 dont_filter=True
             )
 
@@ -1560,11 +1739,12 @@ class AmazonBaseClass(BaseProductsSpider):
         if not others_sellers:
             others_sellers = response.xpath('//div[@id="availability"]/span/a/@href').extract()
         if others_sellers:
-            return product, Request(url= urlparse.urljoin(response.url, others_sellers[0]),
+            meta = response.meta
+            return product, Request(url=urlparse.urljoin(response.url, others_sellers[0]),
                                     callback=self._parse_marketplace_from_static_right_block_more,
-                                    meta=response.meta,
+                                    meta=meta,
                                     dont_filter=True,
-                            )
+                                    )
 
         _prod_price = product.get('price', [])
         _prod_price_currency = None
@@ -1575,7 +1755,7 @@ class AmazonBaseClass(BaseProductsSpider):
         for mbc_row in response.xpath('//*[@id="mbc"]//*[contains(@class, "mbc-offer-row")]'):
             _price = mbc_row.xpath('.//*[contains(@class, "a-color-price")]/text()').extract()
             _name = mbc_row.xpath('.//*[contains(@class, "mbcMerchantName")]/text()').extract()
-            
+
             _json_data = None
             try:
                 _json_data = json.loads(mbc_row.xpath(
@@ -1595,8 +1775,8 @@ class AmazonBaseClass(BaseProductsSpider):
                 _price = self._get_marketplace_price_from_cart(response, mbc_row)
 
             _price = float(self._strip_currency_from_price(
-                           self._fix_dots_commas(_price[0]))) \
-                     if _price else None
+                self._fix_dots_commas(_price[0]))) \
+                if _price else None
 
             if _name:
                 _name = self._marketplace_seller_name_parse(_name)

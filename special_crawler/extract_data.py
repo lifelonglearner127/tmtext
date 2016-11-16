@@ -56,6 +56,12 @@ class Scraper():
     # number of retries for fetching product page source before giving up
     MAX_RETRIES = 3
 
+    PROXY = 'crawlera'
+
+    CRAWLERA_HOST = 'content.crawlera.com'
+    CRAWLERA_PORT = '8010'
+    CRAWLERA_APIKEY = "3b1bf5856b2142a799faf2d35b504383"
+
     # List containing all data types returned by the crawler (that will appear in responses of requests to service in crawler_service.py)
     # In practice, all returned data types for all crawlers should be defined here
     # The final list containing actual implementing methods for each data type will be defined in the constructor
@@ -72,6 +78,7 @@ class Scraper():
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
                        # Only implemented for walmart. Possible values: "Walmart v1" or "Walmart v2"
+            "proxy_service",
 
             # product_info
             "product_name", # name of product, string
@@ -107,6 +114,8 @@ class Scraper():
             "shipping",
             "free_pickup_today",
             "no_longer_available",
+            "assembled_size",
+            "temporary_unavailable",
             "variants", # list of variants
             "swatches", # list of swatches
             "related_products_urls",
@@ -119,6 +128,7 @@ class Scraper():
             "bullet_feature_3",
             "bullet_feature_4",
             "bullet_feature_5",
+            "bullets",
             "usage",
             "directions",
             "warnings",
@@ -129,6 +139,8 @@ class Scraper():
             "mobile_image_same", # whether mobile image is same as desktop image, 1/0
             "image_count", # number of product images, int
             "image_urls", # urls of product images, list of strings
+            "image_alt_text", # alt text for images, list of strings
+            "image_alt_text_len",  # lengths of alt text for images, list of integers
             "image_dimensions", # dimensions of product images
             "no_image_available", # binary (0/1), whether there is a 'no image available' image
             "video_count", # nr of videos, int
@@ -167,6 +179,7 @@ class Scraper():
             "num_items_price_displayed",
             "num_items_no_price_displayed",
             "body_copy",
+            "body_copy_links",
 
             # reviews
             "review_count", # total number of reviews, int
@@ -247,16 +260,16 @@ class Scraper():
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
                         "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "details", "mta", \
-                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5",
+                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5", "bullets",
                         "usage", "directions", "warnings", "indications", "amazon_ingredients",
-                            "specs"],
-        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
+                            "specs", "temporary_unavailable"],
+        "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_alt_text", "image_alt_text_len", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags", "meta_tag_count", "meta_description_count", \
                             "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv", \
                             "best_seller_category", "results_per_page", "total_matches", "lowest_item_price", "highest_item_price",
                             "num_items_price_displayed", "num_items_no_price_displayed",
-                                "body_copy", "meta_description", "cnet"], \
+                                "body_copy", "body_copy_links", "meta_description", "cnet"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "seller_id", "us_seller_id", "in_stock", \
@@ -344,6 +357,12 @@ class Scraper():
         self.product_page_url = kwargs['url']
         self.bot_type = kwargs['bot']
         self.is_timeout = False
+
+        if kwargs.get('proxy'):
+            self.PROXY = kwargs.get('proxy')
+
+        if kwargs.get('api_key'):
+            self.CRAWLERA_APIKEY = kwargs.get('api_key')
 
         # Set generic fields
         # directly (don't need to be computed by the scrapers)
@@ -482,6 +501,8 @@ class Scraper():
             costco_url = re.match('http://www.costco.com/(.*)', self.product_page_url)
             wag_url = re.match('https?://www.wag.com/(.*)', self.product_page_url)
             jcpenney_url = re.match('http://www.jcpenney.com/(.*)', self.product_page_url)
+            walmart_ca_url = re.match('http://www.walmart.ca/(.*)', self.product_page_url)
+            sears_url = re.match('http://www.sears.com/(.*)', self.product_page_url)
 
             if costco_url:
                 self.product_page_url = 'http://www.costco.com/' + urllib2.quote(costco_url.group(1).encode('utf8'))
@@ -489,11 +510,14 @@ class Scraper():
             request = urllib2.Request(self.product_page_url)
             # set user agent to avoid blocking
             agent = ''
-            if self.bot_type == "google" or wag_url:
+            if self.bot_type == "google" or wag_url or sears_url:
                 agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
             else:
                 agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
             request.add_header('User-Agent', agent)
+
+            if walmart_ca_url:
+                request.add_header('Cookie', 'cookieLanguageType=en; deliveryCatchment=2000; marketCatchment=2001; walmart.shippingPostalCode=V5M2G7; zone=2')
 
             for i in range(self.MAX_RETRIES):
                 try:
@@ -598,7 +622,11 @@ class Scraper():
         results_dict = {}
 
         # if it's not a valid product page, abort
-        if self.is_timeout or self.not_a_product():
+        try:
+            if self.is_timeout or self.not_a_product():
+                return self.ERROR_RESPONSE
+        except:
+            self.ERROR_RESPONSE["failure_type"] = 'Not a product'
             return self.ERROR_RESPONSE
 
         for info in info_type_list:

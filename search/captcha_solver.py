@@ -291,9 +291,11 @@ class CaptchaBreakerWrapper():
     CB = None
 
     # paths for data necessary for captcha solving
-    CAPTCHAS_DIR = "captchas"
-    SOLVED_CAPTCHAS_DIR = "solved_captchas"
-    TRAIN_DATA_PATH = "train_captchas_data"
+    CAPTCHAS_DIR = "/tmp/captchas"
+    SOLVED_CAPTCHAS_DIR = "/tmp/solved_captchas"
+    # TRAIN_DATA_PATH = "train_captchas_data"
+    # TRAIN_DATA_PATH = "tmtext/search/train_captchas_data/"
+    TRAIN_DATA_PATH = os.path.join(os.path.dirname(__file__), 'train_captchas_data')
 
     # given an image URL of the captcha, download the image and solve the captcha, return the result as text
     # set debug_info to True for printing debug messages on stderr

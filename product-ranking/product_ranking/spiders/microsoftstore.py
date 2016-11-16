@@ -1,18 +1,14 @@
 # -*- coding: utf-8 -*-#
 
 import json
-import re
 import string
-import itertools
-import urllib
+import requests
 
-from scrapy.http import FormRequest, Request
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy.http import Request
+from scrapy.log import INFO
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
-    cond_set_value
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.spiders import BaseProductsSpider, cond_set_value
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.guess_brand import guess_brand_from_first_words
@@ -197,7 +193,10 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
         return description
 
     def parse_variant(self, response):
-        price_blocks = response.xpath('//div[contains(@class, "price-block")]//p[contains(@class,"current-price")]')
+        variants = []
+        price_blocks = response.xpath(
+            '//div[contains(@class, "price-block")]'
+            '//p[contains(@class,"current-price")]')
         prices = []
         for p_block in price_blocks:
             price = p_block.xpath('.//text()').extract()
@@ -205,20 +204,59 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
             price = "".join(price)
             prices.append(price)
 
-        titles = response.xpath('//div[contains(@class,"variation-container")]//li//a/@title').extract()
+        titles = response.xpath(
+            '//div[contains(@class,"variation-container")]//li//a/@title'
+        ).extract()
         if len(titles) < 1:
-            titles = response.xpath('//div[contains(@class,"variation-container")]//li//a/@data-variation-title').extract()
+            titles = response.xpath('//div[contains(@class,"variation-container")]'
+                                    '//li//a/@data-variation-title').extract()
 
-        variations = []
+        urls = response.xpath(
+            '//div[contains(@class,"btnSubmitSpinContainer")]//'
+            'a[contains(@class,"buyBtn_AddtoCart")]/@href').extract()
+
+        selected = response.xpath(
+            '//div[contains(@class,"variation-container")]//li').extract()
+        data_pids = response.xpath(
+            '//div[contains(@class,"variation-container")]//li/@data-pid'
+        ).extract()
+        if len(selected) > 0 and len(data_pids) == 0:
+            data_pids = response.xpath(
+                '//div[contains(@class,"variation-container")]//li/a/@var-pid'
+            ).extract()
+
         idx = 0
         for price in prices:
-            if idx >= len(titles):
+            variant = {}
+            if idx >= len(titles) or idx >= len(urls):
                 break
-            variation = "%s - %s" % (titles[idx], price)
-            variations.append(variation)
+            variant["price"] = price
+            variant["title"] = titles[idx]
+            variant["url"] = urls[idx]
+            if "class='active'" in selected[idx] \
+                    or 'class="active"' in selected[idx] \
+                    or 'class="selected"' in selected[idx] \
+                    or "class='selected'" in selected[idx]:
+                variant["selected"] = True
+            else:
+                variant["selected"] = False
+
+            if "https://www.microsoftstore.com/store/msusa/en_US/pdp/Lenovo-Yoga-900-Signature-Edition-2-in-1-PC/productID.334955000" == response._url:
+                pass
+
+            in_stock_url = "https://www.microsoftstore.com/store?Action=DisplayPage&" \
+                           "Locale=en_US&SiteID=msusa&id=ProductInventoryStatusXmlPage&" \
+                           "productID=%s" % data_pids[idx]
+            r = requests.get(in_stock_url)
+            if "PRODUCT_INVENTORY_OUT_OF_STOCK" in r.text:
+                variant["in_stock"] = False
+            else:
+                variant["in_stock"] = True
+
+            variants.append(variant)
             idx += 1
-        variation = ", ".join(variations)
-        return variation
+
+        return variants
 
     def send_next_request(self, reqs, response):
         """

@@ -206,7 +206,8 @@ class KohlsScraper(Scraper):
         return 0
 
     def _description(self):
-        description_block = html.fromstring("<div>" + self.product_info_json["productItem"]["accordions"]["productDetails"]["content"] + "</div>")
+        description_block = html.fromstring(
+            "<div>" + self.product_info_json["productItem"]["accordions"]["productDetails"]["content"] + "</div>")
         short_description = ""
         features_title_list = ["Product Features:", "PRODUCT FEATURES", "Product Features", "Features"]
 
@@ -220,7 +221,8 @@ class KohlsScraper(Scraper):
                 if inner_text in features_title_list:
                     break
 
-                short_description += html.tostring(element_block)
+                if not element_block.xpath('./a'):
+                    short_description += html.tostring(element_block)
         else:
             for element_block in description_block:
                 if element_block.tag == "ul":
@@ -238,7 +240,10 @@ class KohlsScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        description_block = html.fromstring("<div>" + self.product_info_json["productItem"]["accordions"]["productDetails"]["content"] + "</div>")
+        description_block = html.fromstring(
+            "<div>" + self.product_info_json["productItem"]["accordions"]["productDetails"]["content"]
+            + "</div>"
+        )
         features_title_list = ["Product Features:", "PRODUCT FEATURES", "Product Features", "Features"]
 
         if not description_block:
@@ -258,14 +263,10 @@ class KohlsScraper(Scraper):
 
                 if inner_text in features_title_list:
                     features_ul = 1
-                    continue
 
                 if features_ul == 1:
-                    features_ul = 2
-                    continue
-
-                if features_ul == 2:
-                    long_description += html.tostring(element_block)
+                    if len(element_block.xpath('./em')) == 0:
+                        long_description += html.tostring(element_block)
         else:
             is_long_description = False
 
@@ -338,12 +339,19 @@ class KohlsScraper(Scraper):
 
         self._extract_webcollage_contents()
 
-        if self.product_info_json["productItem"]["media"].get("videoURL", None):
-            video_page_html = html.fromstring(self.load_page_from_url_with_number_of_retries(self.product_info_json["productItem"]["media"]["videoURL"]))
+        video_url = self.product_info_json["productItem"]["media"].get("videoURL")
+
+        if video_url:
+            if re.match('//www', video_url):
+                video_url = 'http:' + video_url
+
+            video_page_html = html.fromstring(self.load_page_from_url_with_number_of_retries(video_url))
             video_urls = video_page_html.xpath("//video[@id='product-video']/source[contains(@type, 'video')]/@src")
 
             if video_urls:
                 self.video_urls.extend([video_urls[0]])
+            else:
+                self.video_urls.append(video_url)
 
         return self.video_urls if self.video_urls else None
 
