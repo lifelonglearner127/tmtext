@@ -15,7 +15,7 @@ import shutil
 import datetime
 from requests.auth import HTTPProxyAuth
 
-import scrapy
+from scrapy import Spider
 from scrapy.conf import settings
 from scrapy.http import Request, FormRequest
 from scrapy.log import INFO, WARNING, ERROR
@@ -35,21 +35,13 @@ sys.path.append(os.path.join(CWD, '..', '..', '..', '..', '..'))
 
 DEBUG_MODE = False  # TODO! fix
 
+from product_ranking.items import ScreenshotItem
+
 try:
     from search.captcha_solver import CaptchaBreakerWrapper
 except ImportError as e:
     CaptchaBreakerWrapper = None
     print 'Error loading captcha breaker!', str(e)
-
-
-class ScreenshotItem(scrapy.Item):
-    url = scrapy.Field()
-    image = scrapy.Field()
-    via_proxy = scrapy.Field()  # IP via webdriver
-    site_settings = scrapy.Field()  # site-specified settings that were activated (if any)
-
-    def __repr__(self):
-        return '[image data]'  # don't dump image data into logs
 
 
 def _get_random_proxy():
@@ -93,7 +85,7 @@ def _check_bad_results_macys(driver):
         return True
 
 
-class URL2ScreenshotSpider(scrapy.Spider):
+class URL2ScreenshotSpider(Spider):
     name = 'url2screenshot_products'
     # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
     available_drivers = ['chromium', 'firefox']
@@ -512,6 +504,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         item['url'] = response.url
         item['image'] = base64.b64encode(img_content)
         item['site_settings'] = getattr(self, '_site_settings_activated_for', None)
+        item['creation_datetime'] = datetime.datetime.utcnow().isoformat()
 
         if not DEBUG_MODE:
             display.stop()
