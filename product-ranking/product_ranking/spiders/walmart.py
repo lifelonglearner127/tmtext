@@ -1170,9 +1170,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if data:
             # Parse selected product
             selected_product = self._parse_selected_product_alternative(data)
-            import pprint
-            pprint.pprint(selected_product)
-
 
             # Parse selected product offers
             selected_product_offers = self._parse_selected_product_offers(selected_product)
