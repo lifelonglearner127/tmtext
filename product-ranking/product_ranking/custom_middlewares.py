@@ -85,10 +85,6 @@ class AmazonProxyMiddleware(object):
         return response
 
 class WalmartRetryMiddleware(RedirectMiddleware):
-
-    def process_exception(self, request, exception, spider):
-        request.replace(headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36'})
-
     def process_response(self, request, response, spider):
         if response.status in [301, 302, 307]:
             location = response.headers.get('Location')
