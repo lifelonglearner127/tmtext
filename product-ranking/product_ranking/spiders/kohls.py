@@ -132,8 +132,14 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         prod['url'] = response.url
 
         if self._is_not_found(response):
-            prod['not_found'] = True
-            return prod
+            if response.xpath('//div[@id="content"]/@class')[0].extract() == 'pdp_outofstockproduct':
+                prod = response.meta['product']
+                prod['title'] = response.xpath('//div[@id="content"]//b/text()')[0].extract()
+                prod['is_out_of_stock'] = True
+                return prod
+            else:
+                prod['not_found'] = True
+                return prod
 
         kv = KohlsVariants()
         kv.setupSC(response)
