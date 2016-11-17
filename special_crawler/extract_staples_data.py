@@ -293,8 +293,11 @@ class StaplesScraper(Scraper):
             v_url = "http://media.webcollage.net/rwvfp/wc%s" % video['src']['src']
             video_urls.append(v_url)
 
-        self.video_urls = video_urls
-        return video_urls
+        if len(video_urls) == 0:
+            self.video_urls = None
+        else:
+            self.video_urls = video_urls
+        return self.video_urls
 
     def _video_count(self):
         if self.video_urls is None:
