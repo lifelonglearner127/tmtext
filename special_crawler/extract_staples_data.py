@@ -276,14 +276,32 @@ class StaplesScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        return None
+        if self.video_urls is not None:
+            return self.video_urls
+        wc_url = "http://content.webcollage.net/staples/power-page?ird=true&channel-product-id=%s"\
+                 % self._product_id()
+        contents = urllib.urlopen(wc_url).read()
+        contents = re.findall(r'html:(.*?)\}\;', contents, re.DOTALL)[0]
+        contents = contents[contents.find('<'):contents.rfind('>')+1]
+        tree = html.fromstring(contents)
+        video_json = json.loads(
+            tree.xpath("//div[contains(@class,'wc-json-data')]//text()")[0].
+            replace('\\"', '"'))
+        videos = video_json['videos']
+        video_urls = []
+        for video in videos:
+            v_url = "http://media.webcollage.net/rwvfp/wc%s" % video['src']['src']
+            video_urls.append(v_url)
+
+        self.video_urls = video_urls
+        return video_urls
 
     def _video_count(self):
-        urls = self._video_urls()
-
-        if urls:
-            return len(urls)
-        return 0
+        if self.video_urls is None:
+            self._video_urls()
+        if self.video_urls is None:
+            return 0
+        return len(self.video_urls)
 
     def _pdf_urls(self):
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
