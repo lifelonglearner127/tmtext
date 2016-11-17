@@ -51,7 +51,7 @@ def main( environment, scrape_queue_name, thread_id):
     logger.info( "Starting thread %d" % thread_id)
     # establish the scrape queue
     sqs_scrape = SQS_Queue( scrape_queue_name)
-    base = "http://localhost/get_data?url=%s"
+    base = "http://localhost:8000/get_data?url=%s"
 
     last_fetch = datetime.min
 

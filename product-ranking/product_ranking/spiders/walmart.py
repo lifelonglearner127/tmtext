@@ -672,6 +672,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             not_available = True
         if response.xpath('.//div[contains(@class, "price-display-oos-color")]'):
             not_available = True
+        if response.xpath('//*[contains(., "This item is no longer available")]'):
+            not_available = True
         return not_available
 
     def _on_api_response(self, response):
@@ -1232,7 +1234,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def _parse_variants_alternative(self, response, marketplaces, data, products, selected_product):
         variants = []
         primary_product_id = data.get('product', {}).get('primaryProduct')
-        variants_map = data.get('product', {}).get('variantCategoriesMap').get(primary_product_id, {})
+        try:
+            variants_map = data.get('product', {}).get('variantCategoriesMap', {}).get(primary_product_id, {})
+        except:
+            variants_map = {}
         for product in products.values():
             selected_product_offers = self._parse_selected_product_offers(product)
             price = self._parse_price_alternative(marketplaces, selected_product_offers)
