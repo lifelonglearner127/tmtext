@@ -125,7 +125,7 @@ CACHE_URL_GET = 'get_cache'  # url to retrieve task cache from
 CACHE_URL_SAVE = 'save_cache'  # to save cached result to
 CACHE_URL_STATS = 'complete_task'  # to have some stats about completed tasks
 CACHE_URL_FAIL = 'fail_task'  # to manage broken tasks
-CACHE_AUTH = ('admin', 'SD*/#n\%4a')
+CACHE_AUTH = ('admin', 'SD*/#n\%4c')
 CACHE_TIMEOUT = 15  # 15 seconds request timeout
 # key in task data to not retrieve cached result
 # if True, task will be executed even if there is result for it in cache
