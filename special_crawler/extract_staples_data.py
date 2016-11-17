@@ -278,21 +278,24 @@ class StaplesScraper(Scraper):
     def _video_urls(self):
         if self.video_urls != -1:
             return self.video_urls
-        wc_url = "http://content.webcollage.net/staples/power-page?ird=true&channel-product-id=%s"\
-                 % self._product_id()
-        contents = urllib.urlopen(wc_url).read()
-        contents = re.findall(r'html:(.*?)\}\;', contents, re.DOTALL)[0]
-        contents = contents[contents.find('<'):contents.rfind('>')+1]
-        tree = html.fromstring(contents)
-        video_json = json.loads(
-            tree.xpath("//div[contains(@class,'wc-json-data')]//text()")[0].
-            replace('\\"', '"'))
-        videos = video_json['videos']
-        video_urls = []
-        for video in videos:
-            v_url = "http://media.webcollage.net/rwvfp/wc%s" % video['src']['src']
-            video_urls.append(v_url)
 
+        video_urls = []
+        try:
+            wc_url = "http://content.webcollage.net/staples/power-page?ird=true&channel-product-id=%s"\
+                     % self._product_id()
+            contents = urllib.urlopen(wc_url).read()
+            contents = re.findall(r'html:(.*?)\}\;', contents, re.DOTALL)[0]
+            contents = contents[contents.find('<'):contents.rfind('>')+1]
+            tree = html.fromstring(contents)
+            video_json = json.loads(
+                tree.xpath("//div[contains(@class,'wc-json-data')]//text()")[0].
+                replace('\\"', '"'))
+            videos = video_json['videos']
+            for video in videos:
+                v_url = "http://media.webcollage.net/rwvfp/wc%s" % video['src']['src']
+                video_urls.append(v_url)
+        except:
+            pass
         if len(video_urls) == 0:
             self.video_urls = None
         else:
