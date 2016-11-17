@@ -218,7 +218,8 @@ class Scraper():
             "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
             "category_name", # category for this product, string
             "shelf_links_by_level", # list of category urls
-            "brand" # brand of product, string
+            "brand", # brand of product, string
+            "mfg" # mfg, string, for westmarine.com
 
             # Deprecated:
             # "anchors", # links found in the description, dictionary like {"links" : [], quantity: 0}
@@ -257,7 +258,7 @@ class Scraper():
                         "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "details", "mta", \
                         "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5",
                         "usage", "directions", "warnings", "indications", "amazon_ingredients",
-                            "specs", "temporary_unavailable"],
+                            "specs", "temporary_unavailable", "mfg"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_alt_text", "image_alt_text_len", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags", "meta_tag_count", "meta_description_count", \

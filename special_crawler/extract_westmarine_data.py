@@ -432,10 +432,18 @@ class WestmarineScraper(Scraper):
         except:
             return None
 
+    def _mfg(self):
+        try:
+            data = json.loads(
+                self.tree_html.xpath("//script[contains(@type, 'application/ld+json')]//text()")[0]
+            )
+            mfg = data["mpn"]
+            return mfg
+        except:
+            return None
 
     ##########################################
-    ################ HELPER FUNCTIONS
-    ##########################################
+    ################ HELPER FUNCTIONS##########################################
     # clean text inside html tags - remove html entities, trim spaces
     def _clean_text(self, text):
         return re.sub("&nbsp;", " ", text).strip()
@@ -509,6 +517,7 @@ class WestmarineScraper(Scraper):
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
+        "mfg" : _mfg, \
 
 
 
