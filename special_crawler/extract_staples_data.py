@@ -417,10 +417,12 @@ class StaplesScraper(Scraper):
     ##########################################
     def _price(self):
         price = self.tree_html.xpath("//span[@itemprop='price' and @class='SEOFinalPrice']/text()")[0].strip()
+        if "$" not in price:
+            price = "$" + price
         return price
 
     def _price_amount(self):
-        return float(self._price()[1:])
+        return float(self._price().replace("$", ""))
 
     def _price_currency(self):
         return "USD"
