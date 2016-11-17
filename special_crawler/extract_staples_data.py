@@ -40,7 +40,7 @@ class StaplesScraper(Scraper):
         self.reviews = None
         self.feature_count = None
         self.features = None
-        self.video_urls = None
+        self.video_urls = -1
         self.video_count = None
         self.pdf_urls = None
         self.pdf_count = None
@@ -276,7 +276,7 @@ class StaplesScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        if self.video_urls is not None:
+        if self.video_urls != -1:
             return self.video_urls
         wc_url = "http://content.webcollage.net/staples/power-page?ird=true&channel-product-id=%s"\
                  % self._product_id()
@@ -300,7 +300,7 @@ class StaplesScraper(Scraper):
         return self.video_urls
 
     def _video_count(self):
-        if self.video_urls is None:
+        if self.video_urls == -1:
             self._video_urls()
         if self.video_urls is None:
             return 0
