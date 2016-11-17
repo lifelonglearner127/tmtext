@@ -15,6 +15,10 @@ import threading
 import urllib
 from datetime import datetime
 
+import boto
+from boto.s3.key import Key
+from boto.s3.connection import S3Connection
+
 # initialize the logger
 logger = logging.getLogger('basic_logger')
 logger.setLevel(logging.DEBUG)
@@ -41,11 +45,24 @@ queue_names = {
 
 INDEX_ERROR = "IndexError : The queue was really out of items, but the count was lagging so it tried to run again."
 
+FETCH_FREQUENCY = 60
+
 def main( environment, scrape_queue_name, thread_id):
     logger.info( "Starting thread %d" % thread_id)
     # establish the scrape queue
     sqs_scrape = SQS_Queue( scrape_queue_name)
-    base = "http://localhost/get_data?url=%s"
+    base = "http://localhost:8000/get_data?url=%s"
+
+    last_fetch = datetime.min
+
+    config_dict = {'additional_requests': None,
+        'proxy': None,
+        'walmart_proxy_crawlera': None,
+        'walmart_proxy_proxyrain': None,
+        'walmart_proxy_shaderio': None,
+        'walmart_proxy_luminati': None,
+        'api_key': None,
+        'walmart_api_key': None}
 
     # Continually pull off the SQS Scrape Queue
     while True:
@@ -79,18 +96,50 @@ def main( environment, scrape_queue_name, thread_id):
                 server_name = message_json['server_name']
                 product_id = message_json['product_id']
                 event = message_json['event']
-                
+                config_dict['additional_requests'] = message_json.get('additional_requests')
+
                 logger.info("Received: thread %d server %s url %s" % ( thread_id, server_name, url))
 
-                for i in range(3):
+                if (datetime.now() - last_fetch).seconds > FETCH_FREQUENCY:
+                    amazon_bucket_name = 'ch-settings'
+                    key_file = 'proxy_settings.cfg'
+
+                    try:
+                        S3_CONN = boto.connect_s3(is_secure=False)
+                        S3_BUCKET = S3_CONN.get_bucket(amazon_bucket_name, validate=False)
+                        k = Key(S3_BUCKET)
+                        k.key = key_file
+                        key_dict = json.loads(k.get_contents_as_string())
+                        config_dict['proxy'] = key_dict['default']
+                        config_dict['walmart_proxy_crawlera'] = key_dict['walmart']['crawlera']
+                        config_dict['walmart_proxy_proxyrain'] = key_dict['walmart']['proxyrain']
+                        config_dict['walmart_proxy_shaderio'] = key_dict['walmart']['shaderio']
+                        config_dict['walmart_proxy_luminati'] = key_dict['walmart']['luminati']
+                        config_dict['api_key'] = key_dict['crawlera']['api_keys']['default']
+                        config_dict['walmart_api_key'] = key_dict['crawlera']['api_keys']['walmart']
+                        logger.info('FETCHED PROXY CONFIG')
+                        last_fetch = datetime.now()
+                    except Exception, e:
+                        logger.info(str(e))
+                        logger.info('FAILED TO FETCH PROXY CONFIG')
+
+                max_retries = 3
+
+                for i in range(1, max_retries):
                     # Scrape the page using the scraper running on localhost
                     get_start = time.time()
-                    output_text = requests.get(base%(urllib.quote(url))).text
+                    tmp_url = base%(urllib.quote(url))
+                    for k,v in config_dict.items():
+                        if v is not None:
+                            tmp_url += '&%s=%s' % (k, v)
+                    logger.info('REQUESTING %s' % tmp_url)
+                    output_text = requests.get(tmp_url).text
                     get_end = time.time()
 
                     # Add the processing fields to the return object and re-serialize it
                     try:
                         output_json = json.loads(output_text)
+
                     except Exception as e:
                         logger.info(output_text)
                         output_json = {
@@ -98,10 +147,22 @@ def main( environment, scrape_queue_name, thread_id):
                             "date":datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
                             "status":"failure",
                             "page_attributes":{"loaded_in_seconds":round(get_end-get_start,2)}}
-                    output_json['attempt'] = i+1
-                    if not "error" in output_json:
+
+                    output_json['attempt'] = i
+
+                    # If scraper response was successful, we're done
+                    if not output_json.get('status') == 'failure':
                         break
-                    time.sleep( 1)
+
+                    # If failure was due to proxies
+                    if output_json.get('failure_type') in ['max_retries', 'proxy']:
+                        logger.info('GOT FAILURE TYPE %s for %s - RETRY %s' % (output_json.get('failure_type'), url, i))
+                        max_retries = 10
+                        # back off incrementally
+                        time.sleep(60*i)
+                    else:
+                        max_retries = 3
+                        time.sleep(1)
 
                 output_json['url'] = url
                 output_json['site_id'] = site_id

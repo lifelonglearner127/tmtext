@@ -8,7 +8,6 @@ from lxml import html
 import scrapy
 from scrapy.log import WARNING, ERROR
 from scrapy.http import Request
-from scrapy import Selector
 
 from product_ranking.items import SiteProductItem
 

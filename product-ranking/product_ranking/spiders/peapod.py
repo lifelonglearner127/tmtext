@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
 
@@ -7,7 +6,6 @@ from scrapy.log import WARNING
 from scrapy.http import Request
 from scrapy import FormRequest
 
-from scrapy.http import Request
 from product_ranking.items import SiteProductItem, Price, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults,\
     cond_set, cond_set_value

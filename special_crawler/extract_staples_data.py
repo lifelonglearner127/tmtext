@@ -51,6 +51,7 @@ class StaplesScraper(Scraper):
         self.is_variant_info_jsons_checked = False
         self.description = None
         self.long_description = None
+        self.bullet_list = None
 
     def check_url_format(self):
         # for ex: http://www.staples.com/Epson-WorkForce-Pro-WF-4630-Color-Inkjet-All-in-One-Printer/product_242602?cmArea=home_box1
@@ -175,7 +176,7 @@ class StaplesScraper(Scraper):
     def _model_meta(self):
         return None
 
-    def _description(self):
+    def _shelf_description(self):
         self._get_long_and_short_description()
 
         if self.description:
@@ -186,6 +187,13 @@ class StaplesScraper(Scraper):
 
         if self.long_description and not self.long_description == self.description:
             return self.long_description
+
+    def _description(self):
+        self._get_long_and_short_description()
+
+        if self.bullet_list:
+            return self.bullet_list
+        return None
 
     def _get_long_and_short_description(self):
         paragraph = ""
@@ -212,11 +220,12 @@ class StaplesScraper(Scraper):
                 for t in description_info["text"]:
                     expanded_descr += (t["value"] + "\n")
 
-        description = headliner + paragraph + bullet_list
-        long_description = expanded_descr
+        # description = headliner + paragraph + bullet_list
+        # long_description = expanded_descr
 
-        self.description = description
-        self.long_description = long_description
+        self.description = headliner
+        self.long_description = paragraph
+        self.bullet_list = bullet_list
 
     def _variants(self):
         vrs = []
@@ -518,6 +527,7 @@ class StaplesScraper(Scraper):
         "model" : _model, \
         "upc" : _upc, \
         "long_description" : _long_description, \
+        "shelf_description": _shelf_description, \
         "variants" : _variants, \
         "no_longer_available" : _no_longer_available, \
 

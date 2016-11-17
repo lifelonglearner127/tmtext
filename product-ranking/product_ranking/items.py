@@ -2,7 +2,6 @@
 
 import collections
 import decimal
-import re
 
 from scrapy.item import Item, Field
 
@@ -293,6 +292,8 @@ class SiteProductItem(Item):
     dpci = Field()  # Target.com unique item identifier, example - 008-09-1171
     tcin = Field()  # Target.com online item number, for example - Online Item #: 16390220
     origin = Field()  # Target.com origin field, describes if item is imported or not
+
+    temporary_unavailable = Field()  # 12696, returns true if 'We're having technical difficulties..' text on the page
 
 
 class DiscountCoupon(Item):

@@ -1,15 +1,9 @@
-import os
 import re
 import urlparse
-import requests
-import json
 
-from scrapy.log import WARNING, ERROR
 from scrapy.http import Request
-from scrapy import Selector
 
 from product_ranking.items import SiteProductItem
-from spiders_shared_code.walmart_categories import WalmartCategoryParser
 
 is_empty = lambda x: x[0] if x else None
 

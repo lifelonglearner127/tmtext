@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import hjson
 import re
@@ -9,8 +8,7 @@ import string
 from scrapy.http import Request
 from scrapy.log import ERROR, INFO, WARNING
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set_value
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi

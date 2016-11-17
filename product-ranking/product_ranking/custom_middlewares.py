@@ -59,8 +59,8 @@ class AmazonProxyMiddleware(object):
         request.meta['503_retry'] = request.meta.get('503_retry', 0)
         if request.meta['503_retry'] < 10:
             log.msg('PROXY {}'.format(request.url))
-            proxy_address = 'http://proxy.crawlera.com:8010'
-            proxy_user_pass = 'eff4d75f7d3a4d1e89115c0b59fab9b2:'
+            proxy_address = 'http://content.crawlera.com:8010'
+            proxy_user_pass = '0dc1db337be04e8fb52091b812070ccf:'
             request.meta['503_retry'] += 1
             request.meta['proxy'] = proxy_address
             basic_auth = 'Basic ' + base64.encodestring(proxy_user_pass)
@@ -97,3 +97,73 @@ class WalmartRetryMiddleware(RedirectMiddleware):
                 request = request.replace(url=location)
                 return request
         return response
+
+
+class LuminatiProxy(object):
+    def __init__(self, settings):
+        self.squid_proxy_internal = "http:// 52.201.198.254:7708"
+        self.squid_proxy_connector = "http://10.0.5.78:7708"
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler.settings)
+
+    def _insert_proxy_into_request(self, request):
+        request.meta['proxy'] = self.squid_proxy_connector
+        # Debug
+        # log.msg('Using Luminati proxy via Squid {}'.format(self.squid_proxy_connector))
+
+    def process_request(self, request, spider):
+        # Don't overwrite existing
+        if 'proxy' in request.meta:
+            return
+        self._insert_proxy_into_request(request)
+
+    def process_exception(self, request, exception, spider):
+        log.msg('Error {} getting url {} using Luminati proxy'.format(exception, request.url))
+
+
+class ProxyrainProxy(object):
+    def __init__(self, settings):
+        self.rain_proxy = "http://52.200.249.157:7708"
+        self.squid_proxy_connector = "http://10.0.5.241:7708"
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler.settings)
+
+    def _insert_proxy_into_request(self, request):
+        request.meta['proxy'] = self.squid_proxy_connector
+        #request.meta['proxy'] = self.squid_proxy_connector
+        # Debug
+        # log.msg('Using Proxyrain proxy via Squid {}'.format(self.squid_proxy_connector))
+
+    def process_request(self, request, spider):
+        # Don't overwrite existing
+        if 'proxy' in request.meta:
+            return
+        self._insert_proxy_into_request(request)
+
+    def process_exception(self, request, exception, spider):
+        log.msg('Error {} getting url {} using Proxyrain proxy'.format(exception, request.url))
+
+class ShaderioProxy(object):
+    def __init__(self, settings):
+        self.squid_proxy_connector = "http://10.0.5.12:7708"
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler.settings)
+
+    def _insert_proxy_into_request(self, request):
+        request.meta['proxy'] = self.squid_proxy_connector
+
+    def process_request(self, request, spider):
+        # Don't overwrite existing
+        if 'proxy' in request.meta:
+            return
+        self._insert_proxy_into_request(request)
+
+    def process_exception(self, request, exception, spider):
+        log.msg('Error {} getting url {} using Shader.io proxy'.format(exception, request.url))
+

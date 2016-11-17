@@ -1,12 +1,9 @@
-import os.path
 import re
 import urlparse
 import requests
 import json
 
-import scrapy
-from scrapy.conf import settings
-from scrapy.log import WARNING, ERROR
+from scrapy.log import WARNING
 from scrapy.http import Request
 from scrapy import Selector
 
