@@ -802,9 +802,9 @@ class ScrapyTask(object):
                     logger.exception(ex)
                 try:
                     put_file_into_s3(
-                        AMAZON_BUCKET_NAME, output_path+'_url2screenshot.log',
+                        AMAZON_BUCKET_NAME, output_path+'_screenshot.log',
                         is_add_file_time=True)
-                    logger.info('url2screenshot log file uploaded: %s' % (output_path+'_url2screenshot.log'))
+                    logger.info('url2screenshot log file uploaded: %s' % (output_path+'_screenshot.log'))
                 except Exception as ex:
                     logger.error('url2screenshot log file uploading error')
                     logger.exception(ex)
@@ -1208,7 +1208,7 @@ class ScrapyTask(object):
                    ' -s LOG_FILE={log_file}'
                    ' -o "{output_file}" &').format(
                        repo_base_path=REPO_BASE_PATH,
-                       log_file=output_path+'_url2screenshot.log', url2scrape=url2scrape,
+                       log_file=output_path+'_screenshot.log', url2scrape=url2scrape,
                        output_file=output_path+'.screenshot.jl')
             logger.info('Starting a new parallel screenshot job: %s' % cmd)
             os.system(cmd)  # use Popen instead?
