@@ -56,12 +56,12 @@ class SamsclubScraper(Scraper):
 
     def check_url_format(self):
         # http://www.samsclub.com/sams/gold-medal-5552pr-pretzel-oven-combo/136709.ip?searchTerm=278253
-        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?\d+\.ip$", self.product_page_url):
+        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?.+\.ip", self.product_page_url):
             return True
         return self._is_shelf_url(self.product_page_url)
 
     def _is_shelf_url(self, url):
-        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?\d+\.cp$", url) or \
+        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?.+\.cp", url) or \
             re.match(r"^http://www\.samsclub\.com/sams/shop/category.jsp\?categoryId=\d+$", url) or \
             re.match(r"^http://www\.samsclub\.com/sams/pagedetails/content.jsp\?pageName=.+$", url):
             return True
