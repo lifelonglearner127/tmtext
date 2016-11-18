@@ -23,7 +23,7 @@ class StaplesAdvantageScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is https://www\.staplesadvantage\.com/webapp/wcs/stores/servlet/StplShowItem\?(.*)"
+    INVALID_URL_MESSAGE = "Expected URL format is http(s)://www\.staplesadvantage\.com/webapp/wcs/stores/servlet/StplShowItem\?(.*)"
 
     description = None
     long_description = None
@@ -43,7 +43,7 @@ class StaplesAdvantageScraper(Scraper):
 
     def check_url_format(self):
         # for ex: https://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplShowItem?cust_sku=383249&catalogId=4&item_id=71504599&langId=-1&currentSKUNbr=383249&storeId=10101&itemType=0&pathCatLvl1=125128966&pathCatLvl2=125083501&pathCatLvl3=-999999&pathCatLvl4=117896272
-        m = re.match(r"^https://www\.staplesadvantage\.com/webapp/wcs/stores/servlet/StplShowItem\?(.*)", self.product_page_url)
+        m = re.match(r"^(http|https)://www\.staplesadvantage\.com/webapp/wcs/stores/servlet/StplShowItem\?(.*)", self.product_page_url)
         return not not m
 
     def not_a_product(self):
