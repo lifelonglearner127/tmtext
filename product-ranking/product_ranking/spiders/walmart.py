@@ -1157,14 +1157,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _extract_product_info_json_alternative(response):
-        _JS_DATA_RE = re.compile(
-            r'window\.__WML_REDUX_INITIAL_STATE__\s*=\s*(\{.+?\})\s*;\s*<\/script>', re.DOTALL)
-        js_data = re.search(_JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
+        # _JS_DATA_RE = re.compile(
+        #     r'window\.__WML_REDUX_INITIAL_STATE__\s*=\s*(\{.+?\})\s*;\s*<\/script>', re.DOTALL)
+        js_data = response.xpath('//script[@id="content" and @type="application/json"]/text()')
         if js_data:
-            text = js_data.group(1)
+            text = js_data.extract()[0]
             try:
-                data = json.loads(text)
-                return data
+                data = json.loads(text).get('content')
+                return data if data else None
             except ValueError:
                 pass
 
@@ -1275,7 +1275,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_selected_product_offers(selected_product):
-        return selected_product.get('offers', [])
+        # TODO: remove try-exception
+        try:
+            return selected_product.get('offers', [])
+        except:
+            return []
 
     @staticmethod
     def _parse_selected_product_alternative(data):
