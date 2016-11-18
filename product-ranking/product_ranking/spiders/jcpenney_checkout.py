@@ -1,14 +1,16 @@
 import re
-import socket
 import time
+import json
+import inspect
 
+from scrapy import Selector
+from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
+from product_ranking.spiders import FLOATING_POINT_RGEX
 
 import scrapy
-
 
 is_empty = lambda x, y="": x[0] if x else y
 
@@ -20,6 +22,7 @@ class JCpenneySpider(BaseCheckoutSpider):
     SHOPPING_CART_URL = 'http://www.jcpenney.com/jsp/cart/viewShoppingBag.jsp'
     CHECKOUT_PAGE_URL = "https://www.jcpenney.com/dotcom/" \
                         "jsp/checkout/secure/checkout.jsp"
+
 
     def start_requests(self):
         yield scrapy.Request('http://www.jcpenney.com/')
@@ -33,68 +36,66 @@ class JCpenneySpider(BaseCheckoutSpider):
         return [x.get_attribute("name") for x in swatches]
 
     def select_size(self, element=None):
-        size_attribute_xpath = '*//div[@id="skuOptions_size"]//' \
-            'li[@class="sku_select"]'
-        size_attributes_xpath = '*//*[@id="skuOptions_size"]//' \
-            'li[not(@class="sku_not_available" or @class="sku_illegal")]/a'
-        self._click_attribute(size_attribute_xpath,
-                              size_attributes_xpath,
-                              element)
+        default_attr_xpath = '*//div[@id="skuOptions_size"]//' \
+                             'li[@class="sku_select"]'
+        avail_attr_xpath = '*//*[@id="skuOptions_size"]//' \
+                           'li[not(@class="sku_not_available" or @class="sku_illegal")]/a'
+        self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def select_color(self, element=None, color=None):
-        color_attribute_xpath = '*//li[@class="swatch_selected"]'
-        color_attributes_xpath = ('*//*[@class="small_swatches"]'
-                                  '//a[not(span[@class="no_color"]) and '
-                                  'not(span[@class="color_illegal"])]')
+        default_attr_xpath = '*//li[@class="swatch_selected"]'
+        avail_attr_xpath = ('*//*[@class="small_swatches"]'
+                            '//a[not(span[@class="no_color"]) and '
+                            'not(span[@class="color_illegal"])]')
 
-        if color and color in self._get_colors_names():
-            color_attribute_xpath = '*//*[@class="small_swatches"]//a' \
-                                    '[img[@name="%s"]]' % color
+        if color and color in self.available_colors:
+            default_attr_xpath = '*//*[@class="small_swatches"]//a' \
+                                 '[img[@name="%s"]]' % color
 
-        self._click_attribute(color_attribute_xpath,
-                              color_attributes_xpath,
-                              element)
-        time.sleep(10)
-        # Remove focus to avoid hiddend the above element
+        self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
         self._find_by_xpath('//h1')[0].click()
+        time.sleep(1)
+
+    def click_condition(self, default_xpath, all_xpaths):
+        return self._find_by_xpath(default_xpath) or self._find_by_xpath(all_xpaths)
+
+    def select_attribute(self, default_attr_xpath, avail_attr_xpath, element):
+        max_retries = 20
+        retries = 0
+        if self.click_condition(default_attr_xpath, avail_attr_xpath):
+            self._click_attribute(default_attr_xpath,
+                                  avail_attr_xpath,
+                                  element)
+            while self.driver.find_elements(By.ID, 'page_loader') and retries < max_retries:
+                time.sleep(1)
+                retries += 1
+            print(inspect.currentframe().f_back.f_code.co_name)
 
     def select_width(self, element=None):
-        width_attribute_xpath = '*//div[@id="skuOptions_width"]//' \
-            'li[@class="sku_select"]'
-        width_attributes_xpath = '*//*[@id="skuOptions_width"]//' \
-            'li[not(@class="sku_not_available" or @class="sku_illegal")]/a'
-        self._click_attribute(width_attribute_xpath,
-                              width_attributes_xpath,
-                              element)
-        time.sleep(4)
+        default_attr_xpath = '*//div[@id="skuOptions_width"]//' \
+                             'li[@class="sku_select"]'
+        avail_attr_xpath = '*//*[@id="skuOptions_width"]//' \
+                           'li[not(@class="sku_not_available" or @class="sku_illegal")]/a'
 
+        self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def select_waist(self, element=None):
         default_attr_xpath = (
             '*//*[@id="skuOptions_waist"]//li[@class="sku_select"]')
-
         avail_attr_xpath = ('*//*[@id="skuOptions_waist"]//'
                             'li[not(@class="sku_not_available" '
                             'or @class="sku_illegal")]')
 
-        self._click_attribute(default_attr_xpath,
-                              avail_attr_xpath,
-                              element)
-        time.sleep(4)
-
+        self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def select_inseam(self, element=None):
         default_attr_xpath = (
             '*//*[@id="skuOptions_inseam"]//li[@class="sku_select"]')
-
         avail_attr_xpath = ('*//*[@id="skuOptions_inseam"]//'
                             'li[not(@class="sku_not_available" '
                             'or @class="sku_illegal")]')
 
-        self._click_attribute(default_attr_xpath,
-                              avail_attr_xpath,
-                              element)
-        time.sleep(4)
+        self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def select_neck(self, element=None):
         default_attr_xpath = (
@@ -104,10 +105,7 @@ class JCpenneySpider(BaseCheckoutSpider):
                             'li[not(@class="sku_not_available" '
                             'or @class="sku_illegal")]')
 
-        self._click_attribute(default_attr_xpath,
-                              avail_attr_xpath,
-                              element)
-        time.sleep(4)
+        self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def select_sleeve(self, element=None):
         default_attr_xpath = (
@@ -117,12 +115,10 @@ class JCpenneySpider(BaseCheckoutSpider):
                             'li[not(@class="sku_not_available" '
                             'or @class="sku_illegal")]')
 
-        self._click_attribute(default_attr_xpath,
-                              avail_attr_xpath,
-                              element)
-        time.sleep(4)
+        self.select_attribute(default_attr_xpath, avail_attr_xpath, element)
 
     def _parse_attributes(self, product, color, quantity):
+        time.sleep(10)
         self.select_color(product, color)
         self.select_size(product)
         self.select_width(product)
@@ -142,10 +138,9 @@ class JCpenneySpider(BaseCheckoutSpider):
 
         if addtobagbopus:
             self._click_on_element_with_id('addtobagbopus')
-
         elif addtobag:
             self._click_on_element_with_id('addtobag')
-        time.sleep(4)
+        time.sleep(5)
 
     def _do_others_actions(self):
         skip_this_offer = self._find_by_xpath(
@@ -155,102 +150,92 @@ class JCpenneySpider(BaseCheckoutSpider):
             time.sleep(4)
 
     def _set_quantity(self, product, quantity):
-        quantity_option = self._find_by_xpath(
-            '*//*[@name="prod_quantity"]'
-            '/option[@value="%d"]' % quantity, product)
-
-        if quantity_option:
-            quantity_option[0].click()
-
-        time.sleep(4)
+        quantity_option = Select(self.driver.find_element_by_xpath('*//*[@name="prod_quantity"]'))
+        try:
+            quantity_option.select_by_value(str(quantity))
+            quantity_selected = quantity_option.first_selected_option.text
+            if quantity_selected != str(quantity):
+                time.sleep(4)
+            self.log('Quantity "{}" selected'.format(quantity))
+        except:
+            pass
 
     def _get_product_list_cart(self):
-        condition = EC.visibility_of_element_located(
-            (By.ID, 'shoppingBagContentID'))
-        return self.wait.until(condition)
+        time.sleep(1)
+        self.page_source = self.driver.page_source
+        self.page_selector = Selector(text=self.page_source)
+        try:
+            item_info = re.findall(
+                'var jcpORDERJSONjcp = (\{.+?\});', self.page_source, re.MULTILINE)[0]
+            self.item_info = json.loads(item_info)
+            return self.item_info
+        except IndexError:
+            return None
 
     def _get_products_in_cart(self, product_list):
-        html_text = product_list.get_attribute('outerHTML')
-        selector = scrapy.Selector(text=html_text)
-        return selector.xpath('//fieldset')
+        return product_list.get('purchasedItems')
 
     def _get_subtotal(self):
-        order_subtotal_element = self.wait.until(
-            EC.visibility_of_element_located((
-                By.XPATH, '//*[@class="flt_wdt merch_subtotal"]/span/'
-                          'span[@class="flt_rgt"]')))
-        if order_subtotal_element:
-            order_subtotal = order_subtotal_element.text
-            return is_empty(re.findall('\$([\d\.]+)', order_subtotal))
+        return self.item_info.get('merchantTotalWithSavings')
 
     def _get_total(self):
-        socket.setdefaulttimeout(60)
-        self._click_on_element_with_id('Checkout')
-        continue_as_guest_button = self.wait.until(
-            EC.element_to_be_clickable(
-                (By.XPATH, '//input[@class="blue-Button'
-                           ' btn_continue_as_guest"]')))
-        continue_as_guest_button.click()
-
-        order_total_element = self.wait.until(
-            EC.element_to_be_clickable(
-                (By.XPATH, '//div[@class="row order_total"]'
-                           '/span[@class="flt_rgt"]')))
-
-        if order_total_element:
-            order_total = order_total_element.text
-            return is_empty(re.findall('\$([\d\.]+)', order_total))
+        return self.item_info.get('orderTotal')
 
     def _get_item_name(self, item):
-        return is_empty(item.xpath(
-                        '*//*[@data-anid="product_Name"]/text()').extract())
+        return item.get('displayName')
 
     def _get_item_id(self, item):
-        return is_empty(item.xpath(
-                        '*//*[contains(@class,"item_number")]/text()').re('#(.*)'))
+        return item.get('itemNumber')[2:]
 
     def _get_item_price(self, item):
-        return is_empty(item.xpath(
-                        '*//*[contains(@class,"flt_wdt total")]//'
-                        'span[@class="flt_rgt"]/text()').re('\$(.*)'))
+        return str(item.get('lineTotalPrice'))
 
     def _get_item_price_on_page(self, item):
-        return is_empty(item.css(
-                        '.gallery_page_price  .priceValueSpacer::text').re('\$(.*)'))
+        price_on_page_from_json = float(item.get('lineUnitPrice'))
+        price_on_page_from_html = self.page_selector.xpath(
+            '//span[contains(@data-anid, "product_CurrentSellingPrice")]/text()').re(FLOATING_POINT_RGEX)
+        price_on_page_from_html = float(is_empty(price_on_page_from_html, 0))
+        return price_on_page_from_json if price_on_page_from_json >= 0 else price_on_page_from_html
 
     def _get_item_color(self, item):
-        return is_empty(item.xpath(
-                        '*//span[@class="size" and contains(text(),"color:")]'
-                        '/strong/text()').extract())
+        selector = scrapy.Selector(text=self.page_source)
+        color_new = is_empty(
+            selector.xpath('//span[@class="size" and '
+                           'contains(text(),"color:")]/text()').re('color\:\n(.+)'))
+        color_old = is_empty(selector.xpath(
+            '//span[@class="size" and contains(text(),"color:")]'
+            '/strong/text()').extract())
+        return color_new or color_old
 
     def _get_item_quantity(self, item):
-        return is_empty(item.xpath(
-                        '*//select[@name="quantity"]//option'
-                        '[@selected="true"]/text()').extract())
+        return item.get('quantity')
 
     def _enter_promo_code(self, promo_code):
         self.log('Enter promo code: {}'.format(promo_code))
-        promo_field= self._find_by_xpath('//div[@class="cr-coupon"]/*[@id="cr-code"]')[0]
+        promo_field = self._find_by_xpath('//*[@id="cr-code"]')[0]
         promo_field.send_keys(promo_code)
         time.sleep(2)
         promo_field.send_keys(Keys.ENTER)
-        time.sleep(8)
+        time.sleep(5)
+        self.driver.refresh()
+        time.sleep(5)
+        self.item_info = self._get_product_list_cart()
+
+    def _remove_promo_code(self):
+        self.log('Remove promo code')
+        try:
+            remove_field = self._find_by_xpath('//a[@title="remove" and @class="cr-remove"]')[0]
+            remove_field.click()
+            time.sleep(10)
+        except IndexError:
+            self.log('Invalid promo code')
 
     def _get_promo_total(self):
-        order_total_element = self.wait.until(
-            EC.element_to_be_clickable(
-                (By.XPATH, '//div[@class="row order_total"]'
-                           '/span[@class="flt_rgt"]')))
-
-        if order_total_element:
-            order_total = order_total_element.text
-            return is_empty(re.findall('\$([\d\.]+)', order_total))
+        return self._get_total()
 
     def _get_promo_subtotal(self):
-        order_subtotal_element = self.wait.until(
-            EC.visibility_of_element_located((
-                By.XPATH, '//*[@class="flt_wdt total"]/'
-                          'span[@class="flt_rgt marginlft"]')))
-        if order_subtotal_element:
-            order_subtotal = order_subtotal_element.text
-            return is_empty(re.findall('\$([\d\.]+)', order_subtotal))
+        return str(self._get_subtotal())
+
+    def _parse_no_longer_available(self):
+        return bool(self._find_by_xpath(
+            '//*[@class="error_holder"]'))

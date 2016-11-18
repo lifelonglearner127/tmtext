@@ -2,7 +2,7 @@ import json
 import re
 import lxml.html
 import itertools
-
+import unicodedata
 
 is_empty = lambda x,y=None: x[0] if x else y
 
@@ -14,9 +14,10 @@ class JetVariants(object):
         self.response = response
         self.tree_html = lxml.html.fromstring(response.body)
 
-    def setupCH(self, tree_html):
+    def setupCH(self, product_data):
         """ Call it from CH spiders """
-        self.tree_html = tree_html
+        self.response = None
+        self.product_data = product_data
 
     def _variants(self):
         try:
@@ -117,5 +118,60 @@ class JetVariants(object):
 
             return final_variants or None
 
+        except Exception as e:
+            print e
+
+    def _variants_v2(self):
+        # New layout
+        try:
+            if self.response:
+                data = json.loads(self.response.body)
+            else:
+                data = json.loads(self.product_data)
         except:
             return None
+
+        variants = []
+        prod_data = data.get('result')
+
+        other_variants = prod_data.get('productVariations', [])
+        if other_variants:
+            # Default variant is added only if there are other variants
+            other_variants.append(prod_data)
+        for variant in other_variants:
+            sku = variant.get('retailSkuId')
+            prod_name = variant.get('title')
+            prod_slug = self.slugify(prod_name)
+            url = "https://jet.com/product/{}/{}".format(prod_slug, sku)
+
+            props = {}
+            attributes = variant.get('attributes', [])
+            for attribute in attributes:
+                props[attribute.get("name")] = attribute.get("value")
+
+            image_url = variant.get('images')
+            image_url = image_url[0].get('raw') if image_url else None
+
+            # Only default variant have price
+            # additional requests needed to fill other variants prices
+            price = variant.get('productPrice', {}).get("referencePrice")
+            selected = True if price else False
+
+            variants.append({
+                "sku": variant.get("retailSkuId"),
+                "selected": selected,
+                "upc": variant.get("upc"),
+                "title": prod_name,
+                "url": url,
+                "properties": props,
+                "price": price,
+                "image_url": image_url
+            })
+        return variants
+
+    @staticmethod
+    def slugify(value):
+        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+        # Removed .lower() for this website
+        value = re.sub('[^\w\s-]', '', value).strip()
+        return re.sub('[-\s]+', '-', value)

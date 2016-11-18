@@ -49,7 +49,7 @@ class KohlsCouponsSpider(Spider):
     def _parse_end_date(self, coupon):
         d = coupon.css('.td-date::text').re('Ends (\w+ \d+)')
         if d:
-            return parse_date(d[0]).date()
+            return parse_date(d[0]).date().strftime('%Y-%m-%d')
 
     def _parse_category(self, coupon):
         return is_empty(coupon.css('.td-subheader::text').extract())

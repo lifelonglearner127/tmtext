@@ -7,7 +7,6 @@ from scrapy.http import HtmlResponse
 from scrapy.log import ERROR, DEBUG
 
 from product_ranking.items import SiteProductItem
-from product_ranking.validation import BaseValidator
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set_value
 

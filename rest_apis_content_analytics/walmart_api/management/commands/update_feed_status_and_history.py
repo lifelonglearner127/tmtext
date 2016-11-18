@@ -1,20 +1,16 @@
-import random
 import os
 import sys
 import subprocess
-import time
 
 from django.core.management import BaseCommand
 from django.contrib.auth.models import User
-from django.conf import settings
-from django.core.cache import cache
 
 from walmart_api.models import *
 from walmart_api.views import (parse_walmart_api_log, get_walmart_api_invoke_log,
                                get_feed_status, CheckFeedStatusByWalmartApiViewSet)
 from walmart_api.context_processors import get_submission_history_as_json
-from walmart_api.utils import get_cache_key_for_request_or_user
 from statistics.models import *
+from statistics.context_processors import stats_walmart_xml_items
 
 
 def run(command, shell=None):
@@ -65,7 +61,6 @@ class Command(BaseCommand):
             records = list(parse_walmart_api_log(user))
             records.reverse()
             for log_rec in records:  # TODO: parse server name and IP
-                time.sleep(1)
                 date = log_rec['datetime']
                 upc = log_rec['upc'].strip()
                 feed_id = log_rec['feed_id'].strip()
@@ -100,7 +95,6 @@ class Command(BaseCommand):
                                       process_check_feed=True, check_auth=False,
                                       server_name=server_name, client_ip=client_ip)
 
-            # re-create cache for each user
-            cache_key = get_cache_key_for_request_or_user(user)
-            cache.delete(cache_key)
-            get_submission_history_as_json(user)  # this will generate cache
+            # this will regenerate cache
+            get_submission_history_as_json(user, delete_old_cache=True, generate_cache=True)
+            stats_walmart_xml_items(user, delete_old_cache=True, generate_cache=True)

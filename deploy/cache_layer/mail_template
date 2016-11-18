@@ -24,6 +24,13 @@ Sqs
 Executed tasks: {{ executed_tasks }}.
 Used autoscale instances: {{ total_instances }}.
 
+Today request count: {{ today_requests_count }}.
+
+Today jobs: {{ today_jobs.term + today_jobs.url }} jobs ({{ today_jobs.term }} search terms, {{ today_jobs.url }} product URLs){% for server, server_metrics in today_jobs.servers.items() %}
+        {{ server }}: {{ server_metrics.url + server_metrics.term }} jobs ({{ server_metrics.term }} search terms, {{ server_metrics.url }} product URLs)
+{% for scrapper, scrapper_metrics in server_metrics.scrappers.items() %}
+                {{ scrapper }}: {{ scrapper_metrics.term + scrapper_metrics.url }} jobs ({{ scrapper_metrics.term }} search terms, {{ scrapper_metrics.url }} product URLs){% endfor %}{% endfor %}
+
 
 Urgent queue statistics:
 

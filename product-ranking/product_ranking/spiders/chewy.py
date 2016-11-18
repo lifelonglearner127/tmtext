@@ -4,7 +4,6 @@ import urlparse
 
 from itertools import islice
 from scrapy import Request
-from scrapy.conf import settings
 from scrapy.log import ERROR, INFO
 
 from product_ranking.items import SiteProductItem, Price

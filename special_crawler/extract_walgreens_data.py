@@ -15,7 +15,7 @@ class WalgreensScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.walgreens.com/store/c/<product-name>/ID=prod<id>-product"
+    INVALID_URL_MESSAGE = "Expected URL format is http(s)://www.walgreens.com/store/c/<product-name>/ID=prod<id>-product"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -41,8 +41,9 @@ class WalgreensScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match('^http://www.walgreens.com/store/c/.+/ID=prod\d+-product$', self.product_page_url)
-        return not not m
+        if re.match('^https?://www.walgreens.com/store/c/.+/ID=prod\d+-product$', self.product_page_url):
+            return True
+        return False
 
     def not_a_product(self):
         """Checks if current page is not a valid product page

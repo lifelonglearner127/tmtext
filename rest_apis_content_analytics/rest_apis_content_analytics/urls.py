@@ -18,7 +18,7 @@ from mocked_walmart_api.views import (MockedCheckFeedStatusByWalmartApiViewSet,
                                       MockedItemsUpdateWithXmlFileByWalmartApiViewSet,
                                       MockedFeedStatusAjaxView)
 
-from statistics.views import StatsView, GetStatsAjax
+from statistics.views import StatsView
 from nutrition_info_images.views import ClassifyTextImagesByNutritionInfoViewSet
 
 from settings import IS_PRODUCTION
@@ -54,11 +54,16 @@ urlpatterns = format_suffix_patterns([
 
 urlpatterns += [
     url(r'^feed-redirect/(?P<feed_id>[A-Za-z0-9\-\@\_]+)', FeedIDRedirectView.as_view(), name='feed_redirect'),
-    url(r'^xml-file-redirect/(?P<feed_id>[A-Za-z0-9\-]+)', XMLFileRedirect.as_view(), name='xml_file_redirect'),
-    url(r'^feed-status-ajax/(?P<feed_id>[A-Za-z0-9\-]+)', FeedStatusView.as_view(), name='feed_status_ajax'),
-    url(r'^stat-counter-ajax/', GetStatsAjax.as_view(), name='get_stats_ajax'),
+    url(r'^xml-file-redirect/(?P<feed_id>[A-Za-z0-9\-\@\_]+)', XMLFileRedirect.as_view(), name='xml_file_redirect'),
+    url(r'^feed-status-ajax/(?P<feed_id>[A-Za-z0-9\-\@\_]+)', FeedStatusView.as_view(), name='feed_status_ajax'),
+    #url(r'^stat-counter-ajax/', GetStatsAjax.as_view(), name='get_stats_ajax'),
     url(r'^stats/$', StatsView.as_view(), name='stats_view')
 ]
+
+if 'fcgi' in settings.INSTALLED_APPS:
+    urlpatterns += [
+        url(r'^fcgi/', include('fcgi.urls')),
+    ]
 
 router = routers.SimpleRouter()
 router.register(r'comparetwoimages', CompareTwoImageViewSet, 'comparetwoimages')

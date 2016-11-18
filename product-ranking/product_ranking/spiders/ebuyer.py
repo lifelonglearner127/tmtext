@@ -201,15 +201,17 @@ class EBuyerProductSpider(BaseProductsSpider):
             related_link = self.SCRIPT_URL + converted_get
             meta = response.meta.copy()
             meta['item_id'] = p
-            return Request(related_link, callback=self.get_recommended_id,
-                           meta=meta)
-        return prod
+            yield Request(related_link, callback=self.get_recommended_id,
+                          meta=meta)
+        yield prod
 
     def get_recommended_id(self, response):
         placements = re.findall(
             'rr_call_after_flush=function\(\){(.*)};rr_flush=function',
             response.body
         )
+        if not placements:
+            return None
         splited = placements[0].split('json = ')
         splited = splited[1:]
         ids_data = {}

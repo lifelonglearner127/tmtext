@@ -3,21 +3,12 @@ from __future__ import division, absolute_import, unicode_literals
 
 import re
 import json
-import urllib
-import sys
 import urlparse
 
 from scrapy import Request
 
-from scrapy.selector import HtmlXPathSelector
-import requests
-
-from product_ranking.items import SiteProductItem, RelatedProduct, \
-    Price, BuyerReviews
-from product_ranking.spiders import cond_set, cond_set_value, \
-    FLOATING_POINT_RGEX, cond_replace
-from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.guess_brand import guess_brand_from_first_words
+from product_ranking.items import SiteProductItem, Price
+from product_ranking.spiders import cond_set_value
 
 from .target import TargetProductSpider
 
@@ -31,14 +22,14 @@ class TargetShelfPagesSpider(TargetProductSpider):
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
-        self.quantity = sys.maxint
+        # self.quantity = sys.maxint
         self.site_name = self.allowed_domains[0]
         self.user_agent_key = None
         self.current_page = 1
 
     def _setup_meta_compatibility(self):
         """ Needed to prepare first request.meta vars to use """
-        return {'remaining': sys.maxint, 'search_term': ''}.copy()
+        return {'remaining': self.quantity, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
         super(TargetShelfPagesSpider, self).__init__(*args, **kwargs)
@@ -56,6 +47,9 @@ class TargetShelfPagesSpider(TargetProductSpider):
             self.num_pages = int(kwargs['num_pages'])
         else:
             self.num_pages = 1  # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
+
+        if "quantity" in kwargs:
+            self.quantity = int(kwargs['quantity'])
 
         # variants are switched off by default, see Bugzilla 3982#c11
         self.scrape_variants_with_extra_requests = False
