@@ -443,7 +443,7 @@ class AmazonScraper(Scraper):
             return self._clean_text(bullets[4].text_content())
 
     def _bullets(self):
-        bullets = self.tree_html.xpath("//div[@id='feature-bullets']//li//text()")
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]//text()")
         bullets = [self._clean_text(r) for r in bullets if len(self._clean_text(r))>0]
         if len(bullets) > 0:
             return "\n".join(bullets)
