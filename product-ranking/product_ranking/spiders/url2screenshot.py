@@ -123,6 +123,14 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.close_popups = kwargs.get('close_popups', kwargs.get('close_popup', None))
         self.driver = kwargs.get('driver', None)  # if None, then a random UA will be used
 
+        self.extra_handle_httpstatus_list = kwargs.get('extra_handle_httpstatus_list', None)
+        if self.extra_handle_httpstatus_list:
+            for extra_code in self.extra_handle_httpstatus_list.split(','):
+                extra_code = int(extra_code.strip())
+                if extra_code not in self.handle_httpstatus_list:
+                    self.handle_httpstatus_list.append(extra_code)
+            self.log('New self.handle_httpstatus_list value: %s' % self.handle_httpstatus_list)
+
         self.disable_site_settings = kwargs.get('disable_site_settings', None)
         if not self.disable_site_settings:
             self.set_site_specified_settings()
