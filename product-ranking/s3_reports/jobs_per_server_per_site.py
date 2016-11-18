@@ -11,13 +11,9 @@
 #    target: 250 searchterm jobs, 15 product urls
 
 
-import os
 import gzip
 import sys
 import json
-import datetime
-import time
-from collections import OrderedDict
 
 
 def main(input_file, date, spider_marker=None):

@@ -13,10 +13,10 @@ import urlparse
 import cPickle as pickle
 
 from django.core.servers.basehttp import FileWrapper
-from django.views.generic import RedirectView, View, ListView, TemplateView, FormView
+from django.views.generic import RedirectView, View, TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse
 import boto
 from boto.s3.connection import S3Connection
 

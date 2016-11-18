@@ -1,28 +1,20 @@
 # ~~coding=utf-8~~
 from __future__ import division, absolute_import, unicode_literals
-import os.path
+
 import re
-import urlparse
-import json
-from scrapy.conf import settings
-import scrapy
-from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
-from scrapy.http import Request, HtmlResponse
-from scrapy import Selector
-from product_ranking.spiders import cond_set_value
+
+from scrapy.log import ERROR, WARNING
+from scrapy.http import Request
+
 from product_ranking.items import SiteProductItem
 from product_ranking.marketplace import Amazon_marketplace
-from spiders_shared_code.amazon_variants import AmazonVariants
-from itertools import islice
-
-is_empty = lambda x: x[0] if x else None
 
 from .amazon import AmazonProductsSpider
+
 
 try:
     from captcha_solver import CaptchaBreakerWrapper
 except ImportError as e:
-    import sys
     print(
         "### Failed to import CaptchaBreaker.",
         "Will continue without solving captchas:",
@@ -37,9 +29,14 @@ except ImportError as e:
     CaptchaBreakerWrapper = FakeCaptchaBreaker
 
 
+is_empty = lambda x: x[0] if x else None
+
+
 class AmazonShelfPagesSpider(AmazonProductsSpider):
     name = 'amazon_shelf_urls_products'
-    allowed_domains = ["amazon.com", "www.amazon.com"]  # without this find_spiders() fails
+
+    # without this find_spiders() fails
+    allowed_domains = ["amazon.com", "www.amazon.com"]
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
@@ -49,38 +46,39 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         self.current_page = 1
         self.captcha_retries = 12
 
-    def _setup_meta_compatibility(self):
+    @staticmethod
+    def _setup_meta_compatibility():
         """ Needed to prepare first request.meta vars to use """
         return {'remaining': 99999, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
-
-        # For some reason amazon fail to scrape most data when you turn off variants
+        # For some reason amazon fail to scrape most data
+        # when you turn off variants
         self.ignore_variant_data = False
         self.product_url = kwargs['product_url']
 
-        if "num_pages" in kwargs:
-            self.num_pages = int(kwargs['num_pages'])
-        else:
-            self.num_pages = 1  # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
+        # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
+        self.num_pages = int(kwargs.get('num_pages', 1))
 
         # # variants are switched off by default, see Bugzilla 3982#c11
         # self.scrape_variants_with_extra_requests = False
         # if 'scrape_variants_with_extra_requests' in kwargs:
-        #     scrape_variants_with_extra_requests = kwargs['scrape_variants_with_extra_requests']
-        #     if scrape_variants_with_extra_requests in (1, '1', 'true', 'True', True):
+        #     scrape_variants_with_extra_requests = \
+        #         kwargs['scrape_variants_with_extra_requests']
+        #     if scrape_variants_with_extra_requests in \
+        #             (1, '1', 'true', 'True', True):
         #         self.scrape_variants_with_extra_requests = True
-        #
+
         # Default price currency
         self.price_currency = 'USD'
         self.price_currency_view = '$'
-        #
+
         # Locale
         self.locale = 'en-US'
-        #
+
         self.mtp_class = Amazon_marketplace(self)
         self._cbw = CaptchaBreakerWrapper()
-        #
+
         # #backup when total matches cannot be scraped
         # self.total_items_scraped = 0
         # # self.ranking_override = 0
@@ -90,98 +88,179 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         # self.remaining = self.quantity
         # settings.overrides['CRAWLERA_ENABLED'] = True
 
-
     @staticmethod
     def valid_url(url):
-        if not re.findall("http(s){0,1}\:\/\/", url):
-            url = "http://" + url
+        if not url.startswith('http'):
+            url = 'http://' + url
         return url
 
     def start_requests(self):
-        yield Request(url=self.valid_url(self.product_url),
-                meta={'search_term': '', 'remaining': self.quantity},
-            )
+        yield Request(
+            self.valid_url(self.product_url),
+            meta={
+                'search_term': '',
+                'remaining': self.quantity
+            },
+        )
 
     def _scrape_product_links(self, response):
         """
         Overrides BaseProductsSpider method to scrape product links.
         """
-        shelf_categories = [c.strip() for c in response.xpath(".//*[@id='s-result-count']/span/*/text()").extract()
-                                if len(c.strip()) > 1]
+        shelf_categories = [c.strip() for c in response.xpath(
+            ".//*[@id='s-result-count']/span/*/text()").extract()
+                            if len(c.strip()) > 1]
         shelf_category = shelf_categories[-1] if shelf_categories else None
 
-        lis = response.xpath(
-            "//div[@id='resultsCol']/./ul/li |"
-            "//div[@id='mainResults']/.//ul/li [contains(@id, 'result')] |"
-            "//div[@id='atfResults']/.//ul/li[contains(@id, 'result')] |"
-            "//div[@id='mainResults']/.//div[contains(@id, 'result')] |"
-            "//div[@id='btfResults']//ul/li[contains(@id, 'result')]")
-        links = []
-        last_idx = -1
+        try:
+            lis = response.xpath(
+                "//div[@id='resultsCol']/./ul/li |"
+                "//div[@id='mainResults']/.//ul/li [contains(@id, 'result')] |"
+                "//div[@id='atfResults']/.//ul/li[contains(@id, 'result')] |"
+                "//div[@id='mainResults']/.//div[contains(@id, 'result')] |"
+                "//div[@id='btfResults']//ul/li[contains(@id, 'result')]")
+            links = []
+            last_idx = -1
 
-        for li in lis:
-            is_prime = li.xpath(
-                "*/descendant::i[contains(concat(' ', @class, ' '),"
-                "' a-icon-prime ')] |"
-                ".//span[contains(@class, 'sprPrime')]"
-            )
-            is_prime_pantry = li.xpath(
-                "*/descendant::i[contains(concat(' ',@class,' '),'"
-                "a-icon-prime-pantry ')]"
-            )
-            data_asin = self._is_empty(
-                li.xpath('@id').extract()
-            )
-
-            is_sponsored = bool(li.xpath('.//h5[contains(text(), "ponsored")]').extract())
-
-            try:
-                idx = int(self._is_empty(
-                    re.findall(r'\d+', data_asin)
-                ))
-            except ValueError:
-                continue
-
-            if idx > last_idx:
-                link = self._is_empty(
-                    li.xpath(
-                        ".//a[contains(@class,'s-access-detail-page')]/@href |"
-                        ".//h3[@class='newaps']/a/@href"
-                    ).extract()
+            for li in lis:
+                is_prime = li.xpath(
+                    "*/descendant::i[contains(concat(' ', @class, ' '),"
+                    "' a-icon-prime ')] |"
+                    ".//span[contains(@class, 'sprPrime')]"
                 )
+                is_prime_pantry = li.xpath(
+                    "*/descendant::i[contains(concat(' ',@class,' '),'"
+                    "a-icon-prime-pantry ')]"
+                )
+                data_asin = self._is_empty(
+                    li.xpath('@id').extract()
+                )
+
+                is_sponsored = \
+                    bool(li.xpath('.//h5[contains(text(), "ponsored")]').extract())
+
+                try:
+                    idx = int(self._is_empty(
+                        re.findall(r'\d+', data_asin)
+                    ))
+                except ValueError:
+                    continue
+
+                if idx > last_idx:
+                    link = self._is_empty(
+                        li.xpath(
+                            ".//a[contains(@class,'s-access-detail-page')]/@href |"
+                            ".//h3[@class='newaps']/a/@href"
+                        ).extract()
+                    )
+                    if not link:
+                        continue
+
+                    if 'slredirect' in link:
+
+                        link = 'http://' + self.allowed_domains[0] + '/' + link
+
+                    links.append((link, is_prime, is_prime_pantry, is_sponsored))
+                else:
+                    break
+
+                last_idx = idx
+        except Exception as e:
+            self.log('Link fail. ERROR: %s.' % str(e), ERROR)
+
+        links2 = []
+        try:
+            if not links:
+                # added for New fall toys
+                lis = response.xpath(
+                    '//div[contains(@class,"a-carousel-viewport")]'
+                    '//li[contains(@class,"a-carousel-card")]')
+                for li in lis:
+                    is_prime = \
+                        bool(li.xpath('.//i[contains(@class,"a-icon-prime")]'))
+                    is_prime_pantry = False
+                    is_sponsored = False
+                    link = li.xpath(
+                        './a[contains(@class,"acs_product-image")]/@href'
+                    ).extract()
+                    if len(link):
+                        link = 'http://' + self.allowed_domains[0] + '/' + \
+                               link[0]
+                        links2.append((link, is_prime, is_prime_pantry,
+                                       is_sponsored))
+        except Exception as e:
+            self.log('Links2 is fail. ERROR: %s.' % str(e), ERROR)
+
+        links += links2
+
+        if not links:
+            ul = response.xpath('//div[@id="zg_centerListWrapper"]/'
+                                'div[@class="zg_itemImmersion"]')
+            if ul:
+                def __parse_category():
+                    _get_text = lambda x: is_empty(x.xpath('text()').extract())
+
+                    __categories = []
+
+                    category_root = \
+                        response.xpath('//ul[@id="zg_browseRoot"]')
+                    if not category_root:
+                        return []
+
+                    curent_ul = \
+                        category_root.xpath('//span[@class="zg_selected"]')
+                    text = _get_text(curent_ul)
+                    if text:
+                        __categories.insert(0, text.strip())
+
+                    while curent_ul:
+                        curent_ul = curent_ul.xpath(
+                            'parent::li/parent::ul/preceding::li[1]/a')
+                        text = _get_text(curent_ul)
+                        if text:
+                            __categories.insert(0, text.strip())
+                        if text.strip().startswith('Any'):
+                            break
+
+                    return __categories
+
+                shelf_categories = __parse_category()
+                shelf_category = shelf_categories[-1] if shelf_categories \
+                    else None
+
+            for i, li in enumerate(ul):
+                link = is_empty(li.xpath(
+                    './/div[@class="zg_itemImageImmersion"]/a/@href'
+                ).extract())
                 if not link:
                     continue
 
-                if 'slredirect' in link:
+                prod = SiteProductItem(
+                    ranking=i,
+                    shelf_path=shelf_categories,
+                    shelf_name=shelf_category
+                )
 
-                    link = 'http://' + self.allowed_domains[0] + '/' + link
+                yield Request(
+                    link.strip(),
+                    callback=self.parse_product,
+                    headers={
+                        'Referer': None
+                    },
+                    meta={
+                        'product': prod
+                    }
+                ), prod
 
-                links.append((link, is_prime, is_prime_pantry, is_sponsored))
-            else:
-                break
+                # break
 
-            last_idx = idx
+            if ul:
+                return
 
-        links2 = []
-        if not links:
-            #added for New fall toys
-            lis = response.xpath(
-                '//div[contains(@class,"a-carousel-viewport")]'
-                '//li[contains(@class,"a-carousel-card")]')
-            for li in lis:
-                is_prime = bool(li.xpath('.//i[contains(@class,"a-icon-prime")]'))
-                is_prime_pantry = False
-                is_sponsored = False
-                link = li.xpath('./a[contains(@class,"acs_product-image")]/@href').extract()
-                if len(link):
-                    link = 'http://' + self.allowed_domains[0] + '/' + link[0]
-                    links2.append((link, is_prime, is_prime_pantry, is_sponsored))
-
-        links = links + links2
         if not links:
             self.log("Found no product links.", WARNING)
             # from scrapy.shell import inspect_response
-            # inspect_response(resp        onse, self)
+            # inspect_response(response, self)
 
         if links:
             for link, is_prime, is_prime_pantry, is_sponsored in links:
@@ -286,6 +365,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
     #     self.total_items_scraped += prods_per_page
 
     def _scrape_next_results_page_link(self, response):
+        return
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1

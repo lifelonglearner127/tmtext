@@ -52,14 +52,18 @@ class SamsclubScraper(Scraper):
     def __init__(self, **kwargs):
         Scraper.__init__(self, **kwargs)
 
-        # print self.ALL_DATA_TYPES
         self.HEADERS = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0', 'Cookie': 'myPreferredClub=6612'}
 
     def check_url_format(self):
-        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?(prod)?\d+\.ip$", self.product_page_url):
+        # http://www.samsclub.com/sams/gold-medal-5552pr-pretzel-oven-combo/136709.ip?searchTerm=278253
+        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?\d+\.ip$", self.product_page_url):
             return True
-        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?\d+\.cp$", self.product_page_url) or \
-            re.match(r"^http://www\.samsclub\.com/sams/pagedetails/content.jsp\?pageName=.+$", self.product_page_url):
+        return self._is_shelf_url(self.product_page_url)
+
+    def _is_shelf_url(self, url):
+        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?\d+\.cp$", url) or \
+            re.match(r"^http://www\.samsclub\.com/sams/shop/category.jsp\?categoryId=\d+$", url) or \
+            re.match(r"^http://www\.samsclub\.com/sams/pagedetails/content.jsp\?pageName=.+$", url):
             return True
 
     def _is_shelf(self):
@@ -74,29 +78,40 @@ class SamsclubScraper(Scraper):
         and returns True if current page is one.
         '''
 
-        redirect = self.tree_html.xpath('//meta[@http-equiv="Refresh" or @http-equiv="refresh"]/@content')
-        if redirect:
-            redirect_url = re.search('URL=(.*)', redirect[0], re.I).group(1)
+        redirect_url = None
 
-        if not redirect:
-            for javascript in self.tree_html.xpath('//script[@type="text/javascript"]/text()'):
-                javascript = re.sub('[\s\'"\+\;]','',javascript)
-                redirect = re.match('location.href=(.*)', javascript)
+        h = requests.head(self.product_page_url)
 
-                if redirect:
-                    redirect_url = redirect.group(1)
-                    if not re.match('https?://.+\.samsclub.com', redirect_url):
-                        redirect_url = 'http://www.samsclub.com' + redirect_url
+        if h.status_code == 302:
+            redirect_url = h.headers['Location']
 
-        if redirect:
+        else:
+            redirect = self.tree_html.xpath('//meta[@http-equiv="Refresh" or @http-equiv="refresh"]/@content')
+            if redirect:
+                redirect_url = re.search('URL=(.*)', redirect[0], re.I).group(1)
+
+            if not redirect:
+                for javascript in self.tree_html.xpath('//script[@type="text/javascript"]/text()'):
+                    javascript = re.sub('[\s\'"\+\;]','',javascript)
+                    redirect = re.match('location.href=(.*)', javascript)
+
+                    if redirect:
+                        redirect_url = redirect.group(1)
+                        if not re.match('https?://.+\.samsclub.com', redirect_url):
+                            redirect_url = 'http://www.samsclub.com' + redirect_url
+
+        if redirect_url:
+            # do not redirect to homepage or shelf pages from non-shelf pages
+            if redirect_url == 'http://www.samsclub.com/sams/' or \
+                (not self._is_shelf_url(self.product_page_url) and self._is_shelf_url(redirect_url)):
+                self.ERROR_RESPONSE['failure_type'] = '404 Not Found'
+                return True
+
+            r = requests.get(redirect_url, headers=self.HEADERS)
+
             self.product_page_url = redirect_url
-
-        r = requests.get(self.product_page_url, headers=self.HEADERS)
-        if r.url == 'http://www.samsclub.com/sams/':
-            return True
-
-        self.page_raw_text = r.content
-        self.tree_html = html.fromstring(self.page_raw_text)
+            self.page_raw_text = r.content
+            self.tree_html = html.fromstring(self.page_raw_text)
 
         try:
             self.sv.setupCH(self.tree_html)
@@ -244,6 +259,12 @@ class SamsclubScraper(Scraper):
             return long_description
 
         return None
+
+    def _assembled_size(self):
+        arr = self.tree_html.xpath("//div[contains(@class,'itemFeatures')]//h3//text()")
+        if 'Assembled Size' in arr:
+            return 1
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -1053,6 +1074,7 @@ class SamsclubScraper(Scraper):
         "long_description" : _long_description, \
         "variants": _variants, \
         "no_longer_available": _no_longer_available, \
+        "assembled_size": _assembled_size, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "video_urls" : _video_urls, \

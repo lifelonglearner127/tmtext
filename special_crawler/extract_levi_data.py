@@ -34,8 +34,8 @@ class LeviScraper(Scraper):
         self.rev_list = None
         self.is_review_checked = False
         self.lv = LeviVariants()
-        self.proxy_host = "proxy.crawlera.com"
-        self.proxy_port = "8010"
+        self.proxy_host = self.CRAWLERA_HOST
+        self.proxy_port = self.CRAWLERA_PORT
         self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
         self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
         self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
@@ -90,13 +90,20 @@ class LeviScraper(Scraper):
         except:
             try:
                 product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\n")
+                product_json_text = product_json_text.replace("getjsonTrackingObject({", "{")
+                product_json_text = product_json_text.replace("})", "}")
                 self.product_json = json.loads(product_json_text)
             except:
                 self.product_json = None
 
         try:
-            buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
-            self.buy_stack_json = json.loads(buy_stack_json_text)
+            # buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
+            buy_stack_json_text = " " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()"))
+            buy_stack_json_text = re.findall(r'var buyStackJSON = \'(\{.*?\})\';', buy_stack_json_text)
+            if len(buy_stack_json_text) > 0:
+                self.buy_stack_json = json.loads(buy_stack_json_text[0].replace("\'", '"').replace('\\\\"', ""))
+            else:
+                self.buy_stack_json = None
         except:
             self.buy_stack_json = None
 
@@ -112,18 +119,21 @@ class LeviScraper(Scraper):
         return None
 
     def _product_id(self):
-        return self.product_json["product"][0]["product_id"]
+        arr = re.findall(r'p/(\d+)', self.product_page_url)
+        if len(arr) > 0:
+            return arr[0]
+        return None
+        # return self.product_json["product"][0]["product_id"]
 
     def _site_id(self):
-        return self.product_json["product"][0]["product_id"]
+        arr = re.findall(r'p/(\d+)', self.product_page_url)
+        if len(arr) > 0:
+            return arr[0]
+        return None
+        # return self.product_json["product"][0]["product_id"]
 
     def _status(self):
         return "success"
-
-
-
-
-
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO

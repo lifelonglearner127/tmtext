@@ -21,7 +21,7 @@ class WayfairScraper(Scraper):
     ##########################################
     ############### PREP
     ##########################################
-    INVALID_URL_MESSAGE = "Expected URL format is (http|https)://www.wayfair.com/<product-name>.html"
+    INVALID_URL_MESSAGE = "Expected URL format is (http|https)://www.wayfair.com/(.*)"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -32,10 +32,9 @@ class WayfairScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^(http|https)://www.wayfair.com/.+\.html$", self.product_page_url)
-
+        m = re.match(r"^(https|http)://www\.wayfair\.com/(.*)", self.product_page_url)
         return not not m
-    
+
     def not_a_product(self):
         """Checks if current page is not a valid product page
         (an unavailable product page or other type of method)
@@ -87,7 +86,7 @@ class WayfairScraper(Scraper):
         return None
 
     def _upc(self):
-        return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
+        return None
 
     def _features(self):
         features = self.tree_html.xpath("//ul[preceding-sibling::p/text()='Features']/li/text()")
@@ -145,9 +144,11 @@ class WayfairScraper(Scraper):
     ##########################################
     def _mobile_image_same(self):
         pass
-        
+
     def _image_urls(self):
-        image_urls = self.tree_html.xpath("//div[contains(@class, 'product__nova__images_thumbnails')]//img/@src")
+        image_urls = self.tree_html.xpath(
+            "//div[contains(@class, 'ProductDetailImagesThumbnails-content')]//img/@src"
+        )
 
         if not image_urls:
             return None
@@ -280,14 +281,14 @@ class WayfairScraper(Scraper):
 
     def _in_stores(self):
         return 0
-    
+
     def _marketplace(self):
         return 0
 
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
-    ##########################################    
+    ##########################################
     def _categories(self):
         return self.tree_html.xpath("//div[contains(@class, 'product__nova__breadcrumbs')]/a/text()")
 

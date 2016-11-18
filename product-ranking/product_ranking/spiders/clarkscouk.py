@@ -2,16 +2,15 @@
 
 import json
 import re
-import hjson
 import urlparse
 import string
 
-from scrapy.http import FormRequest, Request
+from scrapy.http import Request
 from scrapy.log import ERROR, INFO, WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
+from product_ranking.spiders import BaseProductsSpider, \
     cond_set_value
 
 is_empty = lambda x, y=None: x[0] if x else y
