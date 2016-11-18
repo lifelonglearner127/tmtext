@@ -785,13 +785,8 @@ class ScrapyTask(object):
             AMAZON_BUCKET_NAME, output_path+'.log')
 
         if self.is_screenshot_job():
-            if not os.path.exists(output_path + '.screenshot.jl'):
-                # screenshot task not finished yet? wait 30 seconds
-                time.sleep(60)
-            if not os.path.exists(output_path + '.screenshot.jl'):
-                logger.error('Screenshot output file does not exist: %s' % (
-                    output_path + '.screenshot.jl'))
-            else:
+            if os.path.exists(output_path + '.screenshot.jl'
+                              ) and os.path.getsize(output_path + '.screenshot.jl'):
                 try:
                     put_file_into_s3(
                         AMAZON_BUCKET_NAME, output_path+'.screenshot.jl',
@@ -808,6 +803,15 @@ class ScrapyTask(object):
                 except Exception as ex:
                     logger.error('url2screenshot log file uploading error')
                     logger.exception(ex)
+            else:
+                logger.warning('Screenshot output file does not exist or is empty, waiting 60 seconds')
+                # screenshot task not finished yet? wait 60 seconds
+                time.sleep(60)
+                if not os.path.exists(output_path + '.screenshot.jl') or os.path.exists(
+                                output_path + '.screenshot.jl') and not os.path.getsize(
+                            output_path + '.screenshot.jl'):
+                    logger.error('Screenshot output file does not exist or is empty, giving up: %s' % (
+                        output_path + '.screenshot.jl'))
 
         csv_data_key = None
         global CONVERT_TO_CSV
