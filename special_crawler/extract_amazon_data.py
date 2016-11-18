@@ -1138,6 +1138,14 @@ class AmazonScraper(Scraper):
         return self._tofloat(average_review)
 
     def _review_count(self):
+        if not self.is_review_checked:
+            self._reviews()
+        if self.review_list:
+            sumup = 0
+            for i,v in self.review_list:
+                sumup +=int(v)
+            return sumup
+
         nr_reviews = self.tree_html.xpath("//span[@id='acrCustomerReviewText']//text()")
         if len(nr_reviews) > 0:
             nr_review = re.findall("([0-9,]+) customer reviews", nr_reviews[0])
@@ -1184,7 +1192,7 @@ class AmazonScraper(Scraper):
             elif "acr_dpx_see_all" in review_summary_link:
                 review_link = review_summary_link.replace("acr_dpx_see_all", "cm_cr_pr_viewopt_sr")
                 review_link = review_link + "&filterByStar={0}_star&pageNumber=1".format(mark)
-
+            review_link = review_link.replace("reviewerType=avp_only_reviews", "reviewerType=all_reviews")
             for retry_index in range(3):
                 try:
                     resp = self._request(review_link)
