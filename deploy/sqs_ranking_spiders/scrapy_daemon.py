@@ -787,7 +787,7 @@ class ScrapyTask(object):
         if self.is_screenshot_job():
             if not os.path.exists(output_path + '.screenshot.jl'):
                 # screenshot task not finished yet? wait 30 seconds
-                time.sleep(30)
+                time.sleep(60)
             if not os.path.exists(output_path + '.screenshot.jl'):
                 logger.error('Screenshot output file does not exist: %s' % (
                     output_path + '.screenshot.jl'))
@@ -799,6 +799,14 @@ class ScrapyTask(object):
                     logger.info('Screenshot file uploaded: %s' % (output_path + '.screenshot.jl'))
                 except Exception as ex:
                     logger.error('Screenshot file uploading error')
+                    logger.exception(ex)
+                try:
+                    put_file_into_s3(
+                        AMAZON_BUCKET_NAME, output_path+'_url2screenshot.log',
+                        is_add_file_time=True)
+                    logger.info('url2screenshot log file uploaded: %s' % (output_path+'_url2screenshot.log'))
+                except Exception as ex:
+                    logger.error('url2screenshot log file uploading error')
                     logger.exception(ex)
 
         csv_data_key = None
@@ -1190,16 +1198,18 @@ class ScrapyTask(object):
             url2scrape = self.task_data.get('product_url', self.task_data.get('url', None))
         # TODO: searchterm jobs? checkout scrapers?
         if url2scrape:
-            scrapy_path = "/home/spiders/virtual_environment/bin/scrapy"
-            python_path = "/home/spiders/virtual_environment/bin/python"
+            # scrapy_path = "/home/spiders/virtual_environment/bin/scrapy"
+            # python_path = "/home/spiders/virtual_environment/bin/python"
+            output_path = self.get_output_path()
             cmd = ('cd {repo_base_path}/product-ranking'
-                   ' && {python_path} {scrapy_path} crawl url2screenshot_products'
+                   ' && scrapy crawl url2screenshot_products'
                    ' -a product_url="{url2scrape}" '
                    ' -a width=1280 -a height=1024 -a timeout=60 '
+                   ' -s LOG_FILE={log_file}'
                    ' -o "{output_file}" &').format(
-                       repo_base_path=REPO_BASE_PATH, python_path=python_path,
-                       scrapy_path=scrapy_path, url2scrape=url2scrape,
-                       output_file=self.get_output_path()+'.screenshot.jl')
+                       repo_base_path=REPO_BASE_PATH,
+                       log_file=output_path+'_url2screenshot.log', url2scrape=url2scrape,
+                       output_file=output_path+'.screenshot.jl')
             logger.info('Starting a new parallel screenshot job: %s' % cmd)
             os.system(cmd)  # use Popen instead?
 
