@@ -208,7 +208,7 @@ def switch_branch_if_required(metadata):
     branch_name = metadata.get('branch_name', default_branch)
     if branch_name:
         logger.info("Checkout to branch %s", branch_name)
-        cmd = ('git checkout -f {branch} && git pull origin {branch} && '
+        cmd = ('git fetch && git checkout -f {branch} && git pull origin {branch} && '
                'git checkout {default_branch} -- task_id_generator.py && '
                'git checkout {default_branch} -- remote_instance_starter.py &&'
                ' git checkout {default_branch} -- upload_logs_to_s3.py')
