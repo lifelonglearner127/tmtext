@@ -670,8 +670,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             not_available = True
         if response.xpath('.//div[contains(text(), "This Item is no longer available")]'):
             not_available = True
-        if response.xpath('.//div[contains(@class, "price-display-oos-color")]'):
-            not_available = True
+        # commented into 13176 ticket
+        # if response.xpath('.//div[contains(@class, "price-display-oos-color")]'):
+        #     not_available = True
         if response.xpath('//*[contains(., "This item is no longer available")]'):
             not_available = True
         return not_available
