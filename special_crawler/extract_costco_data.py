@@ -5,6 +5,7 @@ import json
 import random
 from lxml import html, etree
 import lxml.html
+import xml.etree.ElementTree as ET
 import time
 import requests
 from extract_data import Scraper
@@ -18,12 +19,14 @@ class CostcoScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.costco.com/<product name>.product.<product id>.html"
     WEBCOLLAGE_CONTENT_URL = "http://content.webcollage.net/costco/smart-button?ird=true&channel-product-id={0}"
+    IMAGE_CHANNEL_URL = "http://richmedia.channeladvisor.com/ViewerDelivery/productXmlService?profileid={0}&itemid={1}&viewerid=1068"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         self.reviews = None
         self.image_urls = None
+        self.is_image_checked = False
         self.prod_help = None
         self.is_webcollage_checked = False
         self.wc_content = None
@@ -188,31 +191,30 @@ class CostcoScraper(Scraper):
         return image_url_p == image_url_m
 
     def _image_urls(self, tree = None):
-        a = 0
-        if tree == None:
-            if self.image_urls != None:
-                return self.image_urls
-            a = 1
-            tree = self.tree_html
-        img_link = tree.xpath('//script[contains(@src,"costco-static.com")]/@src')
-        if len(img_link) > 0:
-            imgs = requests.get(img_link[0]).text
-            img_url = re.findall(r"image\:(.+?)\,+?",imgs)
-            img_url = ["http://images.costco-static.com/image/media/350-"+b.replace("'","").strip()+".jpg" for b in img_url]
-            if len(img_url) > 0:
-                self.image_urls = img_url
-                return img_url
-        img_url = tree.xpath('//div[@class="seasonTire"]//img/@src')
-        if len(img_url) > 0:
-            self.image_urls = img_url
-            return img_url
+        if self.is_image_checked:
+            return self.image_urls
 
-        if self.tree_html.xpath("//meta[@property='og:image']/@content"):
-            return self.tree_html.xpath("//meta[@property='og:image']/@content")
+        self.is_image_checked = True
 
-        if a == 1:
-            self.image_urls = None
-        return None
+        main_image_url = self.tree_html.xpath("//meta[@property='og:image']/@content")[0]
+        profile_id = re.search("\?profileId=(.*)&imageId", main_image_url).group(1)
+        item_id = re.search("imageId=(.*)__1&recipeName", main_image_url).group(1)
+
+        try:
+            media_info_xml = ET.fromstring(self.load_page_from_url_with_number_of_retries(self.IMAGE_CHANNEL_URL.format(profile_id, item_id)))
+        except Exception as e:
+            print "Costco media xml parsing error: {0}".format(str(e))
+            return [main_image_url]
+
+        images_urls = media_info_xml.findall(".//image[@type='source']")
+        images_urls = [image_info.get("path") for image_info in images_urls]
+
+        if not images_urls:
+            images_urls = [main_image_url if main_image_url.startswith("http:") else "http:" + main_image_url]
+
+        self.image_urls = images_urls
+
+        return self.image_urls
 
     def _mobile_image_url(self, tree = None):
         if tree == None:
