@@ -785,33 +785,35 @@ class ScrapyTask(object):
             AMAZON_BUCKET_NAME, output_path+'.log')
 
         if self.is_screenshot_job():
-            if os.path.exists(output_path + '.screenshot.jl'
-                              ) and os.path.getsize(output_path + '.screenshot.jl'):
+            jl_results_path = output_path + '.screenshot.jl'
+            url2screenshot_log_path = output_path+'_screenshot.log'
+
+            if not os.path.exists(jl_results_path) or os.path.exists(
+                    jl_results_path) and not os.path.getsize(jl_results_path):
+                logger.warning('Screenshot output file does not exist, or is empty waiting 60 seconds')
+                # screenshot task not finished yet? wait 60 seconds
+                time.sleep(60)
+            if not os.path.exists(jl_results_path) or os.path.exists(
+                    jl_results_path) and not os.path.getsize(jl_results_path):
+                logger.error('Screenshot output file does not exist, or is empty, giving up: %s' % (
+                    jl_results_path))
+            else:
                 try:
                     put_file_into_s3(
-                        AMAZON_BUCKET_NAME, output_path+'.screenshot.jl',
+                        AMAZON_BUCKET_NAME, jl_results_path,
                         is_add_file_time=True)
-                    logger.info('Screenshot file uploaded: %s' % (output_path + '.screenshot.jl'))
+                    logger.info('Screenshot file uploaded: %s' % (jl_results_path))
                 except Exception as ex:
                     logger.error('Screenshot file uploading error')
                     logger.exception(ex)
                 try:
                     put_file_into_s3(
-                        AMAZON_BUCKET_NAME, output_path+'_screenshot.log',
+                        AMAZON_BUCKET_NAME, url2screenshot_log_path,
                         is_add_file_time=True)
-                    logger.info('url2screenshot log file uploaded: %s' % (output_path+'_screenshot.log'))
+                    logger.info('url2screenshot log file uploaded: %s' % (url2screenshot_log_path))
                 except Exception as ex:
                     logger.error('url2screenshot log file uploading error')
                     logger.exception(ex)
-            else:
-                logger.warning('Screenshot output file does not exist or is empty, waiting 60 seconds')
-                # screenshot task not finished yet? wait 60 seconds
-                time.sleep(60)
-                if not os.path.exists(output_path + '.screenshot.jl') or os.path.exists(
-                                output_path + '.screenshot.jl') and not os.path.getsize(
-                            output_path + '.screenshot.jl'):
-                    logger.error('Screenshot output file does not exist or is empty, giving up: %s' % (
-                        output_path + '.screenshot.jl'))
 
         csv_data_key = None
         global CONVERT_TO_CSV
