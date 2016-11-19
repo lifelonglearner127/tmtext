@@ -33,7 +33,7 @@ except ImportError:
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', '..'))
 
-DEBUG_MODE = False  # TODO! fix
+DEBUG_MODE = True  # TODO! fix
 
 try:
     from search.captcha_solver import CaptchaBreakerWrapper
@@ -96,7 +96,7 @@ def _check_bad_results_macys(driver):
 class URL2ScreenshotSpider(scrapy.Spider):
     name = 'url2screenshot_products'
     # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
-    available_drivers = ['chromium', 'firefox']
+    available_drivers = ['chromium', 'phantomjs']
 
     handle_httpstatus_list = [403, 404, 502, 500]
 
@@ -322,8 +322,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
         from selenium import webdriver
         profile = webdriver.FirefoxProfile()
         profile.set_preference("general.useragent.override", self.user_agent)
-        profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
         if self.proxy:
+            profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
             if 'socks' in self.proxy_type:
                 profile.set_preference("network.proxy.socks", self.proxy.split(':')[0])
                 profile.set_preference("network.proxy.socks_port", int(self.proxy.split(':')[1]))

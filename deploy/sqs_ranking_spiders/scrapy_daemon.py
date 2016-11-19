@@ -795,9 +795,9 @@ class ScrapyTask(object):
 
             if not os.path.exists(jl_results_path) or os.path.exists(
                     jl_results_path) and not os.path.getsize(jl_results_path):
-                logger.warning('Screenshot output file does not exist, or is empty waiting 60 seconds')
-                # screenshot task not finished yet? wait 60 seconds
-                time.sleep(60)
+                logger.warning('Screenshot output file does not exist, or is empty waiting 90 seconds')
+                # screenshot task not finished yet? wait 90 seconds
+                time.sleep(90)
             if not os.path.exists(jl_results_path) or os.path.exists(
                     jl_results_path) and not os.path.getsize(jl_results_path):
                 logger.error('Screenshot output file does not exist, or is empty, giving up: %s' % (
@@ -1215,7 +1215,7 @@ class ScrapyTask(object):
             cmd = ('cd {repo_base_path}/product-ranking'
                    ' && scrapy crawl url2screenshot_products'
                    ' -a product_url="{url2scrape}" '
-                   ' -a width=1280 -a height=1024 -a timeout=60 '
+                   ' -a width=1280 -a height=1024 -a timeout=90 '
                    ' -s LOG_FILE={log_file}'
                    ' -o "{output_file}" &').format(
                        repo_base_path=REPO_BASE_PATH,
