@@ -84,12 +84,17 @@ FOLDERS_PATH = None
 CONVERT_TO_CSV = True
 
 # Connect to S3
-S3_CONN = boto.connect_s3(is_secure=False)
+try:
+    S3_CONN = boto.connect_s3(is_secure=False)
+except:
+    pass
 # uncomment if you are not using ssl
 
 # Get current bucket
-S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
-
+try:
+    S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
+except:
+    pass
 # settings
 MAX_CONCURRENT_TASKS = 16  # tasks per instance, all with same git branch
 MAX_TRIES_TO_GET_TASK = 100  # tries to get max tasks for same branch
