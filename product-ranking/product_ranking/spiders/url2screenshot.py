@@ -164,8 +164,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
             # self.proxy_type = 'http'
 
             # Using special squid connector
-            self.proxy = "10.0.5.36:7708"
-            self.proxy_type = 'http'
+            # self.proxy = "10.0.5.36:7708"
+            # self.proxy_type = 'http'
 
             settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
             settings.overrides['CRAWLERA_APIKEY'] = crawlera_apikey
