@@ -791,7 +791,7 @@ class ScrapyTask(object):
 
         if self.is_screenshot_job():
             jl_results_path = output_path + '.screenshot.jl'
-            url2screenshot_log_path = output_path+'_screenshot.log'
+            url2screenshot_log_path = output_path+'.screenshot.log'
 
             if not os.path.exists(jl_results_path) or os.path.exists(
                     jl_results_path) and not os.path.getsize(jl_results_path):
@@ -1219,7 +1219,7 @@ class ScrapyTask(object):
                    ' -s LOG_FILE={log_file}'
                    ' -o "{output_file}" &').format(
                        repo_base_path=REPO_BASE_PATH,
-                       log_file=output_path+'_screenshot.log', url2scrape=url2scrape,
+                       log_file=output_path+'.screenshot.log', url2scrape=url2scrape,
                        output_file=output_path+'.screenshot.jl')
             logger.info('Starting a new parallel screenshot job: %s' % cmd)
             os.system(cmd)  # use Popen instead?
