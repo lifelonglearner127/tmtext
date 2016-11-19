@@ -1851,19 +1851,33 @@ def main():
 def prepare_test_data():
     # only for local-filesystem tests!
     # prepare incoming tasks
-    tasks = [dict(
-        task_id=4443, site='walmart', searchterms_str='iphone',
-        server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
-    ), dict(
-        task_id=4444, site='amazon', searchterms_str='iphone',
-        server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 1}, attributes={'SentTimestamp': '1443426145373'}
-    ), dict(
-        task_id=4445, site='target', searchterms_str='iphone',
-        server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
-    )]
+    tasks = [
+    #     dict(
+    #     task_id=4443, site='walmart', searchterms_str='iphone',
+    #     server_name='test_server_name', with_best_seller_ranking=True,
+    #     cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
+    # ), dict(
+    #     task_id=4444, site='amazon', searchterms_str='iphone',
+    #     server_name='test_server_name', with_best_seller_ranking=True,
+    #     cmd_args={'quantity': 1}, attributes={'SentTimestamp': '1443426145373'}
+    # ), dict(
+    #     task_id=4445, site='target', searchterms_str='iphone',
+    #     server_name='test_server_name', with_best_seller_ranking=True,
+    #     cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
+    # ),
+        dict(
+            task_id=4446, branch_name='Bug12886ScreenshotIssue', site='walmart',
+            url='https://www.walmart.com/ip/Peppa-Pig-Family-Figures-6-Pack/44012553',
+            server_name='test_server_name', with_best_seller_ranking=False,
+            cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
+        ),
+        dict(
+            task_id=4447, branch_name='Bug12886ScreenshotIssue', site='petco',
+            url='http://www.petco.com/shop/en/petcostore/product/natural-balance-lid-grain-free-potato-and-duck-dog-food',
+            server_name='test_server_name', with_best_seller_ranking=False,
+            cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
+        ),
+    ]
     files = [open('/tmp/' + q, 'w') for q in QUEUES_LIST.itervalues()]
     for fh in files:
         for msg in tasks:
