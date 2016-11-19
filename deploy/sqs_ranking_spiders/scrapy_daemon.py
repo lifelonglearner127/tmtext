@@ -1181,7 +1181,9 @@ class ScrapyTask(object):
         return save_task_result_to_cache(self.task_data, self.get_output_path())
 
     def is_screenshot_job(self):
-        return self.task_data.get('cmd_args', {}).get('make_screenshot_for_url', False)
+        cmd_args = self.task_data.get('cmd_args', {})
+        # leave "make_screenshot_for_url" for backward compatibility
+        return cmd_args.get('make_screenshot_for_url', cmd_args.get('make_screenshot', False))
 
     def start_screenshot_job_if_needed(self):
         """ Starts a new url2screenshot local job, if needed """
@@ -1726,7 +1728,7 @@ def main():
         elif (task_data['site'] in ('dockers', 'nike')) or 'checkout' in task_data['site']:
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
             logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
-        elif task_data.get('cmd_args', {}).get('make_screenshot_for_url', False):
+        elif ScrapyTask(None, task_data, None).is_screenshot_job():
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
             logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of the parallel url2screenshot job' % MAX_CONCURRENT_TASKS)
 
