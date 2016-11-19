@@ -1872,8 +1872,8 @@ def prepare_test_data():
             cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
         ),
         dict(
-            task_id=4447, branch_name='Bug12886ScreenshotIssue', site='petco',
-            url='http://www.petco.com/shop/en/petcostore/product/natural-balance-lid-grain-free-potato-and-duck-dog-food',
+            task_id=4447, branch_name='Bug12886ScreenshotIssue', site='amazon',
+            url='https://www.amazon.com/Anki-000-00048-Cozmo/dp/B01GA1298S/',
             server_name='test_server_name', with_best_seller_ranking=False,
             cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
         ),
