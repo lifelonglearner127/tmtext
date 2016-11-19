@@ -162,6 +162,9 @@ class URL2ScreenshotSpider(scrapy.Spider):
             # self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
             # self.proxy = "content.crawlera.com:8010"
             # self.proxy_type = 'http'
+            #TODO fix this properly, selenium fails if there is http -> https redirect
+            self.product_url = self.product_url.replace(
+                "http://", "https://") if "http://" in self.product_url else self.product_url
 
             # Using special squid connector
             self.proxy = "10.0.5.36:7708"
