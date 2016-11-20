@@ -1106,7 +1106,6 @@ class ScrapyTask(object):
         checks signal to finish in allowed time, otherwise raises error
         and stops scrapy process, logs duration for given signal
         """
-        start_time = datetime.datetime.utcnow()
         while not self._stop_signal:  # run through all signals
             step_time_start = datetime.datetime.utcnow()
             next_signal = self._get_next_signal(step_time_start)
@@ -1120,8 +1119,7 @@ class ScrapyTask(object):
             except FlowError as ex:
                 self._signal_failed(next_signal, datetime.datetime.utcnow(), ex)
                 break
-        finish_time = datetime.datetime.utcnow()
-        self.finish_date = datetime_difference(finish_time, start_time)
+        self.finish_date = datetime.datetime.utcnow()
         self._finish()
 
     def start(self):
@@ -1827,6 +1825,8 @@ def main():
         raise Exception
     listener.close()
     log_tasks_results(tasks_taken)
+
+    # TODO: add a function to wait till all Selenium processes are done?
 
     # write finish marker
     logger.info('Scrapy daemon finished.')
