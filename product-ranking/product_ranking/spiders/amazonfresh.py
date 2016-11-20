@@ -1,14 +1,11 @@
 from __future__ import division, absolute_import, unicode_literals
 
+import urlparse
 import re
-<<<<<<< HEAD
 import random
 import copy
-=======
 import json
-
 import string
->>>>>>> 551a62fc9763bdbee1d93e6722ae51e55389d61b
 
 from scrapy.http import Request
 from scrapy.conf import settings
@@ -19,8 +16,8 @@ from scrapy.utils.request import request_fingerprint
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.spiders import BaseProductsSpider, cond_set
-
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
+    FormatterWithDefaults, cond_set_value
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -72,8 +69,12 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
 
     ZIP_URL = "https://www.amazon.com/afx/regionlocationselector/ajax/" \
               "updateZipcode"
-
-<<<<<<< HEAD
+    search_sort = {
+        'relevance': 'relevance',  # default
+        'bestselling': 'bestselling',
+        'price_lh': 'price_low_to_high',
+        'price_hl': 'price_high_to_low',
+    }
     zip_codes_to_recrawl = {
         'Seattle': 98101,
         'San Francisco': 94107,
@@ -84,11 +85,13 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
     def __init__(self, zip_code='94117', order='relevance', *args, **kwargs):
         settings.overrides['DUPEFILTER_CLASS'] = 'product_ranking.spiders.amazonfresh.CustomDupeFilter'
         search_sort = self.search_sort.get(order, 'relevance')
-=======
-    def __init__(self, zip_code='94117', *args, **kwargs):
->>>>>>> 551a62fc9763bdbee1d93e6722ae51e55389d61b
         self.zip_code = zip_code
         super(AmazonFreshProductsSpider, self).__init__(*args, **kwargs)
+        # super(AmazonFreshProductsSpider, self).__init__(
+        #     url_formatter=FormatterWithDefaults(search_sort=search_sort),
+        #     *args,
+        #     **kwargs
+        # )
 
     def start_requests(self):
         yield Request(
@@ -105,11 +108,9 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
         )
 
     def login_handler(self, response):
-<<<<<<< HEAD
-        data = {'refer': '',
-                'zip': self.zip_code}
-        return FormRequest(self.ZIP_URL, formdata=data, callback=self.after_login)
-=======
+        # data = {'refer': '',
+        #         'zip': self.zip_code}
+        # return FormRequest(self.ZIP_URL, formdata=data, callback=self.after_login)
         csrf_token = re.findall(r'csrfToken\":\"([^\"]+)', response.body)
         if not csrf_token:
             self.log('Can\'t find csrf token.', ERROR)
@@ -123,7 +124,6 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
             callback=self.after_login,
             dont_filter=True
         )
->>>>>>> 551a62fc9763bdbee1d93e6722ae51e55389d61b
 
     def after_login(self, response):
         return super(AmazonFreshProductsSpider, self).start_requests()
@@ -133,7 +133,6 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         prod = response.meta['product']
-<<<<<<< HEAD
 
         # check if we have a previously scraped product, and we got a 'normal' title this time
         _title = self._scrape_title(response)
@@ -183,9 +182,7 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
         img_url = response.xpath(
             '//div[@id="mainImgWrapper"]/img/@src').extract()
         cond_set(prod, 'image_url', img_url)
-=======
-        cond_set(prod, 'url', [response.url])
->>>>>>> 551a62fc9763bdbee1d93e6722ae51e55389d61b
+        # cond_set(prod, 'url', [response.url])
         cond_set(prod, 'locale', ['en-US'])
         cond_set(
             prod,
