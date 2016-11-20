@@ -110,7 +110,7 @@ REQUIRED_SIGNALS = [
     [SIGNAL_SCRIPT_OPENED, 2 * 60],  # wait for signal that script started
     [SIGNAL_SPIDER_OPENED, 1 * 60],
     [SIGNAL_SPIDER_CLOSED, 24 * 60 * 60],
-    [SIGNAL_SCRIPT_CLOSED, 1 * 100]
+    [SIGNAL_SCRIPT_CLOSED, 1 * 160]
 ]
 
 # optional extension signals
@@ -747,6 +747,15 @@ class ScrapyTask(object):
         compress_multiple_files(output_fname, *log_files)
         return output_fname
 
+    @staticmethod
+    def _wait_for_screenshot_job_to_finish(output_path):
+        for x in xrange(120):  # wait max 120 seconds
+            time.sleep(1)
+            if os.path.exists(output_path + '.screenshot.jl'):
+                # check file size because empty files seem to get created immediately
+                if os.path.getsize(output_path + '.screenshot.jl') > 10:
+                    break
+
     def _finish(self):
         """
         called after scrapy process finished, or failed for some reason
@@ -785,9 +794,7 @@ class ScrapyTask(object):
             AMAZON_BUCKET_NAME, output_path+'.log')
 
         if self.is_screenshot_job():
-            if not os.path.exists(output_path + '.screenshot.jl'):
-                # screenshot task not finished yet? wait 30 seconds
-                time.sleep(30)
+            self._wait_for_screenshot_job_to_finish(output_path=output_path)
             if not os.path.exists(output_path + '.screenshot.jl'):
                 logger.error('Screenshot output file does not exist: %s' % (
                     output_path + '.screenshot.jl'))
@@ -1802,7 +1809,7 @@ def main():
     for _t in tasks_taken:
         logger.info('For task %s, max allowed running time is %ss', (
             _t.task_data.get('task_id'), _t.get_total_wait_time()))
-    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 100
+    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 160
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
     # loop where we wait for all the tasks to complete
@@ -1826,7 +1833,7 @@ def main():
     listener.close()
     log_tasks_results(tasks_taken)
 
-    # TODO: add a function to wait till all Selenium processes are done?
+    # TODO: wait till all Selenium processes are finished? implement or not?
 
     # write finish marker
     logger.info('Scrapy daemon finished.')
