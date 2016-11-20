@@ -644,6 +644,16 @@ class ScrapyTask(object):
         s = sum([r['wait'] for r in self.required_signals.itervalues()])
         if self.current_signal:
             s += self.current_signal[1]['wait']
+
+        # This is needed when there are low number of jobs, so
+        if self.is_screenshot_job():
+            output_path = self.get_output_path()
+            jl_results_path = output_path + '.screenshot.jl'
+            if not os.path.exists(jl_results_path) or os.path.exists(
+                    jl_results_path) and not os.path.getsize(jl_results_path):
+                logger.warning('Screenshot output file does not exist, adding 90 seconds to max wait time')
+                # screenshot task not finished yet? add 90 seconds to max wait time
+                s += 90
         return s
 
     def _dispose(self):
