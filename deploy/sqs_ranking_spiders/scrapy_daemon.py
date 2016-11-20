@@ -1216,7 +1216,7 @@ class ScrapyTask(object):
                    ' && scrapy crawl url2screenshot_products'
                    ' -a product_url="{url2scrape}" '
                    ' -a width=1280 -a height=1024 -a timeout=90 '
-                   ' -s LOG_FILE={log_file}'
+                   ' -s LOG_FILE="{log_file}"'
                    ' -o "{output_file}" &').format(
                        repo_base_path=REPO_BASE_PATH,
                        log_file=output_path+'.screenshot.log', url2scrape=url2scrape,
