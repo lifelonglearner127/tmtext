@@ -402,6 +402,11 @@ class AmazonScraper(Scraper):
 
             hidden = description.xpath('//*[@class="aok-hidden"]')
             more_button = description.xpath('//div[@id="fbExpanderMoreButtonSection"]')
+            expander = description.xpath(".//*[contains(@class, 'a-expander-extend-header')]")
+
+            # remove expander(=show mores) from description
+            if expander:
+                expander[0].getparent().remove(expander[0])
 
             description = html.tostring(description)
 
