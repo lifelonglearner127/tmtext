@@ -110,7 +110,7 @@ REQUIRED_SIGNALS = [
     [SIGNAL_SCRIPT_OPENED, 2 * 60],  # wait for signal that script started
     [SIGNAL_SPIDER_OPENED, 1 * 60],
     [SIGNAL_SPIDER_CLOSED, 24 * 60 * 60],
-    [SIGNAL_SCRIPT_CLOSED, 1 * 60]
+    [SIGNAL_SCRIPT_CLOSED, 1 * 100]
 ]
 
 # optional extension signals
@@ -1801,7 +1801,10 @@ def main():
     # wait until all tasks are finished or max wait time is reached
     # report each task progress after that and kill all tasks
     #  which are not finished in time
-    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 61
+    for _t in tasks_taken:
+        logger.info('For task %s, max allowed running time is %ss', (
+            _t.task_data.get('task_id'), _t.get_total_wait_time()))
+    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 100
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
     # loop where we wait for all the tasks to complete
