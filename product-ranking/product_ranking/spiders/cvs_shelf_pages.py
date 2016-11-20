@@ -4,7 +4,6 @@ import urlparse
 from product_ranking.items import SiteProductItem
 from .cvs import CvsProductsSpider
 from scrapy import Request
-from scrapy.conf import settings
 import urllib
 
 class CvsShelfPagesSpider(CvsProductsSpider):

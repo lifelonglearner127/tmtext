@@ -56,6 +56,8 @@ class Scraper():
     # number of retries for fetching product page source before giving up
     MAX_RETRIES = 3
 
+    PROXY = 'crawlera'
+
     CRAWLERA_HOST = 'content.crawlera.com'
     CRAWLERA_PORT = '8010'
     CRAWLERA_APIKEY = "3b1bf5856b2142a799faf2d35b504383"
@@ -76,6 +78,7 @@ class Scraper():
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
                        # Only implemented for walmart. Possible values: "Walmart v1" or "Walmart v2"
+            "proxy_service",
 
             # product_info
             "product_name", # name of product, string
@@ -111,6 +114,8 @@ class Scraper():
             "shipping",
             "free_pickup_today",
             "no_longer_available",
+            "assembled_size",
+            "temporary_unavailable",
             "variants", # list of variants
             "swatches", # list of swatches
             "related_products_urls",
@@ -123,6 +128,7 @@ class Scraper():
             "bullet_feature_3",
             "bullet_feature_4",
             "bullet_feature_5",
+            "bullets",
             "usage",
             "directions",
             "warnings",
@@ -254,9 +260,9 @@ class Scraper():
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
                         "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "details", "mta", \
-                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5",
+                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5", "bullets",
                         "usage", "directions", "warnings", "indications", "amazon_ingredients",
-                            "specs"],
+                            "specs", "temporary_unavailable", "assembled_size"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_alt_text", "image_alt_text_len", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags", "meta_tag_count", "meta_description_count", \
@@ -351,6 +357,12 @@ class Scraper():
         self.product_page_url = kwargs['url']
         self.bot_type = kwargs['bot']
         self.is_timeout = False
+
+        if kwargs.get('proxy'):
+            self.PROXY = kwargs.get('proxy')
+
+        if kwargs.get('api_key'):
+            self.CRAWLERA_APIKEY = kwargs.get('api_key')
 
         # Set generic fields
         # directly (don't need to be computed by the scrapers)

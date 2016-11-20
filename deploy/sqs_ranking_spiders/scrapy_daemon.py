@@ -125,7 +125,7 @@ CACHE_URL_GET = 'get_cache'  # url to retrieve task cache from
 CACHE_URL_SAVE = 'save_cache'  # to save cached result to
 CACHE_URL_STATS = 'complete_task'  # to have some stats about completed tasks
 CACHE_URL_FAIL = 'fail_task'  # to manage broken tasks
-CACHE_AUTH = ('admin', 'SD*/#n\%4a')
+CACHE_AUTH = ('admin', 'SD*/#n\%4c')
 CACHE_TIMEOUT = 15  # 15 seconds request timeout
 # key in task data to not retrieve cached result
 # if True, task will be executed even if there is result for it in cache
@@ -208,7 +208,7 @@ def switch_branch_if_required(metadata):
     branch_name = metadata.get('branch_name', default_branch)
     if branch_name:
         logger.info("Checkout to branch %s", branch_name)
-        cmd = ('git checkout -f {branch} && git pull origin {branch} && '
+        cmd = ('git fetch --all && git checkout -f {branch} && git pull origin {branch} && '
                'git checkout {default_branch} -- task_id_generator.py && '
                'git checkout {default_branch} -- remote_instance_starter.py &&'
                ' git checkout {default_branch} -- upload_logs_to_s3.py')
@@ -1468,14 +1468,16 @@ def restart_scrapy_daemon():
     """
     Restart this script after update source code.
     """
+    global REPO_BASE_PATH
     logger.info('Scrapy daemon restarting...')
-    arguments = ['python'] + sys.argv
+    arguments = ['python'] + [REPO_BASE_PATH+'/deploy/sqs_ranking_spiders/scrapy_daemon.py'] + sys.argv[1:]
     if 'restarted' not in arguments:
         arguments += ['restarted']
     else:
         logger.error('Error while restarting scrapy daemon. '
                      'Already restarted.')
         return
+    logging.info('Starting %s with args %s' % (sys.executable, arguments))
     os.execv(sys.executable, arguments)
 
 

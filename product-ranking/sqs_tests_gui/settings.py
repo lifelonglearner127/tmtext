@@ -179,6 +179,6 @@ TEST_CACHE_QUEUE = CACHE_QUEUES_LIST['test']
 CACHE_MODELS_FILENAME = '/tmp/cache_models.pickle'
 
 try:
-    from local_settings import *
+    from local_settings import *  # noqa:F401
 except ImportError:
     pass
