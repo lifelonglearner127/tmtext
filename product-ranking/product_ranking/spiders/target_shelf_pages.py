@@ -48,8 +48,8 @@ class TargetShelfPagesSpider(TargetProductSpider):
         else:
             self.num_pages = 1  # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
 
-        if "quantity" in kwargs:
-            self.quantity = int(kwargs['quantity'])
+        # shelf scrapers should ignore quantity parameter
+        self.quantity = 9999999
 
         # variants are switched off by default, see Bugzilla 3982#c11
         self.scrape_variants_with_extra_requests = False
