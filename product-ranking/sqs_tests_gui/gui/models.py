@@ -113,7 +113,7 @@ class Job(models.Model):
                               default='created')
 
     priority_choices = ['test', 'urgent', 'production', 'dev']
-    priority = models.CharField(max_length=20, default='test', choices=[(c, c) for c in priority_choices])
+    priority = models.CharField(max_length=20, default='urgent', choices=[(c, c) for c in priority_choices])
 
     def searchterm_or_url(self):
         return ('SearchTerm [%s]' % self.search_term if self.search_term
