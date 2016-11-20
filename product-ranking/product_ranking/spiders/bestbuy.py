@@ -22,6 +22,11 @@ class BestBuyProductSpider(ProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
+        rows = ''.join(response.xpath("//div[contains(@class,'cart-button')]/@data-add-to-cart-message").extract())
+        if "Sold Out Online" in rows:
+            product['is_out_of_stock'] = True
+        else:
+            product['is_out_of_stock'] = False
         if 'this item is no longer available' in response.body_as_unicode().lower():
             product['not_found'] = True
             return product
@@ -65,6 +70,15 @@ class BestBuyProductSpider(ProductsSpider):
         cond_set(product, 'image_url', product_tree.xpath(
             "descendant::*[not (@itemtype)]/img[@itemprop='image']/@src"
         ).extract())
+        if not product.get('image_url', None):
+            image = response.xpath('//meta[contains(@property, "og:image")]/@content').extract()
+            if image:
+                product['image_url'] = image[0]
+        if product.get('image_url', None):
+            image = product.get('image_url')
+            if 'maxHeight' in image:
+                image = image.split(';maxHeight', 1)[0]
+                product['image_url'] = image
         cond_set(product, 'model', product_tree.xpath(
             "descendant::*[not (@itemtype)]/*[@itemprop='model']/text()"
         ).extract())
@@ -139,11 +153,12 @@ class BestBuyProductSpider(ProductsSpider):
 
     def _unify_price(self, product):
         price = product.get('price')
-        if price is None:
+        if not price:
             return
         price_match = re.search('\$ *([, 0-9]+(?:\.[, 0-9]+)?)', price)
-        price = price_match.group(1)
-        price = ''.join(re.split('[ ,]+', price))
+        if price_match:
+            price = price_match.group(1)
+            price = ''.join(re.split('[ ,]+', price))
         cond_replace_value(product, 'price', Price('USD', price))
 
     def _parse_single_product(self, response):

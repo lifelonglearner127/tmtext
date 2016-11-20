@@ -23,6 +23,7 @@ class WalmartVariants(object):
         return  re.sub(r'\s+', ' ', text)
 
     def _swatches(self):
+        version = 'Walmart v1'
         if self.tree_html.xpath("//meta[@name='keywords']/@content"):
             version = "Walmart v2"
         if self.tree_html.xpath("//meta[@name='Keywords']/@content"):
@@ -63,13 +64,17 @@ class WalmartVariants(object):
 
                             if "imageAssets" in variant:
                                 swatch_info["hero"] = 1
+                                swatch_info['hero_image'] = [variant['imageAssets'][0]['versions']['hero']]
                             else:
                                 swatch_info["hero"] = 0
+                                swatch_info['hero_image'] = None
 
                             if "imageUrl" in variant and "no-image" not in variant["imageUrl"]:
                                 swatch_info["thumb"] = 1
+                                swatch_info['thumb_image'] = [variant['imageUrl']]
                             else:
                                 swatch_info["thumb"] = 0
+                                swatch_info['thumb_image'] = None
 
                             swatch_list.append(swatch_info)
 
@@ -82,6 +87,7 @@ class WalmartVariants(object):
         return None
 
     def _variants(self):
+        version = 'Walmart v1'
         if self.tree_html.xpath("//meta[@name='keywords']/@content"):
             version = "Walmart v2"
         if self.tree_html.xpath("//meta[@name='Keywords']/@content"):
@@ -130,7 +136,7 @@ class WalmartVariants(object):
                     end_index = item.find(",", start_index)
                     item_id = item[start_index:end_index].strip()
                     original_product_canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
-                    if not original_product_canonical_link.startswith("http://www.walmart.com"):
+                    if not re.match("https?://www.walmart.com", original_product_canonical_link):
                         original_product_canonical_link = "http://www.walmart.com" + original_product_canonical_link
                     variant_product_url = original_product_canonical_link[:original_product_canonical_link.rfind("/") + 1] + str(item_id)
 
@@ -227,7 +233,7 @@ class WalmartVariants(object):
 
                 original_product_canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
-                if not original_product_canonical_link.startswith("http://www.walmart.com"):
+                if not re.match("https?://www.walmart.com", original_product_canonical_link):
                     original_product_canonical_link = "http://www.walmart.com" + original_product_canonical_link
 
                 for item in color_size_stockstatus_json_body:

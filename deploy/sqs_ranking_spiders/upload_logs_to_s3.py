@@ -17,11 +17,11 @@ from sqs_ranking_spiders.task_id_generator import \
 try:
     # try local mode
     from sqs_ranking_spiders.remote_instance_starter import log_file_path,\
-        logging, AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+        logging, AMAZON_BUCKET_NAME
 except ImportError:
     # we're in /home/spiders/repo
     from repo.remote_instance_starter import log_file_path, logging, \
-        AMAZON_BUCKET_NAME, AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+        AMAZON_BUCKET_NAME
 
 logger = logging.getLogger('main_log')
 log_mod_time_flag_path = '/tmp/log_mod_time_flag'
@@ -44,11 +44,7 @@ def set_global_variables_from_data_file():
 
 def upload_logs_into_s3(bucket_name):
     global RANDOM_HASH, DATESTAMP, FOLDERS_PATH
-    conn = boto.connect_s3(
-        aws_access_key_id=AMAZON_ACCESS_KEY,
-        aws_secret_access_key=AMAZON_SECRET_KEY,
-        is_secure=False,
-    )
+    conn = boto.connect_s3(is_secure=False)
     bucket = conn.get_bucket(bucket_name, validate=False)
     # Cut out file name
     log_filename = DATESTAMP + '____' + RANDOM_HASH + '____' + \

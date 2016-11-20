@@ -18,20 +18,8 @@ CREDENTIALS_FILE = '~/.sqs_credentials'  # u have to create it to test locally
 # of task message
 
 
-def read_access_and_secret_keys(fname=CREDENTIALS_FILE):
-    config = ConfigParser.ConfigParser()
-    config.read(['site.cfg', os.path.expanduser(fname)])
-    return [config.get('default', 'aws_access_key_id'),
-            config.get('default', 'aws_secret_access_key')]
-
-
 def put_msg_to_sqs(message, queue_name=QUEUES_LIST['test']):
-    conf = read_access_and_secret_keys()
-    conn = boto.sqs.connect_to_region(
-        "us-east-1",
-        aws_access_key_id=conf[0],
-        aws_secret_access_key=conf[1]
-    )
+    conn = boto.sqs.connect_to_region("us-east-1")
     q = conn.get_queue(queue_name)
     m = Message()
     m.set_body(json.dumps(message))

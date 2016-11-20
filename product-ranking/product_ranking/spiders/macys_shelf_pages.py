@@ -76,11 +76,9 @@ class MacysShelfPagesSpider(MacysProductsSpider):
 
         urls = ['http://www1.macys.com' + i for i in urls]
 
-        sample = response.xpath(
-            '//div[@id="featureNav"]/ul/li//text()').extract()
-        categories = [i.strip() for i in reversed(sample) if i.strip()]
-
-        shelf_categories = categories[1:]
+        shelf_categories = response.xpath(
+            './/*[@id="nav_category"]//*[@id="viewAllInCategory" or @id="currentCatNavHeading"]/text()').extract()
+        shelf_categories = [i.replace('View All','').strip() for i in shelf_categories if i.strip()]
         shelf_category = shelf_categories[-1] if shelf_categories else None
 
         for url in urls:
@@ -98,8 +96,14 @@ class MacysShelfPagesSpider(MacysProductsSpider):
         return super(MacysShelfPagesSpider,
                      self)._scrape_next_results_page_link(response)
 
-    def parse_product(self, response):
-        return super(MacysShelfPagesSpider, self).parse_product(response)
+    # def parse_product(self, response):
+    #     is_collection = response.xpath(".//*[@id='memberItemsTab']/a[@href='#collectionItems']"
+    #                                    "/*[contains(text(),'Choose Your Items')]")
+    #     if is_collection:
+    #         self.log("{} - item is collection, dropping the item".format(response.url), INFO)
+    #         return None
+    #     else:
+    #         return super(MacysShelfPagesSpider, self).parse_product(response)
 
     def _populate_from_html(self, response, product):
         """
@@ -127,23 +131,51 @@ class MacysShelfPagesSpider(MacysProductsSpider):
             price = [p.strip() for p in
                      response.xpath('//*[@id="priceInfo"]//text()').extract()
                      if p.strip()]
+        if not price:
+            price = response.xpath('//*[contains(@id, "priceInfo")]').re(FLOATING_POINT_RGEX)
+        if not price:
+            price = response.xpath('//*[contains(@class, "singlePrice")][contains(text(), "$")]')
         if price:
             product['price'] = Price(price=price[0],
                                      priceCurrency='USD')
 
         if not product.get("image_url") or \
-                        "data:image" in product.get("image_url"):
+                            "data:image" in product.get("image_url"):
             image_url = response.xpath(
-                "//img[contains(@id, 'mainView')]/@src").extract()
+                    "//img[contains(@id, 'mainView')]/@src").extract()
             if image_url:
                 product["image_url"] = image_url[0]
+        if not product.get('image_url'):
+            cond_set(
+                product, 'image_url',
+                response.xpath('//*[contains(@class,'
+                               ' "productImageSection")]//img/@src').extract()
+            )
+        if not product.get('image_url'):
+            cond_set(
+                product, 'image_url',
+                response.xpath('//*[contains(@class, "mainImages")]'
+                               '//*[contains(@class, "imageItem")]//img/@src').extract()
+            )
+        if not product.get("image_url") or \
+                        "data:image" in product.get("image_url"):
+            img_src = response.xpath('//*[contains(@class, "imageItem") '
+                                     'and contains(@class, "selected")]/img/@src').extract()
+            if img_src:
+                product['image_url'] = img_src[0]
+
 
         title = response.css('#productTitle::text').extract()
         if not title:
             title = response.xpath('//*[contains(@class, "productTitle")]'
-                                   '[contains(@itemprop, "name")]//text()').extract()
+                                   '[contains(@itemprop, "name")]/text()').extract()
+            title = title[0].strip() if title else ''
+        if not product.get('title', None):
+            title = response.xpath('//h1[contains(@class,"productName")]//text()').extract()
+            title = title[0].strip() if title else ''
+
         if title:
-            cond_replace(product, 'title', title)
+            cond_replace(product, 'title', [''.join(title).strip()])
 
         path = '//*[@id="memberProductDetails"]/node()[normalize-space()]'
         desc = response.xpath(path).extract()
@@ -163,6 +195,8 @@ class MacysShelfPagesSpider(MacysProductsSpider):
         cond_set(product, 'locale', locale)
         brand = response.css('#brandLogo img::attr(alt)').extract()
         if not brand:
+            brand = response.xpath('.//*[@class="productTitle"]/a[@class="brandNameLink"]/text()').extract()
+        if not brand:
             brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
             brand = [brand]
         cond_set(product, 'brand', brand)
@@ -172,8 +206,7 @@ class MacysShelfPagesSpider(MacysProductsSpider):
 
         product_id = response.css('#productId::attr(value)').extract()
 
-        if self.scrape_variants_with_extra_requests:
-            self._parse_reviews(response, product)
+        self._parse_reviews(response, product)
 
         # Related Products
         if product_id:
@@ -223,11 +256,15 @@ class MacysShelfPagesSpider(MacysProductsSpider):
 
     def _parse_reviews(self, response, product):
         product_id = response.css('#productId::attr(value)').extract()
+        if not product_id:
+            product_id = response.xpath('//*[contains(@class,"productID")]'
+                                        '[contains(text(), "Web ID:")]/text()').extract()
+            if product_id:
+                product_id = [''.join([c for c in product_id[0] if c.isdigit()])]
 
         if product_id:  # Reviews
             url = "http://macys.ugc.bazaarvoice.com/7129aa/%s" \
                   "/reviews.djs?format=embeddedhtml" % (product_id[0],)
-
             r = requests.get(url)
             resp = r.text
             resp = re.findall("var materials=(.*)", resp)

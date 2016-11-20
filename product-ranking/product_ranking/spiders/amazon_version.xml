@@ -10,17 +10,17 @@
     <field name="title" version="1.1"></field>
     <field name="upc" version="1.1"></field>
     <field name="model" version="1.1"></field>
-    <field name="url" version="1.1"></field>
+    <field name="url" version="1.2"></field>
     <field name="image_url" version="1.1"></field>
     <field name="description" version="1.2"></field>
-    <field name="brand" version="1.1"></field>
+    <field name="brand" version="1.3"></field>
     <field name="price" version="1.3"></field>
-    <field name="marketplace" version="1.5"></field>
+    <field name="marketplace" version="1.6"></field>
     <field name="locale" version="1.1"></field>
     <field name="related_products" version="1.1"></field>
     <field name="sponsored_links" version="1.1"></field>
     <field name="is_in_store_only" version="1.1"></field>
-    <field name="is_out_of_stock" version="1.1"></field>
+    <field name="is_out_of_stock" version="1.2"></field>
     <field name="buyer_reviews" version="1.3"></field>
     <field name="bestseller_rank" version="1.1"></field>
     <field name="department" version="1.1"></field>
@@ -34,7 +34,7 @@
     <field name="prime" version="1.2"></field>
     <field name="is_pickup_only" version="1.1"></field>
     <field name="date_of_last_question" version="1.1"></field>
-    <field name="recent_questions" version="1.1"></field>
+    <field name="recent_questions" version="1.2"></field>
     <field name="special_pricing" version="1.1"></field>
     <field name="variants" version="1.2"></field>
     <field name="price_subscribe_save" version="1.0"></field>

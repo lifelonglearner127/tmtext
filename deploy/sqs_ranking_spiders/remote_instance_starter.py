@@ -27,8 +27,6 @@ if os.path.dirname(os.path.abspath(__file__)) == '/home/spiders/repo':  # remote
 FLAG_URL = "stop-sc-spiders.contentanalyticsinc.com"
 FLAG_S3_KEY = "scrapy_daemon_stop_flag"
 AMAZON_BUCKET_NAME = 'spyder-bucket'  # Amazon S3 bucket name
-AMAZON_ACCESS_KEY = 'AKIAIKTYYIQIZF3RWNRA'
-AMAZON_SECRET_KEY = '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'
 
 log_file_path = '/tmp/remote_instance_starter2.log'
 log_settings = {
@@ -107,14 +105,8 @@ def wait_until_post_starter_script_executed(script_name):
             return
 
 
-def stop_flag_exists_at_s3(bucket_name, key,
-                           amazon_public_key=AMAZON_ACCESS_KEY,
-                           amazon_secret_key=AMAZON_SECRET_KEY,):
-    conn = boto.connect_s3(
-        aws_access_key_id=amazon_public_key,
-        aws_secret_access_key=amazon_secret_key,
-        is_secure=False,
-    )
+def stop_flag_exists_at_s3(bucket_name, key):
+    conn = boto.connect_s3(is_secure=False)
     bucket = conn.get_bucket(bucket_name, validate=False)
     k = Key(bucket)
     k.key = "scrapy_daemon_stop_flag"
@@ -124,6 +116,19 @@ def stop_flag_exists_at_s3(bucket_name, key,
         return False
     except:
         return False
+
+
+def get_actual_branch_from_cache():
+    try:
+        logger.info('Get default branch from redis.')
+        sys.path.append(os.path.join(REPO_BASE_PATH, 'deploy'))
+        from cache_layer.cache_service import SqsCache
+        sqs = SqsCache()
+        branch = sqs.get_settings('remote_instance_branch')
+    except Exception as e:
+        logger.error('Error while get branch. ERROR: %s', str(e))
+        branch = 'sc_production'
+    return branch or 'sc_production'
 
 
 # def stop_flag_exists_at_url(url):
@@ -140,7 +145,7 @@ if __name__ == '__main__':
     # if stop_flag_exists_at_url(FLAG_URL):
         sys.exit()
     mark_as_running()
-    pull_repo('sc_production')
+    pull_repo(get_actual_branch_from_cache())
     wait_until_post_starter_script_executed('post_starter_root.py')
     wait_until_post_starter_script_executed('post_starter_spiders.py')
     start_scrapy_daemon()

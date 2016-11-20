@@ -1,12 +1,13 @@
 import os
 import sys
+import re
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 #sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
 
-from gui.models import Job, get_data_filename, get_log_filename
+from gui.models import Job
 
 
 sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',
@@ -20,7 +21,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         jobs = Job.objects.filter(status='created').order_by(
-            'created').distinct()[0:50]
+            '?').distinct()[0:500]
         for job in jobs:
             msg = {
                 'task_id': int(job.task_id),
@@ -51,9 +52,11 @@ class Command(BaseCommand):
                 for _arg in job.extra_cmd_args.split('\n'):
                     if not _arg.strip():
                         continue  # skip empty lines
-                    extra_arg_name, extra_arg_value = _arg.split('=')
-                    extra_arg_name = extra_arg_name.strip()
-                    extra_arg_value = extra_arg_value.strip()
+		    search =  re.findall('^(.*?)=(.*)$', _arg.strip())
+                    if search:
+                        extra_arg_name, extra_arg_value = search[0]
+                        extra_arg_name = extra_arg_name.strip()
+                        extra_arg_value = extra_arg_value.strip()
                     if not 'cmd_args' in msg:
                         msg['cmd_args'] = {}
                     msg['cmd_args'][extra_arg_name] = extra_arg_value

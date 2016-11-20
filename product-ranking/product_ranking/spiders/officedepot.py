@@ -3,22 +3,21 @@ from __future__ import division, absolute_import, unicode_literals
 import json
 import re
 import time
-import urllib
+import socket
 import urlparse
+import urllib
 import os
-import sys
+import string
 
 from scrapy import Request
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    FLOATING_POINT_RGEX, cond_set_value
-#from product_ranking.validation import BaseValidator
+    cond_set_value
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
-from scrapy import Selector
-from spiders_shared_code.dockers_variants import DockersVariants
-# from product_ranking.validators.dockers_validator import DockersValidatorSettings
+
+from datetime import datetime
 
 is_empty =lambda x,y=None: x[0] if x else y
 
@@ -31,14 +30,11 @@ def is_num(s):
         return False
 
 
-# TODO: related products
-# TODO: variants ?
-# class DockersProductsSpider(BaseValidator, BaseProductsSpider):
 class OfficedepotProductsSpider(BaseProductsSpider):
     name = 'officedepot_products'
-    allowed_domains = ["officedepot.com", "www.officedepot.com"]
+    allowed_domains = ["officedepot.com", "www.officedepot.com", 'bazaarvoice.com']
     start_urls = []
-
+    _extra_requests = False
     # settings = DockersValidatorSettings
 
     SEARCH_URL = "http://www.officedepot.com/catalog/search.do?Ntt={search_term}&searchSuggestion=true&akamai-feo=off"
@@ -53,6 +49,10 @@ class OfficedepotProductsSpider(BaseProductsSpider):
 
     REVIEW_URL = "http://officedepot.ugc.bazaarvoice.com/2563" \
                  "/{product_id}/reviews.djs?format=embeddedhtml"
+
+    VARIANTS_URL = 'http://www.officedepot.com/mobile/getSkuAvailable' \
+            'Options.do?familyDescription={name}&sku={sku}&noLogin=true'
+    QA_URL = "http://officedepot.ugc.bazaarvoice.com/answers/2563/product/{product_id}/questions.djs?format=embeddedhtml"
     #
     # RELATED_PRODUCT = "http://www.res-x.com/ws/r2/Resonance.aspx?" \
     #                   "appid=dockers01&tk=187015646137297" \
@@ -70,23 +70,22 @@ class OfficedepotProductsSpider(BaseProductsSpider):
     #                   "&ur=http%3A%2F%2Fwww.levi.com%2FUS%2Fen_US%" \
     #                   "2Fwomens-jeans%2Fp%2F095450043&plk=&"
 
-    use_proxies = True
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
-
         # officedepot seems to have a bot protection, so we first get the cookies
         # and parse the site with them after that
         self.proxy = None
-        self.timeout = 30
+        self.timeout = 60
         self.width = 1024
         self.height = 768
         self.selenium_cookies = {}
         self.user_agent = ('Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36'
                            ' (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36')
+        socket.setdefaulttimeout(60)
         self._get_selenium_cookies_for_main_page()
-
-
+        if kwargs.get('scrape_variants_with_extra_requests'):
+            self._extra_requests = True
         super(OfficedepotProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
 
@@ -98,12 +97,23 @@ class OfficedepotProductsSpider(BaseProductsSpider):
     def _get_selenium_cookies_for_main_page(self):
         from pyvirtualdisplay import Display
         display = Display(visible=False)
+        display.start()
         driver = self._init_chromium()
         self._prepare_driver(driver)
-        driver.get('http://' + self.allowed_domains[0])
-        time.sleep(10)
-        for cookie in driver.get_cookies():
-            self.selenium_cookies[cookie['name']] = cookie['value']
+        try:
+            driver.get('http://' + self.allowed_domains[0])
+            time.sleep(10)
+            for cookie in driver.get_cookies():
+                self.selenium_cookies[cookie['name']] = cookie['value']
+            driver.quit()
+        except Exception as e:
+            driver.quit()
+            time.sleep(10)
+            self.log('Error getting cookies from homepage, trying one more time: %s' % str(e))
+            driver.get('http://' + self.allowed_domains[0])
+            time.sleep(10)
+            for cookie in driver.get_cookies():
+                self.selenium_cookies[cookie['name']] = cookie['value']
         try:
             driver.quit()
             display.stop()
@@ -158,7 +168,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
             return match.group(1)
 
     def parse_product(self, response):
-        meta = response.meta.copy()
+        meta = response.meta
         product = meta.get('product', SiteProductItem())
         reqs = []
         meta['reqs'] = reqs
@@ -171,7 +181,7 @@ class OfficedepotProductsSpider(BaseProductsSpider):
 
         # Parse title
         title = self.parse_title(response)
-        cond_set(product, 'title', title)
+        cond_set(product, 'title', title, conv=string.strip)
 
         # Parse image
         image = self.parse_image(response)
@@ -193,37 +203,199 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
-        # Parse variants
-        # variants = self._parse_variants(response)
-        # product['variants'] = variants
+        # Parse model
+        model = self._parse_model(response)
+        cond_set_value(product, 'model', model)
+
+        # Parse is out of stock
+        oos = self._parse_is_out_of_stock(response)
+        cond_set_value(product, 'is_out_of_stock', oos)
+
+        # Parse categories and category
+        categories = self._parse_categories(response)
+        cond_set_value(product, 'categories', categories)
+        if categories:
+            cond_set_value(product, 'category', categories[-1])
+
+        # Parse related products
+        related_product = self._parse_related_product(response)
+        cond_set_value(product, 'related_products', related_product)
 
         br_count = is_empty(re.findall(r'<span itemprop="reviewCount">(\d+)<\/span>',
                                        response.body_as_unicode()))
         meta['_br_count'] = br_count
-        yield Request(
-            url=self.REVIEW_URL.format(product_id=self._get_product_id(response.url)),
+
+        reqs.append(Request(
+            url=self.REVIEW_URL.format(product_id=self._get_product_id(
+                response.url)),
             dont_filter=True,
             callback=self.parse_buyer_reviews,
             meta=meta
-        )
+        ))
 
-        yield product
+        sku = is_empty(response.xpath('//input[@name="id"]/@value').extract())
+        name = is_empty(response.xpath(
+            '//h1[@itemprop="name"]/text()').re('(.*?),'))
+
+
+        if sku and name and self.scrape_variants_with_extra_requests:
+            name = urllib.quote_plus(name.strip().encode('utf-8'))
+            reqs.append(Request(url=self.VARIANTS_URL.format(name=name,
+                                                             sku=sku),
+                        callback=self._parse_variants,
+                        meta=meta))
+        # parse questions & answers
+        reqs.append(Request(
+            url=self.QA_URL.format(product_id=self._get_product_id(
+            response.url)),
+            callback=self._parse_questions,
+            meta=meta,
+            dont_filter=True
+        ))
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+        return product
+
+    def _parse_questions(self, response):
+        meta = response.meta
+        reqs = response.meta['reqs']
+        product = response.meta['product']
+        qa = []
+        questions_ids_regex = """BVQAQuestionSummary.+?javascript:void.+?>([^<]+)[^"']+["']BVQAQuestionMain(\d+)(?:.+?BVQAQuestionDetails.+?div>([^<]+)?).+?BVQAElapsedTime.+?>([^<]+)"""
+        questions_ids = re.findall(questions_ids_regex, response.body_as_unicode())
+        for (question_summary, question_id, question_details, question_date) in questions_ids:
+            # Convert date format
+            if question_date:
+                try:
+                    from dateutil.relativedelta import relativedelta
+                    years = re.findall("(\d+?)\s+?years", question_date)
+                    years = years[0] if years else '0'
+                    years = int(years) if years.isdigit() else '0'
+                    months = re.findall("(\d+?)\s+?months", question_date)
+                    months = months[0] if months else '0'
+                    months = int(months) if months.isdigit() else '0'
+                    if not months and not years:
+                        converted_date = None
+                    else:
+                        converted_date = datetime.now() - relativedelta(years=years, months=months)
+                        converted_date = converted_date.strftime("%Y-%m-%d")
+                except Exception as e:
+                    converted_date = None
+                    self.log('Failed to parse date, setting date to None {}'.format(e))
+            else:
+                converted_date = None
+            # regex to get part of response that contain all answers to question with given id
+            text_r = "BVQAQuestion{}Answers(.+?)BVQAQuestionDivider".format(question_id)
+            all_a_text = re.findall(text_r, response.body_as_unicode())
+            all_a_text = ''.join(all_a_text[0]) if all_a_text else ''
+            answers_regex = r"Answer:.+?>([^<]+)"
+            answers = re.findall(answers_regex, all_a_text)
+            answers = [{'answerText':a} for a in answers]
+            question = {
+                'questionDate': converted_date,
+                'questionId': question_id,
+                'questionDetail': question_details.strip() if question_details else '',
+                'qestionSmmary': question_summary.strip() if question_summary else '',
+                'answers': answers,
+                'totalAnswersCount': len(answers)
+            }
+            qa.append(question)
+        product['all_questions'] = qa
+        if reqs:
+            return self.send_next_request(reqs, response)
+        return product
 
     def clear_text(self, str_result):
         return str_result.replace("\t", "").replace("\n", "").replace("\r", "").replace(u'\xa0', ' ').strip()
 
-    # def _parse_variants(self, response):
-    #     """
-    #     Parses product variants.
-    #     """
-    #     dk = DockersVariants()
-    #     dk.setupSC(response)
-    #     variants = dk._variants()
-    #
-    #     return variants
+    def _parse_is_out_of_stock(self, response):
+        oos = response.xpath(
+            '//*[@itemprop="availability"'
+            ' and @content="http://schema.org/OutOfStock"]')
+        return bool(oos)
+
+    def _parse_model(self, response):
+        model = response.xpath(
+            '//*[@id="attributemodel_namekey"]/text()').extract()
+        if model:
+            return model[0].strip()
+
+    def _parse_categories(self, response):
+        categories = response.xpath(
+            '//*[@id="siteBreadcrumb"]//'
+            'span[@itemprop="name"]/text()').extract()
+        return categories
+
+    def _parse_related_product(self, response):
+        results = []
+        base_url = response.url
+        for related_product in response.xpath(
+                '//*[@id="relatedItems"]'
+                '//tr[contains(@class,"hproduct")]'
+                '/td[@class="description"]/a'):
+            name = is_empty(related_product.xpath('text()').extract())
+            url = is_empty(related_product.xpath('@href').extract())
+            if name and url:
+                results.append(RelatedProduct(title=name,
+                                              url=urlparse.urljoin(base_url,
+                                                                   url)))
+        return results
+
+    def _parse_variants(self, response):
+        """
+        Parses product variants.
+        """
+        reqs = response.meta['reqs']
+        product = response.meta['product']
+        data = json.loads(response.body)
+        variants = []
+
+        if data.get('success'):
+            for sku in data.get('skus', []):
+                vr = {}
+                vr['url'] = urlparse.urljoin(response.url, sku.get('url'))
+                vr['skuId'] = sku.get('sku')
+                price = is_empty(re.findall(
+                    '\$([\d\.]+)', sku.get('attributesDescription', '')))
+                if price:
+                    vr['price'] = price
+
+                name = sku.get('description', '')
+                if name:
+                    vr['properties'] = {'title': name}
+
+                vr['image_url'] = sku.get('thumbnailImageUrl').split('?')[0]
+                variants.append(vr)
+
+            product['variants'] = variants
+        if product.get('variants') and self._extra_requests:
+            variants_urls = [p.get('url') for p in product['variants']]
+            for var_url in variants_urls:
+                req = Request(url=var_url, callback=self._parse_in_stock_for_variants)
+                req.meta['product'] = product
+                reqs.append(req)
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
+
+    # parse variants one by one and set out of stock status for each variant
+    def _parse_in_stock_for_variants(self, response):
+        reqs = response.meta['reqs']
+        product = response.meta['product']
+        oos = self._parse_is_out_of_stock(response)
+        for variant in product['variants']:
+            if variant['url'] == response.url:
+                variant['in_stock'] = not oos
+                break
+        if reqs:
+            return self.send_next_request(reqs, response)
+        return product
 
     def parse_buyer_reviews(self, response):
         meta = response.meta.copy()
+        reqs = meta['reqs']
 
         self.br.br_count = meta['_br_count']
         buyer_reviews_per_page = self.br.parse_buyer_reviews_per_page(response)
@@ -231,7 +403,10 @@ class OfficedepotProductsSpider(BaseProductsSpider):
         product = response.meta['product']
         product['buyer_reviews'] = BuyerReviews(**buyer_reviews_per_page)
 
-        yield product
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product
 
     def send_next_request(self, reqs, response):
         """
@@ -324,9 +499,12 @@ class OfficedepotProductsSpider(BaseProductsSpider):
                 return int(totals)
 
     def _scrape_product_links(self, response):
-        for link in response.xpath(
-                '//div[contains(@class, "descriptionFull")]/a[contains(@class, "med_txt")]/@href'
-        ).extract():
+        items = response.xpath(
+            '//div[contains(@class, "descriptionFull")]/'
+            'a[contains(@class, "med_txt")]/@href'
+        ).extract() or response.css('.desc_text a::attr("href")').extract()
+
+        for link in items:
             yield link, SiteProductItem()
 
     def _get_nao(self, url):

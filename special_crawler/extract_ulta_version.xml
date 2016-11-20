@@ -11,10 +11,11 @@
     <field name="long_description" version="2.1"></field>
     <field name="ingredients" version="1.1"></field>
     <field name="ingredient_count" version="1.1"></field>
+    <field name="variants" version="1.1"></field>
     <field name="image_count" version="1.1"></field>
-    <field name="image_urls" version="1.1"></field>
+    <field name="image_urls" version="1.2"></field>
     <field name="video_count" version="2.1"></field>
-    <field name="video_urls" version="2.1"></field>
+    <field name="video_urls" version="2.2"></field>
     <field name="pdf_count" version="1.1"></field>
     <field name="pdf_urls" version="1.1"></field>
     <field name="webcollage" version="1.1"></field>

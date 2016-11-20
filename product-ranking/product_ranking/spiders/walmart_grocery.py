@@ -1,20 +1,16 @@
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
 
-from urlparse import urljoin
 import json
 import re
 import time
 
 
-from scrapy.http import FormRequest, Request
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy.http import Request
+from scrapy.log import ERROR, WARNING
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews
-from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    dump_url_to_file, FLOATING_POINT_RGEX, cond_set_value
+from product_ranking.items import SiteProductItem, Price
+from product_ranking.spiders import BaseProductsSpider, cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -63,7 +59,7 @@ class WalmartGroceryProductSpider(BaseProductsSpider):
             prod['url'] = self.product_url
             prod['search_term'] = ''
             yield Request(
-                url=self.DETAIL_URL.format(skuId=skuId), 
+                url=self.DETAIL_URL.format(skuId=skuId),
                 callback=self._parse_single_product,
                 meta={'product': prod}
             )
@@ -112,7 +108,7 @@ class WalmartGroceryProductSpider(BaseProductsSpider):
             callback=self.after_start,
             body=json.dumps(params),
         )
- 
+
     def parse_product(self, response):
         product = response.meta.get("product")
         reqs = []
@@ -229,7 +225,7 @@ class WalmartGroceryProductSpider(BaseProductsSpider):
         if self.position < self.tm:
             self.position += 60
             return self.NEXT_PAGI_PAGE.format(
-                search_term=self.searchterms[0], 
+                search_term=self.searchterms[0],
                 position=self.position,
                 storeId=self.storeId,
             )

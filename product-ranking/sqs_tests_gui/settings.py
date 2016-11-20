@@ -33,6 +33,8 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 LOGIN_URL = '/admin/'
 
+SITE_ID = 1
+
 # Application definition
 
 INSTALLED_APPS = (
@@ -42,9 +44,14 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 
     'gui',
-    'fcgi'
+    'fcgi',
+    'watchdog',
+    'kill_servers',
+    'sqs_stats',
+    'reports',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -62,7 +69,7 @@ ROOT_URLCONF = 'urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates'), ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -83,11 +90,15 @@ WSGI_APPLICATION = 'wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': 'c38trillionmonkeys_com',                      # Or path to database file if using sqlite3.
+        # The following settings are not used with sqlite3:
+        'USER': 'root',
+        'PASSWORD': 'L4f12v23Nh49IB8',
+        'HOST': 'sqs-tools.cmuq9py90auz.us-east-1.rds.amazonaws.com',                      # Empty for localhost through domain sockets or           '127.0.0.1' for localhost through TCP.
+        'PORT': '',                      # Set to empty string for default.
     }
 }
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
@@ -166,3 +177,8 @@ TEST_QUEUE = QUEUES_LIST['test']
 TEST_CACHE_QUEUE = CACHE_QUEUES_LIST['test']
 
 CACHE_MODELS_FILENAME = '/tmp/cache_models.pickle'
+
+try:
+    from local_settings import *  # noqa:F401
+except ImportError:
+    pass

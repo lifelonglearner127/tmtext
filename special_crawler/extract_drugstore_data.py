@@ -116,16 +116,106 @@ class DrugstoreScraper(Scraper):
         return self._long_description_helper()
 
     def _long_description_helper(self):
-        rows = self.tree_html.xpath("//div[@id='divPromosPDetail']//text()")
+        rows = self.tree_html.xpath("//table[@id='TblProdForkPromo']//text()")
         rows = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
         description = "\n".join(rows)
         if len(description) < 1:
             return None
         return description
 
+    def _ingredient_count(self):
+        if self._ingredients():
+            return len(self._ingredients())
+        return 0
+
+    def _ingredients(self):
+        ingredient_list = []
+
+        rows = self.tree_html.xpath('//table[@id="TblProdForkIngredients"]//text()')
+        for row in rows:
+            if 'Ingredients' in row:
+                continue
+
+            ingredient_list += map( self._clean_text, row.split(':')[-1].split(','))
+
+        if ingredient_list:
+            return ingredient_list
+
+    def _variants(self):
+        variants = []
+
+        tree_html = self.tree_html
+
+        for variant_link in self.tree_html.xpath('//a[@class="groupDistinction"]'):
+            variant_url = 'http://www.drugstore.com' + variant_link.xpath('@href')[0]
+            variant = variant_link.xpath('text()')[0]
+            selected = True
+
+            # temporarily get variant tree html
+            if not variant_url.split('?')[0] == self._canonical_link():
+                variant_html = html.fromstring( self.load_page_from_url_with_number_of_retries( variant_url))
+
+                self.tree_html = variant_html
+
+                selected = False
+
+            # make sure tree_html gets reset if there is some exception
+            try:
+                image_url = None
+                if self._image_urls():
+                    image_url = self._image_urls()[0]
+
+                variants.append( {
+                    "in_stock" : self._in_stock() == 1,
+                    "properties" : {
+                        "variant" : variant
+                    },
+                    "price" : self._price(),
+                    "selected" : selected,
+                })
+            except:
+                self.tree_html = tree_html
+                raise
+
+            self.tree_html = tree_html
+
+        if len(variants) > 1:
+            return variants
+
+    def _swatches(self):
+        swatches = []
+
+        for distinction in self.tree_html.xpath('//div[@id="divDistinctionBtnType"]'):
+            onmouseover = distinction.xpath('@onmouseover')
+
+            # If there is no mouseover, that swatch is not available for this variant
+            if not onmouseover:
+                continue
+
+            s = {
+                "color": re.search("'([^']+)'\)", onmouseover[0]).group(1),
+                "hero": 1,
+                "hero_image": [
+                    re.search("'(http://[^']+)'", onmouseover[0]).group(1)
+                ],
+                "swatch_name": "color",
+                "thumb": 1,
+                "thumb_image": [
+                  re.search('(http://[^\)]+)\)', distinction.xpath('@style')[0]).group(1)
+                ]
+              }
+
+            swatches.append(s)
+
+        if swatches:
+            return swatches
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
+    def _canonical_link(self):
+        return self.tree_html.xpath('//link[@rel="canonical"]/@href')[0]
+
     #returns 1 if the mobile version is the same, 0 otherwise
     def _mobile_image_same(self):
         return None
@@ -134,6 +224,7 @@ class DrugstoreScraper(Scraper):
         if self.image_count is not None:
             return self.image_urls
         self.image_count = 0
+
         url = self.tree_html.xpath("//div[@id='divPImage']//a/@href")[0].strip()
         m = re.findall(r"javascript:popUp\('(.*?)',", url)
         url = "http://www.drugstore.com%s" % m[0]
@@ -152,6 +243,7 @@ class DrugstoreScraper(Scraper):
             except IndexError:
                 loop_flag = False
 
+        self.image_urls = image_url
         if len(image_url) < 1:
             return None
         self.image_count = len(image_url)
@@ -179,7 +271,9 @@ class DrugstoreScraper(Scraper):
         pdf_hrefs = []
         for pdf in pdfs:
             pdf_hrefs.append(pdf.attrib['href'])
-        return pdf_hrefs
+
+        if pdf_hrefs:
+            return pdf_hrefs
 
     def _pdf_count(self):
         urls = self._pdf_urls()
@@ -220,6 +314,8 @@ class DrugstoreScraper(Scraper):
                 if cnt > 0:
                     self.reviews.append([idx, cnt])
                     rv_scores.append(idx)
+                else:
+                    self.reviews.append([idx, cnt])
                 idx -= 1
                 if idx < 1:
                     break
@@ -315,7 +411,9 @@ class DrugstoreScraper(Scraper):
         return self._categories()[-1]
 
     def _brand(self):
-        return None
+        brandstore = self.tree_html.xpath('//a[@class="brandstore"]/@href')
+        if brandstore:
+            return re.match('/([^/]+)/', brandstore[0]).group(1)
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -343,8 +441,13 @@ class DrugstoreScraper(Scraper):
         "description" : _description, \
         "model" : _model, \
         "long_description" : _long_description, \
+        "ingredient_count" : _ingredient_count, \
+        "ingredients" : _ingredients, \
+        "variants" : _variants, \
+        "swatches" : _swatches, \
 
         # CONTAINER : PAGE_ATTRIBUTES
+        "canonical_link" : _canonical_link, \
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
         "webcollage" : _webcollage, \

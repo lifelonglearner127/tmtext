@@ -3,7 +3,7 @@
     <field name="site" version="1.1"></field>
     <field name="search_term" version="1.1"></field>
     <field name="ranking" version="1.1"></field>
-    <field name="total_matches" version="1.1"></field>
+    <field name="total_matches" version="1.2"></field>
     <field name="results_per_page" version="1.1"></field>
     <field name="scraped_results_per_page" version="1.1"></field>
     <field name="is_single_result" version="1.1"></field>

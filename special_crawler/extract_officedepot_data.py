@@ -34,7 +34,7 @@ class OfficeDepotScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www\.officedepot\.com/a/products/[0-9]+/.*?$", self.product_page_url)
+        m = re.match(r"^http://www\.officedepot\.com/a/products/[0-9]+(/.*)?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -61,9 +61,7 @@ class OfficeDepotScraper(Scraper):
     ##########################################
 
     def _canonical_link(self):
-        canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
-
-        return canonical_link
+        return self.tree_html.xpath('//link[@rel="canonical"]/@href')[0]
 
     def _url(self):
         return self.product_page_url
@@ -72,18 +70,13 @@ class OfficeDepotScraper(Scraper):
         return None
 
     def _product_id(self):
-        return re.findall('http://www.officedepot.com/a/products/(\d+)/', self.product_page_url, re.DOTALL)[0]
+        return re.search('http://www.officedepot.com/a/products/(\d+)', self.product_page_url).group(1)
 
     def _site_id(self):
         return None
 
     def _status(self):
         return "success"
-
-
-
-
-
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -132,6 +125,9 @@ class OfficeDepotScraper(Scraper):
             if description_item.tag == "ul":
                 break
 
+            if description_item.tag != "p":
+                continue
+
             short_description = short_description + html.tostring(description_item)
 
         short_description = self._clean_text(short_description.strip())
@@ -160,7 +156,10 @@ class OfficeDepotScraper(Scraper):
 
         return None
 
-
+    def _no_longer_available(self):
+        if self.tree_html.xpath('//div[contains(@class,"no_longer_avail")]'):
+            return 1
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -191,17 +190,48 @@ class OfficeDepotScraper(Scraper):
         return 0
 
     def _video_urls(self):
+        video_urls = []
+
+        resource_base = re.search('data-resources-base="([^"]+)"', html.tostring(self.tree_html))
+        if resource_base:
+            resource_base = resource_base.group(1)[:-1] # remove trailing '/'
+
+        wc_json = self.tree_html.xpath('//div[contains(@class,"wc-json-data")]/text()')
+
+        if wc_json:
+            wc_json = json.loads(wc_json[0])
+
+            for video in wc_json['videos']:
+                video_urls.append( resource_base + video['src']['src'])
+
+        if video_urls:
+            return video_urls
+
         return None
 
     def _video_count(self):
         videos = self._video_urls()
 
-        if videos:
-            return len(videos)
+        embedded_videos = self.tree_html.xpath('//span[@class="LimelightEmbeddedPlayer"]')
 
-        return 0
+        if videos:
+            return len(videos) + len(embedded_videos)
+
+        else:
+            return len(embedded_videos)
 
     def _pdf_urls(self):
+        urls = []
+
+        pops = map( lambda x: x.get('href'), self.tree_html.xpath('//ul[@class="sku_icons"]/li/a'))
+        for pop in pops:
+            category = re.search( '/([^/]+)\.do', pop ).group(1).lower()
+            id = re.search( '\?id=(\d+)', pop ).group(1)
+            urls.append('http://www.officedepot.com/pdf/%s/%s.pdf' % (category, id))
+
+        if urls:
+            return urls
+
         return None
 
     def _pdf_count(self):
@@ -223,9 +253,6 @@ class OfficeDepotScraper(Scraper):
 
     def _keywords(self):
         return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
-
-    def _no_image(self):
-        return None
     
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -365,10 +392,6 @@ class OfficeDepotScraper(Scraper):
     def _marketplace_lowest_price(self):
         return None
 
-
-
-
-
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
@@ -383,8 +406,6 @@ class OfficeDepotScraper(Scraper):
     def _brand(self):
         return self.tree_html.xpath("//td[@id='attributebrand_namekey']/text()")[0].strip()
 
-
-
     ##########################################
     ################ HELPER FUNCTIONS
     ##########################################
@@ -395,9 +416,6 @@ class OfficeDepotScraper(Scraper):
        	text = re.sub("&nbsp;", " ", text).strip()
 
         return re.sub(r'\s+', ' ', text)
-
-
-
 
     ##########################################
     ################ RETURN TYPES
@@ -425,13 +443,13 @@ class OfficeDepotScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
+        "no_longer_available" : _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
-        "no_image" : _no_image, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
@@ -461,8 +479,6 @@ class OfficeDepotScraper(Scraper):
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
-
-
 
         "loaded_in_seconds" : None, \
         }

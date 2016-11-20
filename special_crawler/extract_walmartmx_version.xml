@@ -7,12 +7,12 @@
     <field name="model" version="1"></field>
     <field name="features" version="1"></field>
     <field name="feature_count" version="1"></field>
-    <field name="description" version="1"></field>
-    <field name="long_description" version="1"></field>
+    <field name="description" version="1.1"></field>
+    <field name="long_description" version="1.1"></field>
     <field name="ingredients" version="1"></field>
     <field name="ingredient_count" version="1"></field>
     <field name="image_count" version="1"></field>
-    <field name="image_urls" version="1"></field>
+    <field name="image_urls" version="1.2"></field>
     <field name="video_count" version="1"></field>
     <field name="video_urls" version="1"></field>
     <field name="pdf_count" version="1"></field>
@@ -30,8 +30,8 @@
     <field name="max_review" version="1"></field>
     <field name="min_review" version="1"></field>
     <field name="reviews" version="1"></field>
-    <field name="price" version="1"></field>
-    <field name="price_amount" version="1"></field>
+    <field name="price" version="1.1"></field>
+    <field name="price_amount" version="1.1"></field>
     <field name="price_currency" version="1"></field>
     <field name="marketplace" version="1"></field>
     <field name="site_online" version="1"></field>

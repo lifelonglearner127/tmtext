@@ -57,7 +57,10 @@ class KohlsShelfPagesSpider(KohlsProductsSpider):
                       meta=self._setup_meta_compatibility())
 
     def _scrape_product_links(self, response):
-        prod_urls = re.findall(
+        prod_urls = response.xpath('//*[contains(@id, "content")]'
+                                   '//noscript//a[contains(@href, "prd-")]/img/../@href').extract()
+        if not prod_urls:
+            prod_urls = re.findall(
                 r'"prodSeoURL"\s?:\s+\"(.+)\"',
                 response.body_as_unicode()
             )

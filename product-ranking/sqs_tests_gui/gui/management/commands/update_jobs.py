@@ -8,7 +8,7 @@ import zipfile
 import subprocess
 import tempfile
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.utils.timezone import now
 import boto
@@ -26,8 +26,7 @@ sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
 import scrapy_daemon
 from test_sqs_flow import download_s3_file, AMAZON_BUCKET_NAME, unzip_file
-from list_all_files_in_s3_bucket import list_files_in_bucket, \
-        AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+from list_all_files_in_s3_bucket import list_files_in_bucket
 
 LOCAL_AMAZON_LIST = os.path.join(CWD, '_amazon_listing.txt')
 
@@ -51,7 +50,7 @@ def run(command, shell=None):
 
 def list_amazon_bucket(bucket=AMAZON_BUCKET_NAME,
                        local_fname=LOCAL_AMAZON_LIST):
-    filez = list_files_in_bucket(AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, bucket)
+    filez = list_files_in_bucket(bucket)
     # dump to a temporary file and replace the original one then
     tmp_file = tempfile.NamedTemporaryFile(mode='rb', delete=False)
     tmp_file.close()
@@ -62,6 +61,7 @@ def list_amazon_bucket(bucket=AMAZON_BUCKET_NAME,
     if os.path.exists(local_fname):
         os.unlink(local_fname)
     os.rename(tmp_file.name, local_fname)
+    os.chmod(local_fname, 0777)
 
 
 def num_of_running_instances(file_path):
@@ -166,7 +166,7 @@ class Command(BaseCommand):
         # get random jobs
         jobs = Job.objects.filter(
             Q(status='pushed into sqs') | Q(status='in progress')
-        ).order_by('?').distinct()[0:50]
+        ).order_by('?').distinct()[0:300]
 
         # get output & progress queue names
         output_queues = get_output_queues_for_jobs(jobs)

@@ -11,7 +11,8 @@ INSTALL_PACKAGES = [
     'Pillow', 'pytesseract', 'requests', 'tldextract', 'boto', 's3peat',
     'workerpool', 'sqlalchemy', 'psycopg2', 'hjson', 'pyyaml',
     'python-dateutil', 'psutil', 'service_identity', 'mmh3', 'flask',
-    'selenium', 'pyvirtualdisplay', 'scrapy_crawlera', 'grequests'
+    'selenium', 'pyvirtualdisplay', 'scrapy_crawlera', 'grequests',
+    'python-apt', 'fake_useragent', 'Twisted==14.0.0'
 ]
 
 
@@ -34,7 +35,7 @@ def mark_as_finished():
 def _install_pip_package(package):
     VENV_PYTHON = '/home/spiders/virtual_environment/bin/python'
     PIP_PATH = '/usr/local/bin/pip'
-    os.system('%s %s install %s' % (VENV_PYTHON, PIP_PATH, package))
+    os.system('%s %s install -U %s' % (VENV_PYTHON, PIP_PATH, package))
 
 
 def _create_http_proxies_list(fpath, host='tprox.contentanalyticsinc.com'):

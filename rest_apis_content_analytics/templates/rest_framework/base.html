@@ -1,10 +1,17 @@
 {% load staticfiles %}
 {% load rest_framework %}
 {% load i18n %}
+{% load settings_values %}
+{% load utcnow %}
 
 <!DOCTYPE html>
 <html>
 <head>
+  {% url "items_update_with_xml_file_by_walmart_api" as items_update_with_xml_file_by_walmart_api_url %}
+  {% url "validate_walmart_product_xml_file" as validate_walmart_product_xml_file_url %}
+  {% url "check_feed_status_by_walmart_api" as check_feed_status_by_walmart_api_url %}
+  {% url "check_item_status_by_product_id" as check_item_status_by_product_id_url %}
+
   {% block head %}
 
     {% block meta %}
@@ -28,22 +35,114 @@
 
   <style>
       .prettyprint_replaced_link {border-bottom:1px dashed;}
+      .stats_big_blue_area td{
+          background: #337ab7;
+          font-size: 20px;
+          padding:20px;
+          text-align: center;
+          border-radius: 5px;
+          border: 0;
+          box-shadow: 1px 2px 5px grey;
+          color: white;
+          cursor: pointer;
+      }
+      .stats_big_blue_area td span {
+          display: block;
+      }
+      .stats_big_blue_area {
+          border-spacing: 20px;
+          border-collapse: separate;
+          margin-left: auto;
+          margin-right: auto;
+      }
+      .stats_table {
+          font-size:12px;
+      }
+      .active-link {
+          font-weight: bold;
+      }
+      .submit_ok {color:green;}
+      .submit_fail {color:red;}
   </style>
 
   <script type="text/javascript">
+      var replacePattern1 = /([0-9a-zA-Z]{8}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{12})/gim;
+      var replacePattern2 = /([0-9A-Z]{20,40}[0-9A-Z\@a-z\_]{5,20})/gim;
+
       function linkify(inputText) {
           // feed ID example: 5e1bc52a-a9f8-4114-9f50-23d567e02f4d
-          var replacedText, replacePattern1;
-          replacePattern1 = /([0-9a-zA-Z]{8}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{4}\-[0-9a-zA-Z]{12})/gim;
+          var replacedText;
           replacedText = inputText.replace(
               replacePattern1,
-              '<a href="/feed-redirect/$1" target="_blank" class="prettyprint_replaced_link">$1</a>'
+              '<a data-target="$1" href="/feed-redirect/$1" target="_blank" class="prettyprint_replaced_link">$1</a>'
+          );
+          replacedText = replacedText.replace(
+              replacePattern2,
+              '<a data-target="$1" href="/feed-redirect/$1" target="_blank" class="prettyprint_replaced_link">$1</a>'
           );
           return replacedText;
       }
+
+      function get_feed_id_from_response(inputText) {
+          if(inputText.match(replacePattern1)) return inputText.match(replacePattern1)[0];
+          else return inputText.match(replacePattern2)[0];
+      }
+
       document.addEventListener("DOMContentLoaded", function() {
           var response_block = $('.response-info .prettyprint');
-          response_block[0].innerHTML = linkify(response_block[0].innerHTML);
+          {% if request.path == items_update_with_xml_file_by_walmart_api_url or request.path == check_feed_status_by_walmart_api_url or request.path == validate_walmart_product_xml_file_url or request.path == check_item_status_by_product_id_url%}
+              response_block[0].innerHTML = linkify(response_block[0].innerHTML);
+
+              $('#download_xml_file').attr('feed-id', get_feed_id_from_response(response_block[0].innerHTML));  // create redirect param for button click
+
+              var submission_history_as_json = "{{ submission_history_as_json }}";
+
+              /*
+              function stat_ajax_request() {
+                  $.ajax({
+                      url: "/stat-counter-ajax/",
+                      data: {
+                          next: "{{ request.path }}"
+                      },
+                      success: function (data, textStatus) {
+                          if (data.redirect) {window.location.href = data.redirect;}
+                          else {
+                              if (data.stats_all_walmart_xml_items) $('#stat_counter_all_time').text(data.stats_all_walmart_xml_items);
+                              if (data.stats_successful_walmart_xml_items) $('#stat_counter_success').text(data.stats_successful_walmart_xml_items);
+                              if (data.stats_today_all_xml_items && data.stats_today_successful_xml_items) {
+                                  $('#stat_counter_today').text(
+                                      data.stats_today_successful_xml_items.toString()
+                                      + ' / ' + data.stats_today_all_xml_items.toString());
+                              }
+                          }
+                      }
+                  });
+              }
+              */
+
+              $('.prettyprint_replaced_link').each(function(i, link) {
+                  $.ajax({
+                      url: "/feed-status-ajax/" + $(link).attr('data-target'),
+                      data: {
+                          next: "{{ request.path }}"
+                      },
+                      success: function (data, textStatus) {
+                          if (data.redirect) {window.location.href = data.redirect;}
+                          else {
+                              var cls = '';
+                              if (data.ok) cls = 'submit_ok';
+                              else cls = 'submit_fail';
+                              if (data.in_progress) $(link).after(" ==> <span class='"+cls+"'>IN PROGRESS</span>");
+                              else if (data.partial_success) $(link).after(" ==> <span class='"+cls+"'>PARTIAL SUCCESS</span>");
+                              else if (data.ok) $(link).after(" ==> <span class='"+cls+"'>SUCCESS</span>");
+                              else $(link).after(" ==> <span class='"+cls+"'>FAILED</span>");
+                          }
+                          //stat_ajax_request();
+                      }
+                  });
+
+              });
+          {% endif %}
       });
   </script>
 </head>
@@ -63,6 +162,7 @@
             {% endblock %}
           </span>
           <ul class="nav navbar-nav pull-right">
+            <li><a>Server time: {% utcnow 'H:i:s' %} (UTC)</a></li>
             {% block userlinks %}
               {% if user.is_authenticated %}
                 {% optional_logout request user %}
@@ -71,28 +171,54 @@
               {% endif %}
             {% endblock %}
           </ul>
+
+          {% is_production as is_production %}
+          {% if not is_production %}
+          <ul class="nav navbar-nav navbar-right">
+            <li><a><span class="text-danger"><b>Test mode</b></span></a></li>
+          </ul>
+          {% endif %}
+
         </div>
       </div>
     {% endblock %}
 
     <div class="container">
-      <ul class="well" style="margin-top:80px">
-          <a href="{% url 'items_update_with_xml_file_by_walmart_api' %}">Submit XML</a>&nbsp;&nbsp;&#8226;&nbsp;
+      <ul class="well top-links-block" style="margin-top:80px">
+          <a href="{% url 'items_update_with_xml_file_by_walmart_api' %}" >Submit XML</a>&nbsp;&nbsp;&#8226;&nbsp;
           <a href="{% url 'validate_walmart_product_xml_file' %}">Validate XML</a>&nbsp;&nbsp;&#8226;&nbsp;
-          <a href="{% url 'check_feed_status_by_walmart_api' %}">Check Feed Status</a>
+          <a href="{% url 'check_feed_status_by_walmart_api' %}">Check Feed Status</a>&nbsp;&nbsp;&#8226;&nbsp;
+          <a href="{% url 'check_item_status_by_product_id' %}">Check GTIN Status</a>
       </ul>
 
+      {% if request.path == items_update_with_xml_file_by_walmart_api_url %}
+      <div>
+        <table class="stats_big_blue_area">
+          <tr>
+            <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Total items submitted (all time)
+              <span id="stat_counter_all_time">{{ stats_all_walmart_xml_items }}</span></td>
+            <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Total successful (all time)
+              <span id="stat_counter_success">{{ stats_successful_walmart_xml_items }}</span></td>
+            <td onclick="window.location.href='{% url "stats_view" %}'; return false;">Today (success/total)
+              <span id="stat_counter_today">{{ stats_today_successful_xml_items }}</span></td>
+          </tr>
+        </table>
+      </div>
+      {% endif %}
+
       {% block breadcrumbs %}
-        <ul class="breadcrumb" style="margin-top:20px">
-          You are here:
-          {% for breadcrumb_name, breadcrumb_url in breadcrumblist %}
-            {% if forloop.last %}
-              <li class="active"><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
-            {% else %}
-              <li><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
-            {% endif %}
-          {% endfor %}
-        </ul>
+        {% if request.path != items_update_with_xml_file_by_walmart_api_url %}
+          <ul class="breadcrumb" style="margin-top:20px">
+            You are here:
+            {% for breadcrumb_name, breadcrumb_url in breadcrumblist %}
+              {% if forloop.last %}
+                <li class="active"><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
+              {% else %}
+                <li><a href="{{ breadcrumb_url }}">{{ breadcrumb_name }}</a></li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        {% endif %}
       {% endblock %}
 
       <!-- Content -->
@@ -124,6 +250,12 @@
 
         {% if options_form %}
           <form class="button-form" action="{{ request.get_full_path }}" data-method="OPTIONS">
+            {% if request.path == items_update_with_xml_file_by_walmart_api_url %}
+              <a href="#" onclick="return false;" id="scroll_to_file_input">Submit XML File</a> &nbsp;
+            {% endif %}
+            {% if request.path == check_feed_status_by_walmart_api_url %}
+              <button class="btn btn-primary" onclick="return false;" id="download_xml_file">Download XML</button> &nbsp;
+            {% endif %}
             <button class="btn btn-primary js-tooltip" title="Make an OPTIONS request on the {{ name }} resource">OPTIONS</button>
           </form>
         {% endif %}
@@ -240,7 +372,7 @@
                       <a name='html-tab' href="#put-object-form" data-toggle="tab">HTML form</a>
                     </li>
                     <li>
-                      <a  name='raw-tab' href="#put-generic-content-form" data-toggle="tab">Raw data</a>
+                      <a name='raw-tab' href="#put-generic-content-form" data-toggle="tab">Raw data</a>
                     </li>
                   </ul>
                 {% endif %}
@@ -284,6 +416,98 @@
     </div><!-- /.container -->
   </div><!-- ./wrapper -->
 
+  {% if request.path == check_item_status_by_product_id_url %}
+      <div id="content2">
+          <div class="well">
+            <div id="content2_table">
+            </div>
+          </div>
+          <script>
+              function insertAfter(newNode, referenceNode) {
+                  referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
+              }
+              function drawCheckItemStatusTable(data) {
+                  var table = '<table class="table stats_table" id="item_status_table">';
+                  table += '<tr><th class="sortable">Code</th><th class="sortable">Feed ID</th>';
+                  table += '<th class="sortable">Date/Time Submitted</th><th class="sortable">Status</th></tr>';
+                  for(var number in data) {
+                      var top_value = data[number];
+                      if (top_value == 'NOT FOUND') table += '<tr><td>' + number.toString() + '</td><td colspan="3">NOT FOUND</td></tr>';
+                      else {
+                          for(var subm_date in top_value) {
+                              var value = top_value[subm_date];
+                              table += '<tr>';
+                              table += '<td>' + number.toString() + '</td>';
+                              table += '<td>' + value.feed_id.toString() + '</td>';
+                              table += '<td>' + value.datetime.toString() + '</td>';
+                              table += '<td>' + value.status.toString() + '</td>';
+                              table += '</tr>';
+                          }
+                      }
+                      //table += '<tr><td colspan="4" style="border: 0"></td></tr>';
+                  }
+                  return table;
+              }
+              var raw_content = {{ content|safe }};
+          </script>
+      </div>
+      <script>
+          function apply_sort(table) {
+              $(table).find('th.sortable').click(function () {
+                  var table = $(this).parents('table').eq(0);
+                  var rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
+                  this.asc = !this.asc;
+                  if (!this.asc) {
+                      rows = rows.reverse()
+                  }
+                  for (var i = 0; i < rows.length; i++) {
+                      table.append(rows[i])
+                  }
+                  if(!this.asc) {
+                      $(table).find('th .table_up_arrow').hide();
+                      $(this).find('.table_down_arrow').show();
+                  } else {
+                      $(table).find('th .table_down_arrow').hide();
+                      $(this).find('.table_up_arrow').show();
+                  }
+              });
+          }
+
+          function init_sort(table, initial_sort_th) {
+              $(table).find('th.sortable').css('cursor', 'pointer');
+              $(table).find('th.sortable').each(function () {
+                  $(this).append('<span class="table_up_arrow"> ↑</span>');
+                  $(this).append('<span class="table_down_arrow"> ↓</span>');
+              });
+              apply_sort(table);
+              $(table).find('th')[initial_sort_th].click();
+              $(table).find('th')[initial_sort_th].click();
+          }
+          function comparer(index) {
+              return function(a, b) {
+                  var valA = getCellValue(a, index), valB = getCellValue(b, index);
+                  if($.isNumeric(valA) && $.isNumeric(valB)) return valA - valB;
+                  else if(Date.parse(valA) && Date.parse(valB)) {
+                      return Date.parse(valA) - Date.parse(valB);
+                  }
+                  else return valA < valB;
+               }
+          }
+          function getCellValue(row, index){ return $(row).children('td').eq(index).html() }
+      </script>
+      <script>
+          document.addEventListener("DOMContentLoaded", function(event) {
+              //var parsed_content = JSON.parse(raw_content);
+              document.getElementById('content2_table').innerHTML = drawCheckItemStatusTable(raw_content);
+              insertAfter(document.getElementById('content2'), document.getElementsByClassName('response-info')[0]);
+              var cont2 = $('#content2');
+              cont2[0].innerHTML = linkify(cont2[0].innerHTML);
+
+              init_sort($('#item_status_table'), 2);
+          });
+      </script>
+  {% endif %}
+
   {% block script %}
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
     <script src="{% static "rest_framework/js/bootstrap.min.js" %}"></script>
@@ -294,6 +518,47 @@
   {% if filter_form %}
   {{ filter_form }}
   {% endif %}
+
+  <script>
+      $('.top-links-block a[href^="/' + location.pathname.split("/")[1] + '"]').addClass('active-link');
+      $('#scroll_to_file_input').click(function(){
+        $('html, body').animate({
+            scrollTop: $('[name="xml_file_to_upload"]').offset().top
+        }, 500);
+        return false;
+      });
+      $('#download_xml_file').click(function(){
+        window.location = "/xml-file-redirect/" + $(this).attr('feed-id');
+        return false;
+      });
+  </script>
+
+  {% if request.path == items_update_with_xml_file_by_walmart_api_url %}
+    <script>
+      function stripHTML(dirtyString) {
+          var container = document.createElement('div');
+          var text = document.createTextNode(dirtyString);
+          container.appendChild(text);
+          return container.innerHTML; // innerHTML will be a xss safe string
+      }
+
+      $('#post-object-form form').attr('action', '{{ items_update_with_xml_file_by_walmart_api_url }}'); // submit without pagination
+      var body_log = $('.response-info').html().replace(/<\/?[^>]+(>|$)/g, "");
+      var current_page = parseInt("{{ request.GET.page }}");
+      if (! current_page || current_page == NaN) current_page = 1;
+      $('.response-info').append('<p id="p_paginator" align="center">Page: </p>');
+      if(body_log.includes('"paginate_left": true')) {
+          $('#p_paginator').append('<a href="?page='+(current_page-1)+'">Previous</a>');
+      }
+      if(body_log.includes('"paginate_left": true') || body_log.includes('"paginate_right": true')) {
+          $('#p_paginator').append('&nbsp;<a style="text-decoration: underline" href="?page='+(current_page)+'">'+(current_page)+'</a>&nbsp;');
+      }
+      if(body_log.includes('"paginate_right": true')) {
+          $('#p_paginator').append('<a href="?page='+(current_page+1)+'">Next</a>');
+      }
+    </script>
+  {% endif %}
+
 
 </body>
 {% endblock %}

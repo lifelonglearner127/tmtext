@@ -4,7 +4,7 @@ from __future__ import division, absolute_import, unicode_literals
 import json
 import re
 
-from scrapy import Request, FormRequest
+from scrapy import Request
 
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.items import SiteProductItem, RelatedProduct, Price
@@ -142,7 +142,8 @@ class OrientaltradingProductsSpider(BaseProductsSpider):
         return img
 
     def parse_description(self, response):
-        description = response.xpath('//div[contains(@class, "pd-text-bloc")]/text()').extract()
+        description = response.xpath(
+            '//div[contains(@class, "pd-text-bloc")] | //p[contains(@class, "pd-text-bloc")]').extract()
         if description:
             return description
         else:

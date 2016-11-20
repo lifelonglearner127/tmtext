@@ -13,10 +13,10 @@ import urlparse
 import cPickle as pickle
 
 from django.core.servers.basehttp import FileWrapper
-from django.views.generic import RedirectView, View, ListView, TemplateView, FormView
+from django.views.generic import RedirectView, View, TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse
 import boto
 from boto.s3.connection import S3Connection
 
@@ -24,7 +24,7 @@ from .models import get_data_filename, get_log_filename, get_progress_filename,\
     Job, JobGrouperCache
 
 from management.commands.update_jobs import LOCAL_AMAZON_LIST,\
-    AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_BUCKET_NAME, download_s3_file
+    AMAZON_BUCKET_NAME, download_s3_file
 from management.commands.download_list_of_s3_cache_files import LOCAL_AMAZON_LIST_CACHE
 import settings
 
@@ -33,7 +33,6 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD,  '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
 sys.path.append(os.path.join(CWD,  '..', '..'))
-from add_task_to_sqs import read_access_and_secret_keys
 from scrapy_daemon import PROGRESS_QUEUE_NAME
 from product_ranking.cache_models import list_db_cache
 
@@ -165,7 +164,6 @@ class ProgressMessagesView(AdminOnlyMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(ProgressMessagesView, self).get_context_data(**kwargs)
-        access, secret = read_access_and_secret_keys()
         self._connect()
         context['msgs'] = self._msgs()
         return context
@@ -297,13 +295,9 @@ class RenderS3CachePage(AdminOnlyMixin, TemplateView):
             ext = ext[1]
 
         # download S3 files
-        # TODO: move bucket name and credentials to an independent config file
-        amazon_public_key = 'AKIAIKTYYIQIZF3RWNRA'
-        amazon_secret_key = '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'
         bucket_name = 'spiders-cache'
 
-        aws_connection = S3Connection(aws_access_key_id=amazon_public_key,
-                                      aws_secret_access_key=amazon_secret_key)
+        aws_connection = S3Connection()
         bucket = aws_connection.get_bucket(bucket_name)
 
         # get response body

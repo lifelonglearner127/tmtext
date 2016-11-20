@@ -6,6 +6,7 @@ CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(1, os.path.join(CWD, '..'))
 
 from flask import Flask, jsonify, abort, request
+from extract_shopritedelivers_data import ShopritedeliversScraper
 from extract_walmart_data import WalmartScraper
 from extract_tesco_data import TescoScraper
 from extract_amazon_data import AmazonScraper
@@ -60,6 +61,7 @@ from extract_deliverywalmart_data import DeliveryWalmartScraper
 from extract_flipkart_data import FlipkartScraper
 from extract_pepperfry_data import PepperfryScraper
 from extract_cvs_data import CVSScraper
+from extract_walgreens_data import WalgreensScraper
 from extract_hairshop24_data import HairShop24Scraper
 from extract_hagelshop_data import HagelShopScraper
 from extract_levi_data import LeviScraper
@@ -81,6 +83,20 @@ from extract_forever21_data import Forever21Scraper
 from extract_officedepot_data import OfficeDepotScraper
 from extract_orientaltrading_data import OrientalTradingScraper
 from extract_walmartmx_data import WalmartMXScraper
+from extract_riteaid_data import RiteAidScraper
+from extract_att_data import ATTScraper
+from extract_verizonwireless_data import VerizonWirelessScraper
+from extract_lowes_data import LowesScraper
+from extract_petco_data import PetcoScraper
+from extract_wag_data import WagScraper
+from extract_chewy_data import ChewyScraper
+from extract_petfooddirect_data import PetFoodDirectScraper
+from extract_pet360_data import Pet360Scraper
+from extract_petsmart_data import PetsmartScraper
+from extract_walmartgrocery_data import WalmartGroceryScraper
+from extract_autozone_data import AutozoneScraper
+from extract_sears_data import SearsScraper
+from extract_jet_data import JetScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -153,6 +169,7 @@ SUPPORTED_SITES = {
                     "flipkart": FlipkartScraper,
                     "pepperfry": PepperfryScraper,
                     "cvs": CVSScraper,
+                    "walgreens": WalgreensScraper,
                     "hairshop24": HairShop24Scraper,
                     "hagelshop": HagelShopScraper,
                     "levi": LeviScraper,
@@ -174,6 +191,21 @@ SUPPORTED_SITES = {
                     "officedepot": OfficeDepotScraper,
                     "orientaltrading": OrientalTradingScraper,
                     "walmartmx": WalmartMXScraper,
+                    "riteaid": RiteAidScraper,
+                    "att": ATTScraper,
+                    "verizonwireless": VerizonWirelessScraper,
+                    "lowes": LowesScraper,
+                    "petco": PetcoScraper,
+                    "wag": WagScraper,
+                    "chewy" : ChewyScraper,
+                    "petfooddirect": PetFoodDirectScraper,
+                    "pet360" : Pet360Scraper,
+                    "petsmart" : PetsmartScraper,
+                    "walmartgrocery" : WalmartGroceryScraper,
+                    "shopritedelivers": ShopritedeliversScraper,
+                    "autozone" : AutozoneScraper,
+                    "sears" : SearsScraper,
+                    "jet" : JetScraper
                     }
 
 # add logger
@@ -273,6 +305,10 @@ def extract_domain(url):
         return "amazonfr"
     if "store.nike.com" in url:
         return "nike"
+    if 'grocery.walmart.com' in url:
+        return 'walmartgrocery'
+    if 'jet.com' in url:
+        return 'jet'
 
     m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:
@@ -350,7 +386,6 @@ def validate_data_params(arguments, ALL_DATA_TYPES):
 # the <data_type> values must be among the keys of DATA_TYPES imported dictionary
 @app.route('/get_data', methods=['GET'])
 def get_data():
-
     # this is used to convert an ImmutableMultiDictionary into a regular dictionary. will be left with only one "data" key
     request_arguments = dict(request.args)
 
@@ -364,8 +399,38 @@ def get_data():
     else:
         bot = None
 
+    # add ppw=fresh to Amazon arguments
+    if site == 'amazon':
+        if request_arguments.get('ppw'):
+            if '?' in url:
+                url += '&ppw=' + request_arguments.get('ppw')[0]
+            else:
+                url += '?ppw=' + request_arguments.get('ppw')[0]
+
+    config_dict = {'additional_requests': None,
+        'proxy': None,
+        'walmart_proxy_crawlera': 0,
+        'walmart_proxy_proxyrain': 0,
+        'walmart_proxy_shaderio': 0,
+        'walmart_proxy_luminati': 0,
+        'api_key': None,
+        'walmart_api_key': None}
+
+    for k in config_dict.keys():
+        if k in request_arguments:
+            config_dict[k] = request_arguments[k][0]
+
     # create scraper class for requested site
-    site_scraper = SUPPORTED_SITES[site](url=url, bot=bot)
+    site_scraper = SUPPORTED_SITES[site](url=url,
+        bot=bot,
+        additional_requests = config_dict['additional_requests'],
+        api_key = config_dict['api_key'],
+        walmart_api_key = config_dict['walmart_api_key'],
+        proxy = config_dict['proxy'],
+        walmart_proxy_crawlera = int(config_dict['walmart_proxy_crawlera']),
+        walmart_proxy_proxyrain = int(config_dict['walmart_proxy_proxyrain']),
+        walmart_proxy_shaderio = int(config_dict['walmart_proxy_shaderio']),
+        walmart_proxy_luminati = int(config_dict['walmart_proxy_luminati']))
 
     # validate parameter values
     # url

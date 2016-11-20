@@ -5,7 +5,9 @@ from django.views.decorators.csrf import csrf_exempt
 from gui.views import LogFileView, CSVDataFileView, AddJob, ProgressMessagesView,\
     ProgressFileView, SearchFilesView, GetS3FileView, SearchS3Cache, \
     RenderS3CachePage, ViewBase64Image
-
+from sqs_stats.views import SQSAutoscaleStats
+from kill_servers.views import KillRestoreServersView
+from reports.views import ReportSQSJobs, ReportDownloadCSV
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -32,7 +34,13 @@ urlpatterns = [
     url(r'^search-files/', SearchFilesView.as_view(), name='search-files'),
     url(r'^get-file/', GetS3FileView.as_view(), name='get-file'),
     url(r'^s3-cache/$', SearchS3Cache.as_view(), name='s3-cache'),
+    url(r'^sqs-stats/$', SQSAutoscaleStats.as_view(), name='sqs-stats'),
+    url(r'^kill-restore-servers/$', KillRestoreServersView.as_view(), name='kill-restore-servers'),
     url(r'^render-s3-cache/$', RenderS3CachePage.as_view(), name='render-s3-cache'),
+
+    url(r'^reports/sqs-jobs/$', ReportSQSJobs.as_view(), name='report-sqs-jobs'),
+    url(r'^reports/get-csv/(?P<encrypted_filename>.+)',
+        ReportDownloadCSV.as_view(), name='report-get-csv'),
 
     url('^fcgi/$', include('fcgi.urls'))
 ]

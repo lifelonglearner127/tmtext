@@ -3,7 +3,6 @@ from __future__ import division, absolute_import, unicode_literals
 import urlparse
 import json
 import re
-import string
 
 from scrapy.http import Request
 
@@ -40,16 +39,16 @@ class WalGreensProductsSpider(BaseProductsSpider):
     page = 1
     SORTING = None
     SORT_MODES = {
-        'relevance':         'relevance',  # default
-        'top_sellers':       'Top Sellers',
-        'price_asc':         'Price Low to High',
-        'price_desc':        'Price High to Low',
-        'product_name_asc':  'Product Name A-Z',
+        'relevance': 'relevance',  # default
+        'top_sellers': 'Top Sellers',
+        'price_asc': 'Price Low to High',
+        'price_desc': 'Price High to Low',
+        'product_name_asc': 'Product Name A-Z',
         'product_name_desc': 'Product Name Z-A',
-        'most_reviewed':     'Most Reviewed',
-        'highest_rated':     'Highest Rated',
-        'most_viewed':       'Most Viewed',
-        'newest_arrival':    'Newest Arrival'
+        'most_reviewed': 'Most Reviewed',
+        'highest_rated': 'Highest Rated',
+        'most_viewed': 'Most Viewed',
+        'newest_arrival': 'Newest Arrival'
     }
 
     SEARCH_URL = "http://www.walgreens.com/svc/products/search?" \
@@ -71,6 +70,9 @@ class WalGreensProductsSpider(BaseProductsSpider):
                      'stats.q0=reviews&' \
                      'callback=BV._internal.dataHandler0'
 
+    PRICE_VARI_API_URL = "http://www.walgreens.com/svc/products" \
+                         "/{prod_id}/(PriceInfo+Inventory)?rnd=1461679490848"
+
     def __init__(self, sort_mode=None, *args, **kwargs):
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
@@ -86,29 +88,25 @@ class WalGreensProductsSpider(BaseProductsSpider):
             *args,
             **kwargs)
 
+    def start_requests(self):
+        # Specific for this website
+        if self.searchterms:
+            self.searchterms = [st.replace('-', ' ') for st in self.searchterms]
+        return super(WalGreensProductsSpider, self).start_requests()
+
     def _parse_single_product(self, response):
-        pId = re.findall("ID=prod(\d+)", response.url)
-        if pId:
-            url = "http://www.walgreens.com/svc/products" \
-                "/prod%s/(PriceInfo+Inventory)?rnd=1428572592049" % (pId[0],)
-            meta = response.meta.copy()
-            meta.update({"response": response})
-            return Request(
-                url=url, 
-                callback=self.get_price_single_product, 
-                meta=meta
-            )
         return self.parse_product(response)
 
-    def get_price_single_product(self, response):
+    def _parse_price_and_variants(self, response):
         try:
             data = json.loads(response.body)
         except:
             data = {}
 
-        result = self.parse_product(response.meta["response"])
-        meta = result.meta.copy()
-        
+        prod = response.meta['product']
+        reqs = response.meta.get('reqs', [])
+
+        # Parse Price
         if "priceInfo" in data:
             if "messages" in data["priceInfo"]:
                 price = None
@@ -120,12 +118,47 @@ class WalGreensProductsSpider(BaseProductsSpider):
                     data["priceInfo"], "regularPrice")
 
             if price:
-                price = price[0]
-                meta["product"]["price"] = Price(
-                    price=price,
-                    priceCurrency='USD'
-                )       
-        return result.replace(meta=meta)
+                cond_set_value(prod, 'price', Price(price=price[0],
+                                                    priceCurrency='USD'))
+        # UPC
+        upc = data.get('inventory', {}).get('upc')
+        cond_set_value(prod, 'upc', upc)
+
+        # In Store Only
+        ship_message = data.get('inventory', {}).get('shipAvailableMessage')
+        is_in_store_only = (ship_message == "Not sold online")
+        cond_set_value(prod, 'is_in_store_only', is_in_store_only)
+
+        # Parse Variants
+        colors_variants = data.get('inventory', {}).get(
+            'relatedProducts', {}).get('color', [])
+
+        variants = []
+        for color in colors_variants:
+            vr = {}
+            vr['skuID'] = color.get('key', "").replace('sku', '')
+            vr['in_stock'] = color.get('isavlbl') == "yes"
+            color_name = color.get('value', '').split('-')[0].strip()
+            vr['properties'] = {'color': color_name}
+            variants.append(vr)
+
+        if variants:
+            cond_set_value(prod, 'variants', variants)
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+        return prod
+
+    def send_next_request(self, reqs, response):
+        """
+        Helps to handle several requests
+        """
+
+        req = reqs.pop(0)
+        new_meta = response.meta.copy()
+        if reqs:
+            new_meta["reqs"] = reqs
+        return req.replace(meta=new_meta)
 
     def parse_price_single_product(self, data, key):
         if "1/" in data[key]:
@@ -136,27 +169,26 @@ class WalGreensProductsSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         prod = response.meta['product']
+        reqs = response.meta.get('reqs', [])
 
-        title = response.xpath('//h2[@id="productName"]/text()').extract()
-        if title:
-            prod['title'] = title[0].strip()
-        else:
-            #title = response.css('h1#productName ::text').extract()
-            title = response.xpath('//h1[@id="productName"]').extract()
-            cond_set(prod, 'title', title)
+        title = response.xpath('//*[@id="productName"]/text()'
+                               '|//*[@class="wag-prod-title"]/text()').extract()
+        title = [x.strip() for x in title if x.strip()]
+        cond_set(prod, 'title', title)
 
-        if prod['title']:
-            prod['title'] = ''.join([c for c in prod['title']
-                                     if c in string.printable and c != '\n'])
+        no_longer_available = bool(response.xpath(
+            '//*[@role="alert"]/span[contains'
+            '(text(),"no longer available")]'))
+
+        cond_set_value(prod, 'no_longer_available', no_longer_available)
 
         img_url = response.xpath(
-            '//img[@id="main-product-image"]/@src').extract()
+            '//img[@id="main-product-image"]/@data-src').extract()
         if img_url:
             img_url = urlparse.urljoin(self.site, img_url[0])
             prod['image_url'] = img_url
 
         prod['url'] = response.url
-
         prod['locale'] = 'en-US'
 
         cond_set_value(
@@ -175,10 +207,19 @@ class WalGreensProductsSpider(BaseProductsSpider):
         )
 
         prod_id = re.findall('ID=(.*)-', response.url)[0]
-        url = self.REVIEW_API_URL.format(prod_id=prod_id)
-        new_meta = response.meta.copy()
-        new_meta['product'] = prod
-        return Request(url, meta=new_meta, callback=self._parse_review_api)
+        review_url = self.REVIEW_API_URL.format(prod_id=prod_id)
+        price_variants_url = self.PRICE_VARI_API_URL.format(prod_id=prod_id)
+
+        reqs.append(Request(review_url,
+                            meta=response.meta,
+                            callback=self._parse_review_api))
+        reqs.append(Request(price_variants_url,
+                            meta=response.meta,
+                            callback=self._parse_price_and_variants))
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+        return prod
 
     def _scrape_total_matches(self, response):
         data = json.loads(response.body)
@@ -239,10 +280,14 @@ class WalGreensProductsSpider(BaseProductsSpider):
                 if 'Out of stock online' in mes['displayText']:
                     product['is_out_of_stock'] = True
 
+        upc = item.get('upc')
+        cond_set_value(product, 'upc', upc)
+
         return product
 
     def _parse_review_api(self, response):
         product = response.meta['product']
+        reqs = response.meta.get('reqs', [])
         res = re.findall('\{.*\}', response.body)[0]
         data = json.loads(res)
 
@@ -258,13 +303,15 @@ class WalGreensProductsSpider(BaseProductsSpider):
             'ReviewStatistics']['TotalReviewCount']
         if total == 0:
             product['buyer_reviews'] = ZERO_REVIEWS_VALUE
-            return product
 
-        avg = round(data['BatchedResults']['q0']['Results'][0][
-                    'ReviewStatistics']['AverageOverallRating'], 1)
+        else:
+            avg = round(data['BatchedResults']['q0']['Results'][0][
+                        'ReviewStatistics']['AverageOverallRating'], 1)
 
-        product['buyer_reviews'] = BuyerReviews(num_of_reviews=total,
-                                                average_rating=avg,
-                                                rating_by_star=by_star)
+            product['buyer_reviews'] = BuyerReviews(num_of_reviews=total,
+                                                    average_rating=avg,
+                                                    rating_by_star=by_star)
+        if reqs:
+            return self.send_next_request(reqs, response)
 
         return product

@@ -8,3 +8,8 @@ class StringListField(serializers.ListField):
 class ImageUrlSerializer(serializers.Serializer):
     urls = StringListField()
 #    rate = serializers.FloatField()
+
+
+class CompareTwoImageListsSerializer(serializers.Serializer):
+    urls1 = StringListField()
+    urls2 = StringListField()

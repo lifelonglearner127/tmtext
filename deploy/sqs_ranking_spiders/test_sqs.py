@@ -7,8 +7,6 @@ from boto.sqs.message import Message
 from boto.sqs import connect_to_region as connect_sqs
 from boto.s3 import connect_to_region as connect_s3
 
-from remote_instance_starter import AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
-
 import logging
 logging.basicConfig(
     stream=sys.stdout,
@@ -184,11 +182,7 @@ def log_failed_tasks(tasks):
 def main():
     logger.info('Initializing variables')
     sqs_conn = connect_sqs('us-east-1')
-    s3_conn = connect_s3(
-        'us-east-1',
-        aws_access_key_id=AMAZON_ACCESS_KEY,
-        aws_secret_access_key=AMAZON_SECRET_KEY
-    )
+    s3_conn = connect_s3('us-east-1')
     bucket = s3_conn.get_bucket('spyder-bucket')
     max_wait_minutes = 40
     server_name = 'sqs_test'

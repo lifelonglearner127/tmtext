@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fields>
+    <field name="site" version="1"></field>
+    <field name="search_term" version="1"></field>
+    <field name="ranking" version="1"></field>
+    <field name="total_matches" version="1"></field>
+    <field name="results_per_page" version="1"></field>
+    <field name="scraped_results_per_page" version="1"></field>
+    <field name="is_single_result" version="1"></field>
+    <field name="title" version="1"></field>
+    <field name="upc" version="1"></field>
+    <field name="model" version="1"></field>
+    <field name="url" version="1"></field>
+    <field name="image_url" version="1.1"></field>
+    <field name="description" version="1"></field>
+    <field name="brand" version="1"></field>
+    <field name="price" version="1.1"></field>
+    <field name="marketplace" version="1"></field>
+    <field name="locale" version="1"></field>
+    <field name="is_out_of_stock" version="1.2"></field>
+    <field name="buyer_reviews" version="1.1"></field>
+    <field name="last_buyer_review_date" version="1.1"></field>
+    <field name="bestseller_rank" version="1"></field>
+    <field name="category" version="1"></field>
+    <field name="categories" version="1"></field>
+    <field name="search_term_in_title_partial" version="1"></field>
+    <field name="search_term_in_title_exactly" version="1"></field>
+    <field name="search_term_in_title_interleaved" version="1"></field>
+    <field name="google_source_site" version="1"></field>
+    <field name="is_mobile_agent" version="1"></field>
+    <field name="variants" version="1.2"></field>
+</fields>

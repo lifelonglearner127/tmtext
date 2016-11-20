@@ -40,17 +40,22 @@ class StaplesScraper(Scraper):
         self.reviews = None
         self.feature_count = None
         self.features = None
-        self.video_urls = None
+        self.video_urls = -1
         self.video_count = None
         self.pdf_urls = None
         self.pdf_count = None
         self.is_review_checked = False
         self.product_info_json = None
         self.is_product_info_json_checked = False
+        self.variant_info_jsons = None
+        self.is_variant_info_jsons_checked = False
+        self.description = None
+        self.long_description = None
+        self.bullet_list = None
 
     def check_url_format(self):
         # for ex: http://www.staples.com/Epson-WorkForce-Pro-WF-4630-Color-Inkjet-All-in-One-Printer/product_242602?cmArea=home_box1
-        m = re.match(r"^http://www\.staples\.com/([a-zA-Z0-9\-/]+)/product_([a-zA-Z0-9]+)", self.product_page_url)
+        m = re.match(r"^http://www\.staples\.com/([a-zA-Z0-9\-/]+/)?product_([a-zA-Z0-9]+)$", self.product_page_url)
         return not not m
 
     def _extract_product_info_json(self):
@@ -72,6 +77,34 @@ class StaplesScraper(Scraper):
 
         self.product_info_json = product_info_json
 
+    def _extract_variant_info_jsons(self):
+        if self.is_variant_info_jsons_checked:
+            return self.variant_info_jsons
+
+        self.is_variant_info_jsons_checked = True
+
+        variant_info_jsons = []
+
+        try:
+            parent_sku = self._find_between(html.tostring(self.tree_html), 'parentSKU = "', '";')
+
+            skus = re.findall('products\["([^"]+)"\]', html.tostring(self.tree_html))
+
+            for sku in skus:
+                if sku == parent_sku:
+                    continue
+
+                variant_info_json = self._find_between(html.tostring(self.tree_html), 'products["{0}"] ='.format(sku), ';products["StaplesUSCAS/en-US/1/')
+
+                if not variant_info_json:
+                    variant_info_json = self._find_between(html.tostring(self.tree_html), 'products["{0}"] ='.format(sku), ";\n")
+
+                variant_info_jsons.append( json.loads(variant_info_json))
+        except:
+            variant_info_jsons = None
+
+        self.variant_info_jsons = variant_info_jsons
+
     def not_a_product(self):
         """Checks if current page is not a valid product page
         (an unavailable product page or other type of method)
@@ -84,6 +117,7 @@ class StaplesScraper(Scraper):
             return True
 
         self._extract_product_info_json()
+        self._extract_variant_info_jsons()
 
         return False
 
@@ -95,7 +129,7 @@ class StaplesScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        return None
+        return re.search('_(\w+)$', self.product_page_url).group(1)
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -121,6 +155,8 @@ class StaplesScraper(Scraper):
 
         for row in rows:
             feature_info = row.xpath(".//td//text()")
+            if feature_info == ['[~spec.attribname~]', '[~spec.attrvalue~]']:
+                continue
             feature_text = ": ".join(feature_info)
             features.append(feature_text)
 
@@ -140,15 +176,26 @@ class StaplesScraper(Scraper):
     def _model_meta(self):
         return None
 
-    def _description(self):
-        description_block = self.tree_html.xpath("//ul[@class='stp--bulleted-list' and @ng-hide='listDesc']")
+    def _shelf_description(self):
+        self._get_long_and_short_description()
 
-        if description_block:
-            return self._clean_text(self._exclude_javascript_from_description(html.tostring(description_block[0])))
-
-        return None
+        if self.description:
+            return self.description
 
     def _long_description(self):
+        self._get_long_and_short_description()
+
+        if self.long_description and not self.long_description == self.description:
+            return self.long_description
+
+    def _description(self):
+        self._get_long_and_short_description()
+
+        if self.bullet_list:
+            return self.bullet_list
+        return None
+
+    def _get_long_and_short_description(self):
         paragraph = ""
         headliner = ""
         bullet_list = ""
@@ -173,12 +220,28 @@ class StaplesScraper(Scraper):
                 for t in description_info["text"]:
                     expanded_descr += (t["value"] + "\n")
 
-        long_description = headliner + paragraph + bullet_list + expanded_descr
+        # description = headliner + paragraph + bullet_list
+        # long_description = expanded_descr
 
-        if long_description:
-            return long_description
+        self.description = headliner
+        self.long_description = paragraph
+        self.bullet_list = bullet_list
 
-        return None
+    def _variants(self):
+        vrs = []
+
+        for variant in self.variant_info_jsons:
+            vr = {}
+            vr['name'] = variant['metadata']['name']
+            vrs.append(vr)
+
+        if vrs:
+            return vrs
+
+    def _no_longer_available(self):
+        if self.tree_html.xpath('//div[@class="content"]/p/text()'):
+            return 1
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -188,8 +251,16 @@ class StaplesScraper(Scraper):
         return None
 
     def _image_urls(self):
-        image_urls = self.product_info_json["description"]["media"]["images"]["enlarged"]
-        image_urls = [image_url["path"] + "_sc7" for image_url in image_urls]
+        if not self.product_info_json:
+            image_urls = self.tree_html.xpath('//img[@u="image"]/@src')
+            return map(lambda u: u.split('?')[0], image_urls)
+
+        if self.product_info_json["description"]["media"]["images"].get("enlarged"):
+            image_urls = self.product_info_json["description"]["media"]["images"]["enlarged"]
+            image_urls = [image_url["path"] + "_sc7" for image_url in image_urls]
+        else:
+            image_urls = self.product_info_json["description"]["media"]["images"]["standard"]
+            image_urls = [image_url["path"].split('?')[0] for image_url in image_urls]
 
         if image_urls:
             return image_urls
@@ -205,14 +276,38 @@ class StaplesScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        return None
+        if self.video_urls != -1:
+            return self.video_urls
+
+        video_urls = []
+        try:
+            wc_url = "http://content.webcollage.net/staples/power-page?ird=true&channel-product-id=%s"\
+                     % self._product_id()
+            contents = urllib.urlopen(wc_url).read()
+            contents = re.findall(r'html:(.*?)\}\;', contents, re.DOTALL)[0]
+            contents = contents[contents.find('<'):contents.rfind('>')+1]
+            tree = html.fromstring(contents)
+            video_json = json.loads(
+                tree.xpath("//div[contains(@class,'wc-json-data')]//text()")[0].
+                replace('\\"', '"'))
+            videos = video_json['videos']
+            for video in videos:
+                v_url = "http://media.webcollage.net/rwvfp/wc%s" % video['src']['src']
+                video_urls.append(v_url)
+        except:
+            pass
+        if len(video_urls) == 0:
+            self.video_urls = None
+        else:
+            self.video_urls = video_urls
+        return self.video_urls
 
     def _video_count(self):
-        urls = self._video_urls()
-
-        if urls:
-            return len(urls)
-        return 0
+        if self.video_urls == -1:
+            self._video_urls()
+        if self.video_urls is None:
+            return 0
+        return len(self.video_urls)
 
     def _pdf_urls(self):
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
@@ -240,6 +335,16 @@ class StaplesScraper(Scraper):
         atags = self.tree_html.xpath("//a[contains(@href, 'webcollage.net/')]")
 
         if len(atags) > 0:
+            return 1
+
+        return 0
+
+    def _cnet(self):
+        c = requests.get('http://ws.cnetcontent.com/d5eea376/script/522bca68e4?cpn=' + self._product_id() + '&lang=EN&market=US&host=www.staples.com&nld=1').content
+
+        cnet_images = re.findall('ndata-image-url="([^"]+)', c.replace('\\', ''))
+
+        if cnet_images:
             return 1
 
         return 0
@@ -299,15 +404,21 @@ class StaplesScraper(Scraper):
             self.review_count = review_count
             self.max_score = max_score
             self.min_score = min_score
-            self.average_review = float(self.product_info_json["review"]["rating"])
+            #self.average_review = float(self.product_info_json["review"]["rating"])
 
             return self.reviews
 
         return None
 
     def _average_review(self):
-        self._load_reviews()
-        return self.average_review
+        yotpo_review = self.load_page_from_url_with_number_of_retries('http://www.staples.com/asgard-node/v1/nad/staplesus/yotporeview/' + self._product_id())
+
+        average_review = re.search( 'yotpo-star-digits&amp;quot;&amp;gt; ([\d\.]+)', yotpo_review)
+
+        if average_review:
+            return float( average_review.group(1))
+
+        return None
 
     def _review_count(self):
         self._load_reviews()
@@ -330,10 +441,12 @@ class StaplesScraper(Scraper):
     ##########################################
     def _price(self):
         price = self.tree_html.xpath("//span[@itemprop='price' and @class='SEOFinalPrice']/text()")[0].strip()
+        if "$" not in price:
+            price = "$" + price
         return price
 
     def _price_amount(self):
-        return float(self._price()[1:])
+        return float(self._price().replace("$", ""))
 
     def _price_currency(self):
         return "USD"
@@ -379,7 +492,14 @@ class StaplesScraper(Scraper):
         if self._site_online() == 0:
             return None
 
-        return self.product_info_json["metadata"]["outofstock_flag"]
+        sku = re.search('selectedSKU = "([^"]+)"', html.tostring(self.tree_html)).group(1)
+
+        pricing = self.load_page_from_url_with_number_of_retries('http://www.staples.com/asgard-node/v1/nad/staplesus/price/%s?offer_flag=true&warranty_flag=true&coming_soon=0&price_in_cart=0&productDocKey=%s' % (self._product_id(), sku))
+
+        if json.loads(pricing)['cartAction'] == 'currentlyOutOfStock':
+            return 1
+
+        return 0
 
     def _in_stores_out_of_stock(self):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
@@ -388,7 +508,7 @@ class StaplesScraper(Scraper):
         if self._in_stores() == 0:
             return None
 
-        return self.product_info_json["outofstock_flag"]
+        return self.product_info_json["metadata"]["outofstock_flag"]
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
@@ -431,7 +551,11 @@ class StaplesScraper(Scraper):
         "feature_count" : _feature_count, \
         "description" : _description, \
         "model" : _model, \
+        "upc" : _upc, \
         "long_description" : _long_description, \
+        "shelf_description": _shelf_description, \
+        "variants" : _variants, \
+        "no_longer_available" : _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
@@ -441,6 +565,7 @@ class StaplesScraper(Scraper):
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
         "webcollage" : _webcollage, \
+        "cnet" : _cnet, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "mobile_image_same" : _mobile_image_same, \
@@ -457,7 +582,6 @@ class StaplesScraper(Scraper):
         "site_online_out_of_stock" : _site_online_out_of_stock, \
         "in_stores_out_of_stock" : _in_stores_out_of_stock, \
 
-
          # CONTAINER : REVIEWS
         "review_count" : _review_count, \
         "average_review" : _average_review, \
@@ -472,7 +596,6 @@ class StaplesScraper(Scraper):
 
         "loaded_in_seconds": None \
         }
-
 
     # special data that can't be extracted from the product page
     # associated methods return already built dictionary containing the data

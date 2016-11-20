@@ -10,6 +10,7 @@ import time
 import yaml
 import requests
 from extract_data import Scraper
+from compare_images import compare_images
 
 
 class MicrosoftScraper(Scraper):
@@ -19,7 +20,8 @@ class MicrosoftScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www.microsoftstore.com/store/msusa/en_US/pdp/<product-title>/productID.<product-id>"
-    REVIEW_URL = "http://api.bazaarvoice.com/data/batch.json?passkey=291coa9o5ghbv573x7ercim80&apiversion=5.5&displaycode=5681-en_us&resource.q0=products&filter.q0=id%3Aeq%3A{0}&stats.q0=questions%2Creviews&filteredstats.q0=questions%2Creviews&filter_questions.q0=contentlocale%3Aeq%3Aen_US&filter_answers.q0=contentlocale%3Aeq%3Aen_US&filter_reviews.q0=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US&resource.q1=questions&filter.q1=productid%3Aeq%3A{0}&filter.q1=contentlocale%3Aeq%3Aen_US&sort.q1=lastapprovedanswersubmissiontime%3Adesc&stats.q1=questions&filteredstats.q1=questions&include.q1=authors%2Cproducts%2Canswers&filter_questions.q1=contentlocale%3Aeq%3Aen_US&filter_answers.q1=contentlocale%3Aeq%3Aen_US&sort_answers.q1=submissiontime%3Adesc&limit.q1=10&offset.q1=0&limit_answers.q1=10&resource.q2=reviews&filter.q2=isratingsonly%3Aeq%3Afalse&filter.q2=productid%3Aeq%3A{0}&filter.q2=contentlocale%3Aeq%3Aen_US&sort.q2=helpfulness%3Adesc%2Ctotalpositivefeedbackcount%3Adesc&stats.q2=reviews&filteredstats.q2=reviews&include.q2=authors%2Cproducts%2Ccomments&filter_reviews.q2=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q2=contentlocale%3Aeq%3Aen_US&filter_comments.q2=contentlocale%3Aeq%3Aen_US&limit.q2=8&offset.q2=0&limit_comments.q2=3&callback=BV._internal.dataHandler0"
+
+    REVIEW_URL = 'http://api.bazaarvoice.com/data/batch.json?passkey=291coa9o5ghbv573x7ercim80&apiversion=5.5&displaycode=5681-en_us&resource.q0=products&filter.q0=id%3Aeq%3A{0}&stats.q0=questions%2Creviews&filteredstats.q0=questions%2Creviews'
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -36,7 +38,7 @@ class MicrosoftScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www\.microsoftstore\.com/store/msusa/en_US/pdp/(.*/)?productID\.[0-9]+?$", self.product_page_url)
+        m = re.match(r"^http://www\.microsoftstore\.com/store/msusa/en_US/pdp/(.*/)?productID\.[0-9]+(\?icid=.*)?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -100,7 +102,7 @@ class MicrosoftScraper(Scraper):
         return None
 
     def _upc(self):
-        upc_list = self._find_between(html.tostring(self.tree_html), ",upc :", "\r").strip()
+        upc_list = re.search( 'upc : (\[[^\]]*\])', html.tostring(self.tree_html)).group(1)
         upc_list = ast.literal_eval(upc_list)
         return upc_list[0]
 
@@ -144,6 +146,26 @@ class MicrosoftScraper(Scraper):
 
         return None
 
+    def _variants(self):
+        variants = []
+        for li in self.tree_html.xpath('//div[contains(@class,"variation-container")]/ul[contains(@class,"option-list")]/li'):
+            v = { 'variant' : self._clean_text(li.xpath('a/span/text()')[0]) }
+
+            if li.get('class') == 'active':
+                v['selected'] = True
+            else:
+                v['selected'] = False
+
+            variants.append(v)
+
+        i = 0
+        for price in self.tree_html.xpath('//p[@itemprop="price"]'):
+            variants[i]['price'] = self._clean_text(price.text_content())
+            i += 1
+
+        if variants:
+            return variants
+
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -156,13 +178,17 @@ class MicrosoftScraper(Scraper):
 
         if url_list:
             for index, url in enumerate(url_list):
-                if not url.startswith("http://"):
-                    url_list[index] = "http:" + url
+                if not url.startswith("https://"):
+                    url_list[index] = "https:" + url
 
             image_urls = []
 
             for url in url_list:
-                if "360_Overlay.png" not in url and "/Spin/" not in url and not url in image_urls:
+                if "360_Overlay.png" not in url \
+                    and "/Spin/" not in url \
+                    and not re.search( '(VID|Video-)\d+', url) \
+                    and url not in image_urls:
+
                     image_urls.append(url)
 
             if image_urls:
@@ -177,7 +203,21 @@ class MicrosoftScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        return None
+        video_urls = []
+
+        video_sources = self.tree_html.xpath('//div[contains(@class,"video-container")]/@data-video-sources')
+        for source in video_sources:
+            for video in source.split(';'):
+                if '.mp4' in video and not video in video_urls:
+                    video_urls.append(video)
+
+        # Add youtube videos
+        for video in self.tree_html.xpath('//div[contains(@class,"youtube-container")]/@data-src'):
+            if not video.split('?')[0] in video_urls:
+                video_urls.append(video.split('?')[0])
+
+        if video_urls:
+            return video_urls
 
     def _video_count(self):
         videos = self._video_urls()
@@ -210,8 +250,6 @@ class MicrosoftScraper(Scraper):
     def _keywords(self):
         return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
 
-    def _no_image(self):
-        return None
     
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -226,7 +264,7 @@ class MicrosoftScraper(Scraper):
 
     def _review_count(self):
         try:
-            review_count = int(self.tree_html.xpath("//div[@id='bvseo-aggregateRatingSection']//span[@class='bvseo-reviewCount' and @itemprop='reviewCount']/text()")[0])
+            review_count = int(self.tree_html.xpath("//div[@id='bvseo-aggregateRatingSection']//span[@class='bvseo-reviewCount' and @itemprop='reviewCount']/text()")[0].replace(',',''))
 
             if review_count > 0:
                 return review_count
@@ -265,10 +303,13 @@ class MicrosoftScraper(Scraper):
         if self._review_count() > 0:
             review_list = []
             review_json = self.load_page_from_url_with_number_of_retries(self.REVIEW_URL.format(self._product_id()))
-            review_json = json.loads(review_json[26:-1])
+            review_json = json.loads(review_json)
+
+            for i in range(5):
+                review_list.append([5-i, 0])
 
             for review in review_json["BatchedResults"]["q0"]["Results"][0]["FilteredReviewStatistics"]["RatingDistribution"]:
-                review_list.append([int(review["RatingValue"]), int(review["Count"])])
+                review_list[5 - int(review["RatingValue"])] = [int(review["RatingValue"]), int(review["Count"])]
 
             if review_list:
                 return review_list
@@ -313,9 +354,6 @@ class MicrosoftScraper(Scraper):
         return None
 
 
-
-
-
     ##########################################
     ############### CONTAINER : CLASSIFICATION
     ##########################################
@@ -355,13 +393,13 @@ class MicrosoftScraper(Scraper):
         "model_meta" : _model_meta, \
         "description" : _description, \
         "long_description" : _long_description, \
+        "variants" : _variants, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
         "image_urls" : _image_urls, \
         "video_count" : _video_count, \
         "video_urls" : _video_urls, \
-        "no_image" : _no_image, \
         "pdf_count" : _pdf_count, \
         "pdf_urls" : _pdf_urls, \
         "webcollage" : _webcollage, \
@@ -375,6 +413,7 @@ class MicrosoftScraper(Scraper):
         "max_review" : _max_review, \
         "min_review" : _min_review, \
         "reviews" : _reviews, \
+
         # CONTAINER : SELLERS
         "price" : _price, \
         "price_amount" : _price_amount, \
@@ -391,8 +430,6 @@ class MicrosoftScraper(Scraper):
         "categories" : _categories, \
         "category_name" : _category_name, \
         "brand" : _brand, \
-
-
 
         "loaded_in_seconds" : None, \
         }

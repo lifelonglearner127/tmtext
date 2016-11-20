@@ -3,11 +3,9 @@
 import os
 import sys
 import datetime
-import zipfile
 import subprocess
 
-from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Q
+from django.core.management.base import BaseCommand
 from django.utils.timezone import now
 import boto
 from dateutil.parser import parse as parse_date
@@ -15,16 +13,9 @@ from dateutil.parser import parse as parse_date
 CWD = os.path.dirname(os.path.abspath(__file__))
 #sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
 
-from settings import MEDIA_ROOT
-from gui.models import Job, get_data_filename, get_log_filename
-
-
 sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
-import scrapy_daemon
-from test_sqs_flow import download_s3_file, AMAZON_BUCKET_NAME, unzip_file
-from list_all_files_in_s3_bucket import list_files_in_bucket, \
-        AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY
+from test_sqs_flow import AMAZON_BUCKET_NAME
 
 
 def run(command, shell=None):
@@ -66,11 +57,7 @@ class Command(BaseCommand):
         if num_of_running_instances('remove_old_s3_files') > 1:
             print 'an instance of the script is already running...'
             sys.exit()
-        conn = boto.connect_s3(
-            aws_access_key_id=AMAZON_ACCESS_KEY,
-            aws_secret_access_key=AMAZON_SECRET_KEY,
-            is_secure=False,  # uncomment if you are not using ssl
-        )
+        conn = boto.connect_s3(is_secure=False)
         # Get current bucket
         bucket = conn.get_bucket(AMAZON_BUCKET_NAME, validate=False)
         for s3_key in bucket.list():

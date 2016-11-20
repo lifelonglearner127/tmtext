@@ -1,22 +1,13 @@
 #!/usr/bin/python
 #  -*- coding: utf-8 -*-
 
-import urllib
 import re
-import sys
 import json
-import lxml
-import os.path
-import urllib, cStringIO
-from io import BytesIO
-from PIL import Image
-import mmh3 as MurmurHash
-from lxml import html
-from lxml import etree
-import time
+import urllib
 import requests
-from extract_data import Scraper
+from lxml import html
 
+from extract_data import Scraper
 from spiders_shared_code.target_variants import TargetVariants
 
 class TargetScraper(Scraper):
@@ -27,21 +18,32 @@ class TargetScraper(Scraper):
 
     INVALID_URL_MESSAGE = "Expected URL format is http://www\.target\.com/p/([a-zA-Z0-9\-]+)/-/A-([0-9A-Za-z]+)"
 
-    reviews_tree = None
     max_score = None
     min_score = None
     review_count = None
     average_review = None
     reviews = None
+
     WEBCOLLAGE_CHANNEL_URL = "http://content.webcollage.net/target/product-content-page?channel-product-id={0}"
     WEBCOLLAGE_CHANNEL_URL1 = "http://content.webcollage.net/target/power-page?ird=true&channel-product-id={0}"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
+        self.version = None
+
         self.tv = TargetVariants()
         self.product_json = None
         self.image_json = None
+
+        self.item_info = None
+        self.parent_item_info = None
+        self.item_info_checked = False
+
+        self.categories = []
+        self.categories_checked = False
+
+        self.no_longer_available = 0
 
         self.wc_360 = 0
         self.wc_emc = 0
@@ -54,7 +56,7 @@ class TargetScraper(Scraper):
 
     def check_url_format(self):
         # for ex: http://www.target.com/p/skyline-custom-upholstered-swoop-arm-chair/-/A-15186757#prodSlot=_1_1
-        m = re.match(r"^http://(www|intl)\.target\.com/p/([a-zA-Z0-9\-]+)/-/A-([0-9A-Za-z]+)", self.product_page_url)
+        m = re.match(r"^(http|https)://(www|intl)\.target\.com/p/(([a-zA-Z0-9\-]+)/)?-/A-([0-9A-Za-z]+)", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -64,12 +66,21 @@ class TargetScraper(Scraper):
         and returns True if current page is one.
         '''
 
-        self.tv.setupCH(self.tree_html)
-
         if len(self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")) < 1:
-            return True
+            self.version = 2
+            try:
+                self._get_item_info()
 
-        self._extract_product_json()
+                # parent_item_info might be null, that's ok that means there are no variants
+                self.tv.setupCH(self.tree_html, item_info=self.parent_item_info, selected_tcin=self._tcin())
+            except Exception as e:
+                print e
+                self.no_longer_available = 1
+
+        else:
+            self.version = 1
+            self._extract_product_json()
+            self.tv.setupCH(self.tree_html)
 
         return False
 
@@ -95,6 +106,22 @@ class TargetScraper(Scraper):
 
         return self.product_json
 
+    def _item_info_helper(self, id):
+            url = 'http://redsky.target.com/v1/pdp/tcin/' + id + '?excludes=taxonomy&storeId=2791'
+            return json.loads( requests.get(url).content)['product']
+
+    def _get_item_info(self):
+        if not self.item_info_checked:
+            self.item_info_checked = True
+            self.item_info = self._item_info_helper( self._product_id())
+
+            if self.item_info['item'].get('parent_items') and type(self.item_info['item']['parent_items']) is not list:
+                self.parent_item_info = self._item_info_helper( self.item_info['item']['parent_items'])
+
+            # if the item itself has children, it is a parent item
+            elif self.item_info['item'].get('child_items'):
+                self.parent_item_info = self.item_info
+
     ##########################################
     ############### CONTAINER : NONE
     ##########################################
@@ -103,33 +130,65 @@ class TargetScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        product_id = str(self.tree_html.xpath("//input[@id='omniPartNumber']/@value")[0])
-        return product_id
+        if self.version == 1:
+            return str( self.tree_html.xpath("//input[@id='omniPartNumber']/@value")[0])
+
+        # else get it from the url
+        return re.search('A-(\d+)', self.product_page_url).group(1)
+
+    def _tcin(self):
+        if self.version == 2:
+            return self.item_info['item']['tcin']
+
+        tcin = re.search('Online Item #:[^\d]*(\d+)', self.page_raw_text)
+
+        if tcin:
+            return tcin.group(1)
+
+        return self._product_id()
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
+        if self.version == 2:
+            return self._product_title()
+
         return self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")[0].strip()
 
     def _product_title(self):
+        if self.version == 2:
+            return self.item_info['item']['product_description']['title']
+
         return self.tree_html.xpath("//h2[starts-with(@class, 'product-name item')]/span/text()")[0].strip()
 
     def _title_seo(self):
+        if self.version == 2:
+            return self._product_title()
+
         return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _model(self):
         return None
 
     def _upc(self):
+        if self.version == 2:
+            return self.item_info['item'].get('upc')
+
         return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0].strip()
 
     def _features(self):
+        if self.version == 2:
+            features = self.item_info['item']['product_description']['bullet_description']
+            features = map(lambda f : re.sub('<.*?>', '', f).strip(), features)
+            if features:
+                return features
+
         rows = self.tree_html.xpath("//ul[@class='normal-list']//li")
         feature_list = []
 
         for row in rows:
-            feature_list.append(row.text_content().strip())
+            feature_list.append( self._clean_html( row.text_content()))
 
         if feature_list:
             return feature_list
@@ -146,6 +205,12 @@ class TargetScraper(Scraper):
         return None
 
     def _description(self):
+        if self.version == 2:
+            if 'downstream_description' in self.item_info['item']['product_description']:
+                return self.item_info['item']['product_description']['downstream_description']
+            else:
+                return None
+
         description = "".join(self.tree_html.xpath("//span[@itemprop='description']//text()")).strip()
         description_copy = "".join(self.tree_html.xpath("//div[@class='details-copy']//text()")).strip()
         if description in description_copy:
@@ -193,18 +258,53 @@ class TargetScraper(Scraper):
         return self.tv._swatches()
 
     def _long_description(self):
+        if self.version == 2:
+            return None
+
         long_desc_block = self.tree_html.xpath("//ul[starts-with(@class,'normal-list reduced-spacing-list')]")[0]
 
         return self._clean_text(html.tostring(long_desc_block))
+
+    def _details(self):
+        if self.version == 2:
+            return self._description()
+
+        details = self.tree_html.xpath('//div[@class="details-copy"]')[0]
+        return self._clean_html(html.tostring(details))
+
+    def _mta(self):
+        if self.version == 2:
+            return ''.join( self.item_info['item']['product_description']['bullet_description'])
+
+        mta = self.tree_html.xpath('//div[@class="details-copy"]/following-sibling::ul')[0]
+        return self._clean_html(html.tostring(mta))
+
+    def _no_longer_available(self):
+        return self.no_longer_available
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
     #returns 1 if the mobile version is the same, 0 otherwise
+    def _canonical_link(self):
+        return self.item_info['item']['buy_url']
+
     def _mobile_image_same(self):
         return None
 
     def _image_urls(self):
+        image_urls = []
+
+        if self.version == 2:
+            for images in self.item_info['item']['enrichment']['images']:
+                base_url = images['base_url']
+
+                image_urls.append(base_url + images['primary'])
+                for alt in images.get('alternate_urls', []):
+                    image_urls.append(base_url + alt)
+
+            return map( lambda i: i + '?scl=1', image_urls)
+
         start_index = self.product_page_url.find("/-/A-") + len("/-/A-")
         end_index = self.product_page_url.rfind("?")
 
@@ -373,21 +473,17 @@ class TargetScraper(Scraper):
         return htags_dict
 
     def _keywords(self):
-        return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
+        if self.version == 1:
+            return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
 
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
-    #populate the reviews_tree variable for use by other functions
     def _load_reviews(self):
         try:
             if not self.max_score or not self.min_score:
-                # url = "http://reviews.pgestore.com/3300/PG_00%s/reviews.htm?format=embedded"
-                passkey = str(self.tree_html.xpath("//input[@id='bvSecAttrUrl']/@value")[0])
-                # url = "%s %s" % (passkey, self._product_id())
-                #url = "%s&resource.q0=products&filter.q0=id%3Aeq%3A%s&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US" % (passkey, self._product_id())
-                url = passkey + "&resource.q0=products&filter.q0=id%3Aeq%3A" + self._product_id() + "&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US"
-                #url = "%s&resource.q0=products&filter.q0=ideq%s&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocaleeqen_US&filter_reviewcomments.q0=contentlocaleeqen_US" % (passkey, self._product_id())
+                url = 'http://api.bazaarvoice.com/data/batch.json?passkey=lqa59dzxi6cbspreupvfme30z&apiversion=5.4&resource.q0=products&filter.q0=id%3Aeq%3A' + self._tcin() + '&stats.q0=reviews&filteredstats.q0=reviews&filter_reviews.q0=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US'
+
                 contents = urllib.urlopen(url).read()
                 jsn = json.loads(contents)
                 review_info = jsn['BatchedResults']['q0']['Results'][0]['ReviewStatistics']
@@ -413,8 +509,9 @@ class TargetScraper(Scraper):
 
                 self.min_score = min_ratingval
                 self.max_score = max_ratingval
-        except:
-            pass
+        except Exception as e:
+            print e
+            raise
 
     def _average_review(self):
         self._load_reviews()
@@ -440,28 +537,51 @@ class TargetScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _temp_price_cut(self):
+        if self.version == 2:
+            if self.item_info['price']['offerPrice']['eyebrow'] == 'OnSale':
+                return 1
+            return 0
+
         temp_price_cut = self.tree_html.xpath("//div[@id='price_main']//div[contains(@class,'price')]//ul//li[contains(@class,'eyebrow')]//text()")
         if "TEMP PRICE CUT" in temp_price_cut:
             return 1
         return 0
 
     def _price(self):
+        if self.version == 2:
+            return self.item_info['price']['offerPrice']['formattedPrice']
+
         return self.tree_html.xpath("//span[@itemprop='price']//text()")[0].strip()
 
     def _price_amount(self):
+        if self.version == 2:
+            return self.item_info['price']['offerPrice']['price']
+
         price = self._price()
         price = price.replace(",", "")
         price_amount = re.findall(r"[\d\.]+", price)[0]
         return float(price_amount)
 
     def _price_currency(self):
-        return "USD"
+        return 'USD'
 
     def _in_stores(self):
         '''in_stores - the item can be ordered online for pickup in a physical store
         or it can not be ordered online at all and can only be purchased in a local store,
         irrespective of availability - binary
         '''
+
+        if self.version == 2:
+            try:
+                if self.item_info['available_to_promise_store']['products'][0]['availability'] == 'AVAILABLE':
+                    return 1
+            except:
+                # if any child product is out of stock, this product is out of stock
+                if 'child_items' in self.item_info['item']:
+                    for child in self.item_info['item']['child_items']:
+                        if child['available_to_promise_store']['products'][0]['availability'] == 'AVAILABLE':
+                            return 1
+            return 0
 
         if self.product_json:
             for item in self.product_json:
@@ -496,6 +616,17 @@ class TargetScraper(Scraper):
         return None
 
     def _site_online(self):
+        if self.version == 2:
+            try:
+                if self.item_info['available_to_promise_network']['availability'] == 'AVAILABLE':
+                    return 1
+            except:
+                # if any child product is online, this product is online
+                for child in self.item_info['item']['child_items']:
+                    if child['available_to_promise_network']['availability'] == 'AVAILABLE':
+                        return 1
+            return 0
+
         if self.product_json:
             for item in self.product_json:
                 if item["Attributes"]["callToActionDetail"]["soldOnline"] == True:
@@ -504,6 +635,21 @@ class TargetScraper(Scraper):
         return 0
 
     def _site_online_out_of_stock(self):
+        if self.version == 2:
+            if self._site_online() == 1:
+                try:
+                    if self.item_info['available_to_promise_network']['availability_status'] != 'OUT_OF_STOCK':
+                        return 0
+                except:
+                    # if any child product is NOT out of stock, this product is NOT out of stock
+                    for child in self.item_info['item']['child_items']:
+                        if child['available_to_promise_network']['availability_status'] != 'OUT_OF_STOCK':
+                            return 0
+                return 1
+
+            else:
+                return None
+
         #  site_online_out_of_stock - currently unavailable from the site - binary
         if self._site_online() == 1:
             if (self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")
@@ -522,6 +668,22 @@ class TargetScraper(Scraper):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
+        if self.version == 2:
+            if self._in_stores() == 1:
+                try:
+                    if self.item_info['available_to_promise_store']['products'][0]['availability_status'] != 'OUT_OF_STOCK':
+                        return 0
+                except:
+                    # if any child product is NOT out of stock, this product is NOT out of stock
+                    if 'child_items' in self.item_info['item']:
+                        for child in self.item_info['item']['child_items']:
+                            if child['available_to_promise_store']['products'][0]['availability_status'] != 'OUT_OF_STOCK':
+                                return 0
+                return 1
+
+            else:
+                return None
+
         if self._in_stores() == 1:
             if self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]") and \
                             "out of stock in stores" in self.tree_html.xpath("//div[contains(@class,'buttonmsgcontainer')]//p[contains(@class,'availmsg')]")[0].text_content():
@@ -535,6 +697,19 @@ class TargetScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
+        if self.version == 2:
+            if not self.categories_checked:
+                self.categories_checked = True
+
+                url = 'http://www.target.com/api/content-publish/taxonomy/v1/seo?url=' + urllib.quote_plus(self._url()) + '&children=true&breadcrumbs=true'
+
+                seo = json.loads(requests.get(url).content)
+
+                for i in range(1, len(seo['breadcrumbs'][0])):
+                    self.categories.append( seo['breadcrumbs'][0][i]['seo_data']['seo_keywords'])
+
+            return self.categories
+
         all = self.tree_html.xpath("//div[contains(@id, 'breadcrumbs')]//a/text()")
         out = [self._clean_text(r) for r in all]
         return out[1:] if out else None
@@ -542,14 +717,10 @@ class TargetScraper(Scraper):
     def _category_name(self):
         return self._categories()[-1]
 
-    def load_universal_variable(self):
-        js_content = ' '.join(self.tree_html.xpath('//script//text()'))
-
-        universal_variable = {}
-        universal_variable["manufacturer"] = re.findall(r'"manufacturer": "(.*?)"', js_content)[0]
-        return universal_variable
-
     def _brand(self):
+        if self.version == 2:
+            return self.item_info['item']['product_brand']['manufacturer_brand']
+
         # http://www.target.com/s?searchTerm=Target+toys+outdoor+toys+lawn+games+Wubble+Bubble
         url = "http://www.target.com/s?searchTerm=%s" % self._product_name()
         contents = urllib.urlopen(url.encode('utf8')).read()
@@ -573,6 +744,15 @@ class TargetScraper(Scraper):
 #    def _clean_text(self, text):
 #        return re.sub("&nbsp;", " ", text).strip()
 
+    def _clean_html(self, content):
+        content = re.sub('[\n\t]', ' ', content)
+        content = re.sub('<![^>]+>', '', content)
+        content = re.sub(' (class|itemprop)="[^"]+"', '', content)
+        content = re.sub('\s+', ' ', content)
+        content = re.sub('> <', '><', content)
+
+        return content.strip()
+
     ##########################################
     ################ RETURN TYPES
     ##########################################
@@ -583,6 +763,7 @@ class TargetScraper(Scraper):
         "url" : _url, \
         "product_id" : _product_id, \
         "upc" : _upc, \
+        "tcin" : _tcin, \
 
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
@@ -595,6 +776,10 @@ class TargetScraper(Scraper):
         "long_description" : _long_description, \
         "variants": _variants, \
         "swatches": _swatches, \
+        "details": _details, \
+        "mta": _mta, \
+        "no_longer_available": _no_longer_available, \
+
         # CONTAINER : PAGE_ATTRIBUTES
         "image_urls" : _image_urls, \
         "image_count" : _image_count, \
@@ -607,6 +792,7 @@ class TargetScraper(Scraper):
         "htags" : _htags, \
         "keywords" : _keywords, \
         "mobile_image_same" : _mobile_image_same, \
+        "canonical_link" : _canonical_link, \
 
         # CONTAINER : SELLERS
         "price" : _price, \

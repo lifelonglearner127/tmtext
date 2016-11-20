@@ -8,7 +8,7 @@ from scrapy import Request
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    FLOATING_POINT_RGEX, cond_set_value
+    cond_set_value
 from product_ranking.validation import BaseValidator
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from scrapy import Selector
@@ -78,8 +78,10 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
     def parse_product(self, response):
         product = response.meta.get('product', SiteProductItem())
 
-        if response.status == 404 and 'This product is no longer available' in response.body_as_unicode():
-            product['not_found'] = True
+        if response.status == 404 or 'This product is no longer available' in response.body_as_unicode() \
+                or "www.levi.com/US/en_US/error" in response.url:
+            product.update({"not_found": True})
+            product.update({"no_longer_available": True})
             return product
 
         reqs = []
@@ -125,7 +127,6 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
-        # Parse variants
         try:
             variants = self._parse_variants(response)
         except KeyError:
@@ -219,8 +220,12 @@ class LeviProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_title(self, response):
         title = response.xpath(
-            '//h1[contains(@class, "title")]/text()').extract()
-
+                '//meta[contains(@property, "og:title")]/@content').extract()
+        if title:
+            title = [title[0].replace('&trade;', '').replace('\u2122', '')]
+        else:
+            title = response.xpath(
+                '//h1[contains(@class, "title")]/text()').extract()
         return title
 
     def parse_data(self, response):

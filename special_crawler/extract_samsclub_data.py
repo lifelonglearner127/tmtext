@@ -24,7 +24,7 @@ class SamsclubScraper(Scraper):
     ############### PREP+
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.samsclub.com/sams/(.+)?/(.+)"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.samsclub.com/sams/(.+/)?(prod)?<prod-id>.ip or http://www.samsclub.com/sams/(.+/)?<cat-id>.cp or http://www.samsclub.com/sams/pagedetails/content.jsp?pageName=<page-name> for shelf pages"
 
     reviews_tree = None
     max_score = None
@@ -33,6 +33,10 @@ class SamsclubScraper(Scraper):
     average_review = None
     reviews = None
     image_urls = None
+    image_alt = []
+    # This is needed to extract alt-text for images of products
+    # from second half of shelf page, loaded via ajax
+    ajax_alt_text = {}
     image_count = -1
     price = None
     price_amount = None
@@ -42,18 +46,30 @@ class SamsclubScraper(Scraper):
     pdf_count = None
     pdf_urls = None
     failure_type = None
+    items = None
     sv = SamsclubVariants()
 
+    def __init__(self, **kwargs):
+        Scraper.__init__(self, **kwargs)
+
+        self.HEADERS = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0', 'Cookie': 'myPreferredClub=6612'}
+
     def check_url_format(self):
-        # for ex: http://www.samsclub.com/sams/dawson-fireplace-fall-2014/prod14520017.ip?origin=item_page.rr1&campaign=rr&sn=ClickCP&campaign_data=prod14170040
-        m = re.match(r"^http://www\.samsclub\.com/sams/(.+)?/(.+)\.ip", self.product_page_url)
-        return not not m
+        # http://www.samsclub.com/sams/gold-medal-5552pr-pretzel-oven-combo/136709.ip?searchTerm=278253
+        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?.+\.ip", self.product_page_url):
+            return True
+        return self._is_shelf_url(self.product_page_url)
 
-    def _failure_type(self):
+    def _is_shelf_url(self, url):
+        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?.+\.cp", url) or \
+            re.match(r"^http://www\.samsclub\.com/sams/shop/category.jsp\?categoryId=\d+$", url) or \
+            re.match(r"^http://www\.samsclub\.com/sams/pagedetails/content.jsp\?pageName=.+$", url):
+            return True
+
+    def _is_shelf(self):
+        # default is shelf page
         if not self.tree_html.xpath("//div[@class='container' and @itemtype='http://schema.org/Product']"):
-            self.failure_type = "Invalid url"
-
-        return self.failure_type
+            return True
 
     def not_a_product(self):
         '''Overwrites parent class method that determines if current page
@@ -62,17 +78,45 @@ class SamsclubScraper(Scraper):
         and returns True if current page is one.
         '''
 
+        redirect_url = None
+
+        h = requests.head(self.product_page_url)
+
+        if h.status_code == 302:
+            redirect_url = h.headers['Location']
+
+        else:
+            redirect = self.tree_html.xpath('//meta[@http-equiv="Refresh" or @http-equiv="refresh"]/@content')
+            if redirect:
+                redirect_url = re.search('URL=(.*)', redirect[0], re.I).group(1)
+
+            if not redirect:
+                for javascript in self.tree_html.xpath('//script[@type="text/javascript"]/text()'):
+                    javascript = re.sub('[\s\'"\+\;]','',javascript)
+                    redirect = re.match('location.href=(.*)', javascript)
+
+                    if redirect:
+                        redirect_url = redirect.group(1)
+                        if not re.match('https?://.+\.samsclub.com', redirect_url):
+                            redirect_url = 'http://www.samsclub.com' + redirect_url
+
+        if redirect_url:
+            # do not redirect to homepage or shelf pages from non-shelf pages
+            if redirect_url == 'http://www.samsclub.com/sams/' or \
+                (not self._is_shelf_url(self.product_page_url) and self._is_shelf_url(redirect_url)):
+                self.ERROR_RESPONSE['failure_type'] = '404 Not Found'
+                return True
+
+            r = requests.get(redirect_url, headers=self.HEADERS)
+
+            self.product_page_url = redirect_url
+            self.page_raw_text = r.content
+            self.tree_html = html.fromstring(self.page_raw_text)
+
         try:
             self.sv.setupCH(self.tree_html)
         except:
             pass
-
-        self._failure_type()
-
-        if self.failure_type:
-            self.ERROR_RESPONSE["failure_type"] = self.failure_type
-
-            return True
 
         return False
 
@@ -87,6 +131,9 @@ class SamsclubScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
+        if self._is_shelf():
+            return None
+
         try:
             product_id = self.tree_html.xpath("//input[@name='/atg/commerce/order/purchase/CartModifierFormHandler.baseProductId']/@value")[0].strip()
             return product_id
@@ -108,21 +155,28 @@ class SamsclubScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath("//span[@itemprop='name']//text()")[0].strip()
+        if not self._is_shelf():
+            return self.tree_html.xpath("//span[@itemprop='name']//text()")[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath("//span[@itemprop='name']//text()")[0].strip()
+        if not self._is_shelf():
+            return self.tree_html.xpath("//span[@itemprop='name']//text()")[0].strip()
 
     def _title_seo(self):
         return self.tree_html.xpath("//title//text()")[0].strip()
     
     def _model(self):
-        return self.tree_html.xpath("//span[@itemprop='model']//text()")[0].strip()
+        if not self._is_shelf():
+            return self.tree_html.xpath("//span[@itemprop='model']//text()")[0].strip()
 
     def _upc(self):
-        return self.tree_html.xpath("//input[@id='mbxSkuId']/@value")[0].strip()
+        if not self._is_shelf():
+            return self.tree_html.xpath("//input[@id='mbxSkuId']/@value")[0].strip()
 
     def _features(self):
+        if self._is_shelf():
+            return None
+
         lis = self.tree_html.xpath("//div[contains(@class,'itemFeatures')]//li")
         rows = []
         for li in lis:
@@ -142,6 +196,9 @@ class SamsclubScraper(Scraper):
         return rows
 
     def _feature_count(self):
+        if self._is_shelf():
+            return None
+
         features = len(self._features())
         if features is None:
             return 0
@@ -151,12 +208,15 @@ class SamsclubScraper(Scraper):
         return None
 
     def _variants(self):
-        if self._no_longer_available():
+        if self._is_shelf() or self._no_longer_available():
             return None
 
         return self.sv._variants()
 
     def _no_longer_available(self):
+        if self._is_shelf():
+            return None
+
         try:
             txt = self.tree_html.xpath("//span[@class='lgFont ft14']/text()")
             txt = "" . join(txt)
@@ -168,6 +228,9 @@ class SamsclubScraper(Scraper):
         return False
 
     def _description(self):
+        if self._is_shelf():
+            return None
+
         try:
             description = self._exclude_javascript_from_description(html.tostring(self.tree_html.xpath("//div[contains(@class,'itemBullets')]")[0]).strip())
         except:
@@ -179,15 +242,29 @@ class SamsclubScraper(Scraper):
         return None
 
     def _long_description(self):
+        if self._is_shelf():
+            return None
+
         try:
-            long_description = self._exclude_javascript_from_description(html.tostring(self.tree_html.xpath("//span[@itemprop='description']")[0]).strip())
+            long_description = self._exclude_javascript_from_description(
+                html.tostring(self.tree_html.xpath("//span[@itemprop='description']")[0]).strip())
         except:
-            long_description = None
+            try:
+                long_description = self._exclude_javascript_from_description(
+                    html.tostring(self.tree_html.xpath("//div[@itemprop='description']")[0]).strip())
+            except:
+                long_description = None
 
         if long_description:
             return long_description
 
         return None
+
+    def _assembled_size(self):
+        arr = self.tree_html.xpath("//div[contains(@class,'itemFeatures')]//h3//text()")
+        if 'Assembled Size' in arr:
+            return 1
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -196,7 +273,58 @@ class SamsclubScraper(Scraper):
     def _mobile_image_same(self):
         return None
 
+    def _meta_description(self):
+        if self.tree_html.xpath('//meta[@name="description"]/@content'):
+            return 1
+        return 0
+
     def _image_urls(self):
+        if self._is_shelf():
+            images = []
+
+            background_images = re.findall('background: url\(http://.+\)', self.page_raw_text)
+            background_images = map(lambda i: re.search('\((http://.+)\)', i).group(1), background_images)
+
+            images += background_images
+
+            other_images = self.tree_html.xpath('//img[not(parent::figure)]/@src')
+            images += other_images
+
+            images = filter(lambda i: re.match('^http://', i), images)
+
+            featured_images = self.tree_html.xpath('//category-carousel[@carousel-type="featured"]//img/@src')
+
+            if self.tree_html.xpath('//div[@class="container" and child::nav]//category-carousel[@carousel-type="featured"]'):
+                featured_images = featured_images[:3]
+            else:
+                featured_images = featured_images[:5]
+
+            featured_images = map(lambda i: i.split('?')[0], featured_images)
+            images += featured_images
+            for image in map(lambda i: i['image'], self._items()):
+                if not image in images:
+                    images.append(image)
+
+            self.image_count = len(images)
+            image_alts = []
+            for im in images:
+                image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@alt'.format(im))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@title'.format(im))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains("{}", @src)]/@alt'.format(im))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@alt'.format(im.replace("http:",'')))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@ng-src, "{}")]/@alt'.format(im.replace("http:",'')))
+                image_alt = image_alt[0] if image_alt else ''
+                if not image_alt:
+                    image_alt = self.ajax_alt_text.get(im.replace("http:",''), '')
+                image_alts.append(image_alt)
+            self.image_alt = image_alts
+            if images:
+                return images
+
         if self.image_count == -1:
             self.image_urls = None
             self.image_count = 0
@@ -226,11 +354,39 @@ class SamsclubScraper(Scraper):
                 except Exception, e:
                     print "WARNING: ", e.message
 
+            img_urls = map(lambda u: u + '?wid=1500&hei=1500&fmt=jpg&qlt=80', img_urls)
+            image_alts = []
+            for im in img_urls:
+                im_c = im.replace("http:", '').split('?')[0]
+                image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@alt'.format(im_c))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@title'.format(im_c))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains("{}", @src)]/@alt'.format(im_c))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath('//img[contains(@src, "{}")]/@alt'.format(im_c))
+                if not image_alt:
+                    image_alt = self.tree_html.xpath(
+                        '//img[contains(@ng-src, "{}")]/@alt'.format(im.replace("http:", '')))
+                image_alt = image_alt[0] if image_alt else ''
+                image_alts.append(image_alt)
+            self.image_alt = image_alts
             self.image_urls = img_urls
             self.image_count = len(img_urls)
+            # TODO add image alt extraction for single items as well
             return img_urls
         else:
             return self.image_urls
+
+    def _image_alt_text(self):
+        if not self.image_count == -1 or not self.image_alt:
+            image_urls = self._image_urls()
+        return self.image_alt
+
+    def _image_alt_text_len(self):
+        if not self.image_alt:
+            image_urls = self._image_urls()
+        return [len(i) if i else 0 for i in self.image_alt] if self.image_alt else None
 
     def _image_count(self):
         if self.image_count == -1:
@@ -271,6 +427,9 @@ class SamsclubScraper(Scraper):
     #     return data
 
     def _video_urls(self):
+        if self._is_shelf():
+            return None
+
         if self.video_count is not None:
             return self.video_urls
         self.video_count = 0
@@ -304,11 +463,17 @@ class SamsclubScraper(Scraper):
         return self.video_urls
 
     def _video_count(self):
+        if self._is_shelf():
+            return None
+
         if self.video_count is None:
             self._video_urls()
         return self.video_count
 
     def _pdf_urls(self):
+        if self._is_shelf():
+            return None
+
         if self.pdf_count is not None:
             return self.pdf_urls
         self.pdf_count = 0
@@ -366,11 +531,17 @@ class SamsclubScraper(Scraper):
         return pdf_hrefs
 
     def _pdf_count(self):
+        if self._is_shelf():
+            return None
+
         if self.pdf_count is None:
             self._pdf_urls()
         return self.pdf_count
 
     def _webcollage(self):
+        if self._is_shelf():
+            return None
+
         # http://content.webcollage.net/sc/smart-button?ird=true&channel-product-id=prod10740044
         url = "http://content.webcollage.net/sc/smart-button?ird=true&channel-product-id=%s" % self._product_id()
         html = urllib.urlopen(url).read()
@@ -386,13 +557,204 @@ class SamsclubScraper(Scraper):
     def _htags(self):
         htags_dict = {}
         # add h1 tags text to the list corresponding to the "h1" key in the dict
-        htags_dict["h1"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']"))
+        htags_dict["h1"] = filter(None, map(lambda t: self._clean_text(t), self.tree_html.xpath("//h1//text()[normalize-space()!='']")))
         # add h2 tags text to the list corresponding to the "h2" key in the dict
-        htags_dict["h2"] = map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']"))
+        htags_dict["h2"] = filter(None, map(lambda t: self._clean_text(t), self.tree_html.xpath("//h2//text()[normalize-space()!='']")))
         return htags_dict
 
     def _keywords(self):
-        return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
+        try:
+            return self.tree_html.xpath("//meta[@name='keywords']/@content")[0]
+        except:
+            pass
+
+    # Not used after reviews fix
+    @staticmethod
+    def _return_br_block_for_prod_id(brs, prod_id):
+        for key, value in brs['BatchedResults'].items():
+            for sub_group in value['Results']:
+                if sub_group.get('Id', None) == prod_id:
+                    return sub_group
+        for key, value in brs['BatchedResults'].items():
+            for sub_group_product, sub_group_product_data in value['Includes'].get('Products', {}).items():
+                if sub_group_product == prod_id:
+                    return sub_group_product_data
+
+    def _get_category_items(self, cat_id, sub=False):
+        items = []
+
+        try:
+            url = 'http://www.samsclub.com/sams/redesign/common/model/loadDataModel.jsp?dataModelId=' + cat_id + '&dataModelType=categoryDataModel'
+
+            c = requests.get(url, headers=self.HEADERS).content
+            h = html.fromstring(c)
+
+            price = None
+
+            try:
+                price = float(item.xpath('.//span[@data-price]/@data-price')[0])
+            except:
+                pass
+
+            for item in h.xpath('//div[contains(@class,"sc-product-card")]')[:5]:
+                i = {
+                    'image' : 'http:' + item.xpath('.//img/@src')[0].split('?')[0],
+                    'price' : price
+                }
+
+                items.append(i)
+
+        except Exception as e:
+            #print 'EXCEPT', e
+            url = 'http://www.samsclub.com/soa/services/v1/catalogsearch/search?searchCategoryId=' + cat_id
+
+            j = json.loads(requests.get(url, headers=self.HEADERS).content)
+
+            records = j['payload'].get('records', [])
+
+            if sub:
+                records = records[:5]
+
+            for record in records:
+                price = None
+                # This is needed to extract alt-text for images of products
+                # from second half of shelf page, loaded via ajax
+                self.ajax_alt_text[record.get('listImage')] = record.get('productName')
+                if record.get('clubPricing') and not record['clubPricing']['forceLoginRequired']:
+                    price = record['clubPricing']['finalPrice']['currencyAmount']
+
+                elif record.get('onlinePricing') and not record['onlinePricing']['forceLoginRequired']:
+                    price = record['onlinePricing']['finalPrice']['currencyAmount']
+
+                i = {
+                    'image': 'http:' + record['listImage'],
+                    'price': price
+                }
+
+                items.append(i)
+
+        return items
+
+    def _items(self):
+        if self.items:
+            return self.items
+
+        self.items = []
+
+        # If the original page displays no product cards (e.g. http://www.samsclub.com/sams/pirelli/5950114.cp or http://www.samsclub.com/sams/shocking-values/13450112.cp), then return no items
+        if not self.tree_html.xpath('//div[contains(@class,"sc-product-card")]'):
+            return self.items
+
+        subcategories = self.tree_html.xpath('//section[starts-with(@id,"catLowFtrdCrsl")]/@ng-controller')
+
+        # If it is a meta-category page
+        if subcategories:
+            for subcategory in subcategories:
+                cat_id = re.search('_(\d+)$', subcategory).group(1)
+
+                self.items += self._get_category_items(cat_id, True)
+
+        # Otherwise it is a normal category page
+        else:
+            cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+
+            self.items += self._get_category_items(cat_id)
+
+        return self.items
+
+    def _results_per_page(self):
+        if self._is_shelf():
+            return len(self._items())
+
+    def _total_matches(self):
+        if self._is_shelf():
+            try:
+                return int(re.search('\'totalRecords\':\'(\d+)\'', self.page_raw_text).group(1))
+            except:
+                pass
+
+    def _lowest_item_price(self):
+        if self._is_shelf():
+            low_price = None
+
+            for item in self._items():
+                if item['price'] is None:
+                    continue
+
+                if not low_price or item['price'] < low_price:
+                    low_price = item['price']
+
+            return low_price
+
+    def _highest_item_price(self):
+        if self._is_shelf():
+            high_price = None
+
+            for item in self._items():
+                if item['price'] is None:
+                    continue
+
+                if not high_price or item['price'] > high_price:
+                    high_price = item['price']
+
+            return high_price
+
+    def _num_items_price_displayed(self):
+        if self._is_shelf():
+            n = 0
+
+            for item in self._items():
+                if item.get('price'):
+                    n += 1
+
+            return n
+
+    def _num_items_no_price_displayed(self):
+        if self._is_shelf():
+            return self._results_per_page() - self._num_items_price_displayed()
+
+    def _meta_description_count(self):
+        try:
+            return len(self.tree_html.xpath('//meta[@name="description"]/@content')[0])
+        except:
+            pass
+
+    def _body_copy(self):
+        if self._is_shelf():
+            body_copy = ''
+
+            for elem in self.tree_html.xpath('//*[contains(@class,"categoryText")]/*'):
+                body_copy += html.tostring(elem)
+
+            if body_copy:
+                return body_copy
+
+    def _body_copy_links(self):
+        cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+
+        if not self.tree_html.xpath('//*[contains(@class,"categoryText")]'):
+            return None
+
+        links = self.tree_html.xpath('//*[contains(@class,"categoryText")]//a/@href')
+
+        return_links = {'self_links' : {'count': 0},
+                        'broken_links' : {'links' : {}, 'count' : 0}}
+
+        for link in links:
+            if not re.match('http://www.samsclub.com', link):
+                link = 'http://www.samsclub.com' + link
+
+            if re.search(cat_id + '.cp$', link):
+                return_links['self_links']['count'] += 1
+
+            else:
+                status_code = requests.head(link).status_code
+
+                if not status_code == 200:
+                    return_links['broken_links']['links'][link] = status_code
+                    return_links['broken_links']['count'] += 1
+
+        return return_links
 
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -404,6 +766,31 @@ class SamsclubScraper(Scraper):
                 # for ex: http://samsclub.ugc.bazaarvoice.com/1337/prod12250457/reviews.djs?format=embeddedhtml
                 url = "http://samsclub.ugc.bazaarvoice.com/1337/%s/reviews.djs?format=embeddedhtml" % self._product_id()
                 contents = urllib.urlopen(url).read()
+                if 'page you have requested cannot be found' in contents.lower():
+                    # url = ('http://api.bazaarvoice.com/data/batch.json?passkey=dap59bp2pkhr7ccd1hv23n39x&apiversion=5.5'
+                    #        '&displaycode=1337-en_us&resource.q0=products&filter.q0=id%3Aeq%3Aprod16470189'
+                    #        '&stats.q0=questions%2Creviews&filteredstats.q0=questions%2Creviews'
+                    #        '&filter_questions.q0=contentlocale%3Aeq%3Aen_US&filter_answers.q0=contentlocale%3Aeq%3Aen_US'
+                    #        '&filter_reviews.q0=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q0=contentlocale%3Aeq%3Aen_US'
+                    #        '&resource.q1=reviews&filter.q1=isratingsonly%3Aeq%3Afalse&filter.q1=productid%3Aeq%3A{prod_id}'
+                    #        '&filter.q1=contentlocale%3Aeq%3Aen_US&sort.q1=helpfulness%3Adesc%2Ctotalpositivefeedbackcount%3Adesc'
+                    #        '&stats.q1=reviews&filteredstats.q1=reviews&include.q1=authors%2Cproducts%2Ccomments'
+                    #        '&filter_reviews.q1=contentlocale%3Aeq%3Aen_US&filter_reviewcomments.q1=contentlocale%3Aeq%3Aen_US'
+                    #        '&filter_comments.q1=contentlocale%3Aeq%3Aen_US&limit.q1=8&offset.q1=0&limit_comments.q1=3'
+                    #        '&resource.q2=reviews&filter.q2=productid%3Aeq%3A{prod_id}&filter.q2=contentlocale%3Aeq%3Aen_US'
+                    #        '&limit.q2=1&resource.q3=reviews&filter.q3=productid%3Aeq%3A{prod_id}'
+                    #        '&filter.q3=isratingsonly%3Aeq%3Afalse&filter.q3=rating%3Agt%3A3'
+                    #        '&filter.q3=totalpositivefeedbackcount%3Agte%3A3&filter.q3=contentlocale%3Aeq%3Aen_US'
+                    #        '&sort.q3=totalpositivefeedbackcount%3Adesc&include.q3=authors%2Creviews%2Cproducts'
+                    #        '&filter_reviews.q3=contentlocale%3Aeq%3Aen_US&limit.q3=1&resource.q4=reviews'
+                    #        '&filter.q4=productid%3Aeq%3A{prod_id}&filter.q4=isratingsonly%3Aeq%3Afalse'
+                    #        '&filter.q4=rating%3Alte%3A3&filter.q4=totalpositivefeedbackcount%3Agte%3A3'
+                    #        '&filter.q4=contentlocale%3Aeq%3Aen_US&sort.q4=totalpositivefeedbackcount%3Adesc'
+                    #        '&include.q4=authors%2Creviews%2Cproducts&filter_reviews.q4=contentlocale%3Aeq%3Aen_US'
+                    #        '&limit.q4=1&callback=bv_1111_4516')
+                    url = "http://api.bazaarvoice.com/data/reviews.json?apiversion=5.5&passkey=dap59bp2pkhr7ccd1hv23n39x" \
+                   "&Filter=ProductId:{prod_id}&Include=Products&Stats=Reviews"
+                    contents = urllib.urlopen(url.format(prod_id=self._product_id())).read()
                 tmp_reviews = re.findall(r'<span class=\\"BVRRHistAbsLabel\\">(.*?)<\\/span>', contents)
                 reviews = []
                 for review in tmp_reviews:
@@ -412,19 +799,10 @@ class SamsclubScraper(Scraper):
                     reviews.append(m[0])
 
                 reviews = reviews[:5]
-                score = 5
-                for review in reviews:
-                    if int(review) > 0:
-                        self.max_score = score
-                        break
-                    score -= 1
 
-                score = 1
-                for review in reversed(reviews):
-                    if int(review) > 0:
-                        self.min_score = score
-                        break
-                    score += 1
+                scores = [v[0] for v in self.reviews if int(v[1]) > 0]
+                self.max_score = max(scores)
+                self.min_score = min(scores)
 
                 self.reviews = []
                 score = 1
@@ -438,26 +816,56 @@ class SamsclubScraper(Scraper):
                 self.review_count = review_cnt
                 self.average_review = total_review * 1.0 / review_cnt
                 # self.reviews_tree = html.fromstring(contents)
+
+                if not self.review_count or not self.average_review:
+                    raise BaseException  # we have to jump to the version #2
         except:
-            pass
+            if not self.review_count or not self.average_review:
+                contents = json.loads(contents)
+                incl = contents.get('Includes')
+                brs = incl.get('Products').get(self._product_id()) if incl else None
+                #import pdb; pdb.set_trace()
+                distrib = [(d['RatingValue'], d['Count']) for d in brs['ReviewStatistics']['RatingDistribution']]
+                self.reviews = sorted(distrib, key=lambda val: val[0], reverse=True)
+                self.review_count = brs['ReviewStatistics']['TotalReviewCount']
+                self.average_review = brs['ReviewStatistics']['AverageOverallRating']
+
+                scores = [v[0] for v in self.reviews if int(v[1])>0]
+                self.max_score = max(scores)
+                self.min_score = min(scores)
 
     def _average_review(self):
+        if self._is_shelf():
+            return None
+
         self._load_reviews()
         return float("%.2f" % self.average_review)
 
     def _review_count(self):
+        if self._is_shelf():
+            return None
+
         self._load_reviews()
         return self.review_count
 
     def _max_review(self):
+        if self._is_shelf():
+            return None
+
         self._load_reviews()
         return self.max_score
 
     def _min_review(self):
+        if self._is_shelf():
+            return None
+
         self._load_reviews()
         return self.min_score
 
     def _reviews(self):
+        if self._is_shelf():
+            return None
+
         self._load_reviews()
         if len(self.reviews) < 1:
             return None
@@ -467,6 +875,9 @@ class SamsclubScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
+        if self._is_shelf():
+            return None
+
         if self.price:
             return self.price
         try:
@@ -486,12 +897,18 @@ class SamsclubScraper(Scraper):
         return None
 
     def _price_amount(self):
+        if self._is_shelf():
+            return None
+
         price = self._price()
         price = price.replace(",", "")
         price_amount = re.findall(r"[\d\.]+", price)[0]
         return float(price_amount)
 
     def _price_currency(self):
+        if self._is_shelf():
+            return None
+
         price = self._price()
         price = price.replace(",", "")
         price_amount = re.findall(r"[\d\.]+", price)[0]
@@ -505,6 +922,9 @@ class SamsclubScraper(Scraper):
         or it can not be ordered online at all and can only be purchased in a local store,
         irrespective of availability - binary
         '''
+        if self._is_shelf():
+            return None
+
         in_stores = None
         rows = self.tree_html.xpath("//div[contains(@class,'moneyBoxContainer')]//div[contains(@class,'moneyBoxBtn')]//text()")
         if "Visit your local Club for pricing & availability" in rows:
@@ -522,6 +942,9 @@ class SamsclubScraper(Scraper):
         between buyer and seller. E.g., "Sold by X and fulfilled by Amazon" is also a marketplace item,
         since Amazon is not the seller.
         '''
+        if self._is_shelf():
+            return None
+
         return 0
 
     def _marketplace_sellers(self):
@@ -544,6 +967,9 @@ class SamsclubScraper(Scraper):
 
     def _site_online(self):
         # site_online: the item is sold by the site (e.g. "sold by Amazon") and delivered directly, without a physical store.
+        if self._is_shelf():
+            return None
+
         rows = self.tree_html.xpath("//*[@id='addtocartsingleajaxonline']")
         if len(rows) > 0:
             return 1
@@ -574,6 +1000,9 @@ class SamsclubScraper(Scraper):
 
     def _site_online_out_of_stock(self):
         #  site_online_out_of_stock - currently unavailable from the site - binary
+        if self._is_shelf():
+            return None
+
         if self._site_online() == 1:
             if self.tree_html.xpath("//*[@itemprop='availability']/@href")[0] == "http://schema.org/OutOfStock":
                 return 1
@@ -586,6 +1015,9 @@ class SamsclubScraper(Scraper):
         '''in_stores_out_of_stock - currently unavailable for pickup from a physical store - binary
         (null should be used for items that can not be ordered online and the availability may depend on location of the store)
         '''
+        if self._is_shelf():
+            return None
+
         if self._in_stores() == 1:
             return 1
 
@@ -595,19 +1027,23 @@ class SamsclubScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        all = self.tree_html.xpath("//div[contains(@id, 'breadcrumb')]//a/text()")
-        out = [self._clean_text(r) for r in all][1:]
+        if self._is_shelf():
+            all = self.tree_html.xpath("//ol[@id='breadCrumbs']/li/span/a/text()")
+        else:
+            all = self.tree_html.xpath("//div[@class='breadcrumb-child']/a/span/text()")[1:]
+
+        out = [self._clean_text(r) for r in all]
 
         if out:
             return out
 
-        return None
-
     def _category_name(self):
-        return self._categories()[-1]
+        if not self._is_shelf():
+            return self._categories()[-1]
 
     def _brand(self):
-        return self.tree_html.xpath("//span[@itemprop='brand']//text()")[0].strip()
+        if not self._is_shelf():
+            return self.tree_html.xpath("//span[@itemprop='brand']//text()")[0].strip()
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -638,16 +1074,29 @@ class SamsclubScraper(Scraper):
         "long_description" : _long_description, \
         "variants": _variants, \
         "no_longer_available": _no_longer_available, \
+        "assembled_size": _assembled_size, \
+
         # CONTAINER : PAGE_ATTRIBUTES
         "video_urls" : _video_urls, \
         "video_count" : _video_count, \
-        # "no_image" : _no_image, \
         "webcollage" : _webcollage, \
         "htags" : _htags, \
         "keywords" : _keywords, \
         "pdf_urls" : _pdf_urls, \
         "pdf_count" : _pdf_count, \
         "mobile_image_same" : _mobile_image_same, \
+        "meta_description" : _meta_description, \
+        "meta_description_count" : _meta_description_count, \
+        "results_per_page" : _results_per_page, \
+        "total_matches" : _total_matches, \
+        "lowest_item_price" : _lowest_item_price, \
+        "highest_item_price" : _highest_item_price, \
+        "num_items_price_displayed" : _num_items_price_displayed, \
+        "num_items_no_price_displayed" : _num_items_no_price_displayed, \
+        "body_copy" : _body_copy, \
+        "body_copy_links" : _body_copy_links, \
+        "image_alt_text": _image_alt_text, \
+        "image_alt_text_len": _image_alt_text_len, \
 
         # CONTAINER : SELLERS
         "price" : _price, \

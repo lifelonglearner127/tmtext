@@ -4,6 +4,7 @@ import re
 import lxml
 import lxml.html
 import requests
+import json
 
 from itertools import groupby
 
@@ -16,7 +17,7 @@ class UltaScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.ulta.com/ulta/browse/productDetail.jsp?productId=<product-id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http://www.ulta.com/ulta/browse/productDetail.jsp?productId=<product-id> or http://www.ulta.com/<product-name>?productId=xlsImpprod<product-id>"
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -25,7 +26,9 @@ class UltaScraper(Scraper):
         """
         m = re.match(r"^http://www\.ulta\.com/ulta/browse/productDetail\.jsp\?productId=.+$", self.product_page_url)
 
-        return not not m
+        m1 = re.match(r"^http://www\.ulta\.com/.+\?productId=xlsImpprod\d+$", self.product_page_url)
+
+        return m or m1
 
     def not_a_product(self):
         """Checks if current page is not a valid product page
@@ -81,9 +84,9 @@ class UltaScraper(Scraper):
 
     def _description(self):
 
-        description_elements = self.tree_html.xpath('//div[@id="product-first-catalog"]/div[@class="product-catalog-content"]')
+        description_elements = self.tree_html.xpath('//div[@id="product-first-catalog"]/div[contains(@class,"product-catalog-content")]')
 
-        text_elements = self.tree_html.xpath('//div[@id="product-first-catalog"]/div[@class="product-catalog-content"]/text()')
+        text_elements = self.tree_html.xpath('//div[@id="product-first-catalog"]/div[contains(@class,"product-catalog-content")]/text()')
 
         short_description = "" . join(text_elements)
 
@@ -103,32 +106,84 @@ class UltaScraper(Scraper):
         else:
             return short_description
 
+    def _variants(self):
+        current_sku = re.search("currentSkuId = '(\d+)'", html.tostring(self.tree_html)).group(1)
+
+        variants = []
+
+        variant_data = re.findall('productSkus\[\d+\] =\s+({[^}]+});', html.tostring(self.tree_html))
+
+        for d in variant_data:
+            variant_json = json.loads(d)
+
+            if current_sku == variant_json['id']:
+                continue
+
+            price_html = html.fromstring( self.load_page_from_url_with_number_of_retries('http://www.ulta.com/common/inc/productDetail_price.jsp?skuId=%s&productId=%s&fromPDP=true' % (variant_json['id'], self._product_id())))
+
+            variants.append( {
+                'variant' : variant_json.get('displayName'),
+                'item_no' : variant_json['id'],
+                'price' : float( price_html.xpath('//p')[0].text[1:]), # remove leading $ and convert to float
+                'image_url' : variant_json['imgUrl'].split('?')[0],
+                'selected' : False,
+            } )
+
+        if variants:
+            return variants
+
+        return None
+
+    '''
+    def _swatches(self):
+        swatches = []
+
+        swatch_els = self.tree_html.xpath('//a[contains(@class,"product-swatch")]/img')
+
+        for e in swatch_els:
+            swatches.append( {
+                'name' : e.get('alt'),
+                'img' : e.get('data-blzsrc').split('?')[0],
+            } )
+
+        if swatches:
+            return swatches
+
+        return None
+    '''
+
+    def _no_longer_available(self):
+        if re.search('Sorry, this product is no longer available.', self.page_raw_text):
+            return 1
+        return 0
+
     # extract product long description from its product product page tree
     # ! may throw exception if not found
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        description_elements = self.tree_html.xpath('//div[@class="product-catalog"]')
+        description_elements = self.tree_html.xpath('//div[contains(@class,"product-catalog")]')
 
         for description_element in description_elements:
-            if description_element.xpath("div[@class='product-catalog-head']/text()") and \
-                            "How to Use" in description_element.xpath("div[@class='product-catalog-head']/text()")[0]:
-                return lxml.html.tostring(description_element.xpath("div[@class='product-catalog-content']")[0]).\
-                    replace('<div class="product-catalog-content" style="display: none;">', "").replace("</div>", "")
+            if description_element.xpath("div[contains(@class,'product-catalog-head')]") and \
+                            "How to Use" in description_element.xpath("div[contains(@class,'product-catalog-head')]")[0].text_content():
+                return re.sub('<div class="product-catalog-content.*>', '', \
+                    lxml.html.tostring(description_element.xpath("div[contains(@class,'product-catalog-content')]")[0])).\
+                    replace('</div>', '').strip()
 
         return None
 
     def _ingredients(self):
-        product_catalog_list = self.tree_html.xpath('//div[@class="product-catalog"]')
+        product_catalog_list = self.tree_html.xpath('//div[contains(@class,"product-catalog")]')
 
         for product_catalog in product_catalog_list:
-            head_text = product_catalog.xpath("div[@class='product-catalog-head']/text()")
+            pch = product_catalog.xpath("div[contains(@class,'product-catalog-head')]")
 
-            if head_text:
-                head_text = head_text[0].strip()
+            if pch:
+                head_text = pch[0].text_content()
 
                 if "Ingredients" in head_text:
-                    ingredients = product_catalog.xpath("div[@class='product-catalog-content']/text()")[0].strip()
+                    ingredients = product_catalog.xpath("div[contains(@class,'product-catalog-content')]")[0].text_content().strip()
 
                     return ingredients.split(', ')
 
@@ -149,7 +204,10 @@ class UltaScraper(Scraper):
     def _image_urls(self):
         main_image_url = self.tree_html.xpath('//meta[@property="og:image"]/@content')[0]
         thumb_image_urls = [main_image_url]
-        thumb_image_urls.extend(self.tree_html.xpath('//div[@class="product-detail-thumbnail-image"]//img/@alt'))
+
+        for url in self.tree_html.xpath('//div[@class="product-detail-thumbnail-image"]//img/@data-blzsrc'):
+            if not url.split('?')[0] in thumb_image_urls:
+                thumb_image_urls.append(url.split('?')[0])
 
         for idx, item in enumerate(thumb_image_urls):
             if "http:" in item:
@@ -166,8 +224,11 @@ class UltaScraper(Scraper):
         return len(self._image_urls())
 
     def _video_urls(self):
-        video_urls = self.tree_html.xpath('//iframe/@src')
-        video_urls = [url for url in video_urls if "www.youtube.com" in url]
+        video_urls = []
+
+        for url in self.tree_html.xpath('//iframe/@src'):
+            if "www.youtube.com" in url and not url in video_urls:
+                video_urls.append(url)
 
         for idx, item in enumerate(video_urls):
             if "http:" in item:
@@ -393,6 +454,8 @@ class UltaScraper(Scraper):
         "long_description" : _long_description, \
         "ingredients": _ingredients, \
         "ingredient_count": _ingredients_count,
+        "variants": _variants,
+        "no_longer_available": _no_longer_available,
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
@@ -411,6 +474,7 @@ class UltaScraper(Scraper):
         "max_review" : _max_review, \
         "min_review" : _min_review, \
         "reviews" : _reviews, \
+
         # CONTAINER : SELLERS
         "price" : _price, \
         "price_amount" : _price_amount, \

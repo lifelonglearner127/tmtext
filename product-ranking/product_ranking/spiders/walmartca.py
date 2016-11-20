@@ -12,15 +12,13 @@ from datetime import datetime
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
-from scrapy import signals
-from scrapy.xlib.pydispatch import dispatcher
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
                                    BuyerReviews, Price)
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
-    cond_set, cond_set_value, FLOATING_POINT_RGEX
+    cond_set, cond_set_value
 from product_ranking.validation import BaseValidator
 from product_ranking.walmartca_related_product import RR
 
@@ -137,6 +135,54 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             ),
             *args, **kwargs)
 
+    def start_requests(self):
+        """Generate Requests from the SEARCH_URL and the search terms."""
+        for st in self.searchterms:
+            yield Request(
+                self.url_formatter.format(
+                    self.SEARCH_URL,
+                    search_term=urllib.quote_plus(st.encode('utf-8')),
+                ),
+                callback=self.set_cookie,
+                meta={'search_term': st, 'remaining': self.quantity},
+            )
+
+        if self.product_url:
+            prod = SiteProductItem()
+            prod['is_single_result'] = True
+            prod['url'] = self.product_url
+            prod['search_term'] = ''
+            yield Request(
+                self.product_url,
+                self._parse_single_product,
+                meta={'product': prod},
+                cookies={
+                    'deliveryCatchment': 2000,
+                    'marketCatchment': 2001,
+                    'walmart.shippingPostalCode': 'V5M2G7',
+                    'ENV': 'origin-edc-torbit-www',
+                    'userSegment': '10-percent'
+                })
+
+        if self.products_url:
+            urls = self.products_url.split('||||')
+            for url in urls:
+                prod = SiteProductItem()
+                prod['url'] = url
+                prod['search_term'] = ''
+                yield Request(url,
+                              self._parse_single_product,
+                              meta={'product': prod})
+
+    def set_cookie(self, response):
+        """This function create same Request for setting right Cookie."""
+        return Request(
+                response.request.url,
+                    callback = self.parse,
+                    meta=response.meta,
+                    dont_filter = True,
+            )
+
     def parse_product(self, response):
         """
         Main parsing product method
@@ -144,6 +190,9 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
         reqs = []
         product = response.meta['product']
+
+        #self._populate_from_html(response, product)
+        #self._populate_from_js(response, product)
 
         # Product ID
         id = re.findall('\/(\d+)', response.url)
@@ -158,22 +207,28 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         self._populate_from_js(response, product)
 
         # Send request to get if limited online status
-        skus = [{"skuid": sku} for sku in response.meta['skus']]
-        request_data = [{
-            "productid": product_id,
-            "skus": [skus]
-        }]
+        try:
+            skus = [{"skuid": sku} for sku in response.meta['skus']]
+            request_data = [{
+                "productid": product_id,
+                "skus": [skus]
+            }]
 
-        request_data = json.dumps(request_data).replace(' ', '')
+            request_data = json.dumps(request_data).replace(' ', '')
 
-        reqs.append(FormRequest(
-            url="http://www.walmart.ca/ws/online/products",
-            formdata={"products": request_data},
-            callback=self._parse_online_status,
-            headers={
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        ))
+            reqs.append(FormRequest(
+                url="http://www.walmart.ca/ws/online/products",
+                formdata={"products": request_data},
+                callback=self._parse_online_status,
+                headers={
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            ))
+        except KeyError:
+            pass
+        if response.xpath('//span[@class="infoText"]/' \
+                          'text()').re('This product is not available'):
+            product['no_longer_available'] = True
 
         self._populate_from_html(response, product)
 
@@ -423,11 +478,22 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         """
         Gets data straight from html body
         """
-
         reqs = response.meta.get('reqs', [])
 
         # Set product url
         cond_set_value(product, 'url', response.url)
+        try:
+            if product['no_longer_available']:
+                image = response.xpath('//img[@itemprop="image"]/@src')
+                image = is_empty(image.extract())
+                image = image.replace('//','http://').replace('Large','Enlarge')
+                product['image_url'] = image
+
+                brand = response.xpath('//span[@itemprop="brand"]/text()')
+                brand = is_empty(brand.extract())
+                product['brand'] = brand
+        except KeyError:
+            pass
 
         # Get title from html
         title = is_empty(
@@ -582,7 +648,12 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         # Set if special price
         try:
             special_price = product_data['baseProdInfo']['price_store_was_price']
-            cond_set_value(product, 'special_pricing', True)
+            online_status = product_data['baseProdInfo']['online_status'][0]
+
+            if online_status != u'90':
+                cond_set_value(product, 'special_pricing', True)
+            else:
+                cond_set_value(product, 'special_pricing', False)
         except (ValueError, KeyError):
             cond_set_value(product, 'special_pricing', False)
 
@@ -590,7 +661,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         number_of_variants = product_data.get('numberOfVariants', 0)
         data_variants = product_data['variantDataRaw']
         skus = []
-
         if number_of_variants:
             try:
                 variants = {}
@@ -614,11 +684,13 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
 
                     color = is_empty(var.get('variantKey_en_Colour', []))
                     size = is_empty(var.get('variantKey_en_Size', []))
-
+                    waist_size = is_empty(var.get('variantKey_en_Waist_size_-_inches'),[])
                     if size:
                         properties['size'] = size
                     if color:
                         properties['color'] = color
+                    if waist_size:
+                        properties['waist_size'] = waist_size
                     variant['properties'] = properties
 
                     variants[sku_id] = variant
@@ -665,7 +737,6 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
         meta = response.meta.copy()
         reqs = meta.get('reqs')
         product = meta['product']
-
         data = json.loads(
             response.body_as_unicode()
         )
@@ -687,6 +758,28 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
                 product['limited_stock'] = True
             else:
                 product['limited_stock'] = False
+
+            #Taking right amount of price and availability status
+            try:
+                currency = re.findall('priceCurrency=(.*?),',str(product['price']))[0]
+            except:
+                currency = 'CAD'
+
+            price = product_info['minCurrentPrice']
+            if not price:
+                prod_data = [{"productid":response.meta['product_id'],
+                            "skus":[{"skuid":str(product['upc']),"storeeligible":True}]
+                }]
+                prod_data = json.dumps(prod_data).replace(' ', '')
+                store_data = json.dumps(['1104','3057','1192','5777']).replace(' ', '')
+                reqs.append(FormRequest(
+                    url="http://www.walmart.ca/ws/store/products",
+                    formdata={'stores':store_data, 'products':prod_data},
+                    callback=self._parse_store_status,
+                    headers={'X-Requested-With': 'XMLHttpRequest'}
+                ))
+            else:
+                product['price'] = Price(priceCurrency=currency, price=price)
 
             # Set limited status for product variants
             if variants:
@@ -779,3 +872,37 @@ class WalmartCaProductsSpider(BaseValidator, BaseProductsSpider):
             )
 
         return next_page
+
+    def _parse_store_status(self, response):
+        """Checking availability in stores and adding store price to product"""
+        reqs = response.meta['reqs']
+        product = response.meta['product']
+        try:
+            currency = re.findall('priceCurrency=(.*?),',str(product['price']))[0]
+        except:
+            currency = 'CAD'
+        data = json.loads(response.body_as_unicode())
+        for store in data['products'][0]['results']:
+            try:
+                if store['availability'] != '70': #Not in store status
+                    price = store['minCurrentPrice']
+                else:
+                    price = None
+            except KeyError:
+                price = None
+                continue
+
+            if price:
+                product['price'] = Price(priceCurrency=currency, price=str(price))
+                break
+
+        if price:
+            if product['is_out_of_stock']:
+                    product['is_in_store_only'] = True
+        else:
+            product['is_in_store_only'] = False
+
+        if reqs:
+            return self.send_next_request(reqs, response)
+
+        return product

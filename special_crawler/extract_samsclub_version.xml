@@ -33,12 +33,13 @@
     <field name="brand" version="1.1"></field>
     <field name="image_urls" version="1.1"></field>
     <field name="image_count" version="1.1"></field>
-    <field name="review_count" version="1.1"></field>
-    <field name="average_review" version="1.2"></field>
-    <field name="max_review" version="1.1"></field>
-    <field name="min_review" version="1.1"></field>
-    <field name="reviews" version="1.1"></field>
+    <field name="review_count" version="1.2"></field>
+    <field name="average_review" version="1.3"></field>
+    <field name="max_review" version="1.2"></field>
+    <field name="min_review" version="1.2"></field>
+    <field name="reviews" version="1.2"></field>
     <field name="variants" version="1.1"></field>
     <field name="no_longer_available" version="1.1"></field>
+    <field name="assembled_size" version="1.2"></field>
     <field name="canonical_link" version="1.1"></field>
 </fields>

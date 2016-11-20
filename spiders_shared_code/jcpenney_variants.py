@@ -3,7 +3,7 @@ import json
 import lxml.html
 import itertools
 import re
-from lxml import html, etree
+from lxml import html
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -119,7 +119,7 @@ class JcpenneyVariants(object):
                         re.search("pp\d+", prev_list["img"]):
                     prev_list["img"] = is_empty(
                         re.findall(
-                            "imageName\s+\=\s+\"([^\"]*)", 
+                            "imageName\s+\=\s+\"([^\"]*)",
                             html.tostring(self.tree_html)
                         ),
                         ""
@@ -132,7 +132,7 @@ class JcpenneyVariants(object):
                 ))
                 if prev_list:
                     images_list.append(prev_list)
-            
+
             #lot attribute
             lot_list = self.tree_html.xpath("//ul[@id='" + product_id + "Lot']//li[not(@class='displayNone')]/a/@title")
             lot_li_list = self.tree_html.xpath("//ul[@id='" + product_id + "Lot']//li[not(@class='displayNone')]")

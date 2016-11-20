@@ -14,13 +14,11 @@ from scrapy import Request, Selector, FormRequest
 from scrapy.log import ERROR, WARNING
 from pyvirtualdisplay import Display
 
-from product_ranking.items import RelatedProduct, BuyerReviews
+from product_ranking.items import RelatedProduct
 from product_ranking.items import SiteProductItem, Price, LimitedStock
-from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
-from product_ranking.spiders import FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set_value, populate_from_open_graph
+from product_ranking.spiders import cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 

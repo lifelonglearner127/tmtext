@@ -1,20 +1,17 @@
 # -*- coding: utf-8 -*-#
 
 import json
-import re
 import string
-import itertools
-import urllib
+import requests
 
-from scrapy.http import FormRequest, Request
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy.http import Request
+from scrapy.log import INFO
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
-    cond_set_value
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.spiders import BaseProductsSpider, cond_set_value
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.guess_brand import guess_brand_from_first_words
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -34,19 +31,11 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
                    '20descending?keywords={search_term}&' \
                    'Env=BASE&callingPage=productSearchResultPage'
 
-    REVIEWS_URL = 'http://api.bazaarvoice.com/data/batch.json' \
-                  '?passkey=291coa9o5ghbv573x7ercim80&apiversion=5.5' \
-                  '&displaycode=5681-en_us&resource.q0=reviews' \
-                  '&filter.q0=isratingsonly%3Aeq%3Afalse' \
-                  '&filter.q0=productid%3Aeq%3A{product_id}' \
-                  '&filter.q0=contentlocale%3Aeq%3Aen_US' \
-                  '&sort.q0=helpfulness%3Adesc%' \
-                  '2Ctotalpositivefeedbackcount%3Adesc' \
-                  '&stats.q0=reviews&filteredstats.q0=reviews' \
-                  '&include.q0=authors%2Cproducts%2Ccomments' \
-                  '&filter_reviews'
-
-
+    # Simplified bazaarapi url, returns both full review stats and filtered stats
+    # https://developer.bazaarvoice.com/docs/read/conversations/reviews/display/5_4
+    REVIEWS_URL = 'http://api.bazaarvoice.com/data/reviews.json?apiversion=5.5&passkey=291coa9o5ghbv573x7ercim80&' \
+                  'Filter=ProductId:eq:{product_id}&Include=Products&Stats=Reviews&filter=contentlocale:eq:en_US&' \
+                  'filteredstats=reviews'
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
@@ -72,10 +61,10 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
         cond_set_value(product, 'title', title)
 
         # Parse brand
-        brand = self.parse_brand(response)
+        brand = self.parse_brand(title)
         cond_set_value(product, 'brand', brand)
 
-       # Parse price
+        # Parse price
         price = self.parse_price(response)
         cond_set_value(product, 'price', price)
 
@@ -127,10 +116,12 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
 
             if data:
                 try:
-                    js = data["BatchedResults"]['q0']['Includes']['Products'][product_id]['ReviewStatistics']
+                    # Need to use FilteredReviewStatistics as on website.
+                    # shows only reviews that match current locale
+                    js = data['Includes']['Products'][product_id]['FilteredReviewStatistics']
                     total = js['TotalReviewCount']
                     average = js['AverageOverallRating']
-                    stars = data["BatchedResults"]['q0']['Includes']['Products'][product_id]['ReviewStatistics']['RatingDistribution']
+                    stars = js['RatingDistribution']
 
                     for star in stars:
                        rating_by_star[str(star['RatingValue'])] = star['Count']
@@ -158,21 +149,24 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
         if title:
             return title
 
-    def parse_brand(self, response):
-        brand = is_empty(response.xpath(
-            '//div[@class="shell-header-brand"]/a/@title').extract())
-
+    def parse_brand(self, title):
+        brand = guess_brand_from_first_words(title)
+        # brand = is_empty(response.xpath(
+        #     '//div[@class="shell-header-brand"]/a/@title').extract())
         return brand
 
     def parse_price(self, response):
         price = is_empty(response.xpath(
-            '//p[@class="current-price"]/span/text()').re(r'(\d+\.?\d+)'))
+            '//p[@class="current-price"]/span/text()').re(r'([\d\.\,]+)'))
+
         currency = is_empty(response.xpath(
             '//meta[@itemprop="priceCurrency"]/@content').extract())
-
         if not price:
             price = is_empty(response.xpath(
-                                   '//span[@itemprop="price"]/text()').re(r'Starting from .(\d+\.?\d+)'))
+                '//span[@itemprop="price"]/text()').re(r'([\d\.\,]+)'))
+        if not price:
+            price = is_empty(response.xpath(
+                                   '//span[@itemprop="price"]/text()').re(r'Starting from .([\d\.\,]+)'))
 
         if price and currency:
             price = Price(price=price, priceCurrency=currency)
@@ -183,6 +177,12 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
     def parse_image_url(self, response):
         image_url = is_empty(response.xpath(
             '//div[@class="image-container"]/@data-src').extract())
+        if not image_url:
+            image_url = is_empty(response.xpath(
+                './/*[@class="product-hero base-hero"]/li[1]/img/@src').extract())
+        if not image_url:
+            image_url = is_empty(response.xpath(
+                './/*[@data-class="poster"]/@data-src').extract())
         if image_url:
             return image_url
 
@@ -193,24 +193,70 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
         return description
 
     def parse_variant(self, response):
-        # options = {}
-        # color ={}
-        # color_list = response.xpath('//ul[contains(@class, "product-colors")]/li[contains(@class, "selected")]/a/@title').extract()
-        # print '*****************',color_list
-        # color_pid = response.xpath('//ul[contains(@class, "product-colors")]/li/a/@var-pid').extract()
-        # data4 = response.xpath('//ul[contains(@class, "option-list")]/li/a//text()').extract()
-        # data4 = [i for i in data4 if i != u'\n' and i != u'*']
-        # data_pid = response.xpath('//ul[contains(@class, "option-list")]/li/@data-pid').extract()
-        # # print data_pid, data4
-        # if color_list:
-        #     for i, items in enumerate(color_pid):
-        #         color[items] = color_list[i]
-        # if data_pid:
-        #     for i, items in enumerate(data_pid):
-        #         options[items] = data4[i]
-        # print options, color
+        variants = []
+        price_blocks = response.xpath(
+            '//div[contains(@class, "price-block")]'
+            '//p[contains(@class,"current-price")]')
+        prices = []
+        for p_block in price_blocks:
+            price = p_block.xpath('.//text()').extract()
+            price = [x for x in price if len(x.strip()) > 0]
+            price = "".join(price)
+            prices.append(price)
 
-        return 'variant'
+        titles = response.xpath(
+            '//div[contains(@class,"variation-container")]//li//a/@title'
+        ).extract()
+        if len(titles) < 1:
+            titles = response.xpath('//div[contains(@class,"variation-container")]'
+                                    '//li//a/@data-variation-title').extract()
+
+        urls = response.xpath(
+            '//div[contains(@class,"btnSubmitSpinContainer")]//'
+            'a[contains(@class,"buyBtn_AddtoCart")]/@href').extract()
+
+        selected = response.xpath(
+            '//div[contains(@class,"variation-container")]//li').extract()
+        data_pids = response.xpath(
+            '//div[contains(@class,"variation-container")]//li/@data-pid'
+        ).extract()
+        if len(selected) > 0 and len(data_pids) == 0:
+            data_pids = response.xpath(
+                '//div[contains(@class,"variation-container")]//li/a/@var-pid'
+            ).extract()
+
+        idx = 0
+        for price in prices:
+            variant = {}
+            if idx >= len(titles) or idx >= len(urls):
+                break
+            variant["price"] = price
+            variant["title"] = titles[idx]
+            variant["url"] = urls[idx]
+            if "class='active'" in selected[idx] \
+                    or 'class="active"' in selected[idx] \
+                    or 'class="selected"' in selected[idx] \
+                    or "class='selected'" in selected[idx]:
+                variant["selected"] = True
+            else:
+                variant["selected"] = False
+
+            if "https://www.microsoftstore.com/store/msusa/en_US/pdp/Lenovo-Yoga-900-Signature-Edition-2-in-1-PC/productID.334955000" == response._url:
+                pass
+
+            in_stock_url = "https://www.microsoftstore.com/store?Action=DisplayPage&" \
+                           "Locale=en_US&SiteID=msusa&id=ProductInventoryStatusXmlPage&" \
+                           "productID=%s" % data_pids[idx]
+            r = requests.get(in_stock_url)
+            if "PRODUCT_INVENTORY_OUT_OF_STOCK" in r.text:
+                variant["in_stock"] = False
+            else:
+                variant["in_stock"] = True
+
+            variants.append(variant)
+            idx += 1
+
+        return variants
 
     def send_next_request(self, reqs, response):
         """

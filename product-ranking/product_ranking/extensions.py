@@ -11,10 +11,8 @@ from socket import error as socket_error
 from scrapy import signals
 from scrapy.exceptions import NotConfigured
 from scrapy.xlib.pydispatch import dispatcher
-import boto
 from boto.s3.connection import S3Connection
 from s3peat import S3Bucket, sync_to_s3  # pip install s3peat
-import workerpool  # pip install workerpool
 
 import cache
 import settings
@@ -31,9 +29,15 @@ except ImportError:
         except ImportError:
             print 'ERROR: CAN NOT IMPORT MONITORING PACKAGE!'
 
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(CWD, '..', '..', 'deploy'))
 
-amazon_public_key = 'AKIAIKTYYIQIZF3RWNRA'
-amazon_secret_key = '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'
+try:
+    from cache_layer.cache_service import SqsCache
+except ImportError:
+    print 'ERROR: CANNOT IMPORT SQSCACHE PACKAGE!'
+
+
 bucket_name = 'spiders-cache'
 
 
@@ -139,11 +143,44 @@ class StatsCollector(object):
         return cls(crawler)
 
 
+class RequestsCounter(object):
+
+    __sqs_cache = None
+
+    def __init__(self, *args, **kwargs):
+        dispatcher.connect(RequestsCounter.__handler, signals.spider_closed)
+
+    @classmethod
+    def get_sqs_cache(cls):
+        if cls.__sqs_cache is None:
+            cls.__sqs_cache = SqsCache()
+        return cls.__sqs_cache
+
+    @staticmethod
+    def __handler(spider, reason):
+        spider_stats = spider.crawler.stats.get_stats()
+        try:
+            request_count = int(spider_stats.get('downloader/request_count'))
+        except (ValueError, TypeError):
+            request_count = 0
+        if request_count:
+            try:
+                RequestsCounter.get_sqs_cache().db.incr(
+                    RequestsCounter.get_sqs_cache().REDIS_REQUEST_COUNTER,
+                    request_count
+                )
+            except Exception as e:
+                print 'ERROR WHILE STORE REQUEST METRICS. EXP: %s', e
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler)
+
+
 def _s3_cache_on_spider_close(spider, reason):
     utcnow = datetime.datetime.utcnow()
     # upload cache
-    bucket = S3Bucket(bucket_name, amazon_public_key, amazon_secret_key,
-                      public=False)
+    bucket = S3Bucket(bucket_name, public=False)
     folder_path = cache.get_partial_request_path(
         settings.HTTPCACHE_DIR, spider, utcnow)
     if not os.path.exists(folder_path):
@@ -222,7 +259,7 @@ class S3CacheDownloader(object):
                                 _load_from)
         # download s3 cache
         # TODO: speed up by using cache_map from DB!
-        conn = S3Connection(amazon_public_key, amazon_secret_key)
+        conn = S3Connection()
         bucket = conn.get_bucket(bucket_name)
         partial_path = cache.get_partial_request_path(
             settings.HTTPCACHE_DIR, crawler._spider, _load_from)
@@ -331,9 +368,8 @@ class IPCollector(object):
 
 
 if __name__ == '__main__':
-    from pprint import pprint
     from boto.s3.connection import S3Connection
-    conn = S3Connection(amazon_public_key, amazon_secret_key)
+    conn = S3Connection()
     bucket = conn.get_bucket(bucket_name)
     if 'clear_bucket' in sys.argv:  # be careful!
         if raw_input('Delete all files? y/n: ').lower() == 'y':
@@ -353,10 +389,7 @@ if __name__ == '__main__':
                     print ' '*8, searchterm
     else:
         # list all files in bucket, for convenience
-        CWD = os.path.dirname(os.path.abspath(__file__))
-        sys.path.append(os.path.join(CWD, '..', '..', 'deploy',
-                                     'sqs_ranking_spiders'))
-        from list_all_files_in_s3_bucket import list_files_in_bucket
-        for f in (list_files_in_bucket(
-                amazon_public_key, amazon_secret_key, bucket_name)):
+        from sqs_ranking_spiders.list_all_files_in_s3_bucket import \
+            list_files_in_bucket
+        for f in (list_files_in_bucket(bucket_name)):
             print f.key

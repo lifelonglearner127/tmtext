@@ -11,6 +11,7 @@ from scrapy.log import INFO
 from scrapy import Request
 from scrapy import Selector
 from scrapy.selector import HtmlXPathSelector
+from scrapy.conf import settings
 
 from product_ranking.items import SiteProductItem, RelatedProduct, \
     Price, BuyerReviews
@@ -48,12 +49,21 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
 
     settings = MacysValidatorSettings
 
+    use_proxies = True
+
     def __init__(self, sort_mode='default', *args, **kwargs):
         super(MacysProductsSpider, self).__init__(*args, **kwargs)
+        #settings.overrides['CRAWLERA_ENABLED'] = True
+        RETRY_HTTP_CODES = settings['RETRY_HTTP_CODES']
+        RETRY_HTTP_CODES.append(507)
+        settings.overrides['RETRY_HTTP_CODES'] = RETRY_HTTP_CODES
+        if self.product_url:
+            self.use_proxies = False  # turn off proxies for individual urls
         self.sort_mode = self.SORT_MODES.get(sort_mode, 'ORIGINAL')
 
     def start_requests(self):  # Stolen from walmart
         """Generate Requests from the SEARCH_URL and the search terms."""
+        #settings.overrides['CRAWLERA_ENABLED'] = True
         self.url_formatter.defaults['page'] = 1
         for st in self.searchterms:
             yield Request(
@@ -88,6 +98,7 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
             yield self._create_from_redirect(response)
         else:
             for item in super(MacysProductsSpider, self).parse(response):
+                #settings.overrides['CRAWLERA_ENABLED'] = False
                 if isinstance(item, Request):
                     item.meta['dont_redirect'] = True
                     item.meta['handle_httpstatus_list'] = [302]
@@ -182,11 +193,41 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         else:
             return None
 
+    def parse_product(self, response):
+        is_collection = response.xpath(".//*[@id='memberItemsTab']/a[@href='#collectionItems']"
+                                       "/*[contains(text(),'Choose Your Items')]")
+        if is_collection:
+            self.log("{} - item is collection, dropping the item".format(response.url), INFO)
+            return
+
+        product = response.meta['product']
+        self._populate_from_html(response, product)
+        self._get_model_from_title(product)
+
+        # Request optional fields
+        if self.options:
+            response.meta['options'] = set(self.options)
+            for option in self.options:
+                yield getattr(self, '_request_%s' % option)(response)
+        else:  # No optional fields required
+            yield product
+
+    # def parse_product(self, response):
+    #     is_collection = response.xpath(".//*[@id='memberItemsTab']/a[@href='#collectionItems']"
+    #                                    "/*[contains(text(),'Choose Your Items')]")
+    #     if is_collection:
+    #         self.log("{} - item is collection, dropping the item".format(response.url), INFO)
+    #         return
+    #     else:
+    #         yield super(MacysProductsSpider, self).parse_product(response)
+
+
     def _populate_from_html(self, response, product):
         """
         @returns items 1 1
         @scrapes title description locale
         """
+
         product = response.meta.get('product', SiteProductItem())
 
         if u'>this product is currently unavailable' in response.body_as_unicode().lower():
@@ -196,6 +237,10 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         mv = MacysVariants()
         mv.setupSC(response)
         product['variants'] = mv._variants()
+        if product.get('variants'):
+            # One-variation product
+            if len(product.get('variants')) == 1:
+                product['upc'] = product.get('variants')[0]['upc']
 
         if response.xpath('//li[@id="memberItemsTab"]').extract():
             price = response.xpath(
@@ -246,7 +291,12 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
             title = response.xpath('//*[contains(@class, "productTitle")]'
                                    '[contains(@itemprop, "name")]/text()').extract()
         if title:
-            cond_replace(product, 'title', [title[0].strip()])
+            cond_replace(product, 'title', [''.join(title).strip()])
+        if not product.get('title', None):
+            title = response.xpath('//h1[contains(@class,"productName")]//text()').extract()
+            if title:
+                product['title'] = title[0].strip()
+
         path = '//*[@id="memberProductDetails"]/node()[normalize-space()]'
         desc = response.xpath(path).extract()
         if not desc:
@@ -268,6 +318,8 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
             ).extract()
         cond_set(product, 'locale', locale)
         brand = response.css('#brandLogo img::attr(alt)').extract()
+        if not brand:
+            brand = response.xpath('.//*[@class="productTitle"]/a[@class="brandNameLink"]/text()').extract()
         if not brand:
             brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
             brand = [brand]

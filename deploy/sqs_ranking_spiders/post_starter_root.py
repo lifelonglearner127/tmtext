@@ -72,6 +72,10 @@ def main():
     _install_system_package('chromium-browser')
     _install_system_package('firefox')
     _install_system_package('phantomjs')
+    _install_system_package('python-setuptools')
+    _install_system_package('python-distutils-extra')
+    _install_system_package('python-apt')
+    # TODO: phantomjs2
     os.system(
         "cd ~"
         " && wget http://chromedriver.storage.googleapis.com/2.9/chromedriver_linux64.zip"
@@ -79,12 +83,28 @@ def main():
         " && sudo mv chromedriver /usr/sbin/"
         " && sudo chmod +x /usr/sbin/chromedriver"
     )
+    # download & install phantomjs2
+    os.system(
+        "cd ~"
+        " && wget https://github.com/Pyppe/phantomjs2.0-ubuntu14.04x64/raw/master/bin/phantomjs"
+        " && sudo mv phantomjs /usr/sbin/phantomjs2"
+        " && sudo chmod +x /usr/sbin/phantomjs2"
+    )
     # disable marketplaces (they are too slow)
     disabler = '/tmp/stop_marketplaces'
     os.system('echo "1" > %s' % disabler)
 
 
+def remove_aws_credentials(keys=('/home/spiders/.aws/credentials', )):
+    """ Remove local AWS credentials file since we've switched to metadata-based keys """
+    for key in keys:
+        if os.path.exists(key):
+            print 'AWS credentials removed:', key
+            os.remove(key)
+
+
 if __name__ == '__main__':
+    remove_aws_credentials()
     if not can_run():
         sys.exit()
     main()

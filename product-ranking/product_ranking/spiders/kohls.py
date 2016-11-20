@@ -3,12 +3,11 @@ from __future__ import division, absolute_import, unicode_literals
 
 import re
 import json
-import string
 import urllib
 
 from scrapy.http import Request
 from scrapy import Selector
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy.log import WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
@@ -48,8 +47,10 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
     # use_proxies = True
 
-    SEARCH_URL = "http://www.kohls.com/search.jsp?search={search_term}&" \
+    SEARCH_URL = "http://www.kohls.com/search.jsp?N=0&search={search_term}&" \
                  "submit-search=web-regular&S={sort_mode}&PPP=60&WS={start}&exp=c"
+
+    SEARCH_URL_AJAX = "http://www.kohls.com/search.jsp?N=0&search={search_term}&PPP=60&WS=0&srp=e2&ajax=true&gNav=false"
 
     SORTING = None
 
@@ -82,6 +83,7 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
 
     def __init__(self, sort_mode=None, *args, **kwargs):
         self.start_pos = 0
+        #settings.overrides['CRAWLERA_ENABLED'] = True
         if sort_mode:
             if sort_mode.lower() not in self.SORT_MODES:
                 self.log('"%s" not in SORT_MODES')
@@ -130,8 +132,14 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         prod['url'] = response.url
 
         if self._is_not_found(response):
-            prod['not_found'] = True
-            return prod
+            if response.xpath('//div[@id="content"]/@class')[0].extract() == 'pdp_outofstockproduct':
+                prod = response.meta['product']
+                prod['title'] = response.xpath('//div[@id="content"]//b/text()')[0].extract()
+                prod['is_out_of_stock'] = True
+                return prod
+            else:
+                prod['not_found'] = True
+                return prod
 
         kv = KohlsVariants()
         kv.setupSC(response)
@@ -175,17 +183,19 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                 response.xpath('//div[@id="easyzoom_wrap"]/div/a/img/@src').extract()
             )
         )
-
-        upc_codes = []
-        upc_codes_from_script = response.xpath(
-            '//script[contains(text(), "allVariants")]'
-        ).re('\"skuUpcCode\":\"(\d+)\"')
-
-        for upc in upc_codes_from_script:
-            if upc not in upc_codes:
-                upc_codes.append(upc)
-
-        product['upc'] = ', '.join(upc_codes)
+        if not product.get('variants'):
+            try:
+                product_info_json = \
+                response.xpath("//script[contains(text(), 'var productJsonData = {')]/text()").extract()
+                product_info_json = product_info_json[0].strip() if product_info_json else ''
+                start_index = product_info_json.find("var productJsonData = ") + len("var productJsonData = ")
+                end_index = product_info_json.rfind(";")
+                product_info_json = product_info_json[start_index:end_index].strip()
+                product_info_json = json.loads(product_info_json)
+                upc = product_info_json.get('productItem').get('skuDetails')[0].get('skuUpcCode')
+            except:
+                upc = None
+            product['upc'] = upc
 
         self._set_price(response, product)
 
@@ -243,10 +253,22 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         return title
 
     def parse_description(self, response):
-        description = is_empty(response.xpath(
-            '//div[@class="prod_description1"]/'
-            'div[@class="Bdescription"]/p/text() | '
-            '//meta[@name="description"][string-length(@content)>0]/@content').extract())
+        try:
+            product_info_json = \
+                response.xpath("//script[contains(text(), 'var productJsonData = {')]/text()").extract()
+            product_info_json = product_info_json[0].strip() if product_info_json else ''
+            start_index = product_info_json.find("var productJsonData = ") + len("var productJsonData = ")
+            end_index = product_info_json.rfind(";")
+            product_info_json = product_info_json[start_index:end_index].strip()
+            product_info_json = json.loads(product_info_json)
+
+            description = product_info_json["productItem"]["accordions"]["productDetails"]["content"]
+            search = re.search(r'<(p).*?>(.*?)</\1>.*?', description)
+            if search:
+                description = search.group(2)
+        except:
+            description = is_empty(response.xpath(
+                '//meta[@name="description"][string-length(@content)>0]/@content').extract())
 
         return description
 
@@ -444,6 +466,36 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
                        dont_filter=True)
 
     def _scrape_product_links(self, response):
+        # V2
+        prod_json_data = re.search('pmpSearchJsonData(.*?)</script>', response.body_as_unicode(), re.MULTILINE | re.DOTALL)
+        if prod_json_data:
+            prod_json_data = prod_json_data.group(1).strip()
+            if prod_json_data.startswith('='):
+                prod_json_data = prod_json_data[1:].strip()
+            if prod_json_data.endswith(';'):
+                prod_json_data = prod_json_data[0:-1].strip()
+            prod_json_data = json.loads(prod_json_data)
+            collected_products = 0
+            for product in prod_json_data.get('productInfo', {}).get('productList', []):
+                prod_url = product.get('prodSeoURL', None)
+                if prod_url:
+                    if prod_url.startswith('/'):
+                        prod_url = 'http://www.' + self.allowed_domains[0] + prod_url
+                    collected_products += 1
+                    product = SiteProductItem()
+                    new_meta = response.meta.copy()
+                    new_meta['product'] = product
+                    new_meta['handle_httpstatus_list'] = [404]
+                    yield Request(
+                        prod_url,
+                        callback=self.parse_product,
+                        meta=new_meta,
+                        errback=self._handle_product_page_error), product
+            if collected_products:
+                self.per_page = collected_products
+                return
+
+        # var pmpSearchJsonData = {
         prod_blocks = response.xpath('//ul[@id="product-matrix"]/li')
 
         if prod_blocks:
@@ -505,6 +557,13 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         return failure.request.meta['product']
 
     def _scrape_total_matches(self, response):
+        # V2
+        count = re.search('productInfo\".*?count\":(.*?,)', response.body, re.MULTILINE)
+        if count:
+            count = count.group(1).replace(',', '').strip()
+            if count and count.isdigit():
+                self.total = int(count)
+                return self.total
         if response.xpath('//div[@class="search-failed"]').extract():
             print('Not Found')
             return 0

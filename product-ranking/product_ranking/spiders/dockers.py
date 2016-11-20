@@ -2,7 +2,6 @@ from __future__ import division, absolute_import, unicode_literals
 
 import json
 import re
-import urllib
 import time
 import urlparse
 
@@ -13,14 +12,16 @@ from pyvirtualdisplay import Display
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    FLOATING_POINT_RGEX, cond_set_value
+    cond_set_value
 from product_ranking.validation import BaseValidator
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from scrapy import Selector
 from spiders_shared_code.dockers_variants import DockersVariants
 from product_ranking.validators.dockers_validator import DockersValidatorSettings
+from product_ranking.statistics import report_statistics
 
-is_empty =lambda x,y=None: x[0] if x else y
+is_empty = lambda x,y=None: x[0] if x else y
+
 
 def is_num(s):
     try:
@@ -70,6 +71,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                       "2Fwomens-jeans%2Fp%2F095450043&plk=&"
 
     use_proxies = True
+    handle_httpstatus_list = [404]
 
     def __init__(self, *args, **kwargs):
         self.br = BuyerReviewsBazaarApi(called_class=self)
@@ -116,10 +118,11 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
         return result
 
     @staticmethod
-    def last_three_digits_the_same(lst):
-        if len(lst) < 4:
+    def last_six_digits_the_same(lst):
+        print lst
+        if len(lst) < 7:
             return
-        return lst[-1] == lst[-2] == lst[-3]
+        return len(set(lst[-6:-1])) == 1  # if all elements are the same, set's length will be 1
 
     def parse(self, response):
         proxy = response.request.meta.get('proxy', None)
@@ -147,15 +150,16 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             while True:
                 try:
                     driver.execute_script("scrollTo(0,50000)")
-                    time.sleep(6)
+                    time.sleep(10)
                     product_links = self._get_product_links_from_serp(driver)
                     collected_products_len.append(len(product_links))
-                    if self.last_three_digits_the_same(collected_products_len):
-                        break  # last three iterations collected equal num of products
+                    if self.last_six_digits_the_same(collected_products_len):
+                        break  # last six iterations collected equal num of products
                     if len(product_links) > self.quantity:
                         break
                     print 'Collected %i product links' % len(product_links)
                     self.log('Collected %i product links' % len(product_links))
+                    self.log('Statistics: %s' % report_statistics())
                 except Exception as e:
                     print str(e)
                     self.log('Error while doing pagination %s' % str(e), WARNING)
@@ -178,6 +182,14 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
     def parse_product(self, response):
         meta = response.meta.copy()
         product = meta.get('product', SiteProductItem())
+        if response.status == 404 or "www.dockers.com/US/en_US/error" in response.url:
+            product.update({"not_found": True})
+            product.update({"no_longer_available": True})
+            product.update({"locale": 'en-US'})
+            return product
+        else:
+            product.update({"no_longer_available": False})
+
         reqs = []
         meta['reqs'] = reqs
 
@@ -320,8 +332,10 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_title(self, response):
         title = response.xpath(
-            '//h1[contains(@class, "title")]/text()').extract()
-
+            '//meta[contains(@property,"og:title")]/@content').extract()
+        if not title:
+            title = response.xpath(
+                '//meta[contains(@name,"og:title")]/@content').extract()
         return title
 
     def parse_data(self, response):
@@ -381,18 +395,15 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             for v in self.js_data['sku'].values():
                 upc = v['upc']
             upc = upc[-12:]
-
             if len(upc) < 12:
                 count = 12-len(upc)
                 upc = '0'*count+upc
-
             return upc
 
     def parse_sku(self, response):
         if self.js_data:
             for v in self.js_data['sku'].values():
                 skuid = v['skuid']
-
             return skuid
 
     def parse_price(self, response):

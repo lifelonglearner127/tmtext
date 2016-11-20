@@ -1,6 +1,6 @@
 #
 # Use for debugging only!
-# Usage: just open web-browser and type http://localhost:5000/get_data?url=http://www.amazon.in/Philips-AquaTouch-AT890-16-Shaver/dp/B009H0B8FU
+# Usage: just open a web-browser and type http://localhost:5000/get_data?url=http://www.amazon.in/Philips-AquaTouch-AT890-16-Shaver/dp/B009H0B8FU
 #
 
 import os
@@ -342,6 +342,21 @@ def get_data_ajax():
 def get_data():
     url = request.args.get('url', '').strip()
     spider = request.args.get('spider', '').strip()
+    # Parse additional argument from url and skip static arguments
+    skip_args = ['url', 'spider']
+    add_args_to_url = []
+    for arg in request.args:
+        if arg in skip_args:
+            continue
+        value = request.args.get(arg, '').strip()
+        if value:
+            add_args_to_url.append('{}={}'.format(arg, value))
+        else:
+            add_args_to_url.append(arg)
+    if add_args_to_url:
+        url += '&'
+        url += '&'.join(add_args_to_url)
+    # End parse url
     if not spider:
         spider = _find_spider_by_url(url)
     if isinstance(spider, (str, unicode)):

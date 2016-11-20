@@ -12,9 +12,10 @@
     <field name="search_term_in_title_interleaved" version="1.0"></field>
     <field name="search_term_in_title_partial" version="1.0"></field>
     <field name="site" version="1.0"></field>
-    <field name="title" version="1.0"></field>
+    <field name="title" version="1.1"></field>
     <field name="upc" version="1.0"></field>
     <field name="url" version="1.0"></field>
     <field name="variants" version="1.0"></field>
     <field name="not_found" version="1.0"></field>
+    <field name="marketplace" version="1.1"></field>
 </fields>

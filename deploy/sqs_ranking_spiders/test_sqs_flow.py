@@ -20,15 +20,11 @@ from sqs_ranking_spiders import QUEUES_LIST
 
 try:
     # try local mode (we're in the deploy dir)
-    from sqs_ranking_spiders.remote_instance_starter import (
-        AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_BUCKET_NAME)
-    from sqs_ranking_spiders.add_task_to_sqs import read_access_and_secret_keys
+    from sqs_ranking_spiders.remote_instance_starter import AMAZON_BUCKET_NAME
 
 except ImportError:
     # we're in /home/spiders/repo
-    from repo.remote_instance_starter import (
-        AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY, AMAZON_BUCKET_NAME)
-    from repo.add_task_to_sqs import read_access_and_secret_keys
+    from repo.remote_instance_starter import AMAZON_BUCKET_NAME
 
 
 MAX_WORKING_TIME = 30  # 30 mins
@@ -38,12 +34,7 @@ DELETE_MESSAGES = True  # set False to avoid deleting messages in output queues
 
 
 def _get_conn():
-    conf = read_access_and_secret_keys()
-    conn = boto.sqs.connect_to_region(
-        REGION,
-        aws_access_key_id=conf[0],
-        aws_secret_access_key=conf[1]
-    )
+    conn = boto.sqs.connect_to_region(REGION)
     return conn
 
 
@@ -106,7 +97,7 @@ def read_msgs_until_task_id_appears(task_id, queue_name, max_wait_time=30*60):
 
 
 def download_s3_file(bucket, s3_path, local_path):
-    aws_connection = S3Connection(AMAZON_ACCESS_KEY, AMAZON_SECRET_KEY)
+    aws_connection = S3Connection()
     bucket = aws_connection.get_bucket(bucket)
     key = bucket.get_key(s3_path)
     key.get_contents_to_filename(local_path)

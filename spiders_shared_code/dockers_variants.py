@@ -1,10 +1,7 @@
 import lxml.html
-from itertools import product
 import json
 import re
-from lxml import html, etree
 import itertools
-import yaml
 
 
 class DockersVariants(object):
@@ -79,7 +76,7 @@ class DockersVariants(object):
                     if color_list:
                         if buy_stack_json["sku"][variant_combination]["colorid"] not in buy_stack_json["colorid"]:
                             continue
-
+                        variant_item['colorid'] = buy_stack_json["sku"][variant_combination]['colorid']
                         properties["color"] = buy_stack_json["colorid"][buy_stack_json["sku"][variant_combination]["colorid"]]["finish"]["title"]
                         variant_item["url"] = product_url[:product_url.rfind("/") + 1] + buy_stack_json["sku"][variant_combination]["colorid"]
                         value_list.append(properties["color"])
