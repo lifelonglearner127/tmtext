@@ -181,7 +181,6 @@ class Scraper():
             "body_copy",
             "body_copy_links",
             "redirect", # 1/0 if page is a redirect
-            "redirect_url",
 
             # reviews
             "review_count", # total number of reviews, int

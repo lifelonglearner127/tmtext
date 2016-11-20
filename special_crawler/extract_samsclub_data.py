@@ -47,6 +47,7 @@ class SamsclubScraper(Scraper):
     pdf_urls = None
     failure_type = None
     items = None
+    redirect = 0
     sv = SamsclubVariants()
 
     def __init__(self, **kwargs):
@@ -108,6 +109,8 @@ class SamsclubScraper(Scraper):
                 return True
 
             r = requests.get(redirect_url, headers=self.HEADERS)
+
+            self.redirect = 1
 
             self.product_page_url = redirect_url
             self.page_raw_text = r.content
@@ -757,14 +760,7 @@ class SamsclubScraper(Scraper):
         return return_links
 
     def _redirect(self):
-        if self._redirect_url():
-            return 1
-        return 0
-
-    def _redirect_url(self):
-        redirect = self.tree_html.xpath('//meta[@http-equiv="Refresh"]/@content')
-        if redirect:
-            return re.search('url=(.*)', redirect[0]).group(1)
+        return self.redirect
 
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -1106,7 +1102,6 @@ class SamsclubScraper(Scraper):
         "body_copy" : _body_copy, \
         "body_copy_links" : _body_copy_links, \
         "redirect" : _redirect, \
-        "redirect_url" : _redirect_url, \
         "image_alt_text": _image_alt_text, \
         "image_alt_text_len": _image_alt_text_len, \
 
