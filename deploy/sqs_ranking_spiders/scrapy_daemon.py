@@ -115,7 +115,7 @@ REQUIRED_SIGNALS = [
     [SIGNAL_SCRIPT_OPENED, 2 * 60],  # wait for signal that script started
     [SIGNAL_SPIDER_OPENED, 1 * 60],
     [SIGNAL_SPIDER_CLOSED, 24 * 60 * 60],
-    [SIGNAL_SCRIPT_CLOSED, 1 * 60]
+    [SIGNAL_SCRIPT_CLOSED, 1 * 160]
 ]
 
 # optional extension signals
@@ -762,6 +762,19 @@ class ScrapyTask(object):
         compress_multiple_files(output_fname, *log_files)
         return output_fname
 
+    @staticmethod
+    def _wait_for_screenshot_job_to_finish(output_path):
+        logger.warning('Screenshot output file does not exist, or is empty, waiting 120 seconds')
+        for x in xrange(12):  # wait max 120 seconds
+            time.sleep(10)
+            if os.path.exists(output_path + '.screenshot.jl'):
+                # check file size because empty files seem to get created immediately
+                if os.path.getsize(output_path + '.screenshot.jl') > 10:
+                    return True
+        logger.error('Screenshot output file does not exist, or is empty, giving up: %s' % (
+            output_path + '.screenshot.jl'))
+        return False
+
     def _finish(self):
         """
         called after scrapy process finished, or failed for some reason
@@ -802,16 +815,9 @@ class ScrapyTask(object):
         if self.is_screenshot_job():
             jl_results_path = output_path + '.screenshot.jl'
             url2screenshot_log_path = output_path+'.screenshot.log'
-
-            if not os.path.exists(jl_results_path) or os.path.exists(
-                    jl_results_path) and not os.path.getsize(jl_results_path):
-                logger.warning('Screenshot output file does not exist, or is empty waiting 90 seconds')
-                # screenshot task not finished yet? wait 90 seconds
-                time.sleep(90)
-            if not os.path.exists(jl_results_path) or os.path.exists(
-                    jl_results_path) and not os.path.getsize(jl_results_path):
-                logger.error('Screenshot output file does not exist, or is empty, giving up: %s' % (
-                    jl_results_path))
+            screenshot_finished = self._wait_for_screenshot_job_to_finish(output_path=output_path)
+            if not screenshot_finished:
+                logger.info('Screenshot job isnt finished, nothing to upload')
             else:
                 try:
                     put_file_into_s3(
@@ -1135,7 +1141,6 @@ class ScrapyTask(object):
         checks signal to finish in allowed time, otherwise raises error
         and stops scrapy process, logs duration for given signal
         """
-        start_time = datetime.datetime.utcnow()
         while not self._stop_signal:  # run through all signals
             step_time_start = datetime.datetime.utcnow()
             next_signal = self._get_next_signal(step_time_start)
@@ -1149,8 +1154,7 @@ class ScrapyTask(object):
             except FlowError as ex:
                 self._signal_failed(next_signal, datetime.datetime.utcnow(), ex)
                 break
-        finish_time = datetime.datetime.utcnow()
-        self.finish_date = datetime_difference(finish_time, start_time)
+        self.finish_date = datetime.datetime.utcnow()
         self._finish()
 
     def start(self):
@@ -1210,7 +1214,9 @@ class ScrapyTask(object):
         return save_task_result_to_cache(self.task_data, self.get_output_path())
 
     def is_screenshot_job(self):
-        return self.task_data.get('cmd_args', {}).get('make_screenshot_for_url', False)
+        cmd_args = self.task_data.get('cmd_args', {})
+        # leave "make_screenshot_for_url" for backward compatibility
+        return cmd_args.get('make_screenshot_for_url', cmd_args.get('make_screenshot', False))
 
     def start_screenshot_job_if_needed(self):
         """ Starts a new url2screenshot local job, if needed """
@@ -1757,7 +1763,7 @@ def main():
         elif (task_data['site'] in ('dockers', 'nike')) or 'checkout' in task_data['site']:
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
             logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
-        elif task_data.get('cmd_args', {}).get('make_screenshot_for_url', False):
+        elif ScrapyTask(None, task_data, None).is_screenshot_job():
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
             logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of the parallel url2screenshot job' % MAX_CONCURRENT_TASKS)
 
@@ -1830,7 +1836,10 @@ def main():
     # wait until all tasks are finished or max wait time is reached
     # report each task progress after that and kill all tasks
     #  which are not finished in time
-    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 61
+    for _t in tasks_taken:
+        logger.info('For task %s, max allowed running time is %ss', (
+            _t.task_data.get('task_id'), _t.get_total_wait_time()))
+    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 160
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
     # loop where we wait for all the tasks to complete
@@ -1853,6 +1862,8 @@ def main():
         raise Exception
     listener.close()
     log_tasks_results(tasks_taken)
+
+    # TODO: wait till all Selenium processes are finished? implement or not?
 
     # write finish marker
     logger.info('Scrapy daemon finished.')
