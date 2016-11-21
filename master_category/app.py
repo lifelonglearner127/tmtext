@@ -29,7 +29,7 @@ login_manager.user_callback = user_loader
 login_manager.init_app(app)
 
 
-def run_converter(input_type, output_type, input_file, mapping_file):
+def run_converter(conversion_type, input_file, mapping_file):
     log_fname = tempfile.NamedTemporaryFile(delete=False)
     log_fname.close()
     log_fname = log_fname.name
@@ -39,12 +39,12 @@ def run_converter(input_type, output_type, input_file, mapping_file):
     if not os.path.exists(converters_dir):
         converters_dir = '.'
 
-    cmd = ('python {converters_dir}/amazon_to_walmart.py --input_type={input_type}'
-           ' --output_type={output_type} --input_file={input_file} --mapping_file={mapping_file}'
+    cmd = ('python {converters_dir}/amazon_to_walmart.py --conversion_type={conversion_type}'
+           ' --input_file={input_file} --mapping_file={mapping_file}'
            ' --log_file="{log_file}"')
 
     cmd_run = cmd.format(converters_dir=converters_dir, log_file=log_fname,
-                         input_type=input_type, output_type=output_type,
+                         conversion_type=conversion_type,
                          input_file=input_file, mapping_file=mapping_file)
 
     print('------- Run converter ----------')
@@ -102,21 +102,18 @@ def parse_log(log_fname):
 
 
 def process_form():
-    input_type = request.form.get('input_type', None)
+    conversion_type = request.form.get('conversion_type', None)
     input_file = request.files.get('input_file', None)
     mapping_file = request.files.get('mapping_file', None)
     output_type = request.form.get('output_type', None)
 
-    if not input_type:
-        return 'Choose input type'
+    if not conversion_type:
+        return 'Choose conversion type'
     if not input_file:
         return 'Choose input file'
 
     # if not mapping_file:
     #     return 'Choose ID mapping file'
-
-    if not output_type:
-        return 'Choose output type'
 
     input_f = upload_file_to_our_server(input_file)
     if mapping_file:
@@ -124,7 +121,7 @@ def process_form():
     else:
         mapping_f = ''
 
-    log_fname = run_converter(input_type=input_type, output_type=output_type,
+    log_fname = run_converter(conversion_type=conversion_type,
                               input_file=input_f, mapping_file=mapping_f)
     success, messages, result_file, file_name = parse_log(log_fname)
 
@@ -145,8 +142,9 @@ def index():
     if not success:
         result_response = """
             <h2>Status: <b>FAILED</b></h2>
-            <h2>Log:</g2>
+            <h2>Log:</h2>
             <p>{messages}</p>
+            <a href='/'>Back</a>
         """.format(messages='<br/>'.join([m.get('msg') for m in messages]))
         return result_response
 
