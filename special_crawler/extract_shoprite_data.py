@@ -3,8 +3,8 @@
 import os
 import re
 import uuid
+import requests
 import json
-import subprocess
 from extract_data import Scraper
 
 
@@ -15,15 +15,6 @@ class ShopriteScraper(Scraper):
     ##########################################
 
     INVALID_URL_MESSAGE = "Expected URL format is https://shop.shoprite.com/store/<store-id>#/product/sku/<product-id>"
-    CURL_SCRIPT_TEMPLATE = "curl 'https://shop.shoprite.com/api/product/v5/product/store/{0}/sku/{1}' " \
-                           "-H 'Authorization: {2}' " \
-                           "-H 'Accept-Encoding: gzip, deflate, sdch, br' " \
-                           "-H 'Accept-Language: en-US' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) " \
-                           "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36' " \
-                           "-H 'Accept: application/vnd.mywebgrocer.product+json' " \
-                           "-H 'Cache-Control: max-age=0' " \
-                           "-H 'X-Requested-With: XMLHttpRequest' " \
-                           "-H 'Referer: https://shop.shoprite.com/store/{0}' --compressed"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -48,25 +39,23 @@ class ShopriteScraper(Scraper):
             False otherwise
         """
         try:
-            unique_file_name = os.path.dirname(os.path.abspath(__file__)) + "/{0}.sh".format(uuid.uuid4())
             token_string = self._find_between(self.page_raw_text, '{"Token":"', '",')
             store_id = self._find_between(self.product_page_url, "shop.shoprite.com/store/", "#/product/sku/")
             product_id = self.product_page_url.split("/")[-1]
+            headers = {'Authorization': token_string,
 
-            with open(unique_file_name, "w") as shell_file:
-                shell_file.write(self.CURL_SCRIPT_TEMPLATE.format(store_id, product_id, token_string))
+                       'Accept-Encoding': 'gzip, deflate, sdch, br',
+                       'Accept-Language': 'en-US',
+                       'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36',
+                       'Accept': 'application/vnd.mywebgrocer.product+json',
+                       'Cache-Control': 'max-age=0',
+                       'X-Requested-With': 'XMLHttpRequest',
+                       'Referer': 'https://shop.shoprite.com/store/{0}'.format(product_id)}
 
-            process = subprocess.Popen("sudo bash " + unique_file_name, shell=True, stdout=subprocess.PIPE)
-            product_json_string = ""
+            response_text = requests.get('https://shop.shoprite.com/api/product/v5/product/store/{0}/sku/{1}'.
+                                         format(store_id, product_id), headers=headers).text
 
-            for line in process.stdout:
-                product_json_string += line
-
-            process.wait()
-
-            self.product_json = json.loads(product_json_string)
-
-            os.remove(unique_file_name)
+            self.product_json = json.loads(response_text)
         except Exception as e:
             print e
             return True
