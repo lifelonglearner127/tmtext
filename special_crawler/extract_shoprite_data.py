@@ -43,10 +43,9 @@ class ShopriteScraper(Scraper):
             store_id = self._find_between(self.product_page_url, "shop.shoprite.com/store/", "#/product/sku/")
             product_id = self.product_page_url.split("/")[-1]
             headers = {'Authorization': token_string,
-
                        'Accept-Encoding': 'gzip, deflate, sdch, br',
                        'Accept-Language': 'en-US',
-                       'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36',
+                       'User-Agent': self.select_browser_agents_randomly(),
                        'Accept': 'application/vnd.mywebgrocer.product+json',
                        'Cache-Control': 'max-age=0',
                        'X-Requested-With': 'XMLHttpRequest',
