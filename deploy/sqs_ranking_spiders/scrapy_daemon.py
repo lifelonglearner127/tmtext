@@ -1887,13 +1887,13 @@ def prepare_test_data():
     #     cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
     # ),
         dict(
-            task_id=4446, branch_name='Bug12886ScreenshotIssue', site='walmart',
+            task_id=4446, branch_name='Bug12886ScreenshotIssueFixed', site='walmart',
             url='https://www.walmart.com/ip/Peppa-Pig-Family-Figures-6-Pack/44012553',
             server_name='test_server_name', with_best_seller_ranking=False,
             cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
         ),
         dict(
-            task_id=4447, branch_name='Bug12886ScreenshotIssue', site='amazon',
+            task_id=4447, branch_name='Bug12886ScreenshotIssueFixed', site='amazon',
             url='https://www.amazon.com/Anki-000-00048-Cozmo/dp/B01GA1298S/',
             server_name='test_server_name', with_best_seller_ranking=False,
             cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
