@@ -84,12 +84,17 @@ FOLDERS_PATH = None
 CONVERT_TO_CSV = True
 
 # Connect to S3
-S3_CONN = boto.connect_s3(is_secure=False)
+try:
+    S3_CONN = boto.connect_s3(is_secure=False)
+except:
+    pass
 # uncomment if you are not using ssl
 
 # Get current bucket
-S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
-
+try:
+    S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
+except:
+    pass
 # settings
 MAX_CONCURRENT_TASKS = 16  # tasks per instance, all with same git branch
 MAX_TRIES_TO_GET_TASK = 100  # tries to get max tasks for same branch
@@ -110,7 +115,7 @@ REQUIRED_SIGNALS = [
     [SIGNAL_SCRIPT_OPENED, 2 * 60],  # wait for signal that script started
     [SIGNAL_SPIDER_OPENED, 1 * 60],
     [SIGNAL_SPIDER_CLOSED, 24 * 60 * 60],
-    [SIGNAL_SCRIPT_CLOSED, 1 * 60]
+    [SIGNAL_SCRIPT_CLOSED, 1 * 160]
 ]
 
 # optional extension signals
@@ -639,6 +644,16 @@ class ScrapyTask(object):
         s = sum([r['wait'] for r in self.required_signals.itervalues()])
         if self.current_signal:
             s += self.current_signal[1]['wait']
+
+        # This is needed when there are low number of jobs, so
+        if self.is_screenshot_job():
+            output_path = self.get_output_path()
+            jl_results_path = output_path + '.screenshot.jl'
+            if not os.path.exists(jl_results_path) or os.path.exists(
+                    jl_results_path) and not os.path.getsize(jl_results_path):
+                logger.warning('Screenshot output file does not exist, adding 90 seconds to max wait time')
+                # screenshot task not finished yet? add 90 seconds to max wait time
+                s += 90
         return s
 
     def _dispose(self):
@@ -747,6 +762,19 @@ class ScrapyTask(object):
         compress_multiple_files(output_fname, *log_files)
         return output_fname
 
+    @staticmethod
+    def _wait_for_screenshot_job_to_finish(output_path):
+        logger.warning('Screenshot output file does not exist, or is empty, waiting 120 seconds')
+        for x in xrange(12):  # wait max 120 seconds
+            time.sleep(10)
+            if os.path.exists(output_path + '.screenshot.jl'):
+                # check file size because empty files seem to get created immediately
+                if os.path.getsize(output_path + '.screenshot.jl') > 10:
+                    return True
+        logger.error('Screenshot output file does not exist, or is empty, giving up: %s' % (
+            output_path + '.screenshot.jl'))
+        return False
+
     def _finish(self):
         """
         called after scrapy process finished, or failed for some reason
@@ -785,20 +813,27 @@ class ScrapyTask(object):
             AMAZON_BUCKET_NAME, output_path+'.log')
 
         if self.is_screenshot_job():
-            if not os.path.exists(output_path + '.screenshot.jl'):
-                # screenshot task not finished yet? wait 30 seconds
-                time.sleep(30)
-            if not os.path.exists(output_path + '.screenshot.jl'):
-                logger.error('Screenshot output file does not exist: %s' % (
-                    output_path + '.screenshot.jl'))
+            jl_results_path = output_path + '.screenshot.jl'
+            url2screenshot_log_path = output_path+'.screenshot.log'
+            screenshot_finished = self._wait_for_screenshot_job_to_finish(output_path=output_path)
+            if not screenshot_finished:
+                logger.info('Screenshot job isnt finished, nothing to upload')
             else:
                 try:
                     put_file_into_s3(
-                        AMAZON_BUCKET_NAME, output_path+'.screenshot.jl',
+                        AMAZON_BUCKET_NAME, jl_results_path,
                         is_add_file_time=True)
-                    logger.info('Screenshot file uploaded: %s' % (output_path + '.screenshot.jl'))
+                    logger.info('Screenshot file uploaded: %s' % (jl_results_path))
                 except Exception as ex:
                     logger.error('Screenshot file uploading error')
+                    logger.exception(ex)
+                try:
+                    put_file_into_s3(
+                        AMAZON_BUCKET_NAME, url2screenshot_log_path,
+                        is_add_file_time=True)
+                    logger.info('url2screenshot log file uploaded: %s' % (url2screenshot_log_path))
+                except Exception as ex:
+                    logger.error('url2screenshot log file uploading error')
                     logger.exception(ex)
 
         csv_data_key = None
@@ -1106,7 +1141,6 @@ class ScrapyTask(object):
         checks signal to finish in allowed time, otherwise raises error
         and stops scrapy process, logs duration for given signal
         """
-        start_time = datetime.datetime.utcnow()
         while not self._stop_signal:  # run through all signals
             step_time_start = datetime.datetime.utcnow()
             next_signal = self._get_next_signal(step_time_start)
@@ -1120,8 +1154,7 @@ class ScrapyTask(object):
             except FlowError as ex:
                 self._signal_failed(next_signal, datetime.datetime.utcnow(), ex)
                 break
-        finish_time = datetime.datetime.utcnow()
-        self.finish_date = datetime_difference(finish_time, start_time)
+        self.finish_date = datetime.datetime.utcnow()
         self._finish()
 
     def start(self):
@@ -1181,7 +1214,9 @@ class ScrapyTask(object):
         return save_task_result_to_cache(self.task_data, self.get_output_path())
 
     def is_screenshot_job(self):
-        return self.task_data.get('cmd_args', {}).get('make_screenshot_for_url', False)
+        cmd_args = self.task_data.get('cmd_args', {})
+        # leave "make_screenshot_for_url" for backward compatibility
+        return cmd_args.get('make_screenshot_for_url', cmd_args.get('make_screenshot', False))
 
     def start_screenshot_job_if_needed(self):
         """ Starts a new url2screenshot local job, if needed """
@@ -1190,16 +1225,18 @@ class ScrapyTask(object):
             url2scrape = self.task_data.get('product_url', self.task_data.get('url', None))
         # TODO: searchterm jobs? checkout scrapers?
         if url2scrape:
-            scrapy_path = "/home/spiders/virtual_environment/bin/scrapy"
-            python_path = "/home/spiders/virtual_environment/bin/python"
+            # scrapy_path = "/home/spiders/virtual_environment/bin/scrapy"
+            # python_path = "/home/spiders/virtual_environment/bin/python"
+            output_path = self.get_output_path()
             cmd = ('cd {repo_base_path}/product-ranking'
-                   ' && {python_path} {scrapy_path} crawl url2screenshot_products'
+                   ' && scrapy crawl url2screenshot_products'
                    ' -a product_url="{url2scrape}" '
-                   ' -a width=1280 -a height=1024 -a timeout=60 '
+                   ' -a width=1280 -a height=1024 -a timeout=90 '
+                   ' -s LOG_FILE="{log_file}"'
                    ' -o "{output_file}" &').format(
-                       repo_base_path=REPO_BASE_PATH, python_path=python_path,
-                       scrapy_path=scrapy_path, url2scrape=url2scrape,
-                       output_file=self.get_output_path()+'.screenshot.jl')
+                       repo_base_path=REPO_BASE_PATH,
+                       log_file=output_path+'.screenshot.log', url2scrape=url2scrape,
+                       output_file=output_path+'.screenshot.jl')
             logger.info('Starting a new parallel screenshot job: %s' % cmd)
             os.system(cmd)  # use Popen instead?
 
@@ -1726,7 +1763,7 @@ def main():
         elif (task_data['site'] in ('dockers', 'nike')) or 'checkout' in task_data['site']:
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
             logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
-        elif task_data.get('cmd_args', {}).get('make_screenshot_for_url', False):
+        elif ScrapyTask(None, task_data, None).is_screenshot_job():
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
             logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of the parallel url2screenshot job' % MAX_CONCURRENT_TASKS)
 
@@ -1799,7 +1836,10 @@ def main():
     # wait until all tasks are finished or max wait time is reached
     # report each task progress after that and kill all tasks
     #  which are not finished in time
-    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 61
+    for _t in tasks_taken:
+        logger.info('For task %s, max allowed running time is %ss', (
+            _t.task_data.get('task_id'), _t.get_total_wait_time()))
+    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 160
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
     # loop where we wait for all the tasks to complete
@@ -1823,6 +1863,8 @@ def main():
     listener.close()
     log_tasks_results(tasks_taken)
 
+    # TODO: wait till all Selenium processes are finished? implement or not?
+
     # write finish marker
     logger.info('Scrapy daemon finished.')
 
@@ -1830,19 +1872,33 @@ def main():
 def prepare_test_data():
     # only for local-filesystem tests!
     # prepare incoming tasks
-    tasks = [dict(
-        task_id=4443, site='walmart', searchterms_str='iphone',
-        server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
-    ), dict(
-        task_id=4444, site='amazon', searchterms_str='iphone',
-        server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 1}, attributes={'SentTimestamp': '1443426145373'}
-    ), dict(
-        task_id=4445, site='target', searchterms_str='iphone',
-        server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
-    )]
+    tasks = [
+    #     dict(
+    #     task_id=4443, site='walmart', searchterms_str='iphone',
+    #     server_name='test_server_name', with_best_seller_ranking=True,
+    #     cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
+    # ), dict(
+    #     task_id=4444, site='amazon', searchterms_str='iphone',
+    #     server_name='test_server_name', with_best_seller_ranking=True,
+    #     cmd_args={'quantity': 1}, attributes={'SentTimestamp': '1443426145373'}
+    # ), dict(
+    #     task_id=4445, site='target', searchterms_str='iphone',
+    #     server_name='test_server_name', with_best_seller_ranking=True,
+    #     cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
+    # ),
+        dict(
+            task_id=4446, branch_name='Bug12886ScreenshotIssueFixed', site='walmart',
+            url='https://www.walmart.com/ip/Peppa-Pig-Family-Figures-6-Pack/44012553',
+            server_name='test_server_name', with_best_seller_ranking=False,
+            cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
+        ),
+        dict(
+            task_id=4447, branch_name='Bug12886ScreenshotIssueFixed', site='amazon',
+            url='https://www.amazon.com/Anki-000-00048-Cozmo/dp/B01GA1298S/',
+            server_name='test_server_name', with_best_seller_ranking=False,
+            cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
+        ),
+    ]
     files = [open('/tmp/' + q, 'w') for q in QUEUES_LIST.itervalues()]
     for fh in files:
         for msg in tasks:
