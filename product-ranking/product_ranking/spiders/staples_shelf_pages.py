@@ -1,14 +1,8 @@
-import os.path
 import re
 import urlparse
-import requests
-import json
 
-import scrapy
-from scrapy.log import WARNING, ERROR
 from scrapy.conf import settings
 from scrapy.http import Request
-from scrapy import Selector
 
 from product_ranking.items import SiteProductItem
 
@@ -34,6 +28,8 @@ class StaplesShelfPagesSpider(StaplesProductsSpider):
         return {'remaining': 99999, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
+        super(StaplesProductsSpider, self).__init__(
+            site_name=self.allowed_domains[0], *args, **kwargs)
         self._setup_class_compatibility()
 
         self.product_url = kwargs['product_url']
@@ -68,6 +64,8 @@ class StaplesShelfPagesSpider(StaplesProductsSpider):
 
     def _scrape_product_links(self, response):
         urls = response.xpath('//a[contains(@property, "url")]/@href').extract()
+        if not urls:
+            urls = response.xpath('.//div[@class="product-info"]/a[contains(@class, "product-title")]/@href').extract()
         if not urls:
             urls = response.xpath('//a[@class="product-title scTrack pfm"]/@href').extract()
         urls = [urlparse.urljoin(response.url, x) for x in urls]

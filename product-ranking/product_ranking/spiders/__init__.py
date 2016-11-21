@@ -1,5 +1,5 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
+from future_builtins import zip
 
 from itertools import islice
 import re
@@ -7,7 +7,6 @@ import string
 import urllib
 import urlparse
 import socket
-import os
 
 import scrapy.log
 from scrapy.log import ERROR, WARNING, INFO
@@ -321,7 +320,7 @@ class BaseProductsSpider(Spider):
                     self._get_products(response)):
                 yield request_or_prod
             prods_count += 1  # Fix counter.
-    
+
             request = self._get_next_products_page(response, prods_count)
             if request is not None:
                 yield request
@@ -361,7 +360,7 @@ class BaseProductsSpider(Spider):
                 if hasattr(self, 'is_nothing_found'):
                     if not self.is_nothing_found(response):
                         self.log(
-                            "Failed to scrape number of products per page", ERROR)
+                            "Failed to scrape number of products per page", WARNING)
             response.meta['scraped_results_per_page'] = scraped_results_per_page
 
         if total_matches is None:

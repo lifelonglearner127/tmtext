@@ -1,22 +1,14 @@
 # -*- coding: utf-8 -*-
+from __future__ import division, absolute_import, unicode_literals
 
 import re
 import json
-import urllib
-import sys
 import urlparse
 
 from scrapy import Request
 
-from scrapy.selector import HtmlXPathSelector
-import requests
-
-from product_ranking.items import SiteProductItem, RelatedProduct, \
-    Price, BuyerReviews
-from product_ranking.spiders import cond_set, cond_set_value, \
-    FLOATING_POINT_RGEX, cond_replace
-from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.guess_brand import guess_brand_from_first_words
+from product_ranking.items import SiteProductItem, Price
+from product_ranking.spiders import cond_set_value
 
 from .target import TargetProductSpider
 
@@ -30,31 +22,42 @@ class TargetShelfPagesSpider(TargetProductSpider):
 
     def _setup_class_compatibility(self):
         """ Needed to maintain compatibility with the SC spiders baseclass """
-        self.quantity = sys.maxint
+        # self.quantity = sys.maxint
         self.site_name = self.allowed_domains[0]
         self.user_agent_key = None
         self.current_page = 1
 
     def _setup_meta_compatibility(self):
         """ Needed to prepare first request.meta vars to use """
-        return {'remaining': sys.maxint, 'search_term': ''}.copy()
+        return {'remaining': self.quantity, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
         super(TargetShelfPagesSpider, self).__init__(*args, **kwargs)
         self.product_url = kwargs['product_url']
         self._setup_class_compatibility()
 
-        self.JSON_SEARCH_URL = "http://tws.target.com/searchservice/item/search_results/v2/by_keyword?" \
-                                "alt=json&pageCount=24&response_group=Items&zone=mobile&" \
-                                "offset={index}&category={category}"
         # self.JSON_SEARCH_URL = "http://tws.target.com/searchservice/item/search_results/v2/by_keyword?" \
-        #                        "callback=getPlpResponse&category={category}&faceted_value={faceted}" \
-        #                        "&zone=PLP&pageCount=24&page={page}&start_results={index}"
+        #                         "alt=json&pageCount=24&response_group=Items&zone=mobile&" \
+        #                         "offset={index}&category={category}"
+        self.JSON_SEARCH_URL = "http://redsky.target.com/v1/plp/search?alt=json&count=24&" \
+                               "response_group=Items%2Csurl&zone=mobile&offset={index}&" \
+                               "category={category}&sort_by=&category_type=nid"
+
+        self.SHELF_AJAX_LINK_URL = "http://redsky.target.com/v1/plp/search?" \
+                                   "keyword={keyword}&" \
+                                   "count={count}&" \
+                                   "offset={offset}&" \
+                                   "category={category}&" \
+                                   "sort_by=relevance&" \
+                                   "faceted_value={faceted_value}"
 
         if "num_pages" in kwargs:
             self.num_pages = int(kwargs['num_pages'])
         else:
             self.num_pages = 1  # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
+
+        # shelf scrapers should ignore quantity parameter
+        self.quantity = 9999999
 
         # variants are switched off by default, see Bugzilla 3982#c11
         self.scrape_variants_with_extra_requests = False
@@ -92,35 +95,69 @@ class TargetShelfPagesSpider(TargetProductSpider):
                                           category=category,
                                           index=0),
                 meta=new_meta)
+
+        import urlparse
+
+        params = urlparse.parse_qs(urlparse.urlparse(response.url).query)
+
+        if not response.meta.get('json') and \
+                params and \
+                params.get("category", None) and \
+                params.get("facetedValue", None) and \
+                params.get("searchTerm", None) and \
+                params.get("sortBy", None):
+            new_meta = response.meta
+            new_meta['json'] = True
+            new_meta['category'] = params["category"][0]
+            new_meta['faceted'] = params["facetedValue"][0]
+
+            return Request(
+                self.url_formatter.format(self.SHELF_AJAX_LINK_URL,
+                                          keyword=params["searchTerm"][0],
+                                          count=24,
+                                          offset=0,
+                                          category=params["category"][0],
+                                          faceted_value=params["facetedValue"][0]),
+                meta=new_meta)
+
         return list(super(TargetShelfPagesSpider, self).parse(response))
 
     def _scrape_product_links_json(self, response):
         data = json.loads(response.body_as_unicode())
-        data = data['searchResponse']
+        data = data['search_response']
         for item in data['items']['Item']:
-        # for item in self._get_json_data(response)['items']['Item']:
+            # for item in self._get_json_data(response)['items']['Item']:
             # Skip Promotions and Ads
             if not item.get('title'):
                 continue
-            url = item['productDetailPageURL']
+            url = item['url']
             url = urlparse.urljoin('http://intl.target.com', url)
             product = SiteProductItem()
-            attrs = item.get('itemAttributes', {})
-            cond_set_value(product, 'title', attrs.get('title'))
+            shelf_path = data.get('breadCrumb_list')
+            shelf_path = shelf_path[0]['breadCrumbValues'] if shelf_path else None
+            if shelf_path:
+                shelf_path = [s.get('label') for s in shelf_path]
+            shelf_name = shelf_path[-1] if shelf_path else None
+            cond_set_value(product, 'shelf_path', shelf_path)
+            cond_set_value(product, 'shelf_name', shelf_name)
+            attrs = item
+            title = attrs.get('title')
+            if '&$174;' in title:
+                title = title.replace('&$174;', '®')
+            cond_set_value(product, 'title', title)
             cond_set_value(product, 'brand',
-                           attrs.get('productManufacturerBrand'))
-            p = item.get('priceSummary', {})
-            priceattr = p.get('offerPrice', p.get('listPrice'))
+                           attrs.get('brand'))
+            priceattr = attrs.get('offer_price', attrs.get('list_price'))
             if priceattr:
-                currency = priceattr['currencyCode']
-                amount = priceattr['amount']
-
+                currency = priceattr.get('formatted_price')
+                currency = currency[0] if currency else None
+                currency = 'USD' if currency == '$' else None
+                amount = priceattr.get('price')
                 if amount == 'Too low to display':
                     price = None
+                elif not currency:
+                    price = None
                 else:
-                    amount = is_empty(re.findall(
-                        '\d+\.{0,1}\d+', priceattr['amount']
-                    ))
                     if amount:
                         price = Price(priceCurrency=currency, price=amount)
                     else:
@@ -135,12 +172,37 @@ class TargetShelfPagesSpider(TargetProductSpider):
         return super(TargetShelfPagesSpider,
                     self)._scrape_next_results_page_link(response)
 
+    def _scrape_total_matches_json(self, response):
+        data = json.loads(response.body_as_unicode())
+        meta_data = data['search_response'].get('metaData')
+        total = None
+        for meta_dict in meta_data:
+            if not total:
+                total = meta_dict.get('value') if meta_dict.get('name') == 'total_results' else None
+            if total:
+                break
+        total = int(total)
+        return total
+
     def _scrape_next_results_page_link_json(self, response):
-        args = self._json_get_args(self._get_json_data(response))
-        current = int(args['currentPage'])
-        total = int(args['totalPages'])
-        per_page = int(args['resultsPerPage'])
-        print "current %s, total %s, per_page %s" % (current, total, per_page)
+        data = json.loads(response.body_as_unicode())
+        meta_data = data['search_response'].get('metaData')
+        current = None
+        total = None
+        per_page = None
+        for meta_dict in meta_data:
+            if not current:
+                current = meta_dict.get('value') if meta_dict.get('name') == 'currentPage' else None
+            if not total:
+                total = meta_dict.get('value') if meta_dict.get('name') == 'totalPages' else None
+            if not per_page:
+                per_page = meta_dict.get('value') if meta_dict.get('name') == 'count' else None
+            if current and total and per_page:
+                break
+        current = int(current)
+        total = int(total)
+        per_page = int(per_page)
+        # print "current %s, total %s, per_page %s" % (current, total, per_page)
         if current <= total:
             sort_mode = self.SORTING or ''
             new_meta = response.meta.copy()

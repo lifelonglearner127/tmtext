@@ -52,6 +52,7 @@ class Email(object):
 
 
 def check_ec2(groups_names=('SCCluster1', 'SCCluster2', 'SCCluster3', 'SCCluster4')):
+    # TODO: update group names!
     # check autoscaling
     conn = AutoScaleConnection()
     selected_group_name = random.choice(groups_names)

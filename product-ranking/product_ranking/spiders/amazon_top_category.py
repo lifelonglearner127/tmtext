@@ -1,31 +1,42 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from datetime import datetime
 import re
-from scrapy import Request, Selector
-from lxml import html
-import requests
+from scrapy import Request, FormRequest
 import urlparse
-from scrapy.conf import settings
 from product_ranking.amazon_tests import AmazonTests
 from product_ranking.amazon_base_class import AmazonBaseClass
 from product_ranking.validators.amazonca_validator import AmazoncaValidatorSettings
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider,FormatterWithDefaults, \
-    cond_set, cond_set_value, FLOATING_POINT_RGEX
-from requests.auth import HTTPProxyAuth
-from product_ranking.settings import CRAWLERA_APIKEY
-
+from product_ranking.spiders import cond_set_value
+import json
+from scrapy.log import INFO, WARNING
 
 class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
     name = 'amazon_top_categories_products'
-    allowed_domains = ["amazon.com"]
+    allowed_domains = ["amazon.com", "asintoupc.com", "walmart.com", "target.com", 'http://psp-gps.info']
 
     settings = AmazoncaValidatorSettings
+    ASIN_UPC_URL = "http://asintoupc.com"
+
+    ASIN_UPC_URL_A = "http://psp-gps.info/index.php?i={}"
+
+    handle_httpstatus_list = [429]
 
     def __init__(self, *args, **kwargs):
         super(AmazonBestSellersProductsSpider, self).__init__(*args, **kwargs)
+        # Optional flags to match target and walmart respectively, turned off by default
+        self.match_walmart = kwargs.get('match_walmart', None)
+        if self.match_walmart in ('1', True, 'true', 'True'):
+            self.match_walmart = True
+        else:
+            self.match_walmart = False
+
+        self.match_target = kwargs.get('match_target', None)
+        if self.match_target in ('1', True, 'true', 'True'):
+            self.match_target = True
+        else:
+            self.match_target = False
 
         # String from html body that means there's no results ( "no results.", for example)
         self.total_match_not_found_re = 'did not match any products.'
@@ -38,7 +49,7 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
 
         # Locale
         self.locale = 'en-US'
-        #settings.overrides['CRAWLERA_ENABLED'] = True
+        # settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         if self.product_url:
@@ -49,17 +60,20 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
                 yield Request(url)
 
     def parse(self, response):
-        url = response.url + '&pg={}&ajax=1&isAboveTheFold={}'
+        url = response.url + '?pg={}&ajax=1&isAboveTheFold={}'
+        shelf_name = response.xpath('//h1/span[@class="category"]/text()').extract()
+        shelf_name = [s.strip() for s in shelf_name if s.strip()]
+        shelf_path = response.xpath(
+                    '//li[@class="zg_browseUp"]/a/text()').extract()[1:] + response.xpath(
+                    '//span[@class="zg_selected"]/text()').extract()
+        shelf_path = [s.strip() for s in shelf_path if s.strip()]
         for page in range(1, 6):
             for position in [1, 0]:
                 request = Request(url=url.format(page, position),
                                   callback=self._scrape_product_links,
                                   dont_filter=True)
-                request.meta['shelf_name'] = response.xpath(
-                    '//h1/span[@class="category"]/text()').extract()
-                request.meta['shelf_path'] = response.xpath(
-                    '//li[@class="zg_browseUp"]/a/text()').extract()[1:] + response.xpath(
-                    '//span[@class="zg_selected"]/text()').extract()
+                request.meta['shelf_name'] = shelf_name
+                request.meta['shelf_path'] = shelf_path
                 yield request
 
     def _scrape_product_links(self, response):
@@ -70,10 +84,11 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
             request.meta['shelf_name'] = response.meta.get('shelf_name')
             request.meta['shelf_path'] = response.meta.get('shelf_path')
             request.meta['ranking'] = product.xpath('.//span[@class="zg_rankNumber"]/text()').re('\d+')[0]
+            request.meta['product'] = SiteProductItem()
             yield request
 
     def parse_product(self, response):
-        product = SiteProductItem()
+        product = response.meta.get('product') if response.meta.get('product') else SiteProductItem()
         cond_set_value(product, 'shelf_path', response.meta.get('shelf_path'))
         cond_set_value(product, 'shelf_name', response.meta.get('shelf_name'))
         title = response.xpath('//h1/span/text()').extract()[0].strip()
@@ -86,53 +101,113 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
             asin = re.findall('\/([A-Z0-9]{10})', response.url)[0]
         cond_set_value(product, 'asin', asin)
         cond_set_value(product, 'url', response.url)
-        upc = self.convert_ASIN2UPC(asin)
-        cond_set_value(product, 'upc', upc)
-        if upc:
-            self._match_walmart(product, upc)
         cond_set_value(product, 'ranking', response.meta.get('ranking'))
-        yield product
+        brand = self._parse_brand(response)
+        cond_set_value(product, 'brand', brand)
+        price = self._parse_price(response)
+        cond_set_value(product, 'price', price)
 
-    def convert_ASIN2UPC(self, asin):
-        upc = ""
-        payload = {
-            r"ctl00$MainContent$txtASIN": asin,
-            r"ctl00$MainContent$btnSearch": "Search",
-        }
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.111 Safari/537.36'}
+        if self.match_target or self.match_walmart:
+            req = Request(url='http://asintoupc.com', callback=self.get_payload, dont_filter=True)
+            req.meta['product'] = product
+            yield req
+        else:
+            yield product
 
-        with requests.session() as s:
-            s.headers = headers
-            try:
-                response = s.get('http://asintoupc.com/')
+        # req = Request(url=self.ASIN_UPC_URL.format(asin), callback=self.threadsafe_ASIN2UPC, dont_filter=True)
+        # req = Request(url=self.ASIN_UPC_URL_A.format(product.get('asin')), callback=self.ASIN2UPC_alternative,
+        #               dont_filter=True)
 
-                # soup = BeautifulSoup(response.content)
-                tree = html.fromstring(response.content)
+    def ASIN2UPC_alternative(self, response):
+        product = response.meta.get('product')
+        if response.xpath('.//*[contains(text(), "Please change this value and retry your request")]'):
+            yield product
+        else:
+            upc = response.xpath('.//b[contains(text(), "UPC:")]/following-sibling::text()[1]').extract()
+            upc = upc[0].strip() if upc else None
 
-                for input_name in ['__VIEWSTATE', '__VIEWSTATEGENERATOR', '__EVENTVALIDATION']:
-                    # payload[input_name] = soup.find('input', {'name': input_name}).get('value', '')
-                    payload[input_name] = tree.xpath("//input[@name='%s']/@value" % input_name)[0]
-                for i in range(1, 30):
-                    response2 = s.post("http://asintoupc.com/", data=payload)
-                    if 'WSE101: An asynchronous operation raised an exception.' not in response2.text:
-                        break
+            if upc:
+                self.log("Got UPC: {}".format(upc), level=INFO)
+                cond_set_value(product, 'upc', upc)
+                if self.match_walmart:
+                    req = Request('http://www.walmart.com/search/?query={}'.format(upc),
+                                  callback=self._match_walmart_threadsafe)
+                    req.meta['product'] = product
+                    yield req
+                elif self.match_target:
+                    target_url = 'http://tws.target.com/searchservice/item/search_results/v2/by_keyword?search_term={}&alt=json&' \
+                                 'pageCount=24&response_group=Items&zone=mobile&offset=0'
+                    req = Request(target_url.format(upc), callback=self._match_target_threadsafe)
+                    req.meta['product'] = product
+                    yield req
+            else:
+                self.log("No UPC for ASIN {} at {}".format(product.get('asin'), response.url), level=INFO)
+                yield product
 
-                # print(response2.content)
-                # soup = BeautifulSoup(response2.content)
-                tree = html.fromstring(response2.content)
-                upc = tree.xpath("//span[@id='MainContent_lblUPC']")[0].text
-            except:
-                pass
-        return upc
+    def get_payload(self, response):
+        product = response.meta.get('product')
+        if response.status == 429 or response.status == 500:
+            req = Request(url=self.ASIN_UPC_URL_A.format(product.get('asin')),
+                          callback=self.ASIN2UPC_alternative, dont_filter=True)
+            req.meta['product'] = product
+            self.log("Page error, trying other service", level=WARNING)
+            yield req
+        else:
+            payload = {
+                r"ctl00$MainContent$txtASIN": product.get('asin'),
+                r"ctl00$MainContent$btnSearch": "Search",
+            }
+            for input_name in ['__VIEWSTATE', '__VIEWSTATEGENERATOR', '__EVENTVALIDATION']:
+                pl = response.xpath("//input[@name='%s']/@value" % input_name).extract()
+                payload[input_name] = pl[0] if pl else ''
 
-    @staticmethod
-    def _match_walmart(product, upc):
-        url = 'http://www.walmart.com/search/?query={}'
-        walmart_selector = Selector(text=requests.get(
-            url.format(upc)).text)
-        walmart_category = walmart_selector.xpath('//p[@class="dept-head-list-heading"]/a/text()').extract()
-        walmart_url = walmart_selector.xpath('//a[@class="js-product-title"][1]/@href').extract()
+            req = FormRequest(url=self.ASIN_UPC_URL.format(product.get('asin')), callback=self.threadsafe_ASIN2UPC,
+                          dont_filter=True, formdata=payload)
+
+            req.meta['product'] = product
+            yield req
+
+    def threadsafe_ASIN2UPC(self, response):
+        product = response.meta.get('product')
+        if response.status == 429 or response.status == 500:
+            req = Request(url=self.ASIN_UPC_URL_A.format(product.get('asin')),
+                          callback=self.ASIN2UPC_alternative, dont_filter=True)
+            req.meta['product'] = product
+            self.log("Page error, trying other service", level=WARNING)
+            yield req
+        else:
+            if 'WSE101: An asynchronous operation raised an exception.' in response.body_as_unicode():
+                req = Request(url=self.ASIN_UPC_URL_A.format(product.get('asin')),
+                              callback=self.ASIN2UPC_alternative, dont_filter=True)
+                req.meta['product'] = product
+                self.log("Page error, trying other service", level=WARNING)
+                yield req
+            else:
+                upc = response.xpath("//span[@id='MainContent_lblUPC']/text()").extract()
+                upc = upc[0] if upc else None
+                if upc:
+                    self.log("Got UPC: {}".format(upc), level=INFO)
+                    cond_set_value(product, 'upc', upc)
+                    if self.match_walmart:
+                        req = Request('http://www.walmart.com/search/?query={}'.format(upc),
+                                      callback=self._match_walmart_threadsafe)
+                        req.meta['product'] = product
+                        yield req
+                    elif self.match_target:
+                        target_url = 'http://tws.target.com/searchservice/item/search_results/v2/by_keyword?search_term={}&alt=json&' \
+                                     'pageCount=24&response_group=Items&zone=mobile&offset=0'
+                        req = Request(target_url.format(upc), callback=self._match_target_threadsafe)
+                        req.meta['product'] = product
+                        yield req
+                else:
+                    self.log("No UPC for ASIN {} at {}".format(product.get('asin'), response.url), level=INFO)
+                    yield product
+
+    def _match_walmart_threadsafe(self, response):
+        product = response.meta.get('product')
+        upc = product.get('upc')
+        walmart_category = response.xpath('//p[@class="dept-head-list-heading"]/a/text()').extract()
+        walmart_url = response.xpath('//a[@class="js-product-title"][1]/@href').extract()
         if walmart_url:
             walmart_exists = True
             walmart_url = urlparse.urljoin('http://www.walmart.com/', walmart_url[0])
@@ -141,5 +216,38 @@ class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
         cond_set_value(product, 'walmart_url', walmart_url)
         cond_set_value(product, 'walmart_category', walmart_category)
         cond_set_value(product, 'walmart_exists', walmart_exists)
+        # This is for case when both flags are true
+        if self.match_target:
+            target_url = 'http://tws.target.com/searchservice/item/search_results/v2/by_keyword?search_term={}&alt=json&' \
+                         'pageCount=24&response_group=Items&zone=mobile&offset=0'
+            req = Request(target_url.format(upc), callback=self._match_target_threadsafe)
+            req.meta['product'] = product
+            yield req
+        else:
+            yield product
 
-
+    def _match_target_threadsafe(self, response):
+        product = response.meta.get('product')
+        json_response = json.loads(response.body_as_unicode())
+        try:
+            item = json_response['searchResponse']['items']['Item']
+            item = item[0] if item else None
+            if item:
+                target_category = item['itemAttributes']['merchClass']
+                target_url = item['productDetailPageURL']
+                if target_url:
+                    target_exists = True
+                    target_url = urlparse.urljoin('http://www.target.com/', target_url)
+                else:
+                    target_exists = False
+                cond_set_value(product, 'target_url', target_url)
+                cond_set_value(product, 'target_category', [target_category])
+                cond_set_value(product, 'target_exists', target_exists)
+            else:
+                target_exists = False
+                cond_set_value(product, 'target_url', [])
+                cond_set_value(product, 'target_category', [])
+                cond_set_value(product, 'target_exists', target_exists)
+        except Exception:
+            pass
+        yield product

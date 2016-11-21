@@ -1,12 +1,11 @@
 # Creates many test jobs
 
 import os
-import sys
 import random
 import argparse
 import datetime
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 

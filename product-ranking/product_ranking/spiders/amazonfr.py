@@ -3,22 +3,10 @@
 from __future__ import division, absolute_import, unicode_literals
 from __future__ import print_function
 
-import json
 import re
-import string
-import urlparse
 from datetime import datetime
 
-from scrapy.http import Request
-from scrapy.http.request.form import FormRequest
-from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
-
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, cond_set,\
-    cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.amazon_tests import AmazonTests
-
-from product_ranking.amazon_bestsellers import amazon_parse_department
 
 from product_ranking.amazon_base_class import AmazonBaseClass
 from product_ranking.validators.amazonfr_validator import AmazonfrValidatorSettings

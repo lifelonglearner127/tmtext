@@ -1,15 +1,11 @@
 # -*- coding: utf-8 -*-#
 
 import re
-import hjson
 from ..items import SiteProductItem
-from scrapy.http import FormRequest, Request
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy.log import ERROR, INFO
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
-    cond_set_value
-from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
+from product_ranking.spiders import BaseProductsSpider, cond_set_value
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 
 

@@ -1,202 +1,309 @@
-import re
-import socket
-import time
-import traceback
-
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from product_ranking.checkout_base import BaseCheckoutSpider
-from product_ranking.items import CheckoutProductItem
-from selenium.common.exceptions import WebDriverException
-
-import scrapy
+import json
+import uuid
 import random
-import os
 import requests
-
-is_empty = lambda x, y="": x[0] if x else y
-
-
-def _get_random_proxy():
-    proxy_file = '/tmp/http_proxies.txt'
-    if os.path.exists(proxy_file):
-        with open(proxy_file, 'r') as f:
-            proxies = [l.strip()
-                     for l in f.readlines() if l.strip()]
-            for i in proxies:
-                proxy = random.choice(proxies)
-                try:
-                    ans = requests.get(
-                        'http://kohls.com/',
-                        proxies={'http': proxy, 'https': proxy},
-                        timeout=10
-                    )
-                    if ans.status_code == 200:
-                        return proxy.replace('http://','')
-                except:
-                    pass
+import re
+import itertools
+from HTMLParser import HTMLParser
+from collections import OrderedDict
+import scrapy
+from scrapy.conf import settings
+from product_ranking.items import CheckoutProductItem
 
 
-class KohlsSpider(BaseCheckoutSpider):
+class KohlsSpider(scrapy.Spider):
     name = 'kohls_checkout_products'
     allowed_domains = ['kohls.com']  # do not remove comment - used in find_spiders()
 
     SHOPPING_CART_URL = 'http://www.kohls.com/checkout/shopping_cart.jsp'
-    CHECKOUT_PAGE_URL = "https://www.Kohls.com/dotcom/" \
-                        "jsp/checkout/secure/checkout.jsp"
+    PROMO_CODE_URL = "http://www.kohls.com/checkout/v2/json/wallet_applied_discount_json.jsp?_DARGS=/checkout/v2/includes/wallet_discounts_update_forms.jsp.2"
+    TAX_URL = "http://www.kohls.com/checkout/v2/json/shipping_surcharges_gift_tax_json.jsp"
+
+    def _get_proxy(timeout=10):
+        http_proxy_path = '/tmp/http_proxies.txt'
+
+        with open(http_proxy_path, 'r') as fh:
+            proxies = [l.strip() for l in fh.readlines() if l.strip()]
+
+        for _ in range(100):
+            prox = random.choice(proxies)
+            try:
+                r = requests.get(
+                    'http://www.kohls.com/',
+                    proxies={'http': prox, 'https': prox},
+                    timeout=timeout
+                )
+                if r.status_code == 200:
+                    return prox
+            except:
+                pass
 
     def __init__(self, *args, **kwargs):
+        settings.overrides['ITEM_PIPELINES'] = {}
         super(KohlsSpider, self).__init__(*args, **kwargs)
-        self.proxy = _get_random_proxy()
-        self.proxy_type = 'http'
+        settings.overrides['COOKIES_DEBUG'] = True
+        self.user_agent = kwargs.get(
+            'user_agent',
+            ('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
+             'Chrome/51.0.2704.79 Safari/537.36')
+        )
+
+        self.product_data = kwargs.get('product_data', "[]")
+        self.product_data = json.loads(self.product_data)
+
+        self.quantity = kwargs.get('quantity')
+        if self.quantity:
+            self.quantity = [x for x in self.quantity.split(',')]
+            self.quantity = sorted(self.quantity)
+        else:
+            self.quantity = ["1"]
+
+        self.promo_code = kwargs.get('promo_code', '')  # ticket 10585
+        self.promo_code = [promo_code.strip() for promo_code in self.promo_code.split(',')]
+        self.promo_price = int(kwargs.get('promo_price', 0))
+        self.promo_mode = self.promo_code and self.promo_price
+        self.promo_code = self.promo_code if self.promo_code else [None]
+        self.proxy = self._get_proxy()
 
     def start_requests(self):
-        yield scrapy.Request('http://www.kohls.com/')
+        for product in self.product_data:
+            url = product.get('url')
+            colors = self._get_list(
+                product.get('color', []))
+            yield scrapy.Request(url,
+                                 meta={'product': product,
+                                       'promo_code': self.promo_code,
+                                       'quantity': self.quantity,
+                                       'color': colors})
 
-    def _parse_item(self, product):
-        item = CheckoutProductItem()
-        name = self._get_item_name(product)
-        item['name'] = name.strip() if name else name
-        item['id'] = self._get_item_id(product)
-        price = self._get_item_price(product)
-        item['price_on_page'] = self._get_item_price_on_page(product)
-        color = self._get_item_color(product)
-        quantity = self._get_item_quantity(product)
+    @staticmethod
+    def _get_list(variable):
+        if isinstance(variable, basestring):
+            variable = [variable]
+        return variable
 
-        if quantity and price:
-            quantity = int(quantity)
-            item['price'] = float(price.replace(',', '')) / quantity
-            item['quantity'] = quantity
-            item['requested_color'] = self.requested_color
-            item['requested_quantity_not_available'] = quantity != self.current_quantity
+    def parse(self, response):
+        promo_codes = self._get_list(
+            response.meta.get('promo_code'))
+        quantity = self._get_list(
+            response.meta.get('quantity'))
+        product = response.meta.get('product')
+        colors = self._get_list(
+            response.meta.get('color'))
+        json_data = self._parse_product_json_data(response)
+        variants = json_data.get('productItem').get('skuDetails')
+        product_id = str(json_data.get('productItem').get('productDetails').get('productId'))
+        variants = self._variants_dict(variants)
+        formdata = self._set_product_formdata(product_id)
 
-        if color:
+        if product.get('FetchAllColors'):
+            colors = variants.keys()
+        elif not response.meta.get('color'):
+            colors.append(variants.keys()[0])
+
+        meta = {}
+        for i, (quantity, color, promo_code) in enumerate(
+                itertools.product(quantity, colors, promo_codes)):
+
+            item = CheckoutProductItem()
+            item['requested_color_not_available'] = False
+            item['requested_quantity_not_available'] = False
+            meta['requested_color'] = color
+            if response.meta.get('retry'):
+                item['requested_quantity_not_available'] = True
+                color = response.meta.get('requested_color')
+            if response.meta.get('product').get('color'):
+                item['requested_color'] = color
+            if color not in variants.keys():
+                color = variants.keys()[0]
+                item['requested_color_not_available'] = True
+
             item['color'] = color
+            item['url'] = response.url
 
-        item['requested_color_not_available'] = (
-            color and self.requested_color and
-            (self.requested_color != color))
-        return item
+            meta['item'] = item
+            meta['product'] = product
+            meta['promo_code'] = promo_code
+            meta['cookiejar'] = "{}{}{}".format(i, promo_code, uuid.uuid4())
+            meta['color'] = color
+            meta['quantity'] = quantity
+            meta['proxy'] = self.proxy
 
-    def _get_colors_names(self):
-        time.sleep(30)
-        swatches = self._find_by_xpath(
-            '//a[@data-skucolor and '
-            'not(contains(@class,"color-unavailable"))]')
-        return [x.get_attribute("alt") for x in swatches]
+            formdata['/atg/commerce/order/purchase/'
+                     'CartModifierFormHandler.catalogRefIds'] = variants.get(color)
+            formdata['add_cart_quantity'] = quantity
 
-    def select_size(self, element=None):
-        time.sleep(10)
-        size_attribute_xpath = ('*//*[@id="size-dropdown"]/'
-                                'option[@select]|*//'
-                                'a[@class="pdp-size-swatch active"]')
+            yield scrapy.FormRequest.from_response(response,
+                                                   formname='pdpAddToBag',
+                                                   formdata=formdata,
+                                                   callback=self.parse_availability,
+                                                   method='POST',
+                                                   dont_filter=True,
+                                                   meta=meta
+                                                   )
 
-        size_attributes_xpath = ('*//*[@id="size-dropdown"]/'
-                                 'option[not(@disabled) and not(@data-skusize="false")] | '
-                                 '*//a[contains(@class,"pdp-size-swatch")'
-                                 ' and not(contains(@class, "unavailable"))]')
-        self._click_attribute(size_attribute_xpath,
-                              size_attributes_xpath,
-                              element)
-        time.sleep(10)
-        self.log('Size selected')
+    def parse_availability(self, response):
+        meta = response.meta
+        if 'You can only purchase' in response.body_as_unicode():
+            meta['retry'] = True
+            meta['quantity'] = '1'
+            yield scrapy.Request(response.meta.get('item').get('url'),
+                                 meta=meta,
+                                 dont_filter=True)
+        else:
+            yield scrapy.Request(self.SHOPPING_CART_URL,
+                                 callback=self.parse_cart,
+                                 dont_filter=True,
+                                 meta=meta
+                                 )
 
-    def select_color(self, element=None, color=None):
-        time.sleep(30)
-        color_attribute_xpath = ('*//*[@class="pdp-color-swatches-info"]'
-                                 '/div[contains(@class,"active")]/a')
-        color_attributes_xpath = ('*//*[@class="pdp-color-swatches-info"]'
-                                  '/div/a[not(contains(@class, color-unavailable))]')
+    def parse_cart(self, response):
+        item = response.meta.get('item')
+        json_data = self._parse_cart_json_data(response)
+        product = json_data.get('shoppingBag').get('items')[0]
+        html_parser = HTMLParser()
+        item['name'] = html_parser.unescape(product.get('displayName'))
+        item['id'] = product.get('skuNumber')
+        sale_price = product.get('salePrice').replace('$', '')
+        regular_price = product.get('regularPrice').replace('$', '')
+        price = sale_price if sale_price else regular_price
+        item['price_on_page'] = price
+        quantity = product.get('quantity')
+        item['quantity'] = quantity
+        order_subtotal = product.get('subtotal').replace('$', '')
+        item['order_subtotal'] = order_subtotal
+        item['price'] = round(
+            float(order_subtotal) / item['quantity'], 2)
+        item['order_total'] = float(json_data.get('orderSummary').get('total').replace('$', ''))
+        if self.promo_mode:
+            yield self.promo_logic(response, response.meta.get('promo_code'))
+        else:
+            yield item
 
-        if color and color in self._get_colors_names():
-            color_attribute_xpath = (
-                '*//*[@class="pdp-color-swatches-info"]'
-                '/div/a[@alt="%s"]' % color)
+    def promo_logic(self, response, promo_code=None):
+        meta = response.meta
+        item = meta.get('item')
+        item['promo_code'] = meta.get('promo_code')
+        if response.meta.get('promo'):
+            promo_order_total = response.meta.get('promo_order_total')
+            promo_order_subtotal = self._calculate_promo_subtotal(response, promo_order_total)
+            promo_price = round(promo_order_subtotal / meta.get('item').get('quantity'), 2)
+            is_promo_code_valid = not promo_order_total == item['order_total']
+            item['is_promo_code_valid'] = is_promo_code_valid
+            if self.promo_price == 1:
+                item['order_total'] = promo_order_total
+                item['order_subtotal'] = promo_order_subtotal
+                item['price'] = promo_price
+            if self.promo_price == 2:
+                item['promo_order_total'] = promo_order_total
+                item['promo_order_subtotal'] = promo_order_subtotal
+                item['promo_price'] = promo_price
+            return item
+        return self._enter_promo_code(response, promo_code)
 
-        self._click_attribute(color_attribute_xpath,
-                              color_attributes_xpath,
-                              element)
-        time.sleep(10)
-        self.log('Color selected')
-        # Remove focus to avoid hiddend the above element
-        # self._find_by_xpath('//h1')[0].click()
+    @staticmethod
+    def _set_product_formdata(product_id):
+        return {
+            '_D:add_cart_quantity': '+',
+            'isRedirectToJsonUrl': 'true',
+            '_D:/atg/commerce/order/purchase/CartModifierFormHandler.productId': '+',
+            '/atg/commerce/order/purchase/CartModifierFormHandler.useForwards': 'true',
+            '/atg/commerce/order/purchase/CartModifierFormHandler.addItemToOrderSuccessURL':
+                'shopping_cart_add_to_cart_success_url',
+            '_D:/atg/commerce/order/purchase/CartModifierFormHandler.useForwards': '+',
+            '_D:/atg/commerce/order/purchase/CartModifierFormHandler.addItemToOrderSuccessURL': '+',
+            '_DARGS': '/catalog/v2/fragments/pdp_addToBag_Form.jsp',
+            '_D:/atg/commerce/order/purchase/CartModifierFormHandler.addItemToOrder': '+',
+            '_D:/atg/commerce/order/purchase/CartModifierFormHandler.addItemToOrderErrorURL': '+',
+            '/atg/commerce/order/purchase/CartModifierFormHandler.catalogRefIds': '34000344',
+            '_dyncharset': 'UTF-8',
+            'addItemToOrderSuccessURL': 'shopping_cart_add_to_cart_json_success_url',
+            '/atg/commerce/order/purchase/CartModifierFormHandler.addItemToOrder': '+',
+            'addItemToOrderErrorURL': 'shopping_cart_add_to_cart_json_error_url',
+            'add_cart_quantity': '1',
+            '_D:/atg/commerce/order/purchase/CartModifierFormHandler.catalogRefIds': '+',
+            '/atg/commerce/order/purchase/CartModifierFormHandler.addItemToOrderErrorURL':
+                'shopping_cart_add_to_cart_error_url',
+            '/atg/commerce/order/purchase/CartModifierFormHandler.productId': product_id,
+        }
 
-    def _get_products(self):
-        time.sleep(30)
-        condition = EC.presence_of_all_elements_located(
-            (By.XPATH, '//div[contains(@class, "pdp-main-container")]'))
-        return self.wait.until(condition)
+    @staticmethod
+    def _parse_product_json_data(response):
+        json_data = response.xpath(
+            '//script[contains(text(), "productJsonData")]/text()').extract()[0]
+        json_regex = re.compile('productJsonData = ({.*?});', re.DOTALL)
+        json_data = json.loads(
+            json_regex.findall(json_data)[0])
+        return json_data
 
-    def _add_to_cart(self):
-        time.sleep(10)
-        self._click_on_element_with_id('addtobagID')
-        time.sleep(20)
-        select_lower = self._find_by_xpath('//*[contains(., "select a lower amount")]')
-        if select_lower:
-            self._set_quantity(None, 1)
-            self._add_to_cart()
+    @staticmethod
+    def _parse_cart_json_data(response):
+        json_data = response.xpath("//script[contains(text(), \"var trJsonData = {\")"
+                                   " and @type=\"text/javascript\"]/text()").extract()[0]
+        json_regex = re.compile('trJsonData = ({.*?});', re.DOTALL)
+        json_data = json_regex.findall(json_data)[0]
+        json_data = json.loads(json_data)
+        return json_data
 
-    def _set_quantity(self, product, quantity):
-        time.sleep(10)
-        self.driver.execute_script(
-            "document.getElementsByClassName('pdp-product-quantity')[0]"
-            ".setAttribute('value', '%s')" % quantity)
-        time.sleep(10)
-        self.log('Quantity selected')
+    @staticmethod
+    def _variants_dict(color_list):
+        variants_dict = OrderedDict()
+        for variant in color_list:
+            color = variant.get('color')
+            if color not in variants_dict.keys():
+                variant_id = variant.get('skuId')
+                variants_dict[color] = variant_id
+        return variants_dict
 
-    def _get_product_list_cart(self):
-        time.sleep(30)
-        condition = EC.visibility_of_element_located(
-            (By.ID, 'shoppingCartLineItem_container'))
-        return self.wait.until(condition)
+    @staticmethod
+    def _calculate_promo_subtotal(response, promo_order_total):
+        tax_rate = int(json.loads(response.body_as_unicode()).get('taxDetails').get('rate'))
+        delivery = response.meta.get('delivery')
+        promo_order_subtotal = round(
+            (promo_order_total - delivery *
+             (tax_rate / 100.0) - delivery) / (1 + (tax_rate / 100.0)), 2)
+        return promo_order_subtotal
 
-    def _get_products_in_cart(self, product_list):
-        time.sleep(10)
-        html_text = product_list.get_attribute('outerHTML')
-        selector = scrapy.Selector(text=html_text)
-        return selector.xpath(
-            '//*[@class="shoppingBagItem shoppingCartLineItem"]')
+    def _parse_cart_tax(self, response):
+        meta = response.meta
+        y = lambda x: x.split(';')[0].split('=')
+        cookies = response.headers.getlist('Set-Cookie')
+        prices_raw = [y(b)[1].replace('$', '') for b in cookies if y(b)[0] == 'VisitorBagTotals']
+        prices = [float(price.split('|')[0]) for price in prices_raw]
+        promo_order_total = min(prices)
+        delivery = float([delivery.split('|')[-1] for delivery in prices_raw if
+                          float(delivery.split('|')[0]) == promo_order_total][0].replace('$', ''))
+        meta['promo'] = True
+        meta['delivery'] = delivery
+        meta['promo_order_total'] = promo_order_total
+        return scrapy.Request(self.TAX_URL,
+                              meta=meta,
+                              callback=self.promo_logic,
+                              dont_filter=True
+                              )
 
-    def _get_subtotal(self):
-        order_subtotal_element = self.wait.until(
-            EC.visibility_of_element_located((
-                By.ID, 'subtotal')))
-        order_subtotal = order_subtotal_element.text
-        return is_empty(re.findall('\$([\d\.]+)', order_subtotal))
-
-    def _get_total(self):
-        order_total_element = self.wait.until(
-            EC.element_to_be_clickable(
-                (By.ID, 'totalcharges')))
-
-        order_total = order_total_element.text
-        return is_empty(re.findall('\$([\d\.]+)', order_total))
-
-    def _get_item_name(self, item):
-        return is_empty(item.xpath(
-                        '*//a[@class="shoppingbag_title"]/text()').extract())
-
-    def _get_item_id(self, item):
-        return is_empty(item.xpath(
-                        '*//*[contains(@id, "sku_")]/text()').re('SKU # (\d+)'))
-
-    def _get_item_price(self, item):
-        return is_empty(item.xpath(
-                        '*//*[@class="shoppingbag_itemtotal"]/text()').re(
-                        '\$(.*)'))
-
-    def _get_item_price_on_page(self, item):
-        return min(map((lambda x: float(x.replace(',', '').strip())),
-                       item.xpath('*//*[contains(@id,"saleprice_")]/text()|'
-                                  '*//*[contains(@id, "regularprice_")]'
-                                  '/text()').re('\$(.*)')))
-
-    def _get_item_color(self, item):
-        return is_empty(item.xpath(
-                        '*//span[contains(@id, "color_")]/text()').re(
-                        'Color: (.*)'))
-
-    def _get_item_quantity(self, item):
-        return is_empty(item.xpath(
-                        '*//input[@name="ship_bill_quantity"]'
-                        '/@value').extract())
+    def _enter_promo_code(self, response, promo_code):
+        formdata = {
+            "_dyncharset": "UTF-8",
+            "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": promo_code,
+            "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.promoCode": "+",
+            "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoSuccessURL":
+                "applied_discounts_tr_success_url",
+            "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoSuccessURL": "+",
+            "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoErrorURL":
+                "applied_discounts_tr_success_url",
+            "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.paymentInfoErrorURL": "+",
+            "/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.useForwards": "true",
+            "_D:/atg/commerce/order/purchase/KLSPaymentInfoFormHandler.useForwards": "+",
+            "apply_promo_code": "submit",
+            "_D:apply_promo_code": "+",
+            "_DARGS": "/checkout/v2/includes/discounts_update_forms.jsp.2"
+        }
+        return scrapy.FormRequest.from_response(response,
+                                                formxpath='//form[@id="apply_promo_code_form"]',
+                                                formdata=formdata,
+                                                callback=self._parse_cart_tax,
+                                                method='POST',
+                                                dont_filter=True,
+                                                meta=response.meta
+                                                )

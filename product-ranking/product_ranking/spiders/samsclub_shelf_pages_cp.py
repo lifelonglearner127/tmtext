@@ -1,16 +1,12 @@
 from __future__ import division, absolute_import, unicode_literals
 from .samsclub_shelf_pages import SamsclubShelfPagesSpider
-from .samsclub import SamsclubProductsSpider
-import re
-from scrapy.http import Request, FormRequest
+from scrapy.http import Request
 from product_ranking.items import SiteProductItem
-from scrapy.log import DEBUG, WARNING, ERROR
+from scrapy.log import ERROR
 import urlparse
-import json
 import time
-from math import ceil
 from product_ranking.spiders import cond_set, cond_set_value
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.items import SiteProductItem
 import lxml.html
 
 is_empty = lambda x: x[0] if x else None

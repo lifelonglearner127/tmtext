@@ -3,8 +3,6 @@ import collections
 import ast
 import itertools
 import re
-import copy
-
 import lxml.html
 
 
@@ -169,6 +167,7 @@ class AmazonVariants(object):
                 stockstatus_for_variants["in_stock"] = True
                 stockstatus_for_variants["selected"] = isSelected
                 stockstatus_for_variants["price"] = None
+                stockstatus_for_variants["asin"] = variation_asin_values[variation_combination_key]
 
                 if original_product_canonical_link:
                     stockstatus_for_variants["url"] = original_product_canonical_link[:original_product_canonical_link.rfind("/") + 1] + variation_asin_values[variation_combination_key]
@@ -195,9 +194,11 @@ class AmazonVariants(object):
 
             stockstatus_for_variants_list = [v for v in stockstatus_for_variants_list
                                              if v not in vars2remove]
+
             if not stockstatus_for_variants_list:
                 return None
             else:
                 return stockstatus_for_variants_list
-        except:
+        except Exception as e:
+            print e
             return None

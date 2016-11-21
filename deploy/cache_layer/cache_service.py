@@ -3,7 +3,7 @@ from time import time, mktime
 from redis import StrictRedis
 from zlib import compress, decompress
 from datetime import date, datetime, timedelta
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from os.path import realpath, dirname
 
 try:
@@ -30,6 +30,12 @@ class SqsCache(object):
     REDIS_COMPLETED_TASKS = 'completed_tasks'  # zset, count completed tasks
     REDIS_INSTANCES_COUNTER = 'daily_sqs_instances_counter'  # int
     REDIS_INSTANCES_HISTORY = 'sqs_instances_history'  # zset
+    REDIS_JOBS_COUNTER = 'daily_sqs_jobs_counter'  # int
+    REDIS_JOBS_HISTORY = 'sqs_jobs_history'  # zset
+    REDIS_JOBS_STATS = 'sqs_jobs_stats'  # hash
+    REDIS_REQUEST_COUNTER = 'daily_sqs_request_counter'  # int
+    REDIS_REQUEST_HISTORY = 'sqs_request_history'  # zset
+    REDIS_TASK_EXECUTION_TIME = 'sqs_task_execution_time'  # zset
     REDIS_URGENT_STATS = 'urgent_stats'  # zset
     REDIS_FAILED_TASKS = 'failed_tasks'  # set, store failed tasks here
     MAX_FAILED_TRIES = 3
@@ -40,13 +46,19 @@ class SqsCache(object):
         'term': 'term',
         'term_cached': 'term_cached'
     }
+    REDIS_SETTINGS_KEY = 'settings'  # hash
+    REDIS_SETTINGS_FIELDS = {
+        'remote_instance_branch': 'remote_instance_branch',
+        'instance_max_billing_time': 'instance_max_billing_time'
+    }
 
     def __init__(self, db=None, timeout=10):
         self.db = db if db else StrictRedis(REDIS_HOST, REDIS_PORT,
                                             socket_timeout=timeout)
         # self.db = db if db else StrictRedis()  # for local
 
-    def _task_to_key(self, task):
+    @staticmethod
+    def _task_to_key(task):
         """
         generate unique key-string for the task, from server_name and task_id
         task should be dict
@@ -70,7 +82,8 @@ class SqsCache(object):
         res = ':'.join(res)
         return is_term, res
 
-    def _parse_freshness(self, task):
+    @staticmethod
+    def _parse_freshness(task):
         allowed_values = ['day', 'hour', '30 minutes', '15 minutes']
         limit = task.get('sqs_cache_time_limit', 'day')
         if limit not in allowed_values:  # validate field
@@ -178,6 +191,10 @@ class SqsCache(object):
         """
         self.db.delete(self.REDIS_INSTANCES_COUNTER,
                        self.REDIS_COMPLETED_COUNTER,
+                       self.REDIS_JOBS_COUNTER,
+                       self.REDIS_JOBS_STATS,
+                       self.REDIS_REQUEST_COUNTER,
+                       self.REDIS_TASK_EXECUTION_TIME,
                        self.REDIS_FAILED_TASKS)
 
         return \
@@ -201,6 +218,16 @@ class SqsCache(object):
         key_counter = 'term' if is_term else 'url'
         if is_from_cache:
             key_counter += '_cached'
+        # Task execution time
+        try:
+            start_time = int(task.get('start_time', 0))
+            finish_time = int(task.get('finish_time', 0))
+        except ValueError:
+            start_time, finish_time = 0, 0
+        if start_time and finish_time:
+            execution_time = finish_time - start_time
+            self.store_execution_time_per_task(execution_time)
+        # End task execution time
         self.db.hincrby(self.REDIS_COMPLETED_COUNTER,
                         self.REDIS_COMPLETED_COUNTER_DICT[key_counter])
         return self.db.zadd(self.REDIS_COMPLETED_TASKS, int(time()), key)
@@ -217,6 +244,18 @@ class SqsCache(object):
         """
         return self.db.get(self.REDIS_INSTANCES_COUNTER)
 
+    def get_today_jobs(self):
+        """
+        get count of started jobs for current day
+        """
+        return self.db.get(self.REDIS_JOBS_COUNTER)
+
+    def get_today_requests(self):
+        """
+        get count of requests for current day
+        """
+        return self.db.get(self.REDIS_REQUEST_COUNTER)
+
     def get_executed_tasks_count(self, hours_from=None, hours_to=None,
                                  for_last_hour=False):
         """
@@ -225,20 +264,18 @@ class SqsCache(object):
         """
         if hours_from is None and not for_last_hour:
             return self.db.zcard(self.REDIS_COMPLETED_TASKS)
+        today = list(date.today().timetuple())
+        if for_last_hour:
+            time_from = int(time()) - 60 * 60
         else:
-            today = list(date.today().timetuple())
-            if for_last_hour:
-                time_from = int(time()) - 60 * 60
-            else:
-                today[3] = hours_from
-                time_from = mktime(today)
-            if hours_to:
-                today[3] = hours_to
-                time_to = mktime(today)
-            else:
-                time_to = int(time())
-            return self.db.zcount(
-                self.REDIS_COMPLETED_TASKS, time_from, time_to)
+            today[3] = hours_from
+            time_from = mktime(today)
+        if hours_to:
+            today[3] = hours_to
+            time_to = mktime(today)
+        else:
+            time_to = int(time())
+        return self.db.zcount(self.REDIS_COMPLETED_TASKS, time_from, time_to)
 
     def get_most_popular_cached_items(self, cnt=10, is_term=False):
         """
@@ -307,7 +344,8 @@ class SqsCache(object):
         """
         returns dict with current settings
         """
-        path = '%s/%s' % (dirname(realpath(__file__)), self.CACHE_SETTINGS_PATH)
+        path = '%s/%s' % (dirname(realpath(__file__)),
+                          self.CACHE_SETTINGS_PATH)
         with open(path, 'r') as f:
             s = f.read()
         data = json.loads(s or '{}')
@@ -319,7 +357,8 @@ class SqsCache(object):
         """
         if not data:
             return
-        path = '%s/%s' % (dirname(realpath(__file__)), self.CACHE_SETTINGS_PATH)
+        path = '%s/%s' % (dirname(realpath(__file__)),
+                          self.CACHE_SETTINGS_PATH)
         with open(path, 'w') as f:
             s = json.dumps(data)
             f.write(s)
@@ -327,21 +366,211 @@ class SqsCache(object):
     def del_redis_keys(self, *keys):
         self.db.delete(*keys)
 
-    def save_today_instances_count(self, instances_num=None):
-        cnt = instances_num or self.db.get(self.REDIS_INSTANCES_COUNTER)
+    def __save_today_counter_to_history(self, counter_key_name,
+                                        history_key_name, number=None):
+        """
+        Default method for save history from daily counter.
+        Args:
+            counter_key_name: Counter key name in redis db.
+            history_key_name: History key name in redis db.
+            number: amount of counter or read from counter.
+        Returns: number of inserted items.
+        """
+        cnt = number or self.db.get(counter_key_name)
         cnt = int(cnt or '0')
         today = date.today() - timedelta(days=1)
         today = int(mktime(today.timetuple()))  # get today's timestamp
-        # score is current day timestamp, name is instances count
-        return self.db.zadd(self.REDIS_INSTANCES_HISTORY, today,
-                            '%s:%s' % (today, cnt))
+        # score is current day timestamp, name is count
+        return self.db.zadd(history_key_name, today, '%s:%s' % (today, cnt))
 
-    def get_instances_history(self, days):
-        date_offset = date.today() - timedelta(days=days+1)
+    def __get_history(self, history_key_name, days):
+        """
+        Default method for get history.
+        Args:
+            history_key_name: History key name from redis db.
+            days: Amount of days.
+        Returns: OrderedDict with result from history.
+         Ex: {'timestamp': 'number', etc }
+        """
+        date_offset = date.today() - timedelta(days=days + 1)
         offset = int(mktime(date_offset.timetuple()))
-        data = self.db.zrevrangebyscore(self.REDIS_INSTANCES_HISTORY,
-                                        9999999999, offset,
+        data = self.db.zrevrangebyscore(history_key_name, 9999999999, offset,
                                         withscores=True, score_cast_func=int)
         res = [(d[1], d[0].split(':')[-1]) for d in data]
         res = OrderedDict(res)
         return res
+
+    def save_today_instances_count(self, instances_num=None):
+        return self.__save_today_counter_to_history(
+            counter_key_name=self.REDIS_INSTANCES_COUNTER,
+            history_key_name=self.REDIS_INSTANCES_HISTORY,
+            number=instances_num
+        )
+
+    def get_instances_history(self, days):
+        return self.__get_history(
+            history_key_name=self.REDIS_INSTANCES_HISTORY,
+            days=days
+        )
+
+    def save_today_jobs_count(self, jobs_num=None):
+        return self.__save_today_counter_to_history(
+            counter_key_name=self.REDIS_JOBS_COUNTER,
+            history_key_name=self.REDIS_JOBS_HISTORY,
+            number=jobs_num
+        )
+
+    def get_jobs_history(self, days):
+        return self.__get_history(
+            history_key_name=self.REDIS_JOBS_HISTORY,
+            days=days
+        )
+
+    def save_today_requests_count(self, jobs_num=None):
+        return self.__save_today_counter_to_history(
+            counter_key_name=self.REDIS_REQUEST_COUNTER,
+            history_key_name=self.REDIS_REQUEST_HISTORY,
+            number=jobs_num
+        )
+
+    def get_requests_count_history(self, days):
+        return self.__get_history(
+            history_key_name=self.REDIS_REQUEST_HISTORY,
+            days=days
+        )
+
+    def add_task_to_jobs_stats(self, task):
+        """
+        Adding task to jobs statistics.
+        Returns: Counter of today jobs inserted.
+        """
+        server = task.get('server_name', 'UnknownServer')
+        site = task.get('site', 'UnknownSite')
+        search_type = 'term' if 'searchterms_str' in task and \
+                                task['searchterms_str'] else 'url'
+        metric_field = '%s:%s:%s' % (server, site, search_type)
+        return self.db.hincrby(self.REDIS_JOBS_STATS, metric_field, 1)
+
+    def get_jobs_stats(self, match=None):
+        """
+        Get jobs statistics.
+        Args:
+            match: Additional filter for redis selector.
+        Returns: Dict of statistics. Ex:
+            {
+                'url': X,
+                'term': X,
+                'servers': {
+                    'Bic': {
+                        'url': X,
+                        'term': X,
+                        'scrappers': {
+                            'Amazon': {
+                                'url': X,
+                                'term': X
+                            }
+                            ...
+                        }
+                    }
+                    ...
+                }
+            }
+        """
+        page = 0
+        result = {
+            'url': 0,
+            'term': 0,
+            'servers': defaultdict(lambda: {
+                'url': 0,
+                'term': 0,
+                'scrappers': defaultdict(lambda: {
+                    'url': 0,
+                    'term': 0
+                })
+            })
+        }
+        while True:
+            data = self.db.hscan(self.REDIS_JOBS_STATS,
+                                 cursor=page, match=match)
+            if not data:
+                break
+            if page == data[0] or not data[0]:
+                break
+            page = data[0]
+            for key, value in data[1].items():
+                server, site, search_type = key.split(':')
+                try:
+                    value = int(value)
+                except ValueError:
+                    continue
+                # increment all stats
+                result[search_type] += value
+                # increment stats per server
+                result['servers'][server][search_type] += value
+                # increment stats per scrapper
+                result['servers'][server]['scrappers'][site][search_type] += \
+                    value
+        return result
+
+    def store_execution_time_per_task(self, execution_time, key=None):
+        """
+        Save execution time for task.
+        Args:
+            execution_time: Execution time in seconds for current task.
+            key: Time. Minutes, seconds and etc must be a Zero.
+              default: current hour.
+        Returns:
+        """
+        if not key:
+            key = list(datetime.today().timetuple())[0:4] + [0]*5
+        key = int(mktime(key))
+        sum_key = '%s:%s' % (key, 'sum')
+        count_key = '%s:%s' % (key, 'count')
+        self.db.hincrby(self.REDIS_TASK_EXECUTION_TIME, sum_key,
+                        execution_time)
+        self.db.hincrby(self.REDIS_TASK_EXECUTION_TIME, count_key)
+        return True
+
+    def get_task_executed_time(self, hours_from=None, hours_to=None,
+                               for_last_hour=False):
+        """
+        Returns: OrderedDict with avg. time of executed tasks per hour.
+        """
+        today = list(date.today().timetuple())[0:4] + [0]*5
+        if for_last_hour:
+            time_from = int(time()) - 60 * 60
+        else:
+            today[3] = hours_from
+            time_from = mktime(today)
+        if hours_to:
+            today[3] = hours_to
+            time_to = mktime(today)
+        else:
+            time_to = int(time())
+        executions_time_tmp = self.db.hgetall(self.REDIS_TASK_EXECUTION_TIME)
+        result = defaultdict(dict)
+        for key, val in executions_time_tmp.items():
+            _time, _type = key.split(':')
+            if time_from > int(_time):
+                continue
+            if time_to < int(_time):
+                break
+            result[_time][_type] = val
+        return OrderedDict([(k, float(v['sum']) / float(v['count']))
+                            for k, v in result.items()])
+
+    def set_settings(self, key, value):
+        """
+        Set option value by field name (key) in settings hash.
+        """
+        return self.db.hset(self.REDIS_SETTINGS_KEY,
+                            self.REDIS_SETTINGS_FIELDS[key], value)
+
+    def get_settings(self, key=None):
+        """
+        Get option from settings hash.
+        """
+        if key is None:
+            return self.db.hgetall(self.REDIS_SETTINGS_KEY)
+        return self.db.hget(self.REDIS_SETTINGS_KEY,
+                            self.REDIS_SETTINGS_FIELDS[key])
