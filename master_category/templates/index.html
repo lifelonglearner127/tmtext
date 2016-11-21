@@ -20,10 +20,17 @@
     <h2>All to data converter UI (MC)</h2>
     <form method='POST' action="/" enctype="multipart/form-data">
         <div>
-            <label for="conversion_type">Conversion type : </label>
-            <select id="conversion_type" name="conversion_type">
-                <option value="amazon_to_walmart">Amazon to Walmart (input .xls, output .xlsx)</option>
-                <option value="template_to_googlemanufacturer">Template to Google Manufacturer (input .csv, output .xml)</option>
+            <label for="input_type">Input type : </label>
+            <select id="input_type" name="input_type">
+                <option value="amazon">Amazon</option>
+                <option value="template">Template</option>
+            </select>
+        </div>
+        <div>
+            <label for="output_type">Output type : </label>
+            <select id="output_type" name="output_type">
+                <option value="walmart">Walmart</option>
+                <option value="googlemanufacturer">Google Manufacturer</option>
             </select>
         </div>
         <div>

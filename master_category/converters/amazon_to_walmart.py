@@ -46,11 +46,13 @@ def write_to_file(content):
 
 def check_extension(filename, extensions):
     name, file_extension = os.path.splitext(filename)
+    print name
+    print file_extension
     return file_extension in extensions
 
 
 def generate_google_manufacturer_xml(input_file):
-    available_extensions = ['csv']
+    available_extensions = ['.csv']
     items = []
     context = {}
 
@@ -97,7 +99,9 @@ def generate_google_manufacturer_xml(input_file):
 
 
 def generate_amazon_to_walmart(input_file):
-    available_extensions = ['xls']
+    available_extensions = ['.xls']
+
+    print input_file
 
     if not check_extension(input_file, available_extensions):
         logging_info('The file extension should be %s.'
@@ -187,7 +191,7 @@ def generate_amazon_to_walmart(input_file):
 
 
 def generate_error():
-    logging_info('This type of conversion is not exist.', 'ERROR')
+    logging_info('This type of conversion does not exist.', 'ERROR')
 
 
 def main():
@@ -195,11 +199,16 @@ def main():
 
     parser = argparse.ArgumentParser(description='test',
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('--conversion_type', type=str, required=True,
-                        help="Enter conversion type\n"
+    parser.add_argument('--input_type', type=str, required=True,
+                        help="Enter input type\n"
                              "Defined types\n"
-                             " - amazon_to_walmart\n"
-                             " - template_to_googlemanufacturer\n")
+                             " - amazon\n"
+                             " - template\n")
+    parser.add_argument('--output_type', type=str, required=True,
+                        help="Enter output type\n"
+                             "Defined types\n"
+                             " - walmart\n"
+                             " - googlemanufacturer\n")
     parser.add_argument('--input_file', type=str, required=True,
                         help="File to upload")
     parser.add_argument('--mapping_file', type=str, required=True,
@@ -212,11 +221,12 @@ def main():
 
     LOG_FILE = namespace.log_file
     input_file = namespace.input_file
-    conversion_type = namespace.conversion_type
+    input_type = namespace.input_type
+    output_type = namespace.output_type
 
-    if conversion_type == 'template_to_googlemanufacturer':
+    if input_type == 'template' and output_type == 'googlemanufacturer':
         generate_google_manufacturer_xml(input_file)
-    elif conversion_type == 'amazon_to_walmart':
+    elif input_type == 'amazon' and output_type == 'walmart':
         generate_amazon_to_walmart(input_file)
     else:
         generate_error()
