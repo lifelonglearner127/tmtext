@@ -7,12 +7,10 @@ import re
 import sys
 import json
 from lxml import html
-import mechanize
 import requests
 from extract_data import Scraper
 import os
 from PIL import Image
-import cookielib
 import cStringIO # *much* faster than StringIO
 from pytesseract import image_to_string
 from requests.auth import HTTPProxyAuth
@@ -24,6 +22,23 @@ from socket import timeout
 import random
 from spiders_shared_code.amazon_variants import AmazonVariants
 import datetime
+import functools
+
+def handle_badstatusline(f):
+    """https://github.com/mikem23/keepalive-race
+    """
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        for _ in range(2):
+            try:
+                return f(*args, **kwargs)
+            except requests.exceptions.ConnectionError as e:
+                if 'httplib.BadStatusLine' in e.message:
+                    continue
+                raise
+        else:
+            raise
+    return wrapper
 
 class AmazonScraper(Scraper):
 
@@ -49,7 +64,6 @@ class AmazonScraper(Scraper):
         self.max_review = None
         self.min_review = None
         self.is_marketplace_sellers_checked = False
-        self.browser = mechanize.Browser()
         self.marketplace_prices = None
         self.marketplace_sellers = None
         self.is_variants_checked = False
@@ -58,47 +72,31 @@ class AmazonScraper(Scraper):
 
         self.proxy_host = self.CRAWLERA_HOST
         self.proxy_port = self.CRAWLERA_PORT
-        self.proxy_auth = (self.CRAWLERA_APIKEY, "")
+        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
         self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
                         "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
-        self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
 
-        self.proxies_enabled = False  # first, they are OFF to save allowed requests
+        self.proxies_enabled = False # first, they are OFF to save allowed requests
 
-    # method that returns xml tree of page, to extract the desired elemets from
-    # special implementation for amazon - handling captcha pages
-    def _initialize_browser_settings(self):
-        # proxies
-        if self.proxies_enabled:
-            proxy_str = "%s:%s" % (
-                self.proxy_host, self.proxy_port)
-            self.browser.set_proxies({'http': proxy_str, 'https': proxy_str})
-            self.browser.add_proxy_password(*self.proxy_auth)
-
-        # Cookie Jar
-        #cj = cookielib.LWPCookieJar()
-        #self.browser.set_cookiejar(cj)
-
-        # Browser options
-        self.browser.set_handle_equiv(True)
-        self.browser.set_handle_gzip(True)
-        self.browser.set_handle_redirect(True)
-        self.browser.set_handle_referer(True)
-        self.browser.set_handle_robots(False)
-
-        # Follows refresh 0 but not hangs on refresh > 0
-        self.browser.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
-
-        # Want debugging messages?
-        #self.browser.set_debug_http(True)
-        #self.browser.set_debug_redirects(True)
-        #self.browser.set_debug_responses(True)
-
-        # User-Agent (this is cheating, ok?)
-        self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
+    @handle_badstatusline
+    def _request(self, url, data=None, allow_redirects=True):
+        #print 'REQUESTING %s WITH PROXIES %s' % (url, self.proxies_enabled)
+        if self.proxies_enabled and 'amazon.com' in url:
+            return requests.get(url, \
+                    data=data, \
+                    proxies=self.proxies, \
+                    auth=self.proxy_auth, \
+                    verify=False, \
+                    timeout=300,
+                    allow_redirects=allow_redirects)
+        else:
+            headers = {'User-Agent': self.select_browser_agents_randomly()}
+            return requests.get(url, data=data, headers=headers, timeout=20)
 
     def _extract_page_tree(self, retry=0, proxy_retry=0, captcha_data=None):
-        self._initialize_browser_settings()
+        # request https instead of http
+        if re.match('http://', self.product_page_url):
+            self.product_page_url = 'https://' + re.match('http://(.+)', self.product_page_url).group(1)
 
         if not re.search('showDetailTechData=1', self.product_page_url):
             if '?' in self.product_page_url:
@@ -111,22 +109,64 @@ class AmazonScraper(Scraper):
         try:
             if captcha_data:
                 data = urllib.urlencode(captcha_data)
-                contents = self.browser.open(self.product_page_url, data, timeout=10).read()
+                resp = self._request(self.product_page_url, data, \
+                    allow_redirects=False)
             else:
-                contents = self.browser.open(self.product_page_url, timeout=10).read()
-        except timeout:
-            self.is_timeout = True
-            self.ERROR_RESPONSE["failure_type"] = "Timeout"
-        except mechanize.HTTPError as e:
-            self.is_timeout = True # set self.is_timeout so we will return an error response
-            self.ERROR_RESPONSE["failure_type"] = str(e)
+                resp = self._request(self.product_page_url, allow_redirects=False)
 
-            # If 404, return failure
-            if e.code == 404:
+            # 3xx are redirections.
+            while str(resp.status_code).startswith('3'):
+                print 'REDIRECTED {code}: {url}'.format(
+                    code=resp.status_code,
+                    url=resp.request.url
+                )
+                if 'location' not in resp.headers:
+                    self.ERROR_RESPONSE['failure_type'] = \
+                        '3xx location not found'
+                    return
+
+                url = resp.headers['location']
+                resp = self._request(url, allow_redirects=False)
+
+            if resp.status_code != 200:
+                print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
+
+                if resp.status_code == 429:
+                    self.is_timeout = True
+                    self.ERROR_RESPONSE['failure_type'] = '429'
+                    return
+
+                elif resp.status_code == 404:
+                    self.is_timeout = True
+                    self.ERROR_RESPONSE['failure_type'] = '404'
+                    return
+
+                self.is_timeout = True
+                self.ERROR_RESPONSE['failure_type'] = resp.status_code
+
+        except requests.exceptions.ProxyError, e:
+            print 'Error extracting', self.product_page_url, type(e), e
+
+            self.is_timeout = True
+            self.ERROR_RESPONSE['failure_type'] = 'proxy'
+            return
+
+        except requests.exceptions.ConnectionError, e:
+            print 'Error extracting', self.product_page_url, type(e), e
+
+            if 'Max retries exceeded' in str(e):
+                self.is_timeout = True
+                self.ERROR_RESPONSE['failure_type'] = 'max_retries'
                 return
-        except mechanize.URLError as e:
+
+            self.is_timeout = True
+            self.ERROR_RESPONSE['failure_type'] = str(e)
+
+        except Exception, e:
+            print 'Error extracting', self.product_page_url, type(e), e
+
             self.is_timeout = True # set self.is_timeout so we will return an error response
-            self.ERROR_RESPONSE["failure_type"] = str(e)
+            self.ERROR_RESPONSE['failure_type'] = str(e)
 
         if self.is_timeout:
             if retry >= self.MAX_RETRIES or proxy_retry >= self.MAX_PROXY_RETRIES:
@@ -134,23 +174,27 @@ class AmazonScraper(Scraper):
             else:
                 if self.proxies_enabled:
                     return self._extract_page_tree(retry, proxy_retry+1)
+                elif retry == self.MAX_RETRIES - 1:
+                    self.proxies_enabled = True
+                    return self._extract_page_tree(retry, proxy_retry+1)
                 else:
                     return self._extract_page_tree(retry+1)
 
         try:
             # replace NULL characters
-            contents = self._clean_null(contents)
+            contents = self._clean_null(resp.text)
             self.tree_html = html.fromstring(contents.decode("utf8"))
         except UnicodeError, e:
             # if string was not utf8, don't deocde it
             print "Warning creating html tree from page content: ", e.message
 
             # replace NULL characters
-            contents = self._clean_null(contents)
+            contents = self._clean_null(resp.text)
             self.tree_html = html.fromstring(contents)
 
         # it's a captcha page
         if self.tree_html.xpath("//form[contains(@action,'Captcha')]"):
+            print 'GOT CAPTCHA for', self.product_page_url
             if retry < self.MAX_RETRIES - 1:
                 image = self.tree_html.xpath(".//img/@src")
                 if image:
@@ -209,11 +253,11 @@ class AmazonScraper(Scraper):
 
     def _product_id(self):
         if self.scraper_version == "uk":
-            product_id = re.match("^https?://www.amazon.co.uk/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]*)?$", self.product_page_url).group(3)
+            product_id = re.match("^https?://www.amazon.co.uk/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\&\=]*)?", self.product_page_url).group(3)
         elif self.scraper_version == "ca":
-            product_id = re.match("^https?://www.amazon.ca/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]*)?$", self.product_page_url).group(3)
+            product_id = re.match("^https?://www.amazon.ca/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\&\=]*)?", self.product_page_url).group(3)
         else:
-            product_id = re.match("^https?://www.amazon.com/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]*)?$", self.product_page_url).group(3)
+            product_id = re.match("^https?://www.amazon.com/([a-zA-Z0-9%\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\&\=]*)?", self.product_page_url).group(3)
         return product_id
 
     def _site_id(self):
@@ -265,7 +309,9 @@ class AmazonScraper(Scraper):
         return None
 
     def _upc(self):
-        return re.search('UPC:</b> (\d+)', html.tostring(self.tree_html)).group(1)
+        upc = re.search('UPC:</b> (\d+)', html.tostring(self.tree_html))
+        if upc:
+            return upc.group(1)
 
     # Amazon's version of UPC
     def _asin(self):
@@ -395,6 +441,13 @@ class AmazonScraper(Scraper):
         bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
         if bullets and len(bullets) > 4:
             return self._clean_text(bullets[4].text_content())
+
+    def _bullets(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]//text()")
+        bullets = [self._clean_text(r) for r in bullets if len(self._clean_text(r))>0]
+        if len(bullets) > 0:
+            return "\n".join(bullets)
+        return None
 
     def _seller_ranking(self):
         seller_ranking = []
@@ -676,17 +729,22 @@ class AmazonScraper(Scraper):
         if important_information:
             important_information = html.tostring( self.tree_html.xpath('//div[@id="importantInformation"]/div/div')[0])
 
-            name_index = important_information.find('<b>' + name)
+            tags = ['<b>', '<h5>']
+            tail_tags = ['</b>', '</h5>']
+            idx = 0
+            for t in tags:
+                name_index = important_information.find(t + name)
 
-            if name_index == -1:
-                return None
+                if name_index == -1:
+                    idx += 1
+                    continue
 
-            start_index = important_information.find('</b>', name_index) + 4
+                start_index = important_information.find(tail_tags[idx], name_index) + len(tail_tags[idx])
 
-            # end at the next bold element
-            end_index = important_information.find('<b>', start_index + 1)
+                # end at the next bold element
+                end_index = important_information.find(t, start_index + 1)
 
-            return important_information[start_index : end_index]
+                return important_information[start_index : end_index]
 
     def _amazon_ingredients(self):
         return self._important_information_helper('Ingredients')
@@ -1055,7 +1113,7 @@ class AmazonScraper(Scraper):
         return self.tree_html.xpath('//meta[@name="keywords"]/@content')[0]
 
     def _related_product_urls(self):
-        variants = self._variants()
+        variants = self._variants() or []
         related_product_url_list = []
 
         for variant in variants:
@@ -1087,6 +1145,14 @@ class AmazonScraper(Scraper):
         return self._tofloat(average_review)
 
     def _review_count(self):
+        if not self.is_review_checked:
+            self._reviews()
+        if self.review_list:
+            sumup = 0
+            for i,v in self.review_list:
+                sumup +=int(v)
+            return sumup
+
         nr_reviews = self.tree_html.xpath("//span[@id='acrCustomerReviewText']//text()")
         if len(nr_reviews) > 0:
             nr_review = re.findall("([0-9,]+) customer reviews", nr_reviews[0])
@@ -1133,10 +1199,13 @@ class AmazonScraper(Scraper):
             elif "acr_dpx_see_all" in review_summary_link:
                 review_link = review_summary_link.replace("acr_dpx_see_all", "cm_cr_pr_viewopt_sr")
                 review_link = review_link + "&filterByStar={0}_star&pageNumber=1".format(mark)
-
-            for retry_index in range(10):
+            review_link = review_link.replace("reviewerType=avp_only_reviews", "reviewerType=all_reviews")
+            for retry_index in range(3):
                 try:
-                    contents = self.browser.open(review_link, timeout=10).read()
+                    resp = self._request(review_link)
+                    if str(resp.status_code).startswith('4'):
+                        break
+                    contents = resp.text
 
                     if "Sorry, no reviews match your current selections." in contents:
                         review_list.append([index + 1, 0])
@@ -1153,9 +1222,9 @@ class AmazonScraper(Scraper):
                         review_list.append([index + 1, review_count])
 
                     break
-                except mechanize.HTTPError as e:
-                    if e.code == 404 or e.code == 400:
-                        break
+
+                except Exception, e:
+                    print e
                     continue
 
         if not review_list:
@@ -1319,7 +1388,7 @@ class AmazonScraper(Scraper):
         fl = 0
 
         while len(url) > 10:
-            contents = self.browser.open(url, timeout=10).read()
+            contents = self._request(url).text
             tree = html.fromstring(contents)
             sells = tree.xpath('//div[@class="a-row a-spacing-mini olpOffer"]')
 
@@ -1350,14 +1419,14 @@ class AmazonScraper(Scraper):
 
                             if seller_name == "":
                                 if seller_link[0].startswith("http://www.amazon."):
-                                    seller_content = self.browser.open(seller_link[0], timeout=10).read()
+                                    seller_content = self._request(seller_link[0]).text
                                 else:
                                     if self.scraper_version == "uk":
-                                        seller_content = self.browser.open("http://www.amazon.co.uk" + seller_link[0], timeout=10).read()
+                                        seller_content = self._request("http://www.amazon.co.uk" + seller_link[0]).text
                                     elif self.scraper_version == "ca":
-                                        seller_content = self.browser.open("http://www.amazon.ca" + seller_link[0], timeout=10).read()
+                                        seller_content = self._request("http://www.amazon.ca" + seller_link[0]).text
                                     else:
-                                        seller_content = self.browser.open("http://www.amazon.com" + seller_link[0], timeout=10).read()
+                                        seller_content = self._request("http://www.amazon.com" + seller_link[0]).text
 
                                 seller_tree = html.fromstring(seller_content)
                                 seller_names = seller_tree.xpath("//h2[@id='s-result-count']/span/span//text()")
@@ -1586,6 +1655,7 @@ class AmazonScraper(Scraper):
         "bullet_feature_3": _bullet_feature_3, \
         "bullet_feature_4": _bullet_feature_4, \
         "bullet_feature_5": _bullet_feature_5, \
+        "bullets": _bullets, \
         "usage": _usage, \
         "directions": _directions, \
         "warnings": _warnings, \

@@ -7,7 +7,6 @@ from scrapy.contrib.downloadermiddleware.redirect import MetaRefreshMiddleware
 from scrapy.contrib.downloadermiddleware.redirect import RedirectMiddleware
 from scrapy import log
 from urlparse import urljoin
-import random
 
 class VerizonMetaRefreshMiddleware(MetaRefreshMiddleware):
     def process_response(self, request, response, spider):

@@ -1,16 +1,13 @@
 import os
-import time
 import datetime
 import sys
 
-from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Q
-from django.utils.timezone import now
+from django.core.management.base import BaseCommand
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', 'product_ranking'))
 
-from cache_models import session, Run
+from cache_models import Run
 
 
 def remove_db_records(max_days=14):

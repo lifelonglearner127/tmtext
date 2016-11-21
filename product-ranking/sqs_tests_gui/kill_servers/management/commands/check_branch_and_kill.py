@@ -1,3 +1,6 @@
+# TODO: make sure Amazon Load-Balancer won't upscale groups after we set them to 0
+# (in order for all instances to get killed)
+
 import os
 import sys
 import shutil
@@ -7,18 +10,19 @@ import datetime
 import subprocess
 import json
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 #sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
 
 from kill_servers.models import ProductionBranchUpdate, ServerKill
-from sqs_stats import AUTOSCALE_GROUPS, set_autoscale_group_capacity,\
+from sqs_stats import set_autoscale_group_capacity,\
     get_number_of_instances_in_autoscale_groups, get_max_instances_in_groups
 
 
 sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
+from libs import get_autoscale_groups
 #from add_task_to_sqs import put_msg_to_sqs
 
 
@@ -60,7 +64,6 @@ class Command(BaseCommand):
 
     def _save_group_sizes(self, fname='/tmp/_group_sizes.json'):
         """ Stores autoscale groups sizes locally """
-        global AUTOSCALE_GROUPS
         result = {}
         for autoscale_group, items in get_max_instances_in_groups().items():
             result[autoscale_group] = items['max_size']
@@ -99,13 +102,14 @@ class Command(BaseCommand):
         os.remove(self.git_log_file)
 
     def _set_autoscale_capacities_to_zero(self):
-        global AUTOSCALE_GROUPS
-        for group in AUTOSCALE_GROUPS:
+        for group in get_autoscale_groups()['groups']:
+            print 'setting autoscale group size to 0: %s' % group
             set_autoscale_group_capacity(group, 0, attributes=('max_size', 'desired_capacity'))
 
     def _set_autoscale_max_instances(self):
         groups = self._load_group_sizes()
         for group, size in groups.items():
+            print 'setting autoscale group size to %s: %s' % (size, group)
             set_autoscale_group_capacity(group, size, attributes=('max_size',))
 
     def handle(self, *args, **options):

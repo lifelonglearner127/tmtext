@@ -1,6 +1,5 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
-from product_ranking.items import BuyerReviews, Price, SiteProductItem
+from product_ranking.items import SiteProductItem
 from product_ranking.pet_base_class import PetBaseProductsSpider
 from scrapy.http import Request
 

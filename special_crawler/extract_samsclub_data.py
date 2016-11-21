@@ -55,12 +55,13 @@ class SamsclubScraper(Scraper):
         self.HEADERS = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0', 'Cookie': 'myPreferredClub=6612'}
 
     def check_url_format(self):
-        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?(prod)?\d+\.ip$", self.product_page_url):
+        # http://www.samsclub.com/sams/gold-medal-5552pr-pretzel-oven-combo/136709.ip?searchTerm=278253
+        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?.+\.ip", self.product_page_url):
             return True
         return self._is_shelf_url(self.product_page_url)
 
     def _is_shelf_url(self, url):
-        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?\d+\.cp$", url) or \
+        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?.+\.cp", url) or \
             re.match(r"^http://www\.samsclub\.com/sams/shop/category.jsp\?categoryId=\d+$", url) or \
             re.match(r"^http://www\.samsclub\.com/sams/pagedetails/content.jsp\?pageName=.+$", url):
             return True
@@ -258,6 +259,12 @@ class SamsclubScraper(Scraper):
             return long_description
 
         return None
+
+    def _assembled_size(self):
+        arr = self.tree_html.xpath("//div[contains(@class,'itemFeatures')]//h3//text()")
+        if 'Assembled Size' in arr:
+            return 1
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -1067,6 +1074,7 @@ class SamsclubScraper(Scraper):
         "long_description" : _long_description, \
         "variants": _variants, \
         "no_longer_available": _no_longer_available, \
+        "assembled_size": _assembled_size, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "video_urls" : _video_urls, \
