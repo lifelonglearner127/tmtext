@@ -17,6 +17,7 @@ from HTMLParser import HTMLParser
 
 from extract_data import Scraper
 from compare_images import compare_images
+sys.path.append('..')
 from spiders_shared_code.walmart_variants import WalmartVariants
 
 def handle_badstatusline(f):

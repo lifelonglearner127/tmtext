@@ -43,6 +43,14 @@ class TargetShelfPagesSpider(TargetProductSpider):
                                "response_group=Items%2Csurl&zone=mobile&offset={index}&" \
                                "category={category}&sort_by=&category_type=nid"
 
+        self.SHELF_AJAX_LINK_URL = "http://redsky.target.com/v1/plp/search?" \
+                                   "keyword={keyword}&" \
+                                   "count={count}&" \
+                                   "offset={offset}&" \
+                                   "category={category}&" \
+                                   "sort_by=relevance&" \
+                                   "faceted_value={faceted_value}"
+
         if "num_pages" in kwargs:
             self.num_pages = int(kwargs['num_pages'])
         else:
@@ -87,6 +95,31 @@ class TargetShelfPagesSpider(TargetProductSpider):
                                           category=category,
                                           index=0),
                 meta=new_meta)
+
+        import urlparse
+
+        params = urlparse.parse_qs(urlparse.urlparse(response.url).query)
+
+        if not response.meta.get('json') and \
+                params and \
+                params.get("category", None) and \
+                params.get("facetedValue", None) and \
+                params.get("searchTerm", None) and \
+                params.get("sortBy", None):
+            new_meta = response.meta
+            new_meta['json'] = True
+            new_meta['category'] = params["category"][0]
+            new_meta['faceted'] = params["facetedValue"][0]
+
+            return Request(
+                self.url_formatter.format(self.SHELF_AJAX_LINK_URL,
+                                          keyword=params["searchTerm"][0],
+                                          count=24,
+                                          offset=0,
+                                          category=params["category"][0],
+                                          faceted_value=params["facetedValue"][0]),
+                meta=new_meta)
+
         return list(super(TargetShelfPagesSpider, self).parse(response))
 
     def _scrape_product_links_json(self, response):
