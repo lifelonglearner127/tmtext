@@ -402,6 +402,11 @@ class AmazonScraper(Scraper):
 
             hidden = description.xpath('//*[@class="aok-hidden"]')
             more_button = description.xpath('//div[@id="fbExpanderMoreButtonSection"]')
+            expander = description.xpath(".//*[contains(@class, 'a-expander-extend-header')]")
+
+            # remove expander(=show mores) from description
+            if expander:
+                expander[0].getparent().remove(expander[0])
 
             description = html.tostring(description)
 
@@ -441,6 +446,13 @@ class AmazonScraper(Scraper):
         bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
         if bullets and len(bullets) > 4:
             return self._clean_text(bullets[4].text_content())
+
+    def _bullets(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]//text()")
+        bullets = [self._clean_text(r) for r in bullets if len(self._clean_text(r))>0]
+        if len(bullets) > 0:
+            return "\n".join(bullets)
+        return None
 
     def _seller_ranking(self):
         seller_ranking = []
@@ -523,12 +535,11 @@ class AmazonScraper(Scraper):
         try:
             description = ""
             children = self.tree_html.xpath("//div[@id='productDescription']/child::*[not(@class='disclaim') and not(name()='script') and not(name()='style')]")
-
-            manufacturer = False
+            skip_manufacturer_flag = False
 
             for child in children:
-                if manufacturer:
-                    manufacturer = False
+                if skip_manufacturer_flag:
+                    skip_manufacturer_flag = False
                     continue
 
                 self._exclude_images_from_description(child)
@@ -536,8 +547,8 @@ class AmazonScraper(Scraper):
                 if 'Product Description' in html.tostring(child):
                     continue
 
-                if 'From the Manufacturer' in html.tostring(child):
-                    manufacturer = True
+                if child.tag == "h3" and child.text.lower().strip() == 'from the manufacturer':
+                    skip_manufacturer_flag = True
                     continue
 
                 description += self._clean_text(self._exclude_javascript_from_description(html.tostring(child)))
@@ -1662,6 +1673,7 @@ class AmazonScraper(Scraper):
         "bullet_feature_3": _bullet_feature_3, \
         "bullet_feature_4": _bullet_feature_4, \
         "bullet_feature_5": _bullet_feature_5, \
+        "bullets": _bullets, \
         "usage": _usage, \
         "directions": _directions, \
         "warnings": _warnings, \
