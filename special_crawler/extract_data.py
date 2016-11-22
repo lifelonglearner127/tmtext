@@ -647,6 +647,10 @@ class Scraper():
 
             results_dict[info] = results
 
+        if sys.getsizeof(str(results_dict)) > 256000:
+            self.ERROR_RESPONSE["failure_type"] = 'Response too large'
+            return self.ERROR_RESPONSE
+
         return results_dict
 
     # pack returned object data types into nested dictionary according to specific format
