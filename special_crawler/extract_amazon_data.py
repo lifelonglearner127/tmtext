@@ -535,9 +535,19 @@ class AmazonScraper(Scraper):
         try:
             description = ""
             children = self.tree_html.xpath("//div[@id='productDescription']/child::*[not(@class='disclaim') and not(name()='script') and not(name()='style')]")
+            skip_manufacturer_flag = False
 
             for child in children:
+                if skip_manufacturer_flag:
+                    skip_manufacturer_flag = False
+                    continue
+
                 self._exclude_images_from_description(child)
+
+                if child.tag == "h3" and child.text.lower().strip() == 'from the manufacturer':
+                    skip_manufacturer_flag = True
+                    continue
+
                 description += self._clean_text(self._exclude_javascript_from_description(html.tostring(child)))
 
             if description is not None and len(description) > 5:
