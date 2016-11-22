@@ -88,7 +88,7 @@ def _check_bad_results_macys(driver):
 class URL2ScreenshotSpider(Spider):
     name = 'url2screenshot_products'
     # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
-    available_drivers = ['chromium', 'firefox']
+    available_drivers = ['chromium', 'phantomjs']
 
     handle_httpstatus_list = [403, 404, 502, 500]
 
@@ -162,6 +162,9 @@ class URL2ScreenshotSpider(Spider):
             # self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
             # self.proxy = "content.crawlera.com:8010"
             # self.proxy_type = 'http'
+            #TODO fix this properly, selenium fails if there is http -> https redirect
+            self.product_url = self.product_url.replace(
+                "http://", "https://") if "http://" in self.product_url else self.product_url
 
             # Using special squid connector
             self.proxy = "10.0.5.36:7708"
@@ -322,8 +325,8 @@ class URL2ScreenshotSpider(Spider):
         from selenium import webdriver
         profile = webdriver.FirefoxProfile()
         profile.set_preference("general.useragent.override", self.user_agent)
-        profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
         if self.proxy:
+            profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
             if 'socks' in self.proxy_type:
                 profile.set_preference("network.proxy.socks", self.proxy.split(':')[0])
                 profile.set_preference("network.proxy.socks_port", int(self.proxy.split(':')[1]))
