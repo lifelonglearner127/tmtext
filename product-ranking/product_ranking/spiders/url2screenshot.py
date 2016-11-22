@@ -88,7 +88,7 @@ def _check_bad_results_macys(driver):
 class URL2ScreenshotSpider(Spider):
     name = 'url2screenshot_products'
     # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
-    available_drivers = ['chromium', 'phantomjs']
+    available_drivers = ['chromium', 'firefox']
 
     handle_httpstatus_list = [403, 404, 502, 500]
 
