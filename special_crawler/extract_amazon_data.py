@@ -544,6 +544,9 @@ class AmazonScraper(Scraper):
 
                 self._exclude_images_from_description(child)
 
+                if 'Product Description' in html.tostring(child):
+                    continue
+
                 if child.tag == "h3" and child.text.lower().strip() == 'from the manufacturer':
                     skip_manufacturer_flag = True
                     continue
