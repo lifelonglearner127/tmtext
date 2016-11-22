@@ -38,7 +38,7 @@ from walmart_api.serializers import (WalmartApiFeedRequestSerializer, WalmartApi
                                      WalmartApiValidateXmlFileRequestSerializer, WalmartDetectDuplicateContentRequestSerializer,
                                      WalmartDetectDuplicateContentFromCsvFileRequestSerializer,
                                      CheckItemStatusByProductIDSerializer)
-from walmart_api.models import SubmissionHistory, SubmissionXMLFile
+from walmart_api.models import SubmissionHistory, SubmissionXMLFile, SubmissionResults
 from statistics.models import process_check_feed_response, ItemMetadata
 from rest_apis_content_analytics.image_duplication.views import parse_data
 from lxml import etree
@@ -490,13 +490,13 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         page = int(request.GET.get('page', 1))
         paginated_list = orig_list[(page-1)*paginate_by: page*paginate_by]
         paginate_left = paginate_right = True
-        
+
         if page <= 1:
             paginate_left = False
-        
+
         if page*paginate_by >= len(orig_list):
             paginate_right = False
-        
+
         return {'paginated_list': paginated_list, 'current_page': page,
                 'paginate_right': paginate_right, 'paginate_left': paginate_left}
 
@@ -506,14 +506,22 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         return context
 
     def list(self, request):
+        start_ = datetime.datetime.now()
+        print 'START!!!', start_
         with open(get_walmart_api_invoke_log(request), "a+") as myfile:
             log_history = myfile.read().splitlines()
+
+        print '2!!!', (datetime.datetime.now() - start_).total_seconds()
 
         if isinstance(log_history, list):
             log_history.reverse()
 
+        print '3!!!', (datetime.datetime.now() - start_).total_seconds()
+
         pagination = self._paginate_log_file_results(request, log_history)
         pagination['log'] = pagination.pop('paginated_list')
+
+        print '4!!!', (datetime.datetime.now() - start_).total_seconds()
 
         return Response(pagination)
 
@@ -880,6 +888,7 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         return Response({'data': 'OK'})
 
     def generate_walmart_api_signature(self, walmart_api_end_point, consumer_id, private_key, request_method, file_path):
+        start_ = datetime.datetime.now()
         cmd = ('java -jar "' + os.path.dirname(os.path.realpath(__file__)) +
                '/DigitalSignatureUtil-1.0.0.jar" DigitalSignatureUtil {0} {1} {2} {3} {4}').format(walmart_api_end_point,
                                                                                                    consumer_id,
@@ -897,6 +906,7 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         return walmart_api_signature
 
     def create(self, request):
+        start_ = datetime.datetime.now()
         output = {}
         request_url_pattern = 'request_url'
         request_feed_id_pattern = "feed_id"
@@ -920,6 +930,11 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         return Response(output)
 
     def process_one_set(self, request_url, request_feed_id):
+        # try to get the response from the DB, if it's available
+        if SubmissionResults.objects.filter(feed_id=request_feed_id):
+            return json.loads(SubmissionResults.objects.filter(feed_id=request_feed_id)[0].response)
+
+        start_ = datetime.datetime.now()
         walmart_api_signature = self.generate_walmart_api_signature(
             request_url.format(feedId=request_feed_id),
             self.walmart_consumer_id,
@@ -927,6 +942,8 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
             "GET",
             os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', "signature.txt"))
         )
+
+        unirest.timeout(30)
 
         response = unirest.get(request_url.format(feedId=request_feed_id),
             headers={
@@ -938,8 +955,9 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
                 "WM_SVC.ENV": self.walmart_environment,
                 "WM_SEC.AUTH_SIGNATURE": walmart_api_signature["signature"],
                 "WM_SEC.TIMESTAMP": int(walmart_api_signature["timestamp"])
-            }
+            },
         )
+
         # load the appropriate SubmissionHistory DB record (if any)
         subm_hist = SubmissionHistory.objects.filter(feed_id=request_feed_id)
         if (len(subm_hist) == 0) or (len(subm_hist) and not subm_hist[0].client_ip):
@@ -953,6 +971,14 @@ class CheckFeedStatusByWalmartApiViewSet(viewsets.ViewSet):
         xml_file = SubmissionXMLFile.objects.filter(feed_id=request_feed_id)
         if xml_file:
             response.body['submitted_at'] = xml_file[0].created.isoformat()
+
+        # save response in DB if it's successful
+        if isinstance(response.body, dict):
+            if response.body.get('feedStatus', None) == 'PROCESSED':
+                if not SubmissionResults.objects.filter(feed_id=request_feed_id):
+                    SubmissionResults.objects.create(
+                        feed_id=request_feed_id, response=json.dumps(response.body))
+
         return response.body
 
     def update(self, request, pk=None):
@@ -1290,9 +1316,9 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
 
 
         search_url = "http://www.google.com/search?oe=utf8&ie=utf8&source=uds&start=0&hl=en&q={0}"
-        proxy_host = "proxy.crawlera.com"
+        proxy_host = "content.crawlera.com"
         proxy_port = "8010"
-        proxy_auth = HTTPProxyAuth("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
+        proxy_auth = HTTPProxyAuth("7be623e22dad4ce1ba0a439128b1f89c", "")
         proxies = {"http": "http://{}:{}/".format(proxy_host, proxy_port)}
         retry_number = 3
         word_search_limit = 10
@@ -1933,10 +1959,7 @@ class FeedStatusAjaxView(DjangoView):
         feed_id = kwargs['feed_id']
 
         if not request.user.is_authenticated():
-            return JsonResponse({
-                'redirect': str(reverse_lazy(
-                    'login')+'?next='+request.GET.get('next', ''))
-            })
+            return JsonResponse({})
 
         feed_history = SubmissionHistory.objects.filter(user=request.user,
                                                         feed_id=feed_id)
@@ -1956,10 +1979,7 @@ class XMLFileRedirect(DjangoView):
         feed_id = kwargs['feed_id']
 
         if not request.user.is_authenticated():
-            return JsonResponse({
-                'redirect': str(reverse_lazy(
-                    'login')+'?next='+request.GET.get('next', ''))
-            })
+            return HttpResponse('Error: not logged in')
 
         xml_file = SubmissionXMLFile.objects.filter(feed_id=feed_id)
         if len(xml_file) > 2:

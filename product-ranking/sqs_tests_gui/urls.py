@@ -7,7 +7,7 @@ from gui.views import LogFileView, CSVDataFileView, AddJob, ProgressMessagesView
     RenderS3CachePage, ViewBase64Image
 from sqs_stats.views import SQSAutoscaleStats
 from kill_servers.views import KillRestoreServersView
-
+from reports.views import ReportSQSJobs, ReportDownloadCSV
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -37,6 +37,10 @@ urlpatterns = [
     url(r'^sqs-stats/$', SQSAutoscaleStats.as_view(), name='sqs-stats'),
     url(r'^kill-restore-servers/$', KillRestoreServersView.as_view(), name='kill-restore-servers'),
     url(r'^render-s3-cache/$', RenderS3CachePage.as_view(), name='render-s3-cache'),
+
+    url(r'^reports/sqs-jobs/$', ReportSQSJobs.as_view(), name='report-sqs-jobs'),
+    url(r'^reports/get-csv/(?P<encrypted_filename>.+)',
+        ReportDownloadCSV.as_view(), name='report-get-csv'),
 
     url('^fcgi/$', include('fcgi.urls'))
 ]

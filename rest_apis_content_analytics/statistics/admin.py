@@ -22,3 +22,9 @@ class SubmitXMLItemAdmin(admin.ModelAdmin):
     inlines = [ItemMetadataInline, ErrorTextInline]
 
     ordering = ['-when']
+
+
+@admin.register(ItemMetadata)
+class ItemMetadataAdmin(admin.ModelAdmin):
+    list_display = ['item', 'upc', 'feed_id']
+    search_fields = ['upc', 'feed_id']

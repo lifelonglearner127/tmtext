@@ -4,8 +4,7 @@ import urlparse
 from product_ranking.items import SiteProductItem
 from .cvs import CvsProductsSpider
 from scrapy import Request
-from scrapy.conf import settings
-
+import urllib
 
 class CvsShelfPagesSpider(CvsProductsSpider):
     name = 'cvs_shelf_urls_products'
@@ -21,13 +20,13 @@ class CvsShelfPagesSpider(CvsProductsSpider):
                       "deviceToken=7780&" \
                       "deviceType=DESKTOP&" \
                       "lineOfBusiness=RETAIL&" \
-                      "navNum=20&" \
+                      "navNum=100&" \
                       "operationName=getProductResultList&" \
                       "pageNum={page_num}&" \
                       "referer={referer}&" \
                       "serviceCORS=False&" \
                       "serviceName=OnlineShopService&" \
-                      "sortBy=nameAZ&" \
+                      "sortBy=highestRated&" \
                       "version=1.0" \
 
     use_proxies = True
@@ -35,15 +34,15 @@ class CvsShelfPagesSpider(CvsProductsSpider):
     def __init__(self, *args, **kwargs):
         super(CvsShelfPagesSpider, self).__init__(*args, **kwargs)
         self.product_url = kwargs['product_url']
+        self.products_per_page = 100
 
         if "num_pages" in kwargs:
-            self.num_pages = int(kwargs['num_pages']) + 1
+            self.num_pages = int(kwargs['num_pages'])
         else:
-            self.num_pages = 2 #TODO: fix
+            self.num_pages = 1
 
         self.current_page = 1
         self.shelf_categories = ''
-        #settings.overrides['CRAWLERA_ENABLED'] = True
 
     @staticmethod
     def valid_url(url):
@@ -66,7 +65,7 @@ class CvsShelfPagesSpider(CvsProductsSpider):
             self.referer = response.url
         shelf_categories_text = response.xpath(
             '//script[contains(text(), "breadcrumb")]/text()').re(
-            'breadcrumb : (\[.+\])'
+            'breadcrumb : (\[.+?\])'
         )
         if not self.shelf_categories:
             self.shelf_categories = json.loads(shelf_categories_text[0])[2:]
@@ -91,19 +90,45 @@ class CvsShelfPagesSpider(CvsProductsSpider):
             yield link, item
 
     def _scrape_next_results_page_link(self, response):
-        if self.current_page >= self.num_pages:
+        if self.current_page > self.num_pages or self.current_page > (self.total_matches_int/self.products_per_page) + 1:
             return
-        return super(CvsShelfPagesSpider,
-                     self)._scrape_next_results_page_link(response)
+        url_parts = urlparse.urlsplit(response.url)
+        query_string = urlparse.parse_qs(url_parts.query)
+
+        ajax_search_url = self.SEARCH_URL_AJAX.format(
+            referer=urllib.quote_plus(self.referer, ':'),
+            page_num=self.current_page)
+        self.current_page += 1
+
+        headers = {'Accept': 'application/json, text/plain, */*',
+                   'Cache-Control': 'no-cache',
+                   'Connection': 'keep-alive',
+                   'Host': 'www.cvs.com',
+                   'Pragma': 'no-cache',
+                   'Referer': self.referer,
+                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64)'
+                                 ' AppleWebKit/537.36 (KHTML, like Gecko)'
+                                 ' Chrome/49.0.2623.110 Safari/537.36'}
+
+        return Request(ajax_search_url,
+                       self.parse,
+                       headers=headers,
+                       meta=response.meta,
+                       priority=1)
 
     def parse_product(self, response):
         return super(CvsShelfPagesSpider, self).parse_product(response)
 
     def _scrape_results_per_page(self, response):
-        return super(CvsShelfPagesSpider, self)._scrape_results_per_page(response)
+        return 100
 
     def _get_products(self, response):
         return super(CvsShelfPagesSpider, self)._get_products(response)
 
     def _scrape_total_matches(self, response):
+        if self.total_matches:
+            self.total_matches_int = self.total_matches
+        else:
+            self.total_matches_int = self.products_per_page
+
         return self.total_matches

@@ -10,6 +10,7 @@
 # - executing the crawler against the cached dir;
 # - error handling (blank page?); solving captcha issues at amazon
 # - CH support
+#
 
 import os
 import sys
@@ -19,9 +20,7 @@ import hashlib
 from exceptions import OSError
 
 from scrapy.contrib.httpcache import *
-from scrapy.contrib.downloadermiddleware.httpcache import HttpCacheMiddleware
 from scrapy.utils import gz
-from boto.s3.connection import S3Connection
 
 import settings
 from cache_models import list_db_cache

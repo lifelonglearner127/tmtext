@@ -1,24 +1,24 @@
-import re
 import json
-from pprint import pprint
 
 import lxml.html
 import requests
 
 class TargetVariants(object):
 
-    def setupSC(self, response, zip_code='94117', item_info=None, debug=False):
+    def setupSC(self, response, zip_code='94117', item_info=None, selected_tcin=None, debug=False):
         """ Call it from SC spiders """
         self.response = response
         self.tree_html = lxml.html.fromstring(response.body)
         self.item_info = item_info
+        self.selected_tcin = selected_tcin
         self.zip_code = zip_code
         self.debug = debug
 
-    def setupCH(self, tree_html, zip_code='94117', item_info=None, debug=False):
+    def setupCH(self, tree_html, zip_code='94117', item_info=None, selected_tcin=None, debug=False):
         """ Call it from CH spiders """
         self.tree_html = tree_html
         self.item_info = item_info
+        self.selected_tcin = selected_tcin
         self.debug = debug
 
         self.zip_code = zip_code
@@ -49,6 +49,31 @@ class TargetVariants(object):
             return ""
 
     def _swatches(self):
+        if self.item_info:
+            swatches = []
+
+            for child in self.item_info['item']['child_items']:
+                s = {
+                    'hero_image': [],
+                }
+
+                for attribute in child['variation']:
+                    s[attribute] = child['variation'][attribute]
+
+                images = child['enrichment']['images'][0]
+
+                if images.get('swatch'):
+                    s['hero_image'] = [images['base_url'] + images['swatch']]
+
+                s['hero'] = len(s['hero_image'])
+
+                swatches.append(s)
+
+            if swatches:
+                return swatches
+
+            return None
+
         javascript_block = self.tree_html.xpath("//script[contains(text(), 'Target.globals.AltImagesJson')]/text()")[0]
         alt_image_json = json.loads(self._find_between(javascript_block, "Target.globals.AltImagesJson =", "\n"))
         alt_name_list = [alt_name.keys()[0] for alt_name in alt_image_json[0][alt_image_json[0].keys()[0]]["items"]]
@@ -159,15 +184,15 @@ class TargetVariants(object):
             'Origin': 'http://www.target.com',
             'Pragma': 'no-cache',
             'Referer': self.item_info['dynamicKitURL'],
-            'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36'
         }
-
-        response = requests.post(url, data=json.dumps(payload), headers=headers)
-        # TODO: url http://www.target.com/p/mid-rise-straight-leg-jeans-curvy-fit-black-mossimo/-/A-15545812 fails
         try:
+            response = requests.post(url, data=json.dumps(payload), headers=headers)
+            # TODO: url http://www.target.com/p/mid-rise-straight-leg-jeans-curvy-fit-black-mossimo/-/A-15545812 fails
+
             return response.json()['products']
         except:
-            print 'ERROR! ' + response.text
+            print 'ERROR getting avilability info! '# + response.text
 
     def _extract_location_id(self, product_id):
         " extract location id to use it in stock status checking "
@@ -185,7 +210,7 @@ class TargetVariants(object):
             'Origin': 'http://www.target.com',
             'Pragma': 'no-cache',
             'Referer': self.item_info['dynamicKitURL'],
-            'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36'
         }
 
         response = requests.get(url, headers=headers)
@@ -199,8 +224,9 @@ class TargetVariants(object):
         if self.item_info:
             variants = []
 
+            '''
             headers = {
-                'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.85 Safari/537.36'
             }
             page_raw_text = requests.get(self.item_info['dynamicKitURL'], headers=headers).content
             # decides if users can see "get it in 4-7 business days"
@@ -228,42 +254,40 @@ class TargetVariants(object):
                     continue
 
                 if 'locations' in item['products'][0]:
-                    status = True if item['products'][0]['locations'][0]['availability_status'] == 'IN_STOCK' else False
+                    status = False
                     try:
+                        status = True if item['products'][0]['locations'][0][
+                                             'availability_status'] == 'IN_STOCK' else False
                         availability_info[product_id].append(status)
-                    except KeyError:
+                    except (KeyError, IndexError):
                         availability_info[product_id] = [status]
+            '''
 
-            for item in self.item_info['SKUs']:
-                try:
-                    price = item['Offers'][0]['OfferPrice'][0]['formattedPriceValue']
-                except ValueError as e:
-                    if 'low to display' in str(e):
-                        price = None  # in cart price?
-                except KeyError:
-                    price = None
-
+            for child in self.item_info['item']['child_items']:
                 v = {
                     'in_stock' : False,
-                    'price': float( price[1:].replace(',',''))\
-                        if price not in ('Too low to display', None, 'price varies')\
-                        else None, # convert price
+                    'price': child['price']['offerPrice']['price'],
                     'properties' : {},
-                    'image_url' : item['Images'][0]['PrimaryImage'][0]['image'],
-                    'selected' : None,
-                    'upc':None,
+                    'image_url' : None,
+                    'selected' : child['tcin'] == self.selected_tcin,
+                    'upc': child['upc'],
+                    'dpci': child['dpci'],
+                    'tcin': child['tcin'],
                 }
-                # Adding UPC
-                v['upc'] = item.get('UPC')
-                v['in_stock'] = any(availability_info.get(item.get('partNumber', True), [True]))  # TODO: this fails if written as indexes ([]), not get()
 
-                for attribute in item.get('VariationAttributes', []):
-                    v['properties'][ attribute['name'].lower() ] = attribute['value']
+                v['in_stock'] = child['available_to_promise_network']['availability_status'] != 'OUT_OF_STOCK'
+
+                for attribute in child['variation']:
+                    v['properties'][attribute] = child['variation'][attribute]
+
+                images = child['enrichment']['images'][0]
+                v['image_url'] = images['base_url'] + images['primary']
 
                 variants.append(v)
 
             if variants:
                 return variants
+
             return None
 
         try:

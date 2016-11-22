@@ -1,10 +1,7 @@
 import re
 import urlparse
 
-import scrapy
-from scrapy.log import WARNING, ERROR
 from scrapy.http import Request
-from scrapy import Selector
 
 from product_ranking.items import SiteProductItem
 
@@ -27,7 +24,7 @@ class LowesShelfPagesSpider(LowesProductsSpider):
 
     def _setup_meta_compatibility(self):
         """ Needed to prepare first request.meta vars to use """
-        return {'remaining': 99999, 'search_term': ''}.copy()
+        return {'remaining': self.quantity, 'search_term': ''}.copy()
 
     def __init__(self, *args, **kwargs):
         super(LowesShelfPagesSpider, self).__init__(*args, **kwargs)
@@ -39,6 +36,9 @@ class LowesShelfPagesSpider(LowesProductsSpider):
             self.num_pages = int(kwargs['num_pages'])
         else:
             self.num_pages = 1  # See https://bugzilla.contentanalyticsinc.com/show_bug.cgi?id=3313#c0
+
+        if "quantity" in kwargs:
+            self.quantity = int(kwargs['quantity'])
 
         self.user_agent = "Mozilla/5.0 (X11; Linux i686 (x86_64))" \
             " AppleWebKit/537.36 (KHTML, like Gecko)" \
@@ -78,18 +78,23 @@ class LowesShelfPagesSpider(LowesProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         if self.current_page >= self.num_pages:
-            return
+            return None
         self.current_page += 1
-        spliturl = self.product_url.split('?')
-        nextlink = spliturl[0]
-        if len(spliturl) == 1:
-            return (nextlink + "?offset=%d" % (self.current_page-1)*36)
-        else:
-            nextlink += "?"
-            for s in spliturl[1].split('&'):
-                if not "offset=" in s:
-                    nextlink += s + "&"
-            return (nextlink + "offset=%d" % (self.current_page-1)*36)
+
+        next_link = response.xpath("//li[contains(@class,'page-next')]/a/@href").extract()
+        if len(next_link) > 0:
+            return "http://www.lowes.com" + next_link[0]
+        return None
+        # spliturl = self.product_url.split('?')
+        # nextlink = spliturl[0]
+        # if len(spliturl) == 1:
+        #     return (nextlink + "?offset=%d" % (self.current_page-1)*36)
+        # else:
+        #     nextlink += "?"
+        #     for s in spliturl[1].split('&'):
+        #         if not "offset=" in s:
+        #             nextlink += s + "&"
+        #     return (nextlink + "offset=%d" % (self.current_page-1)*36)
 
     def parse_product(self, response):
         return super(LowesShelfPagesSpider, self).parse_product(response)

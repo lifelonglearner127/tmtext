@@ -1,13 +1,7 @@
-import os.path
 import re
 import urlparse
-import requests
-import json
 
-import scrapy
-from scrapy.log import WARNING, ERROR
 from scrapy.http import Request
-from scrapy import Selector
 
 from product_ranking.items import SiteProductItem
 

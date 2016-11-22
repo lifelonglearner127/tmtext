@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'api_control',
-    'api_log',
+    #'api_log',
     'api_auth'
 ]
 
@@ -51,7 +51,7 @@ MIDDLEWARE_CLASSES = [
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'api_log.middlewares.LogQueryInformation',
+    #'api_log.middlewares.LogQueryInformation',
 ]
 
 ROOT_URLCONF = 'insights_api.urls'

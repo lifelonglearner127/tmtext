@@ -7,19 +7,25 @@ import sys
 import time
 import traceback
 import urlparse
+import itertools
+from functools import wraps
+import inspect
 
 from abc import abstractmethod
 from selenium.webdriver.common.by import By
+
+
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import WebDriverException
 from product_ranking.items import CheckoutProductItem
 
 import scrapy
 from scrapy.conf import settings
 from scrapy.http import FormRequest
 from scrapy.log import INFO, WARNING, ERROR
+from scrapy import log as scrapy_logger
 import lxml.html
+
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(CWD, '..', '..', '..', '..', '..'))
@@ -44,6 +50,33 @@ def _get_domain(url):
     return urlparse.urlparse(url).netloc.replace('www.', '')
 
 
+def retry_func(ExceptionToCheck, tries=10, delay=2):
+    """Retry call for decorated function"""
+
+    def ext_retry(f):
+
+        @wraps(f)
+        def f_retry(*args, **kwargs):
+            mtries, mdelay = tries, delay
+            while mtries > 1:
+                try:
+                    return f(*args, **kwargs)
+                except ExceptionToCheck as e:
+                    msg = "Exception - {}, retrying method {} in {} seconds, retries left: {}...".format(
+                        str(e), f.__name__, mdelay, mtries)
+                    func_args = "Arguments: {}".format(inspect.getargspec(f))
+                    trb = "################### TRACEBACK HERE ############## \n {} ################".format(
+                        traceback.format_exc())
+                    scrapy_logger.msg(msg, level=WARNING)
+                    scrapy_logger.msg(func_args, level=WARNING)
+                    scrapy_logger.msg(trb, level=WARNING)
+                    time.sleep(mdelay)
+                    mtries -= 1
+            return f(*args, **kwargs)
+        return f_retry  # true decorator
+    return ext_retry
+
+
 class BaseCheckoutSpider(scrapy.Spider):
     allowed_domains = []  # do not remove comment - used in find_spiders()
     available_drivers = ['chromium', 'firefox']
@@ -54,12 +87,11 @@ class BaseCheckoutSpider(scrapy.Spider):
     CHECKOUT_PAGE_URL = ""
 
     retries = 0
-    MAX_RETRIES = 3
-    SOCKET_WAIT_TIME = 120
-    WEBDRIVER_WAIT_TIME = 100
+    MAX_RETRIES = 10
+    SOCKET_WAIT_TIME = 100
+    WEBDRIVER_WAIT_TIME = 60
 
     def __init__(self, *args, **kwargs):
-        socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
         settings.overrides['ITEM_PIPELINES'] = {}
         super(BaseCheckoutSpider, self).__init__(*args, **kwargs)
         self.user_agent = kwargs.get(
@@ -80,8 +112,13 @@ class BaseCheckoutSpider(scrapy.Spider):
         self.requested_color = None
         self.is_requested_color = False
 
+        self.promo_code = kwargs.get('promo_code', '') # ticket 10585
+        self.promo_code = [promo_code.strip() for promo_code in self.promo_code.split(',')]
+        self.promo_price = int(kwargs.get('promo_price', 0))
+        self.promo_mod = self.promo_code and self.promo_price
+
         from pyvirtualdisplay import Display
-        display = Display(visible=False)
+        display = Display(visible=False, size=(1280, 720))
         display.start()
 
         if self.quantity:
@@ -89,6 +126,10 @@ class BaseCheckoutSpider(scrapy.Spider):
             self.quantity = sorted(self.quantity)
         else:
             self.quantity = [1]
+
+    def closed(self, reason):
+        print "## closing all driver windows"
+        self.driver.quit()
 
     def parse(self, request):
         is_iterable = isinstance(self.product_data, (list, tuple))
@@ -98,74 +139,75 @@ class BaseCheckoutSpider(scrapy.Spider):
 
         for product in self.product_data:
             self.log("Product: %r" % product)
-            # Open product URL
-            for qty in self.quantity:
-                self.requested_color = None
-                self.is_requested_color = False
-                url = product.get('url')
-                # Fastest way to empty the cart
-                self._open_new_session(url)
-                if product.get('FetchAllColors'):
-                    # Parse all the products colors
-                    colors = self._get_colors_names()
+            url = product.get('url')
+            self._open_new_session(url)
+            self.requested_color = None
+            self.is_requested_color = False
+            self.no_longer_available = self._parse_no_longer_available()
+            self.available_colors = self._get_colors_names() if not self.no_longer_available else [None]
+            if product.get('FetchAllColors'):
+                # Parse all the products colors
+                self._pre_parse_products()
+                colors = self.available_colors
 
-                else:
-                    # Only parse the selected color
-                    # if None, the first fetched will be selected
-                    colors = product.get('color', None)
+            else:
+                # Only parse the selected color
+                # if None, the first fetched will be selected
+                colors = product.get('color', None)
 
-                    if colors:
-                        self.is_requested_color = True
+                if colors:
+                    self.is_requested_color = True
 
-                    if isinstance(colors, basestring) or not colors:
-                        colors = [colors]
+                if isinstance(colors, basestring) or not colors:
+                    colors = [colors]
+            self.log('Got colors {}'.format(colors), level=WARNING)
+            for variant in self._parse_variants(colors, url):
+                yield variant
+        self.driver.quit()
 
-                self.log('Colors %r' % (colors))
-                for color in colors:
-                    if self.is_requested_color:
-                        self.requested_color = color
-                    self.current_quantity = qty
-                    self.log('Color: %s' % (color or 'None'))
-                    clickable_error = True
-                    self.retries = 0
-                    while clickable_error:
-                        if self.retries >= self.MAX_RETRIES:
-                            self.log('Max retries number reach,'
-                                     ' skipping this product')
-                            break
+    def _parse_items(self, items, url):
+        for item in items:
+            item['url'] = url
+            if self.promo_mod:
+                for item_promo in self.promo_logic(item):
+                    yield item_promo
+            else:
+                yield item
 
-                        else:
-                            self.retries += 1
+    def _parse_variants(self, colors, url):
+        for i, (qty, color) in enumerate(itertools.product(self.quantity, colors)):
+            self.log('Parsing color - {}, quantity - {}'.format(
+                color or 'None', qty), level=WARNING)
+            if self.no_longer_available:
+                for promo_code in self.promo_code:
+                    self.log('No longer available {}'.format(self.no_longer_available), level=WARNING)
+                    item = CheckoutProductItem()
+                    item['url'] = url
+                    item['color'] = color
+                    item['quantity'] = qty
+                    if self.promo_mod:
+                        item['promo_code'] = promo_code
+                    item['no_longer_available'] = True
+                    item['not_found'] = True
+                    yield item
+            else:
+                if i > 0:
+                    self.driver.delete_all_cookies()
+                    self.driver.get(url)
+                if self.is_requested_color:
+                    self.requested_color = color
+                self.current_color = color
+                self.current_quantity = qty
+                self._parse_product_page(url, qty, color)
+                items = self._parse_cart_page()
+                for item in self._parse_items(items, url):
+                    yield item
 
-                        clickable_error = False
-                        try:
-                            self._parse_product_page(url, qty, color)
-
-                            for item in self._parse_cart_page():
-                                item['url'] = url
-                                yield item
-
-                            # Fastest way to empty the cart
-                            # and clear resources
-                            self.driver.close()
-                            self._open_new_session(url)
-
-                        except WebDriverException as e:
-                            clickable_error = True
-                            print traceback.print_exc()
-                            print "Exception: %s" % str(e)
-                            self._open_new_session(url)
-
-                        except:
-                            print traceback.print_exc()
-                            self.log('Error while parsing color %s of %s'
-                                     % (color, url))
-
-                            self._open_new_session(url)
-
-                self.driver.close()
-
+    @retry_func(Exception)
     def _open_new_session(self, url):
+        old_driver = getattr(self, 'driver', None)
+        if old_driver and not isinstance(old_driver, str):
+            self.driver.quit()
         self.driver = self.init_driver()
         self.wait = WebDriverWait(self.driver, self.WEBDRIVER_WAIT_TIME)
         socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
@@ -180,19 +222,22 @@ class BaseCheckoutSpider(scrapy.Spider):
         item['price_on_page'] = self._get_item_price_on_page(product)
         color = self._get_item_color(product)
         quantity = self._get_item_quantity(product)
+        item['no_longer_available'] = False
+        item['not_found'] = False
 
         if quantity and price:
             quantity = int(quantity)
-            item['price'] = float(price) / quantity
+            item['price'] = round(float(price.replace(',', '')) / quantity, 2)
             item['quantity'] = quantity
             item['requested_color'] = self.requested_color
+            item['requested_quantity_not_available'] = quantity != self.current_quantity
 
         if color:
             item['color'] = color
 
         item['requested_color_not_available'] = (
             color and self.requested_color and
-            (self.requested_color != color))
+            (self.requested_color.lower() != color.lower()))
         return item
 
     def _parse_attributes(self, product, color, quantity):
@@ -209,23 +254,59 @@ class BaseCheckoutSpider(scrapy.Spider):
         products = products if is_iterable else list(products)
 
         for product in products:
-            self._parse_attributes(product, color, quantity)
-            self._add_to_cart()
-            self._do_others_actions()
+            self._parse_one_product_page(product, quantity, color)
 
-    def _parse_cart_page(self):
-        socket.setdefaulttimeout(self.SOCKET_WAIT_TIME)
+    @retry_func(Exception)
+    def _parse_one_product_page(self, product, quantity, color=None):
+        # this is moved to separate method to avoid situations in future
+        # where multiple product are given, and add to cart button not worked in one of them
+        # self._open_new_session(url)
+        self._pre_parse_products()
+        self._parse_attributes(product, color, quantity)
+        self._add_to_cart()
+        self._do_others_actions()
+
+    @retry_func(Exception)
+    def _load_cart_page(self, cart_cookies=None):
         self.driver.get(self.SHOPPING_CART_URL)
         product_list = self._get_product_list_cart()
         if product_list:
-            for product in self._get_products_in_cart(product_list):
-                item = self._parse_item(product)
-                if item:
-                        item['order_subtotal'] = self._get_subtotal()
-                        item['order_total'] = self._get_total()
-                        yield item
-                else:
-                    self.log('Missing field in product from shopping cart')
+            return product_list
+        else:
+            # selenium need actual page opened to import cookies
+            self._open_new_session(self.SHOPPING_CART_URL)
+            time.sleep(5)
+            self.driver.delete_all_cookies()
+            time.sleep(5)
+            if cart_cookies:
+                for cookie in cart_cookies:
+                    self.driver.add_cookie(cookie)
+            time.sleep(5)
+            # retry the page until we get correct element
+            raise Exception
+
+    # @retry_func(Exception)
+    def _get_current_domain_name(self):
+        # trying to get current domain to filter cookies
+        url = self.driver.current_url
+        dom_name = urlparse.urlparse(url).netloc.replace(
+            'www1', '').replace('www3', '').replace('www', '')
+        if not dom_name:
+            dom_name = self.allowed_domains[0]
+        self.log("Got domain name: %s" % dom_name, level=WARNING)
+        return dom_name
+
+    def _parse_cart_page(self):
+        # get cookies with our cart stuff and filter them
+        dom_name = self._get_current_domain_name()
+        cart_cookies = [c for c in self.driver.get_cookies() if dom_name in c.get('domain')]
+        self.log("Got cookies from page: %s" % len(cart_cookies), level=WARNING)
+        product_list = self._load_cart_page(cart_cookies=cart_cookies)
+        for product in self._get_products_in_cart(product_list):
+            item = self._parse_item(product)
+            item['order_subtotal'] = float(self._get_subtotal())
+            item['order_total'] = float(self._get_total())
+            yield item
 
     def _find_by_xpath(self, xpath, element=None):
         """
@@ -238,13 +319,13 @@ class BaseCheckoutSpider(scrapy.Spider):
             target = self.driver
         return target.find_elements(By.XPATH, xpath)
 
+    # @retry_func(Exception)
     def _click_attribute(self, selected_attribute_xpath, others_attributes_xpath, element=None):
         """
         Check if the attribute given by selected_attribute_xpath is checkout
         if checkeck don't do it anything,
         else find the first available attribute and click on it
         """
-        time.sleep(2)
         if element:
             target = element
         else:
@@ -261,7 +342,54 @@ class BaseCheckoutSpider(scrapy.Spider):
             available_attributes[0].click()
         elif selected_attribute:
             selected_attribute[0].click()
-        time.sleep(8)
+
+    def promo_logic(self, item):
+        for promo_code in self.promo_code:
+            item['promo_code'] = promo_code
+            self._enter_promo_code(promo_code)
+            promo_order_total = float(self._get_promo_total())
+            promo_order_subtotal = float(self._get_promo_subtotal().replace(',', ''))
+            promo_price = round(promo_order_subtotal / item['quantity'], 2)
+            is_promo_code_valid = not promo_order_total == item['order_total']
+            item['is_promo_code_valid'] = is_promo_code_valid
+            if not is_promo_code_valid:
+                item['promo_invalid_message'] = self._get_promo_invalid_message()
+            else:
+                item.pop('promo_invalid_message', None)
+            if self.promo_price == 1:
+                item['order_total'] = promo_order_total
+                item['order_subtotal'] = promo_order_subtotal
+                item['price'] = promo_price
+            if self.promo_price == 2:
+                item['promo_order_total'] = promo_order_total
+                item['promo_order_subtotal'] = promo_order_subtotal
+                item['promo_price'] = promo_price
+            self._remove_promo_code()
+            yield item
+
+    @abstractmethod
+    def _get_promo_invalid_message(self):
+        return
+
+    @abstractmethod
+    def _get_promo_subtotal(self):
+        return
+
+    @abstractmethod
+    def _get_promo_total(self):
+        return
+
+    @abstractmethod
+    def _enter_promo_code(self, promo_code):
+        return
+
+    @abstractmethod
+    def _remove_promo_code(self):
+        return
+
+    @abstractmethod
+    def _get_product_list_cart(self):
+        return
 
     @abstractmethod
     def start_requests(self):
@@ -344,12 +472,18 @@ class BaseCheckoutSpider(scrapy.Spider):
     def _get_total(self):
         return
 
+    @abstractmethod
+    def _pre_parse_products(self):
+        return
+
+    @abstractmethod
+    def _parse_no_longer_available(self):
+        return False
+
+    # @retry_func(Exception)
     def _click_on_element_with_id(self, _id):
-        try:
-            element = self.wait.until(EC.element_to_be_clickable((By.ID, _id)))
-            element.click()
-        except Exception as e:
-            self.log('Error on clicking element with ID %s: %s' % (_id, str(e)))
+        element = self.wait.until(EC.element_to_be_clickable((By.ID, _id)))
+        element.click()
 
     def _choose_another_driver(self):
         for d in self.available_drivers:
@@ -362,16 +496,18 @@ class BaseCheckoutSpider(scrapy.Spider):
         chrome_options = webdriver.ChromeOptions()  # this is for Chromium
         if self.proxy:
             chrome_options.add_argument(
-                '--proxy-server=%s' % self.proxy_type+'://'+self.proxy)
+                '--proxy-server=%s' % self.proxy_type + '://' + self.proxy)
         chrome_flags["chrome.switches"] = ['--user-agent=%s' % self.user_agent]
         chrome_options.add_argument('--user-agent=%s' % self.user_agent)
         executable_path = '/usr/sbin/chromedriver'
         if not os.path.exists(executable_path):
             executable_path = '/usr/local/bin/chromedriver'
-        # initialize webdriver, open the page and make a screenshot
+        # initialize webdriver, open the page
         driver = webdriver.Chrome(desired_capabilities=chrome_flags,
                                   chrome_options=chrome_options,
                                   executable_path=executable_path)
+        # driver.set_page_load_timeout(self.SOCKET_WAIT_TIME)
+        # driver.maximize_window()
         return driver
 
     def _init_firefox(self):
@@ -400,9 +536,8 @@ class BaseCheckoutSpider(scrapy.Spider):
                 self._driver = random.choice(self.available_drivers)
             else:
                 self._driver = self.driver_name
-        print('Using driver: ' + self._driver)
         self.log('Using driver: ' + self._driver)
-        init_driver = getattr(self, '_init_'+self._driver)
+        init_driver = getattr(self, '_init_' + self._driver)
         return init_driver()
 
     @staticmethod

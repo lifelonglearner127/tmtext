@@ -13,6 +13,8 @@ REDIS_PORT = 6379
 
 # Keys for sqs metrics in redis
 INSTANCES_COUNTER_REDIS_KEY = 'daily_sqs_instances_counter'
+JOBS_COUNTER_REDIS_KEY = 'daily_sqs_jobs_counter'
+JOBS_STATS_REDIS_KEY = 'sqs_jobs_stats'
 
 TASKS_COUNTER_REDIS_KEY = 'executed_tasks_during_the_day'
 

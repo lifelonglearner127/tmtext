@@ -21,7 +21,7 @@ class WayfairScraper(Scraper):
     ##########################################
     ############### PREP
     ##########################################
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.wayfair.com/<product-name>.html"
+    INVALID_URL_MESSAGE = "Expected URL format is (http|https)://www.wayfair.com/(.*)"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -32,10 +32,9 @@ class WayfairScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.wayfair.com/.+\.html$", self.product_page_url)
-
+        m = re.match(r"^(https|http)://www\.wayfair\.com/(.*)", self.product_page_url)
         return not not m
-    
+
     def not_a_product(self):
         """Checks if current page is not a valid product page
         (an unavailable product page or other type of method)
@@ -75,19 +74,19 @@ class WayfairScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.tree_html.xpath('//h1[@class="product__nova__title"]/span[@class="title_name"]/text()')[0].strip()
+        return self.tree_html.xpath('//span[contains(@class,"js-product-title-name")]//text()')[0].strip()
 
     def _product_title(self):
-        return self.tree_html.xpath('//h1[@class="product__nova__title"]/span[@class="title_name"]/text()')[0].strip()
+        return self.tree_html.xpath('//span[contains(@class,"js-product-title-name")]//text()')[0].strip()
 
     def _title_seo(self):
-        return self.tree_html.xpath('//h1[@class="product__nova__title"]/span[@class="title_name"]/text()')[0].strip()
+        return self.tree_html.xpath("//title//text()")[0].strip()
 
     def _model(self):
         return None
 
     def _upc(self):
-        return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
+        return None
 
     def _features(self):
         features = self.tree_html.xpath("//ul[preceding-sibling::p/text()='Features']/li/text()")
@@ -145,9 +144,11 @@ class WayfairScraper(Scraper):
     ##########################################
     def _mobile_image_same(self):
         pass
-        
+
     def _image_urls(self):
-        image_urls = self.tree_html.xpath("//div[contains(@class, 'product__nova__images_thumbnails')]//img/@src")
+        image_urls = self.tree_html.xpath(
+            "//div[contains(@class, 'ProductDetailImagesThumbnails-content')]//img/@src"
+        )
 
         if not image_urls:
             return None
@@ -280,14 +281,14 @@ class WayfairScraper(Scraper):
 
     def _in_stores(self):
         return 0
-    
+
     def _marketplace(self):
         return 0
 
 
     ##########################################
     ############### CONTAINER : CLASSIFICATION
-    ##########################################    
+    ##########################################
     def _categories(self):
         return self.tree_html.xpath("//div[contains(@class, 'product__nova__breadcrumbs')]/a/text()")
 
@@ -348,6 +349,8 @@ class WayfairScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
+        "price_amount" : _price_amount, \
+        "price_currency" : _price_currency, \
         "in_stores" : _in_stores, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "marketplace" : _marketplace, \

@@ -174,7 +174,9 @@ class WagScraper(Scraper):
     def _no_longer_available(self):
         no_longer_aval = self.tree_html.xpath(
             '//*[@class="discontinuedBanner"]')
-        return bool(no_longer_aval)
+        if no_longer_aval:
+            return 1
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -401,9 +403,6 @@ class WagScraper(Scraper):
     def _site_online_out_of_stock(self):
         return self._no_longer_available()
 
-    def _site_online_in_stock(self):
-        return not self.site_online_out_of_stock()
-
     def _in_stores_out_of_stock(self):
         return None
 
@@ -420,7 +419,7 @@ class WagScraper(Scraper):
         return self._categories()[-1]
 
     def _brand(self):
-                return None
+        return None
 
     ##########################################
     ################ HELPER FUNCTIONS
@@ -475,7 +474,6 @@ class WagScraper(Scraper):
         "marketplace_lowest_price": _marketplace_lowest_price,
         "site_online": _site_online,
         "site_online_out_of_stock": _site_online_out_of_stock,
-        "site_online_in_stock": _site_online_in_stock,
         "in_stores_out_of_stock": _in_stores_out_of_stock,
 
         # CONTAINER: CLASSIFICATION

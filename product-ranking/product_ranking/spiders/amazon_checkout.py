@@ -1,5 +1,4 @@
 import re
-import socket
 import time
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
@@ -57,7 +56,7 @@ class AmazonSpider(BaseCheckoutSpider):
         try:
             matched_colors = filter(lambda x: len(x) > 1, pattern.findall(colors_names)[0].split('"'))
         except IndexError:
-            matched_colors = [None]
+            matched_colors = []
         return matched_colors
 
     def select_size(self, element=None):
@@ -69,7 +68,7 @@ class AmazonSpider(BaseCheckoutSpider):
         self.log('Size selected')
 
     def select_color(self, element=None, color=None):
-        time.sleep(4)
+        time.sleep(8)
         color_attributes_xpath = ('*//li[@class="swatchAvailable"]')
 
         if color and color.lower() in map(lambda x: x.lower(), self._get_colors_names()):
@@ -77,6 +76,13 @@ class AmazonSpider(BaseCheckoutSpider):
                                     'img[contains(translate(' \
                                     '@alt, "ABCDEFGHIJKLMNOPQRSTUVWXYZ",' \
                                     ' "abcdefghijklmnopqrstuvwxyz"), "{}")]'.format(color.lower())
+        else:
+            color_attribute_xpath = '//*[contains(@id, "color_name_") and @class="swatchSelect"]'
+            try:
+                self.current_color = self._find_by_xpath(
+                    '//*[contains(@id, "color_name_") and contains(@class, "swatchSelect")]//img')[0].get_attribute('alt')
+            except IndexError:
+                pass
 
         self._click_attribute(color_attribute_xpath,
                               color_attributes_xpath,
@@ -132,6 +138,7 @@ class AmazonSpider(BaseCheckoutSpider):
 
     def _get_total(self):
         try:
+            time.sleep(5)
             xpath = '(//span[@class="a-expander-prompt"])[1]'
             self._click_on_element_with_xpath(xpath)
             self.wait.until(
@@ -140,8 +147,9 @@ class AmazonSpider(BaseCheckoutSpider):
             element = self._find_by_xpath(
                 '//input[@name="zipcode"]')[0]
             element.send_keys(self.ZIP_CODE)
+            time.sleep(2)
             element.send_keys(Keys.ENTER)
-            time.sleep(4)
+            time.sleep(8)
         except Exception as e:
             self.log('Error {}'.format(str(e)))
         try:
