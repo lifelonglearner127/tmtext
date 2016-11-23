@@ -7,7 +7,6 @@ import requests
 from lxml import html, etree
 from extract_data import Scraper
 import json
-from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
 
 class RiteAidScraper(Scraper):
