@@ -295,6 +295,10 @@ class SiteProductItem(Item):
 
     temporary_unavailable = Field()  # 12696, returns true if 'We're having technical difficulties..' text on the page
 
+    search_redirected_to_product = Field()
+    # For some searches, scraper is redirected to
+    # single product page instead of search results page, see bz #13092
+
 
 class DiscountCoupon(Item):
     # Search metadata.
