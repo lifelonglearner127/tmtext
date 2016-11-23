@@ -91,6 +91,7 @@ class Scraper():
             "features", # features of product, string
             "feature_count", # number of features of product, int
             "specs", # specifications
+            "full_specs", # grouped keys from specs, dict
             "model_meta", # model from meta, string
             "description", # short description / entire description if no short available, string
             "seller_ranking",
