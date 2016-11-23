@@ -7,11 +7,11 @@ import time
 import urllib
 import urlparse
 import datetime
-from scrapy import Request, FormRequest, Selector
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy import Request, Selector
+from scrapy.log import WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews, scrapy_price_serializer
+    BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
     cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
@@ -29,7 +29,7 @@ class StaplesProductsSpider(BaseProductsSpider):
 
     PAGINATE_URL = "http://www.staples.com/{search_term}/directory_{search_term}?sby=0&pn={nao}"
 
-    CURRENT_NAO = 0
+    CURRENT_NAO = 1
     PAGINATE_BY = 18  # 18 products
     TOTAL_MATCHES = None  # for pagination
 
@@ -78,12 +78,11 @@ class StaplesProductsSpider(BaseProductsSpider):
         if maintenance_error:
             self.log("Website under maintenance error, retrying request: {}".format(response.url), WARNING)
             return Request(response.url, callback=self.parse_product, meta=meta, dont_filter=True)
-        # try:
-        sku_url, js_data = self.parse_js_data(response)
-        # except Exception as e:
-        #     self.log("Error extracting json data from product page, repeating request: {}".format(e), WARNING)
-        #     print response.url
-        #     return Request(response.url, callback=self.parse_product, meta=meta, dont_filter=True)
+        try:
+            sku_url, js_data = self.parse_js_data(response)
+        except Exception as e:
+            self.log("Error extracting json data from product page, repeating request: {}".format(e), WARNING)
+            return Request(response.url, callback=self.parse_product, meta=meta, dont_filter=True)
 
         # Parse title
         title = self.parse_title(response)
@@ -465,14 +464,15 @@ class StaplesProductsSpider(BaseProductsSpider):
         if self.TOTAL_MATCHES is None:
             self.log('No "next result page" link!')
             return
-        if self.CURRENT_NAO > self.TOTAL_MATCHES + self.PAGINATE_BY:
+        if self.CURRENT_NAO * self.PAGINATE_BY >= self.TOTAL_MATCHES:
             return  # it's over
-        self.CURRENT_NAO += self.PAGINATE_BY
+        self.CURRENT_NAO += 1
         return Request(
             self.PAGINATE_URL.format(
                 search_term=response.meta['search_term'],
                 nao=str(self.CURRENT_NAO)),
-            callback=self.parse, meta=response.meta
+            callback=self.parse, meta=response.meta,
+            dont_filter=True
         )
 
     def parse_data_variant_price(self, response):

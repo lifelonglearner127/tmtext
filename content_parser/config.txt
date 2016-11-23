@@ -1,0 +1,10 @@
+{
+"parser": "P&G",
+"import": "FTP",
+"ip": "54.175.228.114",
+"user": "pg",
+"passwd": "Lhsj9fVL19IuDtHUj",
+"path": "upload",
+"push": "pg.contentanalyticsinc.com/endpoint",
+"cron": "15 13 * * Mon,Tue,Wed,Thu,Fri"
+}

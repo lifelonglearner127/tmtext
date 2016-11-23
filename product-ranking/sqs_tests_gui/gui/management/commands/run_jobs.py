@@ -2,12 +2,12 @@ import os
 import sys
 import re
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 #sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
 
-from gui.models import Job, get_data_filename, get_log_filename
+from gui.models import Job
 
 
 sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',

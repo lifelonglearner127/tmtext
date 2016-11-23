@@ -4,7 +4,7 @@ from __future__ import division, absolute_import, unicode_literals
 import json
 import re
 
-from scrapy import Request, FormRequest
+from scrapy import Request
 
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.items import SiteProductItem, RelatedProduct, Price

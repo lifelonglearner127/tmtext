@@ -56,6 +56,12 @@ class Scraper():
     # number of retries for fetching product page source before giving up
     MAX_RETRIES = 3
 
+    PROXY = 'crawlera'
+
+    CRAWLERA_HOST = 'content.crawlera.com'
+    CRAWLERA_PORT = '8010'
+    CRAWLERA_APIKEY = "3b1bf5856b2142a799faf2d35b504383"
+
     # List containing all data types returned by the crawler (that will appear in responses of requests to service in crawler_service.py)
     # In practice, all returned data types for all crawlers should be defined here
     # The final list containing actual implementing methods for each data type will be defined in the constructor
@@ -72,6 +78,7 @@ class Scraper():
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
                        # Only implemented for walmart. Possible values: "Walmart v1" or "Walmart v2"
+            "proxy_service",
 
             # product_info
             "product_name", # name of product, string
@@ -108,6 +115,8 @@ class Scraper():
             "shipping",
             "free_pickup_today",
             "no_longer_available",
+            "assembled_size",
+            "temporary_unavailable",
             "variants", # list of variants
             "swatches", # list of swatches
             "related_products_urls",
@@ -120,6 +129,7 @@ class Scraper():
             "bullet_feature_3",
             "bullet_feature_4",
             "bullet_feature_5",
+            "bullets",
             "usage",
             "directions",
             "warnings",
@@ -214,7 +224,8 @@ class Scraper():
             "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
             "category_name", # category for this product, string
             "shelf_links_by_level", # list of category urls
-            "brand" # brand of product, string
+            "brand", # brand of product, string
+            "mfg" # mfg, string, for westmarine.com
 
             # Deprecated:
             # "anchors", # links found in the description, dictionary like {"links" : [], quantity: 0}
@@ -251,9 +262,9 @@ class Scraper():
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
                         "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "details", "mta", \
-                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5",
+                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5", "bullets",
                         "usage", "directions", "warnings", "indications", "amazon_ingredients",
-                            "specs"],
+                            "specs", "temporary_unavailable", "mfg", "assembled_size"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_alt_text", "image_alt_text_len", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags", "meta_tag_count", "meta_description_count", \
@@ -348,6 +359,12 @@ class Scraper():
         self.product_page_url = kwargs['url']
         self.bot_type = kwargs['bot']
         self.is_timeout = False
+
+        if kwargs.get('proxy'):
+            self.PROXY = kwargs.get('proxy')
+
+        if kwargs.get('api_key'):
+            self.CRAWLERA_APIKEY = kwargs.get('api_key')
 
         # Set generic fields
         # directly (don't need to be computed by the scrapers)
@@ -487,6 +504,7 @@ class Scraper():
             wag_url = re.match('https?://www.wag.com/(.*)', self.product_page_url)
             jcpenney_url = re.match('http://www.jcpenney.com/(.*)', self.product_page_url)
             walmart_ca_url = re.match('http://www.walmart.ca/(.*)', self.product_page_url)
+            sears_url = re.match('http://www.sears.com/(.*)', self.product_page_url)
 
             if costco_url:
                 self.product_page_url = 'http://www.costco.com/' + urllib2.quote(costco_url.group(1).encode('utf8'))
@@ -494,7 +512,7 @@ class Scraper():
             request = urllib2.Request(self.product_page_url)
             # set user agent to avoid blocking
             agent = ''
-            if self.bot_type == "google" or wag_url:
+            if self.bot_type == "google" or wag_url or sears_url:
                 agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
             else:
                 agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
@@ -629,6 +647,10 @@ class Scraper():
                 results = None
 
             results_dict[info] = results
+
+        if sys.getsizeof(str(results_dict)) > 256000:
+            self.ERROR_RESPONSE["failure_type"] = 'Response too large'
+            return self.ERROR_RESPONSE
 
         return results_dict
 

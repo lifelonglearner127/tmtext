@@ -8,14 +8,19 @@ import urlparse
 import hashlib
 import random
 import re
-import string
 from datetime import datetime
 import lxml.html
+import urllib
 
+import os
+import logging
+logger = logging.getLogger(__name__)
+import boto
+from boto.s3.key import Key
+from scrapy.conf import settings
 from scrapy import Selector
 from scrapy.http import Request, FormRequest
 from scrapy.log import ERROR, INFO, WARNING
-from scrapy.conf import settings as scrapy_settings
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import (SiteProductItem, RelatedProduct,
@@ -90,22 +95,20 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     default_hhl = [404, 500, 502, 520]
 
-    SEARCH_URL = "http://www.walmart.com/search/search-ng.do?Find=Find" \
-        "&_refineresult=true&ic=16_0&search_constraint=0" \
-        "&search_query={search_term}&sort={search_sort}"
+    SEARCH_URL = "https://www.walmart.com/search/?query={search_term}"
 
-    LOCATION_URL = "http://www.walmart.com/location"
-    LOCATION_PROD_URL = "http://www.walmart.com/product/dynamic/{product_id}?" \
+    LOCATION_URL = "https://www.walmart.com/location"
+    LOCATION_PROD_URL = "https://www.walmart.com/product/dynamic/{product_id}?" \
                         "location={zip_code}&selected=true"
 
-    QA_URL = "http://www.walmart.com/reviews/api/questions" \
+    QA_URL = "https://www.walmart.com/reviews/api/questions" \
              "/{product_id}?sort=mostRecentQuestions&pageNumber={page}"
     ALL_QA_URL = 'http://www.walmart.com/reviews/api/questions/%s?pageNumber=%i'
 
-    REVIEW_URL = 'http://walmart.ugc.bazaarvoice.com/1336/{product_id}/' \
+    REVIEW_URL = 'https://walmart.ugc.bazaarvoice.com/1336/{product_id}/' \
                  'reviews.djs?format=embeddedhtml&sort=submissionTime'
 
-    REVIEW_DATE_URL = 'http://www.walmart.com/reviews/api/product/{product_id}?' \
+    REVIEW_DATE_URL = 'https://www.walmart.com/reviews/api/product/{product_id}?' \
                       'limit=3&sort=submission-desc&filters=&showProduct=false'
 
     QA_LIMIT = 0xffffffff
@@ -130,9 +133,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     def __init__(self, search_sort='best_match', zip_code='94117',
                  *args, **kwargs):
+
         global SiteProductItem
         if zip_code:
             self.zip_code = zip_code
+        if search_sort != 'best_match':
+            self.SEARCH_URL += "&sort={search_sort}"
         if search_sort == 'best_sellers':
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         # avoid tons of 'items' in logs
@@ -147,6 +153,148 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             ),
             *args, **kwargs)
 
+        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429, 520]
+        settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
+        settings.overrides['CONCURRENT_REQUESTS'] = 1
+
+        local_filename = "/tmp/_proxy_providers_settings.cfg"
+
+        if os.path.isfile(local_filename) or random.randint(0, 5) == 0:
+            proxy_config = self._parse_proxy_config_file(local_filename)
+        else:
+            proxy_config = self._download_and_parse_proxy_config_file(local_filename)
+        if not proxy_config:
+            proxy_config = {
+                            "crawlera": 100,
+                            "luminati": 0,
+                            "proxyrain": 0,
+                            "shaderio": 0,
+                            }
+
+        self.force_proxy_provider = kwargs.get('force_proxy_provider', None)
+        if self.force_proxy_provider:
+            logger.warning("*** Proxy provider forced via command line: {} ***".format(
+                self.force_proxy_provider))
+            chosen_proxy_provider = self.force_proxy_provider
+        else:
+            chosen_proxy_provider = self._weighted_choice(proxy_config)
+            logger.warning("*** Proxy provider will be chosen randomly from: {} ***".format(proxy_config))
+            logger.warning("*** Chosen : {} ***".format(chosen_proxy_provider))
+
+        middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+
+        # To not redirect randomly
+        middlewares['product_ranking.custom_middlewares.WalmartRetryMiddleware'] = 800
+        middlewares['scrapy.contrib.downloadermiddleware.redirect.RedirectMiddleware'] = None
+
+        middlewares['product_ranking.randomproxy.RandomProxy'] = None
+
+        if chosen_proxy_provider == "crawlera":
+            logger.warning('*** Using Crawlera ***')
+            settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
+            settings.overrides['CRAWLERA_APIKEY'] = "4810848337264489a1d2f2230da5c981"
+            settings.overrides['CRAWLERA_ENABLED'] = True
+            settings.overrides['CRAWLERA_PRESERVE_DELAY'] = True
+        elif chosen_proxy_provider == "luminati":
+            logger.warning('*** Using Luminati ***')
+            middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
+            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
+            middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
+        elif chosen_proxy_provider == "proxyrain":
+            logger.warning('*** Using Proxyrain ***')
+            middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
+            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
+            middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
+        elif chosen_proxy_provider == "shaderio":
+            logger.warning('*** Using Shader.io ***')
+            middlewares['product_ranking.custom_middlewares.ShaderioProxy'] = 750
+            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
+            middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
+
+        settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+
+        self.scrape_questions = kwargs.get('scrape_questions', None)
+        if self.scrape_questions not in ('1', 1, True, 'true'):
+            self.scrape_questions = False
+        self.scrape_related_products = kwargs.get('scrape_related_products', None)
+        if self.scrape_related_products not in ('1', 1, True, 'true'):
+            self.scrape_related_products = False
+        self.cookies = {}
+        self.cookies[
+            'prefper'] = 'PREFSTORE~12648~2PREFCITY~1San%20Leandro~2PREFFULLSTREET~11919%20Davis%20St~2PREFSTATE~1CA~2PREFZIP~194117'
+        self.cookies['PSID'] = '2648'
+        self.cookies['NSID'] = '2648'
+
+        self.visited_links = {}
+
+    def _weighted_choice(self, choices_dict):
+        try:
+            choices = [(key, value) for (key, value) in choices_dict.iteritems()]
+            # Accept dict, converts to list
+            # of iterables in following format
+            # [("choice1", 0.6), ("choice2", 0.2), ("choice3", 0.3)]
+            # Returns chosen variant
+            total = sum(w for c, w in choices)
+            r = random.uniform(0, total)
+            upto = 0
+            for c, w in choices:
+                if upto + w >= r:
+                    return c
+                upto += w
+        except Exception as e:
+            return "crawlera"
+
+    def _get_download_delay(self):
+        amazon_bucket_name = "sc-settings"
+        config_filename = "walmart_download_delay.cfg"
+        default_download_delay = 1.0
+        try:
+            S3_CONN = boto.connect_s3(is_secure=False)
+            S3_BUCKET = S3_CONN.get_bucket(amazon_bucket_name, validate=False)
+            k = Key(S3_BUCKET)
+            k.key = config_filename
+            value = k.get_contents_as_string()
+            logging.info('Retrieved download_delay={}'.format(value))
+            return float(value)
+        except Exception as e:
+            logging.error(e)
+            return default_download_delay
+
+    @staticmethod
+    def _download_and_parse_proxy_config_file(local_filename):
+        amazon_bucket_name = "sc-settings"
+        bucket_config_filename = "walmart_proxy_config.cfg"
+        # local_filename = "/tmp/_proxy_providers_settings.cfg"
+        proxy_config = None
+        try:
+            S3_CONN = boto.connect_s3(is_secure=False)
+            S3_BUCKET = S3_CONN.get_bucket(amazon_bucket_name, validate=False)
+            k = Key(S3_BUCKET)
+            k.key = bucket_config_filename
+            value = k.get_contents_as_string()
+            proxy_config = json.loads(value)
+            # Save config to file
+            with open(local_filename, "w") as conf_file:
+                conf_file.write(value)
+        except Exception as e:
+            logger.error(e)
+        else:
+            logger.info('Retrieved proxy config from bucket: {}'.format(value))
+            logger.info('Saved to file: {}'.format(local_filename))
+        return proxy_config
+
+    @staticmethod
+    def _parse_proxy_config_file(local_filename):
+        proxy_config = None
+        try:
+            with open(local_filename) as conf_file:
+                proxy_config = json.load(conf_file)
+        except Exception as e:
+            logger.error(e)
+        else:
+            logger.info('Retrieved proxy config from file: {}'.format(proxy_config))
+        return proxy_config
+
     def start_requests(self):
         # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
         """
@@ -156,9 +304,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 "&clientId=walmart_us_desktop_backfill_search" \
                 "&channel=ch_8,backfill" % (st,)
             yield Request(
-                url=url, 
+                url=url,
                 callback=self.get_sponsored_links,
-                dont_filter=True, 
+                dont_filter=True,
                 meta={"handle_httpstatus_list": [404, 502]},
             )
         """
@@ -172,15 +320,28 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             yield Request(self.product_url,
                           self._parse_single_product,
                           meta={'product': prod, 'handle_httpstatus_list': [404, 502, 520]},
-                          dont_filter=True)
+                          dont_filter=True,
+                          cookies=self.cookies)
+
         else:
+            # reduce quantity to 100 because we're having issues with Walmart now
+            #  (it bans us so we're using Crawlera)
+            # TODO COMMENT THOSE, IF MORE THAN 100 products per job needed
+            if not self.quantity or not isinstance(self.quantity, int):
+                self.quantity = 100
+            if self.quantity and isinstance(self.quantity, int):
+                if self.quantity > 100:
+                    self.quantity = 100
+
             for st in self.searchterms:
-                yield Request(self.SEARCH_URL.format(search_term=st,
+                self.visited_links[st] = []
+                yield Request(self.SEARCH_URL.format(search_term=urllib.quote_plus(st.encode('utf-8')),
                                                      search_sort=self._SEARCH_SORT[self.search_sort]),
                               #self._parse_single_product,
                               meta={'handle_httpstatus_list': [404, 502, 520],
                                     'remaining': self.quantity, 'search_term': st},
-                              dont_filter=True)
+                              dont_filter=True,
+                              cookies=self.cookies)
 
     def get_sponsored_links(self, response):
         self.reql = []
@@ -258,6 +419,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def parse_product(self, response):
         product = response.meta.get("product")
 
+        if self._parse_temporary_unavailable(response):
+            product['temporary_unavailable'] = True
+            return product
+        else:
+            product['temporary_unavailable'] = False
+
         product['_subitem'] = True
 
         if "we can't find the product you are looking for" \
@@ -285,17 +452,21 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if self.sponsored_links:
             product["sponsored_links"] = self.sponsored_links
 
+        # TODO fix this there was exceptions.AttributeError: while parsing
+        # https://www.walmart.com/nco/Better-Homes-and-Gardens-Bankston-5-Piece-Dining-Set-Mocha/35871841
+        self._populate_from_js_alternative(response, product)
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
         buyer_reviews = self._build_buyer_reviews(response)
         if buyer_reviews:
-            product['buyer_reviews'] = buyer_reviews
+            cond_set_value(product, 'buyer_reviews', buyer_reviews)
         else:
-            product['buyer_reviews'] = 0
+            cond_set_value(product, 'buyer_reviews', 0)
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
         if 'brand' not in product:
-            cond_set_value(product, 'brand', u'NO BRAND')
-        self._gen_related_req(response)
+            cond_set_value(product, 'brand', None)
+        if self.scrape_related_products:
+            self._gen_related_req(response)
 
         # parse category and department
         wcp = WalmartCategoryParser()
@@ -376,7 +547,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         # if seller_ranking:
             # product['seller_ranking'] = seller_ranking
         # seller_ranking = seller_ranking[0].get('ranking') if seller_ranking else None
-        product['bestseller_rank'] = seller_ranking
+        cond_set_value(product, 'bestseller_rank', seller_ranking)
 
         if 'is_in_store_only' not in product:
             if re.search(
@@ -400,10 +571,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 if prod_data.endswith(')'):
                     prod_data = prod_data[0:-1]
                 prod_data = json.loads(prod_data.strip())
-                display_price = prod_data['buyingOptions'].get('price', {}).get('displayPrice', '')
+                display_price = prod_data.get('buyingOptions',{}).get('price', {}).get('displayPrice', '')
 
                 if not display_price:
-                    display_price = prod_data['buyingOptions'].get('minPrice', {}).get('displayPrice', '')
+                    display_price = prod_data.get('buyingOptions',{}).get('minPrice', {}).get('displayPrice', '')
 
                 display_price = re.search('[\d\.]+', display_price)
                 if display_price:
@@ -411,6 +582,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     price_amount = float(display_price)
                     product['price'] = Price(price=price_amount, priceCurrency="USD")
 
+        # randomly walmart respond with a different JS data, so we should make this extra request
         if not product.get('price'):
             cond_set_value(product, 'url', response.url)
             return self._gen_location_request(response)
@@ -427,12 +599,26 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
-        return Request(
-            self.LOCATION_PROD_URL.format(
-                product_id=response.meta['product_id'], zip_code=self.zip_code),
-            callback=self._on_dynamic_api_response,
-            meta=_meta
-        )
+
+        m = re.search(
+            self._JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
+        if m:
+            text = m.group(1)
+            try:
+                data = json.loads(text)
+                self._on_dynamic_api_response(response, data)
+            except ValueError:
+                pass
+
+        if self.scrape_questions:
+            return Request(  # make another call - to scrape questions/answers
+                self.ALL_QA_URL % (
+                    get_walmart_id_from_url(product['url']), 1),
+                meta={'product': response.meta['product']},
+                callback=self._parse_all_questions_and_answers
+            )
+        else:
+            return product
 
     def _scrape_seller_ranking(self, response):
         # Old, more detailed bestseller ranking format
@@ -482,6 +668,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if response.xpath('//*[contains(@class, "heading")'
                           ' and contains(text(), "nformation unavailable")]'):
             not_available = True
+        if response.xpath('.//div[contains(text(), "This Item is no longer available")]'):
+            not_available = True
+        # commented into 13176 ticket
+        # if response.xpath('.//div[contains(@class, "price-display-oos-color")]'):
+        #     not_available = True
+        if response.xpath('//*[contains(., "This item is no longer available")]'):
+            not_available = True
         return not_available
 
     def _on_api_response(self, response):
@@ -525,7 +718,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         yield self.parse_product(original_response)
 
     def _get_walmart_api_data_for_item_id(self, original_response, original_id, current_id, meta):
-        api_url = 'http://api.walmartlabs.com/v1/items/%s?apiKey=%s&format=json'
+        api_url = 'https://api.walmartlabs.com/v1/items/%s?apiKey=%s&format=json'
         api_key = _get_walmart_api_key()
         meta['original_id'] = original_id
         meta['current_id'] = current_id
@@ -608,7 +801,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     '\d+.\d+',
                     is_empty(tree.xpath('//div[contains(@class,'
                                '"BVRRRatingNormalImage")]/img/@alt'), ""))
-            , 0))   
+            , 0))
             buyer_reviews['average_rating'] = avg
             stars = tree.xpath(
                 '//span[contains(@class,"BVRRHistAbsLabel")]/text()')
@@ -731,7 +924,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             })
 
         if marketplaces:
-            product["marketplace"] = marketplaces
+            cond_set_value(product, 'marketplace', marketplaces)
         else:
             name = is_empty(response.xpath(
                 '//div[@class="product-seller"]/div/span/b/text() |'
@@ -762,7 +955,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     "price": float(price_amount) if price_amount else 0.00,
                     "name": name
                 })
-            product["marketplace"] = marketplaces
+            cond_set_value(product, 'marketplace', marketplaces)
 
     def _populate_from_html(self, response, product):
         cond_set_value(product, 'url', response.url)
@@ -787,13 +980,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             ).extract())
         if title:
             title = Selector(text=title).xpath('string()').extract()
-            product["title"] = is_empty(title, "").strip()
+            title = is_empty(title, "").strip()
+            cond_set_value(product, 'title', title)
         if ((isinstance(title, (str, unicode)) and not title.strip())
                 or (isinstance(title, (list, tuple)) and not ''.join(title).strip())):
             title = response.css('h1[itemprop="name"] ::text').extract()
             title = ''.join(title).strip()
             if title:
-                product['title'] = title
+                cond_set_value(product, 'title', title)
         brand = is_empty(response.xpath(
                 "//div[@class='product-subhead-section']"
                 "/a[@id='WMItemBrandLnk']/text()").extract())
@@ -801,11 +995,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             brand = is_empty(response.xpath(
                 ".//*[@id='WMItemBrandLnk']//*[@itemprop='brand']/text()").extract())
         if not brand:
-            brand = guess_brand_from_first_words(product['title'].replace(u'®', ''))
-            brand = [brand]
-        if '&amp;' in brand:
-            brand=brand.replace('&amp;', "&")
-        cond_set(product, 'brand', brand)
+            brand = guess_brand_from_first_words(product.get('title', '').replace(u'®', ''))
+        elif '&amp;' in brand:
+            brand = brand.replace('&amp;', "&")
+        cond_set_value(product, 'brand', brand)
 
         try:
             cond_set(
@@ -842,10 +1035,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 )
                 seller = seller_all.xpath('b/text()').extract()
             if seller and "price" in product:
-                product["marketplace"] = [{
+                cond_set_value(product, 'marketplace', [{
                     "price": product["price"],
                     "name": is_empty(seller)
-                }]
+                }])
 
         also_considered = self._build_related_products(
             response.url,
@@ -921,7 +1114,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         cid = hashlib.md5(prodid).hexdigest()
         reql = []
         url1 = (
-            "http://www.walmart.com/irs?parentItemId%5B%5D={prodid}"
+            "https://www.walmart.com/irs?parentItemId%5B%5D={prodid}"
             "&module=ProductAjax&clientGuid={cid}").format(
                 prodid=prodid,
                 cid=cid)
@@ -961,6 +1154,242 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             self.log(
                 "Unable to parse JSON from %r." % response.request.url, ERROR)
         return self._start_related(response)
+
+    @staticmethod
+    def _extract_product_info_json_alternative(response):
+        _JS_DATA_RE = re.compile(
+            r'window\.__WML_REDUX_INITIAL_STATE__\s*=\s*(\{.+?\})\s*;\s*<\/script>', re.DOTALL)
+        js_data = re.search(_JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
+        if js_data:
+            text = js_data.group(1)
+            try:
+                data = json.loads(text)
+                return data
+            except ValueError:
+                pass
+
+    def _populate_from_js_alternative(self, response, product):
+        data = self._extract_product_info_json_alternative(response)
+        if data:
+            # Parse selected product
+            selected_product = self._parse_selected_product_alternative(data)
+
+            # Parse selected product offers
+            selected_product_offers = self._parse_selected_product_offers(selected_product)
+
+            # Parse marketplaces
+            marketplaces_data = self._parse_marketplaces_data_alternative(data)
+
+            # Parse brand
+            brand = self._parse_brand_alternative(selected_product)
+            cond_set_value(product, 'brand', brand)
+
+            # Parse title
+            title = self._parse_title_alternative(selected_product)
+            cond_set_value(product, 'title', title)
+
+            # Parse out of stock
+            is_out_of_stock = self._parse_out_of_stock_alternative(marketplaces_data, selected_product_offers)
+            cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
+
+            # Parse price
+            price = self._parse_price_alternative(marketplaces_data, selected_product_offers)
+            cond_set_value(product, 'price', Price(priceCurrency='USD', price=price))
+
+            # Parse description
+            description = self._parse_description_alternative(selected_product)
+            cond_set_value(product, 'description', description)
+
+            # Parse image url
+            image_url = self._parse_image_url_alternative(data)
+            cond_set_value(product, 'image_url', image_url)
+
+            # Parse marketplaces
+            # marketplaces_names = self._parse_marketplaces_names(data)
+            # marketplace = self._parse_marketplaces_alternative(marketplaces_data, marketplaces_names)
+            # cond_set_value(product, 'marketplace', marketplace)
+
+            # Parse buyer reviews
+            buyer_reviews = self._parse_buyer_reviews_alternative(data)
+            cond_set_value(product, 'buyer_reviews', buyer_reviews)
+
+            # Parse bestseller rank
+            bestseller_rank = self._parse_bestseller_rank_alternative(selected_product)
+            cond_set_value(product, 'bestseller_rank', bestseller_rank)
+
+            # Parse upc
+            upc = self._parse_upc_alternative(selected_product)
+            cond_set_value(product, 'upc', upc)
+
+            # Parse products
+            products = self._parse_products_alternative(data)
+
+            # Parse variants
+            variants = self._parse_variants_alternative(response, marketplaces_data, data, products, selected_product)
+            cond_set_value(product, 'variants', variants)
+
+    @staticmethod
+    def _parse_products_alternative(data):
+        return data.get('product', {}).get('products', {})
+
+    def _parse_variants_alternative(self, response, marketplaces, data, products, selected_product):
+        variants = []
+        primary_product_id = data.get('product', {}).get('primaryProduct')
+        try:
+            variants_map = data.get('product', {}).get('variantCategoriesMap', {}).get(primary_product_id, {})
+        except:
+            variants_map = {}
+        for product in products.values():
+            selected_product_offers = self._parse_selected_product_offers(product)
+            price = self._parse_price_alternative(marketplaces, selected_product_offers)
+            variant = {}
+            properties = product.get('variants', {})
+            variant_id = product.get('usItemId')
+            url = urlparse.urljoin(response.url, '/ip/{}'.format(variant_id))
+            selected_id = selected_product.get('usItemId')
+            selected = selected_id == variant_id
+            variant['selected'] = selected
+            variant['url'] = url
+            variant['price'] = price
+            properties = self._parse_variant_properties_alternative(variant, variants_map, properties)
+            variant['properties'] = properties
+            variants.append(variant)
+        return variants if len(variants) > 1 else None
+
+    @staticmethod
+    def _parse_variant_properties_alternative(variant, variants_map, properties):
+        property_data = {}
+        for property_name, property_value in properties.items():
+            variant_data = variants_map.get(
+                property_name).get('variants', {}).get(property_value)
+            name = variant_data.get('name')
+            in_stock = variant_data.get('availabilityStatus') == 'AVAILABLE'
+            variant['in_stock'] = in_stock
+            if 'color' in property_name:
+                property_data['color'] = name
+            elif 'size' in property_name:
+                property_data['size'] = name
+            elif 'number_of_pieces' in property_name:
+                property_data['count'] = name
+        return property_data
+
+    @staticmethod
+    def _parse_selected_product_offers(selected_product):
+        return selected_product.get('offers', [])
+
+    @staticmethod
+    def _parse_selected_product_alternative(data):
+        selected = data.get('product', {}).get('selected', {}).get('product')
+        if selected:
+            return data.get('product', {}).get('products', {}).get(selected, {})
+        else:
+            return data.get('product', {}).get('primaryProduct', {})
+
+    @staticmethod
+    def _parse_marketplaces_data_alternative(data):
+        # if there is one seller, structure of json is different
+        needed_data = data.get('product', {}).get('offers')
+        if needed_data.get("availabilityStatus"):
+            # pprint.pprint([needed_data])
+            return [needed_data]
+        else:
+            # pprint.pprint(needed_data.values())
+            return needed_data.values()
+
+    @staticmethod
+    def _parse_brand_alternative(selected_product):
+        return selected_product.get('productAttributes', {}).get('brand')
+
+    @staticmethod
+    def _parse_title_alternative(selected_product):
+        return selected_product.get('productAttributes', {}).get('productName')
+
+    @staticmethod
+    def _parse_upc_alternative(selected_product):
+        return selected_product.get('upc')
+
+    @staticmethod
+    def _parse_out_of_stock_alternative(marketplaces, selected_product_offers):
+        for offer in marketplaces:
+            offer_id = offer.get('id')
+            if offer_id in selected_product_offers \
+                    and offer.get('productAvailability', {}).get('availabilityStatus') == "IN_STOCK":
+                return False
+        if len(marketplaces) == 1:
+            for offer in marketplaces:
+                offer_id = offer.get('offerInfo', {}).get('offerId')
+                if offer_id in selected_product_offers and offer.get('availabilityStatus') == "IN_STOCK":
+                    return False
+        return True
+
+    @staticmethod
+    def _parse_price_alternative(marketplaces, offers):
+        prices = [marketplace.get('pricesInfo', {}).get('priceMap', {}).get('CURRENT', {}).get('price')
+                  for marketplace in marketplaces if marketplace.get('id') in offers]
+        try:
+            price = float(min(prices))
+        except:
+            price = 0
+        return price
+
+    @staticmethod
+    def _parse_description_alternative(selected_product):
+        return selected_product.get('productAttributes', {}).get('detailedDescription')
+
+    @staticmethod
+    def _parse_image_url_alternative(data):
+        images = data.get('product', {}).get('images', {}).values()
+        for image in images:
+            if image.get('type') == 'PRIMARY':
+                return image.get('assetSizeUrls', {}).get('main')
+
+    @staticmethod
+    def _parse_marketplaces_names(data):
+        names = {}
+        for seller in data.get('product').get('sellers').values():
+            seller_id = seller.get('sellerId')
+            seller_name = seller.get('sellerDisplayName')
+            names[seller_id] = seller_name
+        return names
+
+    @staticmethod
+    def _parse_marketplaces_alternative(marketplaces_data, marketplaces_names):
+        marketplaces = []
+        for marketplace in marketplaces_data:
+            seller_id = marketplace.get('sellerId')
+            price = marketplace.get(
+                'pricesInfo', {}).get('priceMap', {}).get('CURRENT', {}).get('price', 0)
+            currency = marketplace.get(
+                'pricesInfo', {}).get('priceMap', {}).get('CURRENT', {}).get('currencyUnit')
+            name = marketplaces_names.get(seller_id)
+            if seller_id in marketplaces_names:
+                marketplaces.append({'name': name,
+                                     'price': price,
+                                     'currency': currency})
+        return marketplaces
+
+    @staticmethod
+    def _parse_buyer_reviews_alternative(data):
+        selected = data.get('product', {}).get('selected', {}).get('product')
+        review_data = data.get('product', {}).get('reviews', {}).get(selected, {})
+        num_of_reviews = review_data.get('totalReviewCount', 0)
+        average_rating = review_data.get('averageOverallRating', 0)
+        rating_by_star = {
+            1: review_data.get('ratingValueOneCount', 0),
+            2: review_data.get('ratingValueTwoCount', 0),
+            3: review_data.get('ratingValueThreeCount', 0),
+            4: review_data.get('ratingValueFourCount', 0),
+            5: review_data.get('ratingValueFiveCount', 0)
+        }
+        buyer_reviews = {'rating_by_star': rating_by_star,
+                         'average_rating': average_rating,
+                         'num_of_reviews': num_of_reviews}
+        return BuyerReviews(**buyer_reviews)
+
+    @staticmethod
+    def _parse_bestseller_rank_alternative(selected_product):
+        ranks = selected_product.get('itemSalesRanks')
+        return ranks[0].get('rank') if ranks else None
 
     def _parse_related(self, sel, response):
         def full_url(url):
@@ -1004,57 +1433,62 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _reload_page(self, response):
         product = response.meta['product']
+        self._populate_from_js_alternative(response, product)
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
         _meta = response.meta
         _meta['handle_httpstatus_list'] = [404, 502, 520]
-        return Request(
-            self.LOCATION_PROD_URL.format(
-                product_id=response.meta['product_id'], zip_code=self.zip_code),
-            callback=self._on_dynamic_api_response,
-            meta=response.meta
-        )
 
-    def _on_dynamic_api_response(self, response):
-        yield Request(  # make another call - to scrape questions/answers
-            self.ALL_QA_URL % (
-                get_walmart_id_from_url(response.meta['product']['url']), 1),
-            meta={'product': response.meta['product']},
-            callback=self._parse_all_questions_and_answers
-        )
-        if response.status != 200:
-            # walmart's unofficial API returned bad code - site change?
-            self.log('Unofficial API returned code [%s], URL: %s' % (
-                response.status, response.url), ERROR)
-        else:
-            data = None
+        m = re.search(
+            self._JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
+        if m:
+            text = m.group(1)
             try:
-                data = json.loads(response.body_as_unicode())
-            except Exception as e:
-                self.log('Could not load JSON at %s' % response.url, ERROR)
-            if data:
-                prod = response.meta['product']
-                opts = data.get('buyingOptions', {})
-                if opts is None:
-                    # product "no longer available"?
-                    self.log('buyingOptions are None: %s' % response.url, WARNING)
-                    prod.update({"no_longer_available": True})
-                else:
-                    prod['is_out_of_stock'] = not opts.get('available', False)
-                    if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
-                        prod['shipping'] = False
-                    prod['is_in_store_only'] = opts.get('storeOnlyItem', None)
-                    if 'price' in opts and 'displayPrice' in opts['price']:
-                        if opts['price']['displayPrice']:
-                            prod['price'] = Price(
-                                priceCurrency='USD',
-                                price=opts['price']['displayPrice'].replace('$', '')
-                            )
-                    self.log(
-                        'Scraped and parsed unofficial APIs from %s' % response.url,
-                        INFO
-                    )
-        yield self._start_related(response)
+                data = json.loads(text)
+                self._on_dynamic_api_response(response, data)
+            except ValueError:
+                pass
+
+        if self.scrape_questions:
+            return Request(  # make another call - to scrape questions/answers
+                self.ALL_QA_URL % (
+                    get_walmart_id_from_url(product['url']), 1),
+                meta={'product': response.meta['product']},
+                callback=self._parse_all_questions_and_answers
+            )
+        else:
+            return product
+
+    @staticmethod
+    def _parse_is_out_of_stock(data):
+        return not data.get('analyticsData', {}).get('inStock')
+
+    def _on_dynamic_api_response(self, response, data):
+        if data:
+            prod = response.meta['product']
+            opts = data.get('buyingOptions', {})
+            if opts is None:
+                # product "no longer available"?
+                self.log('buyingOptions are None: %s' % response.url, WARNING)
+                prod.update({"no_longer_available": True})
+            else:
+                prod['is_out_of_stock'] = not opts.get('available', False)
+
+                prod['is_out_of_stock'] = self._parse_is_out_of_stock(data)
+
+                if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
+                    prod['shipping'] = False
+                prod['is_in_store_only'] = opts.get('storeOnlyItem', None)
+                if 'price' in opts and 'displayPrice' in opts['price']:
+                    if opts['price']['displayPrice']:
+                        prod['price'] = Price(
+                            priceCurrency='USD',
+                            price=opts['price']['displayPrice'].replace('$', '')
+                        )
+                self.log(
+                    'Scraped and parsed unofficial APIs from %s' % response.url,
+                    INFO
+                )
 
     def _populate_from_js(self, response, product):
         data = {}
@@ -1070,6 +1504,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             self.log("No JS matched in %r." % response.url, WARNING)
             return
         try:
+            # Parse marketplace
+            marketplace = self._parse_marketplace_from_js(data)
+            cond_set_value(product, 'marketplace', marketplace)
+
             response.meta['productid'] = str(data['buyingOptions']['usItemId'])
             title = is_empty(Selector(text=data['productName']).xpath(
                 'string()').extract())
@@ -1191,6 +1629,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         for item in items:
             link = item.css('a.js-product-title ::attr(href)')[0].extract()
+            if link in self.visited_links.get(response.meta.get('search_term'), []):
+                continue
+            else:
+                self.visited_links.get(response.meta.get('search_term'), []).append(link)
 
             title = ''.join(item.xpath(
                 'div/div/h4[contains(@class, "tile-heading")]/a/node()'
@@ -1265,8 +1707,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         new_meta = response.meta.copy()
         new_meta['product']['recent_questions'] = []
         url = self.QA_URL.format(product_id=product_id, page=1)
-        return Request(url, self._parse_questions,
-                       meta=new_meta, dont_filter=True)
+        if self.scrape_questions:
+            return Request(url, self._parse_questions,
+                           meta=new_meta, dont_filter=True)
+        else:
+            return response.meta['product']
 
     def _parse_questions(self, response):
         data = json.loads(response.body_as_unicode())
@@ -1378,3 +1823,55 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             product['last_buyer_review_date'] = lbrd.strftime('%d-%m-%Y')
 
         return product
+
+    def _parse_temporary_unavailable(self, response):
+        condition = response.xpath(
+            '//p[contains(@class, "error-page-message-details text-center") '
+            'and contains(text(), "We\'re having technical difficulties and are looking into the problem now.")]')
+        return bool(condition)
+
+    def parse(self, response):
+        # call the appropriate method for the code. It'll only work if you set
+        #  `handle_httpstatus_list = [502, 503, 504]` in the spider
+        if hasattr(self, 'handle_httpstatus_list'):
+            for _code in self.handle_httpstatus_list:
+                if response.status == _code:
+                    _callable = getattr(self, 'parse_' + str(_code), None)
+                    if callable(_callable):
+                        yield _callable()
+
+        if self._search_page_error(response):
+            remaining = response.meta['remaining']
+            search_term = response.meta['search_term']
+
+            self.log("For search term '%s' with %d items remaining,"
+                     " failed to retrieve search page: %s"
+                     % (search_term, remaining, response.request.url),
+                     WARNING)
+        elif self._parse_temporary_unavailable(response):
+            item = SiteProductItem()
+            item['temporary_unavailable'] = True
+            yield item
+        else:
+            prods_count = -1  # Also used after the loop.
+            for prods_count, request_or_prod in enumerate(
+                    self._get_products(response)):
+                yield request_or_prod
+            prods_count += 1  # Fix counter.
+
+            request = self._get_next_products_page(response, prods_count)
+            if request is not None:
+                yield request
+
+    @staticmethod
+    def _parse_marketplace_from_js(data):
+        marketplaces = []
+        marketplaces_data = data.get('buyingOptions', {}).get('marketplaceOptions', [])
+        for marketplace in marketplaces_data:
+            price = marketplace.get('price', {}).get('currencyAmount')
+            currency = marketplace.get('price', {}).get('currencyUnit')
+            name = marketplace.get('seller', {}).get('displayName')
+            marketplaces.append({'price': price,
+                                 'currency': currency,
+                                 'name': name})
+        return marketplaces
