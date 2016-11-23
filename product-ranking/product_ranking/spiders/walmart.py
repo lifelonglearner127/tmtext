@@ -198,17 +198,17 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         elif chosen_proxy_provider == "luminati":
             logger.warning('*** Using Luminati ***')
             middlewares['product_ranking.custom_middlewares.LuminatiProxy'] = 750
-            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
+            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgent'] = 400
             middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
         elif chosen_proxy_provider == "proxyrain":
             logger.warning('*** Using Proxyrain ***')
             middlewares['product_ranking.custom_middlewares.ProxyrainProxy'] = 750
-            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
+            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgent'] = 400
             middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
         elif chosen_proxy_provider == "shaderio":
             logger.warning('*** Using Shader.io ***')
             middlewares['product_ranking.custom_middlewares.ShaderioProxy'] = 750
-            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgentMiddleware'] = 400
+            middlewares['product_ranking.scrapy_fake_useragent.middleware.RandomUserAgent'] = 400
             middlewares['scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware'] = None
 
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
