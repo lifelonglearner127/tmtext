@@ -3,7 +3,9 @@
 
 import os
 import sys
+import urlparse
 from subprocess import check_output, CalledProcessError, STDOUT
+
 
 main_folder = '/home/spiders/repo/'
 
@@ -50,6 +52,30 @@ def _install_system_package(package):
             pass
 
 
+def _install_geckodriver(
+        fallback_url='/mozilla/geckodriver/releases/download/v0.11.1/geckodriver-v0.11.1-linux64.tar.gz',
+        github_latest_url='https://github.com/mozilla/geckodriver/releases/latest'):
+    import lxml.html
+    import requests
+
+    response = requests.get(github_latest_url)
+
+    try:
+        link = lxml.html.fromstring(response.text).xpath(
+            '//a[contains(@href, ".tar.gz")][contains(@href, "linux64")]/@href')[0]
+    except IndexError:
+        print('error while downloading latest geckodriver')
+        link = fallback_url
+
+    if link.startswith('/'):
+        link = urlparse.urljoin('https://github.com', link)
+
+    os.system('wget "%s" -O _geckodriver.tar.gz' % link)
+    os.system('tar xf _geckodriver.tar.gz')
+    os.system('mv geckodriver /usr/sbin')
+    os.system('chmod +x /usr/sbin/geckodriver')
+
+
 def main():
     f = open('/tmp/check_file_post_starter_root_new', 'w')
     f.write('1')
@@ -69,12 +95,15 @@ def main():
     os.system('sudo apt-get update')
     _install_system_package('tesseract-ocr')
     _install_system_package('xvfb')
+    _install_system_package('wget')
     _install_system_package('chromium-browser')
     _install_system_package('firefox')
     _install_system_package('phantomjs')
     _install_system_package('python-setuptools')
     _install_system_package('python-distutils-extra')
     _install_system_package('python-apt')
+    _install_system_package('python-lxml')
+    _install_system_package('python-requests')
     # TODO: phantomjs2
     os.system(
         "cd ~"
@@ -90,6 +119,8 @@ def main():
         " && sudo mv phantomjs /usr/sbin/phantomjs2"
         " && sudo chmod +x /usr/sbin/phantomjs2"
     )
+    # download and install geckodriver (for Firefox)
+    _install_geckodriver()
     # disable marketplaces (they are too slow)
     disabler = '/tmp/stop_marketplaces'
     os.system('echo "1" > %s' % disabler)
