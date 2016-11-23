@@ -15,7 +15,7 @@ class RiteAidScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is https://shop.riteaid.com/<product-name>-<skuid>$"
+    INVALID_URL_MESSAGE = "Expected URL format is (https|http)://shop.riteaid.com/<product-name>-<skuid>$"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -38,7 +38,7 @@ class RiteAidScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match('^https://shop.riteaid.com/.*-\d+$', self.product_page_url)
+        m = re.match('^(https|http)://shop.riteaid.com/.*-\d+$', self.product_page_url)
         return not not m
 
     def not_a_product(self):
