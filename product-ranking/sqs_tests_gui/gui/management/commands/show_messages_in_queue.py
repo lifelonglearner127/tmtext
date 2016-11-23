@@ -2,21 +2,13 @@ import os
 import sys
 import random
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 #sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
 
-from settings import MEDIA_ROOT
-from gui.models import Job, get_data_filename, get_log_filename,\
-    get_progress_filename
-
-
 sys.path.append(os.path.join(CWD,  '..', '..', '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
-import scrapy_daemon
-from test_sqs_flow import download_s3_file, AMAZON_BUCKET_NAME, unzip_file
-from list_all_files_in_s3_bucket import list_files_in_bucket
 
 from update_jobs import _get_queue
 

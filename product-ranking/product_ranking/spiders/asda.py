@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
 import json
@@ -13,7 +12,6 @@ from scrapy.log import WARNING, ERROR
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 from product_ranking.validation import BaseValidator
-from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.validators.asda_validator import AsdaValidatorSettings
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -63,16 +61,9 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
             )
 
         if self.product_url:
-            pId = is_empty(re.findall("product/(\d+)", self.product_url))
-            if pId is None:
-                try:
-                    pId = int(self.product_url.strip('/').split('/')[-1])
-                except (ValueError, TypeError) as e:
-                    self.log('Error while parse item id. ERROR: %s.' % str(e),
-                             ERROR)
-                    return
-            url = "https://groceries.asda.com/api/items/view?" \
-                "itemid=" + str(pId) + "&responsegroup=extended" \
+            pId = is_empty(re.findall("product/.*/(\d+)", self.product_url))
+            url = "http://groceries.asda.com/api/items/view?" \
+                "itemid=" + pId + "&responsegroup=extended" \
                 "&cacheable=true&shipdate=currentDate" \
                 "&requestorigin=gi"
 
@@ -85,7 +76,7 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
-        
+
         try:
             data = json.loads(response.body_as_unicode())
             item = data['items'][0]

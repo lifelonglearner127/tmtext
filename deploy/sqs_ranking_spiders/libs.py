@@ -1,6 +1,12 @@
 import codecs
 import csv
 import json
+import os
+import json
+import datetime
+
+import boto
+from boto.s3.key import Key
 
 
 def convert_json_to_csv(filepath, logger=None):
@@ -40,3 +46,38 @@ def convert_json_to_csv(filepath, logger=None):
                 vals.append(val)
             writer.writerow(vals)
     return csv_filepath
+
+
+def _get_file_age(fname):
+    today = datetime.datetime.now()
+    modified_date = datetime.datetime.fromtimestamp(os.path.getmtime(fname))
+    return (today - modified_date).total_seconds()
+
+
+def _download_autoscale_groups(logging=None):
+    amazon_bucket_name = "sc-settings"
+    config_filename = "autoscale_groups.cfg"
+    S3_CONN = boto.connect_s3(is_secure=False)
+    S3_BUCKET = S3_CONN.get_bucket(amazon_bucket_name, validate=False)
+    k = Key(S3_BUCKET)
+    k.key = config_filename
+    value = json.loads(k.get_contents_as_string())
+    if logging is not None:
+        logging.info('Retrieved autoscale groups config: %s' % value)
+    return value
+
+
+def get_autoscale_groups(local_fname='/tmp/_sc_autoscale_groups.cfg', max_age=600, logging=None):
+    """ Pass logging var if you want logs """
+    if not os.path.exists(local_fname) \
+            or (os.path.exists(local_fname) and _get_file_age(local_fname) > max_age):
+        # update values
+        groups = _download_autoscale_groups(logging=logging)
+        with open(local_fname, 'w') as fh:
+            fh.write(json.dumps(groups))
+        return groups
+    else:
+        with open(local_fname, 'r') as fh:
+            return json.loads(fh.read())
+
+

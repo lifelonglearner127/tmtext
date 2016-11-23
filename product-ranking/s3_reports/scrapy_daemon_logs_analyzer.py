@@ -4,11 +4,7 @@
 
 import os
 import gzip
-import sys
-import json
 import datetime
-import time
-from collections import OrderedDict
 
 import boto
 from boto.s3.key import Key

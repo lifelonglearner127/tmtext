@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import functools
 import re
 import sys
 import json
@@ -12,10 +13,29 @@ import requests
 import random
 import yaml
 from requests.auth import HTTPProxyAuth
+from HTMLParser import HTMLParser
 
 from extract_data import Scraper
 from compare_images import compare_images
+sys.path.append('..')
 from spiders_shared_code.walmart_variants import WalmartVariants
+
+def handle_badstatusline(f):
+    """https://github.com/mikem23/keepalive-race
+    """
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        for _ in range(2):
+            try:
+                return f(*args, **kwargs)
+            except requests.exceptions.ConnectionError as e:
+                if 'httplib.BadStatusLine' in e.message:
+                    continue
+                raise
+        else:
+            raise
+    return wrapper
+
 
 class WalmartScraper(Scraper):
 
@@ -133,22 +153,70 @@ class WalmartScraper(Scraper):
         self.is_bundle_product = False
         self.temporary_unavailable = 0
 
-        print 'using API KEY', self.CRAWLERA_APIKEY
+        n = random.randint(1, 100)
 
-        self.proxy_host = "content.crawlera.com"
-        self.proxy_port = "8010"
-        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
-        self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
-                        "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
+        walmart_proxy_crawlera = kwargs.get('walmart_proxy_crawlera') or 0
+        walmart_proxy_proxyrain = kwargs.get('walmart_proxy_proxyrain') or 0
+        walmart_proxy_shaderio = kwargs.get('walmart_proxy_shaderio') or 0
+        walmart_proxy_luminati = kwargs.get('walmart_proxy_luminati') or 0
+
+        if n <= walmart_proxy_proxyrain:
+            self.PROXY = 'proxyrain'
+            print 'Using proxyRAIN', self.product_page_url
+
+            self.proxy_host = "10.0.5.241"
+            self.proxy_port = "7708"
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+            self.proxy_auth = None
+
+        elif n <= walmart_proxy_proxyrain + walmart_proxy_shaderio:
+            self.PROXY = 'shaderio'
+            print 'Using shader.io', self.product_page_url
+
+            self.proxy_host = "10.0.5.12"
+            self.proxy_port = "7708"
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+            self.proxy_auth = None
+
+        elif n <= walmart_proxy_proxyrain + walmart_proxy_shaderio + walmart_proxy_luminati:
+            self.PROXY = 'luminati'
+            print 'Using luminati', self.product_page_url
+
+            self.proxy_host = "10.0.5.78"
+            self.proxy_port = "7708"
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
+            self.proxy_auth = None
+
+        else:
+            self.PROXY = 'crawlera'
+            print 'Using Crawlera with API KEY', self.product_page_url, self.CRAWLERA_APIKEY
+
+            self.proxy_host = "content.crawlera.com"
+            self.proxy_port = "8010"
+            self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
+            self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port), \
+                            "https": "https://{}:{}/".format(self.proxy_host, self.proxy_port)}
 
         self.proxies_enabled = True
 
-    def _request(self, url, headers=None):
+    def _proxy_service(self):
+        return self.PROXY
+
+    @handle_badstatusline
+    def _request(self, url, headers=None, allow_redirects=True):
         if self.proxies_enabled and 'walmart.com' in url:
+            if self.PROXY == 'proxyrain':
+                headers = {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Cache-Control': 'no-cache',
+                    'DNT': '1'}
+
             return requests.get(url, \
-                    proxies=self.proxies, auth=self.proxy_auth, \
+                    headers=headers, \
+                    proxies=self.proxies, \
+                    auth=self.proxy_auth, \
                     verify=False, \
-                    timeout=300)
+                    timeout=300,
+                    allow_redirects=allow_redirects)
         else:
             return requests.get(url, timeout=10)
 
@@ -167,11 +235,22 @@ class WalmartScraper(Scraper):
             max_retries = 5
 
             try:
-                resp = self._request(self.product_page_url)
+                resp = self._request(self.product_page_url,
+                                     allow_redirects=False)
 
-                if resp.url != self.product_page_url:
-                    print 'REDIRECTED', resp.url, self.product_page_url
-                    continue
+                # 3xx are redirections.
+                while str(resp.status_code).startswith('3'):
+                    print 'REDIRECTED {code}: {url}'.format(
+                        code=resp.status_code,
+                        url=resp.request.url
+                    )
+                    if 'location' not in resp.headers:
+                        self.ERROR_RESPONSE['failure_type'] = \
+                            '3xx location not found'
+                        return
+
+                    url = resp.headers['location']
+                    resp = self._request(url, allow_redirects=False)
 
                 if resp.status_code != 200:
                     print 'Got response %s for %s with headers %s' % (resp.status_code, self.product_page_url, resp.headers)
@@ -193,22 +272,64 @@ class WalmartScraper(Scraper):
 
                         break
 
-                contents = self._clean_null(resp.text)
-                self.page_raw_text = contents
-                self.tree_html = html.fromstring(contents)
+                try:
+                    # replace NULL characters
+                    contents = self._clean_null(resp.text)
+                    self.page_raw_text = contents
+                    self.tree_html = html.fromstring(contents.decode('utf8'))
+                except UnicodeError, e:
+                    # if string was not utf8, don't deocde it
+                    print 'Error decoding', self.product_page_url, e
 
-                self._failure_type()
+                    # replace NULL characters
+                    contents = self._clean_null(resp.text)
+                    self.page_raw_text = contents
+                    self.tree_html = html.fromstring(contents)
+
+                # Retry some failure types
+                try:
+                    self._failure_type()
+                    if self.failure_type in ['No product name', 'Replacement unicode character']:
+                        print 'GOT FAILURE TYPE %s for %s' % (self.failure_type, \
+                            self.product_page_url)
+                        self.is_timeout = True
+                        self.ERROR_RESPONSE['failure_type'] = self.failure_type
+                        continue
+                except Exception, e:
+                    print 'Error getting failure type', self.product_page_url, e
+                    continue
+
+                # If there is an error extracting product info json, retry
+                try:
+                    self._extract_product_info_json()
+                except Exception, e:
+                    print 'Error extracting product info json', self.product_page_url, e
+                    self.extracted_product_info_jsons = False
+                    continue
 
                 return
+
+            except requests.exceptions.ProxyError, e:
+                print 'Error extracting', self.product_page_url, type(e), e
+
+                self.is_timeout = True
+                self.ERROR_RESPONSE['failure_type'] = 'proxy'
+                return
+
+            except requests.exceptions.ConnectionError, e:
+                print 'Error extracting', self.product_page_url, type(e), e
+
+                if 'Max retries exceeded' in str(e):
+                    self.is_timeout = True
+                    self.ERROR_RESPONSE['failure_type'] = 'max_retries'
+                    return
+
             except Exception, e:
                 print 'Error extracting', self.product_page_url, type(e), e
 
-                if str(e) == "('Cannot connect to proxy.', error(104, 'Connection reset by peer'))" or re.search('Max retries exceeded', str(e)):
-                    max_retries = 100
-                    time.sleep(1)
-
         self.is_timeout = True
-        self.ERROR_RESPONSE["failure_type"] = "Timeout"
+        if not self.ERROR_RESPONSE['failure_type']:
+            self.ERROR_RESPONSE['failure_type'] = 'Timeout'
 
     # checks input format
     def check_url_format(self):
@@ -254,6 +375,7 @@ class WalmartScraper(Scraper):
             self._extract_product_info_json()
         except Exception, e:
             print 'Error extracting product info json', self.product_page_url, e
+            self.extracted_product_info_jsons = False
             return True
 
         return False
@@ -772,6 +894,12 @@ class WalmartScraper(Scraper):
                 # assume old design
                 product_name_node = self.tree_html.xpath("//h1[contains(@class, 'productTitle')]")
 
+            if not product_name_node:
+                product_name_node = self.tree_html.xpath("//h1[@itemprop='name']/span")
+
+            if not product_name_node:
+                product_name_node = self.tree_html.xpath("//h2[contains(@class, 'prod-ProductTitle')]/div")
+
             if product_name_node:
                 return product_name_node[0].text_content().strip()
         except Exception, e:
@@ -1156,7 +1284,7 @@ class WalmartScraper(Scraper):
             shelf_description_html = shelf_description_html[:shelf_description_html.rfind("</div>")]
 
             if shelf_description_html and shelf_description_html.strip():
-                return shelf_description_html.strip()
+                return HTMLParser().unescape(shelf_description_html.strip())
 
         return None
 
@@ -1822,6 +1950,14 @@ class WalmartScraper(Scraper):
 
     def _temporary_unavailable(self):
         return self.temporary_unavailable
+
+    def _temp_price_cut(self):
+        self._extract_product_info_json()
+
+        if self.product_info_json:
+            if self.product_info_json['buyingOptions'].get('strikethroughComparisonPrice'):
+                return 1
+        return 0
 
     def _shipping(self):
         flag = 'not available'
@@ -2729,14 +2865,21 @@ class WalmartScraper(Scraper):
         if "We can't find the product you are looking for, but we have similar items for you to consider." in text_contents:
             self.failure_type = "404 Error"
 
-        # If there is no product name, return failure
-        if not self._is_collection_url() and not self._product_name_from_tree():
-            self.failure_type = "No product name"
+        product_name = self._product_name_from_tree()
 
-        # If product is available but has no descriptions
-        if not self._no_longer_available():
-            if not self._short_description_wrapper() and not self._long_description_wrapper():
-                self.failure_type = "No description"
+        # If there is no product name, return failure
+        if not self._is_collection_url() and not product_name:
+            self.failure_type = "No product name"
+            return self.failure_type
+
+        if u'\xef\xbf\xbd' in product_name or u'\ufffd' in product_name:
+            self.failure_type = "Replacement unicode character"
+
+        shelf_description = self._shelf_description()
+
+        if shelf_description:
+            if u'\xef\xbf\xbd' in shelf_description or u'\ufffd' in shelf_description:
+                self.failure_type = "Replacement unicode character"
 
         return self.failure_type
 
@@ -3225,6 +3368,7 @@ class WalmartScraper(Scraper):
     """
 
     DATA_TYPES = { \
+        "proxy_service": _proxy_service, \
         # Info extracted from product page
         "upc": _upc_from_tree, \
         "product_name": _product_name_from_tree, \
@@ -3293,6 +3437,7 @@ class WalmartScraper(Scraper):
         "reviews": _reviews, \
         "no_longer_available": _no_longer_available, \
         "temporary_unavailable": _temporary_unavailable, \
+        "temp_price_cut": _temp_price_cut, \
         # video needs both page source and separate requests
         "video_count": _video_count, \
         "video_urls": _video_urls, \

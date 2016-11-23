@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import urlparse
 import urllib
@@ -7,7 +6,7 @@ import string
 import json
 from datetime import datetime
 
-from scrapy.log import ERROR, DEBUG
+from scrapy.log import ERROR
 from scrapy.http import Request
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \

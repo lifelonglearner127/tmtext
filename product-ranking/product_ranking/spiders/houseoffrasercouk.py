@@ -3,12 +3,11 @@
 import json
 import re
 import urllib2
-from itertools import izip
 
-from scrapy.http import FormRequest, Request
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy.http import Request
+from scrapy.log import ERROR, WARNING
 
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set_value
 
