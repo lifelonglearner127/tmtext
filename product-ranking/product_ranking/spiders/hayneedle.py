@@ -126,24 +126,6 @@ class HayneedleProductSpider(BaseProductsSpider):
             return ip
 
     @staticmethod
-    def _auth_firefox_proxy(driver):
-        driver.set_page_load_timeout(10)
-        try:
-            driver.get('http://icanhazip.com')
-        except:
-            from selenium.webdriver.common.alert import Alert
-            time.sleep(3)
-            alert = Alert(driver)
-            time.sleep(3)
-            #alert.authenticate(CRAWLERA_APIKEY, '')
-            alert.send_keys(CRAWLERA_APIKEY + '\n')
-            alert.accept()
-            #alert.send_keys('\t')
-            #alert.send_keys('\n')
-            #import pdb; pdb.set_trace()
-        driver.set_page_load_timeout(30)
-
-    @staticmethod
     def last_five_digits_the_same(lst):
         if len(lst) < 6:
             return
