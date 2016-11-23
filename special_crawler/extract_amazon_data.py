@@ -402,6 +402,11 @@ class AmazonScraper(Scraper):
 
             hidden = description.xpath('//*[@class="aok-hidden"]')
             more_button = description.xpath('//div[@id="fbExpanderMoreButtonSection"]')
+            expander = description.xpath(".//*[contains(@class, 'a-expander-extend-header')]")
+
+            # remove expander(=show mores) from description
+            if expander:
+                expander[0].getparent().remove(expander[0])
 
             description = html.tostring(description)
 
@@ -530,9 +535,22 @@ class AmazonScraper(Scraper):
         try:
             description = ""
             children = self.tree_html.xpath("//div[@id='productDescription']/child::*[not(@class='disclaim') and not(name()='script') and not(name()='style')]")
+            skip_manufacturer_flag = False
 
             for child in children:
+                if skip_manufacturer_flag:
+                    skip_manufacturer_flag = False
+                    continue
+
                 self._exclude_images_from_description(child)
+
+                if 'Product Description' in html.tostring(child):
+                    continue
+
+                if child.tag == "h3" and child.text.lower().strip() == 'from the manufacturer':
+                    skip_manufacturer_flag = True
+                    continue
+
                 description += self._clean_text(self._exclude_javascript_from_description(html.tostring(child)))
 
             if description is not None and len(description) > 5:

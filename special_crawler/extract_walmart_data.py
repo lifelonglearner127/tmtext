@@ -1951,6 +1951,14 @@ class WalmartScraper(Scraper):
     def _temporary_unavailable(self):
         return self.temporary_unavailable
 
+    def _temp_price_cut(self):
+        self._extract_product_info_json()
+
+        if self.product_info_json:
+            if self.product_info_json['buyingOptions'].get('strikethroughComparisonPrice'):
+                return 1
+        return 0
+
     def _shipping(self):
         flag = 'not available'
 
@@ -3429,6 +3437,7 @@ class WalmartScraper(Scraper):
         "reviews": _reviews, \
         "no_longer_available": _no_longer_available, \
         "temporary_unavailable": _temporary_unavailable, \
+        "temp_price_cut": _temp_price_cut, \
         # video needs both page source and separate requests
         "video_count": _video_count, \
         "video_urls": _video_urls, \
