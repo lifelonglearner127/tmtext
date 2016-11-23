@@ -180,6 +180,7 @@ class Scraper():
             "num_items_no_price_displayed",
             "body_copy",
             "body_copy_links",
+            "redirect", # 1/0 if page is a redirect
 
             # reviews
             "review_count", # total number of reviews, int
@@ -270,7 +271,8 @@ class Scraper():
                             "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv", \
                             "best_seller_category", "results_per_page", "total_matches", "lowest_item_price", "highest_item_price",
                             "num_items_price_displayed", "num_items_no_price_displayed",
-                                "body_copy", "body_copy_links", "meta_description", "cnet"], \
+                                "body_copy", "body_copy_links", "meta_description", "cnet",
+                            "redirect"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "seller_id", "us_seller_id", "in_stock", \
