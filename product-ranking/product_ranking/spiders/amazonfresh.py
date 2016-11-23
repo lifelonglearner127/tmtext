@@ -1,20 +1,43 @@
 from __future__ import division, absolute_import, unicode_literals
 
+import urlparse
 import re
+import random
+import copy
 import json
-
 import string
 
 from scrapy.http import Request
+from scrapy.conf import settings
 from scrapy import FormRequest
 from scrapy.log import ERROR
+from scrapy.dupefilter import BaseDupeFilter
+from scrapy.utils.request import request_fingerprint
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.spiders import BaseProductsSpider, cond_set
-
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
+    FormatterWithDefaults, cond_set_value
 
 is_empty = lambda x, y=None: x[0] if x else y
+
+
+class CustomDupeFilter(BaseDupeFilter):
+    """ Custom dupefilter - counts attempts """
+
+    urls = {}
+
+    def __init__(self, max_attempts=50, *args, **kwargs):
+        self.max_attempts = max_attempts
+        super(CustomDupeFilter, self).__init__(*args, **kwargs)
+
+    def request_seen(self, request):
+        if not request.url in self.urls:
+            self.urls[request.url] = 0
+        self.urls[request.url] += 1
+        if self.urls[request.url] > self.max_attempts:
+            self.log('Too many dupe attempts for url %s' % request.url, ERROR)
+            return True
 
 
 class AmazonFreshProductsSpider(BaseProductsSpider):
@@ -46,10 +69,29 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
 
     ZIP_URL = "https://www.amazon.com/afx/regionlocationselector/ajax/" \
               "updateZipcode"
+    search_sort = {
+        'relevance': 'relevance',  # default
+        'bestselling': 'bestselling',
+        'price_lh': 'price_low_to_high',
+        'price_hl': 'price_high_to_low',
+    }
+    zip_codes_to_recrawl = {
+        'Seattle': 98101,
+        'San Francisco': 94107,
+        'New York': 10128,
+        'Santa Monica': 90404
+    }
 
-    def __init__(self, zip_code='94117', *args, **kwargs):
+    def __init__(self, zip_code='94117', order='relevance', *args, **kwargs):
+        settings.overrides['DUPEFILTER_CLASS'] = 'product_ranking.spiders.amazonfresh.CustomDupeFilter'
+        search_sort = self.search_sort.get(order, 'relevance')
         self.zip_code = zip_code
         super(AmazonFreshProductsSpider, self).__init__(*args, **kwargs)
+        # super(AmazonFreshProductsSpider, self).__init__(
+        #     url_formatter=FormatterWithDefaults(search_sort=search_sort),
+        #     *args,
+        #     **kwargs
+        # )
 
     def start_requests(self):
         yield Request(
@@ -66,6 +108,9 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
         )
 
     def login_handler(self, response):
+        # data = {'refer': '',
+        #         'zip': self.zip_code}
+        # return FormRequest(self.ZIP_URL, formdata=data, callback=self.after_login)
         csrf_token = re.findall(r'csrfToken\":\"([^\"]+)', response.body)
         if not csrf_token:
             self.log('Can\'t find csrf token.', ERROR)
@@ -83,9 +128,61 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
     def after_login(self, response):
         return super(AmazonFreshProductsSpider, self).start_requests()
 
+    def _scrape_title(self, response):
+        return response.xpath('//div[@class="buying"]/h1/text()').extract()
+
     def parse_product(self, response):
         prod = response.meta['product']
-        cond_set(prod, 'url', [response.url])
+
+        # check if we have a previously scraped product, and we got a 'normal' title this time
+        _title = self._scrape_title(response)
+        if _title and isinstance(_title, (list, tuple)):
+            _title = _title[0]
+            if 'Not Available in Your Area' not in _title:
+                if getattr(self, 'original_na_product', None):
+                    prod = self.original_na_product
+                    prod['title'] = _title
+                    return prod
+
+        query_string = urlparse.parse_qs(urlparse.urlsplit(response.url).query)
+        cond_set(prod, 'model', query_string.get('asin', ''))
+
+        brand = response.xpath('//div[@class="byline"]/a/text()').extract()
+        cond_set(prod, 'brand', brand)
+        price = response.xpath(
+            '//div[@class="price"]/span[@class="value"]/text()').extract()
+        cond_set(prod, 'price', price)
+        if prod.get('price', None):
+            if '$' not in prod['price']:
+                self.log('Unknown currency at %s' % response.url, level=ERROR)
+            else:
+                prod['price'] = Price(
+                    price=prod['price'].replace('$', '').replace(
+                        ',', '').replace(' ', '').strip(),
+                    priceCurrency='USD'
+                )
+
+        seller_all = response.xpath('//div[@class="messaging"]/p/strong/a')
+
+        if seller_all:
+            seller = seller_all.xpath('text()').extract()
+            other_products = seller_all.xpath('@href').extract()
+            if other_products:
+                other_products = "https://fresh.amazon.com/" + other_products[0]
+            else:
+                other_products = []
+            if seller:
+                prod["marketplace"] = [{
+                    "name": seller[0], 
+                    "price": prod["price"],
+                }]
+
+        des = response.xpath('//div[@id="productDescription"]').extract()
+        cond_set(prod, 'description', des)
+        img_url = response.xpath(
+            '//div[@id="mainImgWrapper"]/img/@src').extract()
+        cond_set(prod, 'image_url', img_url)
+        # cond_set(prod, 'url', [response.url])
         cond_set(prod, 'locale', ['en-US'])
         cond_set(
             prod,
@@ -139,6 +236,17 @@ class AmazonFreshProductsSpider(BaseProductsSpider):
             prod['buyer_reviews'] = reviews
         prod['is_out_of_stock'] = bool(response.xpath(
             '//div[@class="itemUnavailableText"]/span').extract())
+
+        title = self._scrape_title(response)
+        cond_set(prod, 'title', title)
+        if 'Not Available in Your Area' in prod.get('title', ''):
+            new_zip_code = str(random.choice(self.zip_codes_to_recrawl.values()))
+            self.log('Product not available for ZIP %s - retrying with %s' % (
+                self.zip_code, new_zip_code))
+            self.zip_code = new_zip_code
+            if not getattr(self, 'original_na_product', None):
+                self.original_na_product = copy.deepcopy(prod)
+            return Request(self.WELCOME_URL, callback=self.login_handler)
 
         return prod
 
