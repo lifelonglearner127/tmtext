@@ -3,7 +3,6 @@
 
 import os
 import sys
-import urlparse
 from subprocess import check_output, CalledProcessError, STDOUT
 
 
@@ -52,30 +51,6 @@ def _install_system_package(package):
             pass
 
 
-def _install_geckodriver(
-        fallback_url='/mozilla/geckodriver/releases/download/v0.11.1/geckodriver-v0.11.1-linux64.tar.gz',
-        github_latest_url='https://github.com/mozilla/geckodriver/releases/latest'):
-    import lxml.html
-    import requests
-
-    response = requests.get(github_latest_url)
-
-    try:
-        link = lxml.html.fromstring(response.text).xpath(
-            '//a[contains(@href, ".tar.gz")][contains(@href, "linux64")]/@href')[0]
-    except IndexError:
-        print('error while downloading latest geckodriver')
-        link = fallback_url
-
-    if link.startswith('/'):
-        link = urlparse.urljoin('https://github.com', link)
-
-    os.system('wget "%s" -O _geckodriver.tar.gz' % link)
-    os.system('tar xf _geckodriver.tar.gz')
-    os.system('mv geckodriver /usr/sbin')
-    os.system('chmod +x /usr/sbin/geckodriver')
-
-
 def main():
     f = open('/tmp/check_file_post_starter_root_new', 'w')
     f.write('1')
@@ -120,7 +95,6 @@ def main():
         " && sudo chmod +x /usr/sbin/phantomjs2"
     )
     # download and install geckodriver (for Firefox)
-    _install_geckodriver()
     # disable marketplaces (they are too slow)
     disabler = '/tmp/stop_marketplaces'
     os.system('echo "1" > %s' % disabler)
