@@ -39,9 +39,9 @@ def run_converter(input_type, output_type, input_file, mapping_file):
     if not os.path.exists(converters_dir):
         converters_dir = '.'
 
-    cmd = ('python {converters_dir}/amazon_to_walmart.py --input_type={input_type}'
-           ' --input_file={input_file} --mapping_file={mapping_file}'
-           ' --output_type={output_type} --log_file="{log_file}"')
+    cmd = ('python {converters_dir}/amazon_to_walmart.py --input_type="{input_type}"'
+           ' --input_file="{input_file}" --mapping_file="{mapping_file}"'
+           ' --output_type="{output_type}" --log_file="{log_file}"')
 
     cmd_run = cmd.format(converters_dir=converters_dir, log_file=log_fname,
                          input_type=input_type, output_type=output_type,
