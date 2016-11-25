@@ -100,6 +100,7 @@ from extract_sears_data import SearsScraper
 from extract_jet_data import JetScraper
 from extract_westmarine_data import WestmarineScraper
 from extract_shoprite_data import ShopriteScraper
+from extract_hayneedle_data import HayneedleScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -211,7 +212,8 @@ SUPPORTED_SITES = {
                     "sears" : SearsScraper,
                     "westmarine" : WestmarineScraper,
                     "jet" : JetScraper,
-                    "shoprite" : ShopriteScraper
+                    "shoprite" : ShopriteScraper,
+                    "hayneedle" : HayneedleScraper
                     }
 
 # add logger
@@ -315,6 +317,8 @@ def extract_domain(url):
         return 'walmartgrocery'
     if 'jet.com' in url:
         return 'jet'
+    if 'hayneedle.com' in url:
+        return 'hayneedle'
 
     m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:
