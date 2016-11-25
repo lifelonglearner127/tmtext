@@ -14,6 +14,8 @@ import boto.ec2
 from boto.s3.key import Key
 from boto.ec2.autoscale import AutoScaleConnection
 
+from libs import get_autoscale_groups
+
 
 """This script will stop all remote instances where spider finish
 it's task, failed to start scrapy or still wait for tasks.
@@ -70,7 +72,7 @@ autoscale_conn = None
 
 
 def get_all_group_instances_and_conn(
-        groups_names=('SCCluster1', 'SCCluster2', 'SCCluster3', 'SCCluster4')):
+        groups_names=get_autoscale_groups()['groups']):
     conn = AutoScaleConnection()
     global autoscale_conn
     autoscale_conn = conn

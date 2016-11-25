@@ -2,14 +2,12 @@
 # In other words, turns many "product_url" into "product_urls" batches
 
 import os
-import datetime
 import json
 import random
 
 MAX_URLS = 15  # how many URLs to group into a single batch
 
-from django.core.management.base import BaseCommand, CommandError
-from django.utils import timezone
+from django.core.management.base import BaseCommand
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 

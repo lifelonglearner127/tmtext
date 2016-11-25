@@ -3,13 +3,11 @@ from __future__ import division, absolute_import, unicode_literals
 import re
 import string
 
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy.log import ERROR
 
-from product_ranking.items import SiteProductItem, RelatedProduct, \
-    Price, BuyerReviews
-from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults,\
-    cond_set, cond_set_value
+    cond_set_value
 
 is_empty = lambda x, y=None: x[0] if x else y
 

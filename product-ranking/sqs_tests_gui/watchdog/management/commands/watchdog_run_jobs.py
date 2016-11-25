@@ -3,24 +3,19 @@ import sys
 import datetime
 import json
 import re
-import zipfile
 import ast
 import subprocess
 import random
-import tempfile
 
-from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Q
+from django.core.management.base import BaseCommand
 from django.utils.timezone import now
-import boto
-from dateutil.parser import parse as parse_date
 
 CWD = os.path.dirname(os.path.abspath(__file__))
 #sys.path.append(os.path.join(CWD, '..', '..', '..', '..'))
 
 from settings import MEDIA_ROOT
 from watchdog.models import WatchDogJob, WatchDogJobTestRuns
-from gui.models import Job, get_data_filename, get_log_filename
+from gui.models import Job, get_log_filename
 from gui.management.commands.update_jobs import _unzip_local_file
 
 
@@ -87,7 +82,7 @@ class Command(BaseCommand):
             print 'an instance of the script is already running...'
             sys.exit()
 
-        from jsonpath_rw import jsonpath, parse as jsonparse
+        from jsonpath_rw import parse as jsonparse
 
         # get all active jobs
         active_jobs = [j for j in WatchDogJob.objects.all() if j.is_active()]

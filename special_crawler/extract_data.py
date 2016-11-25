@@ -56,6 +56,8 @@ class Scraper():
     # number of retries for fetching product page source before giving up
     MAX_RETRIES = 3
 
+    PROXY = 'crawlera'
+
     CRAWLERA_HOST = 'content.crawlera.com'
     CRAWLERA_PORT = '8010'
     CRAWLERA_APIKEY = "3b1bf5856b2142a799faf2d35b504383"
@@ -76,6 +78,7 @@ class Scraper():
             "status",
             "scraper", # version of scraper in effect. Relevant for Walmart old vs new pages.
                        # Only implemented for walmart. Possible values: "Walmart v1" or "Walmart v2"
+            "proxy_service",
 
             # product_info
             "product_name", # name of product, string
@@ -88,6 +91,7 @@ class Scraper():
             "features", # features of product, string
             "feature_count", # number of features of product, int
             "specs", # specifications
+            "full_specs", # grouped keys from specs, dict
             "model_meta", # model from meta, string
             "description", # short description / entire description if no short available, string
             "seller_ranking",
@@ -111,6 +115,8 @@ class Scraper():
             "shipping",
             "free_pickup_today",
             "no_longer_available",
+            "assembled_size",
+            "temporary_unavailable",
             "variants", # list of variants
             "swatches", # list of swatches
             "related_products_urls",
@@ -123,6 +129,7 @@ class Scraper():
             "bullet_feature_3",
             "bullet_feature_4",
             "bullet_feature_5",
+            "bullets",
             "usage",
             "directions",
             "warnings",
@@ -174,6 +181,7 @@ class Scraper():
             "num_items_no_price_displayed",
             "body_copy",
             "body_copy_links",
+            "redirect", # 1/0 if page is a redirect
 
             # reviews
             "review_count", # total number of reviews, int
@@ -217,7 +225,8 @@ class Scraper():
             "categories", # full path of categories down to this product's ["full", "path", "to", "product", "category"], list of strings
             "category_name", # category for this product, string
             "shelf_links_by_level", # list of category urls
-            "brand" # brand of product, string
+            "brand", # brand of product, string
+            "mfg" # mfg, string, for westmarine.com
 
             # Deprecated:
             # "anchors", # links found in the description, dictionary like {"links" : [], quantity: 0}
@@ -254,16 +263,17 @@ class Scraper():
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
                         "rollback", "shipping", "free_pickup_today", "no_longer_available", "manufacturer", "return_to", "details", "mta", \
-                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5",
+                        "bullet_feature_1", "bullet_feature_2", "bullet_feature_3", "bullet_feature_4", "bullet_feature_5", "bullets",
                         "usage", "directions", "warnings", "indications", "amazon_ingredients",
-                            "specs"],
+                            "specs", "temporary_unavailable", "mfg", "assembled_size"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_alt_text", "image_alt_text_len", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags", "meta_tag_count", "meta_description_count", \
                             "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv", \
                             "best_seller_category", "results_per_page", "total_matches", "lowest_item_price", "highest_item_price",
                             "num_items_price_displayed", "num_items_no_price_displayed",
-                                "body_copy", "body_copy_links", "meta_description", "cnet"], \
+                                "body_copy", "body_copy_links", "meta_description", "cnet",
+                            "redirect"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "seller_id", "us_seller_id", "in_stock", \
@@ -351,6 +361,12 @@ class Scraper():
         self.product_page_url = kwargs['url']
         self.bot_type = kwargs['bot']
         self.is_timeout = False
+
+        if kwargs.get('proxy'):
+            self.PROXY = kwargs.get('proxy')
+
+        if kwargs.get('api_key'):
+            self.CRAWLERA_APIKEY = kwargs.get('api_key')
 
         # Set generic fields
         # directly (don't need to be computed by the scrapers)
@@ -633,6 +649,10 @@ class Scraper():
                 results = None
 
             results_dict[info] = results
+
+        if sys.getsizeof(str(results_dict)) > 256000:
+            self.ERROR_RESPONSE["failure_type"] = 'Response too large'
+            return self.ERROR_RESPONSE
 
         return results_dict
 

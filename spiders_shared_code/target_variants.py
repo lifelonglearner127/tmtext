@@ -1,7 +1,4 @@
-import re
-
 import json
-from pprint import pprint
 
 import lxml.html
 import requests

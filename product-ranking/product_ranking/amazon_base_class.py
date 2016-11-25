@@ -4,28 +4,23 @@ from __future__ import print_function
 import re
 import urlparse
 from urllib import unquote
-import urllib2
 import json
 import string
 import random
-import os.path
-import base64
 
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
 import lxml.html
 import requests
-from requests.auth import HTTPProxyAuth
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, cond_set, \
+from product_ranking.spiders import BaseProductsSpider, \
     cond_set_value, FLOATING_POINT_RGEX, FormatterWithDefaults
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.marketplace import Amazon_marketplace
 from spiders_shared_code.amazon_variants import AmazonVariants
 from product_ranking.amazon_bestsellers import amazon_parse_department
-from product_ranking.amazon_modules import build_categories
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from scrapy.conf import settings
 
@@ -492,7 +487,7 @@ class AmazonBaseClass(BaseProductsSpider):
         if _prod:
             product = _prod
 
-        # There are more sellers to extract    
+        # There are more sellers to extract
         if req:
             reqs.append(req)
 

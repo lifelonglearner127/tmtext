@@ -1,10 +1,7 @@
 import lxml.html
-from itertools import product
 import json
 import re
-from lxml import html, etree
 import itertools
-import yaml
 
 
 class DockersVariants(object):
@@ -29,7 +26,9 @@ class DockersVariants(object):
         buy_stack_json = None
 
         try:
-            buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
+            buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
+            if '";' in buy_stack_json_text:
+                buy_stack_json_text = buy_stack_json_text[:buy_stack_json_text.index('";')]
             buy_stack_json = json.loads(buy_stack_json_text)
         except:
             buy_stack_json = None

@@ -1,22 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import re
-import json
-import urllib
 import sys
-import urlparse
 
 from scrapy import Request
 
-from scrapy.selector import HtmlXPathSelector
-import requests
-
-from product_ranking.items import SiteProductItem, RelatedProduct, \
-    Price, BuyerReviews
-from product_ranking.spiders import cond_set, cond_set_value, \
-    FLOATING_POINT_RGEX, cond_replace
-from product_ranking.settings import ZERO_REVIEWS_VALUE
-from product_ranking.guess_brand import guess_brand_from_first_words
+from product_ranking.items import SiteProductItem
 
 from .ulta import UltaProductSpider
 

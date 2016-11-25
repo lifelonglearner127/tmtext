@@ -2,7 +2,7 @@
 import re
 import json
 from collections import namedtuple
-from scrapy import Spider, FormRequest, Field, Item, Request
+from scrapy import FormRequest, Field, Item, Request
 from product_ranking.spiders import BaseProductsSpider
 
 

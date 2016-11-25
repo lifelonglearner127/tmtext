@@ -9,13 +9,8 @@ have this code running using Harry Marr's implementation which is available at:
 https://github.com/hmarr/boto/tree/ses
 """
 
-import mimetypes
-from email import encoders
 from email.utils import COMMASPACE
 from email.mime.multipart import MIMEMultipart
-from email.mime.audio import MIMEAudio
-from email.mime.base import MIMEBase
-from email.mime.image import MIMEImage
 from email.mime.text import MIMEText
 from boto.ses import SESConnection
 
@@ -23,17 +18,17 @@ from boto.ses import SESConnection
 class SESMessage(object):
     """
     Usage:
-    
+
     msg = SESMessage('from@example.com', 'to@example.com', 'The subject')
     msg.text = 'Text body'
     msg.html = 'HTML body'
     msg.send()
-    
+
     """
 
     def __init__(self, source, to_addresses, subject, **kw):
         self.ses = SESConnection()
-        
+
         self._source = source
         self._to_addresses = to_addresses
         self._cc_addresses = None
@@ -47,7 +42,7 @@ class SESMessage(object):
     def send(self):
         if not self.ses:
             raise Exception, 'No connection found'
-        
+
         if (self.text and not self.html and not self.attachments) or \
            (self.html and not self.text and not self.attachments):
             return self.ses.send_email(self._source, self.subject,
@@ -58,30 +53,30 @@ class SESMessage(object):
         else:
             if not self.attachments:
                 message = MIMEMultipart('alternative')
-                
+
                 message['Subject'] = self.subject
                 message['From'] = self._source
                 if isinstance(self._to_addresses, (list, tuple)):
                     message['To'] = COMMASPACE.join(self._to_addresses)
                 else:
                     message['To'] = self._to_addresses
-                
+
                 message.attach(MIMEText(self.text, 'plain'))
                 message.attach(MIMEText(self.html, 'html'))
             else:
                 raise NotImplementedError, 'SES does not currently allow ' + \
                                            'messages with attachments.'
 #                message = MIMEMultipart()
-#                
+#
 #                message_alt = MIMEMultipart('alternative')
-#                
+#
 #                if self.text:
 #                    message_alt.attach(MIMEText(self.text, 'plain'))
 #                if self.html:
 #                    message_alt.attach(MIMEText(self.html, 'html'))
-#                
+#
 #                message.attach(message_alt)
-#                
+#
 #                message['Subject'] = self.subject
 #                message['From'] = self._source
 #                if isinstance(self._to_addresses, (list, tuple)):
@@ -125,6 +120,6 @@ class SESMessage(object):
 #                    # Set the filename parameter
 #                    part.add_header('Content-Disposition', 'attachment', filename=attachment)
 #                    message.attach(part)
-            
+
             return self.ses.send_raw_email(self._source, message.as_string(),
                                            destinations=self._to_addresses)

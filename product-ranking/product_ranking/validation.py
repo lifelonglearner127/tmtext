@@ -5,13 +5,11 @@
 #    - 'soft' alerts (sometimes something may fail but will be back to normal soon, so throw alerts only when some error is stable)
 
 import os
-import sys
 import re
 import json
 from pprint import pprint
 from collections import OrderedDict
 import logging
-import time
 import difflib
 import datetime
 
@@ -22,7 +20,6 @@ from scrapy.contrib.exporter import JsonLinesItemExporter
 from twisted.python import log
 
 from product_ranking.items import SiteProductItem
-from product_ranking import settings
 
 
 class bcolors:  # constants to avoid using any 3rd-party lib
@@ -711,13 +708,13 @@ class BaseValidator(object):
 
     def _validate__subitem(self, val):
         return val in (True, False, None, '')
-    
+
     def _validate__jcpenney_has_size_range(self, val):
         return val in (True, False, None, '')
-    
+
     def _validate_level1(self, val):
         return val in (True, False, None, '')
-    
+
     def _validate_level2(self, val):
         return val in (True, False, None, '')
 
@@ -741,7 +738,7 @@ class BaseValidator(object):
 
     def _validate_level9(self, val):
         return val in (True, False, None, '')
-    
+
     def _validate_level10(self, val):
         return val in (True, False, None, '')
 
