@@ -68,8 +68,10 @@ class WayfairScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
+        return None
 
+    def _product_code(self):
+        return self.tree_html.xpath("//meta[@property='og:upc']/@content")[0]
 
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
@@ -322,6 +324,7 @@ class WayfairScraper(Scraper):
         # CONTAINER : PRODUCT_INFO
         "product_name" : _product_name, \
         "product_title" : _product_title, \
+        "product_code" : _product_code, \
         "title_seo" : _title_seo, \
         "model" : _model, \
         "upc" : _upc,\
