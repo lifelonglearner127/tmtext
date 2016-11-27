@@ -120,72 +120,6 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         Overrides BaseProductsSpider method to scrape product links.
         """
 
-        deal_product_url_list = []
-
-        try:
-            marketplace_id = self._find_between(response.body, "ue_mid='", "',")
-            session_id = self._find_between(response.body, "ue_sid='", "',")
-            sorted_deal_ids = self._find_between(response.body, '"sortedDealIDs" : [', "],").split(",")
-            sorted_deal_ids = [deal_id.strip()[1:-1] for deal_id in sorted_deal_ids]
-            deal_targets_1 = []
-            deal_targets_2 = []
-            deal_targets_3 = []
-
-            for index in range(12):
-                deal_targets_1.append({"dealID": sorted_deal_ids[index]})
-
-            for index in range(12, 24):
-                deal_targets_2.append({"dealID": sorted_deal_ids[index]})
-
-            for index in range(24, 32):
-                deal_targets_3.append({"dealID": sorted_deal_ids[index]})
-
-            reference_id = self._find_between(response.body, '"originRID" : "', '",')
-            widget_id = self._find_between(response.body, '"widgetID" : "', '",')
-            slot_name = self._find_between(response.body, '"slotName" : "', '"')
-
-            data = {"requestMetadata":
-                        {"marketplaceID": marketplace_id,
-                         "clientID": "goldbox_mobile_pc",
-                         "sessionID": session_id},
-                    "dealTargets": None,
-                    "responseSize": "ALL",
-                    "itemResponseSize": "DEFAULT_WITH_PREEMPTIVE_LEAKING",
-                    "widgetContext": {"pageType": "GoldBox",
-                                      "subPageType": "Alldeals",
-                                      "deviceType": "pc",
-                                      "refRID": reference_id,
-                                      "widgetID": widget_id,
-                                      "slotName": slot_name}}
-            deal_response_json_list = []
-
-            no_cache = randint(1480238000000, 1480238999999)
-            req = urllib2.Request('https://www.amazon.com/xa/dealcontent/v2/GetDeals?nocache={0}'.format(no_cache))
-            req.add_header('Content-Type', 'application/json')
-            data["dealTargets"] = deal_targets_1
-            deal_response_json_list.append(json.loads(urllib2.urlopen(req, json.dumps(data)).read()))
-
-            no_cache = randint(1480238000000, 1480238999999)
-            req = urllib2.Request('https://www.amazon.com/xa/dealcontent/v2/GetDeals?nocache={0}'.format(no_cache))
-            req.add_header('Content-Type', 'application/json')
-            data["dealTargets"] = deal_targets_2
-            deal_response_json_list.append(json.loads(urllib2.urlopen(req, json.dumps(data)).read()))
-
-            no_cache = randint(1480238000000, 1480238999999)
-            req = urllib2.Request('https://www.amazon.com/xa/dealcontent/v2/GetDeals?nocache={0}'.format(no_cache))
-            req.add_header('Content-Type', 'application/json')
-            data["dealTargets"] = deal_targets_3
-            deal_response_json_list.append(json.loads(urllib2.urlopen(req, json.dumps(data)).read()))
-
-            for deal_response_json in deal_response_json_list:
-                for deal in deal_response_json["dealDetails"]:
-                    if deal_response_json["dealDetails"][deal]["egressUrl"]:
-                        deal_product_url_list.append(deal_response_json["dealDetails"][deal]["egressUrl"])
-                    else:
-                        deal_product_url_list.append("https://www.amazon.com/dp/" + deal_response_json["dealDetails"][deal]["impressionAsin"])
-        except:
-            pass
-
         shelf_categories = [c.strip() for c in response.xpath(
             ".//*[@id='s-result-count']/span/*/text()").extract()
                             if len(c.strip()) > 1]
@@ -336,9 +270,73 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             if ul:
                 return
 
-        links += deal_product_url_list
+        deal_product_url_list = []
 
-        if not links:
+        try:
+            marketplace_id = self._find_between(response.body, "ue_mid='", "',")
+            session_id = self._find_between(response.body, "ue_sid='", "',")
+            sorted_deal_ids = self._find_between(response.body, '"sortedDealIDs" : [', "],").split(",")
+            sorted_deal_ids = [deal_id.strip()[1:-1] for deal_id in sorted_deal_ids]
+            deal_targets_1 = []
+            deal_targets_2 = []
+            deal_targets_3 = []
+
+            for index in range(12):
+                deal_targets_1.append({"dealID": sorted_deal_ids[index]})
+
+            for index in range(12, 24):
+                deal_targets_2.append({"dealID": sorted_deal_ids[index]})
+
+            for index in range(24, 32):
+                deal_targets_3.append({"dealID": sorted_deal_ids[index]})
+
+            reference_id = self._find_between(response.body, '"originRID" : "', '",')
+            widget_id = self._find_between(response.body, '"widgetID" : "', '",')
+            slot_name = self._find_between(response.body, '"slotName" : "', '"')
+
+            data = {"requestMetadata":
+                        {"marketplaceID": marketplace_id,
+                         "clientID": "goldbox_mobile_pc",
+                         "sessionID": session_id},
+                    "dealTargets": None,
+                    "responseSize": "ALL",
+                    "itemResponseSize": "DEFAULT_WITH_PREEMPTIVE_LEAKING",
+                    "widgetContext": {"pageType": "GoldBox",
+                                      "subPageType": "Alldeals",
+                                      "deviceType": "pc",
+                                      "refRID": reference_id,
+                                      "widgetID": widget_id,
+                                      "slotName": slot_name}}
+            deal_response_json_list = []
+
+            no_cache = randint(1480238000000, 1480238999999)
+            req = urllib2.Request('https://www.amazon.com/xa/dealcontent/v2/GetDeals?nocache={0}'.format(no_cache))
+            req.add_header('Content-Type', 'application/json')
+            data["dealTargets"] = deal_targets_1
+            deal_response_json_list.append(json.loads(urllib2.urlopen(req, json.dumps(data)).read()))
+
+            no_cache = randint(1480238000000, 1480238999999)
+            req = urllib2.Request('https://www.amazon.com/xa/dealcontent/v2/GetDeals?nocache={0}'.format(no_cache))
+            req.add_header('Content-Type', 'application/json')
+            data["dealTargets"] = deal_targets_2
+            deal_response_json_list.append(json.loads(urllib2.urlopen(req, json.dumps(data)).read()))
+
+            no_cache = randint(1480238000000, 1480238999999)
+            req = urllib2.Request('https://www.amazon.com/xa/dealcontent/v2/GetDeals?nocache={0}'.format(no_cache))
+            req.add_header('Content-Type', 'application/json')
+            data["dealTargets"] = deal_targets_3
+            deal_response_json_list.append(json.loads(urllib2.urlopen(req, json.dumps(data)).read()))
+
+            for deal_response_json in deal_response_json_list:
+                for deal in deal_response_json["dealDetails"]:
+                    if deal_response_json["dealDetails"][deal]["egressUrl"]:
+                        deal_product_url_list.append(deal_response_json["dealDetails"][deal]["egressUrl"])
+                    else:
+                        deal_product_url_list.append("https://www.amazon.com/dp/" + deal_response_json["dealDetails"][deal]["impressionAsin"])
+        except:
+            pass
+
+        if not links and not deal_product_url_list:
             self.log("Found no product links.", WARNING)
             # from scrapy.shell import inspect_response
             # inspect_response(response, self)
@@ -353,6 +351,14 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                 prod = SiteProductItem(
                     prime=prime, shelf_path=shelf_categories,
                     shelf_name=shelf_category, is_sponsored_product=is_sponsored)
+                yield Request(link, callback=self.parse_product,
+                              headers={'Referer': None},
+                              meta={'product': prod}), prod
+
+        if deal_product_url_list:
+            for link in deal_product_url_list:
+                prod = SiteProductItem(shelf_path=shelf_categories,
+                                       shelf_name=shelf_category)
                 yield Request(link, callback=self.parse_product,
                               headers={'Referer': None},
                               meta={'product': prod}), prod
@@ -446,6 +452,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
     #     self.total_items_scraped += prods_per_page
 
     def _scrape_next_results_page_link(self, response):
+        return
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1
