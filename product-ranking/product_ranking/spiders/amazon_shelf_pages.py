@@ -163,26 +163,26 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             req = urllib2.Request('https://www.amazon.com/xa/dealcontent/v2/GetDeals?nocache={0}'.format(no_cache))
             req.add_header('Content-Type', 'application/json')
             data["dealTargets"] = deal_targets_1
-            deal_response_json_list.push(urllib2.urlopen(req, json.dumps(data)).read())
+            deal_response_json_list.append(json.loads(urllib2.urlopen(req, json.dumps(data)).read()))
 
             no_cache = randint(1480238000000, 1480238999999)
             req = urllib2.Request('https://www.amazon.com/xa/dealcontent/v2/GetDeals?nocache={0}'.format(no_cache))
             req.add_header('Content-Type', 'application/json')
             data["dealTargets"] = deal_targets_2
-            deal_response_json_list.push(urllib2.urlopen(req, json.dumps(data)).read())
+            deal_response_json_list.append(json.loads(urllib2.urlopen(req, json.dumps(data)).read()))
 
             no_cache = randint(1480238000000, 1480238999999)
             req = urllib2.Request('https://www.amazon.com/xa/dealcontent/v2/GetDeals?nocache={0}'.format(no_cache))
             req.add_header('Content-Type', 'application/json')
             data["dealTargets"] = deal_targets_3
-            deal_response_json_list.push(urllib2.urlopen(req, json.dumps(data)).read())
+            deal_response_json_list.append(json.loads(urllib2.urlopen(req, json.dumps(data)).read()))
 
             for deal_response_json in deal_response_json_list:
                 for deal in deal_response_json["dealDetails"]:
-                    if deal_response_json["dealDetails"]["egressUrl"]:
-                        deal_product_url_list.append(deal_response_json["dealDetails"]["egressUrl"])
+                    if deal_response_json["dealDetails"][deal]["egressUrl"]:
+                        deal_product_url_list.append(deal_response_json["dealDetails"][deal]["egressUrl"])
                     else:
-                        deal_product_url_list.append("https://www.amazon.com/dp/" + deal_response_json["dealDetails"]["impressionAsin"])
+                        deal_product_url_list.append("https://www.amazon.com/dp/" + deal_response_json["dealDetails"][deal]["impressionAsin"])
         except:
             pass
 
@@ -272,29 +272,6 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
 
         links += links2
 
-        try:
-            if not links:
-                links2 = []
-                items = response.xpath('//div[@id="zg"]//div[contains(@class,"zg_itemImmersion")]')
-                for item in items:
-                    urls = item.xpath(
-                        './/a/@href'
-                    ).extract()
-                    urls = list(set([r.strip() for r in urls if len(r.strip())>0 and '/dp/' in r]))
-                    if len(urls) > 0:
-                        is_prime = \
-                            bool(item.xpath('.//i[contains(@class,"a-icon-prime")]'))
-                        is_prime_pantry = False
-                        is_sponsored = False
-                        link = 'http://' + self.allowed_domains[0] + '/' + \
-                               urls[0]
-                        links2.append((link, is_prime, is_prime_pantry,
-                                       is_sponsored))
-        except Exception as e:
-            self.log('Links2 is fail. ERROR: %s.' % str(e), ERROR)
-
-        links += links2
-
         if not links:
             ul = response.xpath('//div[@id="zg_centerListWrapper"]/'
                                 'div[@class="zg_itemImmersion"]')
@@ -365,7 +342,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             self.log("Found no product links.", WARNING)
             # from scrapy.shell import inspect_response
             # inspect_response(response, self)
-        return
+
         if links:
             for link, is_prime, is_prime_pantry, is_sponsored in links:
                 prime = None
