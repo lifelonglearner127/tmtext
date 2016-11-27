@@ -83,6 +83,7 @@ class Scraper():
             # product_info
             "product_name", # name of product, string
             "product_title", # page title, string
+            "product_code", # for wayfairs.com
             "title_seo", # SEO title, string
             "model", # model of product, string
             "upc", # upc of product, string
@@ -91,6 +92,7 @@ class Scraper():
             "features", # features of product, string
             "feature_count", # number of features of product, int
             "specs", # specifications
+            "full_specs", # grouped keys from specs, dict
             "model_meta", # model from meta, string
             "description", # short description / entire description if no short available, string
             "seller_ranking",
@@ -180,6 +182,7 @@ class Scraper():
             "num_items_no_price_displayed",
             "body_copy",
             "body_copy_links",
+            "redirect", # 1/0 if page is a redirect
 
             # reviews
             "review_count", # total number of reviews, int
@@ -256,7 +259,7 @@ class Scraper():
     #       maybe put it as an instance variable
     # TODO: add one for root? to make sure nothing new appears in root either?
     DICT_STRUCTURE = {
-        "product_info": ["product_name", "product_title", "title_seo", "model", "upc", "asin", \
+        "product_info": ["product_name", "product_title", "product_code", "title_seo", "model", "upc", "asin", \
                         "features", "feature_count", "model_meta", "description", "seller_ranking", "long_description", "shelf_description", "apluscontent_desc",
                         "ingredients", "ingredient_count", "nutrition_facts", "nutrition_fact_count", "nutrition_fact_text_health", "drug_facts",
                         "drug_fact_count", "drug_fact_text_health", "supplement_facts", "supplement_fact_count", "supplement_fact_text_health",
@@ -270,7 +273,8 @@ class Scraper():
                             "image_hashes", "thumbnail", "sellpoints", "canonical_link", "buying_option", "variants", "bundle_components", "bundle", "swatches", "related_products_urls", "comparison_chart", "btv", \
                             "best_seller_category", "results_per_page", "total_matches", "lowest_item_price", "highest_item_price",
                             "num_items_price_displayed", "num_items_no_price_displayed",
-                                "body_copy", "body_copy_links", "meta_description", "cnet"], \
+                                "body_copy", "body_copy_links", "meta_description", "cnet",
+                            "redirect"], \
         "reviews": ["review_count", "average_review", "max_review", "min_review", "reviews"], \
         "sellers": ["price", "price_amount", "price_currency","temp_price_cut", "web_only", "home_delivery", "click_and_collect", "dsv", "in_stores_only", "in_stores", "owned", "owned_out_of_stock", \
                     "marketplace", "marketplace_sellers", "marketplace_lowest_price", "primary_seller", "seller_id", "us_seller_id", "in_stock", \

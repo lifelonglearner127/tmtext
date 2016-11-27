@@ -67,7 +67,7 @@ class HomeDepotScraper(Scraper):
             return
 
         try:
-            product_json_text = re.search('product: ({.*}),\s*channel:', html.tostring(self.tree_html), re.DOTALL).group(1)
+            product_json_text = re.search('({"itemId":.*?});', html.tostring(self.tree_html), re.DOTALL).group(1)
             self.product_json = json.loads(product_json_text)
         except:
             self.product_json = None
@@ -446,6 +446,11 @@ class HomeDepotScraper(Scraper):
     def _in_stores_out_of_stock(self):
         return 0
 
+    def _in_stock(self):
+        if self._owned_out_of_stock()==1:
+            return 0
+        return 1
+
     def _marketplace(self):
         return 0
 
@@ -543,6 +548,7 @@ class HomeDepotScraper(Scraper):
         "price_currency" : _price_currency, \
         "temp_price_cut" : _temp_price_cut, \
         "in_stores" : _in_stores, \
+        "in_stock" : _in_stock, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "in_stores_out_of_stock": _in_stores_out_of_stock, \

@@ -11,6 +11,8 @@ import re
 from datetime import datetime
 import lxml.html
 import urllib
+import time
+import socket
 
 import os
 import logging
@@ -33,6 +35,10 @@ from product_ranking.validators.walmart_validator import WalmartValidatorSetting
 from spiders_shared_code.walmart_variants import WalmartVariants
 from spiders_shared_code.walmart_categories import WalmartCategoryParser
 #from spiders_shared_code.walmart_extra_data import WalmartExtraData
+
+from selenium.webdriver.common.by import By
+from selenium import webdriver
+from pyvirtualdisplay import Display
 
 
 is_empty = lambda x, y="": x[0] if x else y
@@ -442,21 +448,34 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 "Got 404 when coming from %r." % response.request.url, ERROR)
             return
 
-        not_available = self.parse_available(response)
-        cond_set_value(product, 'no_longer_available', not_available)
-
         wv = WalmartVariants()
         wv.setupSC(response)
         product['variants'] = wv._variants()
 
+        not_available = self.parse_available(response)
+        cond_set_value(product, 'no_longer_available', not_available)
+
         if self.sponsored_links:
             product["sponsored_links"] = self.sponsored_links
 
-        # TODO fix this there was exceptions.AttributeError: while parsing
-        # https://www.walmart.com/nco/Better-Homes-and-Gardens-Bankston-5-Piece-Dining-Set-Mocha/35871841
         self._populate_from_js_alternative(response, product)
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
+
+        # TODO implement for dropdowns as well
+        if self.product_url and response.xpath('.//*[@class="variant-swatch"]'):
+            self.log('Using selenium to get INLA status for swatch product', INFO)
+            INLA, err = self.parse_available_selenium(self.product_url, product.get("variants",[]))
+            if not err:
+                product['no_longer_available'] = INLA
+            else:
+                self.log('Second try', INFO)
+                INLA, err = self.parse_available_selenium(self.product_url, product.get("variants", []))
+                if not err:
+                    product['no_longer_available'] = INLA
+                else:
+                    self.log('Failed second try, giving up', INFO)
+
         buyer_reviews = self._build_buyer_reviews(response)
         if buyer_reviews:
             cond_set_value(product, 'buyer_reviews', buyer_reviews)
@@ -1157,14 +1176,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _extract_product_info_json_alternative(response):
-        _JS_DATA_RE = re.compile(
-            r'window\.__WML_REDUX_INITIAL_STATE__\s*=\s*(\{.+?\})\s*;\s*<\/script>', re.DOTALL)
-        js_data = re.search(_JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
+        # _JS_DATA_RE = re.compile(
+        #     r'window\.__WML_REDUX_INITIAL_STATE__\s*=\s*(\{.+?\})\s*;\s*<\/script>', re.DOTALL)
+        js_data = response.xpath('//script[@id="content" and @type="application/json"]/text()')
         if js_data:
-            text = js_data.group(1)
+            text = js_data.extract()[0]
             try:
-                data = json.loads(text)
-                return data
+                data = json.loads(text).get('content')
+                return data if data else None
             except ValueError:
                 pass
 
@@ -1275,7 +1294,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_selected_product_offers(selected_product):
-        return selected_product.get('offers', [])
+        # TODO: remove try-exception
+        try:
+            return selected_product.get('offers', [])
+        except:
+            return []
 
     @staticmethod
     def _parse_selected_product_alternative(data):
@@ -1875,3 +1898,80 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                                  'currency': currency,
                                  'name': name})
         return marketplaces
+
+    def parse_available_selenium(self, url, variants):
+        try:
+            #TODO debug mode - visible switch
+            display = Display(visible=False, size=(1280, 768))
+            display.start()
+            driver = self._init_chromium()
+            driver.set_page_load_timeout(120)
+            driver.set_script_timeout(120)
+            socket.setdefaulttimeout(120)
+            driver.set_window_size(1280, 768)
+            driver.get(url)
+            time.sleep(5)
+            def_var = [v.get("properties",{}).values() for v in variants if v.get('selected')]
+            # print def_var
+            def_var = def_var[0] if def_var else None
+            # print def_var
+            default_property = def_var[0] if def_var else None
+            # print default_property
+            attribute_xpath = ('.//span[contains(text(), "{}")]/..'.format(default_property))
+            # print attribute_xpath
+            self._click_attribute(driver=driver, selected_attribute_xpath=attribute_xpath)
+            time.sleep(15)
+            INLA = driver.find_elements(By.XPATH, './/h2[contains(text(), "Item not available")]')
+            driver.quit()
+        except Exception as e:
+            self.log('Exception while getting INLA with selenium: ' + str(e), WARNING)
+            return None, e
+        else:
+            return bool(INLA), None
+
+    def _init_chromium(self, proxy=None, proxy_type=None):
+        # TODO use random useragent script here
+        # UA = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0) Gecko/20100101 Firefox/32.0"
+
+        chrome_flags = webdriver.DesiredCapabilities.CHROME  # this is for Chrome?
+        chrome_options = webdriver.ChromeOptions()  # this is for Chromium
+        if proxy:
+            chrome_options.add_argument(
+                '--proxy-server=%s' % proxy_type+'://'+proxy)
+        # chrome_flags["chrome.switches"] = ['--user-agent=%s' % UA]
+        # chrome_options.add_argument('--user-agent=%s' % UA)
+        executable_path = '/usr/sbin/chromedriver'
+        if not os.path.exists(executable_path):
+            executable_path = '/usr/local/bin/chromedriver'
+        # initialize webdriver, open the page and make a screenshot
+        driver = webdriver.Chrome(desired_capabilities=chrome_flags,
+                                  chrome_options=chrome_options,
+                                  executable_path=executable_path)
+        return driver
+
+    @staticmethod
+    def _click_attribute(driver, selected_attribute_xpath, others_attributes_xpath=None, element=None):
+        """
+        Check if the attribute given by selected_attribute_xpath is checkout
+        if checkeck don't do it anything,
+        else find the first available attribute and click on it
+        """
+        if element:
+            target = element
+        else:
+            target = driver
+
+        available_attributes = None
+
+        selected_attribute = target.find_elements(
+            By.XPATH, selected_attribute_xpath)
+
+        if others_attributes_xpath:
+            available_attributes = target.find_elements(
+                By.XPATH, others_attributes_xpath)
+
+        # If not attribute is set and there are available attributes
+        if not selected_attribute and available_attributes:
+            available_attributes[0].click()
+        elif selected_attribute:
+            selected_attribute[0].click()
