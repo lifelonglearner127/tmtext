@@ -341,7 +341,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                     else:
                         deal_product_url_list.append("https://www.amazon.com/dp/" + deal_response_json["dealDetails"][deal]["impressionAsin"])
         except:
-            self.log("No.", WARNING)
+            pass
 
         if not links and not deal_product_url_list:
             self.log("Found no product links.", WARNING)
