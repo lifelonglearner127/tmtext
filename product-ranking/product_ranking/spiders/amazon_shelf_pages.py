@@ -245,8 +245,15 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                 link = is_empty(li.xpath(
                     './/div[@class="zg_itemImageImmersion"]/a/@href'
                 ).extract())
+
+                if not link:
+                    link = is_empty(li.xpath(".//a/@href").extract())
+
                 if not link:
                     continue
+
+                if not link.startswith("https://www.amazon.com"):
+                    link = "https://www.amazon.com" + link
 
                 prod = SiteProductItem(
                     ranking=i,
@@ -334,7 +341,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                     else:
                         deal_product_url_list.append("https://www.amazon.com/dp/" + deal_response_json["dealDetails"][deal]["impressionAsin"])
         except:
-            pass
+            self.log("No.", WARNING)
 
         if not links and not deal_product_url_list:
             self.log("Found no product links.", WARNING)
@@ -356,8 +363,9 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                               meta={'product': prod}), prod
 
         if deal_product_url_list:
-            for link in deal_product_url_list:
-                prod = SiteProductItem(shelf_path=shelf_categories,
+            for index, link in enumerate(deal_product_url_list):
+                prod = SiteProductItem(ranking=index,
+                                       shelf_path=shelf_categories,
                                        shelf_name=shelf_category)
                 yield Request(link, callback=self.parse_product,
                               headers={'Referer': None},
@@ -452,7 +460,6 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
     #     self.total_items_scraped += prods_per_page
 
     def _scrape_next_results_page_link(self, response):
-        return
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1
