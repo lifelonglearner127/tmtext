@@ -1,11 +1,9 @@
 import re
 import string
 import urlparse
-import socket
 
 from itertools import islice
 from scrapy import Request
-from scrapy.conf import settings
 from scrapy.log import ERROR, INFO
 
 from product_ranking.items import SiteProductItem, Price
@@ -13,8 +11,6 @@ from product_ranking.spiders import cond_set_value
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
-
-socket.setdefaulttimeout(60)
 
 
 class ChewyProductsSpider(ProductsSpider):
@@ -63,16 +59,9 @@ class ChewyProductsSpider(ProductsSpider):
         return categories[-1] if categories else None
 
     def _parse_price(self, response):
-        # price = response.css('.our-price::text').re('[\d\.]+')
-        arr = response.xpath('//li[@class="our-price"]//text()').extract()
-        price = [x for x in arr if len(x.strip())>0]
-        price = " ".join(price)
-        price = re.findall('\$([\d\.]+)', price)
+        price = response.xpath('//li[@class="our-price"]//span[@class="ga-eec__price"]/text()')[0].extract().strip()
 
-        if len(price) == 0:
-            return None
-
-        return Price(price=price[0], priceCurrency='USD')
+        return price
 
     def _parse_image_url(self, response):
         image_url = response.xpath(
@@ -118,13 +107,10 @@ class ChewyProductsSpider(ProductsSpider):
         return variants if variants and len(variants) > 1 else None
 
     def _parse_is_out_of_stock(self, response):
-        arr = response.xpath('//*[@id="availability"]/span//text()').extract()
-        arr = [x.lower() for x in arr]
-        status = True
-        if "in stock" in arr:
-            status = False
+        status = response.xpath(
+            '//*[@id="availability"]/span[text()="In Stock"]')
 
-        return not status
+        return not bool(status)
 
     def _parse_shipping_included(self, response):
         shipping_text = ''.join(
@@ -133,10 +119,9 @@ class ChewyProductsSpider(ProductsSpider):
         return shipping_text == ' & FREE Shipping'
 
     def _parse_description(self, response):
-        description = response.xpath(
-            '//*[@class="descriptions-left"]//text()').extract()
+        description = response.xpath('//section[contains(@class,"descriptions__content")]').extract()
 
-        return ''.join(description).strip() if description else None
+        return description[0] if description else None
 
     def send_next_request(self, reqs, response):
         """
@@ -149,21 +134,28 @@ class ChewyProductsSpider(ProductsSpider):
             new_meta["reqs"] = reqs
         return req.replace(meta=new_meta)
 
+    @staticmethod
+    def _parse_no_longer_available(response):
+        message = response.xpath(
+            '//div[@class="error" and '
+            'contains(., "The product you are trying to view is not currently available.")]')
+        return bool(message)
+
     def parse_product(self, response):
         reqs = []
         product = response.meta['product']
         response.meta['product_response'] = response
+
+        if self._parse_no_longer_available(response):
+            product['no_longer_available'] = True
+            return product
+        else:
+            product['no_longer_available'] = False
+
         # Set locale
         product['locale'] = 'en_US'
 
-        arr = response.xpath('//li[contains(@class,"message")]//text()').extract()
-        for item in arr:
-            if "is not currently available." in item.lower():
-                cond_set_value(product, 'no_longer_available', True)
-                break
-
         # Parse title
-
         title = self._parse_title(response)
         cond_set_value(product, 'title', title, conv=string.strip)
 
