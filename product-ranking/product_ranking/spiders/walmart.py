@@ -222,9 +222,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         self.scrape_questions = kwargs.get('scrape_questions', None)
         if self.scrape_questions not in ('1', 1, True, 'true'):
             self.scrape_questions = False
-        self.scrape_related_products = kwargs.get('scrape_related_products', None)
-        if self.scrape_related_products not in ('1', 1, True, 'true'):
-            self.scrape_related_products = False
         self.cookies = {}
         self.cookies[
             'prefper'] = 'PREFSTORE~12648~2PREFCITY~1San%20Leandro~2PREFFULLSTREET~11919%20Davis%20St~2PREFSTATE~1CA~2PREFZIP~194117'
@@ -484,8 +481,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
         if 'brand' not in product:
             cond_set_value(product, 'brand', None)
-        if self.scrape_related_products:
-            self._gen_related_req(response)
 
         # parse category and department
         wcp = WalmartCategoryParser()
@@ -788,15 +783,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         path = urlparse.urlsplit(response.url)[2]
         return path == '/FileNotFound.aspx'
 
-    def _build_related_products(self, url, related_product_nodes):
-        also_considered = []
-        for node in related_product_nodes:
-            link = urlparse.urljoin(url, node.xpath('@href | ../@href').
-                                    extract()[0])
-            title = node.xpath('text()').extract()[0]
-            also_considered.append(RelatedProduct(title.strip(), link))
-        return also_considered
-
     def _build_buyer_reviews_old(self, response):
         product = response.meta['product']
         buyer_reviews = {}
@@ -1059,28 +1045,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     "name": is_empty(seller)
                 }])
 
-        also_considered = self._build_related_products(
-            response.url,
-            response.xpath('//*[@class="top-product-recommendations'
-                           ' tile-heading"]'),
-        )
-        if also_considered:
-            product.setdefault(
-                'related_products', {})["buyers_also_bought"] = also_considered
-
-        recommended = self._build_related_products(
-            response.url,
-            response.xpath(
-                "//p[contains(text(), 'Check out these related products')]/.."
-                "//*[contains(@class, 'tile-heading')] |"
-                "//div[@class='related-item']/a[contains(@class,"
-                "'related-link')] |"
-                "//div[@class='rel0']/a"
-            ),
-        )
-        if recommended:
-            product.setdefault(
-                'related_products', {})['recommended'] = recommended
         if not product.get('price'):
             currency = response.css('[itemprop=priceCurrency]::attr(content)')
             price = response.css('[itemprop=price]::attr(content)')
@@ -1120,27 +1084,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         req = req.replace(body='{"postalCode":"' + self.zip_code + '"}')
         return req
 
-    def _gen_related_req(self, response):
-        prodid = response.meta.get('productid')
-        if not prodid:
-            prodid = response.xpath(
-                "//div[@id='recently-review']/@data-product-id").extract()
-            if prodid:
-                prodid = prodid[0]
-        if not prodid:
-            self.log("No PRODID in %r." % response.url, WARNING)
-            return
-        cid = hashlib.md5(prodid).hexdigest()
-        reql = []
-        url1 = (
-            "https://www.walmart.com/irs?parentItemId%5B%5D={prodid}"
-            "&module=ProductAjax&clientGuid={cid}").format(
-                prodid=prodid,
-                cid=cid)
-        reql.append((url1, self._proc_mod_related))
-        response.meta['relreql'] = reql
-        return reql
-
     def _start_related(self, response):
         product = response.meta['product']
         reql = response.meta.get('relreql')
@@ -1154,25 +1097,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             meta=response.meta.copy(),
             callback=proc,
             dont_filter=True)
-
-    def _proc_mod_related(self, response):
-        product = response.meta['product']
-        text = response.body_as_unicode().encode('utf-8')
-        try:
-            jdata = json.loads(text)
-            modules = jdata['moduleList']
-            for m in modules:
-                html = m['html']
-                sel = Selector(text=html)
-                title, rel = self._parse_related(sel, response)
-                if 'related_products' not in product:
-                    product['related_products'] = {}
-                if rel:
-                    product['related_products'][title] = rel[:]
-        except ValueError:
-            self.log(
-                "Unable to parse JSON from %r." % response.request.url, ERROR)
-        return self._start_related(response)
 
     @staticmethod
     def _extract_product_info_json_alternative(response):
@@ -1413,36 +1337,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def _parse_bestseller_rank_alternative(selected_product):
         ranks = selected_product.get('itemSalesRanks')
         return ranks[0].get('rank') if ranks else None
-
-    def _parse_related(self, sel, response):
-        def full_url(url):
-            return urlparse.urljoin(response.url, url)
-        related = []
-        title = sel.xpath("//div[@class='parent-heading']/h4/text()").extract()
-        if not title:
-            title = sel.xpath("//p[@class='heading-a']/text()").extract()
-        if not title:
-            title = sel.xpath("//div/h1/text()").extract()
-        if title:
-            title = title[0]
-        els = sel.xpath("//ol/li//a[@class='tile-section']/p/..")
-        for el in els:
-            name = el.xpath("p/text()").extract()
-            if name:
-                name = name[0]
-            href = el.xpath("@href").extract()
-            if href:
-                href = href[0]
-                if 'dest=' in href:
-                    url_split = urlparse.urlsplit(href)
-                    query = urlparse.parse_qs(url_split.query)
-                    original_url = query.get('dest')
-                    if original_url:
-                        original_url = original_url[0]
-                else:
-                    original_url = href
-                related.append(RelatedProduct(name, full_url(original_url)))
-        return (title, related)
 
     def _after_location(self, response):
         if response.status == 200:
