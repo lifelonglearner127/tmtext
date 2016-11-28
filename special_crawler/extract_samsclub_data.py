@@ -659,7 +659,7 @@ class SamsclubScraper(Scraper):
 
         # Otherwise it is a normal category page
         else:
-            cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+            cat_id = re.match('.*/(\d+)\.(cp|ip)', self._url()).group(1)
 
             self.items += self._get_category_items(cat_id)
 
@@ -733,7 +733,7 @@ class SamsclubScraper(Scraper):
                 return body_copy
 
     def _body_copy_links(self):
-        cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+        cat_id = re.match('.*/(.+)\.(cp|ip)', self._url()).group(1)
 
         if not self.tree_html.xpath('//*[contains(@class,"categoryText")]'):
             return None
@@ -747,7 +747,7 @@ class SamsclubScraper(Scraper):
             if not re.match('http://www.samsclub.com', link):
                 link = 'http://www.samsclub.com' + link
 
-            if re.search(cat_id + '.cp$', link):
+            if re.search(cat_id + '.cp$', link) or re.search(cat_id + '.ip$', link):
                 return_links['self_links']['count'] += 1
 
             else:
