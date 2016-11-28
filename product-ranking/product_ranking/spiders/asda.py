@@ -61,16 +61,9 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
             )
 
         if self.product_url:
-            pId = is_empty(re.findall("product/(\d+)", self.product_url))
-            if pId is None:
-                try:
-                    pId = int(self.product_url.strip('/').split('/')[-1])
-                except (ValueError, TypeError) as e:
-                    self.log('Error while parse item id. ERROR: %s.' % str(e),
-                             ERROR)
-                    return
-            url = "https://groceries.asda.com/api/items/view?" \
-                "itemid=" + str(pId) + "&responsegroup=extended" \
+            pId = is_empty(re.findall("product/.*/(\d+)", self.product_url))
+            url = "http://groceries.asda.com/api/items/view?" \
+                "itemid=" + pId + "&responsegroup=extended" \
                 "&cacheable=true&shipdate=currentDate" \
                 "&requestorigin=gi"
 

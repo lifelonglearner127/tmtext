@@ -10,6 +10,7 @@ import random
 import re
 from datetime import datetime
 import lxml.html
+import urllib
 
 import os
 import logging
@@ -94,9 +95,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     default_hhl = [404, 500, 502, 520]
 
-    SEARCH_URL = "https://www.walmart.com/search/search-ng.do?Find=Find" \
-        "&_refineresult=true&ic=16_0&search_constraint=0" \
-        "&search_query={search_term}&sort={search_sort}"
+    SEARCH_URL = "https://www.walmart.com/search/?query={search_term}"
 
     LOCATION_URL = "https://www.walmart.com/location"
     LOCATION_PROD_URL = "https://www.walmart.com/product/dynamic/{product_id}?" \
@@ -138,11 +137,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         global SiteProductItem
         if zip_code:
             self.zip_code = zip_code
+        if search_sort != 'best_match':
+            self.SEARCH_URL += "&sort={search_sort}"
         if search_sort == 'best_sellers':
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         # avoid tons of 'items' in logs
         self.search_sort = search_sort
-        SiteProductItem.__repr__ = lambda _: '[product item]'
+        # SiteProductItem.__repr__ = lambda _: '[product item]'
         self.use_data_from_redirect_url = kwargs.get('use_data_from_redirect_url', False)
         self.username = kwargs.get('username', None)
         super(WalmartProductsSpider, self).__init__(
@@ -152,7 +153,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             ),
             *args, **kwargs)
 
-        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
+        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429, 520]
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
         settings.overrides['CONCURRENT_REQUESTS'] = 1
 
@@ -223,6 +224,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             'prefper'] = 'PREFSTORE~12648~2PREFCITY~1San%20Leandro~2PREFFULLSTREET~11919%20Davis%20St~2PREFSTATE~1CA~2PREFZIP~194117'
         self.cookies['PSID'] = '2648'
         self.cookies['NSID'] = '2648'
+
+        self.visited_links = {}
 
     def _weighted_choice(self, choices_dict):
         try:
@@ -331,7 +334,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     self.quantity = 100
 
             for st in self.searchterms:
-                yield Request(self.SEARCH_URL.format(search_term=st,
+                self.visited_links[st] = []
+                yield Request(self.SEARCH_URL.format(search_term=urllib.quote_plus(st.encode('utf-8')),
                                                      search_sort=self._SEARCH_SORT[self.search_sort]),
                               #self._parse_single_product,
                               meta={'handle_httpstatus_list': [404, 502, 520],
@@ -448,6 +452,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if self.sponsored_links:
             product["sponsored_links"] = self.sponsored_links
 
+        # TODO fix this there was exceptions.AttributeError: while parsing
+        # https://www.walmart.com/nco/Better-Homes-and-Gardens-Bankston-5-Piece-Dining-Set-Mocha/35871841
         self._populate_from_js_alternative(response, product)
         self._populate_from_js(response, product)
         self._populate_from_html(response, product)
@@ -458,7 +464,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, 'buyer_reviews', 0)
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
         if 'brand' not in product:
-            cond_set_value(product, 'brand', u'NO BRAND')
+            cond_set_value(product, 'brand', None)
         if self.scrape_related_products:
             self._gen_related_req(response)
 
@@ -571,10 +577,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 if prod_data.endswith(')'):
                     prod_data = prod_data[0:-1]
                 prod_data = json.loads(prod_data.strip())
-                display_price = prod_data['buyingOptions'].get('price', {}).get('displayPrice', '')
+                display_price = prod_data.get('buyingOptions',{}).get('price', {}).get('displayPrice', '')
 
                 if not display_price:
-                    display_price = prod_data['buyingOptions'].get('minPrice', {}).get('displayPrice', '')
+                    display_price = prod_data.get('buyingOptions',{}).get('minPrice', {}).get('displayPrice', '')
 
                 display_price = re.search('[\d\.]+', display_price)
                 if display_price:
@@ -669,6 +675,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                           ' and contains(text(), "nformation unavailable")]'):
             not_available = True
         if response.xpath('.//div[contains(text(), "This Item is no longer available")]'):
+            not_available = True
+        # commented into 13176 ticket
+        # if response.xpath('.//div[contains(@class, "price-display-oos-color")]'):
+        #     not_available = True
+        if response.xpath('//*[contains(., "This item is no longer available")]'):
             not_available = True
         return not_available
 
@@ -991,7 +1002,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 ".//*[@id='WMItemBrandLnk']//*[@itemprop='brand']/text()").extract())
         if not brand:
             brand = guess_brand_from_first_words(product.get('title', '').replace(u'®', ''))
-        if '&amp;' in brand:
+        elif '&amp;' in brand:
             brand = brand.replace('&amp;', "&")
         cond_set_value(product, 'brand', brand)
 
@@ -1152,14 +1163,14 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _extract_product_info_json_alternative(response):
-        _JS_DATA_RE = re.compile(
-            r'window\.__WML_REDUX_INITIAL_STATE__\s*=\s*(\{.+?\})\s*;\s*<\/script>', re.DOTALL)
-        js_data = re.search(_JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
+        # _JS_DATA_RE = re.compile(
+        #     r'window\.__WML_REDUX_INITIAL_STATE__\s*=\s*(\{.+?\})\s*;\s*<\/script>', re.DOTALL)
+        js_data = response.xpath('//script[@id="content" and @type="application/json"]/text()')
         if js_data:
-            text = js_data.group(1)
+            text = js_data.extract()[0]
             try:
-                data = json.loads(text)
-                return data
+                data = json.loads(text).get('content')
+                return data if data else None
             except ValueError:
                 pass
 
@@ -1171,6 +1182,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
             # Parse selected product data
             selected_product = self._parse_selected_product_alternative(data, selected_product_id)
+
+            # Parse selected product offers
+            selected_product_offers = self._parse_selected_product_offers(selected_product)
 
             # Parse marketplaces
             marketplaces_data = self._parse_marketplaces_data_alternative(data)
@@ -1184,12 +1198,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, 'title', title)
 
             # Parse out of stock
-            is_out_of_stock = self._parse_out_of_stock_alternative(marketplaces_data)
+            is_out_of_stock = self._parse_out_of_stock_alternative(marketplaces_data, selected_product_offers)
             cond_set_value(product, 'is_out_of_stock', is_out_of_stock)
 
             # Parse price
-            price = self._parse_price_alternative(marketplaces_data)
-            cond_set_value(product, 'price', price)
+            price = self._parse_price_alternative(marketplaces_data, selected_product_offers)
+            cond_set_value(product, 'price', Price(priceCurrency='USD', price=price))
 
             # Parse description
             description = self._parse_description_alternative(selected_product)
@@ -1237,6 +1251,13 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             department = self._parse_department_alternative(categories)
             cond_set_value(product, 'department', department)
 
+            # Parse products
+            products = self._parse_products_alternative(data)
+
+            # Parse variants
+            variants = self._parse_variants_alternative(response, marketplaces_data, data, products, selected_product)
+            cond_set_value(product, 'variants', variants)
+
     @staticmethod
     def _parse_department_alternative(categories):
         return categories[-1] if categories else None
@@ -1266,11 +1287,77 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_selected_product_alternative(data, selected_product_id):
-        return data.get('product', {}).get('products', {}).get(selected_product_id)
+        selected = data.get('product', {}).get('products', {}).get(selected_product_id)
+        if selected:
+            return selected
+        else:
+            return data.get('product', {}).get('primaryProduct', {})
+
+    @staticmethod
+    def _parse_products_alternative(data):
+        return data.get('product', {}).get('products', {})
+
+    def _parse_variants_alternative(self, response, marketplaces, data, products, selected_product):
+        variants = []
+        primary_product_id = data.get('product', {}).get('primaryProduct')
+        try:
+            variants_map = data.get('product', {}).get('variantCategoriesMap', {}).get(primary_product_id, {})
+        except:
+            variants_map = {}
+        for product in products.values():
+            selected_product_offers = self._parse_selected_product_offers(product)
+            price = self._parse_price_alternative(marketplaces, selected_product_offers)
+            variant = {}
+            properties = product.get('variants', {})
+            variant_id = product.get('usItemId')
+            url = urlparse.urljoin(response.url, '/ip/{}'.format(variant_id))
+            selected_id = selected_product.get('usItemId')
+            selected = selected_id == variant_id
+            variant['selected'] = selected
+            variant['url'] = url
+            variant['price'] = price
+            properties = self._parse_variant_properties_alternative(variant, variants_map, properties)
+            variant['properties'] = properties
+            variants.append(variant)
+        return variants if len(variants) > 1 else None
+
+    @staticmethod
+    def _parse_variant_properties_alternative(variant, variants_map, properties):
+        property_data = {}
+        for property_name, property_value in properties.items():
+            variant_data = variants_map.get(
+                property_name).get('variants', {}).get(property_value)
+            name = variant_data.get('name')
+            in_stock = variant_data.get('availabilityStatus') == 'AVAILABLE'
+            variant['in_stock'] = in_stock
+            if 'color' in property_name:
+                property_data['color'] = name
+            elif 'size' in property_name:
+                property_data['size'] = name
+            elif 'number_of_pieces' in property_name:
+                property_data['count'] = name
+            else:
+                property_data[property_name] = name
+        return property_data
+
+    @staticmethod
+    def _parse_selected_product_offers(selected_product):
+        # TODO: remove try-exception
+        try:
+            return selected_product.get('offers', [])
+        except:
+            return []
 
     @staticmethod
     def _parse_marketplaces_data_alternative(data):
-        return data.get('product', {}).get('offers').values()
+        # if there is one seller, structure of json is different
+        needed_data = data.get('product', {}).get('offers')
+        if needed_data.get("availabilityStatus"):
+            # pprint.pprint([needed_data])
+            return [needed_data]
+        else:
+            # pprint.pprint(needed_data.values())
+            return needed_data.values()
 
     @staticmethod
     def _parse_brand_alternative(selected_product):
@@ -1285,18 +1372,28 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         return selected_product.get('upc')
 
     @staticmethod
-    def _parse_out_of_stock_alternative(marketplaces):
+    def _parse_out_of_stock_alternative(marketplaces, selected_product_offers):
         for offer in marketplaces:
-            if offer.get('productAvailability', {}).get('availabilityStatus') == "IN_STOCK":
+            offer_id = offer.get('id')
+            if offer_id in selected_product_offers \
+                    and offer.get('productAvailability', {}).get('availabilityStatus') == "IN_STOCK":
                 return False
+        if len(marketplaces) == 1:
+            for offer in marketplaces:
+                offer_id = offer.get('offerInfo', {}).get('offerId')
+                if offer_id in selected_product_offers and offer.get('availabilityStatus') == "IN_STOCK":
+                    return False
         return True
 
     @staticmethod
-    def _parse_price_alternative(marketplaces):
+    def _parse_price_alternative(marketplaces, offers):
         prices = [marketplace.get('pricesInfo', {}).get('priceMap', {}).get('CURRENT', {}).get('price')
-                  for marketplace in marketplaces]
-        price = min(prices)
-        return Price(priceCurrency='USD', price=price)
+                  for marketplace in marketplaces if marketplace.get('id') in offers]
+        try:
+            price = float(min(prices))
+        except:
+            price = 0
+        return price
 
     @staticmethod
     def _parse_description_alternative(selected_product):
@@ -1312,7 +1409,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     @staticmethod
     def _parse_marketplaces_names(data):
         names = {}
-        for seller in data.get('product').get('sellers').values():
+        sellers = data.get('product', {}).get('sellers', {})
+        sellers = sellers.values() if not sellers.get('sellerId') else [sellers]
+        for seller in sellers:
             seller_id = seller.get('sellerId')
             seller_name = seller.get('sellerDisplayName')
             names[seller_id] = seller_name
@@ -1337,7 +1436,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_buyer_reviews_alternative(data):
-        selected = data.get('product', {}).get('primaryProduct')
+        selected = data.get('product', {}).get('selected', {}).get('product')
         review_data = data.get('product', {}).get('reviews', {}).get(selected, {})
         num_of_reviews = review_data.get('totalReviewCount', 0)
         average_rating = review_data.get('averageOverallRating', 0)
@@ -1426,6 +1525,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             return product
 
+    @staticmethod
+    def _parse_is_out_of_stock(data):
+        return not data.get('analyticsData', {}).get('inStock')
+
     def _on_dynamic_api_response(self, response, data):
         if data:
             prod = response.meta['product']
@@ -1436,12 +1539,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 prod.update({"no_longer_available": True})
             else:
                 prod['is_out_of_stock'] = not opts.get('available', False)
-                # In stock if at least one of variants in stock
-                # see bugzilla #12076
-                if prod.get("variants"):
-                    variants_instock = any([v.get('in_stock') for v in prod.get('variants', [])])
-                    if variants_instock:
-                        prod['is_out_of_stock'] = False
+
+                prod['is_out_of_stock'] = self._parse_is_out_of_stock(data)
 
                 if 'not available' in opts.get('shippingDeliveryDateMessage', '').lower():
                     prod['shipping'] = False
@@ -1485,12 +1584,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 'is_out_of_stock',
                 not available,
             )
-            # In stock if at least one of variants in stock
-            # see bugzilla #12076
-            if product.get("variants"):
-                variants_instock = any([v.get('in_stock') for v in product.get('variants', [])])
-                if variants_instock:
-                    product['is_out_of_stock'] = False
             # the next 2 lines of code should not be uncommented, see BZ #1459
             #if response.xpath('//button[@id="WMItemAddToCartBtn"]').extract():
             #    product['is_out_of_stock'] = False
@@ -1602,6 +1695,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
         for item in items:
             link = item.css('a.js-product-title ::attr(href)')[0].extract()
+            if link in self.visited_links.get(response.meta.get('search_term'), []):
+                continue
+            else:
+                self.visited_links.get(response.meta.get('search_term'), []).append(link)
 
             title = ''.join(item.xpath(
                 'div/div/h4[contains(@class, "tile-heading")]/a/node()'

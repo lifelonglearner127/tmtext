@@ -51,7 +51,7 @@ def main( environment, scrape_queue_name, thread_id):
     logger.info( "Starting thread %d" % thread_id)
     # establish the scrape queue
     sqs_scrape = SQS_Queue( scrape_queue_name)
-    base = "http://localhost/get_data?url=%s"
+    base = "http://localhost:8000/get_data?url=%s"
 
     last_fetch = datetime.min
 
@@ -123,7 +123,9 @@ def main( environment, scrape_queue_name, thread_id):
                         logger.info(str(e))
                         logger.info('FAILED TO FETCH PROXY CONFIG')
 
-                for i in range(3):
+                max_retries = 3
+
+                for i in range(1, max_retries):
                     # Scrape the page using the scraper running on localhost
                     get_start = time.time()
                     tmp_url = base%(urllib.quote(url))
@@ -137,6 +139,7 @@ def main( environment, scrape_queue_name, thread_id):
                     # Add the processing fields to the return object and re-serialize it
                     try:
                         output_json = json.loads(output_text)
+
                     except Exception as e:
                         logger.info(output_text)
                         output_json = {
@@ -144,10 +147,22 @@ def main( environment, scrape_queue_name, thread_id):
                             "date":datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
                             "status":"failure",
                             "page_attributes":{"loaded_in_seconds":round(get_end-get_start,2)}}
-                    output_json['attempt'] = i+1
-                    if not "error" in output_json:
+
+                    output_json['attempt'] = i
+
+                    # If scraper response was successful, we're done
+                    if not output_json.get('status') == 'failure':
                         break
-                    time.sleep( 1)
+
+                    # If failure was due to proxies
+                    if output_json.get('failure_type') in ['max_retries', 'proxy']:
+                        logger.info('GOT FAILURE TYPE %s for %s - RETRY %s' % (output_json.get('failure_type'), url, i))
+                        max_retries = 10
+                        # back off incrementally
+                        time.sleep(60*i)
+                    else:
+                        max_retries = 3
+                        time.sleep(1)
 
                 output_json['url'] = url
                 output_json['site_id'] = site_id

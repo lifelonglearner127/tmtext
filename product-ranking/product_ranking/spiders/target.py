@@ -346,10 +346,11 @@ class TargetProductSpider(BaseValidator, BaseProductsSpider):
             + partNumber + '&alt=json&callback=itemInfoCallback&_=1464382778193',
             headers={'User-Agent': self.user_agent_googlebot}).content
 
-        item_info = re.match('itemInfoCallback\((.*)\)$', response, re.DOTALL).group(1)
+        item_info = re.match('itemInfoCallback\((.*)\)$', response, re.DOTALL)
         try:
+            item_info = item_info.group(1) if item_info else None
             return json.loads(item_info)['CatalogEntryView'][0]
-        except KeyError:
+        except Exception:
             return {}
 
     def _item_info_v2(self, response):

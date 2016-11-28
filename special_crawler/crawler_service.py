@@ -94,9 +94,13 @@ from extract_petfooddirect_data import PetFoodDirectScraper
 from extract_pet360_data import Pet360Scraper
 from extract_petsmart_data import PetsmartScraper
 from extract_walmartgrocery_data import WalmartGroceryScraper
+from extract_samsung_data import SamsungScraper
 from extract_autozone_data import AutozoneScraper
 from extract_sears_data import SearsScraper
 from extract_jet_data import JetScraper
+from extract_westmarine_data import WestmarineScraper
+from extract_shoprite_data import ShopriteScraper
+from extract_hayneedle_data import HayneedleScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -202,10 +206,14 @@ SUPPORTED_SITES = {
                     "pet360" : Pet360Scraper,
                     "petsmart" : PetsmartScraper,
                     "walmartgrocery" : WalmartGroceryScraper,
+                    "samsung" : SamsungScraper,
                     "shopritedelivers": ShopritedeliversScraper,
                     "autozone" : AutozoneScraper,
                     "sears" : SearsScraper,
-                    "jet" : JetScraper
+                    "westmarine" : WestmarineScraper,
+                    "jet" : JetScraper,
+                    "shoprite" : ShopriteScraper,
+                    "hayneedle" : HayneedleScraper
                     }
 
 # add logger
@@ -309,6 +317,8 @@ def extract_domain(url):
         return 'walmartgrocery'
     if 'jet.com' in url:
         return 'jet'
+    if 'hayneedle.com' in url:
+        return 'hayneedle'
 
     m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:

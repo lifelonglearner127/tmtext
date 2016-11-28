@@ -13,8 +13,7 @@ sys.path.append(os.path.join(CWD,  '..', '..', '..',
                              'deploy', 'sqs_ranking_spiders'))
 
 from add_task_to_sqs import QUEUES_LIST
-
-AUTOSCALE_GROUPS = ['SCCluster1', 'SCCluster2', 'SCCluster3', 'SCCluster4']
+from libs import get_autoscale_groups
 
 
 def get_number_of_messages_in_queues():
@@ -27,10 +26,9 @@ def get_number_of_messages_in_queues():
 
 
 def get_number_of_instances_in_autoscale_groups():
-    global AUTOSCALE_GROUPS
     result = OrderedDict()
     conn = boto.ec2.autoscale.connect_to_region("us-east-1")
-    for group_name in AUTOSCALE_GROUPS:
+    for group_name in get_autoscale_groups()['groups']:
         group = conn.get_all_groups([group_name])[0]
         result[group_name] = {
             'group': group,
@@ -40,10 +38,9 @@ def get_number_of_instances_in_autoscale_groups():
 
 
 def get_max_instances_in_groups():
-    global AUTOSCALE_GROUPS
     result = OrderedDict()
     conn = boto.ec2.autoscale.connect_to_region("us-east-1")
-    for group_name in AUTOSCALE_GROUPS:
+    for group_name in get_autoscale_groups()['groups']:
         group = conn.get_all_groups([group_name])[0]
         result[group_name] = {
             'group': group,
