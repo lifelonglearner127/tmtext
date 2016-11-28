@@ -402,6 +402,11 @@ class AmazonScraper(Scraper):
 
             hidden = description.xpath('//*[@class="aok-hidden"]')
             more_button = description.xpath('//div[@id="fbExpanderMoreButtonSection"]')
+            expander = description.xpath(".//*[contains(@class, 'a-expander-extend-header')]")
+
+            # remove expander(=show mores) from description
+            if expander:
+                expander[0].getparent().remove(expander[0])
 
             description = html.tostring(description)
 
@@ -441,6 +446,13 @@ class AmazonScraper(Scraper):
         bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
         if bullets and len(bullets) > 4:
             return self._clean_text(bullets[4].text_content())
+
+    def _bullets(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]//text()")
+        bullets = [self._clean_text(r) for r in bullets if len(self._clean_text(r))>0]
+        if len(bullets) > 0:
+            return "\n".join(bullets)
+        return None
 
     def _seller_ranking(self):
         seller_ranking = []
@@ -523,9 +535,22 @@ class AmazonScraper(Scraper):
         try:
             description = ""
             children = self.tree_html.xpath("//div[@id='productDescription']/child::*[not(@class='disclaim') and not(name()='script') and not(name()='style')]")
+            skip_manufacturer_flag = False
 
             for child in children:
+                if skip_manufacturer_flag:
+                    skip_manufacturer_flag = False
+                    continue
+
                 self._exclude_images_from_description(child)
+
+                if 'Product Description' in html.tostring(child):
+                    continue
+
+                if child.tag == "h3" and child.text.lower().strip() == 'from the manufacturer':
+                    skip_manufacturer_flag = True
+                    continue
+
                 description += self._clean_text(self._exclude_javascript_from_description(html.tostring(child)))
 
             if description is not None and len(description) > 5:
@@ -1138,6 +1163,14 @@ class AmazonScraper(Scraper):
         return self._tofloat(average_review)
 
     def _review_count(self):
+        if not self.is_review_checked:
+            self._reviews()
+        if self.review_list:
+            sumup = 0
+            for i,v in self.review_list:
+                sumup +=int(v)
+            return sumup
+
         nr_reviews = self.tree_html.xpath("//span[@id='acrCustomerReviewText']//text()")
         if len(nr_reviews) > 0:
             nr_review = re.findall("([0-9,]+) customer reviews", nr_reviews[0])
@@ -1184,7 +1217,7 @@ class AmazonScraper(Scraper):
             elif "acr_dpx_see_all" in review_summary_link:
                 review_link = review_summary_link.replace("acr_dpx_see_all", "cm_cr_pr_viewopt_sr")
                 review_link = review_link + "&filterByStar={0}_star&pageNumber=1".format(mark)
-
+            review_link = review_link.replace("reviewerType=avp_only_reviews", "reviewerType=all_reviews")
             for retry_index in range(3):
                 try:
                     resp = self._request(review_link)
@@ -1640,6 +1673,7 @@ class AmazonScraper(Scraper):
         "bullet_feature_3": _bullet_feature_3, \
         "bullet_feature_4": _bullet_feature_4, \
         "bullet_feature_5": _bullet_feature_5, \
+        "bullets": _bullets, \
         "usage": _usage, \
         "directions": _directions, \
         "warnings": _warnings, \
