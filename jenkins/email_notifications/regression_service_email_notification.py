@@ -15,6 +15,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import COMMASPACE, formatdate
 
+AMAZON_SES_KEY = "AKIAIB35OIAQMWDZ45GA"
+AMAZON_SES_SECRET = "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"
+
 import boto
 
 con = None
@@ -425,7 +428,8 @@ html += "</table>"
 
 msg.attach(MIMEText(header_content + sites_changed + "\n"))
 msg.attach(MIMEText(html, 'html'))
-connection = boto.connect_ses()
+connection = boto.connect_ses(aws_access_key_id=AMAZON_SES_KEY,
+                              aws_secret_access_key=AMAZON_SES_SECRET)
 result = connection.send_raw_email(
     msg.as_string(),
     fromaddr, toaddrs)
