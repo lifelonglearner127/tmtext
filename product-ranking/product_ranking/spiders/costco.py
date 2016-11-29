@@ -74,6 +74,9 @@ class CostcoProductsSpider(BaseProductsSpider):
         if brand:
             prod['brand'] = brand
 
+        from scrapy.shell import inspect_response
+        inspect_response(response, self)
+
 
         merchandising_price = response.xpath('//*[@class="top_review_panel"]/*[@class="merchandisingText"]/text()').re('\$([\d\.\,]+) OFF')
         price_value = ''.join(response.xpath('//input[contains(@name,"price")]/@value').re('[\d.]+')).strip()
@@ -182,7 +185,7 @@ class CostcoProductsSpider(BaseProductsSpider):
             prod['is_out_of_stock'] = True
 
         count_review = response.xpath('//meta[contains(@itemprop, "reviewCount")]/@content').extract()
-        product_id = re.findall(r'var bvProductId = \'(.+)\';', response.body_as_unicode())
+        product_id = re.findall(r'.(\d+).', response.url)
 
         if product_id and count_review:
             reqs.append(
