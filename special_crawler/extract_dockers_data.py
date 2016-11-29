@@ -85,16 +85,23 @@ class DockersScraper(Scraper):
 
         try:
             product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\r")
+            product_json_text = re.findall(r'\((\{.*?\})\)', product_json_text, re.DOTALL)[0]
             self.product_json = json.loads(product_json_text)
         except:
             try:
                 product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\n")
+                product_json_text = re.findall(r'\((\{.*?\})\)', product_json_text, re.DOTALL)[0]
                 self.product_json = json.loads(product_json_text)
             except:
                 self.product_json = None
 
         try:
-            buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
+            # buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
+            buy_stack_json_text = re.findall(
+                r"var buyStackJSON = '(.*?})';",
+                " " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")),
+                re.DOTALL)[0].replace("\'", '"').replace('\\\\"', "")
+
             self.buy_stack_json = json.loads(buy_stack_json_text)
         except:
             self.buy_stack_json = None
