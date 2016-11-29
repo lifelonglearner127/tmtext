@@ -140,15 +140,17 @@ class WestmarineScraper(Scraper):
 
     def _description(self):
         arr = self.tree_html.xpath(
-            "//div[contains(@class,'pdp_warranty_options')]//text()"
+            "//div[contains(@class,'productDescription') and contains(@class,'content-type')]"
+            "/*[not(contains(@class, 'rebate-block'))]//text()"
         )
+
         arr = [r.strip() for r in arr if len(r.strip())>0]
         short_description = " ".join(arr)
 
         if short_description:
             return short_description
         else:
-            return self.long_description_help()
+            return None
 
     def long_description_help(self):
         arr = self.tree_html.xpath(
@@ -164,10 +166,7 @@ class WestmarineScraper(Scraper):
         return None
 
     def _long_description(self):
-        if self._description() == self.long_description_help():
-            return None
-        else:
-            return self.long_description_help()
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
