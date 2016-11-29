@@ -14,7 +14,9 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import COMMASPACE, formatdate
-from settings_ses import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+
+AMAZON_SES_KEY = "AKIAIB35OIAQMWDZ45GA"
+AMAZON_SES_SECRET = "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"
 
 import boto
 
