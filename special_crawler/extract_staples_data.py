@@ -196,32 +196,25 @@ class StaplesScraper(Scraper):
         return None
 
     def _get_long_and_short_description(self):
-        paragraph = ""
-        headliner = ""
-        bullet_list = ""
-        expanded_descr = ""
+        paragraph = ''
+        headliner = ''
+        bullet_list = ''
 
-        description_info_list = self.product_info_json["description"]["details"]
+        description_info_list = self.product_info_json['description']['details']
 
         for description_info in description_info_list:
-            if description_info["description_type"]["name"] == 'Paragraph':
-                for t in description_info["text"]:
-                    paragraph += (t["value"] + "\n")
+            description_name = description_info['description_type']['name']
+            text = description_info['text']
 
-            if description_info["description_type"]["name"] == 'Bullets':
-                for t in description_info["text"]:
-                    bullet_list += (t["value"] + "\n")
+            if description_name == 'Paragraph':
+                paragraph = '<br/>'.join(map(lambda _: _['value'], text))
 
-            if description_info["description_type"]["name"] == 'Headliner':
-                for t in description_info["text"]:
-                    headliner += (t["value"] + "\n")
+            elif description_name == 'Bullets':
+                bullet_list = '<ul>%s</ul>' % ''.join(
+                    map(lambda _: '<li>%s</li>' % _['value'], text))
 
-            if description_info["description_type"]["name"] == 'Expanded Descr':
-                for t in description_info["text"]:
-                    expanded_descr += (t["value"] + "\n")
-
-        # description = headliner + paragraph + bullet_list
-        # long_description = expanded_descr
+            elif description_name == 'Headliner':
+                headliner = '<br/>'.join(map(lambda _: _['value'], text))
 
         self.description = headliner
         self.long_description = paragraph
