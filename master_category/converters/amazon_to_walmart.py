@@ -78,8 +78,8 @@ def generate_google_manufacturer_xml(input_file):
                     'id': item[6],
                     'brand': item[16],
                     'title': item[8],
-                    'gtin': item[1] if item[0] == "" else item[0],
-                    'mpn': '00150',                                 # This field should be redefined
+                    'gtin': item[1],
+                    'mpn': item[6],                                 # This field should be redefined
                     'description': item[11],
                     'bullet_points': bullet_points,
                 })
