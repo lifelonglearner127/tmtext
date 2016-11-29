@@ -179,10 +179,10 @@ class WestmarineScraper(Scraper):
 
     def _image_urls(self):        
         image_list = self.tree_html.xpath(
-            "//ul[@id='carousel_alternate']//span[contains(@class,'thumb')]//img/@src"
+            "//ul[@id='carousel_alternate']//span[contains(@class,'thumb')]//img/@data-primaryimagesrc"
         )
         if len(image_list) < 1:
-            image_list = self.tree_html.xpath("//div[@id='primary_image']//a[@id='imageLink']//img/@src")
+            image_list = self.tree_html.xpath("//div[@id='primary_image']//a[@id='imageLink']//img/@data-primaryimagesrc")
         return image_list
 
     def _image_count(self):
