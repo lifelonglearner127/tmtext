@@ -4,8 +4,7 @@ import urlparse
 from scrapy.http import Request
 from scrapy.log import INFO
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews
+from product_ranking.items import SiteProductItem
 
 from product_ranking.spiders.microsoftstore import MicrosoftStoreProductSpider
 

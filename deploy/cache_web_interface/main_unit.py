@@ -14,6 +14,7 @@ sys.path.insert(1, os.path.join(CWD, '..'))
 
 from cache_layer.cache_service import SqsCache
 from cache_layer import CACHE_QUEUES_LIST
+from sqs_ranking_spiders.libs import get_autoscale_groups
 
 
 AMAZON_BUCKET_NAME = 'spyder-bucket'
@@ -138,7 +139,7 @@ def stats():
         context = dict()
         conn = boto.ec2.autoscale.AutoScaleConnection()
         groups = conn.get_all_groups(
-            names=['SCCluster1', 'SCCluster2', 'SCCluster3', 'SCCluster4'])
+            names=get_autoscale_groups()['groups'])
         instances = {group.name: len(group.instances) for group in groups}
         context['running_instances'] = sum(instances.itervalues())
         context['running_instances_info'] = instances

@@ -3,10 +3,7 @@ from __future__ import division, absolute_import, unicode_literals
 import re
 import urlparse
 
-import scrapy
-from scrapy.log import WARNING, ERROR
 from scrapy.http import Request
-from scrapy import Selector
 import json
 
 from product_ranking.items import SiteProductItem

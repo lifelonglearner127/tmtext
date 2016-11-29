@@ -3,13 +3,11 @@ from __future__ import division, absolute_import, unicode_literals
 
 import re
 import json
-import string
 import urllib
 
 from scrapy.http import Request
 from scrapy import Selector
-from scrapy.log import ERROR, INFO, WARNING
-from scrapy.conf import settings
+from scrapy.log import WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
@@ -134,8 +132,14 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         prod['url'] = response.url
 
         if self._is_not_found(response):
-            prod['not_found'] = True
-            return prod
+            if response.xpath('//div[@id="content"]/@class')[0].extract() == 'pdp_outofstockproduct':
+                prod = response.meta['product']
+                prod['title'] = response.xpath('//div[@id="content"]//b/text()')[0].extract()
+                prod['is_out_of_stock'] = True
+                return prod
+            else:
+                prod['not_found'] = True
+                return prod
 
         kv = KohlsVariants()
         kv.setupSC(response)
@@ -249,10 +253,22 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         return title
 
     def parse_description(self, response):
-        description = is_empty(response.xpath(
-            '//div[@class="prod_description1"]/'
-            'div[@class="Bdescription"]/p/text() | '
-            '//meta[@name="description"][string-length(@content)>0]/@content').extract())
+        try:
+            product_info_json = \
+                response.xpath("//script[contains(text(), 'var productJsonData = {')]/text()").extract()
+            product_info_json = product_info_json[0].strip() if product_info_json else ''
+            start_index = product_info_json.find("var productJsonData = ") + len("var productJsonData = ")
+            end_index = product_info_json.rfind(";")
+            product_info_json = product_info_json[start_index:end_index].strip()
+            product_info_json = json.loads(product_info_json)
+
+            description = product_info_json["productItem"]["accordions"]["productDetails"]["content"]
+            search = re.search(r'<(p).*?>(.*?)</\1>.*?', description)
+            if search:
+                description = search.group(2)
+        except:
+            description = is_empty(response.xpath(
+                '//meta[@name="description"][string-length(@content)>0]/@content').extract())
 
         return description
 

@@ -206,7 +206,8 @@ class KohlsScraper(Scraper):
         return 0
 
     def _description(self):
-        description_block = html.fromstring("<div>" + self.product_info_json["productItem"]["accordions"]["productDetails"]["content"] + "</div>")
+        description_block = html.fromstring(
+            "<div>" + self.product_info_json["productItem"]["accordions"]["productDetails"]["content"] + "</div>")
         short_description = ""
         features_title_list = ["Product Features:", "PRODUCT FEATURES", "Product Features", "Features"]
 
@@ -239,7 +240,10 @@ class KohlsScraper(Scraper):
     # TODO:
     #      - keep line endings maybe? (it sometimes looks sort of like a table and removing them makes things confusing)
     def _long_description(self):
-        description_block = html.fromstring("<div>" + self.product_info_json["productItem"]["accordions"]["productDetails"]["content"] + "</div>")
+        description_block = html.fromstring(
+            "<div>" + self.product_info_json["productItem"]["accordions"]["productDetails"]["content"]
+            + "</div>"
+        )
         features_title_list = ["Product Features:", "PRODUCT FEATURES", "Product Features", "Features"]
 
         if not description_block:
@@ -259,14 +263,9 @@ class KohlsScraper(Scraper):
 
                 if inner_text in features_title_list:
                     features_ul = 1
-                    continue
 
                 if features_ul == 1:
-                    features_ul = 2
-                    continue
-
-                if features_ul == 2:
-                    if not element_block.xpath('./em'):
+                    if len(element_block.xpath('./em')) == 0:
                         long_description += html.tostring(element_block)
         else:
             is_long_description = False

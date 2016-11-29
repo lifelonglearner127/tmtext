@@ -4,18 +4,13 @@ from __future__ import division, absolute_import, unicode_literals
 import re
 from scrapy import Request, FormRequest
 import urlparse
-from scrapy.conf import settings
 from product_ranking.amazon_tests import AmazonTests
 from product_ranking.amazon_base_class import AmazonBaseClass
 from product_ranking.validators.amazonca_validator import AmazoncaValidatorSettings
 from product_ranking.items import SiteProductItem
-from product_ranking.spiders import BaseProductsSpider,FormatterWithDefaults, \
-    cond_set, cond_set_value, FLOATING_POINT_RGEX
-from requests.auth import HTTPProxyAuth
-from product_ranking.settings import CRAWLERA_APIKEY
+from product_ranking.spiders import cond_set_value
 import json
 from scrapy.log import INFO, WARNING
-import urllib
 
 class AmazonBestSellersProductsSpider(AmazonTests, AmazonBaseClass):
     name = 'amazon_top_categories_products'

@@ -146,7 +146,8 @@ class AutozoneScraper(Scraper):
     def _image_urls(self):
         image_urls = self.tree_html.xpath(
             "//div[contains(@class,'productThumbsblock')]//li//a//img/@src")
-
+        if len(image_urls) == 0:
+            image_urls = self.tree_html.xpath("//img[@id='mainimage']/@src")
         return image_urls
 
     def _image_count(self):

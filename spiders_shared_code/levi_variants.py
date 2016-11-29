@@ -1,11 +1,8 @@
 import lxml.html
-from itertools import product
 import json
 import re
-from lxml import html, etree
 import itertools
-import yaml
-
+from lxml import html, etree
 
 class LeviVariants(object):
 
@@ -108,6 +105,21 @@ class LeviVariants(object):
             attribute_values_list = []
             out_of_stock_combination_list = []
 
+            # check whether attributes is displayed or not
+            is_color_showed = is_size_showed = is_waist_showed = is_length_showed = False
+
+            if self.tree_html.xpath("//div[@id='main-pdp-container']//div[@class='color']"):
+                is_color_showed = True
+
+            if self.tree_html.xpath("//div[@id='main-pdp-container']//div[@class='pdp-sizing']"):
+                is_size_showed = True
+
+            if self.tree_html.xpath("//div[@id='main-pdp-container']//div[contains(@class, 'pdp-waist-sizes')]"):
+                is_waist_showed = True
+
+            if self.tree_html.xpath("//div[@id='main-pdp-container']//div[contains(@class, 'pdp-length-sizes')]"):
+                is_length_showed = True
+
             color_list = []
             color_name_id_map = {}
 
@@ -117,22 +129,22 @@ class LeviVariants(object):
                 color_name_id_map[buy_stack_json["colorid"][color_id]["finish"]["title"]
                                   + '____' + str(color_id)] = color_id
 
-            if color_list:
+            if is_color_showed and color_list:
                 attribute_values_list.append(color_list)
-
-            length_list = buy_stack_json["attrs"]["length"]
-
-            if length_list:
-                attribute_values_list.append(length_list)
 
             size_list = buy_stack_json["attrs"]["size"]
 
-            if size_list:
+            if is_size_showed and size_list:
                 attribute_values_list.append(size_list)
+
+            length_list = buy_stack_json["attrs"]["length"]
+
+            if is_length_showed and length_list:
+                attribute_values_list.append(length_list)
 
             waist_list = buy_stack_json["attrs"]["waist"]
 
-            if waist_list:
+            if is_waist_showed and waist_list:
                 attribute_values_list.append(waist_list)
 
             out_of_stock_combination_list = list(itertools.product(*attribute_values_list))
@@ -146,7 +158,7 @@ class LeviVariants(object):
                 properties = {}
                 value_list = []
 
-                if "colorid" in buy_stack_json["sku"][variant_combination]:
+                if is_color_showed and "colorid" in buy_stack_json["sku"][variant_combination]:
                     if color_list:
                         if buy_stack_json["sku"][variant_combination]["colorid"] not in buy_stack_json["colorid"]:
                             continue
@@ -161,15 +173,7 @@ class LeviVariants(object):
                     else:
                         continue
 
-                if "length" in buy_stack_json["sku"][variant_combination]:
-                    if length_list:
-                        properties["length"] = buy_stack_json["sku"][variant_combination]["length"]
-                        value_list.append(properties["length"])
-                        if "length" not in attribute_list: attribute_list.append("length")
-                    else:
-                        continue
-
-                if "size" in buy_stack_json["sku"][variant_combination]:
+                if is_size_showed and "size" in buy_stack_json["sku"][variant_combination]:
                     if size_list:
                         properties["size"] = buy_stack_json["sku"][variant_combination]["size"]
                         value_list.append(properties["size"])
@@ -177,7 +181,15 @@ class LeviVariants(object):
                     else:
                         continue
 
-                if "waist" in buy_stack_json["sku"][variant_combination]:
+                if is_length_showed and "length" in buy_stack_json["sku"][variant_combination]:
+                    if length_list:
+                        properties["length"] = buy_stack_json["sku"][variant_combination]["length"]
+                        value_list.append(properties["length"])
+                        if "length" not in attribute_list: attribute_list.append("length")
+                    else:
+                        continue
+
+                if is_waist_showed and "waist" in buy_stack_json["sku"][variant_combination]:
                     if waist_list:
                         properties["waist"] = buy_stack_json["sku"][variant_combination]["waist"]
                         value_list.append(properties["waist"])

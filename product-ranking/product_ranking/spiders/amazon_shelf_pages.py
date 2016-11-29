@@ -15,7 +15,6 @@ from .amazon import AmazonProductsSpider
 try:
     from captcha_solver import CaptchaBreakerWrapper
 except ImportError as e:
-    import sys
     print(
         "### Failed to import CaptchaBreaker.",
         "Will continue without solving captchas:",
@@ -262,7 +261,6 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             self.log("Found no product links.", WARNING)
             # from scrapy.shell import inspect_response
             # inspect_response(response, self)
-
         if links:
             for link, is_prime, is_prime_pantry, is_sponsored in links:
                 prime = None

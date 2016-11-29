@@ -47,6 +47,7 @@ class SamsclubScraper(Scraper):
     pdf_urls = None
     failure_type = None
     items = None
+    redirect = 0
     sv = SamsclubVariants()
 
     def __init__(self, **kwargs):
@@ -55,12 +56,13 @@ class SamsclubScraper(Scraper):
         self.HEADERS = {'WM_QOS.CORRELATION_ID': '1470699438773', 'WM_SVC.ENV': 'prod', 'WM_SVC.NAME': 'sams-api', 'WM_CONSUMER.ID': '6a9fa980-1ad4-4ce0-89f0-79490bbc7625', 'WM_SVC.VERSION': '1.0.0', 'Cookie': 'myPreferredClub=6612'}
 
     def check_url_format(self):
-        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?(prod)?\d+\.ip$", self.product_page_url):
+        # http://www.samsclub.com/sams/gold-medal-5552pr-pretzel-oven-combo/136709.ip?searchTerm=278253
+        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?.+\.ip", self.product_page_url):
             return True
         return self._is_shelf_url(self.product_page_url)
 
     def _is_shelf_url(self, url):
-        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?\d+\.cp$", url) or \
+        if re.match(r"^http://www\.samsclub\.com/sams/(.+/)?.+\.cp", url) or \
             re.match(r"^http://www\.samsclub\.com/sams/shop/category.jsp\?categoryId=\d+$", url) or \
             re.match(r"^http://www\.samsclub\.com/sams/pagedetails/content.jsp\?pageName=.+$", url):
             return True
@@ -107,6 +109,8 @@ class SamsclubScraper(Scraper):
                 return True
 
             r = requests.get(redirect_url, headers=self.HEADERS)
+
+            self.redirect = 1
 
             self.product_page_url = redirect_url
             self.page_raw_text = r.content
@@ -258,6 +262,12 @@ class SamsclubScraper(Scraper):
             return long_description
 
         return None
+
+    def _assembled_size(self):
+        arr = self.tree_html.xpath("//div[contains(@class,'itemFeatures')]//h3//text()")
+        if 'Assembled Size' in arr:
+            return 1
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -649,7 +659,7 @@ class SamsclubScraper(Scraper):
 
         # Otherwise it is a normal category page
         else:
-            cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+            cat_id = re.match('.*/(\d+)\.(cp|ip)', self._url()).group(1)
 
             self.items += self._get_category_items(cat_id)
 
@@ -723,7 +733,7 @@ class SamsclubScraper(Scraper):
                 return body_copy
 
     def _body_copy_links(self):
-        cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+        cat_id = re.match('.*/(.+)\.(cp|ip)', self._url()).group(1)
 
         if not self.tree_html.xpath('//*[contains(@class,"categoryText")]'):
             return None
@@ -737,7 +747,7 @@ class SamsclubScraper(Scraper):
             if not re.match('http://www.samsclub.com', link):
                 link = 'http://www.samsclub.com' + link
 
-            if re.search(cat_id + '.cp$', link):
+            if re.search(cat_id + '.cp$', link) or re.search(cat_id + '.ip$', link):
                 return_links['self_links']['count'] += 1
 
             else:
@@ -748,6 +758,9 @@ class SamsclubScraper(Scraper):
                     return_links['broken_links']['count'] += 1
 
         return return_links
+
+    def _redirect(self):
+        return self.redirect
 
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -1067,6 +1080,7 @@ class SamsclubScraper(Scraper):
         "long_description" : _long_description, \
         "variants": _variants, \
         "no_longer_available": _no_longer_available, \
+        "assembled_size": _assembled_size, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "video_urls" : _video_urls, \
@@ -1087,6 +1101,7 @@ class SamsclubScraper(Scraper):
         "num_items_no_price_displayed" : _num_items_no_price_displayed, \
         "body_copy" : _body_copy, \
         "body_copy_links" : _body_copy_links, \
+        "redirect" : _redirect, \
         "image_alt_text": _image_alt_text, \
         "image_alt_text_len": _image_alt_text_len, \
 
