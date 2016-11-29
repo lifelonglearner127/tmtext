@@ -470,7 +470,8 @@ class Scraper():
 
         try:
             log_response['page_size'] = len(html.tostring(self.tree_html))
-        except:
+        except Exception as e:
+            print 'Failed to get page size', e
             pass
 
         # don't pass load time as info to be extracted by _extract_product_data

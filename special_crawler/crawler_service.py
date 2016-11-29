@@ -623,8 +623,10 @@ def post_request_logging(response):
     log_response['date'] = datetime.datetime.today().ctime()
 
     try:
-        log_response['instance'] = requests.get('http://169.254.169.254/latest/meta-data/ami-id').content
-    except:
+        log_response['instance'] = requests.get('http://169.254.169.254/latest/meta-data/ami-id',
+            timeout = 10).content
+    except Exception as e:
+        print 'Failed to get instance metadata:', e
         pass
 
     app.logger.info(json.dumps({
@@ -640,8 +642,11 @@ def post_request_logging(response):
     try:
         requests.post('http://10.0.0.22:49215',
             auth=('chlogstash', 'shijtarkecBekekdetloaxod'),
-            data=log_response)
-    except:
+            headers = {'Content-type': 'application/json'},
+            data = json.dumps(log_response),
+            timeout = 10)
+    except Exception as e:
+        print 'Failed to send logs:', e
         pass
 
     return response
