@@ -143,7 +143,10 @@ class WestmarineScraper(Scraper):
             "//div[contains(@class,'productDescription') and contains(@class,'content-type')]"
             "/*[not(contains(@class, 'rebate-block'))]//text()"
         )
-
+        if len(arr) < 1:
+            arr = self.tree_html.xpath(
+                "//div[contains(@class,'productDescription') and contains(@class,'content-type')]//text()"
+            )
         arr = [r.strip() for r in arr if len(r.strip())>0]
         short_description = " ".join(arr)
 
