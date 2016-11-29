@@ -112,6 +112,7 @@ from lxml import etree, html
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import time
+import requests
 
 app = Flask(__name__)
 
