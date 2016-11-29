@@ -428,8 +428,8 @@ html += "</table>"
 
 msg.attach(MIMEText(header_content + sites_changed + "\n"))
 msg.attach(MIMEText(html, 'html'))
-connection = boto.connect_ses(aws_access_key_id=AWS_ACCESS_KEY_ID,
-                              aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+connection = boto.connect_ses(aws_access_key_id=AMAZON_SES_KEY,
+                              aws_secret_access_key=AMAZON_SES_SECRET)
 result = connection.send_raw_email(
     msg.as_string(),
     fromaddr, toaddrs)
