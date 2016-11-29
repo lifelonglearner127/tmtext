@@ -301,6 +301,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             logger.info('Retrieved proxy config from file: {}'.format(proxy_config))
         return proxy_config
 
+    @staticmethod
+    def _replace_http_with_https(url):
+        return re.sub('^http:\/\/', 'https://', url)
+
     def start_requests(self):
         # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
         """
@@ -321,6 +325,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             # remove odd spaces for single product urls
             if type(self.product_url) is str or type(self.product_url) is unicode:
                 self.product_url = self.product_url.strip()
+                self.product_url = self._replace_http_with_https(self.product_url)
             prod = SiteProductItem()
             prod['is_single_result'] = True
             yield Request(self.product_url,
