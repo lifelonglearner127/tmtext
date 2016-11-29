@@ -168,7 +168,7 @@ def generate_amazon_to_walmart(input_file, mapping_file):
                     data = {
                         "upc": u"",
                         "gstn": u"",
-                        "tool_id": mapper[row[4].value][3],
+                        "tool_id": unicode(mapper[row[4].value][3], "utf-8"),
                         "title": row[6].value,
                         "short_desc": row[30].value,
                         "shelf_desc": u"",
@@ -207,8 +207,8 @@ def generate_amazon_to_walmart(input_file, mapping_file):
                     item["long_desc"],
                     item["shelf_desc"],
                     item["short_desc"],
-                    item["ingredients"],
                     item["directions"],
+                    item["ingredients"],
                     item["warnings"],
                     ])
 
