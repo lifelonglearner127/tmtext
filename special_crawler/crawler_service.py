@@ -396,15 +396,26 @@ def natural_sort(d):
         return int(text) if text.isdigit() else text
 
     def natural_keys(text):
-        return [ atoi(c) for c in re.split('(\d+)', text) ]
+        return [atoi(c) for c in re.split('(\d+)', text)]
+    try:
+        if not isinstance(d, (dict)):
+            return d, True
 
-    if not isinstance(d, (dict)):
-        return d
+        is_sorted = True
+        keys = d.keys()
+        keys.sort(key=natural_keys)
 
-    keys = d.keys()
-    keys.sort(key=natural_keys)
+        dict_val = []
+        for key in keys:
+            sd, status = natural_sort(d[key])
+            dict_val += [(key, sd)]
+            if not status:
+                is_sorted = False
+                break
 
-    return collections.OrderedDict([(key, natural_sort(d[key])) for key in keys])
+        return collections.OrderedDict(dict_val), is_sorted
+    except:
+        return d, False
 
 
 # general resource for getting data.
@@ -471,12 +482,13 @@ def get_data():
     # data
     validate_data_params(request_arguments, site_scraper.ALL_DATA_TYPES)
 
+    is_ret_sorted = False
     if 'data' not in request_arguments:
         # return all data if there are no "data" parameters
         try:
             ret_uf = site_scraper.product_info()
             # make natural sort for amazon data
-            ret = natural_sort(ret_uf) if site == 'amazon' else ret_uf
+            ret, is_ret_sorted = natural_sort(ret_uf) if site == 'amazon' else (ret_uf, False)
         except HTTPError as ex:
             raise GatewayError("Error communicating with site crawled.")
     else:
@@ -484,11 +496,11 @@ def get_data():
         try:
             ret_uf = site_scraper.product_info(request_arguments['data'])
             # make natural sort for amazon data
-            ret = natural_sort(ret_uf) if site == 'amazon' else ret_uf
+            ret, is_ret_sorted = natural_sort(ret_uf) if site == 'amazon' else (ret_uf, False)
         except HTTPError:
             raise GatewayError("Error communicating with site crawled.")
 
-    if site == 'amazon':
+    if site == 'amazon' and is_ret_sorted:
         # Tf site is "Amazon", this API output a json as natural_sort.
         return app.response_class(json.dumps(ret, indent=2), mimetype='application/json')
     else:
