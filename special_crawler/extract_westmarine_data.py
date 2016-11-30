@@ -182,7 +182,7 @@ class WestmarineScraper(Scraper):
             "//ul[@id='carousel_alternate']//span[contains(@class,'thumb')]//img/@data-primaryimagesrc"
         )
         if len(image_list) < 1:
-            image_list = self.tree_html.xpath("//div[@id='primary_image']//a[@id='imageLink']//img/@data-primaryimagesrc")
+            image_list = self.tree_html.xpath("//div[@id='primary_image']//a[@id='imageLink']//img/@src")
         return image_list
 
     def _image_count(self):
