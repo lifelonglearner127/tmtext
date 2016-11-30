@@ -195,7 +195,7 @@ class BuyerReviewsBazaarApi(object):
 
                 stars_data = re.findall(
                     r'<span class="BVRRHistStarLabelText">(\d+) (?:S|s)tars?</span>|'
-                    r'<span class="BVRRHistAbsLabel">(\d+)</span>',
+                    r'<span class="BVRRHistAbsLabel">([0-9 ,]+)</span>',
                     histogram_data
                 )
                 if stars_data:
@@ -206,7 +206,7 @@ class BuyerReviewsBazaarApi(object):
 
                     # ['3', '0', '5', '6'] --> {'3': '0', '5': '6'}
                     i = iter(item_list)
-                    stars = {k: int(v) for (k, v) in izip(i, i)}
+                    stars = {k: int(v.replace(',','')) for (k, v) in izip(i, i)}
                 else:
                     stars_data = re.findall(
                         r'<div itemprop="reviewRating".+>.+<span itemprop="ratingValue" '
