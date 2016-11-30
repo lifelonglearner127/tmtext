@@ -521,7 +521,7 @@ class SqsCache(object):
                 result['servers'][server]['scrappers'][site][search_type] += \
                     value
         if with_by_site:
-            return result, sorted(result_with_by_site)
+            return result, result_with_by_site
         return result
 
     def store_execution_time_per_task(self, execution_time, key=None):

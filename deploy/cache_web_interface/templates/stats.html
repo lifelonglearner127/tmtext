@@ -62,7 +62,7 @@
         </li>
         <li>
             Today jobs by site:
-            <a href="#" onclick="javascript: toggle_sibling_ul(event, this);">Show</a>
+	    <a href="#" onclick="javascript: toggle_jobs_metrics(event, this);">Show</a>
             <ul hidden="hidden">
                 {% if today_jobs_by_site.term and today_jobs_by_site.url %}
                 <li>
@@ -90,6 +90,7 @@
                 {% endif %}
             </ul>
         </li>
+        <li>
         <li>
             Today executed tasks: {{ today_executed_tasks }}
             <ul>
