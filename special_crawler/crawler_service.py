@@ -621,7 +621,7 @@ def post_request_logging(response):
     global log_response
 
     log_response['duration'] = round(time_end - time_start, 2)
-    log_response['date'] = datetime.datetime.today().ctime()
+    log_response['date'] = time.time()
 
     try:
         log_response['instance'] = requests.get('http://169.254.169.254/latest/meta-data/ami-id',
