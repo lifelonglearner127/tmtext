@@ -44,7 +44,7 @@
         <li>Today started instances: {{ today_instances }}</li>
         <li>
             Today jobs: {{ today_jobs.term + today_jobs.url }} jobs ({{ today_jobs.term }} search terms, {{ today_jobs.url }} product URLs)
-            <a href="#" onclick="javascript: toggle_sibling_ul(event, this);">Show</a>
+            <a href="#" onclick="javascript: toggle_jobs_metrics(event, this);">Show</a>
             <ul hidden="hidden">
                 {% for server, server_metrics in today_jobs.servers.items() %}
                     <li>
@@ -60,7 +60,7 @@
                 {% endfor %}
             </ul>
         </li>
-        <li>
+	        <li>
             Today jobs by site:
 	    <a href="#" onclick="javascript: toggle_jobs_metrics(event, this);">Show</a>
             <ul hidden="hidden">
@@ -90,7 +90,6 @@
                 {% endif %}
             </ul>
         </li>
-        <li>
         <li>
             Today executed tasks: {{ today_executed_tasks }}
             <ul>
@@ -187,7 +186,7 @@
 
 </body>
 <script type="text/javascript">
-    var toggle_sibling_ul = function(event, el){
+    var toggle_jobs_metrics = function(event, el){
         event.preventDefault();
         var ul = el.nextSibling.nextSibling;
         switch (el.text){
