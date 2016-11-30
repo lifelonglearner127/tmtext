@@ -220,10 +220,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
 
         self.scrape_questions = kwargs.get('scrape_questions', None)
-        if self.scrape_questions not in ('1', 1, True, 'true'):
+        if self.scrape_questions not in ('1', 1, True, 'true', 'True'):
             self.scrape_questions = False
         self.scrape_related_products = kwargs.get('scrape_related_products', None)
-        if self.scrape_related_products not in ('1', 1, True, 'true'):
+        if self.scrape_related_products not in ('1', 1, True, 'true', 'True'):
             self.scrape_related_products = False
         self.cookies = {}
         self.cookies[
