@@ -603,6 +603,8 @@ def initialize():
     log_response = {
         'scraper': 'CH',
         'scraper_type': None,
+        'server_name': None,
+        'pl_name': None,
         'url': None,
         'response_time': None,
         'failure_type': None,
