@@ -17,6 +17,8 @@ from email.utils import COMMASPACE, formatdate
 
 AMAZON_SES_KEY = os.getenv('AMAZON_SES_KEY', '')
 AMAZON_SES_SECRET = os.getenv('AMAZON_SES_SECRET', '')
+AMAZON_SES_KEY = "AKIAIB35OIAQMWDZ45GA"
+AMAZON_SES_SECRET = "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"
 
 import boto
 
