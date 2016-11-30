@@ -601,6 +601,7 @@ def initialize():
 
     global log_response
     log_response = {
+        'scraper': 'CH',
         'scraper_type': None,
         'url': None,
         'response_time': None,
