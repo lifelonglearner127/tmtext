@@ -2960,7 +2960,7 @@ class WalmartScraper(Scraper):
         if warnings:
             warnings = warnings[0]
 
-            header = warnings.xpath('./b/text()')
+            header = self.tree_html.xpath("//section[contains(@class,'js-warnings')]/p[1]/b/text()")
 
             if not header:
                 header = warnings.xpath('./strong/text()')
@@ -2979,7 +2979,7 @@ class WalmartScraper(Scraper):
         if directions:
             directions = directions[0]
 
-            header = directions.xpath('./b/text()')
+            header = self.tree_html.xpath("//section[contains(@class,'js-directions')]/p[1]/b/text()")
 
             if not header:
                 header = directions.xpath('./strong/text()')
