@@ -19,7 +19,7 @@ class CVSScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.cvs.com/shop/(.+/)*<product-name>-prodid-<prodid>?skuid-<skuid>"
+    INVALID_URL_MESSAGE = "Expected URL format is http(s)://www.cvs.com/shop/(.+/)*<product-name>-prodid-<prodid>"
     BASE_URL_REVIEWSREQ = 'http://cvspharmacy.ugc.bazaarvoice.com/3006-en_us/{0}/reviews.djs?format=embeddedhtml'
     BASE_URL_WEBCOLLAGE = 'http://content.webcollage.net/cvs/smart-button?ird=true&channel-product-id={0}'
 
@@ -47,7 +47,7 @@ class CVSScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^http://www.cvs.com/shop/(.+/)*.+-prodid-\d+\?skuId=\d+$", self.product_page_url)
+        m = re.match(r"^https?://www.cvs.com/shop/(.+/)*.+-prodid-\d+(\?skuId=\d+)?$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -85,7 +85,7 @@ class CVSScraper(Scraper):
         return None
 
     def _product_id(self):
-        return re.findall('skuId=(\d+)$', self.product_page_url)[0]
+        return re.findall('prodid-(\d+)', self.product_page_url)[0]
 
     def _site_id(self):
         return self._product_id()
