@@ -112,6 +112,7 @@ from lxml import etree, html
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import time
+import collections
 
 app = Flask(__name__)
 
@@ -389,6 +390,38 @@ def validate_data_params(arguments, ALL_DATA_TYPES):
                 with the <data_i> values among the following keywords: \n" + str(data_permitted_values))
 
 
+# sort dict keys like natural view
+# ex:
+#   {"b2": 1, "b1": 1, "b11": 1, "b21": 1, "b12": 1} => {"b1": 1, "b2": 1, "b11": 1, "b12": 1, "b21": 1}
+#
+def natural_sort(d):
+
+    def atoi(text):
+        return int(text) if text.isdigit() else text
+
+    def natural_keys(text):
+        return [atoi(c) for c in re.split('(\d+)', text)]
+    try:
+        if not isinstance(d, (dict)):
+            return d, True
+
+        is_sorted = True
+        keys = d.keys()
+        keys.sort(key=natural_keys)
+
+        dict_val = []
+        for key in keys:
+            sd, status = natural_sort(d[key])
+            dict_val += [(key, sd)]
+            if not status:
+                is_sorted = False
+                break
+
+        return collections.OrderedDict(dict_val), is_sorted
+    except:
+        return d, False
+
+
 # general resource for getting data.
 # needs "url" and "site" parameters. optional parameter: "data"
 # can be used without "data" parameter, in which case it will return all data
@@ -453,23 +486,31 @@ def get_data():
     # data
     validate_data_params(request_arguments, site_scraper.ALL_DATA_TYPES)
 
-    # return all data if there are no "data" parameters
+    is_ret_sorted = False
     if 'data' not in request_arguments:
+        # return all data if there are no "data" parameters
         try:
-            ret = site_scraper.product_info()
-
+            ret_uf = site_scraper.product_info()
+            # make natural sort for amazon data
+            ret, is_ret_sorted = natural_sort(ret_uf) if site == 'amazon' else (ret_uf, False)
         except HTTPError as ex:
             raise GatewayError("Error communicating with site crawled.")
+    else:
+        # return only requested data
+        try:
+            ret_uf = site_scraper.product_info(request_arguments['data'])
+            # make natural sort for amazon data
+            ret, is_ret_sorted = natural_sort(ret_uf) if site == 'amazon' else (ret_uf, False)
+        except HTTPError:
+            raise GatewayError("Error communicating with site crawled.")
 
+    if site == 'amazon' and is_ret_sorted:
+        # Tf site is "Amazon", this API output a json as natural_sort.
+        return app.response_class(json.dumps(ret, indent=2), mimetype='application/json')
+    else:
+        # Else this API use default output ( use jsonify sort )
         return jsonify(ret)
 
-    # return only requested data
-    try:
-        ret = site_scraper.product_info(request_arguments['data'])
-    except HTTPError:
-        raise GatewayError("Error communicating with site crawled.")
-
-    return jsonify(ret)
 
 
 @app.route('/google_search', methods=['GET'])
