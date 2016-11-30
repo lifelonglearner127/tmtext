@@ -1697,7 +1697,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         original_prod_url = response.meta['product']['url']
         product = response.meta['product']
         product['_subitem'] = True
-        all_questions = product.get('all_questions', [])
+        recent_questions = product.get('recent_questions', [])
         current_qa_page = int(
             re.search('pageNumber\=(\d+)', response.url).group(1))
 
@@ -1706,18 +1706,18 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             # pagination reached its end?
             yield product
             return
-        all_questions.extend(content['questionDetails'])
+        recent_questions.extend(content['questionDetails'])
         if self.username:
-            for idx, q in enumerate(all_questions):
+            for idx, q in enumerate(recent_questions):
                 if not 'answeredByUsername' in q:
-                    all_questions[idx]['answeredByUsername'] = False
+                    recent_questions[idx]['answeredByUsername'] = False
                     if 'answers' in q:
                         for answer in q['answers']:
                             if 'userNickname' in answer:
                                 if self.username.strip().lower() == answer['userNickname'].strip().lower():
-                                    all_questions[idx]['answeredByUsername'] = True
+                                    recent_questions[idx]['answeredByUsername'] = True
 
-        product['all_questions'] = all_questions
+        product['recent_questions'] = recent_questions
         # this is for [future] debugging - do not remove!
         #for qa in content['questionDetails']:
         #    print; print;
