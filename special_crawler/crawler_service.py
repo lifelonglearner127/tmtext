@@ -411,7 +411,7 @@ def get_data():
     log_response['url'] = url
 
     site = request_arguments['site'][0]
-    log_response['domain'] = site
+    log_response['scraper_type'] = site
 
     if 'bot' in request_arguments:
         bot = request_arguments['bot'][0]
@@ -601,7 +601,7 @@ def initialize():
 
     global log_response
     log_response = {
-        'domain': None,
+        'scraper_type': None,
         'url': None,
         'response_time': None,
         'failure_type': None,
