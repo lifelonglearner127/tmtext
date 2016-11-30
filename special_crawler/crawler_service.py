@@ -624,7 +624,7 @@ def post_request_logging(response):
     log_response['date'] = time.time()
 
     try:
-        log_response['instance'] = requests.get('http://169.254.169.254/latest/meta-data/ami-id',
+        log_response['instance'] = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
             timeout = 10).content
     except Exception as e:
         print 'Failed to get instance metadata:', e
