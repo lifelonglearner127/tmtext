@@ -2,11 +2,6 @@ import os
 import xlrd
 import csv
 
-# We'll render HTML templates and access data sent by POST
-# using the request object from flask. Redirect and url_for
-# will be used to redirect the user once the upload is done
-# and send_from_directory will help us to send/show on the
-# browser the file that the user just uploaded
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify
 from werkzeug import secure_filename
 
