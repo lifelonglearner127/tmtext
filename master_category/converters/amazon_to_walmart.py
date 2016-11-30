@@ -114,13 +114,13 @@ def generate_amazon_to_walmart(input_file, mapping_file):
     template = templateEnv.get_template('walmart_long_description.html')
 
     def create_walmart_description(bullet1, bullet2, bullet3, bullet4, bullet5):
-        context = {
-            "bullet1": bullet1 if bullet1 != "" else None,
-            "bullet2": bullet2 if bullet2 != "" else None,
-            "bullet3": bullet3 if bullet3 != "" else None,
-            "bullet4": bullet4 if bullet4 != "" else None,
-            "bullet5": bullet5 if bullet5 != "" else None,
-        }
+        context = {"bullets": []}
+        context["bullets"] += [bullet1] if bullet1 != "" else []
+        context["bullets"] += [bullet2] if bullet2 != "" else []
+        context["bullets"] += [bullet3] if bullet3 != "" else []
+        context["bullets"] += [bullet4] if bullet4 != "" else []
+        context["bullets"] += [bullet5] if bullet5 != "" else []
+        
         return template.render(context)
 
     def convert_file(source_file):
