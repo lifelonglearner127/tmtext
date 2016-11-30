@@ -1763,13 +1763,11 @@ class WalmartScraper(Scraper):
             if upc:
                 return upc
 
-            try:
+            if self.product_choice_info_json:
                 upc = self.product_choice_info_json.get("product", {}).get("wupc")
 
                 if upc:
                     return upc
-            except:
-                pass
 
             if self.is_bundle_product:
                 return self._filter_key_fields("upc", None)
