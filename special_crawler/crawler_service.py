@@ -671,7 +671,6 @@ def post_request_logging(response):
             timeout = 10).content
     except Exception as e:
         print 'Failed to get instance metadata:', e
-        pass
 
     app.logger.info(json.dumps({
         "date" : datetime.datetime.today().ctime(),
@@ -691,7 +690,6 @@ def post_request_logging(response):
             timeout = 10)
     except Exception as e:
         print 'Failed to send logs:', e
-        pass
 
     return response
 
