@@ -38,7 +38,7 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         self.price_currency_view = '$'
 
         self.scrape_questions = kwargs.get('scrape_questions', None)
-        if self.scrape_questions not in ('1', 1, True, 'true'):
+        if self.scrape_questions not in ('1', 1, True, 'true', 'True'):
             self.scrape_questions = False
 
         # Locale
