@@ -60,7 +60,7 @@ class LogHistory(object):
                 data = LogHistory.get_log(),
                 timeout = 10)
         except Exception as e:
-            print logger.warn('Failed to send logs: %s' % str(e))
+            logger.warn('Failed to send logs: %s' % str(e))
         
     @staticmethod
     def add_list_log(key, value):
