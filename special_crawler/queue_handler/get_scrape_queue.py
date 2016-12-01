@@ -23,6 +23,8 @@ import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 import crawler_service
 
+from log_history import LogHistory
+
 # initialize the logger
 logger = logging.getLogger('basic_logger')
 logger.setLevel(logging.DEBUG)
@@ -100,6 +102,7 @@ def main( environment, scrape_queue_name, thread_id):
                 additional_requests = message_json.get('additional_requests')
 
                 LogHistory.start_log()
+                LogHistory.add_log('scraper', 'CH')
 
                 LogHistory.add_log('url', url)
                 LogHistory.add_log('server_hostname', message_json.get('server_hostname'))
@@ -212,8 +215,6 @@ def main( environment, scrape_queue_name, thread_id):
         time.sleep(1)
 
 if __name__ == "__main__":
-    from log_history import LogHistory
-
     if len(sys.argv) > 1:
         environment = sys.argv[1] # e.g., UnitTest, see dictionary of queue names
         queue_name = "no queue"
