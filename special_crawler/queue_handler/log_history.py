@@ -28,9 +28,11 @@ class LogHistory(object):
     }
 
     @staticmethod
-    def start_log():
+    def start_log(scraper):
         global start
         start = time.time()
+
+        LogHistory.add_log('scraper', scraper)
 
     @staticmethod
     def get_log():

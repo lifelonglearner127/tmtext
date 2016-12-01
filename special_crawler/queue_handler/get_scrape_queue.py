@@ -101,8 +101,7 @@ def main( environment, scrape_queue_name, thread_id):
 
                 additional_requests = message_json.get('additional_requests')
 
-                LogHistory.start_log()
-                LogHistory.add_log('scraper', 'CH')
+                LogHistory.start_log('CH')
 
                 LogHistory.add_log('url', url)
                 LogHistory.add_log('server_hostname', message_json.get('server_hostname'))
