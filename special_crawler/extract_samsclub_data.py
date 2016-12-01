@@ -269,6 +269,12 @@ class SamsclubScraper(Scraper):
             return 1
         return 0
 
+    def _item_num(self):
+        item_num = self.tree_html.xpath('//*[@itemprop="productID"]/text()')
+
+        if item_num:
+            return int(item_num[0])
+
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -1081,6 +1087,7 @@ class SamsclubScraper(Scraper):
         "variants": _variants, \
         "no_longer_available": _no_longer_available, \
         "assembled_size": _assembled_size, \
+        "item_num": _item_num, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "video_urls" : _video_urls, \
