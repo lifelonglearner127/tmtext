@@ -3,7 +3,6 @@ from __future__ import division, absolute_import, unicode_literals
 import urlparse
 import json
 import re
-import string
 
 from scrapy.http import Request
 
@@ -94,7 +93,7 @@ class WalGreensProductsSpider(BaseProductsSpider):
         if self.searchterms:
             self.searchterms = [st.replace('-', ' ') for st in self.searchterms]
         return super(WalGreensProductsSpider, self).start_requests()
-    
+
     def _parse_single_product(self, response):
         return self.parse_product(response)
 

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import string
 import urlparse

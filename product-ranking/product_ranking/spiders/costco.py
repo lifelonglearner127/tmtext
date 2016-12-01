@@ -1,5 +1,5 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
+from future_builtins import filter, map
 
 import re
 
@@ -7,7 +7,7 @@ from scrapy.log import ERROR
 from scrapy import Request
 
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
@@ -246,7 +246,7 @@ class CostcoProductsSpider(BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         links = response.xpath(
-            '//div[contains(@class,"product-tile-image-container")]/a/@href'
+            '//div[contains(@class,"product-list grid")]//a[contains(@class,"thumbnail")]/@href'
         ).extract()
         for link in links:
             yield link, SiteProductItem()

@@ -1,21 +1,17 @@
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
 
-import urlparse
 import re
-import urllib
 import time
 import json
 
-from scrapy import Selector
 from scrapy.http import Request
-from scrapy.log import DEBUG
 
 from product_ranking.items import Price, BuyerReviews
 from product_ranking.items import SiteProductItem, RelatedProduct
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set, cond_set_value, dump_url_to_file
+from product_ranking.spiders import cond_set, cond_set_value
 
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -81,7 +77,7 @@ class MarksandspencerProductsSpider(BaseProductsSpider):
 
     def start_requests(self):
         yield Request(
-            url="http://www.marksandspencer.com", 
+            url="http://www.marksandspencer.com",
             callback=self.after_start,
         )
 
@@ -98,9 +94,9 @@ class MarksandspencerProductsSpider(BaseProductsSpider):
             "//form/.//input[@name='typeAhead']/@value").extract(), "")
         for st in self.searchterms:
             url = self.SEARCH_URL.format(
-                searchterm=self.searchterms[0], storeId=storeId, 
-                catalogId=catalogId, categoryId=categoryId, 
-                langId=langId, typeAhead=typeAhead, 
+                searchterm=self.searchterms[0], storeId=storeId,
+                catalogId=catalogId, categoryId=categoryId,
+                langId=langId, typeAhead=typeAhead,
                 sortBy=self.SORT_MODES.get(self.sort_mode)
             )
             yield Request(
@@ -145,8 +141,8 @@ class MarksandspencerProductsSpider(BaseProductsSpider):
 
         #cond_set_value(product, "brand", "Marks and Spencer")
         cond_set(
-            product, 
-            "brand", 
+            product,
+            "brand",
             response.xpath(
                 "//ul[contains(@class, 'sub-brand-des')]/li/text()").extract(),
             lambda x: x.strip(),
@@ -156,20 +152,20 @@ class MarksandspencerProductsSpider(BaseProductsSpider):
             "//h1[@itemprop='name']/text()").extract()))
 
         cond_set(
-            product, 
-            "model", 
-            response.xpath("//p[contains(@class, 'code')]/text()").extract(), 
+            product,
+            "model",
+            response.xpath("//p[contains(@class, 'code')]/text()").extract(),
             lambda x: x.strip(),
         )
 
         cond_set(
-            product, 
-            "description", 
+            product,
+            "description",
             response.xpath(
                 "//div[@class='content']/"
                 "div[contains(@class, 'information-panel')] |"
                 "//div[contains(@class, 'product-information-flyout')]"
-            ).extract(), 
+            ).extract(),
             lambda x: x.strip()
         )
 
@@ -221,7 +217,7 @@ class MarksandspencerProductsSpider(BaseProductsSpider):
         if variants:
             product["variants"] = variants
 
-        reqs = []       
+        reqs = []
 
         prodId = is_empty(re.findall("productId\s+\=\'(\w+)", response.body))
 
@@ -255,7 +251,7 @@ class MarksandspencerProductsSpider(BaseProductsSpider):
                 Request(
                     url=self.RELATED_URL.format(
                         RRApiKey=RRApiKey, time=ts, prodId=prodId,
-                        RRPlacementTypes=RRPlacementTypes, 
+                        RRPlacementTypes=RRPlacementTypes,
                         RRCategoryHintId=RRCategoryHintId
                     ),
                     callback=self.parse_related_product,
@@ -270,7 +266,7 @@ class MarksandspencerProductsSpider(BaseProductsSpider):
     def parse_buyer_reviews(self, response):
         product = response.meta.get("product")
         reqs = response.meta.get("reqs")
-        
+
         total = int(is_empty(response.xpath(
             "//span[contains(@class, 'BVRRRatingSummaryHeaderCounterValue')]"
             "/text()"
@@ -290,7 +286,7 @@ class MarksandspencerProductsSpider(BaseProductsSpider):
                     "\n", "").replace("\t", "").replace("\\n", ""))
         if total and average:
             product["buyer_reviews"] = BuyerReviews(
-                num_of_reviews=total, 
+                num_of_reviews=total,
                 average_rating=average,
                 rating_by_star=rating_by_star
             )
@@ -341,7 +337,7 @@ class MarksandspencerProductsSpider(BaseProductsSpider):
         total_matches = is_empty(response.xpath(
             "//span[contains(@class, 'count')]/text()"
         ).re(FLOATING_POINT_RGEX), 0)
-        
+
         return int(total_matches)
 
     def _scrape_product_links(self, response):

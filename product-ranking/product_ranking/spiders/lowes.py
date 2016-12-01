@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
 import json
 import string
 import urllib
 
-from scrapy.http import Request, FormRequest
-from scrapy.log import DEBUG, ERROR
+from scrapy.http import Request
+from scrapy.log import DEBUG
 from scrapy import Selector
 from urlparse import urljoin
 
@@ -18,9 +17,7 @@ from scrapy.conf import settings
 from product_ranking.items import SiteProductItem, BuyerReviews, \
     RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider
-from product_ranking.spiders import FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set, cond_set_value
-from scrapy.utils.response import open_in_browser
+from product_ranking.spiders import cond_set_value
 
 
 class LowesProductsSpider(BaseProductsSpider):

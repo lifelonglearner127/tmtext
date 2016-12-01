@@ -1,13 +1,11 @@
 import urllib
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value
-from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews
-from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from spiders_shared_code.pepperfry_variants import PepperfryVariants
 from scrapy import Request
-from scrapy.log import WARNING, ERROR
-import re
+from scrapy.log import ERROR
+
 
 class PepperfryProductsSpider(BaseProductsSpider):
     """ pepperfry.com product ranking spider

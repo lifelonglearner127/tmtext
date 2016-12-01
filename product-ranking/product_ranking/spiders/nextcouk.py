@@ -5,7 +5,7 @@ import re
 import hjson
 import urlparse
 
-from scrapy.http import FormRequest, Request
+from scrapy.http import Request
 from scrapy.log import ERROR, INFO, WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \

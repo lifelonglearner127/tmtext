@@ -30,7 +30,7 @@ def get_all_group_instances_and_conn():
     autoscale_conn = conn
     ec2 = boto.ec2.connect_to_region('us-east-1')
     groups = conn.get_all_groups(
-        names=['SCCluster1', 'SCCluster2', 'SCCluster3', 'SCCluster4'])
+        names=['SCCluster1', 'SCCluster2', 'SCCluster3', 'SCCluster4'])  # TODO: update this list
     instances = [instance for group in groups for instance in group]
     if not instances:
         sys.exit()

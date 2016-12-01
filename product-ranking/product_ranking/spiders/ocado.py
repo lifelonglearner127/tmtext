@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
+from future_builtins import map
 
 import string
 import urlparse
@@ -21,7 +21,7 @@ class OcadoProductsSpider(BaseProductsSpider):
 
     SEARCH_URL = "https://www.ocado.com/webshop/getSearchProducts.do?" \
         "clearTabs=yes&isFreshSearch=true&entry={search_term}&sortBy={search_sort}"
-        
+
     SEARCH_SORT = {
         "default" :"default",
         "price_asc": "price_asc",
@@ -29,7 +29,7 @@ class OcadoProductsSpider(BaseProductsSpider):
         "name_asc": "name_asc",
         "name_desc":"name_desc",
         "shelf_life":"shelf_life",
-        "customer_rating": "customer_rating", 
+        "customer_rating": "customer_rating",
     }
 
     def __init__(self, search_sort="default", *args, **kwargs):
@@ -45,7 +45,7 @@ class OcadoProductsSpider(BaseProductsSpider):
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
-      
+
     def parse_product(self, response):
         product = response.meta['product']
 

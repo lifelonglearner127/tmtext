@@ -1,10 +1,7 @@
 import re
 import urlparse
 
-import scrapy
-from scrapy.log import WARNING, ERROR
 from scrapy.http import Request
-from scrapy import Selector
 
 from product_ranking.items import SiteProductItem
 
@@ -82,6 +79,7 @@ class OfficedepotShelfPagesSpider(OfficedepotProductsSpider):
         if self.current_page >= self.num_pages:
             return
         self.current_page += 1
+        return super(OfficedepotShelfPagesSpider, self)._scrape_next_results_page_link(response)
 
     def parse_product(self, response):
         return super(OfficedepotShelfPagesSpider, self).parse_product(response)

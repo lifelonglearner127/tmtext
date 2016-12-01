@@ -38,14 +38,13 @@ class StaplesadvantageProductsSpider(ProductsSpider):
     name = "staplesadvantage_products"
 
     allowed_domains = ['staplesadvantage.com']
-
-    SEARCH_URL = "http://www.staplesadvantage.com/webapp/wcs/stores/servlet" \
+    SEARCH_URL = "https://www.staplesadvantage.com/webapp/wcs/stores/servlet" \
                  "/StplCategoryDisplay?term={search_term}" \
                  "&act=4&src=SRCH&reset=true&storeId=10101&pg={page}"
 
-    START_URL = 'http://www.staplesadvantage.com/learn?storeId=10101'
+    START_URL = 'https://www.staplesadvantage.com/learn?storeId=10101'
 
-    BASE_URL = "http://www.staplesadvantage.com/webapp/wcs/stores/servlet" \
+    BASE_URL = "https://www.staplesadvantage.com/webapp/wcs/stores/servlet" \
                "/StplCategoryDisplay?catalogId=4&langId=-1&storeId=10101"
 
     SORT_MODES = {
@@ -139,7 +138,6 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         url = self.generate_url_from_inputs(response, 'galleryfullnav')
         return Request(url, meta=response.meta)
 
-
     def _total_matches_from_html(self, response):
         total = response.css('.didYouMeanNoOfItems').extract()
         if not total:
@@ -190,8 +188,8 @@ class StaplesadvantageProductsSpider(ProductsSpider):
                  unicode.strip)
 
     def _populate_from_html(self, response, product):
-        title = response.xpath('//p[contains(@class, "search-prod-desc")]'
-            '/@title'
+        title = response.xpath('//h1[contains(@class, "search-prod-desc")]/text()'
+            #'/@title'
             ).extract()
         cond_set(product, 'title', title)
         xpath = '//div[@id="dotcombrand"]/../preceding-sibling::li[1]/text()'
@@ -207,15 +205,14 @@ class StaplesadvantageProductsSpider(ProductsSpider):
                 else:
                     brand = [brand[1]]
         cond_set(product, 'brand', brand)
-        xpath = '//div[@class="tabs_instead_title" and text()="Description"]' \
-                '/following-sibling::*/node()[normalize-space()] |' \
+        xpath = '//h3[text()="Description"]' \
+                '/following-sibling::p[normalize-space()] |' \
                 '//div[contains(@class, "product-details-desc")]'
         desc = response.xpath(xpath).extract()
         cond_set(product, 'description', desc)
-        cond_set(product, 'image_url',
-                 response.css('#enlImage::attr(src)').extract(),
-                 lambda url: urljoin(response.url, url))
-        model = re.findall('var pr_page_id="(\d+)"', response.body)
+        image_url = re.findall("enlargedImageURL = '([^']*)'", response.body)
+        cond_set(product, 'image_url', image_url)
+        model = re.findall('"model" : "([^"]*)"', response.body)
         cond_set(product, 'model', model)
         regex = "currentSKUNbr=(\d+)"
         reseller_id = re.findall(regex, response.url)
@@ -238,16 +235,13 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         cond_set_value(product, 'related_products',
                        {'More product options': products})
 
-
     def _request_buyer_reviews(self, response):
-        prod_id = re.search('var pr_page_id="(\d+)"', response.body)
-        if not prod_id:
-            return
-        prod_id = prod_id.group(1)
-        CH = sum((ord(c) * abs(255 - ord(c)) for c in str(prod_id)))
-        CH = str(CH % 1023).rjust(4, '0')
-        CH = '%s/%s' % (CH[:2], CH[2:])
-        url = "http://www.staplesadvantage.com/pwr/content/%s/contents.js" % CH
+        try:
+            prod_id = response.xpath("//div[@class='maindetailitem']//input[@name='currentSKUNumber']/@value")[0].extract()
+        except IndexError:
+            prod_id = response.xpath("//input[@name='currentSKUNumber']/@value")[0].extract()
+
+        url = "https://yotpo.staplesadvantage.com/v1/widget/RP5gD6RV7AVy75jjXQPUI1AOChyNNClZqkm94Ttb/products/" + prod_id + "/reviews.json?per_page=10&page=1&sort=votes_up&direction=desc&fromAjax=Y"
         meta = response.meta.copy()
         meta['prod_id'] = prod_id
         meta['field'] = 'buyer_reviews'
@@ -256,23 +250,16 @@ class StaplesadvantageProductsSpider(ProductsSpider):
 
     def _parse_buyer_reviews(self, response):
         product = response.meta['product']
-        json_str = re.search("POWERREVIEWS\.common\.gResult"
-                             "\['content/\d+/\d+/contents.js'\] = (.+);",
-                             response.body)
-        if not json_str:
-            cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
-            return
-        data = json.loads(json_str.group(1))
+        data = json.loads(response.body)
+
         try:
-            data = data['locales']['en_US'][
-                'p' + str(response.meta['prod_id'])]
-            data = data['reviews']
+            data = data["response"]["bottomline"]
         except KeyError:
             cond_set_value(product, 'buyer_reviews', ZERO_REVIEWS_VALUE)
             return
-        ratings = {i + 1: val for i, val in enumerate(data['review_ratings'])}
-        avg = float(data['avg'])
-        total = data['review_count']
+        ratings = data['star_distribution']
+        avg = float(data['average_score'])
+        total = data['total_review']
         cond_set_value(response.meta['product'], 'buyer_reviews',
                        BuyerReviews(total, avg,
                                     ratings) if total else ZERO_REVIEWS_VALUE)

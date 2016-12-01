@@ -3,12 +3,9 @@
 #
 
 import re
-import urlparse
 
 import scrapy
-from scrapy.http import Request
 from dateutil.parser import parse as parse_date
-from datetime import datetime
 
 from product_ranking.items import DiscountCoupon
 

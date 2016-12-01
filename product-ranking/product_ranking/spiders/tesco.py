@@ -1,5 +1,5 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
+from future_builtins import zip
 
 import json
 import re
@@ -240,7 +240,7 @@ class TescoProductsSpider(BaseProductsSpider):
             reseller_id = reseller_id[0] if reseller_id else None
             cond_set_value(product, "reseller_id", reseller_id)
             product["price"] = Price(
-                price=productdata["price"], 
+                price=productdata["price"],
                 priceCurrency="GBP"
             )
             product["image_url"] = productdata["mediumImage"]

@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 from scrapy.log import WARNING
 
@@ -136,7 +135,7 @@ class BabySecurityProductSpider(BaseProductsSpider):
             url = all_inf.xpath('@href').extract()
             recommendations.append(
                 RelatedProduct(
-                    title=is_empty(title), 
+                    title=is_empty(title),
                     url=is_empty(url)
                     )
                 )

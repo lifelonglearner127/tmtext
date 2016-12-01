@@ -146,7 +146,7 @@ class ShopriteProductsSpider(BaseProductsSpider):
 
     @staticmethod
     def _parse_store(url):
-        store = re.findall(r'\/store\/(\d+)\#', url)
+        store = re.findall(r'\/store\/([\d\w]+)\?*.*?\#', url)
         return store[0] if store else None
 
     @staticmethod
@@ -206,6 +206,12 @@ class ShopriteProductsSpider(BaseProductsSpider):
                        callback=self.parse_product,
                        meta=response.meta)
 
+    def _parse_shelf_path(self):
+        return None
+
+    def _parse_shelf_name(self):
+        return None
+
     def parse_product(self, response, product_info=None):
         """Handles parsing of a product page."""
         product = response.meta['product'] if response.meta.get('product') else SiteProductItem()
@@ -245,9 +251,13 @@ class ShopriteProductsSpider(BaseProductsSpider):
         no_longer_available = self._parse_no_longer_available(product_info)
         cond_set_value(product, 'no_longer_available', no_longer_available)
 
-        # # Parse category
-        # category = self._parse_category(product_info)
-        # cond_set_value(product, 'category', category)
+        # Parse shelf_path
+        shelf_path = self._parse_shelf_path()
+        cond_set_value(product, 'shelf_path', shelf_path)
+
+        # Parse shelf_name
+        shelf_name = self._parse_shelf_name()
+        cond_set_value(product, 'shelf_name', shelf_name)
 
         # Parse price
         price = self._parse_price(product_info)

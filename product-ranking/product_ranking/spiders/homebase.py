@@ -11,10 +11,9 @@ from scrapy.log import ERROR, WARNING
 
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.rich_relevance_reviews_api import RichRelevanceApi
-from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
-    cond_set, cond_set_value, FLOATING_POINT_RGEX
+from product_ranking.items import SiteProductItem, Price
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
+    cond_set_value
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 

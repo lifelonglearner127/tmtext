@@ -9,26 +9,19 @@ from __future__ import division, absolute_import, unicode_literals
 
 import json
 import re
-from urllib import urlencode
-import urlparse
-import datetime
 import itertools
 import os
 import copy
 import time
 
 from scrapy import Request
-from scrapy.http.request.form import FormRequest
 from scrapy.dupefilter import RFPDupeFilter
-from scrapy.conf import settings
-from scrapy.utils.request import request_fingerprint
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
     RelatedProduct
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set
-from product_ranking.spiders import cond_set_value
 
 
 is_empty = lambda x, y=None: x[0] if x else y

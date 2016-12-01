@@ -1,11 +1,10 @@
 import re
 import string
 
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy.log import INFO, WARNING
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
-    cond_set_value
+from product_ranking.spiders import BaseProductsSpider, cond_set_value
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
 is_empty = lambda x, y=None: x[0] if x else y

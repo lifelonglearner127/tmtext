@@ -43,6 +43,8 @@ ITEM_PIPELINES = {
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'product_ranking (+http://www.yourdomain.com)'
 
+RANDOM_UA_PER_PROXY = True
+
 # Delay between requests not to be blocked (seconds).
 DOWNLOAD_DELAY = 0.5
 
@@ -103,8 +105,8 @@ DOWNLOADER_MIDDLEWARES = {
 
 
 CRAWLERA_ENABLED = False  # false by default
-CRAWLERA_APIKEY = 'eff4d75f7d3a4d1e89115c0b59fab9b2'
-
+CRAWLERA_APIKEY = '0dc1db337be04e8fb52091b812070ccf'
+CRAWLERA_URL = 'http://content.crawlera.com:8010'
 
 _args_names = [arg.split('=')[0] if '=' in arg else arg for arg in sys.argv]
 if 'validate' in _args_names:
@@ -141,7 +143,7 @@ if 'enable_cache' in _args_names:  # for local development purposes only!
 EXTENSIONS['product_ranking.extensions.SignalsExtension'] = 100
 
 try:
-    from settings_local import *
+    from settings_local import *  # noqa:F401
 except ImportError:
     pass
 

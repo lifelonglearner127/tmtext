@@ -14,7 +14,7 @@ from scrapy import Request
 
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import SiteProductItem, \
-    Price, RelatedProduct, BuyerReviews, MarketplaceSeller
+    Price, RelatedProduct, BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, \
     cond_set, cond_set_value, FLOATING_POINT_RGEX
@@ -151,7 +151,7 @@ class TescoDirectProductsSpider(BaseProductsSpider):
                 },
                 callback=self.handler,
             )
-        
+
     def parse(self, response):
         if self._search_page_error(response):
             remaining = response.meta['remaining']
@@ -290,7 +290,7 @@ class TescoDirectProductsSpider(BaseProductsSpider):
         image_url = response.xpath(
             '//div[@class="static-product-image scene7-enabled"]' \
             '/img[@itemprop="image"]/@src'
-        ).extract()          
+        ).extract()
         cond_set(product, 'image_url', image_url)
 
         resc_url = "http://recs.richrelevance.com/rrserver/p13n_generated.js?"
@@ -319,7 +319,7 @@ class TescoDirectProductsSpider(BaseProductsSpider):
         ajax = urllib2.urlopen(resc_url)
         resp = ajax.read()
         ajax.close()
-      
+
         #related_products
         rp = []
         sel_all = re.findall('html:(\s+){0,1}\'([^\}]*)', resp)
@@ -369,7 +369,7 @@ class TescoDirectProductsSpider(BaseProductsSpider):
                 "%2Cen_DE%2Cen_GB%2Cen_IE%2Cen_NZ%2Cen_US" \
                 "&limit.q1=5&offset.q1=0&limit_comments.q1=3"
             rating_url += "&filter.q0=id%3Aeq%3A" + str(upc[0])
-            rating_url += "&filter.q1=productid%3Aeq%3A" + str(upc[0]) 
+            rating_url += "&filter.q1=productid%3Aeq%3A" + str(upc[0])
 
             ajax = urllib2.urlopen(rating_url)
             resp = ajax.read()
@@ -436,9 +436,9 @@ class TescoDirectProductsSpider(BaseProductsSpider):
             next_req =  self.next_total_stack_request()
         else:
             next_req = self.sum_total_matches(response)
-        
+
         return next_req
-    
+
     def sum_total_matches(self, response):
         if "0 results found" in response.body_as_unicode():
             total_matches = 0
@@ -469,7 +469,7 @@ class TescoDirectProductsSpider(BaseProductsSpider):
         total_matches = is_empty(total_matches)
 
         return int(total_matches)
-        
+
     def _scrape_product_links(self, response):
         links = response.xpath('//ul[@class="products"]/' \
             'li[contains(@class, "product-tile")]' \

@@ -160,8 +160,9 @@ class BestBuyProductSpider(ProductsSpider):
         if not price:
             return
         price_match = re.search('\$ *([, 0-9]+(?:\.[, 0-9]+)?)', price)
-        price = price_match.group(1)
-        price = ''.join(re.split('[ ,]+', price))
+        if price_match:
+            price = price_match.group(1)
+            price = ''.join(re.split('[ ,]+', price))
         cond_replace_value(product, 'price', Price('USD', price))
 
     def _parse_single_product(self, response):

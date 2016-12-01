@@ -1,24 +1,21 @@
 from __future__ import division, absolute_import, unicode_literals
 
-import os
 import json
 import re
 import time
 import urlparse
 import socket
-import random
 
 from scrapy import Request
 from scrapy.log import ERROR, WARNING
 from pyvirtualdisplay import Display
 
-from product_ranking.items import RelatedProduct, BuyerReviews
+from product_ranking.items import BuyerReviews
 from product_ranking.items import SiteProductItem, Price
-from product_ranking.settings import ZERO_REVIEWS_VALUE, CRAWLERA_APIKEY
+from product_ranking.settings import CRAWLERA_APIKEY
 from product_ranking.spiders import BaseProductsSpider, cond_set
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
-from product_ranking.spiders import FLOATING_POINT_RGEX
-from product_ranking.spiders import cond_set_value, populate_from_open_graph
+from product_ranking.spiders import cond_set_value
 from spiders_shared_code.nike_variants import NikeVariants
 
 
@@ -47,7 +44,7 @@ class NikeProductSpider(BaseProductsSpider):
 
         self.quantity = kwargs.get('quantity', 1000)  # default is 1000
 
-        self.proxy = 'proxy.crawlera.com:8010'
+        self.proxy = 'content.crawlera.com:8010'
         self.proxy_type = 'http'
         #self.user_agent = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0) Gecko/20100101 Firefox/32.0'
         self.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.75.14 (KHTML, like Gecko) Version/7.0.3 Safari/7046A194A'

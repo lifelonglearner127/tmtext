@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-import re
 import string
 import urllib
 import urlparse
@@ -8,10 +7,9 @@ from scrapy.log import ERROR
 from scrapy.http import Request
 
 from product_ranking.guess_brand import guess_brand_from_first_words
-from product_ranking.items import SiteProductItem, RelatedProduct, Price
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    cond_set_value, cond_replace_value, cond_replace,\
-    FLOATING_POINT_RGEX, FormatterWithDefaults
+    cond_set_value, FormatterWithDefaults
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -91,7 +89,7 @@ class NewlookProductsSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
-        
+
         cond_set(
             product,
             'title',
