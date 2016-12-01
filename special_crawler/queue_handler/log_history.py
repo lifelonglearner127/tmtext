@@ -29,8 +29,7 @@ class LogHistory(object):
 
     @staticmethod
     def start_log(scraper):
-        global start
-        start = time.time()
+        LogHistory.start = time.time()
 
         LogHistory.add_log('scraper', scraper)
 
@@ -46,7 +45,7 @@ class LogHistory(object):
     def send_log():
         end = time.time()
 
-        LogHistory.data['duration'] = round(end-start, 2)
+        LogHistory.data['duration'] = round(end-LogHistory.start, 2)
         LogHistory.data['date'] = time.time()
 
         try:
