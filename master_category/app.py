@@ -130,7 +130,7 @@ def process_form():
     return success, messages, result_file, file_name
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/converter', methods=['GET', 'POST'])
 def index():
     if request.method == 'GET':
         return render_template('index.html')
@@ -150,10 +150,42 @@ def index():
         """.format(messages='<br/>'.join([m.get('msg') for m in messages]))
         return result_response
 
-    return send_file(result_file,
-                     mimetype='application/force-download',
-                     as_attachment=True,
-                     attachment_filename=file_name)
+    try:
+        return send_file(result_file,
+                         mimetype='application/force-download',
+                         as_attachment=True,
+                         attachment_filename=file_name)
+    except:
+        return "<p>Could not find the result file.</p>"
+
+
+@app.route('/converter/api', methods=['GET', 'POST'])
+def api():
+    if request.method == 'GET':
+        return render_template('api.html')
+
+    _msgs = process_form()
+    if isinstance(_msgs, (list, tuple)):
+        success, messages, result_file, file_name = _msgs
+    else:
+        return jsonify({'status': 'error', 'message': _msgs}), 400
+
+    if not success:
+        return jsonify({
+            'status': 'error',
+            'message': messages
+        }), 400
+
+    try:
+        return send_file(result_file,
+                         mimetype='application/force-download',
+                         as_attachment=True,
+                         attachment_filename=file_name)
+    except:
+        return jsonify({
+            'status': 'error',
+            'message': 'Could not find the result file.'
+        }), 400
 
 
 if __name__ == '__main__':
