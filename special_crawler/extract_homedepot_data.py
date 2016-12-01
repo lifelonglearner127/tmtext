@@ -54,6 +54,9 @@ class HomeDepotScraper(Scraper):
                 raise Exception()
 
         except Exception:
+            arr = self.tree_html.xpath('//div[@id="productinfo_ctn"]//div[contains(@class,"error")]//text()')
+            if "to view is not currently available." in " ".join(arr).lower():
+                return False
             return True
 
         return False
@@ -84,8 +87,11 @@ class HomeDepotScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = self.tree_html.xpath('//h2[@class="product_details"]//span[@itemprop="productID"]/text()')[0]
-        return product_id
+        try:
+            product_id = self.tree_html.xpath('//h2[@class="product_details"]//span[@itemprop="productID"]/text()')[0]
+            return product_id
+        except:
+            return re.findall(r'\d+$', self.product_page_url)[0]
 
     def _site_id(self):
         return None
@@ -241,6 +247,12 @@ class HomeDepotScraper(Scraper):
 
         if variants:
             return variants
+
+    def _no_longer_available(self):
+        arr = self.tree_html.xpath('//div[@id="productinfo_ctn"]//div[contains(@class,"error")]//text()')
+        if "to view is not currently available." in " ".join(arr).lower():
+            return 1
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -522,6 +534,7 @@ class HomeDepotScraper(Scraper):
         "long_description" : _long_description, \
         "swatches" : _swatches, \
         "variants" : _variants, \
+        "no_longer_available" : _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
