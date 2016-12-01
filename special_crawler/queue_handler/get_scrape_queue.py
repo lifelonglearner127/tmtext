@@ -23,8 +23,6 @@ import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 import crawler_service
 
-from log_history import LogHistory
-
 # initialize the logger
 logger = logging.getLogger('basic_logger')
 logger.setLevel(logging.DEBUG)
@@ -52,6 +50,8 @@ INDEX_ERROR = "IndexError : The queue was really out of items, but the count was
 FETCH_FREQUENCY = 60
 
 def main( environment, scrape_queue_name, thread_id):
+    from log_history import LogHistory
+
     logger.info( "Starting thread %d" % thread_id)
     # establish the scrape queue
     sqs_scrape = SQS_Queue( scrape_queue_name)
