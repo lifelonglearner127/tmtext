@@ -5,6 +5,7 @@ import os
 import sys
 from subprocess import check_output, CalledProcessError, STDOUT
 
+
 main_folder = '/home/spiders/repo/'
 
 
@@ -69,12 +70,15 @@ def main():
     os.system('sudo apt-get update')
     _install_system_package('tesseract-ocr')
     _install_system_package('xvfb')
+    _install_system_package('wget')
     _install_system_package('chromium-browser')
     _install_system_package('firefox')
     _install_system_package('phantomjs')
     _install_system_package('python-setuptools')
     _install_system_package('python-distutils-extra')
     _install_system_package('python-apt')
+    _install_system_package('python-lxml')
+    _install_system_package('python-requests')
     # TODO: phantomjs2
     os.system(
         "cd ~"
@@ -90,6 +94,7 @@ def main():
         " && sudo mv phantomjs /usr/sbin/phantomjs2"
         " && sudo chmod +x /usr/sbin/phantomjs2"
     )
+    # download and install geckodriver (for Firefox)
     # disable marketplaces (they are too slow)
     disabler = '/tmp/stop_marketplaces'
     os.system('echo "1" > %s' % disabler)
