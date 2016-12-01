@@ -68,7 +68,6 @@ def main( environment, scrape_queue_name, thread_id):
     while True:
         go_to_sleep = False
         
-        '''
         if sqs_scrape.count() == 0:
             go_to_sleep = True
 
@@ -84,23 +83,11 @@ def main( environment, scrape_queue_name, thread_id):
                 # TODO : Consider testing that sqs_scrape is still live, and restart it if need be
                 go_to_sleep = True
                 logger.warn(e)
-        '''
 
         if not go_to_sleep:
             try:
                 # De-serialize to a json object
-                #message_json = json.loads(message)
-
-                message_json = {
-                    'event': 17,
-                    'pl_name': "924 variant",
-                    'product_id': "2106132",
-                    'server_hostname': "igor-test",
-                    'server_name': "5ff8744f-f4d2-4cf5-bb03-a23eeb5fa298",
-                    'site': "walmart",
-                    'site_id': "1",
-                    'url': "http://www.walmart.com/ip/43888233"
-                }
+                message_json = json.loads(message)
 
                 # Vars from the json object
                 url = message_json['url']
@@ -207,19 +194,16 @@ def main( environment, scrape_queue_name, thread_id):
                 output_message = json.dumps(output_json)
                 #print(output_message)
 
-                '''
                 # Add the scraped page to the processing queue ...
                 sqs_process = SQS_Queue('%s_process'%server_name)
                 sqs_process.put( output_message, url)
                 # ... and remove it from the scrape queue
                 sqs_scrape.task_done()
-                '''
                 
                 logger.info("Sent: thread %d server %s url %s" % ( thread_id, server_name, url))
 
                 # Send Log History
                 LogHistory.send_log()
-                sys.exit()
 
             except Exception as e:
                 logger.warn(e)
