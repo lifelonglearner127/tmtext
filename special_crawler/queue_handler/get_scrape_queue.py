@@ -19,6 +19,10 @@ import boto
 from boto.s3.key import Key
 from boto.s3.connection import S3Connection
 
+import os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+import crawler_service
+
 # initialize the logger
 logger = logging.getLogger('basic_logger')
 logger.setLevel(logging.DEBUG)
@@ -96,6 +100,7 @@ def main( environment, scrape_queue_name, thread_id):
                 server_name = message_json['server_name']
                 product_id = message_json['product_id']
                 event = message_json['event']
+
                 config_dict['additional_requests'] = message_json.get('additional_requests')
 
                 logger.info("Received: thread %d server %s url %s" % ( thread_id, server_name, url))
@@ -128,20 +133,29 @@ def main( environment, scrape_queue_name, thread_id):
                 for i in range(1, max_retries):
                     # Scrape the page using the scraper running on localhost
                     get_start = time.time()
-                    tmp_url = base%(urllib.quote(url))
-                    for k,v in config_dict.items():
-                        if v is not None:
-                            tmp_url += '&%s=%s' % (k, v)
-                    logger.info('REQUESTING %s' % tmp_url)
-                    output_text = requests.get(tmp_url).text
-                    get_end = time.time()
 
-                    # Add the processing fields to the return object and re-serialize it
                     try:
-                        output_json = json.loads(output_text)
+                        site = crawler_service.extract_domain(url)
+
+                        # create scraper class for requested site
+                        site_scraper = crawler_service.SUPPORTED_SITES[site](url=url,
+                            bot=None,
+                            additional_requests = config_dict['additional_requests'],
+                            api_key = config_dict['api_key'],
+                            walmart_api_key = config_dict['walmart_api_key'],
+                            proxy = config_dict['proxy'],
+                            walmart_proxy_crawlera = int(config_dict['walmart_proxy_crawlera']),
+                            walmart_proxy_proxyrain = int(config_dict['walmart_proxy_proxyrain']),
+                            walmart_proxy_shaderio = int(config_dict['walmart_proxy_shaderio']),
+                            walmart_proxy_luminati = int(config_dict['walmart_proxy_luminati']))
+
+                        output_json = site_scraper.product_info(log_response={})
 
                     except Exception as e:
-                        logger.info(output_text)
+                        get_end = time.time()
+
+                        print 'Error extracting output json', type(e), e
+
                         output_json = {
                             "error":str(e),
                             "date":datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
@@ -168,6 +182,7 @@ def main( environment, scrape_queue_name, thread_id):
                 output_json['site_id'] = site_id
                 output_json['product_id'] = product_id
                 output_json['event'] = event
+
                 output_message = json.dumps( output_json)
                 #print(output_message)
 
