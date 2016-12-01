@@ -159,7 +159,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             ),
             *args, **kwargs)
 
-        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429, 520]
+        settings.overrides['RETRY_HTTP_CODES'] = [500, 502, 503, 504, 400, 403, 404, 408, 429]
         settings.overrides['DOWNLOAD_DELAY'] = self._get_download_delay()
         settings.overrides['CONCURRENT_REQUESTS'] = 1
 
@@ -220,11 +220,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
 
         self.scrape_questions = kwargs.get('scrape_questions', None)
-        if self.scrape_questions not in ('1', 1, True, 'true'):
+        if self.scrape_questions not in ('1', 1, True, 'true', 'True'):
             self.scrape_questions = False
-        self.scrape_related_products = kwargs.get('scrape_related_products', None)
-        if self.scrape_related_products not in ('1', 1, True, 'true'):
-            self.scrape_related_products = False
         self.cookies = {}
         self.cookies[
             'prefper'] = 'PREFSTORE~12648~2PREFCITY~1San%20Leandro~2PREFFULLSTREET~11919%20Davis%20St~2PREFSTATE~1CA~2PREFZIP~194117'
@@ -301,6 +298,10 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             logger.info('Retrieved proxy config from file: {}'.format(proxy_config))
         return proxy_config
 
+    @staticmethod
+    def _replace_http_with_https(url):
+        return re.sub('^http:\/\/', 'https://', url)
+
     def start_requests(self):
         # uncomment below to enable sponsored links (but this may cause walmart.com errors!)
         """
@@ -321,6 +322,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             # remove odd spaces for single product urls
             if type(self.product_url) is str or type(self.product_url) is unicode:
                 self.product_url = self.product_url.strip()
+                self.product_url = self._replace_http_with_https(self.product_url)
             prod = SiteProductItem()
             prod['is_single_result'] = True
             yield Request(self.product_url,
@@ -484,8 +486,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         cond_set_value(product, 'locale', 'en-US')  # Default locale.
         if 'brand' not in product:
             cond_set_value(product, 'brand', None)
-        if self.scrape_related_products:
-            self._gen_related_req(response)
 
         # parse category and department
         wcp = WalmartCategoryParser()
@@ -750,7 +750,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         )
 
     def _parse_single_product(self, response):
-        if response.status in (404, 520):
+        if response.status == 404:
             if 'product' not in response.meta:
                 product = SiteProductItem()
             else:
@@ -787,15 +787,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def _search_page_error(self, response):
         path = urlparse.urlsplit(response.url)[2]
         return path == '/FileNotFound.aspx'
-
-    def _build_related_products(self, url, related_product_nodes):
-        also_considered = []
-        for node in related_product_nodes:
-            link = urlparse.urljoin(url, node.xpath('@href | ../@href').
-                                    extract()[0])
-            title = node.xpath('text()').extract()[0]
-            also_considered.append(RelatedProduct(title.strip(), link))
-        return also_considered
 
     def _build_buyer_reviews_old(self, response):
         product = response.meta['product']
@@ -1059,28 +1050,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                     "name": is_empty(seller)
                 }])
 
-        also_considered = self._build_related_products(
-            response.url,
-            response.xpath('//*[@class="top-product-recommendations'
-                           ' tile-heading"]'),
-        )
-        if also_considered:
-            product.setdefault(
-                'related_products', {})["buyers_also_bought"] = also_considered
-
-        recommended = self._build_related_products(
-            response.url,
-            response.xpath(
-                "//p[contains(text(), 'Check out these related products')]/.."
-                "//*[contains(@class, 'tile-heading')] |"
-                "//div[@class='related-item']/a[contains(@class,"
-                "'related-link')] |"
-                "//div[@class='rel0']/a"
-            ),
-        )
-        if recommended:
-            product.setdefault(
-                'related_products', {})['recommended'] = recommended
         if not product.get('price'):
             currency = response.css('[itemprop=priceCurrency]::attr(content)')
             price = response.css('[itemprop=price]::attr(content)')
@@ -1120,27 +1089,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         req = req.replace(body='{"postalCode":"' + self.zip_code + '"}')
         return req
 
-    def _gen_related_req(self, response):
-        prodid = response.meta.get('productid')
-        if not prodid:
-            prodid = response.xpath(
-                "//div[@id='recently-review']/@data-product-id").extract()
-            if prodid:
-                prodid = prodid[0]
-        if not prodid:
-            self.log("No PRODID in %r." % response.url, WARNING)
-            return
-        cid = hashlib.md5(prodid).hexdigest()
-        reql = []
-        url1 = (
-            "https://www.walmart.com/irs?parentItemId%5B%5D={prodid}"
-            "&module=ProductAjax&clientGuid={cid}").format(
-                prodid=prodid,
-                cid=cid)
-        reql.append((url1, self._proc_mod_related))
-        response.meta['relreql'] = reql
-        return reql
-
     def _start_related(self, response):
         product = response.meta['product']
         reql = response.meta.get('relreql')
@@ -1154,25 +1102,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             meta=response.meta.copy(),
             callback=proc,
             dont_filter=True)
-
-    def _proc_mod_related(self, response):
-        product = response.meta['product']
-        text = response.body_as_unicode().encode('utf-8')
-        try:
-            jdata = json.loads(text)
-            modules = jdata['moduleList']
-            for m in modules:
-                html = m['html']
-                sel = Selector(text=html)
-                title, rel = self._parse_related(sel, response)
-                if 'related_products' not in product:
-                    product['related_products'] = {}
-                if rel:
-                    product['related_products'][title] = rel[:]
-        except ValueError:
-            self.log(
-                "Unable to parse JSON from %r." % response.request.url, ERROR)
-        return self._start_related(response)
 
     @staticmethod
     def _extract_product_info_json_alternative(response):
@@ -1413,36 +1342,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def _parse_bestseller_rank_alternative(selected_product):
         ranks = selected_product.get('itemSalesRanks')
         return ranks[0].get('rank') if ranks else None
-
-    def _parse_related(self, sel, response):
-        def full_url(url):
-            return urlparse.urljoin(response.url, url)
-        related = []
-        title = sel.xpath("//div[@class='parent-heading']/h4/text()").extract()
-        if not title:
-            title = sel.xpath("//p[@class='heading-a']/text()").extract()
-        if not title:
-            title = sel.xpath("//div/h1/text()").extract()
-        if title:
-            title = title[0]
-        els = sel.xpath("//ol/li//a[@class='tile-section']/p/..")
-        for el in els:
-            name = el.xpath("p/text()").extract()
-            if name:
-                name = name[0]
-            href = el.xpath("@href").extract()
-            if href:
-                href = href[0]
-                if 'dest=' in href:
-                    url_split = urlparse.urlsplit(href)
-                    query = urlparse.parse_qs(url_split.query)
-                    original_url = query.get('dest')
-                    if original_url:
-                        original_url = original_url[0]
-                else:
-                    original_url = href
-                related.append(RelatedProduct(name, full_url(original_url)))
-        return (title, related)
 
     def _after_location(self, response):
         if response.status == 200:
@@ -1798,7 +1697,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         original_prod_url = response.meta['product']['url']
         product = response.meta['product']
         product['_subitem'] = True
-        all_questions = product.get('all_questions', [])
+        recent_questions = product.get('recent_questions', [])
         current_qa_page = int(
             re.search('pageNumber\=(\d+)', response.url).group(1))
 
@@ -1807,18 +1706,18 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             # pagination reached its end?
             yield product
             return
-        all_questions.extend(content['questionDetails'])
+        recent_questions.extend(content['questionDetails'])
         if self.username:
-            for idx, q in enumerate(all_questions):
+            for idx, q in enumerate(recent_questions):
                 if not 'answeredByUsername' in q:
-                    all_questions[idx]['answeredByUsername'] = False
+                    recent_questions[idx]['answeredByUsername'] = False
                     if 'answers' in q:
                         for answer in q['answers']:
                             if 'userNickname' in answer:
                                 if self.username.strip().lower() == answer['userNickname'].strip().lower():
-                                    all_questions[idx]['answeredByUsername'] = True
+                                    recent_questions[idx]['answeredByUsername'] = True
 
-        product['all_questions'] = all_questions
+        product['recent_questions'] = recent_questions
         # this is for [future] debugging - do not remove!
         #for qa in content['questionDetails']:
         #    print; print;

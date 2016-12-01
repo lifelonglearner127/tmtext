@@ -1763,10 +1763,11 @@ class WalmartScraper(Scraper):
             if upc:
                 return upc
 
-            upc = self.product_choice_info_json.get("product", {}).get("wupc")
+            if self.product_choice_info_json:
+                upc = self.product_choice_info_json.get("product", {}).get("wupc")
 
-            if upc:
-                return upc
+                if upc:
+                    return upc
 
             if self.is_bundle_product:
                 return self._filter_key_fields("upc", None)
@@ -2960,7 +2961,7 @@ class WalmartScraper(Scraper):
         if warnings:
             warnings = warnings[0]
 
-            header = warnings.xpath('./b/text()')
+            header = self.tree_html.xpath("//section[contains(@class,'js-warnings')]/p[1]/b/text()")
 
             if not header:
                 header = warnings.xpath('./strong/text()')
@@ -2979,7 +2980,7 @@ class WalmartScraper(Scraper):
         if directions:
             directions = directions[0]
 
-            header = directions.xpath('./b/text()')
+            header = self.tree_html.xpath("//section[contains(@class,'js-directions')]/p[1]/b/text()")
 
             if not header:
                 header = directions.xpath('./strong/text()')
