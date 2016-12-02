@@ -492,19 +492,16 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         wcp.setupSC(response)
         try:
             categories = wcp._categories_hierarchy()
-            if categories:
-                cond_set_value(product, 'categories', categories)
+            cond_set_value(product, 'categories', categories)
         except Exception as e:
             self.log('Category not parsed: '+str(e), WARNING)
         try:
             department = wcp._category()
-            if department:
-                cond_set_value(product, 'department', department)
+            cond_set_value(product, 'department', department)
         except Exception as e:
             self.log('No department to parse: '+str(e), WARNING)
         categories_full_info = wcp.full_categories_with_links()
-        if categories_full_info:
-            cond_set_value(product, 'categories_full_info', categories_full_info)
+        cond_set_value(product, 'categories_full_info', categories_full_info)
 
         model = is_empty(
             response.xpath('//tr[@class="js-product-specs-row"]/'
