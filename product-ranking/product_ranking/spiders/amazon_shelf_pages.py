@@ -95,6 +95,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         # For goldbox deals
         self.deal_response_json_list = []
         self.deal_product_url_list = []
+        self.sorted_goldbox_deals_ids = []
 
     @staticmethod
     def valid_url(url):
@@ -396,6 +397,7 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         session_id = self._find_between(response.body, "ue_sid='", "',")
         sorted_deal_ids = self._find_between(response.body, '"sortedDealIDs" : [', "],").split(",")
         sorted_deal_ids = [deal_id.strip()[1:-1] for deal_id in sorted_deal_ids]
+        self.sorted_goldbox_deals_ids = sorted_deal_ids
         deal_targets_1 = []
         deal_targets_2 = []
         deal_targets_3 = []
@@ -430,20 +432,31 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
 
     def _parse_goldbox_deals(self, response):
         payload_list = response.meta.get("payload_list")
-        deal_product_url_list = []
-
+        deal_product_url_dict = {}
         self.deal_response_json_list.append(json.loads(response.body))
         # payload_list is empty, we done all 3 requests needed. Generate product urls.
         if not payload_list:
             for deal_response_json in self.deal_response_json_list:
-                for deal in deal_response_json["dealDetails"]:
-                    if deal_response_json["dealDetails"][deal]["egressUrl"]:
-                        deal_product_url_list.append(deal_response_json["dealDetails"][deal]["egressUrl"])
+                for deal in deal_response_json.get("dealDetails", {}):
+                    egressurl = deal_response_json.get("dealDetails", {}).get(deal, {}).get("egressUrl", '')
+                    if egressurl:
+                        deal_product_url_dict[deal] = egressurl
                     else:
-                        deal_product_url_list.append(
-                            "https://www.amazon.com/dp/" + deal_response_json["dealDetails"][deal]["impressionAsin"])
-            self.deal_product_url_list = deal_product_url_list
-            print "got final urls list", len(deal_product_url_list)
+                        deal_asin = deal_response_json.get("dealDetails", {}).get(deal, {}).get("impressionAsin", '')
+                        if deal_asin:
+                            deal_product_url_dict[deal] = "https://www.amazon.com/dp/{}".format(deal_asin)
+                        else:
+                            self.log("No asin forund for deal id {}".format(deal), WARNING)
+
+            # Generating a list with correctly ordered product urls, important for rankings
+            for deal_id in self.sorted_goldbox_deals_ids:
+                # We need only first 32 products in right order
+                try:
+                    self.deal_product_url_list.append(deal_product_url_dict[deal_id])
+                except:
+                    # TODO self.sorted_goldbox_deals_ids contains sorted ids for more than one page
+                    # may do more requests previously and get urls for next pages here
+                    pass
             yield Request(
                         self.valid_url(self.product_url),
                         meta={
