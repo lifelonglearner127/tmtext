@@ -620,12 +620,20 @@ class TescoScraper(Scraper):
 
         if self.bazaarvoice['BatchedResults']['q0']['Results']:
             stars = self.bazaarvoice['BatchedResults']['q0']['Results'][0]['FilteredReviewStatistics']['RatingDistribution']
-            rev=[]
+            rev = []
+
             for s in stars:
                 a = s['RatingValue']
                 b = s['Count']
-                rev.append([a,b])
-            if len(rev) > 0 :
+                rev.append([a, b])
+
+            showing_mark = [review[0] for review in rev]
+
+            for mark in range(1, 6):
+                if mark not in showing_mark:
+                    rev.append([mark, 0])
+
+            if len(rev) > 0:
                 return sorted(rev, key=lambda x: x[0])
 
         return None
@@ -635,6 +643,12 @@ class TescoScraper(Scraper):
     ##########################################
     ############### CONTAINER : SELLERS *************************************************************************88
     ##########################################
+    def _temp_price_cut(self):
+        if self.tree_html.xpath("//div[@class='price-info']//span[@class='saving']"):
+            return 1
+
+        return 0
+
     def _price(self):
         if self._owned_out_of_stock() == 1:
             return "out of stock - no price given"
@@ -736,7 +750,8 @@ class TescoScraper(Scraper):
     ##########################################
     def _categories(self):
         if self.scraper_version == "groceries":
-            return None
+            categories = self.tree_html.xpath("//ul[@id='breadcrumbNav']//li[@class='f']/a//text()")
+            return categories
 
         if self.scraper_version == "version-2":
             categories = self.tree_html.xpath("//div[@id='breadcrumb-v2']//ul/li//span[@itemprop='title']/text()")
@@ -750,9 +765,6 @@ class TescoScraper(Scraper):
         return out
 
     def _category_name(self):
-        if self.scraper_version == "groceries":
-            return None
-
         dept = self._categories()[-1]
         return dept
 
@@ -827,6 +839,7 @@ class TescoScraper(Scraper):
 
         # CONTAINER : SELLERS
         "price" : _price, \
+        "temp_price_cut": _temp_price_cut, \
         "price_amount": _price_amount, \
         "price_currency": _price_currency, \
 #        "in_stock" : _in_stock, \

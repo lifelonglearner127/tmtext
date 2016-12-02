@@ -31,7 +31,7 @@
     <field name="marketplace_out_of_stock" version="1.2"></field>
     <field name="site_online" version="1.2"></field>
     <field name="site_online_out_of_stock" version="1.2"></field>
-    <field name="categories" version="1.2"></field>
+    <field name="categories" version="1.3"></field>
     <field name="category_name" version="1.2"></field>
     <field name="scraper" version="1.2"></field>
     <field name="pdf_urls" version="1.2"></field>
@@ -44,6 +44,7 @@
     <field name="review_count" version="1.2"></field>
     <field name="max_review" version="1.2"></field>
     <field name="min_review" version="1.2"></field>
-    <field name="reviews" version="1.2"></field>
+    <field name="reviews" version="1.3"></field>
+    <field name="temp_price_cut" version="1.1"></field>
     <field name="brand" version="1.2"></field>
 </fields>
