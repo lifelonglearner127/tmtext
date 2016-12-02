@@ -50,7 +50,8 @@ INDEX_ERROR = "IndexError : The queue was really out of items, but the count was
 FETCH_FREQUENCY = 60
 
 def main( environment, scrape_queue_name, thread_id):
-    from log_history import LogHistory
+    sys.path.append('...')
+    from spiders_shared_code.log_history import LogHistory
 
     logger.info( "Starting thread %d" % thread_id)
     # establish the scrape queue

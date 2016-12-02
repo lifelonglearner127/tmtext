@@ -20,7 +20,8 @@ from lxml import html, etree
 from itertools import chain
 import time
 
-from queue_handler.log_history import LogHistory
+sys.path.append('..')
+from spiders_shared_code.log_history import LogHistory
 
 class Scraper():
 
