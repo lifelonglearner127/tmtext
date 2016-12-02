@@ -17,7 +17,7 @@ import time
 import requests
 from extract_data import Scraper
 from spiders_shared_code.macys_variants import MacysVariants
-sys.path.append('../product-ranking')
+sys.path.insert(1, os.path.join(sys.path[0], '../product-ranking'))
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 
