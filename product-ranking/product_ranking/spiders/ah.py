@@ -75,18 +75,22 @@ class AhProductsSpider(BaseProductsSpider):
             self.log('Error while parse single product. ERROR: %s.' % str(e),
                      ERROR)
             return
-        return self.__parse_product(response.meta['product'], product_info)
+        return self.__parse_product(response, product_info)
 
-    def __parse_product(self, product, product_info):
+    def __parse_product(self, response, product_info):
         try:
+            product = response.meta['product']
+            product['locale'] = 'nl_NL'
+            product['sku'] = product_info['id']
+            product['is_out_of_stock'] = product_info['availability']['orderable'] != True
             product['category'] = product_info['categoryName']
-            product['description'] = product_info['description']
+            product['description'] = product_info['details']['summary']
             if isinstance(product_info.get('images'), list):
                 a = [img['height'] for img in product_info['images']
                      if 'height' in img]
                 image = product_info['images'][a.index(max(a))]
-                product['title'] = image['title']
                 product['image_url'] = image['link']['href']
+                product['title'] = image['title']
             product['brand'] = product_info.get('brandName')
             product['price'] = Price(
                 priceCurrency=self.PRICE_CURRENCY,
