@@ -844,7 +844,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             ).extract()
         )
 
-
     def _build_buyer_reviews(self, response):
         overall_block = response.xpath(
             '//*[contains(@class, "review-summary")]'
@@ -873,105 +872,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                      .strip())
             buyer_reviews['rating_by_star'][int(_star)] = int(_reviews)
         return BuyerReviews(**buyer_reviews)
-
-    def _parse_marketplace_price_in_cart(self, response, offer_id):
-        """ Parses the price of marketplace, if it's displayed only "in cart" """
-        product_data = re.search('"product/data",\n(.*)', response.body, re.MULTILINE).group(1)
-        if product_data:
-            try:
-                product_data = json.loads(product_data)
-            except Exception as e:
-                self.log('Error while parsing product_data: %s' % str(e))
-        for json_seller in product_data.get('analyticsData', {}).get('productSellersMap', []):
-            offer_id_json = json_seller.get('offerId', None)
-            if offer_id_json and offer_id_json == offer_id:
-                return json_seller.get('price', None)
-
-    def _parse_marketplaces_from_page_html(self, response, product):
-        marketplaces = []
-        for seller in response.xpath(
-            "//ul[contains(@class, 'sellers-list')]"
-            "/li[contains(@class,'js-marketplace-seller')]"
-        ):
-            price = is_empty(seller.xpath(
-                ".//div[contains(@class, 'price')]/strong/text()"
-            ).re(FLOATING_POINT_RGEX))
-            if not price:
-                price = is_empty(seller.xpath(
-                    ".//strong[contains(@class, 'price')]/text()"
-                ).re(FLOATING_POINT_RGEX))
-            if not price:
-                # "in cart" price?
-                offer_id = seller.xpath('.//a[contains(@href, "offerId")]/@href').extract()
-                if offer_id:
-                    offer_id = re.search('offerId=([A-Za-z0-9]+)', offer_id[0])
-                    if offer_id:
-                        offer_id = offer_id.group(1)
-                else:
-                    offer_id = seller.xpath('.//*[@data-offer-id]/@data-offer-id').extract()
-                    if offer_id:
-                        offer_id = offer_id[0]
-                if offer_id:
-                    price = self._parse_marketplace_price_in_cart(response, offer_id)
-
-            name = is_empty(seller.xpath(
-                "div/div/div[contains(@class, 'name')]/a/text() |"
-                "div/div/div[contains(@class, 'name')]/a/b/text()"
-            ).extract())
-            if not name:
-                name = is_empty(seller.xpath(
-                        "div/div/div[contains(@class, 'name')]/text()"
-                ).extract()).strip()
-            if not name:
-                name = is_empty(seller.xpath(
-                    './/div[contains(@class, "seller-name")]/text()'
-                ).extract()).strip()
-            if not name:
-                name = is_empty(seller.xpath(
-                    './/div[contains(@class, "seller-name")]//a/text()'
-                ).extract()).strip()
-            if not name:
-                name = is_empty(seller.xpath(
-                    './/span[contains(@class,"copy-small")]/b/text()').extract())
-            marketplaces.append({
-                'currency': 'USD',
-                "price": float(price) if price else 0.00,
-                "name": name.strip()
-            })
-
-        if marketplaces:
-            cond_set_value(product, 'marketplace', marketplaces)
-        else:
-            name = is_empty(response.xpath(
-                '//div[@class="product-seller"]/div/span/b/text() |'
-                '//div[@class="product-seller"]/div/span/a/b/text()'
-            ).extract())
-            if not name:
-                name = is_empty(response.xpath(
-                    '//meta[@itemprop="seller"]/@content'
-                ).extract())
-            if not name:
-                name_json = re.search(r',\"sellerName\"\:\"(.*?)\",',
-                                      response.body)
-                if name_json:
-                    name = name_json.group(1).strip()
-
-            price_amount = is_empty(
-                response.xpath('//meta[@itemprop="price"]'
-                               '/@content').re(FLOATING_POINT_RGEX)
-            )
-            currency = is_empty(
-                response.xpath('//meta[@itemprop="priceCurrency"]'
-                               '/@content').extract(),
-                "USD"
-            )
-            if name:
-                marketplaces.append({
-                    'currency': currency,
-                    "price": float(price_amount) if price_amount else 0.00,
-                    "name": name
-                })
-            cond_set_value(product, 'marketplace', marketplaces)
 
     def _populate_from_html(self, response, product):
         cond_set_value(product, 'url', response.url)
@@ -1039,23 +939,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 (guess_brand_from_first_words(brand.strip()),)
             )
 
-        if not product.get("marketplace"):
-            seller = response.xpath(
-                '//div[@class="product-seller"]/div/' \
-                'span[contains(@class, "primary-seller")]/b/text()'
-            ).extract()
-            if not seller:
-                seller_all = response.xpath(
-                    '//div[@class="product-seller"]/div/' \
-                    'span[contains(@class, "primary-seller")]/a'
-                )
-                seller = seller_all.xpath('b/text()').extract()
-            if seller and "price" in product:
-                cond_set_value(product, 'marketplace', [{
-                    "price": product["price"],
-                    "name": is_empty(seller)
-                }])
-
         if not product.get('price'):
             currency = response.css('[itemprop=priceCurrency]::attr(content)')
             price = response.css('[itemprop=price]::attr(content)')
@@ -1074,8 +957,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 'upc',
                 response.xpath('//strong[@id="UPC_CODE"]/text()').extract()
             )
-
-        self._parse_marketplaces_from_page_html(response, product)
 
     def _gen_location_request(self, response):
         data = {"postalCode": ""}
@@ -1111,14 +992,23 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _extract_product_info_json_alternative(response):
-        # _JS_DATA_RE = re.compile(
-        #     r'window\.__WML_REDUX_INITIAL_STATE__\s*=\s*(\{.+?\})\s*;\s*<\/script>', re.DOTALL)
         js_data = response.xpath('//script[@id="content" and @type="application/json"]/text()')
         if js_data:
             text = js_data.extract()[0]
             try:
                 data = json.loads(text).get('content')
                 return data if data else None
+            except ValueError:
+                pass
+
+        _JS_DATA_RE = re.compile(
+            r'window\.__WML_REDUX_INITIAL_STATE__\s*=\s*(\{.+?\})\s*;\s*<\/script>', re.DOTALL)
+        js_data = re.search(_JS_DATA_RE, response.body_as_unicode().encode('utf-8'))
+        if js_data:
+            text = js_data.group(1)
+            try:
+                data = json.loads(text)
+                return data
             except ValueError:
                 pass
 
@@ -1851,6 +1741,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def _parse_marketplace_from_js(data):
         marketplaces = []
         marketplaces_data = data.get('buyingOptions', {}).get('marketplaceOptions', [])
+        if not marketplaces_data:
+            marketplaces_data = [data.get('buyingOptions', {})]
         for marketplace in marketplaces_data:
             price = marketplace.get('price', {}).get('currencyAmount')
             currency = marketplace.get('price', {}).get('currencyUnit')
