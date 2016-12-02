@@ -1,13 +1,3 @@
-<div id="feature-bullets" class="a-section collapsedFeatureBullets showAllFeatureBullets"> 
-<div id="fbExpandableSection" class="a-section a-spacing-none">
-<div id="fbExpandableSectionContent" class="a-section a-spacing-none">
-<ul class="a-vertical a-spacing-none">
-{% if bullet1 %}<li class="showHiddenFeatureBullets"><span class="a-list-item">{{ bullet1 }}</span></li>{% endif %}
-<li class="showHiddenFeatureBullets"><span class="a-list-item">{{ bullet2 }}</span></li>
-<li class="showHiddenFeatureBullets"><span class="a-list-item">{{ bullet3 }}</span></li>
-<li class="showHiddenFeatureBullets"><span class="a-list-item">{{ bullet4 }}</span></li>
-<li class="showHiddenFeatureBullets"><span class="a-list-item">{{ bullet5 }}</span></li>
+<ul>{% for bullet in bullets %}
+    <li>{{ bullet }}</li>{% endfor %}
 </ul>
-</div>
-</div>
-</div>

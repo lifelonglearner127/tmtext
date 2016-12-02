@@ -140,15 +140,20 @@ class WestmarineScraper(Scraper):
 
     def _description(self):
         arr = self.tree_html.xpath(
-            "//div[contains(@class,'pdp_warranty_options')]//text()"
+            "//div[contains(@class,'productDescription') and contains(@class,'content-type')]"
+            "/*[not(contains(@class, 'rebate-block'))]//text()"
         )
+        if len(arr) < 1:
+            arr = self.tree_html.xpath(
+                "//div[contains(@class,'productDescription') and contains(@class,'content-type')]//text()"
+            )
         arr = [r.strip() for r in arr if len(r.strip())>0]
         short_description = " ".join(arr)
 
         if short_description:
             return short_description
         else:
-            return self.long_description_help()
+            return None
 
     def long_description_help(self):
         arr = self.tree_html.xpath(
@@ -164,10 +169,7 @@ class WestmarineScraper(Scraper):
         return None
 
     def _long_description(self):
-        if self._description() == self.long_description_help():
-            return None
-        else:
-            return self.long_description_help()
+        return None
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -177,8 +179,10 @@ class WestmarineScraper(Scraper):
 
     def _image_urls(self):        
         image_list = self.tree_html.xpath(
-            "//ul[@id='carousel_alternate']//span[contains(@class,'thumb')]//img/@src"
+            "//ul[@id='carousel_alternate']//span[contains(@class,'thumb')]//img/@data-primaryimagesrc"
         )
+        if len(image_list) < 1:
+            image_list = self.tree_html.xpath("//div[@id='primary_image']//a[@id='imageLink']//img/@src")
         return image_list
 
     def _image_count(self):
