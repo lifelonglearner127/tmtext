@@ -630,6 +630,18 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         brs = self.buyer_reviews.parse_buyer_reviews_per_page(response)
         if brs.get('average_rating', None):
             if brs.get('rating_by_star', None):
+                for k,v in brs['rating_by_star'].items():
+                    if k not in ['1', '2', '3', '4', '5']:
+                        #manually parse
+                        arr = response.xpath('//span[contains(@class, "BVRRHistStarLabelText")]//span[contains(@class,"BVRRHistAbsLabel")]//text()').extract()
+                        stars = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+                        for i in range(5):
+                            num = arr[i*2]
+                            num = num.replace(',', '')
+                            num = re.findall(r'\d+', num)[0]
+                            stars[str(5-i)] = int(num.replace(',', ''))
+                        brs['rating_by_star'] = stars
+                        break
                 product['buyer_reviews'] = brs
 
         if not product.get('buyer_reviews', None) and response.status == 200:

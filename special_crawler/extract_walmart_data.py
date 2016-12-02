@@ -17,6 +17,7 @@ from HTMLParser import HTMLParser
 
 from extract_data import Scraper
 from compare_images import compare_images
+sys.path.append('..')
 from spiders_shared_code.walmart_variants import WalmartVariants
 
 def handle_badstatusline(f):
@@ -1195,7 +1196,8 @@ class WalmartScraper(Scraper):
                     possible_end_indexes.append(index)
 
             index = long_description.find('<h3>')
-            if index > -1 and not index == long_description.find('<h3>About'):
+            if index > -1 and not index in [long_description.find('<h3>About'), \
+                long_description.find('<h3>' + self._product_name_from_tree().split(',')[0])]:
                 possible_end_indexes.append(index)
 
             if possible_end_indexes:
@@ -1762,10 +1764,11 @@ class WalmartScraper(Scraper):
             if upc:
                 return upc
 
-            upc = self.product_choice_info_json.get("product", {}).get("wupc")
+            if self.product_choice_info_json:
+                upc = self.product_choice_info_json.get("product", {}).get("wupc")
 
-            if upc:
-                return upc
+                if upc:
+                    return upc
 
             if self.is_bundle_product:
                 return self._filter_key_fields("upc", None)
@@ -1949,6 +1952,14 @@ class WalmartScraper(Scraper):
 
     def _temporary_unavailable(self):
         return self.temporary_unavailable
+
+    def _temp_price_cut(self):
+        self._extract_product_info_json()
+
+        if self.product_info_json:
+            if self.product_info_json['buyingOptions'].get('strikethroughComparisonPrice'):
+                return 1
+        return 0
 
     def _shipping(self):
         flag = 'not available'
@@ -2785,7 +2796,7 @@ class WalmartScraper(Scraper):
                     if self.product_info_json["buyingOptions"]["displayArrivalDate"].lower() == "see dates in checkout":
                         return 0
 
-                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False and self.product_info_json.get('analyticsData').get('inStock'):
+                    if self.product_info_json['buyingOptions'].get('allVariantsOutOfStock') == False:
                         return 0
 
                     if self.product_info_json['buyingOptions'].get('available') == True:
@@ -2951,7 +2962,7 @@ class WalmartScraper(Scraper):
         if warnings:
             warnings = warnings[0]
 
-            header = warnings.xpath('./b/text()')
+            header = self.tree_html.xpath("//section[contains(@class,'js-warnings')]/p[1]/b/text()")
 
             if not header:
                 header = warnings.xpath('./strong/text()')
@@ -2970,7 +2981,7 @@ class WalmartScraper(Scraper):
         if directions:
             directions = directions[0]
 
-            header = directions.xpath('./b/text()')
+            header = self.tree_html.xpath("//section[contains(@class,'js-directions')]/p[1]/b/text()")
 
             if not header:
                 header = directions.xpath('./strong/text()')
@@ -3428,6 +3439,7 @@ class WalmartScraper(Scraper):
         "reviews": _reviews, \
         "no_longer_available": _no_longer_available, \
         "temporary_unavailable": _temporary_unavailable, \
+        "temp_price_cut": _temp_price_cut, \
         # video needs both page source and separate requests
         "video_count": _video_count, \
         "video_urls": _video_urls, \

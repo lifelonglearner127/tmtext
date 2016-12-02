@@ -60,3 +60,7 @@ upload_file.xml
 .env/
 product-ranking/amazon_marketplace/new/
 product-ranking/product_ranking/amazon_marketplace/
+
+master_category/_uploads
+master_category/converters/_results
+!master_category/requirements.txt
