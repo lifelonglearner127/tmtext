@@ -108,7 +108,7 @@ class ChewyProductsSpider(ProductsSpider):
 
     def _parse_is_out_of_stock(self, response):
         status = response.xpath(
-            '//*[@id="availability"]/span[text()="In Stock"]')
+            '//*[@id="availability"]/span[text()="In stock"]')
 
         return not bool(status)
 
