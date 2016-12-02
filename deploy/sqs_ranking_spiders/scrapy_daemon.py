@@ -5,6 +5,7 @@ import json
 import random
 import zipfile
 import unidecode
+import urlparse
 import string
 import redis
 import boto
@@ -17,6 +18,7 @@ import datetime
 from threading import Thread
 from multiprocessing.connection import Listener, AuthenticationError, Client
 from subprocess import Popen, PIPE, check_output, CalledProcessError, STDOUT
+
 
 # list of all available incoming SQS with tasks
 OUTPUT_QUEUE_NAME = 'sqs_ranking_spiders_output'
@@ -58,20 +60,18 @@ try:
     from sqs_ranking_spiders.remote_instance_starter import REPO_BASE_PATH,\
         logging, AMAZON_BUCKET_NAME
     from sqs_ranking_spiders import QUEUES_LIST
-    from product_ranking import statistics
 except ImportError:
     # we're in /home/spiders/repo
     from repo.remote_instance_starter import REPO_BASE_PATH, logging, \
         AMAZON_BUCKET_NAME
     from repo.remote_instance_starter import QUEUES_LIST
-    from product_ranking import statistics
+from product_ranking import statistics
 sys.path.insert(
     3, os.path.join(REPO_BASE_PATH, 'deploy', 'sqs_ranking_spiders'))
 from sqs_queue import SQS_Queue
 from libs import convert_json_to_csv
 from cache_layer import REDIS_HOST, REDIS_PORT, INSTANCES_COUNTER_REDIS_KEY, \
-    TASKS_COUNTER_REDIS_KEY, HANDLED_TASKS_SORTED_SET, \
-    JOBS_COUNTER_REDIS_KEY, JOBS_STATS_REDIS_KEY
+    JOBS_STATS_REDIS_KEY, JOBS_COUNTER_REDIS_KEY
 
 
 TEST_MODE = False  # if we should perform local file tests
@@ -85,11 +85,17 @@ FOLDERS_PATH = None
 CONVERT_TO_CSV = True
 
 # Connect to S3
-S3_CONN = boto.connect_s3(is_secure=False)  # uncomment if you are not using ssl
+try:
+    S3_CONN = boto.connect_s3(is_secure=False)
+except:
+    pass
+# uncomment if you are not using ssl
 
 # Get current bucket
-S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
-
+try:
+    S3_BUCKET = S3_CONN.get_bucket(AMAZON_BUCKET_NAME, validate=False)
+except:
+    pass
 # settings
 MAX_CONCURRENT_TASKS = 16  # tasks per instance, all with same git branch
 MAX_TRIES_TO_GET_TASK = 100  # tries to get max tasks for same branch
@@ -110,7 +116,7 @@ REQUIRED_SIGNALS = [
     [SIGNAL_SCRIPT_OPENED, 2 * 60],  # wait for signal that script started
     [SIGNAL_SPIDER_OPENED, 1 * 60],
     [SIGNAL_SPIDER_CLOSED, 24 * 60 * 60],
-    [SIGNAL_SCRIPT_CLOSED, 1 * 60]
+    [SIGNAL_SCRIPT_CLOSED, 1 * 160]
 ]
 
 # optional extension signals
@@ -125,7 +131,7 @@ CACHE_URL_GET = 'get_cache'  # url to retrieve task cache from
 CACHE_URL_SAVE = 'save_cache'  # to save cached result to
 CACHE_URL_STATS = 'complete_task'  # to have some stats about completed tasks
 CACHE_URL_FAIL = 'fail_task'  # to manage broken tasks
-CACHE_AUTH = ('admin', 'SD*/#n\%4a')
+CACHE_AUTH = ('admin', 'SD*/#n\%4c')
 CACHE_TIMEOUT = 15  # 15 seconds request timeout
 # key in task data to not retrieve cached result
 # if True, task will be executed even if there is result for it in cache
@@ -133,6 +139,11 @@ CACHE_GET_IGNORE_KEY = 'sqs_cache_get_ignore'
 # key in task data to not save cached result
 # if True, result will not be saved to cache
 CACHE_SAVE_IGNORE_KEY = 'sqs_cache_save_ignore'
+
+# File with required parameters for restarting scrapy daemon.
+OPTION_FILE_FOR_RESTART = '/tmp/scrapy_daemon_option_file.json'
+# Allow to restart scrapy daemon
+ENABLE_TO_RESTART_DAEMON = True
 
 
 # custom exceptions
@@ -165,15 +176,49 @@ def get_branch_for_task(task_data):
     return task_data.get('branch_name')
 
 
+class GlobalSettingsFromRedis(object):
+    """settings cache"""
+
+    __settings = None
+
+    @classmethod
+    def get_global_settings_from_sqs_cache(cls):
+        if cls.__settings is None:
+            try:
+                from cache_layer.cache_service import SqsCache
+                sqs = SqsCache()
+                logger.info('Getting global settings from redis cache.')
+                cls.__settings = sqs.get_settings()
+            except Exception as e:
+                cls.__settings = {}
+                logger.error(
+                    'Error while get global settings from redis cache.'
+                    ' ERROR: %s', str(e))
+        return cls.__settings
+
+    def get(self, key, default=None):
+        return self.get_global_settings_from_sqs_cache().get(key, default)
+global_settings_from_redis = GlobalSettingsFromRedis()
+
+
+def get_actual_branch_from_cache():
+    logger.info('Get default branch from redis cache.')
+    branch = global_settings_from_redis.get('remote_instance_branch',
+                                            'sc_production')
+    logger.info('Branch is %s', branch)
+    return branch or 'sc_production'
+
+
 def switch_branch_if_required(metadata):
-    branch_name = metadata.get('branch_name', 'sc_production')
+    default_branch = get_actual_branch_from_cache()
+    branch_name = metadata.get('branch_name', default_branch)
     if branch_name:
         logger.info("Checkout to branch %s", branch_name)
-        cmd = 'git checkout -f {branch} && git pull origin {branch} && '\
-              'git checkout sc_production -- task_id_generator.py && '\
-              'git checkout sc_production -- remote_instance_starter.py && '\
-              'git checkout sc_production -- upload_logs_to_s3.py'
-        cmd = cmd.format(branch=branch_name)
+        cmd = ('git fetch --all && git checkout -f {branch} && git pull origin {branch} && '
+               'git checkout {default_branch} -- task_id_generator.py && '
+               'git checkout {default_branch} -- remote_instance_starter.py &&'
+               ' git checkout {default_branch} -- upload_logs_to_s3.py')
+        cmd = cmd.format(branch=branch_name, default_branch=default_branch)
         logger.info("Run '%s'", cmd)
         os.system(cmd)
 
@@ -385,7 +430,8 @@ def compress_multiple_files(output_fname, *filenames):
     zf.close()
 
 
-def put_file_into_s3(bucket_name, fname, compress=True):
+def put_file_into_s3(bucket_name, fname, compress=True,
+                     is_add_file_time=False):
     if TEST_MODE:
         print 'Simulate put file to s3, %s' % fname
         return True
@@ -428,6 +474,9 @@ def put_file_into_s3(bucket_name, fname, compress=True):
     k = Key(S3_BUCKET)
     # Set path to file on S3
     k.key = folders
+    # Add file creation time to metadata
+    if is_add_file_time:
+        k.set_metadata('creation_time', get_file_cm_time(filename))
     try:
         # Upload file to S3
         k.set_contents_from_filename(fname)
@@ -495,6 +544,30 @@ def datetime_difference(d1, d2):
     """helper func to get difference between two dates in seconds"""
     res = d1 - d2
     return 86400 * res.days + res.seconds
+
+
+def install_geckodriver(
+        fallback_url='/mozilla/geckodriver/releases/download/v0.11.1/geckodriver-v0.11.1-linux64.tar.gz',
+        github_latest_url='https://github.com/mozilla/geckodriver/releases/latest'):
+    import lxml.html
+    import requests
+
+    response = requests.get(github_latest_url)
+
+    try:
+        link = lxml.html.fromstring(response.text).xpath(
+            '//a[contains(@href, ".tar.gz")][contains(@href, "linux64")]/@href')[0]
+    except IndexError:
+        print('error while downloading latest geckodriver')
+        link = fallback_url
+
+    if link.startswith('/'):
+        link = urlparse.urljoin('https://github.com', link)
+
+    os.system('wget "%s" -O _geckodriver.tar.gz' % link)
+    os.system('tar xf _geckodriver.tar.gz')
+    os.system('mv geckodriver /home/spiders/')
+    os.system('chmod +x /home/spiders/geckodriver')
 
 
 class ScrapyTask(object):
@@ -596,6 +669,16 @@ class ScrapyTask(object):
         s = sum([r['wait'] for r in self.required_signals.itervalues()])
         if self.current_signal:
             s += self.current_signal[1]['wait']
+
+        # This is needed when there are low number of jobs, so
+        if self.is_screenshot_job():
+            output_path = self.get_output_path()
+            jl_results_path = output_path + '.screenshot.jl'
+            if not os.path.exists(jl_results_path) or os.path.exists(
+                    jl_results_path) and not os.path.getsize(jl_results_path):
+                logger.warning('Screenshot output file does not exist, adding 90 seconds to max wait time')
+                # screenshot task not finished yet? add 90 seconds to max wait time
+                s += 90
         return s
 
     def _dispose(self):
@@ -704,6 +787,19 @@ class ScrapyTask(object):
         compress_multiple_files(output_fname, *log_files)
         return output_fname
 
+    @staticmethod
+    def _wait_for_screenshot_job_to_finish(output_path):
+        logger.warning('Screenshot output file does not exist, or is empty, waiting 120 seconds')
+        for x in xrange(12):  # wait max 120 seconds
+            time.sleep(10)
+            if os.path.exists(output_path + '.screenshot.jl'):
+                # check file size because empty files seem to get created immediately
+                if os.path.getsize(output_path + '.screenshot.jl') > 10:
+                    return True
+        logger.error('Screenshot output file does not exist, or is empty, giving up: %s' % (
+            output_path + '.screenshot.jl'))
+        return False
+
     def _finish(self):
         """
         called after scrapy process finished, or failed for some reason
@@ -742,19 +838,27 @@ class ScrapyTask(object):
             AMAZON_BUCKET_NAME, output_path+'.log')
 
         if self.is_screenshot_job():
-            if not os.path.exists(output_path + '.screenshot.jl'):
-                # screenshot task not finished yet? wait 30 seconds
-                time.sleep(30)
-            if not os.path.exists(output_path + '.screenshot.jl'):
-                logger.error('Screenshot output file does not exist: %s' % (
-                    output_path + '.screenshot.jl'))
+            jl_results_path = output_path + '.screenshot.jl'
+            url2screenshot_log_path = output_path+'.screenshot.log'
+            screenshot_finished = self._wait_for_screenshot_job_to_finish(output_path=output_path)
+            if not screenshot_finished:
+                logger.info('Screenshot job isnt finished, nothing to upload')
             else:
                 try:
                     put_file_into_s3(
-                        AMAZON_BUCKET_NAME, output_path+'.screenshot.jl')
-                    logger.info('Screenshot file uploaded: %s' % (output_path + '.screenshot.jl'))
+                        AMAZON_BUCKET_NAME, jl_results_path,
+                        is_add_file_time=True)
+                    logger.info('Screenshot file uploaded: %s' % (jl_results_path))
                 except Exception as ex:
                     logger.error('Screenshot file uploading error')
+                    logger.exception(ex)
+                try:
+                    put_file_into_s3(
+                        AMAZON_BUCKET_NAME, url2screenshot_log_path,
+                        is_add_file_time=True)
+                    logger.info('url2screenshot log file uploaded: %s' % (url2screenshot_log_path))
+                except Exception as ex:
+                    logger.error('url2screenshot log file uploading error')
                     logger.exception(ex)
 
         csv_data_key = None
@@ -1062,7 +1166,6 @@ class ScrapyTask(object):
         checks signal to finish in allowed time, otherwise raises error
         and stops scrapy process, logs duration for given signal
         """
-        start_time = datetime.datetime.utcnow()
         while not self._stop_signal:  # run through all signals
             step_time_start = datetime.datetime.utcnow()
             next_signal = self._get_next_signal(step_time_start)
@@ -1076,8 +1179,7 @@ class ScrapyTask(object):
             except FlowError as ex:
                 self._signal_failed(next_signal, datetime.datetime.utcnow(), ex)
                 break
-        finish_time = datetime.datetime.utcnow()
-        self.finish_date = datetime_difference(finish_time, start_time)
+        self.finish_date = datetime.datetime.utcnow()
         self._finish()
 
     def start(self):
@@ -1096,7 +1198,7 @@ class ScrapyTask(object):
             self._push_simmetrica_events()
             first_signal = self._get_next_signal(start_time)
         except Exception as ex:
-            logger.warning('Error occured while starting scrapy: %s', ex)
+            logger.warning('Error occurred while starting scrapy: %s', ex)
             return False
         try:
             self._run_signal(first_signal, start_time)
@@ -1137,7 +1239,9 @@ class ScrapyTask(object):
         return save_task_result_to_cache(self.task_data, self.get_output_path())
 
     def is_screenshot_job(self):
-        return self.task_data.get('cmd_args', {}).get('make_screenshot_for_url', False)
+        cmd_args = self.task_data.get('cmd_args', {})
+        # leave "make_screenshot_for_url" for backward compatibility
+        return cmd_args.get('make_screenshot_for_url', cmd_args.get('make_screenshot', False))
 
     def start_screenshot_job_if_needed(self):
         """ Starts a new url2screenshot local job, if needed """
@@ -1146,16 +1250,18 @@ class ScrapyTask(object):
             url2scrape = self.task_data.get('product_url', self.task_data.get('url', None))
         # TODO: searchterm jobs? checkout scrapers?
         if url2scrape:
-            scrapy_path = "/home/spiders/virtual_environment/bin/scrapy"
-            python_path = "/home/spiders/virtual_environment/bin/python"
+            # scrapy_path = "/home/spiders/virtual_environment/bin/scrapy"
+            # python_path = "/home/spiders/virtual_environment/bin/python"
+            output_path = self.get_output_path()
             cmd = ('cd {repo_base_path}/product-ranking'
-                   ' && {python_path} {scrapy_path} crawl url2screenshot_products'
+                   ' && scrapy crawl url2screenshot_products'
                    ' -a product_url="{url2scrape}" '
-                   ' -a width=1280 -a height=1024 -a timeout=60 '
+                   ' -a width=1280 -a height=1024 -a timeout=90 '
+                   ' -s LOG_FILE="{log_file}"'
                    ' -o "{output_file}" &').format(
-                       repo_base_path=REPO_BASE_PATH, python_path=python_path,
-                       scrapy_path=scrapy_path, url2scrape=url2scrape,
-                       output_file=self.get_output_path()+'.screenshot.jl')
+                       repo_base_path=REPO_BASE_PATH,
+                       log_file=output_path+'.screenshot.log', url2scrape=url2scrape,
+                       output_file=output_path+'.screenshot.jl')
             logger.info('Starting a new parallel screenshot job: %s' % cmd)
             os.system(cmd)  # use Popen instead?
 
@@ -1201,6 +1307,21 @@ class ScrapyTask(object):
         with open(progress_fname, 'w') as fh:
             fh.write(json.dumps(msg, default=json_serializer))
         put_file_into_s3(AMAZON_BUCKET_NAME, progress_fname)
+
+
+def get_file_cm_time(file_path):
+    """Get unix timestamp of create date of file or last modify date."""
+    try:
+        create_time = os.path.getctime(file_path)
+        if create_time:
+            return int(create_time)
+        modify_time = os.path.getmtime(file_path)
+        if modify_time:
+            return int(modify_time)
+    except (OSError, ValueError) as e:
+        logger.error('Error while get creation time of file. ERROR: %s.',
+                     str(e))
+    return 0
 
 
 def get_task_result_from_cache(task, queue_name):
@@ -1285,6 +1406,9 @@ def log_failed_task(task):
 def notify_cache(task, is_from_cache=False):
     """send request to cache (for statistics)"""
     url = CACHE_HOST + CACHE_URL_STATS
+    json_task = json.dumps(task)
+    logger.info('Notify cache task: %s', json_task)
+    data = dict(task=json_task, is_from_cache=json.dumps(is_from_cache))
     if 'start_time' in task and task['start_time']:
         if ('finish_time' in task and not task['finish_time']) or \
                 'finish_time' not in task:
@@ -1354,6 +1478,161 @@ def store_tasks_metrics(task, redis_db):
                        JOBS_STATS_REDIS_KEY, generated_key, e)
 
 
+def get_instance_billing_limit_time():
+    try:
+        return int(global_settings_from_redis.get('instance_max_billing_time'))
+    except Exception as e:
+        logger.warning('Error while getting instance billing '
+                       'time limit from redis cache. Limitation is disabled.'
+                       ' ERROR: %s.', str(e))
+    return 0
+
+
+def shut_down_instance_if_swap_used():
+    """ Shuts down the instance of swap file is used heavily
+    :return:
+    """
+    stats = statistics.report_statistics()
+    swap_usage_total = stats.get('swap_usage_total', None)
+    ram_usage_total = stats.get('ram_usage_total', None)
+
+    logger.info('Checking swap and RAM usage...')
+
+    if swap_usage_total and ram_usage_total:
+        try:
+            swap_usage_total = float(ram_usage_total)
+            ram_usage_total = float(ram_usage_total)
+        except:
+            logger.error('Swap and RAM usage check failed during float() conversion')
+            return
+
+        if ram_usage_total > 70:
+            if swap_usage_total > 10:
+                # we're swapping very badly!
+                logger.error('Swap and RAM usage is too high! Terminating instance')
+                try:
+                    conn = boto.connect_ec2()
+                    instance_id = get_instance_metadata()['instance-id']
+                    conn.terminate_instances(instance_id, decrement_capacity=True)
+                except Exception as e:
+                    logger.error('Failed to terminate instance, exception: %s' % str(e))
+
+
+def get_uptime():
+    """
+    Get instance billing time.
+    """
+    output = Popen('cat /proc/uptime', shell=True, stdout=PIPE)
+    return float(output.communicate()[0].split()[0])
+
+
+def restart_scrapy_daemon():
+    """
+    Restart this script after update source code.
+    """
+    global REPO_BASE_PATH
+    logger.info('Scrapy daemon restarting...')
+    arguments = ['python'] + [REPO_BASE_PATH+'/deploy/sqs_ranking_spiders/scrapy_daemon.py'] + sys.argv[1:]
+    if 'restarted' not in arguments:
+        arguments += ['restarted']
+    else:
+        logger.error('Error while restarting scrapy daemon. '
+                     'Already restarted.')
+        return
+    logging.info('Starting %s with args %s' % (sys.executable, arguments))
+    os.execv(sys.executable, arguments)
+
+
+def daemon_is_restarted():
+    """
+    Check this script is restarted copy or not.
+    """
+    return 'restarted' in sys.argv
+
+
+def load_options_after_restart():
+    """
+    Load previous script options.
+    """
+    try:
+        with open(OPTION_FILE_FOR_RESTART, 'r') as f:
+            options = f.read()
+            print '\n\n', options, '\n\n'
+        os.remove(OPTION_FILE_FOR_RESTART)
+        return json.loads(options)
+    except Exception as e:
+        logger.error('Error while load old options for scrapy daemon. '
+                     'ERROR: %s' % str(e))
+    return {}
+
+
+def save_options_for_restart(options):
+    """
+    Save script options for another copy.
+    """
+    try:
+        options = json.dumps(options)
+        with open(OPTION_FILE_FOR_RESTART, 'w') as f:
+            f.write(options)
+    except Exception as e:
+        logger.error('Error while save options for scrapy daemon. '
+                     'ERROR: %s' % str(e))
+
+
+def prepare_queue_after_restart(options):
+    """
+    Load queue and message from disk after restart.
+    """
+    if TEST_MODE:
+        global task_number
+        try:
+            task_number
+        except NameError:
+            task_number = -1
+        task_number += 1
+        fake_class = SQS_Queue(options['queue']['name'])
+        return options['task_data'], fake_class
+    # Connection to SQS
+    queue = SQS_Queue(
+        name=options['queue']['queue_name'],
+        region=options['queue']['conn_region']
+    )
+    # Create a new message
+    queue.currentM = queue.q.message_class()
+    # Fill message
+    queue.currentM.body = options['queue']['body']
+    queue.currentM.attributes = options['queue']['attributes']
+    queue.currentM.md5_message_attributes = \
+        options['queue']['md5_message_attributes']
+    queue.currentM.message_attributes = options['queue']['message_attributes']
+    queue.currentM.receipt_handle = options['queue']['receipt_handle']
+    queue.currentM.id = options['queue']['id']
+    queue.currentM.md5 = options['queue']['md5']
+    return options['task_data'], queue
+
+
+def store_queue_for_restart(queue):
+    """
+    Save queue options and message to disk for load after restart.
+    """
+    if TEST_MODE:
+        return queue.__dict__
+    if not queue.currentM:
+        logger.error('Message was not found in queue for restart daemon.')
+        return None
+    return {
+        'conn_region': queue.conn.region.name,
+        'queue_name': queue.q.name,
+        'body': queue.currentM.get_body(),
+        'attributes': queue.currentM.attributes,
+        'md5_message_attributes': queue.currentM.md5_message_attributes,
+        'message_attributes': queue.currentM.message_attributes,
+        'receipt_handle': queue.currentM.receipt_handle,
+        'id': queue.currentM.id,
+        'md5': queue.currentM.md5
+    }
+
+
 def main():
     if not TEST_MODE:
         instance_meta = get_instance_metadata()
@@ -1363,12 +1642,30 @@ def main():
     set_global_variables_from_data_file()
     redis_db = connect_to_redis_database(redis_host=REDIS_HOST,
                                          redis_port=REDIS_PORT)
-    # increment quantity of instances spinned up during the day.
-    increment_metric_counter(INSTANCES_COUNTER_REDIS_KEY, redis_db)
-    max_tries = MAX_TRIES_TO_GET_TASK
+    global MAX_CONCURRENT_TASKS
     tasks_taken = []
-    branch = None
-
+    options = {}
+    if not daemon_is_restarted():
+        # increment quantity of instances spinned up during the day.
+        increment_metric_counter(INSTANCES_COUNTER_REDIS_KEY, redis_db)
+        max_tries = MAX_TRIES_TO_GET_TASK
+        branch = None
+        task_data = None
+        queue = None
+        skip_first_getting_task = False
+    else:
+        options = load_options_after_restart()
+        try:
+            max_tries = int(options.get('max_tries', MAX_TRIES_TO_GET_TASK))
+        except Exception as e:
+            logger.warning('Error while load `max_tries` from old options. '
+                           'ERROR: %s' % str(e))
+            max_tries = MAX_TRIES_TO_GET_TASK
+        branch = options.get('branch')
+        task_data, queue = prepare_queue_after_restart(options)
+        MAX_CONCURRENT_TASKS = options.get('MAX_CONCURRENT_TASKS')
+        TASK_QUEUE_NAME = options.get('TASK_QUEUE_NAME')
+        skip_first_getting_task = True
     try:
         listener = Listener(LISTENER_ADDRESS)
     except AuthenticationError:
@@ -1382,6 +1679,13 @@ def main():
         logger.debug("Create job output dir %s",
                      os.path.expanduser(JOB_OUTPUT_PATH))
         os.makedirs(os.path.expanduser(JOB_OUTPUT_PATH))
+
+    def is_end_billing_instance_time():
+        if not get_instance_billing_limit_time() or \
+                get_uptime() > get_instance_billing_limit_time():
+            return False
+        logger.info('Instance execution time limit.')
+        return True
 
     def is_all_tasks_finished(tasks):
         return all([_.is_finished() for _ in tasks])
@@ -1414,29 +1718,42 @@ def main():
     # names of the queues in SQS, ordered by priority
     q_keys = ['urgent', 'production', 'test', 'dev']
     q_ind = 0  # index of current queue
-    global MAX_CONCURRENT_TASKS
     # try to get tasks, untill max number of tasks is reached or
     # max number of tries to get tasks is reached
-    while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries:
-        TASK_QUEUE_NAME = QUEUES_LIST[q_keys[q_ind]]
-        logger.info('Trying to get task from %s, try #%s',
-                    TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
-        if TEST_MODE:
-            msg = test_read_msg_from_fs(TASK_QUEUE_NAME)
-        else:
-            msg = read_msg_from_sqs(
-                TASK_QUEUE_NAME, max_tries+add_timeout, attributes)
-        max_tries -= 1
-        if msg is None:  # no task
-            # if failed to get task from current queue,
-            # then change it to the following value in a circle
-            if q_ind < len(q_keys) - 1:
-                q_ind += 1
+    while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries and \
+            not is_end_billing_instance_time():
+        # Skip if needed getting first task. After restarting task
+        # in old options. For work scrapy daemon with a new source code
+        # from new branch and with old task.
+        if not skip_first_getting_task or \
+                not task_data:
+            TASK_QUEUE_NAME = QUEUES_LIST[q_keys[q_ind]]
+            logger.info('Trying to get task from %s, try #%s',
+                        TASK_QUEUE_NAME, MAX_TRIES_TO_GET_TASK - max_tries)
+            if TEST_MODE:
+                msg = test_read_msg_from_fs(TASK_QUEUE_NAME)
             else:
-                q_ind = 0
-            time.sleep(3)
+                msg = read_msg_from_sqs(
+                    TASK_QUEUE_NAME, max_tries+add_timeout, attributes)
+            max_tries -= 1
+            if msg is None:  # no task
+                # if failed to get task from current queue,
+                # then change it to the following value in a circle
+                if q_ind < len(q_keys) - 1:
+                    q_ind += 1
+                else:
+                    q_ind = 0
+                time.sleep(3)
+                continue
+            task_data, queue = msg
+        else:
+            skip_first_getting_task = False
+        if not task_data or not queue:
             continue
-        task_data, queue = msg
+        if not tasks_taken and ENABLE_TO_RESTART_DAEMON:
+            options['MAX_CONCURRENT_TASKS'] = MAX_CONCURRENT_TASKS
+            options['max_tries'] = max_tries
+            options['TASK_QUEUE_NAME'] = TASK_QUEUE_NAME
         if 'url' in task_data and 'searchterms_str' not in task_data \
                 and not 'checkout' in task_data['site']:
             if MAX_CONCURRENT_TASKS < 70:  # increase num of parallel jobs
@@ -1471,7 +1788,7 @@ def main():
         elif (task_data['site'] in ('dockers', 'nike')) or 'checkout' in task_data['site']:
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
             logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
-        elif task_data.get('cmd_args', {}).get('make_screenshot_for_url', False):
+        elif ScrapyTask(None, task_data, None).is_screenshot_job():
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
             logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of the parallel url2screenshot job' % MAX_CONCURRENT_TASKS)
 
@@ -1487,8 +1804,18 @@ def main():
         if not tasks_taken:
             # get git branch from first task, all tasks should
             # be in the same branch
-            branch = get_branch_for_task(task_data)
-            switch_branch_if_required(task_data)
+            if not daemon_is_restarted():
+                branch = get_branch_for_task(task_data)
+                switch_branch_if_required(task_data)
+                options['branch'] = branch
+                options['task_data'] = task_data
+                options['queue'] = store_queue_for_restart(queue)
+                if branch and \
+                        get_actual_branch_from_cache() != branch and \
+                        ENABLE_TO_RESTART_DAEMON:
+                    save_options_for_restart(options)
+                    listener.close()
+                    restart_scrapy_daemon()
         elif not is_same_branch(get_branch_for_task(task_data), branch):
             # make sure all tasks are in same branch
             queue.reset_message()
@@ -1534,7 +1861,10 @@ def main():
     # wait until all tasks are finished or max wait time is reached
     # report each task progress after that and kill all tasks
     #  which are not finished in time
-    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 61
+    for _t in tasks_taken:
+        logger.info('For task %s, max allowed running time is %ss', (
+            _t.task_data.get('task_id'), _t.get_total_wait_time()))
+    max_wait_time = max([t.get_total_wait_time() for t in tasks_taken]) or 160
     logger.info('Max allowed running time is %ss', max_wait_time)
     step_time = 30
     # loop where we wait for all the tasks to complete
@@ -1546,6 +1876,7 @@ def main():
             send_tasks_status(tasks_taken)
             time.sleep(step_time)
             logger.info('Server statistics: ' + str(statistics.report_statistics()))
+            shut_down_instance_if_swap_used()
         else:
             logger.error('Some of the tasks not finished in allowed time, '
                          'stopping them.')
@@ -1557,6 +1888,8 @@ def main():
     listener.close()
     log_tasks_results(tasks_taken)
 
+    # TODO: wait till all Selenium processes are finished? implement or not?
+
     # write finish marker
     logger.info('Scrapy daemon finished.')
 
@@ -1564,19 +1897,33 @@ def main():
 def prepare_test_data():
     # only for local-filesystem tests!
     # prepare incoming tasks
-    tasks = [dict(
-        task_id=4443, site='walmart', searchterms_str='iphone',
-        server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
-    ), dict(
-        task_id=4444, site='amazon', searchterms_str='iphone',
-        server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 1}, attributes={'SentTimestamp': '1443426145373'}
-    ), dict(
-        task_id=4445, site='target', searchterms_str='iphone',
-        server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
-    )]
+    tasks = [
+    #     dict(
+    #     task_id=4443, site='walmart', searchterms_str='iphone',
+    #     server_name='test_server_name', with_best_seller_ranking=True,
+    #     cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
+    # ), dict(
+    #     task_id=4444, site='amazon', searchterms_str='iphone',
+    #     server_name='test_server_name', with_best_seller_ranking=True,
+    #     cmd_args={'quantity': 1}, attributes={'SentTimestamp': '1443426145373'}
+    # ), dict(
+    #     task_id=4445, site='target', searchterms_str='iphone',
+    #     server_name='test_server_name', with_best_seller_ranking=True,
+    #     cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
+    # ),
+        dict(
+            task_id=4446, branch_name='Bug12886ScreenshotIssueFixed', site='walmart',
+            url='https://www.walmart.com/ip/Peppa-Pig-Family-Figures-6-Pack/44012553',
+            server_name='test_server_name', with_best_seller_ranking=False,
+            cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
+        ),
+        dict(
+            task_id=4447, branch_name='Bug12886ScreenshotIssueFixed', site='amazon',
+            url='https://www.amazon.com/Anki-000-00048-Cozmo/dp/B01GA1298S/',
+            server_name='test_server_name', with_best_seller_ranking=False,
+            cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
+        ),
+    ]
     files = [open('/tmp/' + q, 'w') for q in QUEUES_LIST.itervalues()]
     for fh in files:
         for msg in tasks:
@@ -1598,6 +1945,8 @@ def log_free_disk_space():
 
 
 if __name__ == '__main__':
+    if daemon_is_restarted():
+        logger.info('Scrapy daemon is restarted.')
     if 'test' in [a.lower().strip() for a in sys.argv]:
         TEST_MODE = True
         prepare_test_data()
@@ -1609,6 +1958,10 @@ if __name__ == '__main__':
             from repo.fake_sqs_queue_class import SQS_Queue
         logger.debug('TEST MODE ON')
         logger.debug('Faking the SQS_Queue class')
+
+    # TODO: move the whole code for downloading geckodriver to post_starter_root.py and rebuild the AMI image
+    if not os.path.exists('/home/spiders/geckodriver'):
+        install_geckodriver()
 
     try:
         main()

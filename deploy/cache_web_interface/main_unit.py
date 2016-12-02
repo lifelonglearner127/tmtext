@@ -14,6 +14,7 @@ sys.path.insert(1, os.path.join(CWD, '..'))
 
 from cache_layer.cache_service import SqsCache
 from cache_layer import CACHE_QUEUES_LIST
+from sqs_ranking_spiders.libs import get_autoscale_groups
 
 
 AMAZON_BUCKET_NAME = 'spyder-bucket'
@@ -138,7 +139,7 @@ def stats():
         context = dict()
         conn = boto.ec2.autoscale.AutoScaleConnection()
         groups = conn.get_all_groups(
-            names=['SCCluster1', 'SCCluster2', 'SCCluster3', 'SCCluster4'])
+            names=get_autoscale_groups()['groups'])
         instances = {group.name: len(group.instances) for group in groups}
         context['running_instances'] = sum(instances.itervalues())
         context['running_instances_info'] = instances
@@ -321,6 +322,53 @@ def fail_task():
 # ###################################
 # ######### CACHE METHODS END #######
 # ###################################
+
+
+@app.route('/common-settings', methods=['GET', 'POST'])
+def common_settings():
+    if request.method == 'GET':
+        try:
+            context = dict()
+            context['settings'] = cache.get_settings()
+            return render_template('settings.html', **context)
+        except Exception as e:
+            return str(e)
+    # Store settings
+    form = request.form
+    try:
+        if 'action' not in form:
+            raise Exception('Unknown action.')
+        # Set default branch
+        if form['action'] == 'remote_instance_branch':
+            branch = form.get('branch', '').strip()
+            if not branch:
+                raise Exception('Branch cannot be blank.')
+            # Check branch for existing
+            os.system('git fetch -q')
+            cmd = 'git branch -a | grep -P "[/\s]%s$"'
+            with os.popen(cmd % branch) as stdout:
+                branch_exist = stdout.read()
+            if not branch_exist.strip('\n\r '):
+                raise Exception('This branch does not exists.')
+            cache.set_settings('remote_instance_branch', branch)
+            return 'OK'
+        # End default branch
+        # Set instance execution time
+        elif form['action'] == 'instance_max_billing_time':
+            try:
+                limitation = int(form.get('limitation', 0))
+            except ValueError:
+                raise Exception('Instance limit of execution time must'
+                                ' be integer.')
+            if limitation < 0:
+                raise Exception('Instance limit of execution time can\'t'
+                                ' have negative value.')
+            cache.set_settings('instance_max_billing_time', limitation)
+            return 'OK'
+        # End instance execution time
+        raise Exception('Unknown action.')
+    except Exception as e:
+        return str(e)
 
 
 if __name__ == '__main__':

@@ -15,14 +15,20 @@ import threading
 import urllib
 from datetime import datetime
 
+import boto
+from boto.s3.key import Key
+from boto.s3.connection import S3Connection
+
+import os
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+import crawler_service
+
 # initialize the logger
 logger = logging.getLogger('basic_logger')
 logger.setLevel(logging.DEBUG)
 fh = logging.StreamHandler()
 fh.setLevel(logging.DEBUG)
 logger.addHandler(fh)
-
-# from config import scrape_queue_name
 
 queue_names = {
     "Development": "dev_scrape", 
@@ -35,16 +41,31 @@ queue_names = {
     "Walmartondemand": "walmart-ondemand_scrape",
     "WalmartMPHome": "walmart-mp_home_scrape",
     "WalmartScrapeTO": "walmart-mp_scrapeto",
-    "Productioncustomer": "production_customer_scrape"
+    "Productioncustomer": "production_customer_scrape",
+    "wm_production_scrape": "wm_production_scrape"
 }
 
 INDEX_ERROR = "IndexError : The queue was really out of items, but the count was lagging so it tried to run again."
 
+FETCH_FREQUENCY = 60
+
 def main( environment, scrape_queue_name, thread_id):
+    sys.path.append('...')
+    from spiders_shared_code.log_history import LogHistory
+
     logger.info( "Starting thread %d" % thread_id)
     # establish the scrape queue
     sqs_scrape = SQS_Queue( scrape_queue_name)
-    base = "http://localhost/get_data?url=%s"
+
+    last_fetch = datetime.min
+
+    proxy = None
+    walmart_proxy_crawlera = None
+    walmart_proxy_proxyrain = None
+    walmart_proxy_shaderio = None
+    walmart_proxy_luminati = None
+    api_key = None
+    walmart_api_key = None
 
     # Continually pull off the SQS Scrape Queue
     while True:
@@ -78,49 +99,120 @@ def main( environment, scrape_queue_name, thread_id):
                 server_name = message_json['server_name']
                 product_id = message_json['product_id']
                 event = message_json['event']
-                
+
+                additional_requests = message_json.get('additional_requests')
+
+                LogHistory.start_log('CH')
+
+                LogHistory.add_log('url', url)
+                LogHistory.add_log('server_hostname', message_json.get('server_hostname'))
+                LogHistory.add_log('pl_name', message_json.get('pl_name'))
+
                 logger.info("Received: thread %d server %s url %s" % ( thread_id, server_name, url))
 
-                for i in range(3):
+                if (datetime.now() - last_fetch).seconds > FETCH_FREQUENCY:
+                    amazon_bucket_name = 'ch-settings'
+                    key_file = 'proxy_settings.cfg'
+
+                    try:
+                        S3_CONN = boto.connect_s3(is_secure=False)
+                        S3_BUCKET = S3_CONN.get_bucket(amazon_bucket_name, validate=False)
+                        k = Key(S3_BUCKET)
+                        k.key = key_file
+                        key_dict = json.loads(k.get_contents_as_string())
+
+                        proxy = key_dict['default']
+                        walmart_proxy_crawlera = int(key_dict['walmart']['crawlera'])
+                        walmart_proxy_proxyrain = int(key_dict['walmart']['proxyrain'])
+                        walmart_proxy_shaderio = int(key_dict['walmart']['shaderio'])
+                        walmart_proxy_luminati = int(key_dict['walmart']['luminati'])
+                        api_key = key_dict['crawlera']['api_keys']['default']
+                        walmart_api_key = key_dict['crawlera']['api_keys']['walmart']
+
+                        logger.info('FETCHED PROXY CONFIG')
+                        last_fetch = datetime.now()
+
+                    except Exception as e:
+                        logger.warn(e)
+                        logger.warn('FAILED TO FETCH PROXY CONFIG')
+
+                max_retries = 3
+
+                for i in range(1, max_retries):
                     # Scrape the page using the scraper running on localhost
                     get_start = time.time()
-                    output_text = requests.get(base%(urllib.quote(url))).text
-                    get_end = time.time()
 
-                    # Add the processing fields to the return object and re-serialize it
                     try:
-                        output_json = json.loads(output_text)
+                        site = crawler_service.extract_domain(url)
+                        LogHistory.add_log('scraper_type', site)
+
+                        # create scraper class for requested site
+                        site_scraper = crawler_service.SUPPORTED_SITES[site](url=url,
+                            bot = None,
+                            additional_requests = additional_requests,
+                            api_key = api_key,
+                            walmart_api_key = walmart_api_key,
+                            proxy = proxy,
+                            walmart_proxy_crawlera = walmart_proxy_crawlera,
+                            walmart_proxy_proxyrain = walmart_proxy_proxyrain,
+                            walmart_proxy_shaderio = walmart_proxy_shaderio,
+                            walmart_proxy_luminati = walmart_proxy_luminati)
+
+                        output_json = site_scraper.product_info()
+                        LogHistory.add_log('failure_type', output_json.get('failure_type'))
+
                     except Exception as e:
+                        get_end = time.time()
+
+                        print 'Error extracting output json', type(e), e
+                        logger.warn(e)
+
                         output_json = {
                             "error":str(e),
                             "date":datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
                             "status":"failure",
                             "page_attributes":{"loaded_in_seconds":round(get_end-get_start,2)}}
-                    output_json['attempt'] = i+1
-                    if not "error" in output_json:
+
+                    output_json['attempt'] = i
+
+                    # If scraper response was successful, we're done
+                    if not output_json.get('status') == 'failure':
                         break
-                    time.sleep( 1)
+
+                    # If failure was due to proxies
+                    if output_json.get('failure_type') in ['max_retries', 'proxy']:
+                        logger.info('GOT FAILURE TYPE %s for %s - RETRY %s' % (output_json.get('failure_type'), url, i))
+                        max_retries = 10
+                        # back off incrementally
+                        time.sleep(60*i)
+                    else:
+                        max_retries = 3
+                        time.sleep(1)
 
                 output_json['url'] = url
                 output_json['site_id'] = site_id
                 output_json['product_id'] = product_id
                 output_json['event'] = event
-                output_message = json.dumps( output_json)
+
+                output_message = json.dumps(output_json)
                 #print(output_message)
 
                 # Add the scraped page to the processing queue ...
                 sqs_process = SQS_Queue('%s_process'%server_name)
-                sqs_process.put( output_message)
+                sqs_process.put( output_message, url)
                 # ... and remove it from the scrape queue
                 sqs_scrape.task_done()
                 
                 logger.info("Sent: thread %d server %s url %s" % ( thread_id, server_name, url))
 
+                # Send Log History
+                LogHistory.send_log()
+
             except Exception as e:
                 logger.warn(e)
                 sqs_scrape.reset_message()
 
-        time.sleep( 1)
+        time.sleep(1)
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

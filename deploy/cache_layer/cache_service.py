@@ -46,6 +46,11 @@ class SqsCache(object):
         'term': 'term',
         'term_cached': 'term_cached'
     }
+    REDIS_SETTINGS_KEY = 'settings'  # hash
+    REDIS_SETTINGS_FIELDS = {
+        'remote_instance_branch': 'remote_instance_branch',
+        'instance_max_billing_time': 'instance_max_billing_time'
+    }
 
     def __init__(self, db=None, timeout=10):
         self.db = db if db else StrictRedis(REDIS_HOST, REDIS_PORT,
@@ -471,7 +476,6 @@ class SqsCache(object):
                 }
             }
         """
-        data = ()
         page = 0
         result = {
             'url': 0,
@@ -546,11 +550,27 @@ class SqsCache(object):
         executions_time_tmp = self.db.hgetall(self.REDIS_TASK_EXECUTION_TIME)
         result = defaultdict(dict)
         for key, val in executions_time_tmp.items():
-            key = key.split(':')
-            if time_from > int(key):
+            _time, _type = key.split(':')
+            if time_from > int(_time):
                 continue
-            if time_to < int(key):
+            if time_to < int(_time):
                 break
-            result[key[0]][key[1]] = val
+            result[_time][_type] = val
         return OrderedDict([(k, float(v['sum']) / float(v['count']))
                             for k, v in result.items()])
+
+    def set_settings(self, key, value):
+        """
+        Set option value by field name (key) in settings hash.
+        """
+        return self.db.hset(self.REDIS_SETTINGS_KEY,
+                            self.REDIS_SETTINGS_FIELDS[key], value)
+
+    def get_settings(self, key=None):
+        """
+        Get option from settings hash.
+        """
+        if key is None:
+            return self.db.hgetall(self.REDIS_SETTINGS_KEY)
+        return self.db.hget(self.REDIS_SETTINGS_KEY,
+                            self.REDIS_SETTINGS_FIELDS[key])

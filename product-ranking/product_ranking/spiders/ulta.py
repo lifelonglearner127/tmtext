@@ -7,7 +7,6 @@ import urllib
 
 import requests
 from scrapy.http import Request
-from scrapy.conf import settings
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
@@ -110,8 +109,10 @@ class UltaProductSpider(BaseProductsSpider):
 
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
-
-        model = response.css('.product-item-no ::text').re('\d{3,20}')[0]
+        try:
+            model = response.xpath('//*[@id="itemNumber"]/text()').re('\d{3,20}')[0]
+        except:
+            model = None
         prod['model'] = model
         product_id = re.findall('\?productId=([a-zA-Z0-9]+)', response.url)
         new_meta = response.meta.copy()
@@ -226,7 +227,7 @@ class UltaProductSpider(BaseProductsSpider):
                     url = requests.get(links[j], timeout=5).url or links[j]
                     products.append(RelatedProduct(titles[j].strip(), url))
                 except Exception:
-                    self.log("Can't get related product!!!")                
+                    self.log("Can't get related product!!!")
             related_products[key] = products
         product['related_products'] = related_products
 

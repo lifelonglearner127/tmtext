@@ -34,9 +34,9 @@ class DockersScraper(Scraper):
         self.rev_list = None
         self.is_review_checked = False
         self.dk = DockersVariants()
-        self.proxy_host = "proxy.crawlera.com"
-        self.proxy_port = "8010"
-        self.proxy_auth = HTTPProxyAuth("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
+        self.proxy_host = self.CRAWLERA_HOST
+        self.proxy_port = self.CRAWLERA_PORT
+        self.proxy_auth = HTTPProxyAuth(self.CRAWLERA_APIKEY, "")
         self.proxies = {"http": "http://{}:{}/".format(self.proxy_host, self.proxy_port)}
         self.proxy_config = {"proxy_auth": self.proxy_auth, "proxies": self.proxies}
 
@@ -64,7 +64,9 @@ class DockersScraper(Scraper):
         try:
             itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
 
-            if itemtype != "product":
+            if itemtype == 'website':
+                pass
+            elif itemtype != "product":
                 raise Exception()
 
             self._extract_product_json()
@@ -83,16 +85,23 @@ class DockersScraper(Scraper):
 
         try:
             product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\r")
+            product_json_text = re.findall(r'\((\{.*?\})\)', product_json_text, re.DOTALL)[0]
             self.product_json = json.loads(product_json_text)
         except:
             try:
                 product_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var pageData = ", ";\n")
+                product_json_text = re.findall(r'\((\{.*?\})\)', product_json_text, re.DOTALL)[0]
                 self.product_json = json.loads(product_json_text)
             except:
                 self.product_json = None
 
         try:
-            buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
+            # buy_stack_json_text = self._find_between(" " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")), "var buyStackJSON = '", "'; var productCodeMaster =").replace("\'", '"').replace('\\\\"', "")
+            buy_stack_json_text = re.findall(
+                r"var buyStackJSON = '(.*?})';",
+                " " . join(self.tree_html.xpath("//script[@type='text/javascript']/text()")),
+                re.DOTALL)[0].replace("\'", '"').replace('\\\\"', "")
+
             self.buy_stack_json = json.loads(buy_stack_json_text)
         except:
             self.buy_stack_json = None
@@ -181,6 +190,13 @@ class DockersScraper(Scraper):
 
     def _swatches(self):
         return self.dk._swatches()
+
+    def _no_longer_available(self):
+        itemtype = self.tree_html.xpath('//meta[@property="og:type"]/@content')[0].strip()
+
+        if itemtype == 'website':
+            return 1
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -436,6 +452,7 @@ class DockersScraper(Scraper):
         "long_description" : _long_description, \
         "variants": _variants, \
         "swatches": _swatches, \
+        "no_longer_available": _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\

@@ -5,17 +5,14 @@
 import os
 import sys
 import datetime
-from time import time
 from multiprocessing.connection import Client
 from socket import error as socket_error
 
 from scrapy import signals
 from scrapy.exceptions import NotConfigured
 from scrapy.xlib.pydispatch import dispatcher
-import boto
 from boto.s3.connection import S3Connection
 from s3peat import S3Bucket, sync_to_s3  # pip install s3peat
-import workerpool  # pip install workerpool
 
 import cache
 import settings
@@ -164,7 +161,7 @@ class RequestsCounter(object):
         spider_stats = spider.crawler.stats.get_stats()
         try:
             request_count = int(spider_stats.get('downloader/request_count'))
-        except ValueError:
+        except (ValueError, TypeError):
             request_count = 0
         if request_count:
             try:
@@ -371,7 +368,6 @@ class IPCollector(object):
 
 
 if __name__ == '__main__':
-    from pprint import pprint
     from boto.s3.connection import S3Connection
     conn = S3Connection()
     bucket = conn.get_bucket(bucket_name)

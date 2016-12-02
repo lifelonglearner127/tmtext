@@ -1,5 +1,5 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
+from future_builtins import zip
 
 import json
 import re
@@ -193,7 +193,8 @@ class TescoProductsSpider(BaseProductsSpider):
         cond_set(prod, 'locale', ['en-GB'])
 
         title = response.xpath(
-            '//h1[contains(@class, "pdp_main_title")]/text()').extract()
+            '//div[contains(@class,"descriptionDetails")]//h1//span[@data-title="true"]//text()'
+        ).extract()
         cond_set(prod, 'title', title)
 
         try:
@@ -230,10 +231,13 @@ class TescoProductsSpider(BaseProductsSpider):
             product["is_out_of_stock"] = not productdata["available"]
             product["url"] = "http://www.tesco.com/groceries/product/details/"\
                 "?id=" + str(productdata["productId"])
-            product["price"] = Price(
-                price=productdata["price"], 
-                priceCurrency="GBP"
-            )
+            try:
+                product["price"] = Price(
+                    price=productdata["price"],
+                    priceCurrency="GBP"
+                )
+            except:
+                pass
             product["image_url"] = productdata["mediumImage"]
             product["search_term"] = ""
             product["brand"] = is_empty(self.brand_from_title(product["title"]))

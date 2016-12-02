@@ -6,13 +6,12 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider
-from selenium.common.exceptions import WebDriverException
-from product_ranking.items import CheckoutProductItem
 
 import scrapy
 
 is_empty = lambda x, y="": x[0] if x else y
 delete_commas = lambda x: x.replace(',', '')
+
 
 class MacysSpider(BaseCheckoutSpider):
     name = 'macys_checkout_products'
@@ -23,38 +22,11 @@ class MacysSpider(BaseCheckoutSpider):
     def start_requests(self):
         yield scrapy.Request('http://www1.macys.com/', dont_filter=True)
 
-    def _parse_item(self, product):
-        item = CheckoutProductItem()
-        name = self._get_item_name(product)
-        item['name'] = name.strip() if name else name
-        item['id'] = self._get_item_id(product)
-        price = self._get_item_price(product)
-        item['price_on_page'] = self._get_item_price_on_page(product)
-        color = self._get_item_color(product)
-        quantity = self._get_item_quantity(product)
-
-        if quantity and price:
-            quantity = int(quantity)
-            item['price'] = float(price) / quantity
-            item['quantity'] = quantity
-            item['requested_color'] = self.requested_color
-            item['requested_quantity_not_available'] = quantity != self.current_quantity
-
-        if color:
-            item['color'] = color
-
-        item['requested_color_not_available'] = (
-            color and self.requested_color and
-            (self.requested_color.lower() != color.lower()))
-        return item
-
     def _get_colors_names(self):
         xpath = '//div[@class="colorsSection"]//li[@data-title]'
-        condition = EC.presence_of_all_elements_located(
-            (By.XPATH, xpath))
-        swatches = self.wait.until(condition)
-        self.log('Colors matched')
-        return [x.get_attribute("data-title").lower() for x in swatches]
+        swatches = self._find_by_xpath(xpath)
+        colors = [x.get_attribute("data-title").lower() for x in swatches]
+        return colors if colors else [None]
 
     def select_size(self, element=None):
         size_attribute_xpath = (
@@ -163,7 +135,9 @@ class MacysSpider(BaseCheckoutSpider):
                         '*//*[@class="itemTotal"]/text()').re('\$(.*)')))
 
     def _get_item_price_on_page(self, item):
-        return delete_commas(min(item.xpath('//*[@class="colPrice"]//text()').re('\$(.*)')))
+        prices = item.xpath('//*[@class="colPrice"]//text()').re('\$(.*)')
+        prices = [float(delete_commas(price)) for price in prices]
+        return min(prices)
 
     def _get_item_color(self, item):
         return delete_commas(is_empty(item.xpath(
@@ -215,3 +189,8 @@ class MacysSpider(BaseCheckoutSpider):
 
     def _get_promo_invalid_message(self):
         return self.driver.find_element_by_id('promoCodeError').text
+
+    def _parse_no_longer_available(self):
+        return bool(self._find_by_xpath(
+            '//*[contains(., "This product is currently unavailable") or '
+            'contains(., "This product is no longer available.")]'))

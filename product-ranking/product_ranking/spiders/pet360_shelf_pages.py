@@ -1,5 +1,4 @@
 import re
-import urlparse
 
 from scrapy.http import Request
 

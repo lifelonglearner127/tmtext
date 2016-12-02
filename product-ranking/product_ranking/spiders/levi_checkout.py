@@ -5,7 +5,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from product_ranking.checkout_base import BaseCheckoutSpider, retry_func
 from product_ranking.items import CheckoutProductItem
-import selenium.webdriver.support.ui as ui
 from scrapy.log import WARNING
 
 import scrapy
@@ -118,7 +117,7 @@ class LeviSpider(BaseCheckoutSpider):
             item['requested_color'] = self.requested_color
 
         if color:
-            item['color'] = color
+            item['color'] = color.upper()
 
         item['requested_color_not_available'] = (
             color and self.requested_color and
@@ -174,9 +173,10 @@ class LeviSpider(BaseCheckoutSpider):
                               color_attributes_xpath,
                               element)
 
-        time.sleep(1)
+        time.sleep(4)
 
     def select_waist(self, element=None):
+        time.sleep(4)
         size_attribute_xpath = (
             '*//*[@id="pdp-buystack-waist-values"]'
             '/li[contains(@class,"selected") and not(contains(@class, "not-available"))]')
@@ -188,6 +188,7 @@ class LeviSpider(BaseCheckoutSpider):
                               element)
 
     def select_length(self, element=None):
+        time.sleep(4)
         size_attribute_xpath = (
             '*//*[@id="pdp-buystack-length-values"]'
             '/li[contains(@class,"selected") and not(contains(@class, "not-available"))]')
@@ -216,6 +217,13 @@ class LeviSpider(BaseCheckoutSpider):
         if promp_window and promp_window[0].is_displayed():
             promp_window[0].click()
             time.sleep(2)
+
+        promp_window = self._find_by_xpath('//*[@id="oo_close_prompt" and @aria-label="Close dialog"]')
+
+        if promp_window and promp_window[0].is_displayed():
+            promp_window[0].click()
+            time.sleep(2)
+
 
         more_colors_button = self._find_by_xpath(
             '//*[@class="color-swatch more-button"]')

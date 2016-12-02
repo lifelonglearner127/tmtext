@@ -7,9 +7,10 @@ import string
 import urllib
 import itertools
 import random
+import urlparse
 
 import requests
-from scrapy.http import Request, FormRequest
+from scrapy.http import Request
 from scrapy import Selector
 from scrapy.log import WARNING
 
@@ -629,6 +630,18 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         brs = self.buyer_reviews.parse_buyer_reviews_per_page(response)
         if brs.get('average_rating', None):
             if brs.get('rating_by_star', None):
+                for k,v in brs['rating_by_star'].items():
+                    if k not in ['1', '2', '3', '4', '5']:
+                        #manually parse
+                        arr = response.xpath('//span[contains(@class, "BVRRHistStarLabelText")]//span[contains(@class,"BVRRHistAbsLabel")]//text()').extract()
+                        stars = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+                        for i in range(5):
+                            num = arr[i*2]
+                            num = num.replace(',', '')
+                            num = re.findall(r'\d+', num)[0]
+                            stars[str(5-i)] = int(num.replace(',', ''))
+                        brs['rating_by_star'] = stars
+                        break
                 product['buyer_reviews'] = brs
 
         if not product.get('buyer_reviews', None) and response.status == 200:
@@ -701,16 +714,23 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                        #dont_filter=True)
 
     def _scrape_product_links(self, response):
-        links = response.xpath(
+        urls = response.xpath(
             '//li[contains(@class,"productDisplay")]//div[@class="productDisplay_image"]/a/@href'
         ).extract()
-        products = re.findall(
-            'var filterResults\s?=\s?jq\.parseJSON\(\'(\{.+?\})\'\);', response.body, re.MULTILINE)[0].decode(
-            'string-escape')
-        products = json.loads(products).get('organicZoneInfo').get('records')
-        links += [product.get('pdpUrl') for product in products]
-        for link in links:
-            yield 'http://www.jcpenney.com'+link, SiteProductItem()
+
+        try:
+            products = re.findall(
+                'var\s?filterResults\s?=\s?jq\.parseJSON\([\'\"](\{.+?\})[\'\"]\);', response.body, re.MULTILINE)[0].decode(
+                'string-escape')
+            products = json.loads(products).get('organicZoneInfo').get('records')
+
+            urls += [product.get('pdpUrl') for product in products]
+        except Exception as e:
+            self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
+            self.log('Extracted urls using xpath: %s' % (len(urls)), WARNING)
+
+        for link in urls:
+            yield urlparse.urljoin(response.url, link), SiteProductItem()
 
     def _scrape_total_matches(self, response):
         if response.xpath('//div[@class="null_result_holder"]').extract():

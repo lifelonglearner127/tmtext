@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 import json
-from scrapy import Spider, FormRequest, Item, Field, Request
+from scrapy import FormRequest, Item, Field, Request
 from product_ranking.spiders import BaseProductsSpider
 
 
@@ -163,4 +163,4 @@ class InstagramHashtagsSpider(BaseProductsSpider):
         request.meta['csrf_token'] = csrf_token
         request.meta['url'] = url
         return request
-    
+

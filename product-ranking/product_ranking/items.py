@@ -2,7 +2,6 @@
 
 import collections
 import decimal
-import re
 
 from scrapy.item import Item, Field
 
@@ -294,6 +293,8 @@ class SiteProductItem(Item):
     tcin = Field()  # Target.com online item number, for example - Online Item #: 16390220
     origin = Field()  # Target.com origin field, describes if item is imported or not
 
+    temporary_unavailable = Field()  # 12696, returns true if 'We're having technical difficulties..' text on the page
+
 
 class DiscountCoupon(Item):
     # Search metadata.
@@ -316,6 +317,7 @@ class DiscountCoupon(Item):
     conditions = Field()  # (Applies to select items priced $50 or more...)
     promo_code = Field()  # (For ex: ALL4KIDS, 3BUYMORE, etc)
 
+
 class CheckoutProductItem(Item):
     name = Field()
     id = Field()
@@ -337,3 +339,14 @@ class CheckoutProductItem(Item):
     is_promo_code_valid = Field() # True if promo_code changed _order_total price, else False
     promo_invalid_message = Field() # Message returned by website if promo code is invalid, ticket #11720
     url = Field()
+
+
+class ScreenshotItem(Item):
+    url = Field()
+    image = Field()
+    via_proxy = Field()  # IP via webdriver
+    site_settings = Field()  # site-specified settings that were activated (if any)
+    creation_datetime = Field()
+
+    def __repr__(self):
+        return '[image data]'  # don't dump image data into logs

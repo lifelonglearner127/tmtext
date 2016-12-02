@@ -71,7 +71,7 @@ def delete_old_cache_data(cache):
 
 
 def save_instances_number(cache):
-    return cache.save_today_instances_count(cache.get_today_jobs())
+    return cache.save_today_instances_count(cache.get_today_instances())
 
 
 def save_jobs_number(cache):

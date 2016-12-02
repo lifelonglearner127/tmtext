@@ -1,10 +1,8 @@
 import lxml.html
-from itertools import product
 import json
 import re
-from lxml import html, etree
+from lxml import html
 import itertools
-import yaml
 
 
 class WayfairVariants(object):

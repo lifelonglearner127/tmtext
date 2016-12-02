@@ -40,7 +40,7 @@ class StaplesScraper(Scraper):
         self.reviews = None
         self.feature_count = None
         self.features = None
-        self.video_urls = None
+        self.video_urls = -1
         self.video_count = None
         self.pdf_urls = None
         self.pdf_count = None
@@ -51,6 +51,7 @@ class StaplesScraper(Scraper):
         self.is_variant_info_jsons_checked = False
         self.description = None
         self.long_description = None
+        self.bullet_list = None
 
     def check_url_format(self):
         # for ex: http://www.staples.com/Epson-WorkForce-Pro-WF-4630-Color-Inkjet-All-in-One-Printer/product_242602?cmArea=home_box1
@@ -175,7 +176,7 @@ class StaplesScraper(Scraper):
     def _model_meta(self):
         return None
 
-    def _description(self):
+    def _shelf_description(self):
         self._get_long_and_short_description()
 
         if self.description:
@@ -187,36 +188,37 @@ class StaplesScraper(Scraper):
         if self.long_description and not self.long_description == self.description:
             return self.long_description
 
-    def _get_long_and_short_description(self):
-        paragraph = ""
-        headliner = ""
-        bullet_list = ""
-        expanded_descr = ""
+    def _description(self):
+        self._get_long_and_short_description()
 
-        description_info_list = self.product_info_json["description"]["details"]
+        if self.bullet_list:
+            return self.bullet_list
+        return None
+
+    def _get_long_and_short_description(self):
+        paragraph = ''
+        headliner = ''
+        bullet_list = ''
+
+        description_info_list = self.product_info_json['description']['details']
 
         for description_info in description_info_list:
-            if description_info["description_type"]["name"] == 'Paragraph':
-                for t in description_info["text"]:
-                    paragraph += (t["value"] + "\n")
+            description_name = description_info['description_type']['name']
+            text = description_info['text']
 
-            if description_info["description_type"]["name"] == 'Bullets':
-                for t in description_info["text"]:
-                    bullet_list += (t["value"] + "\n")
+            if description_name == 'Paragraph':
+                paragraph = '<br/>'.join(map(lambda _: _['value'], text))
 
-            if description_info["description_type"]["name"] == 'Headliner':
-                for t in description_info["text"]:
-                    headliner += (t["value"] + "\n")
+            elif description_name == 'Bullets':
+                bullet_list = '<ul>%s</ul>' % ''.join(
+                    map(lambda _: '<li>%s</li>' % _['value'], text))
 
-            if description_info["description_type"]["name"] == 'Expanded Descr':
-                for t in description_info["text"]:
-                    expanded_descr += (t["value"] + "\n")
+            elif description_name == 'Headliner':
+                headliner = '<br/>'.join(map(lambda _: _['value'], text))
 
-        description = headliner + paragraph + bullet_list
-        long_description = expanded_descr
-
-        self.description = description
-        self.long_description = long_description
+        self.description = headliner
+        self.long_description = paragraph
+        self.bullet_list = bullet_list
 
     def _variants(self):
         vrs = []
@@ -267,14 +269,38 @@ class StaplesScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        return None
+        if self.video_urls != -1:
+            return self.video_urls
+
+        video_urls = []
+        try:
+            wc_url = "http://content.webcollage.net/staples/power-page?ird=true&channel-product-id=%s"\
+                     % self._product_id()
+            contents = urllib.urlopen(wc_url).read()
+            contents = re.findall(r'html:(.*?)\}\;', contents, re.DOTALL)[0]
+            contents = contents[contents.find('<'):contents.rfind('>')+1]
+            tree = html.fromstring(contents)
+            video_json = json.loads(
+                tree.xpath("//div[contains(@class,'wc-json-data')]//text()")[0].
+                replace('\\"', '"'))
+            videos = video_json['videos']
+            for video in videos:
+                v_url = "http://media.webcollage.net/rwvfp/wc%s" % video['src']['src']
+                video_urls.append(v_url)
+        except:
+            pass
+        if len(video_urls) == 0:
+            self.video_urls = None
+        else:
+            self.video_urls = video_urls
+        return self.video_urls
 
     def _video_count(self):
-        urls = self._video_urls()
-
-        if urls:
-            return len(urls)
-        return 0
+        if self.video_urls == -1:
+            self._video_urls()
+        if self.video_urls is None:
+            return 0
+        return len(self.video_urls)
 
     def _pdf_urls(self):
         pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
@@ -408,10 +434,12 @@ class StaplesScraper(Scraper):
     ##########################################
     def _price(self):
         price = self.tree_html.xpath("//span[@itemprop='price' and @class='SEOFinalPrice']/text()")[0].strip()
+        if "$" not in price:
+            price = "$" + price
         return price
 
     def _price_amount(self):
-        return float(self._price()[1:])
+        return float(self._price().replace("$", ""))
 
     def _price_currency(self):
         return "USD"
@@ -518,6 +546,7 @@ class StaplesScraper(Scraper):
         "model" : _model, \
         "upc" : _upc, \
         "long_description" : _long_description, \
+        "shelf_description": _shelf_description, \
         "variants" : _variants, \
         "no_longer_available" : _no_longer_available, \
 

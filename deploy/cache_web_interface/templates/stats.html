@@ -25,7 +25,7 @@
             <li><a href="/killer">Killer logs</a></li>
             <li><a href="/settings">Cache settings</a></li>
             <li><a href="/clear_cache">Clear cache</a></li>
-            <li><a href="/fcgi">Reload server</a></li>
+            <li><a href="/common-settings">Common Settings</a></li>
         </ul>
     </header>
 </div>
@@ -68,7 +68,7 @@
             </ul>
         </li>
         <li>Today requests count: {{ today_requests_count }}</li>
-        <li>Task executed avg time for last hour: {{ last_hour_executed_tasks_time_avg }}</li>
+        <li>Task executed avg time for last hour: {{ last_hour_executed_tasks_time_avg|round(2) }} sec</li>
         <li>Last hour executed tasks: {{ last_hour_executed_tasks }}</li>
         <li>Task left in queues: {{ left_tasks_total }}
             <ul>
