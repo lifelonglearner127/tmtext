@@ -270,7 +270,10 @@ class WalmartVariants(object):
                         variant_product_id = item['buyingOptions']['usItemId']
                         variant_product_url = original_product_canonical_link[:original_product_canonical_link.rfind("/") + 1] + str(variant_product_id)
                         stockstatus_for_variants["url"] = variant_product_url
-                        stockstatus_for_variants["in_stock"] = item['buyingOptions']['available']
+                        if item['buyingOptions'].get('offerId'):
+                            stockstatus_for_variants["in_stock"] = item['buyingOptions']['available']
+                        else:
+                            stockstatus_for_variants["in_stock"] = False
                     except Exception, e:
                         stockstatus_for_variants["url"] = None
                         stockstatus_for_variants["in_stock"] = False
