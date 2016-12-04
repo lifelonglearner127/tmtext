@@ -429,7 +429,7 @@ class WestmarineScraper(Scraper):
     def _brand(self):
         try:
             data = json.loads(
-                self.tree_html.xpath("//script[contains(@type, 'application/ld+json')]//text()")[0]
+                self.tree_html.xpath("//script[contains(@type, 'application/ld+json')]//text()")[0].replace('\t', '')
             )
             brand = data["brand"]["name"]
             return brand
@@ -439,7 +439,7 @@ class WestmarineScraper(Scraper):
     def _mfg(self):
         try:
             data = json.loads(
-                self.tree_html.xpath("//script[contains(@type, 'application/ld+json')]//text()")[0]
+                self.tree_html.xpath("//script[contains(@type, 'application/ld+json')]//text()")[0].replace('\t', '')
             )
             mfg = data["mpn"]
             return mfg

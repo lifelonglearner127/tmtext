@@ -97,6 +97,7 @@ from extract_walmartgrocery_data import WalmartGroceryScraper
 from extract_samsung_data import SamsungScraper
 from extract_autozone_data import AutozoneScraper
 from extract_sears_data import SearsScraper
+from extract_pepboys_data import PepboysScraper
 from extract_jet_data import JetScraper
 from extract_westmarine_data import WestmarineScraper
 from extract_shoprite_data import ShopriteScraper
@@ -208,6 +209,8 @@ SUPPORTED_SITES = {
                     "pet360" : Pet360Scraper,
                     "petsmart" : PetsmartScraper,
                     "walmartgrocery" : WalmartGroceryScraper,
+                    "sears" : SearsScraper,
+                    "pepboys" : PepboysScraper,
                     "samsung" : SamsungScraper,
                     "shopritedelivers": ShopritedeliversScraper,
                     "autozone" : AutozoneScraper,
