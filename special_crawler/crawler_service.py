@@ -97,6 +97,7 @@ from extract_walmartgrocery_data import WalmartGroceryScraper
 from extract_samsung_data import SamsungScraper
 from extract_autozone_data import AutozoneScraper
 from extract_sears_data import SearsScraper
+from extract_pepboys_data import PepboysScraper
 from extract_jet_data import JetScraper
 from extract_westmarine_data import WestmarineScraper
 from extract_shoprite_data import ShopriteScraper
@@ -112,6 +113,7 @@ from lxml import etree, html
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import time
+import requests
 import collections
 
 app = Flask(__name__)
@@ -207,6 +209,8 @@ SUPPORTED_SITES = {
                     "pet360" : Pet360Scraper,
                     "petsmart" : PetsmartScraper,
                     "walmartgrocery" : WalmartGroceryScraper,
+                    "sears" : SearsScraper,
+                    "pepboys" : PepboysScraper,
                     "samsung" : SamsungScraper,
                     "shopritedelivers": ShopritedeliversScraper,
                     "autozone" : AutozoneScraper,
@@ -216,6 +220,10 @@ SUPPORTED_SITES = {
                     "shoprite" : ShopriteScraper,
                     "hayneedle" : HayneedleScraper
                     }
+
+log_response = {}
+time_start = None
+time_end = None
 
 # add logger
 # using StreamHandler ensures that the log is sent to stderr to be picked up by uwsgi log
@@ -436,7 +444,11 @@ def get_data():
     validate_args(request_arguments)
 
     url = request_arguments['url'][0]
+    log_response['url'] = url
+
     site = request_arguments['site'][0]
+    log_response['scraper_type'] = site
+
     if 'bot' in request_arguments:
         bot = request_arguments['bot'][0]
     else:
@@ -490,9 +502,10 @@ def get_data():
     if 'data' not in request_arguments:
         # return all data if there are no "data" parameters
         try:
-            ret_uf = site_scraper.product_info()
+            ret_uf = site_scraper.product_info(log_response=log_response)
             # make natural sort for amazon data
             ret, is_ret_sorted = natural_sort(ret_uf) if site == 'amazon' else (ret_uf, False)
+            log_response['failure_type'] = ret.get('failure_type')
         except HTTPError as ex:
             raise GatewayError("Error communicating with site crawled.")
     else:
@@ -625,9 +638,42 @@ def handle_internal_error(error):
     response.status_code = 500
     return response
 
+@app.before_request
+def initialize():
+    global time_start
+    time_start = time.time()
+
+    global log_response
+    log_response = {
+        'scraper': 'CH',
+        'scraper_type': None,
+        'server_name': None,
+        'pl_name': None,
+        'url': None,
+        'response_time': None,
+        'failure_type': None,
+        'date': None,
+        'duration': None,
+        'page_size': None,
+        'instance': None,
+        'errors': []
+    }
+
 # post request logger
 @app.after_request
 def post_request_logging(response):
+    time_end = time.time()
+
+    global log_response
+
+    log_response['duration'] = round(time_end - time_start, 2)
+    log_response['date'] = time.time()
+
+    try:
+        log_response['instance'] = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
+            timeout = 10).content
+    except Exception as e:
+        print 'Failed to get instance metadata:', e
 
     app.logger.info(json.dumps({
         "date" : datetime.datetime.today().ctime(),
@@ -638,6 +684,15 @@ def post_request_logging(response):
         "request_headers" : ', '.join([': '.join(x) for x in request.headers])
         })
     )
+
+    try:
+        requests.post('http://10.0.0.22:49215',
+            auth=('chlogstash', 'shijtarkecBekekdetloaxod'),
+            headers = {'Content-type': 'application/json'},
+            data = json.dumps(log_response),
+            timeout = 10)
+    except Exception as e:
+        print 'Failed to send logs:', e
 
     return response
 

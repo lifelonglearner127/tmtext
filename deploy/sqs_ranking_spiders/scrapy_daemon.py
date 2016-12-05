@@ -5,6 +5,7 @@ import json
 import random
 import zipfile
 import unidecode
+import urlparse
 import string
 import redis
 import boto
@@ -543,6 +544,30 @@ def datetime_difference(d1, d2):
     """helper func to get difference between two dates in seconds"""
     res = d1 - d2
     return 86400 * res.days + res.seconds
+
+
+def install_geckodriver(
+        fallback_url='/mozilla/geckodriver/releases/download/v0.11.1/geckodriver-v0.11.1-linux64.tar.gz',
+        github_latest_url='https://github.com/mozilla/geckodriver/releases/latest'):
+    import lxml.html
+    import requests
+
+    response = requests.get(github_latest_url)
+
+    try:
+        link = lxml.html.fromstring(response.text).xpath(
+            '//a[contains(@href, ".tar.gz")][contains(@href, "linux64")]/@href')[0]
+    except IndexError:
+        print('error while downloading latest geckodriver')
+        link = fallback_url
+
+    if link.startswith('/'):
+        link = urlparse.urljoin('https://github.com', link)
+
+    os.system('wget "%s" -O _geckodriver.tar.gz' % link)
+    os.system('tar xf _geckodriver.tar.gz')
+    os.system('mv geckodriver /home/spiders/')
+    os.system('chmod +x /home/spiders/geckodriver')
 
 
 class ScrapyTask(object):
@@ -1933,6 +1958,10 @@ if __name__ == '__main__':
             from repo.fake_sqs_queue_class import SQS_Queue
         logger.debug('TEST MODE ON')
         logger.debug('Faking the SQS_Queue class')
+
+    # TODO: move the whole code for downloading geckodriver to post_starter_root.py and rebuild the AMI image
+    if not os.path.exists('/home/spiders/geckodriver'):
+        install_geckodriver()
 
     try:
         main()
