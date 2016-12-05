@@ -126,6 +126,11 @@ class GoogleProductsSpider(BaseProductsSpider):
             '/*[@class="specs-value"]/text()'
         ).extract())
 
+        reseller_id_regex = "/(\d+)\??"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         if not product.get("price"):
             _prices = response.xpath('.//*[contains(@class, "price")]')
             price = get_price(_prices)

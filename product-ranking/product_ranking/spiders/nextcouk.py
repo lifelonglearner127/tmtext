@@ -40,7 +40,7 @@ class NextCoUkProductSpider(BaseProductsSpider):
 
     NEXT_PAGE_URL = "http://www.next.co.uk/search?w=jeans&isort=score&srt={start_pos}"
 
-    REVIEWS_URL = "http://next.ugc.bazaarvoice.com/data/products.json?apiversion=5.3&" \
+    REVIEWS_URL = "http://api.bazaarvoice.com/data/products.json?apiversion=5.3&" \
                   "passkey=2l72hgc4hdkhcc1bqwyj1dt6d&" \
                   "Filter=Id:{product_id}&stats=reviews&callback=bvGetReviewSummaries"
 
@@ -92,6 +92,11 @@ class NextCoUkProductSpider(BaseProductsSpider):
         response.meta['product_target'] = product_target
 
         product['locale'] = 'en_GB'
+
+        regex = "\/(g[\da-z]+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
 
         # Set category
         self._parse_category(response)

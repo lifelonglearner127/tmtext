@@ -172,6 +172,11 @@ class LowesProductsSpider(BaseProductsSpider):
         categories = self._parse_categories(response)
         return categories[-1] if categories else None
 
+    def _parse_reseller_id(self, response):
+        reseller_id = response.xpath('.//*[contains(text(), "Item #")]/following-sibling::text()[1]').extract()
+        reseller_id = reseller_id[0] if reseller_id else None
+        return reseller_id
+
     def _parse_price(self, response):
         price = response.xpath(
             '//*[@class="price"]/text()').re('[\d\.\,]+')
@@ -262,6 +267,10 @@ class LowesProductsSpider(BaseProductsSpider):
         # Parse price
         price = self._parse_price(response)
         cond_set_value(product, 'price', price)
+
+        # Parse reseller_id
+        reseller_id = self._parse_reseller_id(response)
+        cond_set_value(product, 'reseller_id', reseller_id)
 
         # Parse image url
         image_url = self._parse_image_url(response)

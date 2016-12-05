@@ -775,6 +775,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             response.meta['product'] = {}
         response.meta['product']['_walmart_original_id'] = original_parent_id
         response.meta['product']['_walmart_current_id'] = current_id
+        response.meta['product']['reseller_id'] = current_id
         if original_parent_id:
             # ok we've been redirected and we get the original item ID. Now:
             # * perform API call (in method _get_walmart_api_data_from_item_id
