@@ -9,7 +9,12 @@ from product_ranking.items import RelatedProduct, valid_currency_codes
 from product_ranking.spiders import cond_set, cond_replace, cond_set_value, \
     dump_url_to_file
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
+<<<<<<< HEAD
+from product_ranking.items import Price, MarketplaceSeller
+import re
+=======
 from product_ranking.items import Price
+>>>>>>> master
 
 
 SYM_USD = '$'
@@ -206,6 +211,11 @@ class EbayUkProductsSpider(ProductsSpider):
         xpath = '//td[@class="attrLabels" and contains(text(), "Model:")]' \
                 '/following-sibling::td/span/text()'
         cond_set(product, 'model', response.xpath(xpath).extract())
+
+        reseller_id_regex = "-\/([^\/&?\.\s]+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
 
 
     def _request_related_products(self, response):

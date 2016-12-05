@@ -163,6 +163,11 @@ class QuillProductsSpider(ProductsSpider):
         self._buyer_reviews_from_html(response, product)
         cond_replace_value(product, 'url', response.url.split('?', 1)[0])
 
+        regex = "\/(\d+)\."
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
+
         data = r'quillMData\s=\s(.*)</script>'
         data_script = re.findall(data, response.body_as_unicode())
         j = json.loads(data_script[0])

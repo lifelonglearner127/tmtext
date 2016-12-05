@@ -159,6 +159,11 @@ class Forever21ProductsSpider(ProductsSpider):
         description = self._parse_description(response)
         cond_set_value(product, 'description', description)
 
+        reseller_id_regex = "[Pp]roduct[Ii][dD]=(\d+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         # Parse price
         price = self._parse_price(response)
         cond_set_value(product, 'price', price)

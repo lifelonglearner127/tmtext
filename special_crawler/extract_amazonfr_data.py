@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-#!/usr/bin/python
+# !/usr/bin/python
 
-
-import urllib, urllib2
+import urllib
 import re
 import sys
 import json
@@ -13,16 +12,15 @@ from extract_data import Scraper
 import os
 from PIL import Image
 import cookielib
-import cStringIO # *much* faster than StringIO
+import cStringIO  # *much* faster than StringIO
 from pytesseract import image_to_string
 
 sys.path.append(os.path.abspath('../search'))
 import captcha_solver
-import compare_images
-from socket import timeout
 import random
 from spiders_shared_code.amazon_variants import AmazonVariants
 import datetime
+
 
 class AmazonFRScraper(Scraper):
 
@@ -39,7 +37,7 @@ class AmazonFRScraper(Scraper):
 
     MAX_CAPTCHA_RETRIES = 10
 
-    def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
+    def __init__(self, **kwargs):  # **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
 
         self.av = AmazonVariants()
@@ -73,9 +71,9 @@ class AmazonFRScraper(Scraper):
         self.browser.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
 
         # Want debugging messages?
-        #br.set_debug_http(True)
-        #br.set_debug_redirects(True)
-        #br.set_debug_responses(True)
+        # br.set_debug_http(True)
+        # br.set_debug_redirects(True)
+        # br.set_debug_responses(True)
 
         # User-Agent (this is cheating, ok?)
         self.browser.addheaders = [('User-agent', self.select_browser_agents_randomly())]
@@ -99,7 +97,7 @@ class AmazonFRScraper(Scraper):
         self.tree_html = html.fromstring(contents)
 
     def check_url_format(self):
-        m = re.match(r"^http://www.amazon.fr/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        m = re.match(r"^(http|https)://www.amazon.fr/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         self.scraper_version = "fr"
 
         return not not m
@@ -129,7 +127,7 @@ class AmazonFRScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = re.match("^http://www.amazon.fr/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+        product_id = re.match("^(http|https)://www.amazon.fr/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(4)
         return product_id
 
     def _site_id(self):
@@ -239,6 +237,113 @@ class AmazonFRScraper(Scraper):
 
         return self._long_description_helper()
 
+    def _bullet_feature_1(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 0:
+            return self._clean_text(bullets[0].text_content())
+
+    def _bullet_feature_2(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 1:
+            return self._clean_text(bullets[1].text_content())
+
+    def _bullet_feature_3(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 2:
+            return self._clean_text(bullets[2].text_content())
+
+    def _bullet_feature_4(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 3:
+            return self._clean_text(bullets[3].text_content())
+
+    def _bullet_feature_5(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 4:
+            return self._clean_text(bullets[4].text_content())
+
+    def _bullet_feature_6(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 5:
+            return self._clean_text(bullets[5].text_content())
+
+    def _bullet_feature_7(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 6:
+            return self._clean_text(bullets[6].text_content())
+
+    def _bullet_feature_8(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 7:
+            return self._clean_text(bullets[7].text_content())
+
+    def _bullet_feature_9(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 8:
+            return self._clean_text(bullets[8].text_content())
+
+    def _bullet_feature_10(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 9:
+            return self._clean_text(bullets[9].text_content())
+
+    def _bullet_feature_11(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 10:
+            return self._clean_text(bullets[10].text_content())
+
+    def _bullet_feature_12(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 11:
+            return self._clean_text(bullets[11].text_content())
+
+    def _bullet_feature_13(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 12:
+            return self._clean_text(bullets[12].text_content())
+
+    def _bullet_feature_14(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 13:
+            return self._clean_text(bullets[13].text_content())
+
+    def _bullet_feature_15(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 14:
+            return self._clean_text(bullets[14].text_content())
+
+    def _bullet_feature_16(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 15:
+            return self._clean_text(bullets[15].text_content())
+
+    def _bullet_feature_17(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 16:
+            return self._clean_text(bullets[16].text_content())
+
+    def _bullet_feature_18(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 17:
+            return self._clean_text(bullets[17].text_content())
+
+    def _bullet_feature_19(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 18:
+            return self._clean_text(bullets[18].text_content())
+
+    def _bullet_feature_20(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 19:
+            return self._clean_text(bullets[19].text_content())
+
+    def _bullets(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]//text()")
+        bullets = [self._clean_text(r) for r in bullets if len(self._clean_text(r))>0]
+        if len(bullets) > 0:
+            return "\n".join(bullets)
+        return None
+
     def _seller_ranking(self):
         seller_ranking = []
 
@@ -273,7 +378,6 @@ class AmazonFRScraper(Scraper):
         if d1 == d2:
             return None
         return d2
-
 
     def _long_description_helper(self):
         try:
@@ -339,7 +443,7 @@ class AmazonFRScraper(Scraper):
             description = description.xpath('//div[@class="productDescriptionWrapper"]')
             res = ""
             for d in description:
-                if len(d.xpath('.//div[@class="aplus"]'))==0:
+                if len(d.xpath('.//div[@class="aplus"]')) == 0:
                     res += self._clean_text(' '.join(d.xpath('.//text()')))+" "
             if res != "":
                 return res
@@ -350,15 +454,18 @@ class AmazonFRScraper(Scraper):
 
     def _apluscontent_desc(self):
         res = self._clean_text(' '.join(self.tree_html.xpath('//div[@id="aplusProductDescription"]//text()')))
-        if res != "" : return res
+        if res != "":
+            return res
         desc = '\n'.join(self.tree_html.xpath('//script//text()'))
         desc = re.findall(r'var iframeContent = "(.*)";', desc)
         desc = urllib.unquote_plus(str(desc))
         desc = html.fromstring(desc)
         res = self._clean_text(' '.join(desc.xpath('//div[@id="aplusProductDescription"]//text()')))
-        if res != "" : return res
+        if res != "":
+            return res
         res = self._clean_text(' '.join(desc.xpath('//div[@class="productDescriptionWrapper"]/div[@class="aplus"]//text()')))
-        if res != "" : return res
+        if res != "":
+            return res
         return None
 
     def _variants(self):
@@ -465,6 +572,53 @@ class AmazonFRScraper(Scraper):
 
         return 0
 
+    def _no_longer_available(self):
+        availability = self.tree_html.xpath('//*[@id="availability" or @id="pantry-availability"]')
+
+        if availability:
+            if re.search('Currently [uU]navailable', availability[0].text_content()):
+                return 1
+
+        return 0
+
+    def _important_information_helper(self, name):
+        important_information = self.tree_html.xpath('//div[@id="importantInformation"]/div/div')
+
+        if important_information:
+            important_information = html.tostring( self.tree_html.xpath('//div[@id="importantInformation"]/div/div')[0])
+
+            tags = ['<b>', '<h5>']
+            tail_tags = ['</b>', '</h5>']
+            idx = 0
+            for t in tags:
+                name_index = important_information.find(t + name)
+
+                if name_index == -1:
+                    idx += 1
+                    continue
+
+                start_index = important_information.find(tail_tags[idx], name_index) + len(tail_tags[idx])
+
+                # end at the next bold element
+                end_index = important_information.find(t, start_index + 1)
+
+                return important_information[start_index : end_index]
+
+    def _amazon_ingredients(self):
+        return self._important_information_helper('Ingredients')
+
+    def _usage(self):
+        return self._important_information_helper('Usage')
+
+    def _directions(self):
+        return self._important_information_helper('Directions')
+
+    def _warnings(self):
+        return self._important_information_helper('Safety')
+
+    def _indications(self):
+        return self._important_information_helper('Indications')
+
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -480,12 +634,12 @@ class AmazonFRScraper(Scraper):
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
-        if canonical_link.startswith("http://www.amazon.fr"):
+        if canonical_link.startswith("http://www.amazon.fr") or canonical_link.startswith("https://www.amazon.fr"):
             return canonical_link
         else:
             return "http://www.amazon.fr" + canonical_link
 
-    #returns 1 if the mobile version is the same, 0 otherwise
+    # returns 1 if the mobile version is the same, 0 otherwise
     def _mobile_image_same(self):
         url = self.product_page_url
         mobile_headers = {"User-Agent" : "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_2_1 like Mac OS X; en-us) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5"}
@@ -550,40 +704,40 @@ class AmazonFRScraper(Scraper):
             swatch_image_json = None
 
         image_url = swatch_images
-        #The small images are to the left of the big image
+        # The small images are to the left of the big image
         image_url.extend(tree.xpath("//span[@class='a-button-text']//img/@src"))
-        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls])
+        if image_url is not None and len(image_url) > n and self.no_image(image_url) == 0:
+            return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player") < 0 and m.find("video") < 0 and m.find("play-button") < 0 and m not in vurls])
 
-        #The small images are below the big image
+        # The small images are below the big image
         image_url.extend(tree.xpath("//div[@id='thumbs-image']//img/@src"))
-        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
-            res = [m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls]
+        if image_url is not None and len(image_url) > n and self.no_image(image_url) == 0:
+            res = [m for m in image_url if m.find("player") < 0 and m.find("video") < 0 and m.find("play-button") < 0 and m not in vurls]
             return self._get_origin_image_urls_from_thumbnail_urls(res)
 
-        #Amazon instant video
+        # Amazon instant video
         image_url.extend(tree.xpath("//div[@class='dp-meta-icon-container']//img/@src"))
-        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
+        if image_url is not None and len(image_url) > n and self.no_image(image_url) == 0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
         image_url.extend(tree.xpath("//td[@id='prodImageCell']//img/@src"))
-        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
+        if image_url is not None and len(image_url) > n and self.no_image(image_url) == 0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
         image_url.extend(tree.xpath("//div[contains(@id,'thumb-container')]//img/@src"))
-        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
+        if image_url is not None and len(image_url) > n and self.no_image(image_url) == 0:
             return self._get_origin_image_urls_from_thumbnail_urls([m for m in image_url if m.find("player")<0 and m.find("video")<0 and m.find("play-button")<0 and m not in vurls])
 
         image_url.extend(tree.xpath("//div[contains(@class,'imageThumb')]//img/@src"))
-        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
+        if image_url is not None and len(image_url) > n and self.no_image(image_url) == 0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
         image_url.extend(tree.xpath("//div[contains(@id,'coverArt')]//img/@src"))
-        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
+        if image_url is not None and len(image_url) > n and self.no_image(image_url) == 0:
             return self._get_origin_image_urls_from_thumbnail_urls(image_url)
 
-        image_url =tree.xpath('//img[@id="imgBlkFront"]')
-        if image_url is not None and len(image_url)>n and self.no_image(image_url)==0:
+        image_url = tree.xpath('//img[@id="imgBlkFront"]')
+        if image_url is not None and len(image_url) > n and self.no_image(image_url) == 0:
             return ["inline image"]
 
         if len(allimg) > 0 and self.no_image(allimg) == 0:
@@ -606,48 +760,51 @@ class AmazonFRScraper(Scraper):
                     colors = self.tree_html.xpath('//div[@id="variation_color_name"]//span[@class="selection"]//text()')
                     pack = self.tree_html.xpath('//div[@id="variation_item_package_quantity"]//span[@class="selection"]//text()')
                     style = self.tree_html.xpath('//div[@id="variation_style_name"]//span[@class="selection"]//text()')
-                    color=""
-                    if len(colors)>0:
-                        color=colors[0].strip()
-                    if len(pack)>0:
-                        color=pack[0].strip() + " " + color
-                    if  len(style)>0:
-                        color=style[0].strip()
-                    st = s.find("{",st)
-                    e = s.find(";",st)
-                    if st>=e: continue
-                    imdata=json.loads(s[st:e])
+                    color = ""
+                    if len(colors) > 0:
+                        color = colors[0].strip()
+                    if len(pack) > 0:
+                        color = pack[0].strip() + " " + color
+                    if len(style) > 0:
+                        color = style[0].strip()
+                    st = s.find("{", st)
+                    e = s.find(";", st)
+                    if st >= e:
+                        continue
+                    imdata = json.loads(s[st:e])
 
-                    if type(imdata) is dict and len(imdata)>0:
-                        if color=="" or not imdata.has_key(color):
+                    if type(imdata) is dict and len(imdata) > 0:
+                        if color == "" or not imdata.has_key(color):
                             color =imdata.keys()[0]
                         for t in imdata[color]:
                             res.append(t['large'])
                         return res
                 st = s.find("'colorImages':")
-                if len(res)==0 and st > 0:
-                    while s[st]!="{" and st>0:
+                if len(res) == 0 and st > 0:
+                    while s[st] != "{" and st > 0:
                         st -= 1
-                    e = s.find("};",st)+1
-                    if st>=e: continue
-                    imdata=json.loads(s[st:e].replace("'",'"'))
-                    if type(imdata) is dict and len(imdata)>0  and imdata.has_key('colorImages')\
+                    e = s.find("};", st)+1
+                    if st >= e:
+                        continue
+                    imdata=json.loads(s[st:e].replace("'", '"'))
+                    if type(imdata) is dict and len(imdata) > 0 and imdata.has_key('colorImages')\
                      and imdata['colorImages'].has_key('initial'):
                         for d in imdata['colorImages']['initial']:
-                            imu = d.get("large","")
-                            if len(imu)>10:
+                            imu = d.get("large", "")
+                            if len(imu) > 10:
                                 res.append(imu)
                         return res
                 st = s.find("var colorImages")
-                if len(res)==0 and st > 0:
-                    st = s.find("{",st)
-                    e = s.find("};",st)+1
-                    if st>=e: continue
-                    imdata=json.loads(s[st:e].replace("'",'"'))
-                    if type(imdata) is dict and len(imdata)>0  and imdata.has_key('initial'):
+                if len(res) == 0 and st > 0:
+                    st = s.find("{", st)
+                    e = s.find("};", st)+1
+                    if st >= e:
+                        continue
+                    imdata = json.loads(s[st:e].replace("'", '"'))
+                    if type(imdata) is dict and len(imdata) > 0 and imdata.has_key('initial'):
                         for d in imdata['initial']:
-                            imu = d.get("large","")
-                            if len(imu)>10:
+                            imu = d.get("large", "")
+                            if len(imu) > 10:
                                 res.append(imu)
                         return res
         except:
@@ -655,21 +812,21 @@ class AmazonFRScraper(Scraper):
         return res
 
     def _mobile_image_url(self, tree = None):
-        if tree == None:
+        if tree is None:
             tree = self.tree_html
         image_url = tree.xpath("//span[@class='a-button-text']//img/@src")
         return image_url
 
     def _image_count(self):
         iu = self._image_urls()
-        if iu ==None:
+        if iu is None:
             return 0
         return len(iu)
 
     # return 1 if the "no image" image is found
-    def no_image(self,image_url):
+    def no_image(self, image_url):
         try:
-            if len(image_url)>0 and image_url[0].find("no-img")>0:
+            if len(image_url) > 0 and image_url[0].find("no-img") > 0:
                 return 1
             if self._no_image(image_url[0]):
                 return 1
@@ -678,35 +835,43 @@ class AmazonFRScraper(Scraper):
         return 0
 
     def _video_urls(self):
-        video_url = self.tree_html.xpath('//script')  #[@type="text/javascript"]
+        video_url = self.tree_html.xpath('//script')  # [@type="text/javascript"]
         temp = []
         for v in video_url:
-            st=str(v.xpath('.//text()'))
+            st = str(v.xpath('.//text()'))
             r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", st)
             if r:
                 temp.extend(r)
-            ii=st.find("kib-thumb-container-")
+            ii = st.find("kib-thumb-container-")
             if ii > 0:
-                ij=st.find('"',ii+19)
-                if ij-ii<25:
+                ij = st.find('"', ii+19)
+                if ij-ii < 25:
                     vid = st[ii:ij]
                     viurl = self.tree_html.xpath('//div[@id="%s"]//img/@src' % vid)
-                    if len(viurl)>0:
+                    if len(viurl) > 0:
                         temp.append(viurl[0])
 
-        #Find video among the  small images.
+        # Find video among the  small images.
         image_url = self.tree_html.xpath("//span[@class='a-button-text']//img/@src")
-        if len(image_url)==0:
+        if len(image_url) == 0:
             image_url = self.tree_html.xpath("//div[@id='thumbs-image']//img/@src")
         for v in image_url:
-            if v.find("player")>0 :
+            if v.find("player") > 0:
                 temp.append(v)
-        if len(temp)==0: return None
-        return temp#",".join(temp)
+
+        video_urls = re.findall('"url":"([^"]+.mp4)"', html.tostring(self.tree_html))
+        for video in video_urls:
+            if video not in temp:
+                temp.append(video)
+
+        if len(temp) == 0:
+            return None
+        return temp  # ",".join(temp)
 
     def _video_count(self):
-        if self._video_urls()==None: return 0
-        return len(self._video_urls())#.split(','))
+        if self._video_urls() == None:
+            return 0
+        return len(self._video_urls())  # .split(','))
 
     # return one element containing the PDF
     def _pdf_urls(self):
@@ -772,7 +937,7 @@ class AmazonFRScraper(Scraper):
             return self._toint(nr_reviews[1])
         nr_reviews = self.tree_html.xpath("//a[@class='a-link-normal a-text-normal product-reviews-link']//text()")
         if len(nr_reviews) > 1:
-            return self._toint(nr_reviews[0].replace('(','').replace(')','').replace(',',''))
+            return self._toint(nr_reviews[0].replace('(', '').replace(')', '').replace(',', ''))
         if self.scraper_version == "fr":
             nr_reviews = self.tree_html.xpath("//span[@class='crAvgStars']/a//text()")
             if len(nr_reviews) > 0:
@@ -838,19 +1003,19 @@ class AmazonFRScraper(Scraper):
 
         return self.review_list
 
-    def _tofloat(self,s):
+    def _tofloat(self, s):
         try:
             s = s.replace(",", "")
             s = re.findall(r"[\d\.]+", s)[0]
-            t=float(s)
+            t = float(s)
             return t
         except ValueError:
             return 0.0
 
-    def _toint(self,s):
+    def _toint(self, s):
         try:
-            s = s.replace(',','')
-            t=int(s)
+            s = s.replace(',', '')
+            t = int(s)
             return t
         except ValueError:
             return 0
@@ -870,7 +1035,7 @@ class AmazonFRScraper(Scraper):
     ##########################################
     def _price_amount(self):
         price = self._price()
-        price = price.replace(",", "")
+        price = price[:-3].replace(",", "") + price[-3:].replace(",", ".")
         price_amount = re.findall(r"[\d\.]+", price)[0]
         return float(price_amount)
 
@@ -931,12 +1096,13 @@ class AmazonFRScraper(Scraper):
     def _marketplace(self):
         aa = self.tree_html.xpath("//div[@class='buying' or @id='merchant-info']")
         for a in aa:
-            if a.text_content().find('old by ')>0 and a.text_content().find('old by Amazon')<0:
+            if a.text_content().find('old by ') > 0 and a.text_content().find('old by Amazon') < 0:
                 return 1
-            if a.text_content().find('seller')>0 :
+            if a.text_content().find('seller') > 0:
                 return 1
         a = self.tree_html.xpath('//div[@id="availability"]//a//text()')
-        if len(a)>0 and a[0].find('seller')>=0: return 1
+        if len(a) > 0 and a[0].find('seller') >= 0:
+            return 1
 
         marketplace_sellers = self._marketplace_sellers()
 
@@ -1046,12 +1212,12 @@ class AmazonFRScraper(Scraper):
 
             urls = tree.xpath(".//ul[contains(@class,'a-pagination')]//li[contains(@class,'a-last')]//a/@href")
 
-            if len(urls)>0:
+            if len(urls) > 0:
                 url = domain[0]+"//"+domain[2]+urls[0]
             else:
                 url = ""
 
-        if len(mps)>0:
+        if len(mps) > 0:
             if fl == 1:
                 try:
                     with open(path, 'w') as fp:
@@ -1093,7 +1259,7 @@ class AmazonFRScraper(Scraper):
         seller_info['owned'] = 1 if "FREE Two-Day" in acheckboxlabel else 0
 
         a = self.tree_html.xpath('//div[@id="soldByThirdParty"]')
-        a = not not a#turn it into a boolean
+        a = not not a  # turn it into a boolean
         seller_info['marketplace'] = 1 if "Other Sellers on Amazon" in h5_tags else 0
         seller_info['marketplace'] = int(seller_info['marketplace'] or a)
 
@@ -1154,32 +1320,32 @@ class AmazonFRScraper(Scraper):
         return categories
 
     def _brand(self):
-        bn=self.tree_html.xpath('//div[@id="mbc"]/@data-brand')
-        if len(bn)>0 and bn[0]!="":
+        bn = self.tree_html.xpath('//div[@id="mbc"]/@data-brand')
+        if len(bn) > 0 and bn[0] != "":
             return bn[0]
-        bn=self.tree_html.xpath('//a[@id="brand"]//text()')
-        if len(bn)>0 and bn[0]!="":
+        bn = self.tree_html.xpath('//a[@id="brand"]//text()')
+        if len(bn) > 0 and bn[0] != "":
             return bn[0]
-        bn=self.tree_html.xpath('//div[@class="buying"]//span[contains(text(),"by")]/a//text()')
-        if len(bn)>0  and bn[0]!="":
+        bn = self.tree_html.xpath('//div[@class="buying"]//span[contains(text(),"by")]/a//text()')
+        if len(bn) > 0 and bn[0] != "":
             return bn[0]
-        bn=self.tree_html.xpath('//a[contains(@class,"contributorName")]//text()')
-        if len(bn)>0  and bn[0]!="":
+        bn = self.tree_html.xpath('//a[contains(@class,"contributorName")]//text()')
+        if len(bn) > 0 and bn[0] != "":
             return bn[0]
-        bn=self.tree_html.xpath('//a[contains(@id,"contributorName")]//text()')
-        if len(bn)>0  and bn[0]!="":
+        bn = self.tree_html.xpath('//a[contains(@id,"contributorName")]//text()')
+        if len(bn) > 0 and bn[0] != "":
             return bn[0]
-        bn=self.tree_html.xpath('//span[contains(@class,"author")]//a//text()')
-        if len(bn)>0  and bn[0]!="":
+        bn = self.tree_html.xpath('//span[contains(@class,"author")]//a//text()')
+        if len(bn) > 0 and bn[0] != "":
             return bn[0]
         fts = self._features()
         if fts:
             for f in fts:
-                if f.find("Studio:")>=0 or f.find("Network:")>=0:
+                if f.find("Studio:") >= 0 or f.find("Network:") >= 0:
                     bn = f.split(':')[1]
                     return bn
-        bn=self.tree_html.xpath('//div[@id="ArtistLinkSection"]//text()')
-        if len(bn)>0:
+        bn = self.tree_html.xpath('//div[@id="ArtistLinkSection"]//text()')
+        if len(bn) > 0:
             return "".join(bn).strip()
 
         brand = self.tree_html.xpath("//div[@id='brandByline_feature_div']//a[@id='brand']/@href")
@@ -1189,14 +1355,13 @@ class AmazonFRScraper(Scraper):
             return brand
         return None
 
-
     def _version(self):
         """Determines if Amazon.co.uk page being read
         Returns:
             "uk" for Amazon.co.uk
             "com" for Amazon.com
         """
-         # using url to distinguish between page versions.
+        # using url to distinguish between page versions.
         return "fr"
 
     ##########################################
@@ -1207,25 +1372,25 @@ class AmazonFRScraper(Scraper):
 
     DATA_TYPES = { \
         # CONTAINER : NONE
-        "url" : _url, \
-        "event" : _event, \
-        "product_id" : _product_id, \
-        "site_id" : _site_id, \
-        "status" : _status, \
+        "url": _url, \
+        "event": _event, \
+        "product_id": _product_id, \
+        "site_id": _site_id, \
+        "status": _status, \
 
         # CONTAINER : PRODUCT_INFO
-        "product_name" : _product_name, \
-        "product_title" : _product_title, \
-        "title_seo" : _title_seo, \
-        "model" : _model, \
-        "upc" : _asin,\
-        "features" : _features, \
-        "feature_count" : _feature_count, \
-        "model_meta" : _model_meta, \
-        "description" : _description, \
+        "product_name": _product_name, \
+        "product_title": _product_title, \
+        "title_seo": _title_seo, \
+        "model": _model, \
+        "upc": _asin,\
+        "features": _features, \
+        "feature_count": _feature_count, \
+        "model_meta": _model_meta, \
+        "description": _description, \
         "seller_ranking": _seller_ranking, \
-        "long_description" : _long_description, \
-        "apluscontent_desc" : _apluscontent_desc, \
+        "long_description": _long_description, \
+        "apluscontent_desc": _apluscontent_desc, \
         "variants": _variants, \
         "swatches": _swatches, \
         "related_products_urls":  _related_product_urls, \
@@ -1233,51 +1398,78 @@ class AmazonFRScraper(Scraper):
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \
         "nutrition_fact_count": _nutrition_fact_count, \
+        "no_longer_available": _no_longer_available, \
+        "bullet_feature_1": _bullet_feature_1, \
+        "bullet_feature_2": _bullet_feature_2, \
+        "bullet_feature_3": _bullet_feature_3, \
+        "bullet_feature_4": _bullet_feature_4, \
+        "bullet_feature_5": _bullet_feature_5, \
+        "bullet_feature_6": _bullet_feature_6, \
+        "bullet_feature_7": _bullet_feature_7, \
+        "bullet_feature_8": _bullet_feature_8, \
+        "bullet_feature_9": _bullet_feature_9, \
+        "bullet_feature_10": _bullet_feature_10, \
+        "bullet_feature_11": _bullet_feature_11, \
+        "bullet_feature_12": _bullet_feature_12, \
+        "bullet_feature_13": _bullet_feature_13, \
+        "bullet_feature_14": _bullet_feature_14, \
+        "bullet_feature_15": _bullet_feature_15, \
+        "bullet_feature_16": _bullet_feature_16, \
+        "bullet_feature_17": _bullet_feature_17, \
+        "bullet_feature_18": _bullet_feature_18, \
+        "bullet_feature_19": _bullet_feature_19, \
+        "bullet_feature_20": _bullet_feature_20, \
+        "bullets": _bullets, \
+        "usage": _usage, \
+        "directions": _directions, \
+        "warnings": _warnings, \
+        "indications": _indications, \
+        "amazon_ingredients" : _amazon_ingredients, \
 
         # CONTAINER : PAGE_ATTRIBUTES
-        "image_count" : _image_count,\
-        "image_urls" : _image_urls, \
-        "video_count" : _video_count, \
-        "video_urls" : _video_urls, \
+        "image_count": _image_count,\
+        "image_urls": _image_urls, \
+        "video_count": _video_count, \
+        "video_urls": _video_urls, \
 #        "no_image" : _no_image, \
-        "pdf_count" : _pdf_count, \
-        "pdf_urls" : _pdf_urls, \
-        "webcollage" : _webcollage, \
-        "htags" : _htags, \
-        "keywords" : _keywords, \
+        "pdf_count": _pdf_count, \
+        "pdf_urls": _pdf_urls, \
+        "webcollage": _webcollage, \
+        "htags": _htags, \
+        "keywords": _keywords, \
         "meta_tags": _meta_tags,\
         "meta_tag_count": _meta_tag_count,\
         "canonical_link": _canonical_link,
 
         # CONTAINER : REVIEWS
-        "review_count" : _review_count, \
-        "average_review" : _average_review, \
-        "max_review" : _max_review, \
-        "min_review" : _min_review, \
-        "reviews" : _reviews, \
+        "review_count": _review_count, \
+        "average_review": _average_review, \
+        "max_review": _max_review, \
+        "min_review": _min_review, \
+        "reviews": _reviews, \
 
         # CONTAINER : SELLERS
-        "price" : _price, \
-        "price_amount" : _price_amount, \
-        "price_currency" : _price_currency, \
-        "in_stores" : _in_stores, \
+        "price": _price, \
+        "price_amount": _price_amount, \
+        "price_currency": _price_currency, \
+        "in_stores": _in_stores, \
         "marketplace": _marketplace, \
-        "marketplace_sellers" : _marketplace_sellers, \
-        "marketplace_prices" : _marketplace_prices, \
-        "marketplace_lowest_price" : _marketplace_lowest_price, \
-        "marketplace_out_of_stock" : _marketplace_out_of_stock, \
-        "site_online" : _site_online, \
-        "site_online_out_of_stock" : _site_online_out_of_stock, \
-        "in_stores_out_of_stock" : _in_stores_out_of_stock, \
+        "marketplace_sellers": _marketplace_sellers, \
+        "marketplace_prices": _marketplace_prices, \
+        "marketplace_lowest_price": _marketplace_lowest_price, \
+        "marketplace_out_of_stock": _marketplace_out_of_stock, \
+        "site_online": _site_online, \
+        "site_online_out_of_stock": _site_online_out_of_stock, \
+        "in_stores_out_of_stock": _in_stores_out_of_stock, \
 
         # CONTAINER : CLASSIFICATION
-        "categories" : _categories, \
-        "category_name" : _category_name, \
-        "brand" : _brand, \
-        "scraper" : _version, \
+        "categories": _categories, \
+        "category_name": _category_name, \
+        "brand": _brand, \
+        "scraper": _version, \
 
 
-        "loaded_in_seconds" : None, \
+        "loaded_in_seconds": None, \
         }
 
     # special data that can't be extracted from the product page
@@ -1289,11 +1481,11 @@ class AmazonFRScraper(Scraper):
 def getUserAgent():
     platform = random.choice(['Macintosh', 'Windows', 'X11'])
     if platform == 'Macintosh':
-        os  = random.choice(['68K', 'PPC'])
+        os = random.choice(['68K', 'PPC'])
     elif platform == 'Windows':
-        os  = random.choice(['Win3.11', 'WinNT3.51', 'WinNT4.0', 'Windows NT 5.0', 'Windows NT 5.1', 'Windows NT 5.2', 'Windows NT 6.0', 'Windows NT 6.1', 'Windows NT 6.2', 'Win95', 'Win98', 'Win 9x 4.90', 'WindowsCE'])
+        os = random.choice(['Win3.11', 'WinNT3.51', 'WinNT4.0', 'Windows NT 5.0', 'Windows NT 5.1', 'Windows NT 5.2', 'Windows NT 6.0', 'Windows NT 6.1', 'Windows NT 6.2', 'Win95', 'Win98', 'Win 9x 4.90', 'WindowsCE'])
     elif platform == 'X11':
-        os  = random.choice(['Linux i686', 'Linux x86_64'])
+        os = random.choice(['Linux i686', 'Linux x86_64'])
     browser = random.choice(['chrome', 'firefox', 'ie'])
     if browser == 'chrome':
         webkit = str(random.randint(500, 599))

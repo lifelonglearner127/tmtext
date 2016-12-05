@@ -78,6 +78,9 @@ class ToysrusProductsSpider(BaseProductsSpider):
         sku = self._parse_sku(response)
         cond_set_value(product, 'sku', sku)
 
+        # reseller_id
+        cond_set_value(product, 'reseller_id', sku)
+
         # # Parse buyer reviews
         buyer_reviews = self._parse_buyer_reviews(response)
         cond_set_value(product, 'buyer_reviews', buyer_reviews)

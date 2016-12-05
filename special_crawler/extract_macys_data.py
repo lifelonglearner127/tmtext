@@ -16,8 +16,8 @@ from lxml import etree
 import time
 import requests
 from extract_data import Scraper
-from spiders_shared_code.macys_variants import MacysVariants
-sys.path.append('../product-ranking')
+from spiders_shared_code.macys_variants import MacysVariants, normalize_product_json_string
+sys.path.insert(1, os.path.join(sys.path[0], '../product-ranking'))
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 
@@ -75,7 +75,7 @@ class MacysScraper(Scraper):
                 product_info_json = self.tree_html.xpath("//script[@id='productMainData' and @type='application/json']/text()")
 
                 if product_info_json:
-                    product_info_json = json.loads(product_info_json[0])
+                    product_info_json = json.loads(normalize_product_json_string(product_info_json[0]))
         except:
             product_info_json = None
 

@@ -99,6 +99,11 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
                 "//div[@class='pricingReg']"
                 "/span[@itemprop='price']/text()").extract())
 
+        reseller_id_regex = "\/(\d+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         if product.get('price', None):
             if not '$' in product['price']:
                 self.log('Unknown currency at' % response.url)

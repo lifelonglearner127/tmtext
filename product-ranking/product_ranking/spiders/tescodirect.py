@@ -17,7 +17,7 @@ from product_ranking.items import SiteProductItem, \
     Price, RelatedProduct, BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, \
-    cond_set, FLOATING_POINT_RGEX
+    cond_set, cond_set_value, FLOATING_POINT_RGEX
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -271,6 +271,11 @@ class TescoDirectProductsSpider(BaseProductsSpider):
             '/section[@class="detailWrapper"]'
         ).extract()
         cond_set(product, 'description', desc)
+
+        regex = "([A-Z0-9\-]+)\.prd"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
 
         is_out_of_stock = response.xpath(
             '//div[@id="bbSeller1"]').extract()

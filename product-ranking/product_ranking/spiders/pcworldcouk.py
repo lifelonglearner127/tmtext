@@ -84,6 +84,11 @@ class PcworldcoukProductsSpider(BaseProductsSpider):
             "//section[@itemscope]/descendant::section[@class='productMedias']"
             "/div[@id='currentView']/a/img/@src").extract())
 
+        regex = "(\d+)-pdt"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
+
         if self.DO_DESCRIPTION:
             cond_set(product, 'description', response.xpath(
                 "//section[@id='longDesc']").extract())

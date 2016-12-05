@@ -1287,7 +1287,8 @@ class WalmartScraper(Scraper):
             if shelf_description_html and shelf_description_html.strip():
                 return HTMLParser().unescape(shelf_description_html.strip())
 
-        return None
+        self._extract_product_info_json()
+        return self.product_info_json.get('shortDescription')
 
     def _variants(self):
         if self._no_longer_available():

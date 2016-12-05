@@ -1,15 +1,20 @@
 # ~~coding=utf-8~~
 from __future__ import division, absolute_import, unicode_literals
 
+from itertools import islice
 import re
 
-from scrapy.log import ERROR, WARNING
-from scrapy.http import Request
+from scrapy.log import ERROR, WARNING, INFO
+from scrapy.http import Request, FormRequest
 
 from product_ranking.items import SiteProductItem
 from product_ranking.marketplace import Amazon_marketplace
+from product_ranking.spiders import cond_set_value
 
 from .amazon import AmazonProductsSpider
+import urlparse
+from random import randint
+import json
 
 
 try:
@@ -86,7 +91,11 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         super(AmazonShelfPagesSpider, self).__init__(*args, **kwargs)
         self._setup_class_compatibility()
         # self.remaining = self.quantity
-        # settings.overrides['CRAWLERA_ENABLED'] = True
+
+        # For goldbox deals
+        self.deal_response_json_list = []
+        self.deal_product_url_list = []
+        self.sorted_goldbox_deals_ids = []
 
     @staticmethod
     def valid_url(url):
@@ -95,13 +104,20 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
         return url
 
     def start_requests(self):
-        yield Request(
-            self.valid_url(self.product_url),
-            meta={
-                'search_term': '',
-                'remaining': self.quantity
-            },
-        )
+        if not "/goldbox/" in self.product_url:
+            yield Request(
+                self.valid_url(self.product_url),
+                meta={
+                    'search_term': '',
+                    'remaining': self.quantity
+                },
+            )
+        else:
+            self.log("Detected goldbox/lightning deals shelf page.", WARNING)
+            yield Request(
+                self.valid_url(self.product_url),
+                callback=self._start_scrape_goldbox_links
+            )
 
     def _scrape_product_links(self, response):
         """
@@ -232,8 +248,15 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                 link = is_empty(li.xpath(
                     './/div[@class="zg_itemImageImmersion"]/a/@href'
                 ).extract())
+
+                if not link:
+                    link = is_empty(li.xpath(".//a/@href").extract())
+
                 if not link:
                     continue
+
+                if not "http" in link:
+                    link = urlparse.urljoin(response.url, link)
 
                 prod = SiteProductItem(
                     ranking=i,
@@ -257,10 +280,6 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
             if ul:
                 return
 
-        if not links:
-            self.log("Found no product links.", WARNING)
-            # from scrapy.shell import inspect_response
-            # inspect_response(response, self)
         if links:
             for link, is_prime, is_prime_pantry, is_sponsored in links:
                 prime = None
@@ -275,93 +294,213 @@ class AmazonShelfPagesSpider(AmazonProductsSpider):
                               headers={'Referer': None},
                               meta={'product': prod}), prod
 
-    # TODO This was done to to make ranking work again with self.num_pages>1
-    # TODO fix this
-    # def _get_products(self, response):
-    #     remaining = response.meta['remaining']
-    #     search_term = response.meta['search_term']
-    #     prods_per_page = response.meta.get('products_per_page')
-    #     total_matches = response.meta.get('total_matches')
-    #     scraped_results_per_page = response.meta.get('scraped_results_per_page')
-    #
-    #     prods = self._scrape_product_links(response)
-    #
-    #     if prods_per_page is None:
-    #         # Materialize prods to get its size.
-    #         prods = list(prods)
-    #         prods_per_page = len(prods)
-    #         response.meta['products_per_page'] = prods_per_page
-    #
-    #     if scraped_results_per_page is None:
-    #         scraped_results_per_page = self._scrape_results_per_page(response)
-    #         if scraped_results_per_page:
-    #             self.log(
-    #                 "Found %s products at the first page" % scraped_results_per_page
-    #                 , INFO)
-    #         else:
-    #             scraped_results_per_page = prods_per_page
-    #             if hasattr(self, 'is_nothing_found'):
-    #                 if not self.is_nothing_found(response):
-    #                     self.log(
-    #                         "Failed to scrape number of products per page", ERROR)
-    #         response.meta['scraped_results_per_page'] = scraped_results_per_page
-    #
-    #     if total_matches is None:
-    #         total_matches = self._scrape_total_matches(response)
-    #         if total_matches is not None:
-    #             response.meta['total_matches'] = total_matches
-    #             self.log("Found %d total matches." % total_matches, INFO)
-    #         else:
-    #             if hasattr(self, 'is_nothing_found'):
-    #                 if not self.is_nothing_found(response):
-    #                     self.log(
-    #                         "Failed to parse total matches for %s" % response.url, ERROR)
-    #
-    #     if total_matches and not prods_per_page:
-    #         # Parsing the page failed. Give up.
-    #         self.log("Failed to get products for %s" % response.url, ERROR)
-    #         return
-    #
-    #     if self.current_page == 1:
-    #         self.quantity = min(total_matches, self.quantity) if total_matches else self.quantity
-    #         self.remaining = self.quantity
-    #     else:
-    #         self.remaining -= prods_per_page
-    #
-    #     for i, (prod_url, prod_item) in enumerate(islice(prods, 0, self.remaining)):
-    #         # Initialize the product as much as possible.
-    #         prod_item['site'] = self.site_name
-    #         prod_item['search_term'] = search_term
-    #         prod_item['total_matches'] = total_matches
-    #         prod_item['results_per_page'] = prods_per_page
-    #         prod_item['scraped_results_per_page'] = scraped_results_per_page
-    #         # The ranking is the position in this page plus the number of
-    #         # products from other pages.
-    #
-    #         if not total_matches:
-    #             prod_item['ranking'] = (i + 1) + self.total_items_scraped
-    #         else:
-    #             prod_item['ranking'] = (i + 1) + (self.quantity - self.remaining)
-    #         if self.user_agent_key not in ["desktop", "default"]:
-    #             prod_item['is_mobile_agent'] = True
-    #
-    #         if prod_url is None:
-    #             # The product is complete, no need for another request.
-    #             yield prod_item
-    #         elif isinstance(prod_url, Request):
-    #             cond_set_value(prod_item, 'url', prod_url.url)  # Tentative.
-    #             yield prod_url
-    #         else:
-    #             # Another request is necessary to complete the product.
-    #             url = urlparse.urljoin(response.url, prod_url)
-    #             cond_set_value(prod_item, 'url', url)  # Tentative.
-    #             yield Request(
-    #                 url,
-    #                 callback=self.parse_product,
-    #                 meta={'product': prod_item},
-    #             )
-    #
-    #     self.total_items_scraped += prods_per_page
+    def _get_products(self, response):
+        remaining = response.meta['remaining']
+        search_term = response.meta['search_term']
+        prods_per_page = response.meta.get('products_per_page')
+        total_matches = response.meta.get('total_matches')
+        scraped_results_per_page = response.meta.get('scraped_results_per_page')
+
+        if self.deal_product_url_list:
+            prods = self._generate_goldbox_links_from_deals(response)
+        else:
+            prods = self._scrape_product_links(response)
+
+        if prods_per_page is None:
+            # Materialize prods to get its size.
+            prods = list(prods)
+            prods_per_page = len(prods)
+            response.meta['products_per_page'] = prods_per_page
+
+        if scraped_results_per_page is None:
+            scraped_results_per_page = self._scrape_results_per_page(response)
+            if scraped_results_per_page:
+                self.log(
+                    "Found %s products at the first page" %scraped_results_per_page
+                    , INFO)
+            else:
+                scraped_results_per_page = prods_per_page
+                if hasattr(self, 'is_nothing_found'):
+                    if not self.is_nothing_found(response):
+                        self.log(
+                            "Failed to scrape number of products per page", WARNING)
+            response.meta['scraped_results_per_page'] = scraped_results_per_page
+
+        if total_matches is None:
+            total_matches = self._scrape_total_matches(response)
+            if total_matches is not None:
+                response.meta['total_matches'] = total_matches
+                self.log("Found %d total matches." % total_matches, INFO)
+            else:
+                if hasattr(self, 'is_nothing_found'):
+                    if not self.is_nothing_found(response):
+                        self.log(
+                            "Failed to parse total matches for %s" % response.url,ERROR)
+
+        if total_matches and not prods_per_page:
+            # Parsing the page failed. Give up.
+            self.log("Failed to get products for %s" % response.url, ERROR)
+            return
+
+        for i, (prod_url, prod_item) in enumerate(islice(prods, 0, remaining)):
+            # Initialize the product as much as possible.
+            prod_item['site'] = self.site_name
+            prod_item['search_term'] = search_term
+            prod_item['total_matches'] = total_matches
+            prod_item['results_per_page'] = prods_per_page
+            prod_item['scraped_results_per_page'] = scraped_results_per_page
+            # The ranking is the position in this page plus the number of
+            # products from other pages.
+            prod_item['ranking'] = (i + 1) + (self.quantity - remaining)
+            if self.user_agent_key not in ["desktop", "default"]:
+                prod_item['is_mobile_agent'] = True
+
+            if prod_url is None:
+                # The product is complete, no need for another request.
+                yield prod_item
+            elif isinstance(prod_url, Request):
+                cond_set_value(prod_item, 'url', prod_url.url)  # Tentative.
+                yield prod_url
+            else:
+                # Another request is necessary to complete the product.
+                url = urlparse.urljoin(response.url, prod_url)
+                cond_set_value(prod_item, 'url', url)  # Tentative.
+                yield Request(
+                    url,
+                    callback=self.parse_product,
+                    meta={'product': prod_item},
+                )
+
+    def _start_scrape_goldbox_links(self, response):
+        all_deal_targets, data = self._get_goldbox_payload(response)
+        # prepare payload list
+        payload_list = []
+        for deal_targets in all_deal_targets:
+            cp_data = data.copy()
+
+            cp_data["dealTargets"] = deal_targets
+            payload_list.append(cp_data)
+
+        current_payload = payload_list.pop(0)
+        no_cache = randint(1480238000000, 1480238999999)
+        req = Request(url='https://www.amazon.com/xa/dealcontent/v2/GetDeals?nocache={0}'.format(no_cache),
+                          method="POST",
+                          body=json.dumps(current_payload),
+                          callback=self._parse_goldbox_deals
+                          )
+        req.meta["payload_list"] = payload_list
+        yield req
+
+    def _get_goldbox_payload(self, response):
+        # not a callback, just a method to get payload for ajax requests
+        marketplace_id = self._find_between(response.body, "ue_mid='", "',")
+        session_id = self._find_between(response.body, "ue_sid='", "',")
+        sorted_deal_ids = self._find_between(response.body, '"sortedDealIDs" : [', "],").split(",")
+        sorted_deal_ids = [deal_id.strip()[1:-1] for deal_id in sorted_deal_ids]
+        self.sorted_goldbox_deals_ids = sorted_deal_ids
+        deal_targets_1 = []
+        deal_targets_2 = []
+        deal_targets_3 = []
+
+        for index in range(12):
+            deal_targets_1.append({"dealID": sorted_deal_ids[index]})
+
+        for index in range(12, 24):
+            deal_targets_2.append({"dealID": sorted_deal_ids[index]})
+
+        for index in range(24, 32):
+            deal_targets_3.append({"dealID": sorted_deal_ids[index]})
+
+        reference_id = self._find_between(response.body, '"originRID" : "', '",')
+        widget_id = self._find_between(response.body, '"widgetID" : "', '",')
+        slot_name = self._find_between(response.body, '"slotName" : "', '"')
+
+        data = {"requestMetadata":
+                    {"marketplaceID": marketplace_id,
+                     "clientID": "goldbox_mobile_pc",
+                     "sessionID": session_id},
+                "dealTargets": None,
+                "responseSize": "ALL",
+                "itemResponseSize": "DEFAULT_WITH_PREEMPTIVE_LEAKING",
+                "widgetContext": {"pageType": "GoldBox",
+                                  "subPageType": "Alldeals",
+                                  "deviceType": "pc",
+                                  "refRID": reference_id,
+                                  "widgetID": widget_id,
+                                  "slotName": slot_name}}
+        return (deal_targets_1, deal_targets_2, deal_targets_3), data
+
+    def _parse_goldbox_deals(self, response):
+        payload_list = response.meta.get("payload_list")
+        deal_product_url_dict = {}
+        self.deal_response_json_list.append(json.loads(response.body))
+        # payload_list is empty, we done all 3 requests needed. Generate product urls.
+        if not payload_list:
+            for deal_response_json in self.deal_response_json_list:
+                for deal in deal_response_json.get("dealDetails", {}):
+                    egressurl = deal_response_json.get("dealDetails", {}).get(deal, {}).get("egressUrl", '')
+                    if egressurl:
+                        deal_product_url_dict[deal] = egressurl
+                    else:
+                        deal_asin = deal_response_json.get("dealDetails", {}).get(deal, {}).get("impressionAsin", '')
+                        if deal_asin:
+                            deal_product_url_dict[deal] = "https://www.amazon.com/dp/{}".format(deal_asin)
+                        else:
+                            self.log("No asin forund for deal id {}".format(deal), WARNING)
+
+            # Generating a list with correctly ordered product urls, important for rankings
+            for deal_id in self.sorted_goldbox_deals_ids:
+                # We need only first 32 products in right order
+                try:
+                    self.deal_product_url_list.append(deal_product_url_dict[deal_id])
+                except:
+                    # TODO self.sorted_goldbox_deals_ids contains sorted ids for more than one page
+                    # may do more requests previously and get urls for next pages here
+                    pass
+            yield Request(
+                        self.valid_url(self.product_url),
+                        meta={
+                            'search_term': '',
+                            'remaining': self.quantity
+                        },
+                        callback=self.parse,
+                        dont_filter=True
+                        )
+        else:
+            # not all request are done, call itself again
+            current_payload = payload_list.pop(0)
+            no_cache = randint(1480238000000, 1480238999999)
+            req = Request(url='https://www.amazon.com/xa/dealcontent/v2/GetDeals?nocache={0}'.format(no_cache),
+                          method="POST",
+                          body=json.dumps(current_payload),
+                          callback=self._parse_goldbox_deals,
+                          dont_filter=True
+                          )
+            req.meta["payload_list"] = payload_list
+            yield req
+
+    def _generate_goldbox_links_from_deals(self, response):
+        shelf_categories = [c.strip() for c in response.xpath(
+            ".//*[@id='s-result-count']/span/*/text()").extract()
+                            if len(c.strip()) > 1]
+        shelf_category = shelf_categories[-1] if shelf_categories else None
+
+        for index, link in enumerate(self.deal_product_url_list):
+            prod = SiteProductItem(ranking=index,
+                                   shelf_path=shelf_categories,
+                                   shelf_name=shelf_category)
+            yield Request(link, callback=self.parse_product,
+                          headers={'Referer': None},
+                          meta={'product': prod}), prod
+
+    def _find_between(self, s, first, last, offset=0):
+        try:
+            s = s.decode("utf-8")
+            start = s.index(first, offset) + len(first)
+            end = s.index(last, start)
+            return s[start:end]
+        except ValueError:
+            return ""
 
     def _scrape_next_results_page_link(self, response):
         return

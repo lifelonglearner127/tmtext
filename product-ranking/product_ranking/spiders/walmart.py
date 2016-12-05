@@ -491,14 +491,17 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         wcp = WalmartCategoryParser()
         wcp.setupSC(response)
         try:
-            product['categories'] = wcp._categories_hierarchy()
+            categories = wcp._categories_hierarchy()
+            cond_set_value(product, 'categories', categories)
         except Exception as e:
             self.log('Category not parsed: '+str(e), WARNING)
         try:
-            product['department'] = wcp._category()
+            department = wcp._category()
+            cond_set_value(product, 'department', department)
         except Exception as e:
             self.log('No department to parse: '+str(e), WARNING)
-        product['categories_full_info'] = wcp.full_categories_with_links()
+        categories_full_info = wcp.full_categories_with_links()
+        cond_set_value(product, 'categories_full_info', categories_full_info)
 
         model = is_empty(
             response.xpath('//tr[@class="js-product-specs-row"]/'
@@ -772,6 +775,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             response.meta['product'] = {}
         response.meta['product']['_walmart_original_id'] = original_parent_id
         response.meta['product']['_walmart_current_id'] = current_id
+        response.meta['product']['reseller_id'] = current_id
         if original_parent_id:
             # ok we've been redirected and we get the original item ID. Now:
             # * perform API call (in method _get_walmart_api_data_from_item_id
@@ -1009,8 +1013,11 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def _populate_from_js_alternative(self, response, product):
         data = self._extract_product_info_json_alternative(response)
         if data:
-            # Parse selected product
-            selected_product = self._parse_selected_product_alternative(data)
+            # Parse selected product id
+            selected_product_id = self._parse_selected_product_id(data)
+
+            # Parse selected product data
+            selected_product = self._parse_selected_product_alternative(data, selected_product_id)
 
             # Parse selected product offers
             selected_product_offers = self._parse_selected_product_offers(selected_product)
@@ -1042,10 +1049,16 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             image_url = self._parse_image_url_alternative(data)
             cond_set_value(product, 'image_url', image_url)
 
-            # Parse marketplaces
-            # marketplaces_names = self._parse_marketplaces_names(data)
-            # marketplace = self._parse_marketplaces_alternative(marketplaces_data, marketplaces_names)
-            # cond_set_value(product, 'marketplace', marketplace)
+            # Parse marketplaces names
+            marketplaces_names = self._parse_marketplaces_names(data)
+
+            # Parse selected product available marketplaces
+            selected_product_marketplaces = self._parse_selected_product_marketplaces(selected_product)
+
+            # Parse marketplace
+            marketplace = self._parse_marketplaces_alternative(
+                marketplaces_data, marketplaces_names, selected_product_marketplaces)
+            cond_set_value(product, 'marketplace', marketplace)
 
             # Parse buyer reviews
             buyer_reviews = self._parse_buyer_reviews_alternative(data)
@@ -1059,12 +1072,62 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             upc = self._parse_upc_alternative(selected_product)
             cond_set_value(product, 'upc', upc)
 
+            # Parse categories data
+            categories_data = self._parse_categories_data_alternative(selected_product)
+
+            # Parse categories
+            categories = self._parse_categories_alternative(categories_data)
+            cond_set_value(product, 'categories', categories)
+
+            # Parse categories_full_info
+            categories_full_info = self._parse_categories_full_info_alternative(response, categories_data)
+            cond_set_value(product, 'categories_full_info', categories_full_info)
+
+            # Parse department
+            department = self._parse_department_alternative(categories)
+            cond_set_value(product, 'department', department)
+
             # Parse products
             products = self._parse_products_alternative(data)
 
             # Parse variants
             variants = self._parse_variants_alternative(response, marketplaces_data, data, products, selected_product)
             cond_set_value(product, 'variants', variants)
+
+    @staticmethod
+    def _parse_department_alternative(categories):
+        return categories[-1] if categories else None
+
+    @staticmethod
+    def _parse_categories_full_info_alternative(response, categories_data):
+        for category in categories_data:
+            category['url'] = urlparse.urljoin(response.url, category.get('url'))
+        return categories_data
+
+    @staticmethod
+    def _parse_categories_alternative(categories_data):
+        return [category.get('name') for category in categories_data]
+
+    @staticmethod
+    def _parse_categories_data_alternative(selected_product):
+        return selected_product.get('productAttributes', {}).get(
+            'productCategory', {}).get('path')
+
+    @staticmethod
+    def _parse_selected_product_marketplaces(selected_product):
+        return selected_product.get('offers')
+
+    @staticmethod
+    def _parse_selected_product_id(data):
+        return data.get('product', {}).get('selected', {}).get('product')
+
+    @staticmethod
+    def _parse_selected_product_alternative(data, selected_product_id):
+        selected = data.get('product', {}).get('products', {}).get(selected_product_id)
+        if selected:
+            return selected
+        else:
+            return data.get('product', {}).get('primaryProduct', {})
 
     @staticmethod
     def _parse_products_alternative(data):
@@ -1109,6 +1172,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 property_data['size'] = name
             elif 'number_of_pieces' in property_name:
                 property_data['count'] = name
+            else:
+                property_data[property_name] = name
         return property_data
 
     @staticmethod
@@ -1118,14 +1183,6 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             return selected_product.get('offers', [])
         except:
             return []
-
-    @staticmethod
-    def _parse_selected_product_alternative(data):
-        selected = data.get('product', {}).get('selected', {}).get('product')
-        if selected:
-            return data.get('product', {}).get('products', {}).get(selected, {})
-        else:
-            return data.get('product', {}).get('primaryProduct', {})
 
     @staticmethod
     def _parse_marketplaces_data_alternative(data):
@@ -1188,23 +1245,26 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     @staticmethod
     def _parse_marketplaces_names(data):
         names = {}
-        for seller in data.get('product').get('sellers').values():
+        sellers = data.get('product', {}).get('sellers', {})
+        sellers = sellers.values() if not sellers.get('sellerId') else [sellers]
+        for seller in sellers:
             seller_id = seller.get('sellerId')
             seller_name = seller.get('sellerDisplayName')
             names[seller_id] = seller_name
         return names
 
     @staticmethod
-    def _parse_marketplaces_alternative(marketplaces_data, marketplaces_names):
+    def _parse_marketplaces_alternative(marketplaces_data, marketplaces_names, selected_product_marketplaces):
         marketplaces = []
         for marketplace in marketplaces_data:
+            offer_id = marketplace.get('id')
             seller_id = marketplace.get('sellerId')
             price = marketplace.get(
                 'pricesInfo', {}).get('priceMap', {}).get('CURRENT', {}).get('price', 0)
             currency = marketplace.get(
                 'pricesInfo', {}).get('priceMap', {}).get('CURRENT', {}).get('currencyUnit')
             name = marketplaces_names.get(seller_id)
-            if seller_id in marketplaces_names:
+            if offer_id in selected_product_marketplaces:
                 marketplaces.append({'name': name,
                                      'price': price,
                                      'currency': currency})

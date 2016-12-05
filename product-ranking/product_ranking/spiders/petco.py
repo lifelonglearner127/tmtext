@@ -207,6 +207,9 @@ class PetcoProductsSpider(ProductsSpider):
         sku = self._parse_sku(response)
         cond_set_value(product, 'sku', sku)
 
+        # Reseller_id
+        cond_set_value(product, 'reseller_id', sku)
+
         # Brand
         brand = self._parse_brand(response)
         cond_set_value(product, 'brand', brand)

@@ -64,6 +64,10 @@ class BestBuyProductSpider(ProductsSpider):
     def _populate_from_schemaorg(self, response, product):
         product_tree = response.xpath("//*[@itemtype='http://schema.org/Product']")
 
+        cond_set(product, 'reseller_id', product_tree.xpath(
+            "//*[@itemtype='http://schema.org/Product']//*[@id='pdp-model-data']/@data-sku-id"
+        ).extract())
+
         cond_set(product, 'title', product_tree.xpath(
             "descendant::*[not (@itemtype)]/meta[@itemprop='name']/@content"
         ).extract())

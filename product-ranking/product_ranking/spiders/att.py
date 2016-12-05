@@ -268,6 +268,7 @@ class ATTProductsSpider(BaseProductsSpider):
             prod['available_store'] = 0
         prod['title'] = sel_v['displayName']
         prod['sku'] = response.meta['selected_sku']
+        prod['reseller_id'] = prod.get('sku')
         yield prod
 
     def _on_variants_response_url2(self, response):

@@ -171,6 +171,11 @@ class MarksandspencerProductsSpider(BaseProductsSpider):
 
         product["locale"] = "en_GB"
 
+        regex = "\/p\/([a-z0-9$]+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
+
         variants_stock = is_empty(re.findall(
             "itemStockDetailsMap_\d+\s+\=\s+([^\;]*)", response.body), "{}")
         variants_price = is_empty(re.findall(
