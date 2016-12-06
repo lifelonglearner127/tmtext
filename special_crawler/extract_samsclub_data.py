@@ -47,6 +47,7 @@ class SamsclubScraper(Scraper):
     pdf_urls = None
     failure_type = None
     items = None
+    redirect = 0
     sv = SamsclubVariants()
 
     def __init__(self, **kwargs):
@@ -108,6 +109,8 @@ class SamsclubScraper(Scraper):
                 return True
 
             r = requests.get(redirect_url, headers=self.HEADERS)
+
+            self.redirect = 1
 
             self.product_page_url = redirect_url
             self.page_raw_text = r.content
@@ -656,7 +659,7 @@ class SamsclubScraper(Scraper):
 
         # Otherwise it is a normal category page
         else:
-            cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+            cat_id = re.match('.*/(\d+)\.(cp|ip)', self._url()).group(1)
 
             self.items += self._get_category_items(cat_id)
 
@@ -730,7 +733,7 @@ class SamsclubScraper(Scraper):
                 return body_copy
 
     def _body_copy_links(self):
-        cat_id = re.match('.*/(\d+)\.cp', self._url()).group(1)
+        cat_id = re.match('.*/(.+)\.(cp|ip)', self._url()).group(1)
 
         if not self.tree_html.xpath('//*[contains(@class,"categoryText")]'):
             return None
@@ -744,7 +747,7 @@ class SamsclubScraper(Scraper):
             if not re.match('http://www.samsclub.com', link):
                 link = 'http://www.samsclub.com' + link
 
-            if re.search(cat_id + '.cp$', link):
+            if re.search(cat_id + '.cp$', link) or re.search(cat_id + '.ip$', link):
                 return_links['self_links']['count'] += 1
 
             else:
@@ -755,6 +758,9 @@ class SamsclubScraper(Scraper):
                     return_links['broken_links']['count'] += 1
 
         return return_links
+
+    def _redirect(self):
+        return self.redirect
 
     ##########################################
     ############### CONTAINER : REVIEWS
@@ -1095,6 +1101,7 @@ class SamsclubScraper(Scraper):
         "num_items_no_price_displayed" : _num_items_no_price_displayed, \
         "body_copy" : _body_copy, \
         "body_copy_links" : _body_copy_links, \
+        "redirect" : _redirect, \
         "image_alt_text": _image_alt_text, \
         "image_alt_text_len": _image_alt_text_len, \
 

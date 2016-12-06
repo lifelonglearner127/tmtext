@@ -156,6 +156,8 @@ class RiverislandProductsSpider(BaseProductsSpider):
             sku = None
         cond_set(product, 'sku', sku, string.strip)
 
+        cond_set(product, 'reseller_id', sku, string.strip)
+
         price_now = response.css(
             ".product-details-container .right-side .price .sale::text"
             ).extract()

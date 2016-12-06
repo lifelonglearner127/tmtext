@@ -30,16 +30,17 @@ def is_num(s):
 
 class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
     name = 'homedepot_products'
-    allowed_domains = ["homedepot.com", "www.res-x.com"]
+    allowed_domains = ["homedepot.com", "origin.api-beta.homedepot.com"]
     start_urls = []
 
     settings = HomedepotValidatorSettings
 
     SEARCH_URL = "http://www.homedepot.com/s/{search_term}?NCNI-5"
-    SCRIPT_URL = "http://www.res-x.com/ws/r2/Resonance.aspx"
     DETAILS_URL = "http://www.homedepot.com/p/getSkuDetails?itemId=%s"
     REVIEWS_URL = "http://homedepot.ugc.bazaarvoice.com/1999m/%s/" \
         "reviews.djs?format=embeddedhtml"
+    RECOMMENDED_URL = "http://origin.api-beta.homedepot.com/ProductServices/v2/products/" \
+        "recommendation?type=json&key=tRXWvUBGuAwEzFHScjLw9ktZ0Bw7a335"
 
     product_filter = []
 
@@ -97,6 +98,11 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
             response.xpath(
                 "//div[@class='pricingReg']"
                 "/span[@itemprop='price']/text()").extract())
+
+        reseller_id_regex = "\/(\d+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
 
         if product.get('price', None):
             if not '$' in product['price']:
@@ -168,15 +174,20 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
             except (KeyError, IndexError):
                 self.log("Incomplete data from Javascript.", DEBUG)
 
-        certona_url = self._gen_certona_url(response)
-        if certona_url:
+        certona_payload = self._gen_payload(response)
+
+        if certona_payload:
             new_meta = response.meta.copy()
             new_meta['product'] = product
-            new_meta['handle_httpstatus_list'] = [404]
+            new_meta['handle_httpstatus_list'] = [404, 415]
             new_meta['internet_no'] = internet_no
+            headers = {'Proxy-Connection':'keep-alive', 'Content-Type':'application/json'}
             return Request(
-                certona_url,
-                self._parse_certona,
+                self.RECOMMENDED_URL,
+                callback = self._parse_related_products,
+                headers = headers,
+                body = json.dumps(certona_payload),
+                method = "POST",
                 meta=new_meta,
                 priority=1000,
             )
@@ -213,7 +224,9 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
             return product
         return reqs
 
-    def _gen_certona_url(self, response):
+    def _gen_payload(self, response):
+        """Generates request body. Also maxProducts value can be changed for +\- number of values"""
+
         # changed version 4.2x -> 5.3x
         # appid = response.xpath("//input[@id='certona_appId']/@value").extract()
         # if not appid:
@@ -228,62 +241,37 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
             return
 
         payload = {
-            "appid": appid,
-            "tk": "62903038691729",
-            "ss": "181357350200414",
-            "sg": "1",
-            "pg": "210528030293062",
-            "vr": "4.2x",
-            "bx": "true",
-            "sc": "PIPHorizontal1_rr",
-            "ev": "product",
-            "ei": critemid,
-            "storenum": "121",
-            "cb": "None",
+            "appId": appid,
+            "products": critemid,
+            "maxProducts": "16",
+            "certonaSchema": "PIPHorizontal1_rr",
+            "sessionId": "41020192309266",
+            "trackingId": "252187705102752",
+            "storeId": "123",
         }
-        return urlparse.urljoin(
-            self.SCRIPT_URL, "?" + urllib.urlencode(payload))
+        return payload
 
-    def _parse_certona(self, response):
+    def _parse_related_products(self, response):
         product = response.meta['product']
         internet_no = response.meta.get('internet_no', None)
 
-        if response.status == 404:
-            # No further pages were found.
+        if response.status in response.meta['handle_httpstatus_list']:
+            # No further pages were found. Check the request payload.
             return product
 
-        m = re.match(r'None\((.*)\);', response.body_as_unicode())
-        if m:
-            js = m.group(1)
-            jsdata = json.loads(js)
-
-            try:
-                html = jsdata['Resonance']['Response'][0]['output']
-            except (KeyError, IndexError):
-                html = None
-        else:
-            html = response.body_as_unicode()
-
-        if html:
-            sel = Selector(text=html)
-
-            el = sel.xpath(
-                "//div[contains(@class,'pod')]/div/div"
-                "/a[@class='item_description']"
+        data=json.loads(response.body_as_unicode())
+        related_prods=[]
+        for prod in data['schemas'][0]['products']:
+            name = prod['productName']
+            href = prod['canonicalURL']
+            related_prods.append(RelatedProduct(
+                name, urlparse.urljoin(product['url'], href))
             )
-            prods = []
-            for e in el:
-                href = e.xpath("@href").extract()
-                if href:
-                    href = href[0]
-                name = e.xpath("text()").extract()
-                if name:
-                    name = name[0].strip()
-                prods.append(RelatedProduct(
-                    name, urlparse.urljoin(product['url'], href)))
-
-            if prods:
-                product['related_products'] = {"recommended": prods}
+        if related_prods:
+            if 'THE HOME DEPOT RECOMMENDS' in data['schemas'][0]['title']:
+                product['related_products'] = {'recommended': related_prods}
+            else:
+                product['related_products'] = {'buyers_also_bought': related_prods}
 
         skus = response.meta.get('skus', None)
 

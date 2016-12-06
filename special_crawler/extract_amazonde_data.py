@@ -99,7 +99,7 @@ class AmazonDEScraper(Scraper):
         self.tree_html = html.fromstring(contents)
 
     def check_url_format(self):
-        m = re.match(r"^http://www.amazon.de/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
+        m = re.match(r"^(http|https)://www.amazon.de/([a-zA-Z0-9\-\%\_]+/)?(dp|gp/product)/[a-zA-Z0-9]+(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url)
         self.scraper_version = "de"
 
         return not not m
@@ -129,7 +129,7 @@ class AmazonDEScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = re.match("^http://www.amazon.de/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(3)
+        product_id = re.match("^(http|https)://www.amazon.de/([a-zA-Z0-9\-]+/)?(dp|gp/product)/([a-zA-Z0-9]+)(/[a-zA-Z0-9_\-\?\&\=]+)?$", self.product_page_url).group(4)
         return product_id
 
     def _site_id(self):
@@ -238,6 +238,113 @@ class AmazonDEScraper(Scraper):
             return short_description.replace("\n"," ")
 
         return self._long_description_helper()
+
+    def _bullet_feature_1(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 0:
+            return self._clean_text(bullets[0].text_content())
+
+    def _bullet_feature_2(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 1:
+            return self._clean_text(bullets[1].text_content())
+
+    def _bullet_feature_3(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 2:
+            return self._clean_text(bullets[2].text_content())
+
+    def _bullet_feature_4(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 3:
+            return self._clean_text(bullets[3].text_content())
+
+    def _bullet_feature_5(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 4:
+            return self._clean_text(bullets[4].text_content())
+
+    def _bullet_feature_6(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 5:
+            return self._clean_text(bullets[5].text_content())
+
+    def _bullet_feature_7(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 6:
+            return self._clean_text(bullets[6].text_content())
+
+    def _bullet_feature_8(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 7:
+            return self._clean_text(bullets[7].text_content())
+
+    def _bullet_feature_9(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 8:
+            return self._clean_text(bullets[8].text_content())
+
+    def _bullet_feature_10(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 9:
+            return self._clean_text(bullets[9].text_content())
+
+    def _bullet_feature_11(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 10:
+            return self._clean_text(bullets[10].text_content())
+
+    def _bullet_feature_12(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 11:
+            return self._clean_text(bullets[11].text_content())
+
+    def _bullet_feature_13(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 12:
+            return self._clean_text(bullets[12].text_content())
+
+    def _bullet_feature_14(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 13:
+            return self._clean_text(bullets[13].text_content())
+
+    def _bullet_feature_15(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 14:
+            return self._clean_text(bullets[14].text_content())
+
+    def _bullet_feature_16(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 15:
+            return self._clean_text(bullets[15].text_content())
+
+    def _bullet_feature_17(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 16:
+            return self._clean_text(bullets[16].text_content())
+
+    def _bullet_feature_18(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 17:
+            return self._clean_text(bullets[17].text_content())
+
+    def _bullet_feature_19(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 18:
+            return self._clean_text(bullets[18].text_content())
+
+    def _bullet_feature_20(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]")
+        if bullets and len(bullets) > 19:
+            return self._clean_text(bullets[19].text_content())
+
+    def _bullets(self):
+        bullets = self.tree_html.xpath("//*[contains(@id,'feature-bullets')]//ul/li[not(contains(@class,'hidden'))]//text()")
+        bullets = [self._clean_text(r) for r in bullets if len(self._clean_text(r))>0]
+        if len(bullets) > 0:
+            return "\n".join(bullets)
+        return None
 
     def _seller_ranking(self):
         seller_ranking = []
@@ -464,6 +571,53 @@ class AmazonDEScraper(Scraper):
 
         return 0
 
+    def _no_longer_available(self):
+        availability = self.tree_html.xpath('//*[@id="availability" or @id="pantry-availability"]')
+
+        if availability:
+            if re.search('Currently [uU]navailable', availability[0].text_content()):
+                return 1
+
+        return 0
+
+    def _important_information_helper(self, name):
+        important_information = self.tree_html.xpath('//div[@id="importantInformation"]/div/div')
+
+        if important_information:
+            important_information = html.tostring( self.tree_html.xpath('//div[@id="importantInformation"]/div/div')[0])
+
+            tags = ['<b>', '<h5>']
+            tail_tags = ['</b>', '</h5>']
+            idx = 0
+            for t in tags:
+                name_index = important_information.find(t + name)
+
+                if name_index == -1:
+                    idx += 1
+                    continue
+
+                start_index = important_information.find(tail_tags[idx], name_index) + len(tail_tags[idx])
+
+                # end at the next bold element
+                end_index = important_information.find(t, start_index + 1)
+
+                return important_information[start_index : end_index]
+
+    def _amazon_ingredients(self):
+        return self._important_information_helper('Ingredients')
+
+    def _usage(self):
+        return self._important_information_helper('Usage')
+
+    def _directions(self):
+        return self._important_information_helper('Directions')
+
+    def _warnings(self):
+        return self._important_information_helper('Safety')
+
+    def _indications(self):
+        return self._important_information_helper('Indications')
+
     ##########################################
     ################ CONTAINER : PAGE_ATTRIBUTES
     ##########################################
@@ -680,31 +834,39 @@ class AmazonDEScraper(Scraper):
         video_url = self.tree_html.xpath('//script')  #[@type="text/javascript"]
         temp = []
         for v in video_url:
-            st=str(v.xpath('.//text()'))
+            st = str(v.xpath('.//text()'))
             r = re.findall("[\'\"]url[\'\"]:[\'\"](http://.+?\.mp4)[\'\"]", st)
             if r:
                 temp.extend(r)
             ii=st.find("kib-thumb-container-")
             if ii > 0:
-                ij=st.find('"',ii+19)
-                if ij-ii<25:
+                ij=st.find('"', ii+19)
+                if ij-ii < 25:
                     vid = st[ii:ij]
                     viurl = self.tree_html.xpath('//div[@id="%s"]//img/@src' % vid)
-                    if len(viurl)>0:
+                    if len(viurl) > 0:
                         temp.append(viurl[0])
 
-        #Find video among the  small images.
+        # Find video among the small images.
         image_url = self.tree_html.xpath("//span[@class='a-button-text']//img/@src")
-        if len(image_url)==0:
+        if len(image_url) == 0:
             image_url = self.tree_html.xpath("//div[@id='thumbs-image']//img/@src")
         for v in image_url:
-            if v.find("player")>0 :
+            if v.find("player") > 0:
                 temp.append(v)
-        if len(temp)==0: return None
-        return temp#",".join(temp)
+
+        video_urls = re.findall('"url":"([^"]+.mp4)"', html.tostring(self.tree_html))
+        for video in video_urls:
+            if video not in temp:
+                temp.append(video)
+
+        if len(temp) == 0:
+            return None
+        return temp  # ",".join(temp)
 
     def _video_count(self):
-        if self._video_urls()==None: return 0
+        if self._video_urls() == None:
+            return len(self.tree_html.xpath('//*[@id="cr-video-swf-url"]'))
         return len(self._video_urls())#.split(','))
 
     # return one element containing the PDF
@@ -869,7 +1031,7 @@ class AmazonDEScraper(Scraper):
     ##########################################
     def _price_amount(self):
         price = self._price()
-        price = price.replace(",", "")
+        price = price[:-3].replace(",", "") + price[-3:].replace(",", ".")
         price_amount = re.findall(r"[\d\.]+", price)[0]
         return float(price_amount)
 
@@ -989,7 +1151,13 @@ class AmazonDEScraper(Scraper):
                 sname = s.xpath('.//*[contains(@class,"olpSellerName")]/span/a/text()')
 
                 if len(price) > 0:
-                    seller_price = self._tofloat(price[0])
+                    tmp = price[0].strip()
+                    tmp = tmp[:-3].replace(",", "") + tmp[-3:].replace(",", ".")
+                    tmp = re.findall(r"[\d\.]+", tmp)[0]
+                    try:
+                        seller_price = float(tmp)
+                    except ValueError:
+                        seller_price = 0.0
                     seller_name = ""
 
                     if len(sname) > 0 and sname[0].strip() != "":
@@ -1232,6 +1400,33 @@ class AmazonDEScraper(Scraper):
         "ingredient_count": _ingredient_count, \
         "nutrition_facts": _nutrition_facts, \
         "nutrition_fact_count": _nutrition_fact_count, \
+        "no_longer_available": _no_longer_available, \
+        "bullet_feature_1": _bullet_feature_1, \
+        "bullet_feature_2": _bullet_feature_2, \
+        "bullet_feature_3": _bullet_feature_3, \
+        "bullet_feature_4": _bullet_feature_4, \
+        "bullet_feature_5": _bullet_feature_5, \
+        "bullet_feature_6": _bullet_feature_6, \
+        "bullet_feature_7": _bullet_feature_7, \
+        "bullet_feature_8": _bullet_feature_8, \
+        "bullet_feature_9": _bullet_feature_9, \
+        "bullet_feature_10": _bullet_feature_10, \
+        "bullet_feature_11": _bullet_feature_11, \
+        "bullet_feature_12": _bullet_feature_12, \
+        "bullet_feature_13": _bullet_feature_13, \
+        "bullet_feature_14": _bullet_feature_14, \
+        "bullet_feature_15": _bullet_feature_15, \
+        "bullet_feature_16": _bullet_feature_16, \
+        "bullet_feature_17": _bullet_feature_17, \
+        "bullet_feature_18": _bullet_feature_18, \
+        "bullet_feature_19": _bullet_feature_19, \
+        "bullet_feature_20": _bullet_feature_20, \
+        "bullets": _bullets, \
+        "usage": _usage, \
+        "directions": _directions, \
+        "warnings": _warnings, \
+        "indications": _indications, \
+        "amazon_ingredients" : _amazon_ingredients, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\

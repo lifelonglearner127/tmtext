@@ -213,6 +213,11 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
         # Parse model
         cond_set_value(product, 'model', self.product_id)
 
+        reseller_id_regex = "p\/([^\/&?\.\s]+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         # Parse title
         title = self.parse_title(response)
         cond_set(product, 'title', title)
@@ -361,26 +366,31 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
         related_prods = []
         product = response.meta['product']
         sample = response.body
-        sample = sample.replace('certonaResx.showResponse(', '')
-        sample = sample[:-2]
-        data = json.loads(sample)
-        html = data['Resonance']['Response'][2]['output']
+        try:
+            sample = sample.replace('certonaResx.showResponse(', '')
+            sample = sample[:-2]
+            data = json.loads(sample)
+            html = data['Resonance']['Response'][2]['output']
+        except Exception as e:
+            self.log('Error during parsing related products page: {}'.format(e))
+            return product
+        else:
 
-        s = Selector(text=html)
-        titles = s.xpath('//h4/text()').extract()  # Title
-        urls = s.xpath('//img/@src').extract()  # Img url
-        for title, url in zip(titles, urls):
-            if url and title:
-                related_prods.append(
-                            RelatedProduct(
-                                title=title,
-                                url=url
+            s = Selector(text=html)
+            titles = s.xpath('//h4/text()').extract()  # Title
+            urls = s.xpath('//img/@src').extract()  # Img url
+            for title, url in zip(titles, urls):
+                if url and title:
+                    related_prods.append(
+                                RelatedProduct(
+                                    title=title,
+                                    url=url
+                                )
                             )
-                        )
-        product['related_products'] = {}
-        if related_prods:
-            product['related_products']['buyers_also_bought'] = related_prods
-        return product
+            product['related_products'] = {}
+            if related_prods:
+                product['related_products']['buyers_also_bought'] = related_prods
+            return product
 
     def parse_description(self, response):
         if self.js_data:

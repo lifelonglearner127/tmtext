@@ -130,6 +130,10 @@ class MothercareProductsSpider(ProductsSpider):
         cond_set(product, 'model',
                  response.css('[itemprop=model]::text').extract())
 
+        regex = "\/(\d+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
 
         price = product.get("price")
         if not re.findall(u'\xa3 *\d[\d, .]*', price):

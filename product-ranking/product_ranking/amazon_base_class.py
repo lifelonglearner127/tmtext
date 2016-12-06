@@ -411,6 +411,8 @@ class AmazonBaseClass(BaseProductsSpider):
         asin = [a.strip() for a in asin if a.strip()]
         asin = asin[0] if asin else None
         cond_set_value(product, 'asin', asin)
+        # See bugzilla #11492
+        cond_set_value(product, 'reseller_id', asin)
 
         # Parse variants
         if not self.ignore_variant_data:
