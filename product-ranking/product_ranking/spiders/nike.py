@@ -284,6 +284,10 @@ class NikeProductSpider(BaseProductsSpider):
         image = self.parse_image(response, js_data)
         cond_set_value(product, 'image_url', image)
 
+        # Parse reseller_id
+        reseller_id = self.parse_reseller_id(response)
+        cond_set_value(product, "reseller_id", reseller_id)
+
         # Parse brand
         # brand = self.parse_brand(response)
         # cond_set_value(product, 'brand', brand)
@@ -321,6 +325,12 @@ class NikeProductSpider(BaseProductsSpider):
             meta=meta
         )
         yield product
+
+    def parse_reseller_id(self, response):
+        regex = "\/pid-(\d+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        return reseller_id
 
     def parse_count_reviews(self, response):
         count_review = response.xpath(

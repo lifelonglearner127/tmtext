@@ -125,6 +125,11 @@ class GandermountainProductsSpider(ProductsSpider):
             product['price'] = Price(priceCurrency='USD',
                                      price=re.sub('[ ,]', '', price))
 
+        reseller_id_regex = "i=(\d+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         model = response.xpath(
             "//div[@class='item']/text()").re(FLOATING_POINT_RGEX)
         cond_set(product, 'model', model)

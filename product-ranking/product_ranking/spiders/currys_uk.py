@@ -228,7 +228,15 @@ class CurrysUkProductsSpider(ProductsSpider):
         cond_set(product, 'title',
                  response.css('[itemprop=name]::text').extract())
         css = '#longDesc article'
-        cond_set_value(product, 'description', response.css(css).extract()[0])
+        desc = response.css(css).extract()
+        desc = desc[0] if desc else None
+        cond_set_value(product, 'description', desc)
+
+        reseller_id_regex = "(\d+)-pdt"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         self._unify_price(product)
 
     def _unify_price(self, product):

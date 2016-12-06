@@ -199,7 +199,6 @@ class StaplesAdvantageScraper(Scraper):
             script = "\n".join(self.tree_html.xpath("//script//text()"))
             m = re.findall("enlargedImageURL = '([^']*)'", script, re.DOTALL)
             image_url = list(set(m))
-            image_url = ["https://www.staplesadvantage.com%s" % r for r in image_url]
         if len(image_url) < 1:
             return None
         try:

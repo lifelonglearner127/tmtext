@@ -117,7 +117,7 @@ class LeviSpider(BaseCheckoutSpider):
             item['requested_color'] = self.requested_color
 
         if color:
-            item['color'] = color
+            item['color'] = color.upper()
 
         item['requested_color_not_available'] = (
             color and self.requested_color and

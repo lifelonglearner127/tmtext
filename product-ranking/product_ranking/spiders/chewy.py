@@ -138,6 +138,11 @@ class ChewyProductsSpider(ProductsSpider):
             new_meta["reqs"] = reqs
         return req.replace(meta=new_meta)
 
+    def _parse_reseller_id(self, response):
+        reseller_id = re.findall('dp\/(\d+)', response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        return reseller_id
+
     def parse_product(self, response):
         reqs = []
         product = response.meta['product']
@@ -180,6 +185,9 @@ class ChewyProductsSpider(ProductsSpider):
         # Sku
         sku = self._parse_sku(response)
         cond_set_value(product, 'sku', sku)
+
+        reseller_id = self._parse_reseller_id(response)
+        cond_set_value(product, 'reseller_id', reseller_id)
 
         # Brand
         brand = self._parse_brand(response)

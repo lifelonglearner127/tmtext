@@ -61,6 +61,10 @@ class BolProductsSpider(BaseProductsSpider):
             conv=int,
         )
 
+        reseller_id = re.findall('\/(\d+)\/', response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         cond_set(product, 'locale', response.xpath("//html/@lang").extract())
 
         rel = response.xpath(
