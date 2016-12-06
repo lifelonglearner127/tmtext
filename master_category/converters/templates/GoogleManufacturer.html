@@ -11,10 +11,8 @@
 <g:title>{{ item.title }}</g:title>
 <g:gtin>{{ item.gtin }}</g:gtin>
 <g:mpn>{{ item.mpn }}</g:mpn>
-<g:description>{{ item.description }}</g:description>
-{% for bullet in item.bullet_points %}
-<g:bullet_point>{{ bullet }}</g:bullet_point>
-{% endfor %}
+{% if item.description %}<g:description>{{ item.description }}</g:description>{% endif %}
+{% for bullet in item.bullet_points %}<g:bullet_point>{{ bullet }}</g:bullet_point>{% endfor %}
 </item>
 {% endfor %}
 </channel>

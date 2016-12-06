@@ -64,7 +64,7 @@ def generate_google_manufacturer_xml(input_file):
             csvfile.readline()
             reader = csv.reader(csvfile)
             for item in reader:
-                tree_description = html.fromstring(item[9])
+                tree_description = html.fromstring(item[10])
                 tree_bullets = \
                     tree_description.xpath("//*[contains(@id,'feature-bullets')]//ul/"
                                            "li[not(contains(@class,'hidden'))]")
@@ -73,12 +73,12 @@ def generate_google_manufacturer_xml(input_file):
                     bullet_points.append(bullet.text_content())
 
                 items.append({
-                    'id': item[6],
-                    'brand': item[16],
-                    'title': item[8],
+                    'id': item[7],
+                    'brand': item[17],
+                    'title': item[9],
                     'gtin': item[1],
                     'mpn': item[6],                                 # This field should be redefined
-                    'description': item[11],
+                    'description': item[12],
                     'bullet_points': bullet_points,
                 })
     except Exception as e:
