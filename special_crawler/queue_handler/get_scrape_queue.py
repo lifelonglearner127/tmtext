@@ -204,9 +204,6 @@ def main(environment, scrape_queue_name, thread_id):
                 # Send Log History
                 LogHistory.send_log()
 
-                # Send Log History
-                LogHistory.send_log()
-
             except Exception as e:
                 logger.warn('Error: %s %s' % (type(e), e))
                 sqs_scrape.reset_message()
