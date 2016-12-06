@@ -23,12 +23,7 @@ import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 import crawler_service
 
-# initialize the logger
 logger = logging.getLogger('basic_logger')
-logger.setLevel(logging.DEBUG)
-fh = logging.StreamHandler()
-fh.setLevel(logging.DEBUG)
-logger.addHandler(fh)
 
 queue_names = {
     "Development": "dev_scrape", 
@@ -49,13 +44,14 @@ INDEX_ERROR = "IndexError : The queue was really out of items, but the count was
 
 FETCH_FREQUENCY = 60
 
-def main( environment, scrape_queue_name, thread_id):
+def main(environment, scrape_queue_name, thread_id):
     sys.path.append('...')
     from spiders_shared_code.log_history import LogHistory
 
-    logger.info( "Starting thread %d" % thread_id)
+    logger.info("Starting thread %d" % thread_id)
+
     # establish the scrape queue
-    sqs_scrape = SQS_Queue( scrape_queue_name)
+    sqs_scrape = SQS_Queue(scrape_queue_name)
 
     last_fetch = datetime.min
 
@@ -89,6 +85,8 @@ def main( environment, scrape_queue_name, thread_id):
 
         if not go_to_sleep:
             try:
+                logger.info('Received: thread %d message %s' % (thread_id, message))
+
                 # De-serialize to a json object
                 message_json = json.loads(message)
 
@@ -107,8 +105,6 @@ def main( environment, scrape_queue_name, thread_id):
                 LogHistory.add_log('url', url)
                 LogHistory.add_log('server_hostname', message_json.get('server_hostname'))
                 LogHistory.add_log('pl_name', message_json.get('pl_name'))
-
-                logger.info("Received: thread %d server %s url %s" % ( thread_id, server_name, url))
 
                 if (datetime.now() - last_fetch).seconds > FETCH_FREQUENCY:
                     amazon_bucket_name = 'ch-settings'
@@ -129,17 +125,16 @@ def main( environment, scrape_queue_name, thread_id):
                         api_key = key_dict['crawlera']['api_keys']['default']
                         walmart_api_key = key_dict['crawlera']['api_keys']['walmart']
 
-                        logger.info('FETCHED PROXY CONFIG')
+                        logger.info('Fetched proxy config: thread %d' % thread_id)
                         last_fetch = datetime.now()
 
                     except Exception as e:
-                        logger.warn(e)
-                        logger.warn('FAILED TO FETCH PROXY CONFIG')
+                        logger.warn('Failed to fetch proxy config: thread %d error %s' % \
+			                (thread_id, e))
 
                 max_retries = 3
 
                 for i in range(1, max_retries):
-                    # Scrape the page using the scraper running on localhost
                     get_start = time.time()
 
                     try:
@@ -162,16 +157,15 @@ def main( environment, scrape_queue_name, thread_id):
                         LogHistory.add_log('failure_type', output_json.get('failure_type'))
 
                     except Exception as e:
-                        get_end = time.time()
+                        logger.warn('Error extracting output json: %s %s' % (type(e), e))
 
-                        print 'Error extracting output json', type(e), e
-                        logger.warn(e)
+                        loaded_in_seconds = round(time.time() - get_start, 2)
 
                         output_json = {
                             "error":str(e),
                             "date":datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
                             "status":"failure",
-                            "page_attributes":{"loaded_in_seconds":round(get_end-get_start,2)}}
+                            "page_attributes":{"loaded_in_seconds":loaded_in_seconds}}
 
                     output_json['attempt'] = i
 
@@ -181,7 +175,8 @@ def main( environment, scrape_queue_name, thread_id):
 
                     # If failure was due to proxies
                     if output_json.get('failure_type') in ['max_retries', 'proxy']:
-                        logger.info('GOT FAILURE TYPE %s for %s - RETRY %s' % (output_json.get('failure_type'), url, i))
+                        logger.info('GOT FAILURE TYPE %s for %s - RETRY %d' % \
+			                (output_json.get('failure_type'), url, i))
                         max_retries = 10
                         # back off incrementally
                         time.sleep(60*i)
@@ -195,21 +190,25 @@ def main( environment, scrape_queue_name, thread_id):
                 output_json['event'] = event
 
                 output_message = json.dumps(output_json)
-                #print(output_message)
+
+                logger.info('Sending: url %s message %s' % (url, output_message))
 
                 # Add the scraped page to the processing queue ...
-                sqs_process = SQS_Queue('%s_process'%server_name)
-                sqs_process.put( output_message, url)
+                sqs_process = SQS_Queue('%s_process' % server_name)
+                sqs_process.put(output_message)
                 # ... and remove it from the scrape queue
                 sqs_scrape.task_done()
                 
-                logger.info("Sent: thread %d server %s url %s" % ( thread_id, server_name, url))
+                logger.info("Sent: thread %d server %s url %s" % (thread_id, server_name, url))
+
+                # Send Log History
+                LogHistory.send_log()
 
                 # Send Log History
                 LogHistory.send_log()
 
             except Exception as e:
-                logger.warn(e)
+                logger.warn('Error: %s %s' % (type(e), e))
                 sqs_scrape.reset_message()
 
         time.sleep(1)
@@ -224,17 +223,17 @@ if __name__ == "__main__":
                 queue_name = queue_names[k]
 
         if queue_name != "no queue":
-            logger.info( "environment: %s" % environment)
-            logger.info( "using scrape queue %s" % queue_name)
+            logger.info("environment: %s" % environment)
+            logger.info("using scrape queue %s" % queue_name)
             if environment != "UnitTest":
                 threads = []
                 for i in range(5):
-                    logger.info( "Creating thread %d" % i)
-                    t = threading.Thread( target=main, args=( environment, queue_name, i))
-                    threads.append( t)
+                    logger.info("Creating thread %d" % i)
+                    t = threading.Thread(target=main, args=(environment, queue_name, i))
+                    threads.append(t)
                     t.start()
             else:
-                main( environment, queue_name, -1)
+                main(environment, queue_name, -1)
         else:
             print "Environment not recognized: %s" % environment
     else:
