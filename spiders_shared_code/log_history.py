@@ -49,7 +49,7 @@ class LogHistory(object):
         self.data['date'] = time.time()
 
         try:
-            self.data['instance'] = requests.get('http://169.254.169.254/latest/meta-self.data/instance-id',
+            self.data['instance'] = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
                 timeout = 10).content
         except Exception as e:
             self.data['instance'] = 'Failed to get instance metadata: %s %s' % (type(e), e)
