@@ -11,60 +11,54 @@ fh.setLevel(logging.DEBUG)
 logger.addHandler(fh)
 
 class LogHistory(object):
-    start = None
-    data = {
-        'scraper': None,
-        'scraper_type': None,
-        'server_hostname': None,
-        'pl_name': None,
-        'url': None,
-        'response_time': None,
-        'failure_type': None,
-        'date': None,
-        'duration': None,
-        'page_size': None,
-        'instance': None,
-        'errors': []
-    }
+    def __init__(self, scraper):
+        self.start = None
+        self.data = {
+            'scraper': scraper,
+            'scraper_type': None,
+            'server_hostname': None,
+            'pl_name': None,
+            'url': None,
+            'response_time': None,
+            'failure_type': None,
+            'date': None,
+            'duration': None,
+            'page_size': None,
+            'instance': None,
+            'errors': []
+        }
 
-    @staticmethod
-    def start_log(scraper):
-        LogHistory.start = time.time()
+    def start_log(self):
+        self.start = time.time()
 
-        LogHistory.add_log('scraper', scraper)
+    def get_log(self):
+        return json.dumps(self.data)
 
-    @staticmethod
-    def get_log():
-        return json.dumps(LogHistory.data)
+    def add_log(self, key, value):
+        self.data[key] = value
 
-    @staticmethod
-    def add_log(key, value):
-        LogHistory.data[key] = value
+    def add_list_log(self, key, value):
+        if key not in self.data:
+            self.data[key] = []
+        self.data[key].append(value)
 
-    @staticmethod
-    def send_log():
+    def send_log(self):
         end = time.time()
 
-        LogHistory.data['duration'] = round(end-LogHistory.start, 2)
-        LogHistory.data['date'] = time.time()
+        self.data['duration'] = round(end-self.start, 2)
+        self.data['date'] = time.time()
 
         try:
-            LogHistory.data['instance'] = requests.get('http://169.254.169.254/latest/meta-LogHistory.data/instance-id',
+            self.data['instance'] = requests.get('http://169.254.169.254/latest/meta-self.data/instance-id',
                 timeout = 10).content
         except Exception as e:
-            LogHistory.data['instance'] = 'Failed to get instance metadata: %s' % str(e)
+            self.data['instance'] = 'Failed to get instance metadata: %s %s' % (type(e), e)
 
         try:
             requests.post('http://10.0.0.22:49215',
                 auth=('chlogstash', 'shijtarkecBekekdetloaxod'),
                 headers = {'Content-type': 'application/json'},
-                data = LogHistory.get_log(),
+                data = self.get_log(),
                 timeout = 10)
         except Exception as e:
-            logger.warn('Failed to send logs: %s' % str(e))
-        
-    @staticmethod
-    def add_list_log(key, value):
-        if key not in LogHistory.data:
-            LogHistory.data[key] = []
-        LogHistory.data[key].append(value)
+            logger.warn('Failed to send logs: %s %s' % (type(e), e))

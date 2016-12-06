@@ -23,6 +23,9 @@ import os
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 import crawler_service
 
+sys.path.append('...')
+from spiders_shared_code.log_history import LogHistory
+
 logger = logging.getLogger('basic_logger')
 
 queue_names = {
@@ -45,9 +48,6 @@ INDEX_ERROR = "IndexError : The queue was really out of items, but the count was
 FETCH_FREQUENCY = 60
 
 def main(environment, scrape_queue_name, thread_id):
-    sys.path.append('...')
-    from spiders_shared_code.log_history import LogHistory
-
     logger.info("Starting thread %d" % thread_id)
 
     # establish the scrape queue
@@ -100,11 +100,12 @@ def main(environment, scrape_queue_name, thread_id):
 
                 additional_requests = message_json.get('additional_requests')
 
-                LogHistory.start_log('CH')
+                lh = LogHistory('CH')
+                lh.start_log()
 
-                LogHistory.add_log('url', url)
-                LogHistory.add_log('server_hostname', message_json.get('server_hostname'))
-                LogHistory.add_log('pl_name', message_json.get('pl_name'))
+                lh.add_log('url', url)
+                lh.add_log('server_hostname', message_json.get('server_hostname'))
+                lh.add_log('pl_name', message_json.get('pl_name'))
 
                 if (datetime.now() - last_fetch).seconds > FETCH_FREQUENCY:
                     amazon_bucket_name = 'ch-settings'
@@ -139,7 +140,7 @@ def main(environment, scrape_queue_name, thread_id):
 
                     try:
                         site = crawler_service.extract_domain(url)
-                        LogHistory.add_log('scraper_type', site)
+                        lh.add_log('scraper_type', site)
 
                         # create scraper class for requested site
                         site_scraper = crawler_service.SUPPORTED_SITES[site](url=url,
@@ -153,8 +154,8 @@ def main(environment, scrape_queue_name, thread_id):
                             walmart_proxy_shaderio = walmart_proxy_shaderio,
                             walmart_proxy_luminati = walmart_proxy_luminati)
 
-                        output_json = site_scraper.product_info()
-                        LogHistory.add_log('failure_type', output_json.get('failure_type'))
+                        output_json = site_scraper.product_info(lh=lh)
+                        lh.add_log('failure_type', output_json.get('failure_type'))
 
                     except Exception as e:
                         logger.warn('Error extracting output json: %s %s' % (type(e), e))
@@ -201,8 +202,10 @@ def main(environment, scrape_queue_name, thread_id):
                 
                 logger.info("Sent: thread %d server %s url %s" % (thread_id, server_name, url))
 
+		logger.info('Sending log history in thread %d with value %s' % (thread_id, lh.get_log()))
+
                 # Send Log History
-                LogHistory.send_log()
+                lh.send_log()
 
             except Exception as e:
                 logger.warn('Error: %s %s' % (type(e), e))
