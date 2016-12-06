@@ -7,6 +7,7 @@ from lxml import html
 from extract_data import Scraper
 from spiders_shared_code.jet_variants import JetVariants
 
+
 class JetScraper(Scraper):
     ##########################################
     ############### PREP
@@ -141,8 +142,17 @@ class JetScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
-        if self.product_data['productPrice']['status']:
+        if not self.product_data['display']:
             return 1
+
+        if self._site_online() == 0:
+            return None
+
+        in_stock = self.tree_html.xpath('//div[contains(@class, "were_sorry")]//text()')
+        in_stock = " ".join(in_stock)
+        if 'this item is unavailable right now' in in_stock.lower():
+            return 1
+
         return 0
 
     def _web_only(self):
