@@ -1,12 +1,7 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
-
-import re
 from scrapy import Request
 
-from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
-from product_ranking.items import SiteProductItem, Price, BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
+from product_ranking.items import SiteProductItem
 from product_ranking.spiders.petsmart import PetsmartProductsSpider
 
 
