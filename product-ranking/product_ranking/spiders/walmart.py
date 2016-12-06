@@ -1491,7 +1491,8 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
     def _scrape_product_links(self, response):
         items = response.xpath(
             '//div[@class="js-tile tile-landscape"] | '
-            '//div[contains(@class, "js-tile js-tile-landscape")]'
+            '//div[contains(@class, "js-tile js-tile-landscape")] | '
+            '//div[contains(@class,"js-tile tile-grid-unit")]'
         )
         if not items:
             items = response.xpath('//div[contains(@class, "js-tile")]')
