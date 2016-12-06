@@ -9,14 +9,12 @@ import time
 import csv
 import gzip
 import shutil
-from datetime import date, timedelta
+from prettytable import PrettyTable
+from datetime import date
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import COMMASPACE, formatdate
-
-AMAZON_SES_KEY = os.getenv('AMAZON_SES_KEY', '')
-AMAZON_SES_SECRET = os.getenv('AMAZON_SES_SECRET', '')
 
 import boto
 
@@ -27,7 +25,7 @@ cur = con.cursor(cursor_factory=psycopg2.extras.DictCursor)
 today = date.today()
 
 fromaddr = "jenkins@contentanalyticsinc.com"
-toaddrs = ["qa@contentanalyticsinc.com"]  # must be a list
+toaddrs = ["adriana@contentanalyticsinc.com", "support@contentanalyticsinc.com", "no.andrey@gmail.com", "alex@contentanalyticsinc.com"]  # must be a list
 subject = "Regression Service Summary Report: {0}".format(today.isoformat())
 msg = MIMEMultipart(
         From=fromaddr,
@@ -39,31 +37,9 @@ msg.preamble = subject
 header_content = "Possibly Changed Sites:\n"
 sites_changed = ""
 email_content = "\nWeb console:\nhttp://regression.contentanalyticsinc.com:8080/regression/\nlogin: tester\npassword: password\n\n"
-newdatahtml = ""
-websites = ["walmart", "jcpenney", "kohls", "macys", "target", "levi", "dockers", "samsclub", "drugstore", "amazon"]
-categories = ["Total tested product numbers:", "Not a product count:", "Product numbers of content structure changed:", "Product numbers of version changed:", "Percentage of changed products:", "80 percent of product titles are < 2 characters long:", "80 percent of review counts are 0:", "80 percent of product descriptions are < 2 words long:", "80 percent of image counts are 0:", "80 percent of products are out of stock:", "Possibility of overall website changes:"]
-keys = ["totaltested", "notaproduct", "structurechanged", "versionchanged", "changedproducts", "titles", "reviewcounts", "descriptions", "imagecounts", "outofstock", "possibilitychanges"]
-cathtml = ""
-for c in categories:
-    cathtml += "<p>%s</p>" % c
-day1 = []
-day2 = []
-day3 = []
-day4 = []
-html = '<table border="1"><tr><th></th>'
-for website in websites:
-    html += "<th>%s</th>" % website
-    sql = "SELECT * FROM email_history WHERE website = \'%s\' ORDER BY day ASC" % website
-    cur.execute(sql)
-    rows = cur.fetchall()
-    day1.append(rows[0])
-    day2.append(rows[1])
-    day3.append(rows[2])
-    day4.append(rows[3])
-for k in keys:
-    sql = "UPDATE email_history t2 SET {0} = t1.{0} FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website".format(k)
-    cur.execute(sql)
 
+websites = ["walmart", "jcpenney", "kohls", "macys", "target", "levi", "dockers", "samsclub", "drugstore", "amazon"]
+'''
 for website in websites:
     if website == "amazon":
         sql_sample_products = "select id, url, website, json, not_a_product from console_urlsample where website like '{0}'".format("amazon%")
@@ -339,17 +315,6 @@ for website in websites:
                                                  possibility_of_overall_website_changes)
     email_content += (website_header)
 
-    newdata = [number_of_reported_products, number_of_not_a_product, number_of_changed_products, number_of_version_changed_products, "%.2f" % percentage_of_changed_products, possibility_of_80_percent_product_titles_are_less_than_2_character_long, possibility_of_80_percent_review_counts_are_0, possibility_of_80_percent_product_descriptions_are_less_than_2_character_long, possibility_of_80_percent_image_counts_are_0, possibility_of_80_percent_products_are_out_of_stock, possibility_of_overall_website_changes]
-    newdatahtml += "<td>"
-    newdatahtml += "<br />"
-    for d in newdata:
-        newdatahtml += "<p>%s</p>" % d
-    newdatahtml += "</td>"
-
-    for i in range(0,len(keys)-1):
-        sql = "UPDATE email_history SET {0} = \'{1}\' WHERE website = \'{2}\' AND day = 1".format(keys[i],newdata[i],website)
-        cur.execute(sql)
-
     if os.path.isfile(csv_file_name_product_changes + ".gz"):
         csv_file = MIMEApplication(open(csv_file_name_product_changes + ".gz", "rb").read())
         csv_file.add_header('Content-Disposition', 'attachment', filename=basename(csv_file_name_product_changes + ".gz"))
@@ -381,61 +346,35 @@ for website in websites:
         msg.attach(csv_file1)
 
 if sites_changed == "":
-    sites_changed = "None"
-
-html += "</tr>"
-html += "<tr>"
-html += "<td><b><p>{0}:</b></p>".format(date.today().isoformat()) + cathtml + "</td>"
-html += newdatahtml
-html += "</tr>"
-html += "<tr>"
-html += "<td><p><b>{0}:</b></p>".format((date.today() - timedelta(1)).isoformat()) + cathtml + "</td>"
-for d in day1:
-    html += "<td>"
-    html += "<br />"
-    for k in keys:
-        html += "<p>%s</p>" % d[k]
-    html += "</td>"
-html += "</tr>"
-html += "<tr>"
-html += "<td><p><b>{0}:</b></p>".format((date.today() - timedelta(2)).isoformat()) + cathtml + "</td>"
-for d in day2:
-    html += "<td>"
-    html += "<br />"
-    for k in keys:
-        html += "<p>%s</p>" % d[k]
-    html += "</td>"
-html += "</tr>"
-html += "<tr>"
-html += "<td><p><b>{0}:</b></p>".format((date.today() - timedelta(3)).isoformat()) + cathtml + "</td>"
-for d in day3:
-    html += "<td>"
-    html += "<br />"
-    for k in keys:
-        html += "<p>%s</p>" % d[k]
-    html += "</td>"
-html += "</tr>"
-html += "<tr>"
-html += "<td><p><b>{0}:</b></p>".format((date.today() - timedelta(4)).isoformat()) + cathtml + "</td>"
-for d in day4:
-    html += "<td>"
-    html += "<br />"
-    for k in keys:
-        html += "<p>%s</p>" % d[k]
-    html += "</td>"
-html += "</tr>"
-html += "</table>"
-
-msg.attach(MIMEText(header_content + sites_changed + "\n"))
-msg.attach(MIMEText(html, 'html'))
-connection = boto.connect_ses(aws_access_key_id=AMAZON_SES_KEY,
-                              aws_secret_access_key=AMAZON_SES_SECRET)
+    sites_changed = "None\n"
+'''
+#UPDATE email_history t2 SET content = t1.content FROM email_history t1 WHERE t2.day = t1.day+1 and t2.website = t1.website
+day1 = []
+day2 = []
+day3 = []
+day4 = []
+for website in websites:
+    sql = "SELECT * FROM email_history WHERE website = \'%s\' ORDER BY day ASC" % website
+    cur.execute(sql)
+    rows = cur.fetchall()
+    day1.append(row[0])
+    day2.append(row[1])
+    day3.append(row[2])
+    day4.append(row[3])
+t = PrettyTable(websites)
+t.add_row(day1)
+t.add_row(day2)
+t.add_row(day3)
+t.add_row(day4)
+print t
+'''
+msg.attach(MIMEText(header_content + sites_changed + "\n" + t.get_string()))
+connection = boto.connect_ses()
 result = connection.send_raw_email(
     msg.as_string(),
     fromaddr, toaddrs)
 
-con.commit()
-
+'''
 #Change according to your settings
 #smtp_server = 'email-smtp.us-east-1.amazonaws.com'
 #smtp_username = 'AKIAI2XV5DZO5VTJ6LXQ'

@@ -54,6 +54,9 @@ class HomeDepotScraper(Scraper):
                 raise Exception()
 
         except Exception:
+            arr = self.tree_html.xpath('//div[@id="productinfo_ctn"]//div[contains(@class,"error")]//text()')
+            if "to view is not currently available." in " ".join(arr).lower():
+                return False
             return True
 
         return False
@@ -67,7 +70,7 @@ class HomeDepotScraper(Scraper):
             return
 
         try:
-            product_json_text = re.search('product: ({.*}),\s*channel:', html.tostring(self.tree_html), re.DOTALL).group(1)
+            product_json_text = re.search('({"itemId":.*?});', html.tostring(self.tree_html), re.DOTALL).group(1)
             self.product_json = json.loads(product_json_text)
         except:
             self.product_json = None
@@ -84,8 +87,11 @@ class HomeDepotScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = self.tree_html.xpath('//h2[@class="product_details"]//span[@itemprop="productID"]/text()')[0]
-        return product_id
+        try:
+            product_id = self.tree_html.xpath('//h2[@class="product_details"]//span[@itemprop="productID"]/text()')[0]
+            return product_id
+        except:
+            return re.findall(r'\d+$', self.product_page_url)[0]
 
     def _site_id(self):
         return None
@@ -241,6 +247,12 @@ class HomeDepotScraper(Scraper):
 
         if variants:
             return variants
+
+    def _no_longer_available(self):
+        arr = self.tree_html.xpath('//div[@id="productinfo_ctn"]//div[contains(@class,"error")]//text()')
+        if "to view is not currently available." in " ".join(arr).lower():
+            return 1
+        return 0
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -446,6 +458,11 @@ class HomeDepotScraper(Scraper):
     def _in_stores_out_of_stock(self):
         return 0
 
+    def _in_stock(self):
+        if self._owned_out_of_stock()==1:
+            return 0
+        return 1
+
     def _marketplace(self):
         return 0
 
@@ -517,6 +534,7 @@ class HomeDepotScraper(Scraper):
         "long_description" : _long_description, \
         "swatches" : _swatches, \
         "variants" : _variants, \
+        "no_longer_available" : _no_longer_available, \
 
         # CONTAINER : PAGE_ATTRIBUTES
         "image_count" : _image_count,\
@@ -543,6 +561,7 @@ class HomeDepotScraper(Scraper):
         "price_currency" : _price_currency, \
         "temp_price_cut" : _temp_price_cut, \
         "in_stores" : _in_stores, \
+        "in_stock" : _in_stock, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "in_stores_out_of_stock": _in_stores_out_of_stock, \
