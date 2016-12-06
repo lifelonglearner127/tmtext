@@ -192,8 +192,6 @@ class RandomUserAgent(object):
         self.set_user_agent(request, spider)
 
     def set_user_agent(self, request, spider):
-        session = request.headers.get(self.session_header, None)
-        if session not in self.sessions_uagent_map:
-            self.sessions_uagent_map[session] = self.user_agent or self.get_random_user_agent()
-        uagent = self.sessions_uagent_map[session]
+        uagent = self.user_agent or self.get_random_user_agent()
         request.headers['User-Agent'] = uagent
+        logger.info('UA set to: {}'.format(uagent))
