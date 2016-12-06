@@ -173,7 +173,6 @@ class RandomUserAgent(object):
 
     def __init__(self, crawler):
         self.user_agent = crawler.settings.get('RANDOM_USER_AGENT')
-        self.sessions_uagent_map = {}
         self.get_random_user_agent = None
         try:
             from fake_useragent import UserAgent
