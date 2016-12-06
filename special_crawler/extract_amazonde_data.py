@@ -1151,7 +1151,13 @@ class AmazonDEScraper(Scraper):
                 sname = s.xpath('.//*[contains(@class,"olpSellerName")]/span/a/text()')
 
                 if len(price) > 0:
-                    seller_price = self._tofloat(price[0])
+                    tmp = price[0].strip()
+                    tmp = tmp[:-3].replace(",", "") + tmp[-3:].replace(",", ".")
+                    tmp = re.findall(r"[\d\.]+", tmp)[0]
+                    try:
+                        seller_price = float(tmp)
+                    except ValueError:
+                        seller_price = 0.0
                     seller_name = ""
 
                     if len(sname) > 0 and sname[0].strip() != "":
