@@ -74,7 +74,7 @@ class WalmartScraper(Scraper):
 
     CRAWLERA_APIKEY = '6b7c3e13db4e440db31d457bc10e6be8'
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http(s)://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -338,7 +338,7 @@ class WalmartScraper(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match("https?://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
+        m = re.match("https?://www\.walmart\.com(/.*)?/[0-9]+(\?.*)?", self.product_page_url)
         return not not m
 
     def _is_collection_url(self):
