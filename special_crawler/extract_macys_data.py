@@ -17,7 +17,8 @@ import time
 import requests
 from extract_data import Scraper
 from spiders_shared_code.macys_variants import MacysVariants, normalize_product_json_string
-sys.path.insert(1, os.path.join(sys.path[0], '../product-ranking'))
+CWD = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(1, os.path.join(CWD, '../product-ranking'))
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 
