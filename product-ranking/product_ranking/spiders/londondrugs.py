@@ -240,18 +240,18 @@ class LondondrugsProductsSpider(BaseProductsSpider):
                 return
         return 0
 
-    #def parse(self, response):
-    #    redirect_urls = response.meta.get('redirect_urls')
-    #    if redirect_urls:
-    #        response.meta['product'] = SiteProductItem(
-    #            search_term=response.meta['search_term'])
-    #        product = self.parse_product(response)
-    #        product['site'] = self.site_name
-    #        product['total_matches'] = 1
-    #        product['ranking'] = 1
-    #        return product
-    #    else:
-    #        return super(LondondrugsProductsSpider, self).parse(response)
+    def parse(self, response):
+        redirect_urls = response.meta.get('redirect_urls')
+        if redirect_urls:
+            response.meta['product'] = SiteProductItem(
+                search_term=response.meta['search_term'])
+            product = self.parse_product(response)
+            product['site'] = self.site_name
+            product['total_matches'] = 1
+            product['ranking'] = 1
+            return product
+        else:
+            return super(LondondrugsProductsSpider, self).parse(response)
 
     def _scrape_product_links(self, response):
         nohitsmessage = response.xpath(
