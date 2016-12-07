@@ -63,3 +63,4 @@ product-ranking/product_ranking/amazon_marketplace/
 
 master_category/_uploads
 master_category/converters/_results
+!master_category/requirements.txt

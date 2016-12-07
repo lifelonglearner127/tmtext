@@ -88,7 +88,7 @@ def _check_bad_results_macys(driver):
 class URL2ScreenshotSpider(Spider):
     name = 'url2screenshot_products'
     # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
-    available_drivers = ['chromium', 'phantomjs']
+    available_drivers = ['chromium', 'firefox']
 
     handle_httpstatus_list = [403, 404, 502, 500]
 
@@ -334,7 +334,12 @@ class URL2ScreenshotSpider(Spider):
                 profile.set_preference("network.proxy.http", self.proxy.split(':')[0])
                 profile.set_preference("network.proxy.http_port", int(self.proxy.split(':')[1]))
         profile.update_preferences()
-        driver = webdriver.Firefox(profile)
+        if os.path.exists('/home/spiders/geckodriver'):
+            self.log('Using geckodriver located at /home/spiders/geckodriver')
+            driver = webdriver.Firefox(profile, executable_path='/home/spiders/geckodriver')
+        else:
+            self.log('Geckodriver not found at /home/spiders/geckodriver - using default path')
+            driver = webdriver.Firefox(profile)
         return driver
 
     def init_driver(self, name=None):
@@ -355,7 +360,10 @@ class URL2ScreenshotSpider(Spider):
     def prepare_driver(self, driver):
         driver.set_page_load_timeout(int(self.timeout))
         driver.set_script_timeout(int(self.timeout))
-        driver.set_window_size(int(self.width), int(self.height))
+        try:
+            driver.set_window_size(int(self.width), int(self.height))
+        except Exception as e:
+            self.log('Error while trying to maximize the browser: %s' % e, ERROR)
 
     def make_screenshot(self, driver, output_fname):
         driver.get(self.product_url)
@@ -363,7 +371,10 @@ class URL2ScreenshotSpider(Spider):
         # maximize height of the window
         _body_height = self._get_js_body_height(driver)
         if _body_height and _body_height > 10:
-            driver.set_window_size(self.width, _body_height)
+            try:
+                driver.set_window_size(self.width, _body_height)
+            except Exception as e:
+                self.log('Error while trying to maximize the browser: %s' % e, ERROR)
         self._solve_captha_in_selenium(driver)
 
         if self.close_popups:

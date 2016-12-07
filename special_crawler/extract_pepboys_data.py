@@ -13,14 +13,14 @@ import requests
 from extract_data import Scraper
 
 
-class CVSScraper(Scraper):
+class PepboysScraper(Scraper):
 
     ##########################################
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http(s)://www.cvs.com/shop/(.+/)*<product-name>-prodid-<prodid>"
-    BASE_URL_REVIEWSREQ = 'http://cvspharmacy.ugc.bazaarvoice.com/3006-en_us/{0}/reviews.djs?format=embeddedhtml'
+    INVALID_URL_MESSAGE = "Expected URL format is https://www.pepboys.com/.*"
+    BASE_URL_REVIEWSREQ = 'https://pepboys.ugc.bazaarvoice.com/8514-en_us/{product_id}/reviews.djs?format=embeddedhtml'
     BASE_URL_WEBCOLLAGE = 'http://content.webcollage.net/cvs/smart-button?ird=true&channel-product-id={0}'
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
@@ -31,7 +31,11 @@ class CVSScraper(Scraper):
         self.breadcrumb_list = None
         self.product = None
         self.full_description = None
-        self.reviews = None
+        self.review_list = None
+        self.review_count = None
+        self.average_review = None
+        self.max_review = None
+        self.min_review = None
         self.images = None
         self.is_review_checked = False
         self.is_webcollage_checked = False
@@ -47,7 +51,7 @@ class CVSScraper(Scraper):
         Returns:
             True if valid, False otherwise
         """
-        m = re.match(r"^https?://www.cvs.com/shop/(.+/)*.+-prodid-\d+(\?skuId=\d+)?$", self.product_page_url)
+        m = re.match(r"^https://www.pepboys.com/.+$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -58,15 +62,9 @@ class CVSScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-
-        try:
-            self.product = json.loads( self.tree_html.xpath('//script[@type="application/ld+json"]')[1].text_content(), strict=False)
-
-            if self.product['@type'] == 'Product':
-                return False
-        except:
-            pass
-
+        rows = self.tree_html.xpath("//div[contains(@class,'tdTireDetailPicHolder')]")
+        if len(rows) > 0:
+            return False
         return True
 
     ##########################################
@@ -85,7 +83,10 @@ class CVSScraper(Scraper):
         return None
 
     def _product_id(self):
-        return re.findall('prodid-(\d+)', self.product_page_url)[0]
+        arr = self.tree_html.xpath("//div[contains(@class,'j-results-item-container')]/@data-sku")
+        if len(arr) > 0:
+            return arr[0]
+        return None
 
     def _site_id(self):
         return self._product_id()
@@ -96,26 +97,15 @@ class CVSScraper(Scraper):
     ##########################################
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
-    def _load_product_json(self):
-        if not self.product_json:
-            self.product_json = json.loads( self.load_page_from_url_with_number_of_retries('https://www.cvs.com/retail/frontstore/productDetails?apiKey=c9c4a7d0-0a3c-4e88-ae30-ab24d2064e43&apiSecret=4bcd4484-c9f5-4479-a5ac-9e8e2c8ad4b0&appName=CVS_WEB&channelName=WEB&code=' + self._product_id() + '&codeType=sku&deviceToken=2695&deviceType=DESKTOP&lineOfBusiness=RETAIL&operationName=getSkuDetails&serviceCORS=True&serviceName=productDetails&version=1.0'))
-
-    def _load_breadcrumb_list(self):
-        if not self.breadcrumb_list:
-            self.breadcrumb_list = json.loads( self.tree_html.xpath('//script[@type="application/ld+json"]')[0].text_content(), strict=False)
-
-    def _load_description(self):
-        if not self.full_description:
-            # The first 'offer' has the full description
-            self.full_description = self._clean_text( self.product['offers'][0]['itemOffered']['description'])
-
-    def _offer(self):
-        for offer in self.product['offers']:
-            if offer['itemOffered']['sku'] == self._product_id():
-                return offer
-
     def _product_name(self):
-        return self._clean_text( self.product['name'])
+        arr = self.tree_html.xpath(
+            "//div[contains(@class,'tdProductDetailItem')]"
+            "//div[contains(@class,'row-fluid')]"
+            "//h4[contains(@class,'margin-top-none')]/a/text()"
+        )
+        if len(arr) > 0:
+            return self._clean_text(arr[0])
+        return None
 
     def _product_title(self):
         return self.tree_html.xpath('//title')[0].text_content()
@@ -124,77 +114,44 @@ class CVSScraper(Scraper):
         return self._product_title()
 
     def _model(self):
-        model = re.search('Model # (\w+)', html.tostring( self.tree_html))
-
-        if model:
-            return model.group(1)
+        return None
 
     def _upc(self):
         return None
 
     def _features(self):
-        self._load_description()
+        arr = self.tree_html.xpath("//div[contains(@class,'tdContentDesc')]//li/text()")
 
-        ul = re.search('<ul>.*</ul>', self.full_description, re.I)
-        if ul:
-            return self._clean_text( ul.group(0))
+        return arr
 
     def _feature_count(self):
         if self._features():
-            return len( self._features().split('</li><li>'))
+            return len(self._features())
 
     def _model_meta(self):
         return None
 
     def _description(self):
-        self._load_description()
-        return self._clean_text( self.full_description.split('Overview:')[0])
+        arr = self.tree_html.xpath("//div[contains(@class,'tdContentDesc')]/text()")
+        arr = [r.strip() for r in arr if len(r.strip())>0]
+        desc = "".join(arr)
+        return self._clean_text(desc)
 
     def _long_description(self):
-        self._load_description()
+        description = ''
 
-        long_description = self.full_description.split('Overview:')[1]
-
-        # Remove features
-        long_description = re.sub('<ul>.*</ul>', '', long_description, re.I)
-
-        # Stop at Directions
-        long_description = long_description.split('Directions:')[0]
-
-        return self._clean_text( long_description)
+        if description:
+            if description != self._description():
+                return description
 
     def _ingredients(self):
-        self._load_description()
-
-        ingredients = self.full_description[ self.full_description.index('Ingredients:'): ]
-        ingredients = re.sub('(\.)?[^\.:]+:', ',', ingredients).split(',')
-
-        ingredients = map(lambda x: self._clean_text(x), ingredients)
-        ingredients = filter(len, ingredients)
-
-        if ingredients:
-            return ingredients
+        return None
 
     def _ingredient_count(self):
-        if self._ingredients():
-            return len( self._ingredients())
+        return None
 
     def _variants(self):
         variants = []
-
-        if len( self.product['offers']) > 1:
-            for offer in self.product['offers']:
-                variants.append({
-                    'name' : self._clean_text( offer['itemOffered']['name']),
-                    'in_stock' : offer['availability'] == 'http://schema.org/InStock',
-                    'image' : offer['itemOffered']['image'],
-                    'price' : offer['price'],
-                    'properties' : {
-                        'color' : offer['itemOffered']['color'],
-                        'weight' : offer['itemOffered']['weight']['value'] + ' LBS'
-                        },
-                    'selected' : offer['itemOffered']['sku'] == self._product_id(),
-                })
 
         if variants:
             return variants
@@ -209,23 +166,8 @@ class CVSScraper(Scraper):
         if self.images:
             return self.images
 
-        image_urls = []
-
-        num_images = 6
-        first_offer = True
-
-        for offer in self.product['offers']:
-            if not offer['itemOffered']['image'] in image_urls:
-                image_urls.append( offer['itemOffered']['image'] )
-
-                for i in range(2, num_images):
-                    image_url = offer['itemOffered']['image'][:-4] + '_' + str(i) + '.jpg'
-                    if requests.head( image_url).status_code == 200:
-                        image_urls.append(image_url)
-                    elif first_offer:
-                        num_images = i
-                        first_offer = False
-
+        image_urls = self.tree_html.xpath(
+            "//div[contains(@class,'tdImgDetailLinks')]//img[@alt!='Play']/@src")
         self.images = image_urls
 
         if image_urls:
@@ -250,46 +192,33 @@ class CVSScraper(Scraper):
             return video_urls
 
     def _video_count(self):
-        video_urls = self._video_urls()
+        videos = self.tree_html.xpath(
+            "//div[contains(@class,'tdImgDetailLinks')]//img[@alt='Play']/@src")
 
-        if video_urls:
-            return len( video_urls)
+        if videos:
+            return len(videos)
 
     def _pdf_urls(self):
-        self._webcollage()
-
-        pdf_urls = []
-
-        for wcobj in re.findall(r'wcobj=\\"([^"]+)\\"', self.webcollage_content):
-            if re.search('.pdf$', wcobj.replace('\\', '')):
-                pdf_urls.append( wcobj.replace('\\', ''))
-
-        if pdf_urls:
-            return pdf_urls
+        pdfs = self.tree_html.xpath("//a[contains(@href,'.pdf')]")
+        pdf_hrefs = []
+        for pdf in pdfs:
+            pdf_url_txts = [self._clean_text(r) for r in pdf.xpath(".//text()") if len(self._clean_text(r)) > 0]
+            if len(pdf_url_txts) > 0:
+                pdf_hrefs.append(pdf.attrib['href'])
+        if len(pdf_hrefs) < 1:
+            return None
+        return pdf_hrefs
 
     def _pdf_count(self):
-        pdf_urls = self._pdf_urls()
-
-        if pdf_urls:
-            return len( pdf_urls)
+        urls = self._pdf_urls()
+        if urls is not None:
+            return len(urls)
+        return 0
 
     def _webcollage(self):
-        """Uses video and pdf information
-        to check whether product has any media from webcollage.
-        Returns:
-            1 if there is webcollage media
-            0 otherwise
-        """
-        if not self.is_webcollage_checked:
-            self.is_webcollage_checked = True
-            self.webcollage_content = self.load_page_from_url_with_number_of_retries('http://content.webcollage.net/cvs/power-page?ird=true&channel-product-id=' + self._product_id())
-
-        if "_wccontent" in self.webcollage_content:
-            self.wc_emc = 1
-
-        if self.wc_360 + self.wc_emc + self.wc_pdf + self.wc_prodtour + self.wc_video > 0:
+        atags = self.tree_html.xpath("//a[contains(@href, 'webcollage.net/')]")
+        if len(atags) > 0:
             return 1
-
         return 0
 
     def _wc_360(self):
@@ -326,71 +255,88 @@ class CVSScraper(Scraper):
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
-    def _load_reviews(self):
-        if not self.reviews:
-            reviews = self.load_page_from_url_with_number_of_retries('http://api.bazaarvoice.com/data/batch.json?passkey=ll0p381luv8c3ler72m8irrwo&apiversion=5.5&displaycode=3006-en_us&resource.q0=products&filter.q0=id%3Aeq%3A' + self._product_id() + '&stats.q0=questions%2Creviews')
+    def _reviews(self):
+        if hasattr(self, 'reviews_called'):
+            return self.review_list
 
-            try:
-                self.reviews = json.loads(reviews)['BatchedResults']['q0']['Results'][0]['ReviewStatistics']
-            except:
-                pass
+        self.review_called = True
+        reviews = self.load_page_from_url_with_number_of_retries(
+            self.BASE_URL_REVIEWSREQ.format(
+                product_id=self._product_id()
+            )
+        )
+        review_html = html.fromstring(re.search('BVRRRatingSummarySourceID":"(.*?)"},', reviews).group(1))
+        arr = review_html.xpath("//div[contains(@class,'BVRRHistogramTitle')]//span[contains(@class,'BVRRNumber')]//text()")
+        review_list = []
+        if len(arr) > 11:
+            for i in range(0, 5):
+                try:
+                    item = re.findall(r'\d+', arr[(i+1)*2])
+                    if len(item) > 0:
+                        value = int(item[0])
+                    else:
+                        value = 0
+                except:
+                    value = 0
+                review_list.append([5-i, value])
+
+        if review_list:
+            self.review_list = review_list
+            return review_list
+        else:
+            return None
+
+    # reviews
+    def _review_count(self):
+        self._reviews()
+        cnt = 0
+        for i, review in self.review_list:
+            cnt += review
+        return cnt
 
     def _average_review(self):
-        self._load_reviews()
-
-        if self.reviews:
-            return round(self.reviews['AverageOverallRating'], 1)
-
-    def _review_count(self):
-        self._load_reviews()
-
-        if self.reviews:
-            return self.reviews['TotalReviewCount']
-        else:
-            return 0
+        self._reviews()
+        sum = 0
+        cnt = 0
+        for i, review in self.review_list:
+            sum += review*i
+            cnt += review
+        return float(sum)/cnt
 
     def _max_review(self):
-        if self._reviews():
-            for review in self._reviews():
-                if not review[1] == 0:
-                    return review[0]
+        self._reviews()
+        if self._review_count() == 0:
+            return None
+
+        for i, review in self.review_list:
+            if review > 0:
+                return i
+        return None
 
     def _min_review(self):
-        if self._reviews():
-            for review in self._reviews()[::-1]: # reverses list
-                if not review[1] == 0:
-                    return review[0]
+        self._reviews()
+        if self._review_count() == 0:
+            return None
 
-    def _reviews(self):
-        self._load_reviews()
-
-        if self.reviews:
-            reviews = []
-
-            ratings_distribution = self.reviews['RatingDistribution']
-
-            for rating in ratings_distribution:
-                reviews.append( [rating['RatingValue'], rating['Count']])
-
-            if reviews:
-                # Insert 0 for nonexistant ratings
-                for i in range(0,5):
-                    if len(reviews) <= i or not reviews[i][0] == i + 1:
-                        reviews.insert(i, [i+1, 0])
-
-                return reviews[::-1] # reverses list
+        for i, review in reversed(self.review_list):
+            if review > 0:
+                return i
 
     ##########################################
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return '$' + str( self._price_amount())
+        return '$' + str(self._price_amount())
 
     def _price_amount(self):
-        return float( self._offer()['price'])
+        arr = self.tree_html.xpath("//div[contains(@class,'price-stack')]//span[contains(@class,'price')]//text()")
+        if len(arr) > 0:
+            value = re.findall(r'[\d\.]+', arr[0])[0]
+            return float(value)
+        return None
 
     def _price_currency(self):
-        return self._find_between(html.tostring(self.tree_html), 'currency : "', '"',)
+        return "USD"
 
     def _in_stores(self):
         return 0
@@ -423,16 +369,15 @@ class CVSScraper(Scraper):
     ############### CONTAINER : CLASSIFICATION
     ##########################################
     def _categories(self):
-        self._load_breadcrumb_list()
-        breadcrumbs = map( lambda x: self._clean_text( x['item']['name']), self.breadcrumb_list['itemListElement'])
-        # First two are 'home' and 'shop'
-        return breadcrumbs[2:]
+        arr = self.tree_html.xpath("//ul[contains(@class,'breadcrumb')]/li//text()")
+        arr = [self._clean_text(r) for r in arr if len(self._clean_text(r))>0 and self._clean_text(r)!='/']
+        return arr[1:]
 
     def _category_name(self):
         return self._categories()[-1]
 
     def _brand(self):
-        return self._clean_text( self.product['brand'])
+        return None
 
     ##########################################
     ################ HELPER FUNCTIONS

@@ -114,6 +114,11 @@ class ScrewfixProductsSpider(BaseProductsSpider):
                 "/div[@class='description']"
             ).extract())
 
+            regex = "\/([a-z\d]+)(?:$|\?)"
+            reseller_id = re.findall(regex, product.get('url', ''))
+            reseller_id = reseller_id[0] if reseller_id else None
+            cond_set_value(product, "reseller_id", reseller_id)
+
             stock_status = response.xpath(
                 '//link[@itemprop="availability"]/@href'
             ).extract()

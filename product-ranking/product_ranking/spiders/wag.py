@@ -141,6 +141,7 @@ class WagProductsSpider(ProductsSpider):
             cond_set(vr, 'image_url', images)
             sku = item.xpath('*//input[@class="skuHidden"]/@value').extract()
             cond_set(vr, 'skuId', sku)
+            cond_set(vr, 'reseller_id', sku)
             selected = bool(item.xpath('@isprimarysku').re('Y'))
             cond_set_value(vr, 'selected', selected)
             if sku:
@@ -311,6 +312,10 @@ class WagProductsSpider(ProductsSpider):
         # Sku
         sku = self._parse_sku(response)
         cond_set_value(product, 'sku', sku)
+
+        # reseller_id
+        reseller_id = sku.upper() if sku else None
+        cond_set_value(product, 'reseller_id', reseller_id)
 
         review_id = response.xpath(
             '//*[@class="pr-review-engine"]/@id').re('pr-review-engine-(\d+)')

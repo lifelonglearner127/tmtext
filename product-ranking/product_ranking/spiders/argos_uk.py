@@ -145,7 +145,7 @@ class ArgosUKProductsSpider(BaseProductsSpider):
             lambda s: string.strip(s, ' \n')
         )
         if not product.get('brand', None):
-            brand = guess_brand_from_first_words(product['title'].strip())
+            brand = guess_brand_from_first_words(product.get('title').strip() if product.get('title') else '')
             if brand:
                 product['brand'] = brand
 
@@ -153,10 +153,10 @@ class ArgosUKProductsSpider(BaseProductsSpider):
             dump_url_to_file(response.url)
 
         if product.get('price') is None:
-            currency = response.css('.currency::text').extract()[0]
-            price = re.search(
-                '\d+', response.css('.actualprice .price::text').extract()[0]
-            ).group()
+            currency = response.css('.currency::text').extract()
+            currency = currency[0] if currency else ''
+            price = response.css('.actualprice .price::text').re('\d+')
+            price = price[0] if price else ''
             cond_set_value(product, 'price', currency + price)
         if not u'£' in product.get('price', ''):
             self.log('Invalid price at: %s' % response.url, level=ERROR)
@@ -175,6 +175,10 @@ class ArgosUKProductsSpider(BaseProductsSpider):
         cond_set(product, 'is_out_of_stock',
                  response.css('#globalDeliveryGrey[style="display:block;"]'),
                  bool)
+        reseller_id = re.findall(r'partNumber/(\d+)', response.url)
+        cond_set(
+            product, 'reseller_id', reseller_id[0] if reseller_id else None
+        )
         # Hardcoded
         cond_set_value(product, 'locale', 'en-GB')
 

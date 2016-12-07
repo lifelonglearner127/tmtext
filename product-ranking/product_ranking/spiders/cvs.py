@@ -147,6 +147,11 @@ class CvsProductsSpider(BaseProductsSpider):
                 self._set_brand(product, desc, brands)
         product['locale'] = "en-US"
 
+        reseller_id_regex = "prodid-(\d+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         ld_json = is_empty(response.xpath(
             '//*[@type="application/ld+json" '
             'and contains(text(),"product")]/text()').extract())

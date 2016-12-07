@@ -94,6 +94,7 @@ class WalmartRetryMiddleware(RedirectMiddleware):
                 request.dont_filter = True
                 return request
             else:
+                log.msg('Redirect to {}'.format(location))
                 request = request.replace(url=location)
                 return request
         return response

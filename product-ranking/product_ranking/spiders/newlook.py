@@ -101,7 +101,7 @@ class NewlookProductsSpider(BaseProductsSpider):
 
         if not product.get('brand', None):
             brand = guess_brand_from_first_words(
-                product.get('title', None).strip())
+                product.get('title', '').strip())
             if brand:
                 product['brand'] = brand
 
@@ -149,6 +149,11 @@ class NewlookProductsSpider(BaseProductsSpider):
                 priceCurrency='EUR')
 
         cond_set_value(product, 'locale', 'en_EU')
+
+        regex = "\/p\/([\d]+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
 
         stock_status = response.xpath('///select[@id="size_standard"]'
                                       '/option/@class').extract()
