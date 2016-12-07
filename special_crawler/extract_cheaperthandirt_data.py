@@ -360,6 +360,8 @@ class CheaperthandirtScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
+        if len(self.tree_html.xpath("//button[@name='addToBasket']")) < 1:
+            return 1
         return 0
 
     def _in_stores_out_of_stock(self):
