@@ -365,7 +365,7 @@ class CheaperthandirtScraper(Scraper):
         return 0
 
     def _in_stores_out_of_stock(self):
-        return 0
+        return None
 
     def _marketplace(self):
         return 0
