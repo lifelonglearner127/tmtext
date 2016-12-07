@@ -9,7 +9,7 @@ import re
 
 from scrapy import Request
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, RelatedProduct
-from product_ranking.spiders import cond_set_value
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value, FLOATING_POINT_RGEX
 from product_ranking.spiders.contrib.product_spider import ProductsSpider
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.settings import ZERO_REVIEWS_VALUE
@@ -150,6 +150,23 @@ class PetsmartProductsSpider(ProductsSpider):
                 )
             else:
                 product['buyer_reviews'] = ZERO_REVIEWS_VALUE
+
+        # price
+        sale_price = response.xpath("//div[@class='ship-to-me-price']//div[@class='product-price']//span[@class='price-sales']/text()").re(FLOATING_POINT_RGEX)
+        regular_price = response.xpath("//div[@class='ship-to-me-price']//div[@class='product-price']//span[@class='price-regular']/text()").re(FLOATING_POINT_RGEX)
+        standard_price = response.xpath("//div[@class='ship-to-me-price']//div[@class='product-price']//span[@class='price-standard']/text()").re(FLOATING_POINT_RGEX)
+
+        if sale_price:
+            final_price = sale_price[0]
+        elif regular_price:
+            final_price = regular_price[0]
+        elif standard_price:
+            final_price = standard_price[0]
+        else:
+            final_price = None
+
+        if final_price:
+            cond_set_value(product, 'price', final_price)
 
         # variants
         variants = set(response.xpath(self.XPATH['product']['variants']).extract())

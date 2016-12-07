@@ -16,6 +16,7 @@ class PetsmartShelfUrlsSpider(PetsmartProductsSpider):
         else:
             self.num_pages = 1
         self.current_page = 1
+        self.quantity = 99999
 
     def start_requests(self):
         yield Request(self.product_url, meta={'remaining': self.quantity, "search_term": ''})
