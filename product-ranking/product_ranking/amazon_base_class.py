@@ -1374,7 +1374,7 @@ class AmazonBaseClass(BaseProductsSpider):
                    'showViewpoints=1&' \
                    'sortBy=recent&' \
                    'pageNumber=1&' \
-                   'filterByStar={star}& ' \
+                   'filterByStar={star}&' \
                    'formatType=all_formats'.format(star=star)
             url = response.url + args
             meta['_current_star'] = star
