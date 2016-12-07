@@ -3,13 +3,20 @@ from future_builtins import filter, map
 
 import re
 
-from scrapy.log import ERROR
+from scrapy.log import ERROR, WARNING
 from scrapy import Request
 
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
+from selenium.webdriver.common.by import By
+from selenium import webdriver
+from pyvirtualdisplay import Display
+import os
+import time
+import socket
+from scrapy.selector import Selector
 
 class CostcoProductsSpider(BaseProductsSpider):
     name = "costco_products"
@@ -39,6 +46,14 @@ class CostcoProductsSpider(BaseProductsSpider):
         meta = response.meta.copy()
         reqs = []
         meta['reqs'] = reqs
+
+        selenium_html = self._get_page_html_selenium(response.url)
+        # TODO might as well use that html to extract other data
+        if selenium_html:
+            price = Selector(text=selenium_html).xpath(
+                './/*[contains(@class, "your-price")]/span[@class="value"]/text()').extract()
+            cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
+                                                price=price))
 
         # not longer available
         no_longer_available = response.xpath(
@@ -73,42 +88,43 @@ class CostcoProductsSpider(BaseProductsSpider):
         brand = re.sub(r'Brand\W*', '', brand)
         if brand:
             prod['brand'] = brand
-
-        from scrapy.shell import inspect_response
-        inspect_response(response, self)
-
-
-        merchandising_price = response.xpath('//*[@class="top_review_panel"]/*[@class="merchandisingText"]/text()').re('\$([\d\.\,]+) OFF')
-        price_value = ''.join(response.xpath('//input[contains(@name,"price")]/@value').re('[\d.]+')).strip()
-        configured_price_html = response.xpath(
-            '//span[contains(text(),"Configured Price")]')
-
-        if configured_price_html:
-            configured_price = configured_price_html.xpath(
-                'following-sibling::span[@class="currency"]'
-                '/text()').re('[\d\.\,]+')
-            if configured_price:
-                cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
-                                                    price=configured_price[0]))
-
-        elif merchandising_price:
-            diff_price = str(float(price_value) + float(merchandising_price[0].replace(',','')))
-            cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
-                                                    price=diff_price))
-
-            cond_set_value(prod, 'price_with_discount', Price(priceCurrency=self.DEFAULT_CURRENCY,
-                                                                    price=price_value))
-        else:
-            price_without_discount = ''.join(response.xpath('//*[@class="online-price"]/span[@class="currency"]/text()').re('[\d\.\,]+')).strip().replace(',','')
-            if price_value:
-                if price_without_discount:
-                    cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
-                                                        price=price_without_discount))
-                    cond_set_value(prod, 'price_with_discount', Price(priceCurrency=self.DEFAULT_CURRENCY,
-                                                                        price=price_value))
-                else:
-                    cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
-                                                        price=price_value))
+        if not prod.get("brand"):
+            brand = response.xpath(
+                    './/*[contains(text(), "Brand:")]/following-sibling::text()[1]').extract()
+            brand = brand[0].strip() if brand else None
+            cond_set_value(prod, 'brand', brand)
+        # This isn't working anymore
+        # merchandising_price = response.xpath('//*[@class="top_review_panel"]/*[@class="merchandisingText"]/text()').re('\$([\d\.\,]+) OFF')
+        # price_value = ''.join(response.xpath('//input[contains(@name,"price")]/@value').re('[\d.]+')).strip()
+        # configured_price_html = response.xpath(
+        #     '//span[contains(text(),"Configured Price")]')
+        #
+        # if configured_price_html:
+        #     configured_price = configured_price_html.xpath(
+        #         'following-sibling::span[@class="currency"]'
+        #         '/text()').re('[\d\.\,]+')
+        #     if configured_price:
+        #         cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
+        #                                             price=configured_price[0]))
+        #
+        # elif merchandising_price:
+        #     diff_price = str(float(price_value) + float(merchandising_price[0].replace(',','')))
+        #     cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
+        #                                             price=diff_price))
+        #
+        #     cond_set_value(prod, 'price_with_discount', Price(priceCurrency=self.DEFAULT_CURRENCY,
+        #                                                             price=price_value))
+        # else:
+        #     price_without_discount = ''.join(response.xpath('//*[@class="online-price"]/span[@class="currency"]/text()').re('[\d\.\,]+')).strip().replace(',','')
+        #     if price_value:
+        #         if price_without_discount:
+        #             cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
+        #                                                 price=price_without_discount))
+        #             cond_set_value(prod, 'price_with_discount', Price(priceCurrency=self.DEFAULT_CURRENCY,
+        #                                                                 price=price_value))
+        #         else:
+        #             cond_set_value(prod, 'price', Price(priceCurrency=self.DEFAULT_CURRENCY,
+        #                                                 price=price_value))
 
 
         des = response.xpath('//div[@id="product-tab1"]//text()').extract()
@@ -185,7 +201,8 @@ class CostcoProductsSpider(BaseProductsSpider):
             prod['is_out_of_stock'] = True
 
         count_review = response.xpath('//meta[contains(@itemprop, "reviewCount")]/@content').extract()
-        product_id = re.findall(r'.(\d+).', response.url)
+        product_id = re.findall(r'\.(\d+)\.', response.url)
+        cond_set_value(prod, 'reseller_id', product_id[0] if product_id else None)
 
         if product_id and count_review:
             reqs.append(
@@ -268,3 +285,41 @@ class CostcoProductsSpider(BaseProductsSpider):
             link = None
 
         return link
+
+    def _get_page_html_selenium(self, url):
+        try:
+            display = Display(visible=False, size=(1280, 768))
+            display.start()
+            driver = self._init_chromium()
+            driver.set_page_load_timeout(120)
+            driver.set_script_timeout(120)
+            socket.setdefaulttimeout(120)
+            driver.set_window_size(1280, 768)
+            driver.get(url)
+            time.sleep(5)
+            page_html = driver.page_source
+            driver.quit()
+        except Exception as e:
+            self.log('Exception while getting page html with selenium: ' + str(e), WARNING)
+            return None
+        else:
+            return page_html
+
+    def _init_chromium(self, proxy=None, proxy_type=None):
+        # TODO use random useragent script here?
+        # UA = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0) Gecko/20100101 Firefox/32.0"
+        chrome_flags = webdriver.DesiredCapabilities.CHROME  # this is for Chrome?
+        chrome_options = webdriver.ChromeOptions()  # this is for Chromium
+        if proxy:
+            chrome_options.add_argument(
+                '--proxy-server=%s' % proxy_type+'://'+proxy)
+        # chrome_flags["chrome.switches"] = ['--user-agent=%s' % UA]
+        # chrome_options.add_argument('--user-agent=%s' % UA)
+        executable_path = '/usr/sbin/chromedriver'
+        if not os.path.exists(executable_path):
+            executable_path = '/usr/local/bin/chromedriver'
+        # initialize webdriver
+        driver = webdriver.Chrome(desired_capabilities=chrome_flags,
+                                  chrome_options=chrome_options,
+                                  executable_path=executable_path)
+        return driver
