@@ -8,6 +8,7 @@ import json
 import string
 import random
 
+from scrapy import Selector
 from scrapy.http import Request
 from scrapy.http.request.form import FormRequest
 from scrapy.log import msg, ERROR, WARNING, INFO, DEBUG
@@ -435,7 +436,7 @@ class AmazonBaseClass(BaseProductsSpider):
                     prc_variants = variants
                 # Parse variants prices
                 # Turn on only for amazon.com for now
-                if prc_variants and ('amazon.com/' in response.url or 'amazon.ca/' in response.url):
+                if prc_variants and 'amazon.com/' in response.url:
                     js_text = response.xpath('.//script[contains(text(),"immutableURLPrefix")]/text()').extract()
                     js_text = js_text[0] if js_text else None
                     if not js_text:
@@ -542,12 +543,13 @@ class AmazonBaseClass(BaseProductsSpider):
         product = meta['product']
         child_asin = re.findall(r'asinList=(.+?)&', response.url)
         child_asin = child_asin[0] if child_asin else None
-        price_regex = """price_feature_div.+?priceblock_ourprice[^_].+?">[\$|CDN$\s]([\d\.]+)"""
-        price = re.findall(price_regex, response.body)
+        text = re.findall('{\s*"price_feature_div"\s*:\s*"(.+?)"\s*}', response.body, re.DOTALL)
+        text = text[0] if text else ''
+        selector = Selector(text=text)
+        price = selector.xpath('.//*[contains(@class, "priceblock_ourprice")]/text()').re('([\d\.]+)')
         # Trying alternative regex
         if not price:
-            price_regex = """buybox_feature_div.+?a-color-price['"]>[\s?.+?|CDN$\s]([\d\.]+)"""
-            price = re.findall(price_regex, response.body)
+            price = selector.xpath('.//*[contains(@class, "a-color-price")]/text()').re('([\d\.]+)')
         if not price:
             fail_var_url = [v.get('url') for v in product["variants"] if v.get('asin')==child_asin]
             self.log('Unable to find price for variant: {} ASIN {} url {}'.format(
