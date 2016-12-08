@@ -149,7 +149,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             self.SEARCH_URL += '&soft_sort=false&cat_id=0'
         # avoid tons of 'items' in logs
         self.search_sort = search_sort
-        SiteProductItem.__repr__ = lambda _: '[product item]'
+        # SiteProductItem.__repr__ = lambda _: '[product item]'
         self.use_data_from_redirect_url = kwargs.get('use_data_from_redirect_url', False)
         self.username = kwargs.get('username', None)
         super(WalmartProductsSpider, self).__init__(
@@ -1592,12 +1592,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
         if not data:
             if not product.get('buyer_reviews') or\
                             product.get('buyer_reviews') == 0:
-                new_meta = response.meta.copy()
-                return Request(url=self.REVIEW_URL.format(
-                    product_id=response.meta['product_id']),
-                               callback=self._build_buyer_reviews_old,
-                               meta=new_meta,
-                               dont_filter=True)
+                pass
             else:
                 return product
         last_date = product.get('date_of_last_question')
@@ -1628,11 +1623,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             product['date_of_last_question'] = str(last_date)
         if not product.get('buyer_reviews') or \
                         product.get('buyer_reviews') == 0:
-            new_meta = response.meta.copy()
-            return Request(url=self.REVIEW_URL.format(
-                product_id=response.meta['product_id']),
-                           callback=self._build_buyer_reviews_old,
-                           meta=new_meta, dont_filter=True)
+            pass
         else:
             if 'buyer_reviews' in product.keys():
                 new_meta = response.meta.copy()
