@@ -12,7 +12,7 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FLOATING_POINT_RGEX, cond_set_value
 
 
-class KrogerProductsSpider(BaseProductsSpider):
+class ZulilyProductsSpider(BaseProductsSpider):
     name = "zulily_products"
     allowed_domains = ["zulily.com"]
 
@@ -22,7 +22,7 @@ class KrogerProductsSpider(BaseProductsSpider):
     use_proxies = True
 
     def __init__(self, login="", password="", *args, **kwargs):
-        super(KrogerProductsSpider, self).__init__(
+        super(ZulilyProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
 
     def start_requests(self):
@@ -121,106 +121,28 @@ class KrogerProductsSpider(BaseProductsSpider):
         price = product_json["style_data"]["price"]
         cond_set_value(product, 'price', price)
 
-        # variants
+        # image
+        image = product_json["id_json"]["image"]
+        if image:
+            cond_set_value(product, 'image_url', image)
+
+        # brand
+        brand = product_json["id_json"]["brand"]["name"]
+        cond_set_value(product, "brand", brand)
+
+        # original price
+        original_price = product_json["style_data"]["originalPrice"]
+        cond_set_value(product, 'price_original', original_price)
+
+        # no longer available
+        availability = response.xpath("//meta[@property='og:availability']/@content").extract()
+        if availability:
+            no_longer_avail = False if availability[0] == 'instock' else True
+        cond_set_value(product, 'no_longer_available', no_longer_avail)
+        if product['no_longer_available']:
+            product['is_out_of_stock'] = True
 
         return product
-
-        # variants
-        variants = set(response.xpath(self.XPATH['product']['variants']).extract())
-
-        if len(variants) > 1:
-            product['variants'] = []
-            response.meta['product'] = product
-            variant_sku = variants.pop()
-            response.meta['variants'] = variants
-            return Request(
-                response.url.split('?')[0].split(';')[0] + '?var_id=' + variant_sku,
-                meta=response.meta,
-                callback=self._parse_variants,
-                # dont_filter=True
-            )
-        else:
-            product['variants'] = [self._parse_variant_data(response)]
-            return product
-
-    def _parse_variants(self, response):
-        response.meta['product']['variants'].append(
-            self._parse_variant_data(response)
-        )
-        if response.meta.get('variants'):
-            variant_sku = response.meta['variants'].pop()
-            return Request(
-                response.url.split('?')[0] + '?var_id=' + variant_sku,
-                meta=response.meta,
-                callback=self._parse_variants,
-                # dont_filter=True
-            )
-        else:
-            return response.meta['product']
-
-    def _parse_variant_data(self, response):
-        data = {}
-        # id
-        id = response.xpath(self.XPATH['product']['id']).extract()
-        _populate(data, 'id', id, first=True)
-
-        # sku
-        sku = response.xpath(self.XPATH['product']['sku']).extract()
-        _populate(data, 'sku', sku, first=True)
-
-        # image url
-        if data.get('sku'):
-            image_url = [self.IMAGE_URL.format(sku=data['sku'])]
-        else:
-            image_url = [""]
-        _populate(data, 'image_url', image_url, first=True)
-
-        # in stock?
-        stock = response.xpath(self.XPATH['product']['out_of_stock_button']).extract()
-        data['is_out_of_stock'] = True
-        if stock:
-            if re.search('in stock', stock[0], re.IGNORECASE):
-                data['is_out_of_stock'] = False
-            else:
-                data['is_out_of_stock'] = True
-
-        if data['is_out_of_stock']:
-            data['available_online'] = False
-            data['available_store'] = False
-        else:
-            available_online = re.search('this item is not available for in-store pickup', response.body_as_unicode(), re.IGNORECASE)
-            available_store = re.search('your items will be available', response.body_as_unicode(), re.IGNORECASE)
-            data['available_online'] = False
-            data['available_store'] = False
-            data['is_in_store_only'] = False
-            if available_store:
-                data['is_in_store_only'] = True
-                data['available_online'] = False
-                data['available_store'] = True
-            elif available_online:
-                data['available_online'] = True
-                data['available_store'] = False
-                data['is_in_store_only'] = False
-
-        # currency
-        currency = response.xpath(self.XPATH['product']['currency']).extract()
-        _populate(data, 'currency', currency, first=True)
-
-        # price
-        price = response.xpath(self.XPATH['product']['price']).extract()
-        if price:
-            price = price[0].strip(currency[0])
-            data['price'] = float(price)
-
-        # size
-        size = response.xpath(self.XPATH['product']['size']).extract()
-        _populate(data, 'size', size)
-
-        # color
-        color = response.xpath(self.XPATH['product']['color']).extract()
-        _populate(data, 'color', color)
-
-        return data
 
     def _total_matches_from_html(self, response):
         total_matches = response.xpath(self.XPATH['search']['total_matches']).re(r'\d+')
