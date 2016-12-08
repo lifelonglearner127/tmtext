@@ -542,7 +542,7 @@ class AmazonBaseClass(BaseProductsSpider):
         product = meta['product']
         child_asin = re.findall(r'asinList=(.+?)&', response.url)
         child_asin = child_asin[0] if child_asin else None
-        price_regex = """price_feature_div.+?priceblock_ourprice[^_].+?">\$([\d\.]+)"""
+        price_regex = """price_feature_div.+?priceblock_ourprice[^_].+?">[\$|CDN$\s]([\d\.]+)"""
         price = re.findall(price_regex, response.body)
         # Trying alternative regex
         if not price:
