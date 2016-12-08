@@ -435,7 +435,7 @@ class AmazonBaseClass(BaseProductsSpider):
                     prc_variants = variants
                 # Parse variants prices
                 # Turn on only for amazon.com for now
-                if prc_variants and 'amazon.com/' in response.url:
+                if prc_variants and ('amazon.com/' in response.url or 'amazon.ca/' in response.url):
                     js_text = response.xpath('.//script[contains(text(),"immutableURLPrefix")]/text()').extract()
                     js_text = js_text[0] if js_text else None
                     if not js_text:
