@@ -5,16 +5,16 @@ import os
 from template_to_googlemanufacturer import generate_google_manufacturer_xml
 from amazon_to_walmart import generate_amazon_to_walmart
 
-from helper import logging_info
+from helper import logging_info, set_cwd, get_cwd, set_log_file
 
-CWD = os.path.dirname(os.path.abspath(__file__))
 
-templateLoader = jinja2.FileSystemLoader(searchpath=CWD+'/templates/')
+set_cwd(os.path.dirname(os.path.abspath(__file__)))
+
+templateLoader = jinja2.FileSystemLoader(searchpath=get_cwd() + '/templates/')
 templateEnv = jinja2.Environment(loader=templateLoader)
 
 
 def main():
-    global LOG_FILE
 
     parser = argparse.ArgumentParser(description='test',
                                      formatter_class=argparse.RawTextHelpFormatter)
@@ -37,12 +37,13 @@ def main():
 
     namespace = parser.parse_args()
 
-
-    LOG_FILE = namespace.log_file
+    log_file = namespace.log_file
     input_file = namespace.input_file
     mapping_file = namespace.mapping_file
     input_type = namespace.input_type
     output_type = namespace.output_type
+
+    set_log_file(log_file)
 
     if input_type == 'template' and output_type == 'googlemanufacturer':
         logging_info('[Start Google Manufacturer]')
@@ -54,7 +55,7 @@ def main():
         logging_info('[END Amazon to Walmart]')
     else:
         generate_error()
-
+    logging_info('Finished')
     return
 
 

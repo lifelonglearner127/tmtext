@@ -81,8 +81,9 @@ def upload_file_to_our_server(file):
 
 def parse_log(log_fname):
     if not os.path.exists(log_fname):
-        return False, 'Could not find the conversion result.'
+        return False, [{'msg': 'Could not find the conversion result.','level': 'ERROR'}], None, ''
     has_error = False
+    completed = False
     result_file = None
     file_name = 'result'
     with open(log_fname, 'r') as fh:
@@ -95,8 +96,10 @@ def parse_log(log_fname):
                 file_name = msg['msg']
             if msg['level'] == 'ERROR':
                 has_error = True
+            if msg['msg'] == 'Finished':
+                completed = True
 
-    is_success = True if not has_error else False
+    is_success = True if not has_error and completed else False
 
     return is_success, msgs, result_file, file_name
 
@@ -130,7 +133,7 @@ def process_form():
     return success, messages, result_file, file_name
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/converter', methods=['GET', 'POST'])
 def index():
     if request.method == 'GET':
         return render_template('index.html')
@@ -150,10 +153,63 @@ def index():
         """.format(messages='<br/>'.join([m.get('msg') for m in messages]))
         return result_response
 
-    return send_file(result_file,
-                     mimetype='application/force-download',
-                     as_attachment=True,
-                     attachment_filename=file_name)
+    if not result_file or not os.path.exists(result_file):
+        result_response = """
+            <h2>Status: <b>FAILED - converted file does not exist</b></h2>
+            <h2>Log:</h2>
+            <p>{messages}</p>
+            <a href='/'>Back</a>
+        """.format(messages='<br/>'.join([m.get('msg') for m in messages]))
+        return result_response
+
+    try:
+        return send_file(result_file,
+                         mimetype='application/force-download',
+                         as_attachment=True,
+                         attachment_filename=file_name)
+    except:
+        result_response = """
+            <h2>Status: <b>FAILED - did not find the result file</b></h2>
+            <h2>Log:</h2>
+            <p>{messages}</p>
+            <a href='/'>Back</a>
+        """.format(messages='<br/>'.join([m.get('msg') for m in messages]))
+        return result_response
+
+
+@app.route('/converter/api', methods=['GET', 'POST'])
+def api():
+    if request.method == 'GET':
+        return render_template('api.html')
+
+    _msgs = process_form()
+    if isinstance(_msgs, (list, tuple)):
+        success, messages, result_file, file_name = _msgs
+    else:
+        return jsonify({'status': 'error', 'message': _msgs}), 400
+
+    if not success:
+        return jsonify({
+            'status': 'error',
+            'message': messages
+        }), 400
+
+    if not result_file or not os.path.exists(result_file):
+        return jsonify({
+            'status': 'error',
+            'message': 'The converter is not finished successfully.'
+        }), 400
+
+    try:
+        return send_file(result_file,
+                         mimetype='application/force-download',
+                         as_attachment=True,
+                         attachment_filename=file_name)
+    except:
+        return jsonify({
+            'status': 'error',
+            'message': 'Could not find the result file.'
+        }), 400
 
 
 if __name__ == '__main__':

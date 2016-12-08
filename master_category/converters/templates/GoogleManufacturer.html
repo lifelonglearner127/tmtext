@@ -6,13 +6,13 @@
 <description>Sample Feed</description>
 {% for item in items %}
 <item>
-<g:id>{{ item.id }}</g:id>
-<g:brand>{{ item.brand }}</g:brand>
-<g:title>{{ item.title }}</g:title>
-<g:gtin>{{ item.gtin }}</g:gtin>
-<g:mpn>{{ item.mpn }}</g:mpn>
-{% if item.description %}<g:description>{{ item.description }}</g:description>{% endif %}
-{% for bullet in item.bullet_points %}<g:bullet_point>{{ bullet }}</g:bullet_point>{% endfor %}
+<g:id>{{ item.id|e }}</g:id>
+<g:brand>{{ item.brand|e }}</g:brand>
+<g:title>{{ item.title|e }}</g:title>
+<g:gtin>{{ item.gtin|e }}</g:gtin>
+<g:mpn>{{ item.mpn|e }}</g:mpn>
+{% if item.description %}<g:description>{{ item.description|e }}</g:description>{% endif %}
+{% for bullet in item.bullet_points %}<g:bullet_point>{{ bullet|e }}</g:bullet_point>{% endfor %}
 </item>
 {% endfor %}
 </channel>
