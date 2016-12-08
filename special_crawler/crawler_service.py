@@ -103,6 +103,7 @@ from extract_westmarine_data import WestmarineScraper
 from extract_shoprite_data import ShopriteScraper
 from extract_hayneedle_data import HayneedleScraper
 from extract_cheaperthandirt_data import CheaperthandirtScraper
+from extract_zulily_data import ZulilyScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -220,7 +221,8 @@ SUPPORTED_SITES = {
                     "jet" : JetScraper,
                     "shoprite" : ShopriteScraper,
                     "hayneedle" : HayneedleScraper,
-                    "cheaperthandirt" : CheaperthandirtScraper
+                    "cheaperthandirt" : CheaperthandirtScraper,
+                    "zulily" : ZulilyScraper
                     }
 
 # add logger
@@ -326,6 +328,8 @@ def extract_domain(url):
         return 'jet'
     if 'hayneedle.com' in url:
         return 'hayneedle'
+    if 'zulily.com' in url:
+        return 'zulily'
 
     m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:
