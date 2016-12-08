@@ -143,17 +143,3 @@ class ZulilyProductsSpider(BaseProductsSpider):
             product['is_out_of_stock'] = True
 
         return product
-
-    def _total_matches_from_html(self, response):
-        total_matches = response.xpath(self.XPATH['search']['total_matches']).re(r'\d+')
-        if total_matches:
-            return int(total_matches[0])
-
-    def _scrape_next_results_page_link(self, response):
-        next_page = response.xpath(self.XPATH['search']['next_page']).extract()
-        if next_page:
-            return next_page[0]
-
-    def _scrape_product_links(self, response):
-        for link in response.xpath(self.XPATH['search']['prod_links']).extract():
-            yield link.split('?')[0].split(';')[0], SiteProductItem()
