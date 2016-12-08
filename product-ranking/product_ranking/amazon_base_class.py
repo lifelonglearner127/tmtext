@@ -546,7 +546,7 @@ class AmazonBaseClass(BaseProductsSpider):
         price = re.findall(price_regex, response.body)
         # Trying alternative regex
         if not price:
-            price_regex = """buybox_feature_div.+?a-color-price['"]>\s?.+?([\d\.]+)"""
+            price_regex = """buybox_feature_div.+?a-color-price['"]>[\s?.+?|CDN$\s]([\d\.]+)"""
             price = re.findall(price_regex, response.body)
         if not price:
             fail_var_url = [v.get('url') for v in product["variants"] if v.get('asin')==child_asin]
