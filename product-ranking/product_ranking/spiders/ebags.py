@@ -263,16 +263,6 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
             price = storeskus['storeSku']['pricing']['originalPrice']
             product['price'] = price
 
-            if product.get('price', None):
-                if not '$' in product['price']:
-                    self.log('Unknown currency at' % response.url)
-                else:
-                    product['price'] = Price(
-                        price=product['price'].replace(',', '').replace(
-                            '$', '').strip(),
-                        priceCurrency='USD'
-                    )
-
             desc = jsdata['info']['description']
             product['description'] = desc
 
