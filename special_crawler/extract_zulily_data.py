@@ -203,6 +203,9 @@ class ZulilyScraper(Scraper):
     def _description(self):
         return self.product_json["style_data"]["descriptionHtml"]
 
+    def _shelf_description(self):
+        return self.product_json["event_data"]["descriptionHtml"]
+
     def _long_description(self):
         return self.product_json["style_data"]["descriptionHtml"]
 
@@ -418,10 +421,12 @@ class ZulilyScraper(Scraper):
     def _in_stores(self):
         self._extract_product_json()
 
-        if self.product_json["itemAvailability"]["availableInStore"] == True:
-            return 1
+        availability = self.tree_html.xpath("//meta[@property='og:availability']/@content")
+        if availability:
+            avail = True if availability[0] == 'instock' else False
+            return avail
 
-        return 0
+        return True
 
     def _site_online(self):
         self._extract_product_json()
@@ -432,11 +437,10 @@ class ZulilyScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
-        self._extract_product_json()
-
-        for message in self.product_json["storeSkus"][0]["storeAvailability"]["itemAvilabilityMessages"]:
-            if message["messageValue"] == u'Out Of Stock Online':
-                return 1
+        availability = self.tree_html.xpath("//meta[@property='og:availability']/@content").extract()
+        if availability:
+            no_longer_avail = False if availability[0] == 'instock' else True
+            return no_longer_avail
 
         return 0
 
@@ -566,4 +570,5 @@ class ZulilyScraper(Scraper):
     # associated methods return already built dictionary containing the data
     DATA_TYPES_SPECIAL = { \
         "mobile_image_same" : _mobile_image_same, \
+        "shelf_description": _shelf_description, \
     }
