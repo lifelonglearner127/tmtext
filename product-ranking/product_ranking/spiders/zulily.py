@@ -144,9 +144,9 @@ class ZulilyProductsSpider(BaseProductsSpider):
         return product
 
     def _total_matches_from_html(self, response):
-        total_matches = response.xpath("//div[@class='searchBanner control']/span/text()").re(r'\d+')
+        total_matches = response.xpath("//div[@class='searchBanner control']/span/text()").re(r'\d+(?:,\d+)?')
         if total_matches:
-            return int(total_matches[0])
+            return int(total_matches[0].replace(",", ""))
 
     def _scrape_product_links(self, response):
         for link in response.xpath("//ul[contains(@class, 'products-grid')]/li//a[@contains(class, 'product-image')]").extract():
