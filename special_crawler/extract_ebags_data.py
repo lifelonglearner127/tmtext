@@ -311,7 +311,11 @@ class EbagsScraper(Scraper):
         return None
 
     def _review_count(self):
-        review_count = re.findall(r'\d+', self.tree_html.xpath("//*[@itemprop='reviewCount']//text()")[0])
+        review_count = re.findall(
+            r'\d+',
+            self.tree_html.xpath("//div[contains(@class,'pdpRatingsReviews')]"
+                                 "//span[contains(@class,'hilight')]//text()")[0]
+        )
 
         if review_count:
             return int(review_count[0])
