@@ -14,19 +14,23 @@ from product_ranking.spiders import BaseProductsSpider, cond_set, \
 
 class ZulilyProductsSpider(BaseProductsSpider):
     name = "zulily_products"
-    allowed_domains = ["zulily.com"]
+    allowed_domains = ["www.zulily.com"]
 
     LOG_IN_URL = "https://www.zulily.com/auth"
     SEARCH_URL = 'http://www.zulily.com/{search_term}?fromSearch=true&searchTerm={search_term}'
     use_proxies = True
 
-    def __init__(self, login="", password="", *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(ZulilyProductsSpider, self).__init__(
             site_name=self.allowed_domains[0], *args, **kwargs)
+        self.product_url = kwargs['product_url']
+
+        self.login = kwargs.get("login", "arnoldmessi777@gmail.com")
+        self.password = kwargs.get("password", "apple123")
 
     def start_requests(self):
-        body = '{"login": {"username": "arnoldmessi777@gmail.com", "password": "apple123"}, ' \
-               '"redirectUrl": "https://www.zulily.com/"}'
+        body = '{{"login": {{"username": "{email}", "password": "{password}"}}, ' \
+               '"redirectUrl": "https://www.zulily.com/"}}'.format(email=self.login, password=self.password)
 
         yield Request(self.LOG_IN_URL,
                       method='POST',
