@@ -19,7 +19,7 @@ def generate_bullets(desc):
     return []
 
 
-def generate_google_manufacturer_xml(input_file, templateEnv):
+def generate_google_manufacturer_xml(templateEnv, input_file):
     available_extensions = ['.csv', '.xls']
     items = []
     context = {}

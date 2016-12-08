@@ -14,7 +14,7 @@ templateEnv = jinja2.Environment(loader=templateLoader)
 
 
 def main():
-    global LOG_FILE, OUTPUT_DIR, ID
+    global LOG_FILE
 
     parser = argparse.ArgumentParser(description='test',
                                      formatter_class=argparse.RawTextHelpFormatter)
@@ -40,15 +40,22 @@ def main():
 
     LOG_FILE = namespace.log_file
     input_file = namespace.input_file
+    mapping_file = namespace.mapping_file
     input_type = namespace.input_type
     output_type = namespace.output_type
 
     if input_type == 'template' and output_type == 'googlemanufacturer':
-        generate_google_manufacturer_xml(input_file)
+        logging_info('[Start Google Manufacturer]')
+        generate_google_manufacturer_xml(templateEnv, input_file)
+        logging_info('[End Google Manufacturer]')
     elif input_type == 'amazon' and output_type == 'walmart':
-        generate_amazon_to_walmart(input_file)
+        logging_info('[START Amazon to Walmart]')
+        generate_amazon_to_walmart(templateEnv, input_file, mapping_file)
+        logging_info('[END Amazon to Walmart]')
     else:
         generate_error()
+
+    return
 
 
 def generate_error():

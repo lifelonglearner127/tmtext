@@ -8,7 +8,9 @@ CWD = ''
 
 def logging_info(msg, level='INFO'):
     """ We're using JSON which is easier to parse """
-    global LOG_FILE
+    if not LOG_FILE:
+        return
+
     with open(LOG_FILE, 'a') as fh:
         fh.write(json.dumps({'msg': msg, 'level': level})+'\n')
 

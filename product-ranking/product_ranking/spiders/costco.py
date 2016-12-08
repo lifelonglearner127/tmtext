@@ -246,7 +246,7 @@ class CostcoProductsSpider(BaseProductsSpider):
 
     def _scrape_product_links(self, response):
         links = response.xpath(
-            '//div[contains(@class,"product-tile-image-container")]/a/@href'
+            '//div[contains(@class,"product-list grid")]//a[contains(@class,"thumbnail")]/@href'
         ).extract()
         for link in links:
             yield link, SiteProductItem()
