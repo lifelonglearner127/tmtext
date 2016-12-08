@@ -17,8 +17,7 @@ class ZulilyProductsSpider(BaseProductsSpider):
     allowed_domains = ["zulily.com"]
 
     LOG_IN_URL = "https://www.zulily.com/auth"
-    SEARCH_URL = 'http://www.petsmart.com/search?SearchTerm={search_term}'
-    IMAGE_URL = 'http://s7d2.scene7.com/is/image/PetSmart/{sku}_Imageset'
+    SEARCH_URL = 'http://www.zulily.com/{search_term}?fromSearch=true&searchTerm={search_term}'
     use_proxies = True
 
     def __init__(self, login="", password="", *args, **kwargs):
@@ -143,3 +142,12 @@ class ZulilyProductsSpider(BaseProductsSpider):
             product['is_out_of_stock'] = True
 
         return product
+
+    def _total_matches_from_html(self, response):
+        total_matches = response.xpath("//div[@class='searchBanner control']/span/text()").re(r'\d+')
+        if total_matches:
+            return int(total_matches[0])
+
+    def _scrape_product_links(self, response):
+        for link in response.xpath("//ul[contains(@class, 'products-grid')]/li//a[@contains(class, 'product-image')]").extract():
+            yield link.split('?')[0], SiteProductItem()
