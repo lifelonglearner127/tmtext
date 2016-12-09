@@ -183,6 +183,7 @@ class WestmarineScraper(Scraper):
         )
         if len(image_list) < 1:
             image_list = self.tree_html.xpath("//div[@id='primary_image']//a[@id='imageLink']//img/@src")
+        image_list = ["http:" + r for r in image_list]
         return image_list
 
     def _image_count(self):
