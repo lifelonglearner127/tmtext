@@ -20,7 +20,6 @@ from lxml import html, etree
 from itertools import chain
 import time
 
-
 class Scraper():
 
     """Base class for scrapers
@@ -460,7 +459,7 @@ class Scraper():
     # Additionally from extract_product_data(), this method extracts page load time.
     # parameter: types of info to be extracted as a list of strings, or None for all info
     # return: dictionary with type of info as key and extracted info as value
-    def product_info(self, info_type_list = None):
+    def product_info(self, info_type_list = None, lh = None):
         """Extract all requested data for this product, using subclass extractor methods
         Args:
             info_type_list (list of strings) list containing the types of data requested
@@ -476,7 +475,6 @@ class Scraper():
         if not info_type_list:
             info_type_list = self.ALL_DATA_TYPES.keys()
 
-
         # copy of info list to send to _extract_product_data
         info_type_list_copy = list(info_type_list)
 
@@ -485,6 +483,13 @@ class Scraper():
         #TODO: only do this if something in DATA_TYPES was requested
         self._extract_page_tree()
         time_end = time.time()
+
+        if lh:
+            try:
+                lh.add_log('page_size', len(html.tostring(self.tree_html)))
+            except Exception as e:
+                print 'Failed to get page size', e
+
         # don't pass load time as info to be extracted by _extract_product_data
         return_load_time = "loaded_in_seconds" in info_type_list_copy
         if return_load_time:
@@ -497,6 +502,8 @@ class Scraper():
         #      - what happens if there are requests to js info too? count that load time as well?
         if return_load_time:
             ret_dict["loaded_in_seconds"] = round(time_end - time_start, 2)
+            if lh:
+                lh.add_log('response_time', ret_dict["loaded_in_seconds"])
 
         # pack results into nested structure
         nested_results_dict = self._pack_returned_object(ret_dict)

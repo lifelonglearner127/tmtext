@@ -124,6 +124,10 @@ class BJSProductsSpider(BaseValidator, ProductsSpider):
         # Title key must be present even if it is blank
         cond_set_value(product, 'title', '')
 
+        reseller_id = re.findall('product.(\d+)', response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         # Price handling
         # this field may exist and contain full price if product have discount
         full_price = response.xpath(

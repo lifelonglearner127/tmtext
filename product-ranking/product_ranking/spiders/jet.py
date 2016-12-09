@@ -186,7 +186,8 @@ class JetProductsSpider(BaseValidator, BaseProductsSpider):
             cond_set_value(product, "title", prod_data.get('title'))
 
             # Uncomment when reseller_id ticket will be deployed, see bz #12076
-            # cond_set(product, "reseller_id", prod_data.get('retailSkuId'))
+            cond_set(product, "reseller_id", prod_data.get('retailSkuId'))
+
 
             cond_set_value(product, "model", prod_data.get('part_no'))
 

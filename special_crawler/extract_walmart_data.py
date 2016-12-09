@@ -74,7 +74,7 @@ class WalmartScraper(Scraper):
 
     CRAWLERA_APIKEY = '6b7c3e13db4e440db31d457bc10e6be8'
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http(s)://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -338,7 +338,7 @@ class WalmartScraper(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match("https?://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
+        m = re.match("https?://www\.walmart\.com(/.*)?/[0-9]+(\?.*)?", self.product_page_url)
         return not not m
 
     def _is_collection_url(self):
@@ -1196,7 +1196,8 @@ class WalmartScraper(Scraper):
                     possible_end_indexes.append(index)
 
             index = long_description.find('<h3>')
-            if index > -1 and not index == long_description.find('<h3>About'):
+            if index > -1 and not index in [long_description.find('<h3>About'), \
+                long_description.find('<h3>' + self._product_name_from_tree().split(',')[0])]:
                 possible_end_indexes.append(index)
 
             if possible_end_indexes:
@@ -1286,7 +1287,8 @@ class WalmartScraper(Scraper):
             if shelf_description_html and shelf_description_html.strip():
                 return HTMLParser().unescape(shelf_description_html.strip())
 
-        return None
+        self._extract_product_info_json()
+        return self.product_info_json.get('shortDescription')
 
     def _variants(self):
         if self._no_longer_available():
@@ -1763,10 +1765,11 @@ class WalmartScraper(Scraper):
             if upc:
                 return upc
 
-            upc = self.product_choice_info_json.get("product", {}).get("wupc")
+            if self.product_choice_info_json:
+                upc = self.product_choice_info_json.get("product", {}).get("wupc")
 
-            if upc:
-                return upc
+                if upc:
+                    return upc
 
             if self.is_bundle_product:
                 return self._filter_key_fields("upc", None)
@@ -2960,7 +2963,7 @@ class WalmartScraper(Scraper):
         if warnings:
             warnings = warnings[0]
 
-            header = warnings.xpath('./b/text()')
+            header = self.tree_html.xpath("//section[contains(@class,'js-warnings')]/p[1]/b/text()")
 
             if not header:
                 header = warnings.xpath('./strong/text()')
@@ -2979,7 +2982,7 @@ class WalmartScraper(Scraper):
         if directions:
             directions = directions[0]
 
-            header = directions.xpath('./b/text()')
+            header = self.tree_html.xpath("//section[contains(@class,'js-directions')]/p[1]/b/text()")
 
             if not header:
                 header = directions.xpath('./strong/text()')

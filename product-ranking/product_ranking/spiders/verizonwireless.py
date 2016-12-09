@@ -297,6 +297,10 @@ class VerizonwirelessProductsSpider(ProductsSpider):
         variants = self._parse_variants(response)
         cond_set_value(product, 'variants', variants)
 
+        # Parse reseller_id
+        reseller_id = self._parse_reseller_id(response)
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         # Parse stock status
         out_of_stock = self._parse_is_out_of_stock(response, variants)
         cond_set_value(product, 'is_out_of_stock', out_of_stock)
@@ -326,6 +330,10 @@ class VerizonwirelessProductsSpider(ProductsSpider):
             return self.send_next_request(reqs, response)
 
         return product
+
+    def _parse_reseller_id(self, response):
+        reseller_id = re.findall(r'productId[\"\']:[\"\']([^\"\']+)', response.body)
+        return reseller_id[0] if reseller_id else None
 
     def _parse_reviews(self, response):
         product = response.meta['product']

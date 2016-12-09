@@ -182,7 +182,7 @@ class WestmarineScraper(Scraper):
             "//ul[@id='carousel_alternate']//span[contains(@class,'thumb')]//img/@data-primaryimagesrc"
         )
         if len(image_list) < 1:
-            image_list = self.tree_html.xpath("//div[@id='primary_image']//a[@id='imageLink']//img/@data-primaryimagesrc")
+            image_list = self.tree_html.xpath("//div[@id='primary_image']//a[@id='imageLink']//img/@src")
         return image_list
 
     def _image_count(self):
@@ -429,7 +429,7 @@ class WestmarineScraper(Scraper):
     def _brand(self):
         try:
             data = json.loads(
-                self.tree_html.xpath("//script[contains(@type, 'application/ld+json')]//text()")[0]
+                self.tree_html.xpath("//script[contains(@type, 'application/ld+json')]//text()")[0].replace('\t', '')
             )
             brand = data["brand"]["name"]
             return brand
@@ -439,7 +439,7 @@ class WestmarineScraper(Scraper):
     def _mfg(self):
         try:
             data = json.loads(
-                self.tree_html.xpath("//script[contains(@type, 'application/ld+json')]//text()")[0]
+                self.tree_html.xpath("//script[contains(@type, 'application/ld+json')]//text()")[0].replace('\t', '')
             )
             mfg = data["mpn"]
             return mfg

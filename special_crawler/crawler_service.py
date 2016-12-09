@@ -97,10 +97,12 @@ from extract_walmartgrocery_data import WalmartGroceryScraper
 from extract_samsung_data import SamsungScraper
 from extract_autozone_data import AutozoneScraper
 from extract_sears_data import SearsScraper
+from extract_pepboys_data import PepboysScraper
 from extract_jet_data import JetScraper
 from extract_westmarine_data import WestmarineScraper
 from extract_shoprite_data import ShopriteScraper
 from extract_hayneedle_data import HayneedleScraper
+from extract_cheaperthandirt_data import CheaperthandirtScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -112,6 +114,7 @@ from lxml import etree, html
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import time
+import requests
 import collections
 
 app = Flask(__name__)
@@ -207,6 +210,8 @@ SUPPORTED_SITES = {
                     "pet360" : Pet360Scraper,
                     "petsmart" : PetsmartScraper,
                     "walmartgrocery" : WalmartGroceryScraper,
+                    "sears" : SearsScraper,
+                    "pepboys" : PepboysScraper,
                     "samsung" : SamsungScraper,
                     "shopritedelivers": ShopritedeliversScraper,
                     "autozone" : AutozoneScraper,
@@ -214,7 +219,8 @@ SUPPORTED_SITES = {
                     "westmarine" : WestmarineScraper,
                     "jet" : JetScraper,
                     "shoprite" : ShopriteScraper,
-                    "hayneedle" : HayneedleScraper
+                    "hayneedle" : HayneedleScraper,
+                    "cheaperthandirt" : CheaperthandirtScraper
                     }
 
 # add logger
@@ -437,6 +443,7 @@ def get_data():
 
     url = request_arguments['url'][0]
     site = request_arguments['site'][0]
+
     if 'bot' in request_arguments:
         bot = request_arguments['bot'][0]
     else:
@@ -628,7 +635,6 @@ def handle_internal_error(error):
 # post request logger
 @app.after_request
 def post_request_logging(response):
-
     app.logger.info(json.dumps({
         "date" : datetime.datetime.today().ctime(),
         "remote_addr" : request.remote_addr,
