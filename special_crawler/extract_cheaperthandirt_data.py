@@ -360,6 +360,13 @@ class CheaperthandirtScraper(Scraper):
         return 1
 
     def _site_online_out_of_stock(self):
+        try:
+            str = self.tree_html.xpath("//form[@id='mainForm']//span[contains(@class,'messagealert')]//text()")[0]
+            if "regret that this item is not available at this time" in str:
+                return 1
+        except:
+            pass
+
         if len(self.tree_html.xpath("//button[@name='addToBasket']")) < 1:
             return 1
         return 0
