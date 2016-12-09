@@ -154,19 +154,16 @@ class ZulilyScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return self.product_json["id_json"]["name"]
+        return self.product_json.get("id_json", {}).get("name")
 
     def _product_title(self):
-        return self.product_json["id_json"]["name"]
+        return self.product_json.get("id_json", {}).get("name")
 
     def _title_seo(self):
-        product_json = self._extract_product_json()
-        return self.product_json["id_json"]["name"]
+        return self.product_json.get("id_json", {}).get("name")
 
     def _model(self):
-        self._extract_product_json()
-
-        return self.product_json["info"]["modelNumber"]
+        return self.product_json.get("info", {}).get("modelNumber")
 
     def _upc(self):
         scripts = self.tree_html.xpath('//script//text()')
@@ -201,13 +198,13 @@ class ZulilyScraper(Scraper):
         return None
 
     def _description(self):
-        return self.product_json["style_data"]["descriptionHtml"]
+        return self.product_json.get("style_data", {}).get("descriptionHtml")
 
     def _shelf_description(self):
-        return self.product_json["event_data"]["descriptionHtml"]
+        return self.product_json.get("event_data", {}).get("descriptionHtml")
 
     def _long_description(self):
-        return self.product_json["style_data"]["descriptionHtml"]
+        return self.product_json.get("style_data", {}).get("descriptionHtml")
 
     def _swatches(self):
         swatches = []
@@ -286,7 +283,7 @@ class ZulilyScraper(Scraper):
         return None
 
     def _image_urls(self):        
-        media_list = self.product_json["style_data"]["gallery"]
+        media_list = self.product_json.get("style_data", {}).get("gallery")
         image_list = []
 
         for media_item in media_list:
@@ -337,7 +334,7 @@ class ZulilyScraper(Scraper):
         if self._review_count() == 0:
             return None
 
-        average_review = round(float(self.review_json["jsonData"]["attributes"]["avgRating"]), 1)
+        average_review = round(float(self.review_json.get("jsonData", {}).get("attributes", {}).get("avgRating")), 1)
 
         if str(average_review).split('.')[1] == '0':
             return int(average_review)
@@ -350,7 +347,7 @@ class ZulilyScraper(Scraper):
         if not self.review_json:
             return 0
 
-        return int(self.review_json["jsonData"]["attributes"]["numReviews"])
+        return int(self.review_json.get("jsonData", {}).get("attributes", {}).get("numReviews"))
 
     def _max_review(self):
         if self._review_count() == 0:
@@ -407,16 +404,16 @@ class ZulilyScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.product_json["style_data"]["originalPrice"]
+        return self.product_json.get("style_data", {}).get("originalPrice")
 
     def _price_amount(self):
         return float( self._price()[1:].replace(',',''))
 
     def _price_currency(self):
-        return self.product_json["style_data"]["currency"]
+        return self.product_json.get("style_data", {}).get("currency")
 
     def _temp_price_cut(self):
-        return self.product_json["itemExtension"]["localStoreSku"]["pricing"]["itemOnSale"]
+        return self.product_json.get("itemExtension", {}).get("localStoreSku", {}).get("pricing", {}).get("itemOnSale")
 
     def _in_stores(self):
         self._extract_product_json()
@@ -484,7 +481,7 @@ class ZulilyScraper(Scraper):
     def _brand(self):
         self._extract_product_json()
 
-        return self.product_json["info"]["brandName"]
+        return self.product_json.get("info", {}).get("brandName")
 
 
     ##########################################
