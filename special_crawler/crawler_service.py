@@ -221,8 +221,7 @@ SUPPORTED_SITES = {
                     "jet" : JetScraper,
                     "shoprite" : ShopriteScraper,
                     "hayneedle" : HayneedleScraper,
-                    "cheaperthandirt" : CheaperthandirtScraper,
-                    "zulily" : ZulilyScraper
+                    "cheaperthandirt" : CheaperthandirtScraper
                     }
 
 # add logger

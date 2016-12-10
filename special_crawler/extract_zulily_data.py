@@ -72,12 +72,7 @@ class ZulilyScraper(Scraper):
         Returns:
             lxml tree object
         """
-        agent = ''
-        if self.bot_type == "google":
-            print 'GOOOOOOOOOOOOOGGGGGGGLEEEE'
-            agent = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
-        else:
-            agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
+        agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20140319 Firefox/24.0 Iceweasel/24.4.0'
 
         #Set login form for delivery
         payload = '{"login": {"username": "arnoldmessi777@gmail.com", "password": "apple123"}, ' \
