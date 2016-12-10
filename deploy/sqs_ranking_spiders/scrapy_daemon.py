@@ -701,6 +701,7 @@ class ScrapyTask(object):
 
     def _get_next_signal(self, date_time):
         """get and remove next signal from the main queue"""
+        logger.warning('_get_next_signal called')
         try:
             k = self.required_signals.iterkeys().next()
         except StopIteration:
@@ -1167,6 +1168,7 @@ class ScrapyTask(object):
         and stops scrapy process, logs duration for given signal
         """
         while not self._stop_signal:  # run through all signals
+            logger.warning('checking signal')
             step_time_start = datetime.datetime.utcnow()
             next_signal = self._get_next_signal(step_time_start)
             if not next_signal:
@@ -1195,7 +1197,7 @@ class ScrapyTask(object):
             self.task_data['start_time'] = \
                 time.mktime(self.start_date.timetuple())
             self._start_scrapy_process()
-            self._push_simmetrica_events()
+            # self._push_simmetrica_events()
             first_signal = self._get_next_signal(start_time)
         except Exception as ex:
             logger.warning('Error occurred while starting scrapy: %s', ex)
