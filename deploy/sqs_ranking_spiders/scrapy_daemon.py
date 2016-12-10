@@ -376,21 +376,21 @@ def json_serializer(obj):
 
 
 def write_msg_to_sqs(queue_name_or_instance, msg):
-    if not isinstance(msg, (str, unicode)):
-        msg = json.dumps(msg, default=json_serializer)
-    if isinstance(queue_name_or_instance, (str, unicode)):
-        sqs_queue = SQS_Queue(queue_name_or_instance)
-    else:
-        sqs_queue = queue_name_or_instance
-    if getattr(sqs_queue, 'q', '') is None:
-        logger.warning("Queue '%s' does not exist. Will be created new one.",
-                       queue_name_or_instance)
-        _create_sqs_queue(sqs_queue.conn, queue_name_or_instance)
-        sqs_queue = SQS_Queue(queue_name_or_instance)
-    time.sleep(5)  # let the queue get up
     try:
+        if not isinstance(msg, (str, unicode)):
+            msg = json.dumps(msg, default=json_serializer)
+        if isinstance(queue_name_or_instance, (str, unicode)):
+            sqs_queue = SQS_Queue(queue_name_or_instance)
+        else:
+            sqs_queue = queue_name_or_instance
+        if getattr(sqs_queue, 'q', '') is None:
+            logger.warning("Queue '%s' does not exist. Will be created new one.",
+                           queue_name_or_instance)
+            _create_sqs_queue(sqs_queue.conn, queue_name_or_instance)
+            sqs_queue = SQS_Queue(queue_name_or_instance)
+        time.sleep(5)  # let the queue get up
         sqs_queue.put(msg)
-    except Exception, e:
+    except Exception as e:
         logger.error("Failed to put message to queue %s:\n%s",
                      queue_name_or_instance, str(e))
 
@@ -1906,19 +1906,20 @@ def prepare_test_data():
     #     task_id=4444, site='amazon', searchterms_str='iphone',
     #     server_name='test_server_name', with_best_seller_ranking=True,
     #     cmd_args={'quantity': 1}, attributes={'SentTimestamp': '1443426145373'}
-    # ), dict(
-    #     task_id=4445, site='target', searchterms_str='iphone',
-    #     server_name='test_server_name', with_best_seller_ranking=True,
-    #     cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
     # ),
+    dict(
+        task_id=4445, branch_name='Bug13779SqsIssue', site='target', searchterms_str='iphone',
+        server_name='test_server_name', with_best_seller_ranking=False,
+        cmd_args={'quantity': 10}, attributes={'SentTimestamp': '1443426145373'}
+    ),
+        # dict(
+        #     task_id=4446, site='walmart',
+        #     url='https://www.walmart.com/ip/Peppa-Pig-Family-Figures-6-Pack/44012553',
+        #     server_name='test_server_name', with_best_seller_ranking=False,
+        #     cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
+        # ),
         dict(
-            task_id=4446, branch_name='Bug12886ScreenshotIssueFixed', site='walmart',
-            url='https://www.walmart.com/ip/Peppa-Pig-Family-Figures-6-Pack/44012553',
-            server_name='test_server_name', with_best_seller_ranking=False,
-            cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
-        ),
-        dict(
-            task_id=4447, branch_name='Bug12886ScreenshotIssueFixed', site='amazon',
+            task_id=4447, branch_name='Bug13779SqsIssue', site='amazon',
             url='https://www.amazon.com/Anki-000-00048-Cozmo/dp/B01GA1298S/',
             server_name='test_server_name', with_best_seller_ranking=False,
             cmd_args={'make_screenshot_for_url': True}, attributes={'SentTimestamp': '1443426145373'}
