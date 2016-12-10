@@ -1884,8 +1884,8 @@ def prepare_test_data():
     # ),
     dict(
         task_id=4445, branch_name='Bug13779SqsIssue', site='target', searchterms_str='iphone',
-        server_name='test_server_name', with_best_seller_ranking=True,
-        cmd_args={'quantity': 50}, attributes={'SentTimestamp': '1443426145373'}
+        server_name='test_server_name', with_best_seller_ranking=False,
+        cmd_args={'quantity': 10}, attributes={'SentTimestamp': '1443426145373'}
     ),
         # dict(
         #     task_id=4446, site='walmart',
