@@ -315,6 +315,9 @@ class AmazonScraper(Scraper):
 
     # Amazon's version of UPC
     def _asin(self):
+        return self._product_id()
+
+        '''
         asin_text = self.tree_html.xpath('//*[contains(text(),"ASIN:")]/..')
         if asin_text:
             if 'productASIN' not in asin_text[0].text_content():
@@ -333,6 +336,7 @@ class AmazonScraper(Scraper):
         if asin:
             asin = asin.group(1)
             return asin
+        '''
 
     def _specs(self):
         specs = {}
