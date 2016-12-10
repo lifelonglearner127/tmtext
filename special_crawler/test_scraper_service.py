@@ -231,7 +231,7 @@ class ServiceScraperTest(unittest.TestCase):
                         print "******************Parsing Error at {0}******************".format(url)
                         continue
 
-        self.cur.execute("select url from console_urlsample where website = '%s'" % website)
+        self.cur.execute("select url from console_urlsample where website = '%s' and not_a_product = 0" % website)
         urls = self.cur.fetchall()
 
         self.urls_by_scraper[website] = [url[0] for url in urls]
