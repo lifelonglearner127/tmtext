@@ -157,6 +157,11 @@ class SnapdealProductSpider(BaseProductsSpider):
             "//section[@id='productSpecs']"
         ).extract())
 
+        regex = "\/(\d+)(?:$|\?)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
+
         price = is_empty(response.xpath(
             "//span[@id='selling-price-id']/text() |"
             "//input[@id='productSellingPrice']/@value |"

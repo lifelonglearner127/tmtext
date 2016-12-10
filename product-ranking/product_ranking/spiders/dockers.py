@@ -213,6 +213,11 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
         # Parse model
         cond_set_value(product, 'model', self.product_id)
 
+        reseller_id_regex = "p\/([^\/&?\.\s]+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
+
         # Parse title
         title = self.parse_title(response)
         cond_set(product, 'title', title)

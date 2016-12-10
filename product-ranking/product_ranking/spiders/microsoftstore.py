@@ -53,6 +53,8 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
             r"productId: '(\d+)'"))
         meta['product_id'] = product_id
 
+        cond_set_value(product, "reseller_id", product_id)
+
         # Set locale
         product['locale'] = 'en_US'
 

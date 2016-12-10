@@ -144,7 +144,6 @@ class UkRsOnlineProductsSpider(ProductsSpider):
             cond_set(product, 'brand', box.xpath(xpath).extract(),
                      unicode.strip)
 
-
     def _populate_from_html(self, response, product):
         cond_set(product, 'price', response.css('.price span::text').re(
             u'\u00a3([\d, .]+)'))
@@ -161,6 +160,12 @@ class UkRsOnlineProductsSpider(ProductsSpider):
                        response.css('.stockMessaging::text').re(
                            'out of stock|Discontinued product'),
                        bool)
+
+        regex = "\/([0-9]+)[\/\?]"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
+
         details = response.css('.prodDetailsContainer').xpath(
             'node()[normalize-space()]')
         details = [d.extract() for d in details if not d.css('form')]

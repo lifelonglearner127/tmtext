@@ -119,6 +119,7 @@ class AhProductsSpider(BaseProductsSpider):
                     continue
                 product['url'] = \
                     self.BASE_URL + product_info['navItem']['link']['href']
+                product['reseller_id'] = self._parse_reseller_id(product.get('url',''))
                 yield product
         except Exception as e:
             self.log('Can\'t parse product list body. ERROR: %s.' % str(e),
@@ -158,3 +159,10 @@ class AhProductsSpider(BaseProductsSpider):
         except Exception as e:
             self.log('Error: %s' % str(e))
             return 0
+
+    @staticmethod
+    def _parse_reseller_id(url):
+        regex = "(wi\d+)"
+        reseller_id = re.findall(regex, url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        return reseller_id

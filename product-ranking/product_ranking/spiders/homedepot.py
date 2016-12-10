@@ -10,7 +10,7 @@ from scrapy import Request, Selector
 from scrapy.log import DEBUG
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price
-from product_ranking.spiders import BaseProductsSpider, cond_set, \
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value,\
     FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
 from product_ranking.validators.homedepot_validator import HomedepotValidatorSettings
@@ -98,6 +98,11 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
             response.xpath(
                 "//div[@class='pricingReg']"
                 "/span[@itemprop='price']/text()").extract())
+
+        reseller_id_regex = "\/(\d+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
 
         if product.get('price', None):
             if not '$' in product['price']:

@@ -236,6 +236,9 @@ class ShopriteProductsSpider(BaseProductsSpider):
         sku = self._parse_sku(product_info)
         cond_set_value(product, 'sku', sku)
 
+        # Parse reseller_id
+        cond_set_value(product, 'reseller_id', sku)
+
         # Parse description
         description = self._parse_description(product_info)
         cond_set_value(product, 'description', description)
