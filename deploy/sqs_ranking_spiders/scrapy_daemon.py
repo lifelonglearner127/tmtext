@@ -375,21 +375,21 @@ def json_serializer(obj):
 
 
 def write_msg_to_sqs(queue_name_or_instance, msg):
-    if not isinstance(msg, (str, unicode)):
-        msg = json.dumps(msg, default=json_serializer)
-    if isinstance(queue_name_or_instance, (str, unicode)):
-        sqs_queue = SQS_Queue(queue_name_or_instance)
-    else:
-        sqs_queue = queue_name_or_instance
-    if getattr(sqs_queue, 'q', '') is None:
-        logger.warning("Queue '%s' does not exist. Will be created new one.",
-                       queue_name_or_instance)
-        _create_sqs_queue(sqs_queue.conn, queue_name_or_instance)
-        sqs_queue = SQS_Queue(queue_name_or_instance)
-    time.sleep(5)  # let the queue get up
     try:
+        if not isinstance(msg, (str, unicode)):
+            msg = json.dumps(msg, default=json_serializer)
+        if isinstance(queue_name_or_instance, (str, unicode)):
+            sqs_queue = SQS_Queue(queue_name_or_instance)
+        else:
+            sqs_queue = queue_name_or_instance
+        if getattr(sqs_queue, 'q', '') is None:
+            logger.warning("Queue '%s' does not exist. Will be created new one.",
+                           queue_name_or_instance)
+            _create_sqs_queue(sqs_queue.conn, queue_name_or_instance)
+            sqs_queue = SQS_Queue(queue_name_or_instance)
+        time.sleep(5)  # let the queue get up
         sqs_queue.put(msg)
-    except Exception, e:
+    except Exception as e:
         logger.error("Failed to put message to queue %s:\n%s",
                      queue_name_or_instance, str(e))
 
