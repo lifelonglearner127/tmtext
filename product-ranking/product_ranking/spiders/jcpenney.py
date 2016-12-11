@@ -13,6 +13,7 @@ import requests
 from scrapy.http import Request
 from scrapy import Selector
 from scrapy.log import WARNING
+from scrapy.conf import settings
 
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
@@ -73,7 +74,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         'rating_desc': 'RHL'
     }
 
-    use_proxies = True
+    # disabled TOR proxies due 403 status code
+    # use_proxies = True
 
     REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{product_id}" \
                  "/reviews.djs?format=embeddedhtml"
@@ -114,6 +116,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             site_name=self.allowed_domains[0],
             *args,
             **kwargs)
+        settings.overrides['CRAWLERA_ENABLED'] = True
 
     def start_requests(self):
         cookies = {'pageTemplate': 'new'}
