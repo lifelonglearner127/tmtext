@@ -54,21 +54,32 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
     REVIEW_URL = "http://dockers.ugc.bazaarvoice.com/2080-en_us/{product_id}" \
                  "/reviews.djs?format=embeddedhtml&page={index}&"
 
-    RELATED_PRODUCT = "http://www.res-x.com/ws/r2/Resonance.aspx?" \
-                      "appid=dockers01&tk=187015646137297" \
-                      "&ss=182724939426407" \
-                      "&sg=1&" \
-                      "&vr=5.3x&bx=true" \
-                      "&sc=product4_rr" \
-                      "&sc=product3_rr" \
-                      "&sc=product1_r" \
-                      "r&sc=product2_rr" \
-                      "&ev=product&ei={product_id}" \
-                      "&no=20" \
-                      "&language=en_US" \
-                      "&cb=certonaResx.showResponse" \
-                      "&ur=http%3A%2F%2Fwww.levi.com%2FUS%2Fen_US%" \
-                      "2Fwomens-jeans%2Fp%2F095450043&plk=&"
+    RELATED_PRODUCT = "https://levis.tt.omtrdc.net/m2/levis/mbox/ajax?" \
+                      "mboxHost=www.dockers.com" \
+                      "&mboxSession=1481449902450-970396" \
+                      "&mboxCount=1" \
+                      "&entity.id={product_id}" \
+                      "&entity.categoryId={product_categories}" \
+                      "&mbox=target-global-mbox" \
+                      "&mboxId=0" \
+                      "&mboxURL={product_url}" \
+                      "&mboxReferrer=http://www.dockers.com/" \
+                      "&mboxVersion=60"
+    # RELATED_PRODUCT = "http://www.res-x.com/ws/r2/Resonance.aspx?" \
+    #                   "appid=dockers01&tk=187015646137297" \
+    #                   "&ss=182724939426407" \
+    #                   "&sg=1&" \
+    #                   "&vr=5.3x&bx=true" \
+    #                   "&sc=product4_rr" \
+    #                   "&sc=product3_rr" \
+    #                   "&sc=product1_r" \
+    #                   "r&sc=product2_rr" \
+    #                   "&ev=product&ei={product_id}" \
+    #                   "&no=20" \
+    #                   "&language=en_US" \
+    #                   "&cb=certonaResx.showResponse" \
+    #                   "&ur=http%3A%2F%2Fwww.levi.com%2FUS%2Fen_US%" \
+    #                   "2Fwomens-jeans%2Fp%2F095450043&plk=&"
 
     use_proxies = True
     handle_httpstatus_list = [404]
@@ -250,6 +261,9 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
         variants = self._parse_variants(response)
         product['variants'] = variants
 
+        # Parse product_categories
+        self.product_categories = self._extract_categories(response.body_as_unicode())
+
         response.meta['marks'] = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
         real_count = is_empty(re.findall(r'<span itemprop="reviewCount">(\d+)<\/span>',
                                 response.body_as_unicode()))
@@ -307,9 +321,14 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             rating_by_star=response.meta['marks']
             )
 
+        # Updated related product url, previous res-x doesn't work
+        product_id = self.product_id + 'US'
+        url = self.RELATED_PRODUCT.format(product_id=product_id,
+                                          product_categories=self.product_categories,
+                                          product_url=product.get('url'))
         reqs.append(
             Request(
-                url=self.RELATED_PRODUCT.format(product_id=self.product_id),
+                url=url,
                 dont_filter=True,
                 callback=self.parse_related_product,
                 meta=meta
@@ -366,6 +385,7 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
         related_prods = []
         product = response.meta['product']
         sample = response.body
+        print sample
         try:
             sample = sample.replace('certonaResx.showResponse(', '')
             sample = sample[:-2]
@@ -474,3 +494,9 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                 nao=str(self.CURRENT_NAO)),
             callback=self.parse, meta=response.meta
         )
+
+    @staticmethod
+    def _extract_categories(body):
+        pattern = re.compile('var\s+categoryIds\s*=\s*\'(.+?)\;')
+        categories = pattern.search(body)
+        return categories.group(1) if categories else None
