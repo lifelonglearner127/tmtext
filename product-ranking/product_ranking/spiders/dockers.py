@@ -65,21 +65,6 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
                       "&mboxURL={product_url}" \
                       "&mboxReferrer=http://www.dockers.com/" \
                       "&mboxVersion=60"
-    # RELATED_PRODUCT = "http://www.res-x.com/ws/r2/Resonance.aspx?" \
-    #                   "appid=dockers01&tk=187015646137297" \
-    #                   "&ss=182724939426407" \
-    #                   "&sg=1&" \
-    #                   "&vr=5.3x&bx=true" \
-    #                   "&sc=product4_rr" \
-    #                   "&sc=product3_rr" \
-    #                   "&sc=product1_r" \
-    #                   "r&sc=product2_rr" \
-    #                   "&ev=product&ei={product_id}" \
-    #                   "&no=20" \
-    #                   "&language=en_US" \
-    #                   "&cb=certonaResx.showResponse" \
-    #                   "&ur=http%3A%2F%2Fwww.levi.com%2FUS%2Fen_US%" \
-    #                   "2Fwomens-jeans%2Fp%2F095450043&plk=&"
 
     use_proxies = True
     handle_httpstatus_list = [404]
@@ -382,35 +367,13 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
             return image
 
     def parse_related_product(self, response):
-        related_prods = []
         product = response.meta['product']
-        sample = response.body
-        print sample
-        try:
-            sample = sample.replace('certonaResx.showResponse(', '')
-            sample = sample[:-2]
-            data = json.loads(sample)
-            html = data['Resonance']['Response'][2]['output']
-        except Exception as e:
-            self.log('Error during parsing related products page: {}'.format(e))
-            return product
-        else:
-
-            s = Selector(text=html)
-            titles = s.xpath('//h4/text()').extract()  # Title
-            urls = s.xpath('//img/@src').extract()  # Img url
-            for title, url in zip(titles, urls):
-                if url and title:
-                    related_prods.append(
-                                RelatedProduct(
-                                    title=title,
-                                    url=url
-                                )
-                            )
+        text = self._extract_related_products_json(response.body_as_unicode())
+        related_products = self._build_related_products_array(text, product)
+        if related_products:
             product['related_products'] = {}
-            if related_prods:
-                product['related_products']['buyers_also_bought'] = related_prods
-            return product
+            product['related_products']['buyers_also_bought'] = related_products
+        return product
 
     def parse_description(self, response):
         if self.js_data:
@@ -500,3 +463,28 @@ class DockersProductsSpider(BaseValidator, BaseProductsSpider):
         pattern = re.compile('var\s+categoryIds\s*=\s*\'(.+?)\;')
         categories = pattern.search(body)
         return categories.group(1) if categories else None
+
+    def _extract_related_products_json(self, body):
+        pattern = re.compile('\_AT\.applyWhenReady\(\s*\[\s*({.+?})\s*\]\s*\)\s*;', re.DOTALL)
+        related_products_json = pattern.search(body)
+        data = related_products_json.group(1) if related_products_json else None
+        try:
+            data = json.loads(data).get('content')
+            return data
+        except Exception as e:
+            self.log('{}'.format(e.message))
+            return None
+
+    @staticmethod
+    def _build_related_products_array(text, product):
+        s = Selector(text=text)
+        related_products = []
+        product_url = product.get('url')
+        for element in s.xpath('//li[contains(@class, "imagegrid")]'):
+            url = element.xpath('.//a/@href').extract()
+            title = element.xpath('.//p[@class="name"]/text()').extract()
+            if url and title:
+                url = urlparse.urljoin(product_url, url[0])
+                title = title[0]
+                related_products.append(RelatedProduct(url=url, title=title))
+        return related_products
