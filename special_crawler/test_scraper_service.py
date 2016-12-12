@@ -13,7 +13,7 @@ import urllib
 import signal
 from datetime import date
 
-SUPPORTED_SITES = ["walmart", "amazon", "jcpenney", "kohls", "macys", "target", "uniqlo", "levi", "dockers", "nike", "samsclub", "drugstore"]
+SUPPORTED_SITES = ["walmart", "amazon", "amazon2", "jcpenney", "kohls", "macys", "target", "uniqlo", "levi", "dockers", "nike", "samsclub", "drugstore"]
 
 def signal_handler(signum, frame):
     raise Exception("Timed out!")
@@ -231,7 +231,7 @@ class ServiceScraperTest(unittest.TestCase):
                         print "******************Parsing Error at {0}******************".format(url)
                         continue
 
-        self.cur.execute("select url from console_urlsample where website = '%s'" % website)
+        self.cur.execute("select url from console_urlsample where website = '%s' and not_a_product = 0" % website)
         urls = self.cur.fetchall()
 
         self.urls_by_scraper[website] = [url[0] for url in urls]
@@ -261,6 +261,18 @@ class ServiceScraperTest(unittest.TestCase):
         for url in self.urls_by_scraper["amazon"]:
             try:
                 self._test("amazon", url)
+            except:
+                pass
+
+    def test_amazon2(self):
+        if specified_website and specified_website != "amazon2":
+            return
+
+        self.initialize_scraper("amazon2")
+
+        for url in self.urls_by_scraper["amazon2"]:
+            try:
+                self._test("amazon2", url)
             except:
                 pass
 

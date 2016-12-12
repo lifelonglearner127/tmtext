@@ -264,10 +264,22 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         if not price:
             price = response.xpath('//*[contains(@id, "priceInfo")]').re(FLOATING_POINT_RGEX)
         if not price:
-            price = response.xpath('//*[contains(@class, "singlePrice")][contains(text(), "$")]')
+            price = response.xpath('//*[contains(@class, "singlePrice")][contains(text(), "$")]').re(FLOATING_POINT_RGEX)
+
+        if not price:
+            # TODO Move to another method, populate_from_json
+            json_product_data = response.xpath('.//script[@id="productMainData"]/text()').extract()
+            json_product_data = json.loads(json_product_data[0]) if json_product_data else None
+            if json_product_data:
+                price = [json_product_data.get('salePrice')]
+                in_stock = json_product_data.get('inStock', None)
+                if in_stock is not None:
+                    if in_stock == "true":
+                        product['is_out_of_stock'] = False
+                    else:
+                        product['is_out_of_stock'] = True
         if price:
-                product['price'] = Price(price=price[0],
-                                         priceCurrency='USD')
+            product['price'] = Price(price=price[0], priceCurrency='USD')
 
         if not product.get("image_url") or \
                 "data:image" in product.get("image_url"):
@@ -318,6 +330,10 @@ class MacysProductsSpider(BaseValidator, ProductsSpider):
         if not product.get('description', ''):
             product['description'] = (
                 ' '.join(response.css('#product-detail-control ::text').extract()))
+
+        if not product.get('description', ''):
+            desc = response.xpath(".//*[@id='longDescription']/text()").extract()
+            product['description'] = desc[0] if desc else ''
 
         locale = response.css('#headerCountryFlag::attr(title)').extract()
         if not locale:
