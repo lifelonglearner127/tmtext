@@ -104,11 +104,12 @@ class ZulilyProductsSpider(BaseProductsSpider):
         product_json = self.extract_product_json(response)
 
         # title
-        title = product_json["id_json"]["name"]
+        title = product_json.get("id_json", {}).get("name", None)
         cond_set_value(product, 'title', title)
 
         # categories
-        categories = [category_info["value"] for category_info in product_json["style_data"]["categories"]]
+        categories = product_json.get("style_data", {}).get("categories", [])
+        categories = [category_info["value"] for category_info in categories]
 
         if categories:
             cond_set_value(product, 'categories', categories)
@@ -117,24 +118,24 @@ class ZulilyProductsSpider(BaseProductsSpider):
             product['category'] = product['categories'][-1]
 
         # description
-        description = product_json["style_data"]["descriptionHtml"]
+        description = product_json.get("style_data", {}).get("descriptionHtml", None)
         cond_set_value(product, 'description', description)
 
         # price
-        price = product_json["style_data"]["price"]
+        price = product_json.get("style_data", {}).get("price", None)
         cond_set_value(product, 'price', price)
 
         # image
-        image = product_json["id_json"]["image"]
+        image = product_json.get("id_json", {}).get("image", None)
         if image:
             cond_set_value(product, 'image_url', image)
 
         # brand
-        brand = product_json["id_json"]["brand"]["name"]
+        brand = product_json.get("id_json", {}).get("brand", {}).get("name", None)
         cond_set_value(product, "brand", brand)
 
         # original price
-        original_price = product_json["style_data"]["originalPrice"]
+        original_price = product_json.get("style_data", {}).get("originalPrice", None)
         cond_set_value(product, 'price_original', original_price)
 
         # no longer available
