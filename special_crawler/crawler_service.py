@@ -222,7 +222,7 @@ SUPPORTED_SITES = {
                     "shoprite" : ShopriteScraper,
                     "hayneedle" : HayneedleScraper,
                     "cheaperthandirt" : CheaperthandirtScraper,
-                    "auchanfr" : AuchanfrScraper
+                    "auchan" : AuchanfrScraper
                     }
 
 # add logger
