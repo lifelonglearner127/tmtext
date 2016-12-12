@@ -101,7 +101,7 @@ from extract_jet_data import JetScraper
 from extract_westmarine_data import WestmarineScraper
 from extract_shoprite_data import ShopriteScraper
 from extract_hayneedle_data import HayneedleScraper
-from extract_ahnl_data import AhnlScraper
+from extract_ah_data import AhScraper
 
 from urllib2 import HTTPError
 import datetime
@@ -217,7 +217,7 @@ SUPPORTED_SITES = {
                     "jet" : JetScraper,
                     "shoprite" : ShopriteScraper,
                     "hayneedle" : HayneedleScraper,
-                    "ahnl" : AhnlScraper
+                    "ah" : AhScraper
                     }
 
 log_response = {}

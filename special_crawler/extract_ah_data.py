@@ -35,7 +35,7 @@ def deep_search(needles, haystack):
                     found[k] = v
     return found
 
-class AhnlScraper(Scraper):
+class AhScraper(Scraper):
 
     ##########################################
     ############### PREP
