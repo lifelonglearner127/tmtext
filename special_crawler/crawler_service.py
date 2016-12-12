@@ -221,6 +221,7 @@ SUPPORTED_SITES = {
                     "jet" : JetScraper,
                     "shoprite" : ShopriteScraper,
                     "hayneedle" : HayneedleScraper,
+                    "zulily" : ZulilyScraper,
                     "cheaperthandirt" : CheaperthandirtScraper
                     }
 
@@ -327,8 +328,6 @@ def extract_domain(url):
         return 'jet'
     if 'hayneedle.com' in url:
         return 'hayneedle'
-    if 'zulily.com' in url:
-        return 'zulily'
 
     m = re.match("^https?://(www|shop|www1|intl)\.([^/\.]+)\..*$", url)
     if m:

@@ -94,7 +94,6 @@ class ZulilyScraper(Scraper):
                         print "Warning creating html tree from page content: ", e.message
                         self.tree_html = html.fromstring(contents)
                     return
-        new_data = {}
 
     def _extract_product_json(self):
         if self.product_json:
@@ -361,39 +360,7 @@ class ZulilyScraper(Scraper):
                 return i + 1
 
     def _reviews(self):
-        if self.is_review_checked:
-            return self.review_list
-
-        self.is_review_checked = True
-
-        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
-        s = requests.Session()
-        a = requests.adapters.HTTPAdapter(max_retries=3)
-        b = requests.adapters.HTTPAdapter(max_retries=3)
-        s.mount('http://', a)
-        s.mount('https://', b)
-        contents = s.get(self.REVIEW_URL.format(self._product_id()), headers=h, timeout=5).text
-
-        try:
-            start_index = contents.find("webAnalyticsConfig:") + len("webAnalyticsConfig:")
-            end_index = contents.find(",\nwidgetInitializers:initializers", start_index)
-
-            self.review_json = contents[start_index:end_index]
-            self.review_json = json.loads(self.review_json)
-        except:
-            self.review_json = None
-
-        review_html = html.fromstring(re.search('"BVRRSecondaryRatingSummarySourceID":" (.+?)"},\ninitializers={', contents).group(1))
-        reviews_by_mark = review_html.xpath("//*[contains(@class, 'BVRRHistAbsLabel')]/text()")
-        reviews_by_mark = reviews_by_mark[:5]
-        review_list = [[5 - i, int(re.findall('\d+', mark)[0])] for i, mark in enumerate(reviews_by_mark)]
-
-        if not review_list:
-            review_list = None
-
-        self.review_list = review_list
-
-        return self.review_list
+        return None
 
     ##########################################
     ############### CONTAINER : SELLERS
