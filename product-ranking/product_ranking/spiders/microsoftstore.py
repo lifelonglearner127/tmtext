@@ -1,19 +1,14 @@
 # -*- coding: utf-8 -*-#
 
 import json
-import re
 import string
-import itertools
-import urllib
 import requests
 
-from scrapy.http import FormRequest, Request
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy.http import Request
+from scrapy.log import INFO
 
-from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
-    cond_set_value
+from product_ranking.items import SiteProductItem, Price, BuyerReviews
+from product_ranking.spiders import BaseProductsSpider, cond_set_value
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.guess_brand import guess_brand_from_first_words
@@ -57,6 +52,8 @@ class MicrosoftStoreProductSpider(BaseProductsSpider):
             '//script[contains(text(), "productId")]/text()').re(
             r"productId: '(\d+)'"))
         meta['product_id'] = product_id
+
+        cond_set_value(product, "reseller_id", product_id)
 
         # Set locale
         product['locale'] = 'en_US'

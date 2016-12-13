@@ -136,7 +136,7 @@ class WalmartVariants(object):
                     end_index = item.find(",", start_index)
                     item_id = item[start_index:end_index].strip()
                     original_product_canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
-                    if not original_product_canonical_link.startswith("http://www.walmart.com"):
+                    if not re.match("https?://www.walmart.com", original_product_canonical_link):
                         original_product_canonical_link = "http://www.walmart.com" + original_product_canonical_link
                     variant_product_url = original_product_canonical_link[:original_product_canonical_link.rfind("/") + 1] + str(item_id)
 
@@ -233,7 +233,7 @@ class WalmartVariants(object):
 
                 original_product_canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
 
-                if not original_product_canonical_link.startswith("http://www.walmart.com"):
+                if not re.match("https?://www.walmart.com", original_product_canonical_link):
                     original_product_canonical_link = "http://www.walmart.com" + original_product_canonical_link
 
                 for item in color_size_stockstatus_json_body:
@@ -270,7 +270,10 @@ class WalmartVariants(object):
                         variant_product_id = item['buyingOptions']['usItemId']
                         variant_product_url = original_product_canonical_link[:original_product_canonical_link.rfind("/") + 1] + str(variant_product_id)
                         stockstatus_for_variants["url"] = variant_product_url
-                        stockstatus_for_variants["in_stock"] = item['buyingOptions']['available']
+                        if item['buyingOptions'].get('offerId'):
+                            stockstatus_for_variants["in_stock"] = item['buyingOptions']['available']
+                        else:
+                            stockstatus_for_variants["in_stock"] = False
                     except Exception, e:
                         stockstatus_for_variants["url"] = None
                         stockstatus_for_variants["in_stock"] = False

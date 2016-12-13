@@ -43,6 +43,7 @@ class SQS_Queue():
     # Messages are strings (or at least serialized to strings)
     def put(self, message):
         m = Message()
+
         try:
             if isinstance(message, basestring):
                 m.set_body(zlib.compress(message))

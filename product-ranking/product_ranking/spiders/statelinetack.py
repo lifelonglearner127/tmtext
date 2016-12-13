@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import urlparse
 
@@ -65,6 +64,8 @@ class StatelinetackProductsSpider(BaseProductsSpider):
             "/@value"
         ).extract()
         cond_set(product, 'upc', upc)
+
+        cond_set(product, 'reseller_id', upc)
 
         title = response.xpath("//h2[@itemprop='name']/text()").extract()
         cond_set(product, 'title', title)

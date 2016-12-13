@@ -91,7 +91,10 @@ class PetBaseProductsSpider(ProductsSpider):
         if not variant_search:
             return None
 
-        variants_json = json.loads(variant_search.group(1))
+        try:
+            variants_json = json.loads(variant_search.group(1))
+        except ValueError:
+            return None
 
         for attr_id in response.xpath(
             '//div[not(contains(@class,"hidden"))]/div/'
@@ -212,6 +215,9 @@ class PetBaseProductsSpider(ProductsSpider):
         # Sku
         sku = self._parse_sku(response)
         cond_set_value(product, 'sku', sku)
+
+        # Reseller_id
+        cond_set_value(product, 'reseller_id', sku)
 
         # Brand
         brand = self._parse_brand(response)

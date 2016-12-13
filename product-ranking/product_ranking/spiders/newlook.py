@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-import re
 import string
 import urllib
 import urlparse
@@ -8,10 +7,9 @@ from scrapy.log import ERROR
 from scrapy.http import Request
 
 from product_ranking.guess_brand import guess_brand_from_first_words
-from product_ranking.items import SiteProductItem, RelatedProduct, Price
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    cond_set_value, cond_replace_value, cond_replace,\
-    FLOATING_POINT_RGEX, FormatterWithDefaults
+    cond_set_value, FormatterWithDefaults
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -91,7 +89,7 @@ class NewlookProductsSpider(BaseProductsSpider):
 
     def parse_product(self, response):
         product = response.meta['product']
-        
+
         cond_set(
             product,
             'title',
@@ -103,7 +101,7 @@ class NewlookProductsSpider(BaseProductsSpider):
 
         if not product.get('brand', None):
             brand = guess_brand_from_first_words(
-                product.get('title', None).strip())
+                product.get('title', '').strip())
             if brand:
                 product['brand'] = brand
 
@@ -151,6 +149,11 @@ class NewlookProductsSpider(BaseProductsSpider):
                 priceCurrency='EUR')
 
         cond_set_value(product, 'locale', 'en_EU')
+
+        regex = "\/p\/([\d]+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
 
         stock_status = response.xpath('///select[@id="size_standard"]'
                                       '/option/@class').extract()

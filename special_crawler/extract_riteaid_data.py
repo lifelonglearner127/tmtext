@@ -3,8 +3,10 @@
 import re
 import HTMLParser
 
+import requests
 from lxml import html, etree
 from extract_data import Scraper
+import json
 
 
 class RiteAidScraper(Scraper):
@@ -13,7 +15,7 @@ class RiteAidScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is https://shop.riteaid.com/<product-name>-<skuid>$"
+    INVALID_URL_MESSAGE = "Expected URL format is (https|http)://shop.riteaid.com/<product-name>-<skuid>$"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -29,13 +31,14 @@ class RiteAidScraper(Scraper):
         self.ingredients = None
         self.images = None
         self.videos = None
+        self.reviews = None
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
         Returns:
             True if valid, False otherwise
         """
-        m = re.match('^https://shop.riteaid.com/.*-\d+$', self.product_page_url)
+        m = re.match('^(https|http)://shop.riteaid.com/.*-\d+$', self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -116,30 +119,17 @@ class RiteAidScraper(Scraper):
     def _description(self):
         description = ''
 
-        for element in self.tree_html.xpath('//div[@class="std"]/*'):
-            is_features = element.xpath('strong/text()') and 'Features' in element.xpath('strong/text()')[0]
-
-            if element.tag != 'p' or is_features:
-                break
-
+        for element in self.tree_html.xpath('//dd[@class="tab-container"]')[0].xpath("./*"):
             if not element.text_content():
                 continue
 
-            description += self._clean_text(html.tostring(element))
+            description += self._clean_html(html.tostring(element))
 
         if description:
             return description
 
     def _long_description(self):
         description = ''
-
-        for element in self.tree_html.xpath('//div[@class="std"]/*'):
-            is_features = element.xpath('strong/text()') and 'Features' in element.xpath('strong/text()')[0]
-
-            if element.tag != 'p' or is_features or not element.text_content():
-                continue
-
-            description += self._clean_text(html.tostring(element))
 
         if description:
             if description != self._description():
@@ -191,7 +181,7 @@ class RiteAidScraper(Scraper):
                 if is_video_image:
                     continue
 
-                if 'cloudfront.net/media/catalog/product' in image and not image in images:
+                if '/media/catalog/product' in image and not image in images:
                     images.append(image)
 
             if images:
@@ -288,25 +278,67 @@ class RiteAidScraper(Scraper):
     ##########################################
     ############### CONTAINER : REVIEWS
     ##########################################
-    def _average_review(self):
-        rating_value = self.tree_html.xpath('//div[@itemprop="aggregateRating"]/span[@itemprop="ratingValue"]/text()')
+    def _load_reviews(self):
+        if not self.reviews:
+            try:
+                sku = self.tree_html.xpath('//meta[@itemprop="sku"]/@content')[0]
 
+                reviews_json = self.load_page_from_url_with_number_of_retries(
+                    "http://api.bazaarvoice.com/data/reviews.json?apiversion=5.4"
+                    "&passkey=tezax0lg4cxakub5hhurfey5o&Filter=ProductId:{}"
+                    "&Include=Products&Stats=Reviews".format(sku))
+
+                self.reviews = json.loads(reviews_json).get("Includes", {}).get(
+                    "Products", {}).get(sku, {}).get("ReviewStatistics", {})
+            except Exception as ex:
+                print ex
+
+    def _average_review(self):
+        self._load_reviews()
+        rating_value = self.reviews.get("AverageOverallRating")
+        rating_value = round(rating_value, 2) if rating_value else None
         if rating_value:
-            return rating_value[0]
+            return rating_value
 
     def _review_count(self):
-        review_count = self.tree_html.xpath('//div[@itemprop="aggregateRating"]/span[@itemprop="reviewCount"]/text()')
-
+        self._load_reviews()
+        review_count = self.reviews.get("TotalReviewCount")
         if review_count:
-            return review_count[0]
+            return review_count
 
     def _max_review(self):
-        return None
+        reviews = self._reviews()
+
+        if reviews:
+            for review in reviews:
+                if review[1] != 0:
+                    return review[0]
 
     def _min_review(self):
-        return None
+        reviews = self._reviews()
+
+        if reviews:
+            for review in reviews[::-1]:
+                if review[1] != 0:
+                    return review[0]
 
     def _reviews(self):
+        self._load_reviews()
+        if self.reviews['RatingDistribution']:
+            reviews = []
+
+            for i in range(1,6):
+                has_value = False
+
+                for review in self.reviews['RatingDistribution']:
+                    if review['RatingValue'] == i:
+                        reviews.append([i, review['Count']])
+                        has_value = True
+
+                if not has_value:
+                    reviews.append([i, 0])
+
+            return reviews[::-1]
         return None
 
     ##########################################
@@ -379,6 +411,9 @@ class RiteAidScraper(Scraper):
         text = re.sub('[\r\n]', '', text)
         return text.strip()
 
+    def _clean_html(self, html):
+        html = re.sub('<(\w+)[^>]*>', r'<\1>', html)
+        return self._clean_text(html)
     ##########################################
     ################ RETURN TYPES
     ##########################################

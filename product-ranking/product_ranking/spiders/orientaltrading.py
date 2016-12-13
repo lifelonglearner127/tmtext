@@ -4,7 +4,7 @@ from __future__ import division, absolute_import, unicode_literals
 import json
 import re
 
-from scrapy import Request, FormRequest
+from scrapy import Request
 
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 from product_ranking.items import SiteProductItem, RelatedProduct, Price
@@ -67,6 +67,9 @@ class OrientaltradingProductsSpider(BaseProductsSpider):
         # Parse sku
         sku = self.parse_sku(response)
         cond_set_value(product, 'sku', sku)
+
+        # Parse reseller_id
+        cond_set_value(product, "reseller_id", sku)
 
         # Parse price
         price = self.parse_price(response)

@@ -10,8 +10,8 @@ from scrapy.http import Request
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    cond_set_value, cond_replace_value, cond_replace,\
-    FLOATING_POINT_RGEX, FormatterWithDefaults, populate_from_open_graph
+    cond_set_value, cond_replace, FormatterWithDefaults, \
+    populate_from_open_graph
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -120,7 +120,7 @@ class RiverislandProductsSpider(BaseProductsSpider):
         product = response.meta['product']
 
         populate_from_open_graph(response, product)
-        
+
         cond_set(
             product,
             'title',
@@ -156,6 +156,8 @@ class RiverislandProductsSpider(BaseProductsSpider):
             sku = None
         cond_set(product, 'sku', sku, string.strip)
 
+        cond_set(product, 'reseller_id', sku, string.strip)
+
         price_now = response.css(
             ".product-details-container .right-side .price .sale::text"
             ).extract()
@@ -168,7 +170,7 @@ class RiverislandProductsSpider(BaseProductsSpider):
 
         cond_set(
             product,
-            'price', price,            
+            'price', price,
             conv=string.strip,
         )
         if price:

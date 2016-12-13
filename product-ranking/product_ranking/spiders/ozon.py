@@ -1,20 +1,18 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
+from future_builtins import map
 
 import string
 import urlparse
 import re
 import json
-import urllib
 
 from scrapy.log import ERROR, DEBUG, WARNING
-from scrapy.http import FormRequest, Request
+from scrapy.http import Request
 
 from product_ranking.items import SiteProductItem, RelatedProduct, \
                                     Price, BuyerReviews
 from product_ranking.spiders import (BaseProductsSpider, cond_set,
-                                     FormatterWithDefaults, cond_set_value,
-                                    _extract_open_graph_metadata, FLOATING_POINT_RGEX)
+                                     FormatterWithDefaults)
 
 
 def clear_text(l):
@@ -131,6 +129,11 @@ class OzonProductsSpider(BaseProductsSpider):
             product['description'] = is_empty(
                 desc.extract()
             ).strip()
+
+        regex = "\/(\d+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
 
         # TODO: refactor brand
         # Set brand

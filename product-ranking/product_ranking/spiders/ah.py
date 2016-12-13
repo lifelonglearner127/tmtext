@@ -1,44 +1,39 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
+import json
 
 from scrapy.log import ERROR, DEBUG
+from scrapy.http import Request
 
 from product_ranking.items import SiteProductItem, Price
-from product_ranking.spiders import (BaseProductsSpider, FormatterWithDefaults,
-                                     cond_set, cond_set_value)
-
-
-def _get_next_page(current_url, offset_per_page):
-    current_offset = re.search('offset=(\d+)', current_url)
-    current_offset = int(current_offset.group(1).strip())
-    new_offset = current_offset + offset_per_page
-    return (
-        re.sub('(offset=)(\d+)', '\g<1>'+str(new_offset), current_url),
-        current_offset,
-        new_offset
-    )
-
-is_empty = lambda x: x[0] if x else None
+from product_ranking.spiders import (BaseProductsSpider, FormatterWithDefaults)
 
 
 class AhProductsSpider(BaseProductsSpider):
     name = 'ah_products'
     allowed_domains = ["ah.nl"]
+    BASE_URL = 'http://www.ah.nl'
     start_urls = []
 
-    SEARCH_URL = ("http://www.ah.nl/zoeken?rq={search_term}"
-                  "&sorting={sort}")
+    SEARCH_URL = BASE_URL + '/service/rest/delegate?url=' \
+                                 '/zoeken?rq={search_term}&sorting={sort}'
 
-    additional_url = "http://www.ah.nl/"
+    REST_PROD_URL = BASE_URL + '/service/rest/delegate?url=/producten/' \
+                               'product/{product_id}/{product_name}'
+
+    REGEXP_PROD_URL = re.compile('^(https?://)?(www.)?ah.nl/(producten/'
+                                 'product/(?P<product_id>[^/]+)/'
+                                 '(?P<product_name>[^/]+)/?)')
 
     SORT_BY = {
         'relevance': 'relevance',
         'name': 'name_asc',
     }
+
+    PRICE_CURRENCY = 'EUR'
 
     def __init__(self, *args, **kwargs):
         self.sort_by = self.SORT_BY.get(
@@ -47,91 +42,127 @@ class AhProductsSpider(BaseProductsSpider):
         super(AhProductsSpider, self).__init__(formatter, *args, **kwargs)
 
     def _parse_single_product(self, response):
-        return self.parse_product(response)
+        product = self.REGEXP_PROD_URL.search(response.url)
+        if not product:
+            self.log('Can\'t parse product url.', ERROR)
+            return
+        product = product.groupdict()
+        meta = response.meta
+        meta.update(product)
+        yield Request(
+            self.REST_PROD_URL.format(
+                product_name=product['product_name'],
+                product_id=product['product_id']
+            ),
+            callback=self.parse_single_product,
+            meta=meta
+        )
 
-    def _scrape_product_links(self, response):
+    def parse_single_product(self, response):
+        product_info = None
+        try:
+            body = json.loads(response.body)
+            for lane in body['_embedded']['lanes']:
+                _type = lane.get('type')
+                if not _type or _type != 'ProductDetailLane':
+                    continue
+                product_info = \
+                    lane['_embedded']['items'][0]['_embedded']['product']
+                break
+            if not product_info:
+                raise Exception('Product was not found.')
+        except Exception as e:
+            self.log('Error while parse single product. ERROR: %s.' % str(e),
+                     ERROR)
+            return
+        return self.__parse_product(response.meta['product'], product_info)
 
-        links = response.xpath(
-            './/div[@class="detail"]/a[contains(@href, "/product/")]/@href'
-        ).extract() 
+    def __parse_product(self, product, product_info):
+        try:
+            product['category'] = product_info['categoryName']
+            product['description'] = product_info['description']
+            if isinstance(product_info.get('images'), list):
+                a = [img['height'] for img in product_info['images']
+                     if 'height' in img]
+                image = product_info['images'][a.index(max(a))]
+                product['title'] = image['title']
+                product['image_url'] = image['link']['href']
+            product['brand'] = product_info.get('brandName')
+            product['price'] = Price(
+                priceCurrency=self.PRICE_CURRENCY,
+                price=product_info['priceLabel']['now']
+            )
+        except Exception as e:
+            self.log('Error while parse product. ERROR: %s.' % str(e), ERROR)
+            return None
+        return product
 
-        for link in links:            
-            yield self.additional_url + link, SiteProductItem()
+    def _get_products(self, response):
+        product_list = None
+        try:
+            body = json.loads(response.body)
+            for lane in body['_embedded']['lanes']:
+                _type = lane.get('type')
+                if not _type or _type != 'SearchLane':
+                    continue
+                product_list = lane['_embedded']['items']
+                break
+            if not product_list:
+                self.log('Products was not found.', DEBUG)
+                return
+            for product_info in product_list:
+                product = self.__parse_product(
+                    SiteProductItem(),
+                    product_info['_embedded']['product']
+                )
+                if not product:
+                    continue
+                product['url'] = \
+                    self.BASE_URL + product_info['navItem']['link']['href']
+                product['reseller_id'] = self._parse_reseller_id(product.get('url',''))
+                yield product
+        except Exception as e:
+            self.log('Can\'t parse product list body. ERROR: %s.' % str(e),
+                     ERROR)
+            return
 
     def _scrape_next_results_page_link(self, response):
-        # this website uses offsets instead of pagination, so we simple
-        #  increase the offset param every time by `page_offset`
-        num_items = min(response.meta.get('total_matches', 0), self.quantity)
-        if not num_items:
-            return
-        page_offset = 60
-        new_offset = page_offset
-        url = response.url
-        if not 'offset=' in url:
-            url += '&offset=%i' % page_offset
-        else:
-            url, _, new_offset = _get_next_page(url, page_offset)
-        if new_offset > getattr(self, 'total_results', 0):
-            return  # if we've scraped all the items already
-        return url
+        next_url = None
+        try:
+            body = json.loads(response.body)
+            for lane in body['_embedded']['lanes']:
+                _type = lane['type']
+                if not _type or _type != 'LoadMoreLane':
+                    continue
+                next_url = lane['navItem']['link']['href']
+                break
+        except Exception as e:
+            self.log('Can\'t find next page. ERROR: %s.' % str(e), ERROR)
+            return None
+
+        if not next_url:
+            return None
+
+        return Request(
+            self.BASE_URL + next_url,
+            callback=self._get_products
+        )
 
     def _scrape_total_matches(self, response):
-        totals = response.css('div.page-controls').re('van (\d+)')
-        if totals:
-            total = int(totals[0])
-        else:
-            if 'geen producten gevonden' in response.body.lower():
-                return 0  # nothing has been found
-            else:
-                self.log(
-                    "'total matches' string not found at %s" % response.url,
-                    ERROR
-                )
-                return
-        self.total_results = total  # remember num of results
-        return total
+        try:
+            body = json.loads(response.body)
+            # Set total results
+            self.total_results = \
+                int(body['_meta']['analytics']['parameters']
+                    ['ns_search_result'])
+            return self.total_results
+        except Exception as e:
+            self.log('Error: %s' % str(e))
+            return 0
 
-    def parse_product(self, response):
-        product = response.meta['product']
-
-        title = response.xpath('//h1[@class="h1"]/text()[normalize-space()]').extract()
-        cond_set(product, 'title', title)
-        if product.get('title'):
-            product['title'] = product['title']
-
-        cond_set(
-            product, 'image_url',
-            response.xpath('//div[@class="product-detail__image"]'
-                           '/a/img/@src').extract()
-        )
-
-        price = response.xpath(
-            '//p/meta[@itemprop="price"]/@content'
-        ).extract()
-        priceCurrency = response.xpath(
-            '//p/meta[@itemprop="priceCurrency"]/@content'
-        ).extract()
-
-        if price:
-            product["price"] = Price(
-                priceCurrency=is_empty(priceCurrency),
-                price=price[0]
-            )
-
-        if not product.get('image_url'):
-            cond_set(
-                product, 'image_url',
-                response.xpath('//div[@class="product-detail__image"]'
-                               '//img/@src').extract()
-            )
-        cond_set(
-            product, 'brand',
-            response.xpath('.//meta[@itemprop="brand"]/@content').extract()
-        )
-
-        description = response.xpath(
-            '//div[contains(@class, "row product-detail__content product-detail__border-row")]'
-        ).extract()
-        if description:
-            cond_set(product, 'description', (description[0].replace("\t", "").replace("\n", ""),))
-        return product
+    @staticmethod
+    def _parse_reseller_id(url):
+        regex = "(wi\d+)"
+        reseller_id = re.findall(regex, url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        return reseller_id

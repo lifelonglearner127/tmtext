@@ -1,12 +1,12 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 from scrapy.log import WARNING
 
 from product_ranking.items import SiteProductItem, Price, RelatedProduct
 from product_ranking.spiders import BaseProductsSpider, \
-    FormatterWithDefaults, FLOATING_POINT_RGEX, cond_set
+    FormatterWithDefaults, FLOATING_POINT_RGEX, cond_set, cond_set_value
 
+is_empty = lambda x, y=None: x[0] if x else y
 
 class BabySecurityProductSpider(BaseProductsSpider):
     name = 'babysecurity_products'
@@ -71,6 +71,12 @@ class BabySecurityProductSpider(BaseProductsSpider):
         else:
             return None
 
+    def _parse_reseller_id(self, response):
+        reseller_id = is_empty(response.xpath('.//*[@class="sku" and @itemprop="sku"]/text()').extract())
+        if reseller_id:
+            reseller_id = reseller_id.strip()
+        return reseller_id
+
     def parse_product(self, response):
         is_empty = lambda x: x[0] if x else ""
 
@@ -95,6 +101,10 @@ class BabySecurityProductSpider(BaseProductsSpider):
         img = response.xpath('//a[@id="zoom-btn"]/@href').extract()
         if img:
             prod['image_url'] = img[0]
+
+        # Parse reseller_id
+        reseller_id = self._parse_reseller_id(response)
+        cond_set_value(prod, 'reseller_id', reseller_id)
 
         price = response.xpath(
             '//div[@class="product-type-data"]'
@@ -125,7 +135,7 @@ class BabySecurityProductSpider(BaseProductsSpider):
             url = all_inf.xpath('@href').extract()
             recommendations.append(
                 RelatedProduct(
-                    title=is_empty(title), 
+                    title=is_empty(title),
                     url=is_empty(url)
                     )
                 )

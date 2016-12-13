@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
+from future_builtins import map
 
 import string
 import urlparse
@@ -11,6 +11,7 @@ from scrapy.log import ERROR, DEBUG
 from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
      cond_set, cond_set_value
+import re
 
 
 class OcadoProductsSpider(BaseProductsSpider):
@@ -20,7 +21,7 @@ class OcadoProductsSpider(BaseProductsSpider):
 
     SEARCH_URL = "https://www.ocado.com/webshop/getSearchProducts.do?" \
         "clearTabs=yes&isFreshSearch=true&entry={search_term}&sortBy={search_sort}"
-        
+
     SEARCH_SORT = {
         "default" :"default",
         "price_asc": "price_asc",
@@ -28,7 +29,7 @@ class OcadoProductsSpider(BaseProductsSpider):
         "name_asc": "name_asc",
         "name_desc":"name_desc",
         "shelf_life":"shelf_life",
-        "customer_rating": "customer_rating", 
+        "customer_rating": "customer_rating",
     }
 
     def __init__(self, search_sort="default", *args, **kwargs):
@@ -44,7 +45,7 @@ class OcadoProductsSpider(BaseProductsSpider):
 
     def _parse_single_product(self, response):
         return self.parse_product(response)
-      
+
     def parse_product(self, response):
         product = response.meta['product']
 
@@ -90,6 +91,11 @@ class OcadoProductsSpider(BaseProductsSpider):
             ))
 
         cond_set_value(product, 'locale', "en_GB")
+
+        regex = "\/(\d+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
 
         cond_set(
             product,

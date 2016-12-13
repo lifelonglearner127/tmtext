@@ -5,6 +5,7 @@ import re
 
 from datetime import datetime
 from scrapy import Request
+from scrapy.log import ERROR
 
 from product_ranking.amazon_tests import AmazonTests
 from product_ranking.amazon_base_class import AmazonBaseClass
@@ -18,12 +19,14 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
     user_agent = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:35.0) Gecko'
                   '/20100101 Firefox/35.0')
 
-    settings = AmazonValidatorSettings
 
-    QUESTIONS_URL = "http://www.amazon.com/ask/questions/inline/{asin_id}/{page}"
+
+    QUESTIONS_URL = "https://www.amazon.com/ask/questions/inline/{asin_id}/{page}"
 
     def __init__(self, *args, **kwargs):
         super(AmazonProductsSpider, self).__init__(*args, **kwargs)
+
+        self.settings = AmazonValidatorSettings(spider_class=self)
 
         # String from html body that means there's no results ( "no results.", for example)
         self.total_match_not_found_re = 'did not match any products.'
@@ -35,11 +38,13 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         self.price_currency_view = '$'
 
         self.scrape_questions = kwargs.get('scrape_questions', None)
-        if self.scrape_questions not in ('1', 1, True, 'true'):
+        if self.scrape_questions not in ('1', 1, True, 'true', 'True'):
             self.scrape_questions = False
 
         # Locale
         self.locale = 'en-US'
+
+        # update validator settings
 
     def _format_last_br_date(self, date):
         """
@@ -57,7 +62,11 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
             try:
                 d = datetime.strptime(date, '%B %d %Y')
             except ValueError:
-                d = datetime.strptime(date, '%b %d %Y')
+                try:
+                    d = datetime.strptime(date, '%b %d %Y')
+                except ValueError as e:
+                    self.log('Cant\'t parse date. ERROR: %s.' % str(e), ERROR)
+                    d = None
 
             return d
 
@@ -80,7 +89,7 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
         if asin_id:
             return Request(self.QUESTIONS_URL
                                .format(asin_id=asin_id[0], page="1"),
-                           callback=self._parse_recent_questions)
+                           callback=self._parse_recent_questions, dont_filter=True)
 
         return None
 
@@ -157,8 +166,10 @@ class AmazonProductsSpider(AmazonTests, AmazonBaseClass):
                 current_page = int(re.search('/(\d+)$', response.url).group(1))
                 url = re.sub('/\d+$', "/%d" % (current_page + 1), response.url)
                 reqs.append(
-                    Request(url, callback=self._parse_recent_questions))
-            except:
+                    Request(url, callback=self._parse_recent_questions, dont_filter=True))
+            except Exception as e:
+                self.log('Error while parse question page. ERROR: %s.' %
+                         str(e), ERROR)
                 pass
 
         if reqs:

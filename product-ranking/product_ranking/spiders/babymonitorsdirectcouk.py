@@ -3,13 +3,11 @@ from __future__ import division, absolute_import, unicode_literals
 import re
 import string
 
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy.log import ERROR
 
-from product_ranking.items import SiteProductItem, RelatedProduct, \
-    Price, BuyerReviews
-from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.items import SiteProductItem, Price
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults,\
-    cond_set, cond_set_value
+    cond_set_value
 
 is_empty = lambda x, y=None: x[0] if x else y
 
@@ -59,6 +57,10 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
         title = self._parse_title(response)
         cond_set_value(product, 'title', title, conv=string.strip)
 
+        # Parse reseller_id
+        reseller_id = self._parse_reseller_id(response)
+        cond_set_value(product, 'reseller_id', reseller_id, conv=string.strip)
+
         # Parse brand
         brand = self._parse_brand(response)
         cond_set_value(product, 'brand', brand, conv=string.strip)
@@ -93,6 +95,12 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
 
         return product
 
+    def _parse_reseller_id(self, response):
+        reseller_id = is_empty(response.xpath('.//*[@class="sku"]//span[@class="value"]/text()').extract())
+        if reseller_id:
+            reseller_id = reseller_id.strip()
+        return reseller_id
+
     def _parse_title(self, response):
         title = is_empty(
             response.xpath(
@@ -118,10 +126,8 @@ class BabymonitorsdirectProductsSpider(BaseProductsSpider):
 
     def _parse_price(self, response):
         price = is_empty(
-            response.xpath('//p[@class="special-price"]/'
-                           'span[@class="price"]/text() |'
-                           '//span[@class="regular-price"]'
-                           '/span[@class="price"]/text()').extract(), 0.00
+            response.xpath('//p[@class="special-price"]/span[@itemprop="price"]/text()'
+                           ' |//span[@class="regular-price"]/span[@itemprop="price"]/text()').extract(), 0.00
         )
         if price:
             price = is_empty(

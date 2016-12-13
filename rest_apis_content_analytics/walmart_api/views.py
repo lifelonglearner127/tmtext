@@ -490,13 +490,13 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         page = int(request.GET.get('page', 1))
         paginated_list = orig_list[(page-1)*paginate_by: page*paginate_by]
         paginate_left = paginate_right = True
-        
+
         if page <= 1:
             paginate_left = False
-        
+
         if page*paginate_by >= len(orig_list):
             paginate_right = False
-        
+
         return {'paginated_list': paginated_list, 'current_page': page,
                 'paginate_right': paginate_right, 'paginate_left': paginate_left}
 
@@ -506,14 +506,22 @@ class ItemsUpdateWithXmlFileByWalmartApiViewSet(viewsets.ViewSet):
         return context
 
     def list(self, request):
+        start_ = datetime.datetime.now()
+        print 'START!!!', start_
         with open(get_walmart_api_invoke_log(request), "a+") as myfile:
             log_history = myfile.read().splitlines()
+
+        print '2!!!', (datetime.datetime.now() - start_).total_seconds()
 
         if isinstance(log_history, list):
             log_history.reverse()
 
+        print '3!!!', (datetime.datetime.now() - start_).total_seconds()
+
         pagination = self._paginate_log_file_results(request, log_history)
         pagination['log'] = pagination.pop('paginated_list')
+
+        print '4!!!', (datetime.datetime.now() - start_).total_seconds()
 
         return Response(pagination)
 
@@ -1308,9 +1316,9 @@ class DetectDuplicateContentByMechanizeViewset(viewsets.ViewSet):
 
 
         search_url = "http://www.google.com/search?oe=utf8&ie=utf8&source=uds&start=0&hl=en&q={0}"
-        proxy_host = "proxy.crawlera.com"
+        proxy_host = "content.crawlera.com"
         proxy_port = "8010"
-        proxy_auth = HTTPProxyAuth("eff4d75f7d3a4d1e89115c0b59fab9b2", "")
+        proxy_auth = HTTPProxyAuth("7be623e22dad4ce1ba0a439128b1f89c", "")
         proxies = {"http": "http://{}:{}/".format(proxy_host, proxy_port)}
         retry_number = 3
         word_search_limit = 10

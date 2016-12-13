@@ -7,11 +7,14 @@ import string
 import urllib
 import itertools
 import random
+import urlparse
 
 import requests
-from scrapy.http import Request, FormRequest
+from requests.auth import HTTPProxyAuth
+from scrapy.http import Request
 from scrapy import Selector
 from scrapy.log import WARNING
+from scrapy.conf import settings
 
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
@@ -59,12 +62,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         'www.jcpenney.comjavascript'
     ]
 
-    SEARCH_URL = "http://www.jcpenney.com/jsp/search/results.jsp?" \
-                 "fromSearch=true&" \
-                 "Ntt={search_term}&" \
-                 "ruleZoneName=XGNSZone&" \
-                 "Ns={sort_mode}&" \
-                 "redirectTerm=skirts{search_term}"
+    SEARCH_URL = "http://www.jcpenney.com/jsp/search/results.jsp?fromSearch=true&Ntt={search_term}" \
+                 "&ruleZoneName=XGNSZone&successPage=null&_dyncharset=UTF-8&rootContentItemType=XGNS&Ns={sort_mode}"
     SORTING = None
     SORT_MODES = {
         'default': '',
@@ -76,7 +75,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         'rating_desc': 'RHL'
     }
 
-    use_proxies = True
+    # disabled TOR proxies due 403 status code
+    # use_proxies = True
 
     REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{product_id}" \
                  "/reviews.djs?format=embeddedhtml"
@@ -117,8 +117,14 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             site_name=self.allowed_domains[0],
             *args,
             **kwargs)
+        settings.overrides['CRAWLERA_ENABLED'] = True
+        default_headers = settings.get('DEFAULT_REQUEST_HEADERS')
+        default_headers['X-Crawlera-UA'] = 'pass'
+        settings.overrides['DEFAULT_REQUEST_HEADERS'] = default_headers
+        self.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36'
 
     def start_requests(self):
+        cookies = {'pageTemplate': 'new'}
         for st in self.searchterms:
             url = self.url_formatter.format(
                 self.SEARCH_URL,
@@ -128,7 +134,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             )
             yield Request(
                 url,
-                meta={'search_term': st, 'remaining': self.quantity}
+                meta={'search_term': st, 'remaining': self.quantity},
+                cookies=cookies
             )
 
         if self.product_url:
@@ -136,7 +143,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             prod['is_single_result'] = True
             yield Request(self.product_url,
                           self._parse_single_product,
-                          meta={'product': prod, 'handle_httpstatus_list': [404]})
+                          meta={'product': prod, 'handle_httpstatus_list': [404]},
+                          cookies=cookies)
 
     def _parse_single_product(self, response):
         if response.status == 404:
@@ -351,19 +359,30 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             except TypeError:
                 _rp = None
 
+            # replaced tor proxies with crawlera
             # try to fetch the page using a random proxy until it works
-            for _ in range(100):
-                if _rp is not None:
-                    random_proxy = random.choice(_rp.proxies.keys())
-                else:
-                    random_proxy = None
-                proxies = {"http": random_proxy, "https": random_proxy}
-                self.log('Using "Requests" lib to scrape the following url: %s, proxy: %s' % (
-                    size_url, random_proxy))
+            # for _ in range(100):
+            #     if _rp is not None:
+            #         random_proxy = random.choice(_rp.proxies.keys())
+            #     else:
+            #         random_proxy = None
+            #     proxies = {"http": random_proxy, "https": random_proxy}
+            #     self.log('Using "Requests" lib to scrape the following url: %s, proxy: %s' % (
+            #         size_url, random_proxy))
 
-                # perform sync request
+            # perform sync request
+            proxy_host = "content.crawlera.com"
+            proxy_port = "8010"
+            CRAWLERA_APIKEY = '0dc1db337be04e8fb52091b812070ccf'
+            proxy_auth = HTTPProxyAuth(CRAWLERA_APIKEY, "")
+            proxies = {"http": "http://{}:{}/".format(proxy_host, proxy_port), \
+                            "https": "https://{}:{}/".format(proxy_host, proxy_port)}
+            headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36',
+                       'X-Crawlera-UA': 'pass'}
+            for _ in range(10):
+                self.log('Retry count {}'.format(_))
                 try:
-                    result = requests.get(size_url, proxies=proxies, timeout=15)
+                    result = requests.get(size_url, proxies=proxies, timeout=15, auth=proxy_auth, headers=headers)
                 except Exception, e:
                     self.log('Non-fatal error %s while fetching URL %s' % (str(e), size_url))
                     continue
@@ -392,25 +411,29 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
             variant['in_stock'] = None
 
-        if result.get('priceHtml', None):
-            price_data = result['priceHtml']
-            if price_data:
-                price = re.findall(r'\$(\d+\.*\d+)&nbsp', price_data)
-                if price:
-                    try:
-                        price = price[1]
-                    except:
-                        price = price[0]
-                    variant['price'] = price
-        # find of such a combination is available
-        if color:
-            _avail = [a['options'] for a in result['skuOptions'] if a.get('key', None).lower() == 'color']
-            if _avail:
-                _avail = {k['option']: k['availability'] == 'true' for k in _avail[0]}
-                if not color in _avail:
-                    variant['in_stock'] = False
-                    return  # not defined; availability unknown
-                variant['in_stock'] = _avail[color]
+        if isinstance(result, dict):
+            if result.get('priceHtml', None):
+                price_data = result['priceHtml']
+                if price_data:
+                    price = re.findall(r'\$(\d+\.*\d+)&nbsp', price_data)
+                    if price:
+                        try:
+                            price = price[1]
+                        except:
+                            price = price[0]
+                        variant['price'] = price
+            # find of such a combination is available
+            if color:
+                _avail = [a['options'] for a in result['skuOptions'] if a.get('key', None).lower() == 'color']
+                if _avail:
+                    _avail = {k['option']: k['availability'] == 'true' for k in _avail[0]}
+                    if not color in _avail:
+                        variant['in_stock'] = False
+                        return  # not defined; availability unknown
+                    variant['in_stock'] = _avail[color]
+        else:
+            # TODO: fix this behaviour
+            self.log('Result variable isn\'t a dictionary, please fix')
         yield product
 
     @staticmethod
@@ -418,9 +441,17 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         return ('varisSephora=true'
                 in response.body_as_unicode().replace(' ', '').replace("'", ''))
 
+    @staticmethod
+    def _parse_reseller_id(url):
+        regex = "ppId=(p?p?\d+)"
+        reseller_id = re.findall(regex, url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        return reseller_id
+
     def parse_product(self, response):
         prod = response.meta['product']
         prod['url'] = response.url
+        prod['reseller_id'] = self._parse_reseller_id(response.url)
         prod['_subitem'] = True
 
         if "what you are looking for is currently unavailable" in response.body_as_unicode().lower():
@@ -630,6 +661,18 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         brs = self.buyer_reviews.parse_buyer_reviews_per_page(response)
         if brs.get('average_rating', None):
             if brs.get('rating_by_star', None):
+                for k,v in brs['rating_by_star'].items():
+                    if k not in ['1', '2', '3', '4', '5']:
+                        #manually parse
+                        arr = response.xpath('//span[contains(@class, "BVRRHistStarLabelText")]//span[contains(@class,"BVRRHistAbsLabel")]//text()').extract()
+                        stars = {'1': 0, '2': 0, '3': 0, '4': 0, '5': 0}
+                        for i in range(5):
+                            num = arr[i*2]
+                            num = num.replace(',', '')
+                            num = re.findall(r'\d+', num)[0]
+                            stars[str(5-i)] = int(num.replace(',', ''))
+                        brs['rating_by_star'] = stars
+                        break
                 product['buyer_reviews'] = brs
 
         if not product.get('buyer_reviews', None) and response.status == 200:
@@ -702,16 +745,23 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                        #dont_filter=True)
 
     def _scrape_product_links(self, response):
-        links = response.xpath(
-            '//div[@class="product_holder"]/div/div/'
-            'span[contains(@class, "product_image")]/a/@href'
+        urls = response.xpath(
+            '//li[contains(@class,"productDisplay")]//div[@class="productDisplay_image"]/a/@href'
         ).extract()
 
-        for link in links:
-            if 'javascript:void(price)' in link:
-                continue
-            else:
-                yield 'http://www.jcpenney.com'+link, SiteProductItem()
+        try:
+            products = re.findall(
+                'var\s?filterResults\s?=\s?jq\.parseJSON\([\'\"](\{.+?\})[\'\"]\);', response.body, re.MULTILINE)[0].decode(
+                'string-escape')
+            products = json.loads(products).get('organicZoneInfo').get('records')
+
+            urls += [product.get('pdpUrl') for product in products]
+        except Exception as e:
+            self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
+            self.log('Extracted urls using xpath: %s' % (len(urls)), WARNING)
+
+        for link in urls:
+            yield urlparse.urljoin(response.url, link), SiteProductItem()
 
     def _scrape_total_matches(self, response):
         if response.xpath('//div[@class="null_result_holder"]').extract():
@@ -720,8 +770,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             total = is_empty(
                 response.xpath(
-                    '//div[@class="sorted_items flt_wdt"]/p/text()'
-                ).re('of\s?(\d+)'))
+                    '//span[@data-anid="numberOfResults"]/text()'
+                ).extract())
 
             if total:
                 total_matches = int(total.replace(',', ''))
@@ -731,7 +781,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
     def _scrape_next_results_page_link(self, response):
         next_page = response.xpath(
-            '//ul[@id="paginationIdTOP"]/li/a/@href'
+            '//li[@class="pagination_item--last"]/a/@href'
         ).extract()
 
         if next_page:

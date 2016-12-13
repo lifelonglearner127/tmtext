@@ -3,7 +3,7 @@ import json
 from itertools import izip
 from datetime import datetime
 
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy.log import ERROR
 import lxml.html
 
 from product_ranking.items import BuyerReviews

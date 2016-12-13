@@ -9,26 +9,19 @@ from __future__ import division, absolute_import, unicode_literals
 
 import json
 import re
-from urllib import urlencode
-import urlparse
-import datetime
 import itertools
 import os
 import copy
 import time
 
 from scrapy import Request
-from scrapy.http.request.form import FormRequest
 from scrapy.dupefilter import RFPDupeFilter
-from scrapy.conf import settings
-from scrapy.utils.request import request_fingerprint
 
 from product_ranking.items import SiteProductItem, Price, BuyerReviews, \
     RelatedProduct
 from product_ranking.guess_brand import guess_brand_from_first_words
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set
-from product_ranking.spiders import cond_set_value
 
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -275,6 +268,7 @@ class ATTProductsSpider(BaseProductsSpider):
             prod['available_store'] = 0
         prod['title'] = sel_v['displayName']
         prod['sku'] = response.meta['selected_sku']
+        prod['reseller_id'] = prod.get('sku')
         yield prod
 
     def _on_variants_response_url2(self, response):

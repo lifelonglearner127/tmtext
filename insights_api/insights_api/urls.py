@@ -24,9 +24,9 @@ from api_control.views import ProductListViewSet, SitesViewSet, \
 
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
-router.register(r'product_lists', ProductListViewSet)
-router.register(r'search_terms', SearchTermsViewSet)
-router.register(r'search_term_groups', SearchTermsGroupsViewSet)
+router.register(r'product_lists', ProductListViewSet, base_name='productlists')
+router.register(r'search_terms', SearchTermsViewSet, base_name='searchterms')
+router.register(r'search_terms_groups', SearchTermsGroupsViewSet, base_name='searchtermgroups')
 router.register(r'sites', SitesViewSet, base_name='sites')
 router.register(r'brands', BrandsViewSet, base_name='brands')
 router.register(r'dates', DateViewSet, base_name='dates')

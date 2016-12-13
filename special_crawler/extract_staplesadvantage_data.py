@@ -23,8 +23,11 @@ class StaplesAdvantageScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www\.staplesadvantage\.com/webapp/wcs/stores/servlet/StplShowItem\?(.*)"
+    INVALID_URL_MESSAGE = "Expected URL format is http(s)://www\.staplesadvantage\.com/webapp/wcs/stores/servlet/StplShowItem\?(.*)"
 
+    description = None
+    long_description = None
+    shelf_description = None
     reviews_tree = None
     max_score = None
     min_score = None
@@ -39,8 +42,8 @@ class StaplesAdvantageScraper(Scraper):
     features = None
 
     def check_url_format(self):
-        # for ex: http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplShowItem?cust_sku=383249&catalogId=4&item_id=71504599&langId=-1&currentSKUNbr=383249&storeId=10101&itemType=0&pathCatLvl1=125128966&pathCatLvl2=125083501&pathCatLvl3=-999999&pathCatLvl4=117896272
-        m = re.match(r"^http://www\.staplesadvantage\.com/webapp/wcs/stores/servlet/StplShowItem\?(.*)", self.product_page_url)
+        # for ex: https://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplShowItem?cust_sku=383249&catalogId=4&item_id=71504599&langId=-1&currentSKUNbr=383249&storeId=10101&itemType=0&pathCatLvl1=125128966&pathCatLvl2=125083501&pathCatLvl3=-999999&pathCatLvl4=117896272
+        m = re.match(r"^(http|https)://www\.staplesadvantage\.com/webapp/wcs/stores/servlet/StplShowItem\?(.*)", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -51,7 +54,7 @@ class StaplesAdvantageScraper(Scraper):
             True if it's an unavailable product page
             False otherwise
         """
-        rows = self.tree_html.xpath("//div[@id='s7FlashViewer']")
+        rows = self.tree_html.xpath("//div[contains(@class, 'product-detail-container')]")
         if len(rows) > 0:
             return False
         return True
@@ -64,7 +67,7 @@ class StaplesAdvantageScraper(Scraper):
         return self.product_page_url
 
     def _product_id(self):
-        # http://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplShowItem?cust_sku=310342&catalogId=4&item_id=71341298&langId=-1&currentSKUNbr=310342&storeId=10101&itemType=0&pathCatLvl1=125128966&pathCatLvl2=125083501&pathCatLvl3=-999999&pathCatLvl4=125083516&addWE1ToCart=true
+        # https://www.staplesadvantage.com/webapp/wcs/stores/servlet/StplShowItem?cust_sku=310342&catalogId=4&item_id=71341298&langId=-1&currentSKUNbr=310342&storeId=10101&itemType=0&pathCatLvl1=125128966&pathCatLvl2=125083501&pathCatLvl3=-999999&pathCatLvl4=125083516&addWE1ToCart=true
         try:
             id = self.tree_html.xpath("//div[@class='maindetailitem']//input[@name='currentSKUNumber']/@value")[0].strip()
         except IndexError:
@@ -75,13 +78,14 @@ class StaplesAdvantageScraper(Scraper):
     ############### CONTAINER : PRODUCT_INFO
     ##########################################
     def _product_name(self):
-        return " ".join(self.tree_html.xpath("//p[contains(@class,'search-prod-desc')]//text()"))
+        product_name = self.tree_html.xpath("//h1[contains(@class,'search-prod-desc')]//text()[normalize-space()!='']")[0]
+        return product_name
 
     def _product_title(self):
-        return " ".join(self.tree_html.xpath("//p[contains(@class,'search-prod-desc')]//text()"))
+        return self.tree_html.xpath("//h1[contains(@class,'search-prod-desc')]//text()[normalize-space()!='']")[0]
 
     def _title_seo(self):
-        return " ".join(self.tree_html.xpath("//p[contains(@class,'search-prod-desc')]//text()"))
+        return self.tree_html.xpath("//h1[contains(@class,'search-prod-desc')]//text()[normalize-space()!='']")[0]
     
     def _model(self):
         return None
@@ -150,54 +154,36 @@ class StaplesAdvantageScraper(Scraper):
         return None
 
     def _description(self):
-        description = self._description_helper()
-        if description is None or len(description) < 1:
-            return self._long_description_helper()
-        return description
+        self._description_helper()
 
-    def _description_helper(self):
-        line_txts = self.tree_html.xpath("//div[contains(@class,'product-details-desc')]//ul//text()")
-        line_txts = [r for r in line_txts if len(self._clean_text(r)) > 0]
-        if len(line_txts) < 1:
-            return None
-        description = "\n".join(line_txts)
-        return description
+        if self.description:
+            return self.description
+
+    def _shelf_description(self):
+        self._description_helper()
+
+        if self.shelf_description:
+            return self.shelf_description
 
     def _long_description(self):
-        description = self._description_helper()
-        if description is None or len(description) < 1:
-            return None
-        return self._long_description_helper()
+        self._description_helper()
 
-    def _long_description_helper(self):
-        line_txts = []
-        # https://scontent.webcollage.net/stapleslink-en/sb-for-ppp?ird=true&channel-product-id=957754
-        url = "https://scontent.webcollage.net/stapleslink-en/sb-for-ppp?ird=true&channel-product-id=%s" % self._product_id()
-        contents = urllib.urlopen(url).read()
-        # wcsb:url=\"http:\/\/content.webcollage.net\/stapleslink-en\/product-content-page?channel-product-id=957754&amp;wcpid=lysol-1358965925135&amp;report-event=product-button-click&amp;usemap=0\"
-        # \/552b9366-55ed-443c-b21e-02ede6dd89aa.mp4.mobile.mp4\"
-        m = re.findall(r'wcsb:url="(.*?)"', contents.replace("\\",""), re.DOTALL)
-        if len(m) > 0:
-            url_wc = m[0]
-            contents_wc = urllib.urlopen(url_wc).read()
-            # document.location.replace('
-            m_wc = re.findall(r'document.location.replace\(\'(.*?)\'\);', contents_wc.replace("\\",""), re.DOTALL)
-            if len(m_wc) > 0:
-                url_wc2 = m_wc[0]
-                contents_wc2 = urllib.urlopen(url_wc2).read()
-                tree = html.fromstring(contents_wc2)
-                rows = tree.xpath("//div[contains(@class,'wc-pc-tabs')]//li")
-                for row in rows:
-                    txt = " ".join(row.xpath(".//text()"))
-                    if "Overview" in txt:
-                        url_wc3 = "http://content.webcollage.net%s" % row.xpath(".//a/@href")[0].strip()
-                        contents_wc3 = urllib.urlopen(url_wc3).read()
-                        tree3 = html.fromstring(contents_wc3)
-                        rows = tree3.xpath("//div[@class='wc-pc-content']//ul//text()")
-                        line_txts = [self._clean_text(r) for r in rows if len(self._clean_text(r)) > 0]
-        if len(line_txts) < 1:
-            return None
-        return "\n".join(line_txts)
+        if self.long_description:
+            return self.long_description
+
+    def _description_helper(self):
+        if not self.description or not self.shelf_description or self.long_description:
+            headline = self.tree_html.xpath("//div[contains(@class,'product-details')]//p[contains(@class, 'headliner')]//text()")[0]
+            expanded_descr = self.tree_html.xpath("//div[contains(@class,'product-details')]//p[contains(@class, 'whyBuyProductDetailPage')]//text()")[0]
+            bullet_list = self.tree_html.xpath("//div[contains(@class,'product-details-desc')]//ul/li//text()")
+            bullet_list = [r for r in bullet_list if len(self._clean_text(r)) > 0]
+            if len(bullet_list) < 1:
+                return None
+            bullet_list = "\n".join(bullet_list)
+
+            self.description = headline
+            self.shelf_description = expanded_descr
+            self.long_description = headline + "\n" + expanded_descr + "\n" + bullet_list
 
     ##########################################
     ############### CONTAINER : PAGE_ATTRIBUTES
@@ -208,12 +194,11 @@ class StaplesAdvantageScraper(Scraper):
 
     def _image_urls(self):
         rows = self.tree_html.xpath("//div[@id='altquickimgalt']//ul/li//a/img/@src")
-        image_url = ["http://www.staplesadvantage.com%s" % r for r in rows]
+        image_url = ["https://www.staplesadvantage.com%s" % r for r in rows]
         if len(image_url) < 1:
             script = "\n".join(self.tree_html.xpath("//script//text()"))
             m = re.findall("enlargedImageURL = '([^']*)'", script, re.DOTALL)
             image_url = list(set(m))
-            image_url = ["http://www.staplesadvantage.com%s" % r for r in image_url]
         if len(image_url) < 1:
             return None
         try:
@@ -222,10 +207,10 @@ class StaplesAdvantageScraper(Scraper):
         except Exception, e:
             print "WARNING: ", e.message
         # image_url = self.tree_html.xpath("//div[@class='maindetailitem']//div[@class='productpics']//li//img/@src")
-        # image_url = ["http://www.staplesadvantage.com%s" % r for r in image_url if "s0930105_sc7" not in r]
+        # image_url = ["https://www.staplesadvantage.com%s" % r for r in image_url if "s0930105_sc7" not in r]
         # if len(image_url) < 1:
         #     image_url = self.tree_html.xpath("//div[@class='maindetailitem']//div[@class='productpics']//div[contains(@class,'showinprint')]//img[@class='mainproductimage']/@src")
-        #     image_url = ["http://www.staplesadvantage.com%s" % r for r in image_url if "s0930105_sc7" not in r]
+        #     image_url = ["https://www.staplesadvantage.com%s" % r for r in image_url if "s0930105_sc7" not in r]
         #     if len(image_url) < 1:
         #         return None
         return image_url
@@ -369,44 +354,33 @@ class StaplesAdvantageScraper(Scraper):
     ##########################################
     #populate the reviews_tree variable for use by other functions
     def _load_reviews(self):
-        if not self.max_score or not self.min_score:
-            txt = self.tree_html.xpath("//div[contains(@class,'pr_snippet_product')]//div[@class='pr-snippet-stars']//div[contains(@data-histogram,'noOfReviews')]/@data-histogram")[0].strip()
-            # ["{'noOfReviews':7,'numOfFives':4,'numOfFours':3,'numOfThrees':0,'numOfTwos':0,'numOfOnes':0}"]
-            rows = []
-            cnt_tmp = int(re.findall(r"numOfFives'\:(\d+)", txt)[0].strip())
-            rows.append(cnt_tmp)
-            cnt_tmp = int(re.findall(r"numOfFours'\:(\d+)", txt)[0].strip())
-            rows.append(cnt_tmp)
-            cnt_tmp = int(re.findall(r"numOfThrees'\:(\d+)", txt)[0].strip())
-            rows.append(cnt_tmp)
-            cnt_tmp = int(re.findall(r"numOfTwos'\:(\d+)", txt)[0].strip())
-            rows.append(cnt_tmp)
-            cnt_tmp = int(re.findall(r"numOfOnes'\:(\d+)", txt)[0].strip())
-            rows.append(cnt_tmp)
 
-            self.reviews = []
-            idx = 5
+        if not self.review_count or self.average_review or self.max_score or not self.min_score:
+            prod_id = self._product_id()
+            url = "https://yotpo.staplesadvantage.com/v1/widget/RP5gD6RV7AVy75jjXQPUI1AOChyNNClZqkm94Ttb/products/" + prod_id + "/reviews.json?per_page=10&page=1&sort=votes_up&direction=desc&fromAjax=Y"
+            product_json = json.loads(self.load_page_from_url_with_number_of_retries(
+                url))
+            review_info = product_json["response"]["bottomline"]
+
+            self.review_count = review_info["total_review"]
+            self.average_review = review_info["average_score"]
+            self.reviews = review_info["star_distribution"]
+
             rv_scores = []
-            for cnt in rows:
+            for score, cnt in self.reviews.iteritems():
                 if cnt > 0:
-                    self.reviews.append([idx, cnt])
-                    rv_scores.append(idx)
-                idx -= 1
-                if idx < 1:
-                    break
+                    rv_scores.append(score)
+
             self.max_score = max(rv_scores)
             self.min_score = min(rv_scores)
 
     def _average_review(self):
-        txt = self.tree_html.xpath("//div[contains(@class,'pr_snippet_product')]//div[@class='pr-snippet-stars']//span[contains(@class,'pr-snippet-rating-decimal')]//text()")[0].strip()
-        avg_review = re.findall(r"^(.*?) of", txt)[0].strip()
-        avg_review = round(float(avg_review), 2)
-        return avg_review
+        self._load_reviews()
+        return self.average_review
 
     def _review_count(self):
-        txt = self.tree_html.xpath("//div[contains(@class,'pr_snippet_product')]//a[contains(@class,'pr-snippet-link')]//text()")[0].strip()
-        review_cnt = re.findall(r"^(.*?) reviews", txt)[0].strip()
-        return int(review_cnt)
+        self._load_reviews()
+        return self.review_count
 
     def _max_review(self):
         self._load_reviews()
@@ -588,6 +562,7 @@ class StaplesAdvantageScraper(Scraper):
     DATA_TYPES_SPECIAL = { \
         # CONTAINER : PRODUCT_INFO
         "description" : _description, \
+        "shelf_description" : _shelf_description, \
         "long_description" : _long_description, \
 
         # CONTAINER : PRODUCT_INFO

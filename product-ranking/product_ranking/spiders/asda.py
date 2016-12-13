@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import re
 import json
@@ -13,7 +12,6 @@ from scrapy.log import WARNING, ERROR
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults
 from product_ranking.validation import BaseValidator
-from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.validators.asda_validator import AsdaValidatorSettings
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -26,22 +24,22 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
 
     settings = AsdaValidatorSettings
 
-    SEARCH_URL = "http://groceries.asda.com/api/items/search" \
+    SEARCH_URL = "https://groceries.asda.com/api/items/search" \
         "?pagenum={pagenum}&productperpage={prods_per_page}" \
         "&keyword={search_term}&contentid=New_IM_Search_WithResults_promo_1" \
         "&htmlassociationtype=0&listType=12&sortby=relevance+desc" \
         "&cacheable=true&fromgi=gi&requestorigin=gi"
 
-    PRODUCT_LINK = "http://groceries.asda.com/asda-webstore/landing" \
+    PRODUCT_LINK = "https://groceries.asda.com/asda-webstore/landing" \
                    "/home.shtml?cmpid=ahc-_-ghs-d1-_-asdacom-dsk-_-hp" \
                    "/search/%s#/product/%s"
 
-    API_URL = "http://groceries.asda.com/api/items/view?" \
+    API_URL = "https://groceries.asda.com/api/items/view?" \
               "itemid={id}&" \
               "responsegroup=extended&cacheable=true&" \
               "shipdate=currentDate&requestorigin=gi"
 
-    REVIEW_URL = "http://groceries.asda.com/review/reviews.json?" \
+    REVIEW_URL = "https://groceries.asda.com/review/reviews.json?" \
                  "Filter=ProductId:%s&" \
                  "Sort=SubmissionTime:desc&" \
                  "apiversion=5.4&" \
@@ -63,7 +61,7 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
             )
 
         if self.product_url:
-            pId = is_empty(re.findall("product/(\d+)", self.product_url))
+            pId = is_empty(re.findall("product/.*/(\d+)", self.product_url))
             url = "http://groceries.asda.com/api/items/view?" \
                 "itemid=" + pId + "&responsegroup=extended" \
                 "&cacheable=true&shipdate=currentDate" \
@@ -72,13 +70,14 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
             prod = SiteProductItem()
             prod['is_single_result'] = True
             prod["url"] = self.product_url
+            prod["reseller_id"] = pId
             yield Request(url,
                           self._parse_single_product,
                           meta={'product': prod})
 
     def parse_product(self, response):
         product = response.meta['product']
-        
+
         try:
             data = json.loads(response.body_as_unicode())
             item = data['items'][0]
@@ -135,6 +134,7 @@ class AsdaProductsSpider(BaseValidator, BaseProductsSpider):
             prod = SiteProductItem()
             prod['title'] = item['itemName']
             prod['brand'] = item['brandName']
+            prod['site'] = 'http://www.asda.com/'
 
             # Hardcoded, store seems not to have out of stock products
             prod['is_out_of_stock'] = False

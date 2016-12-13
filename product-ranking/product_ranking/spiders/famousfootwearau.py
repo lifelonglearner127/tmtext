@@ -1,5 +1,4 @@
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import urlparse
 
@@ -7,6 +6,7 @@ from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from product_ranking.spiders import BaseProductsSpider
 from product_ranking.spiders import cond_set, cond_set_value
 from scrapy.log import DEBUG
+import re
 
 
 class FamousfootwearauProductsSpider(BaseProductsSpider):
@@ -65,6 +65,11 @@ class FamousfootwearauProductsSpider(BaseProductsSpider):
         cond_set(product, 'upc', response.xpath(
             "//input[@id='hidId']/@value").extract())
         cond_set_value(product, 'locale', "en-US")
+
+        reseller_id_regex = "\/([A-Z\.]{3,})"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
 
         rels = response.xpath("//ul[@class='like_list row']/li/a")
         related = []

@@ -64,6 +64,10 @@ class BestBuyProductSpider(ProductsSpider):
     def _populate_from_schemaorg(self, response, product):
         product_tree = response.xpath("//*[@itemtype='http://schema.org/Product']")
 
+        cond_set(product, 'reseller_id', product_tree.xpath(
+            "//*[@itemtype='http://schema.org/Product']//*[@id='pdp-model-data']/@data-sku-id"
+        ).extract())
+
         cond_set(product, 'title', product_tree.xpath(
             "descendant::*[not (@itemtype)]/meta[@itemprop='name']/@content"
         ).extract())
@@ -156,8 +160,9 @@ class BestBuyProductSpider(ProductsSpider):
         if not price:
             return
         price_match = re.search('\$ *([, 0-9]+(?:\.[, 0-9]+)?)', price)
-        price = price_match.group(1)
-        price = ''.join(re.split('[ ,]+', price))
+        if price_match:
+            price = price_match.group(1)
+            price = ''.join(re.split('[ ,]+', price))
         cond_replace_value(product, 'price', Price('USD', price))
 
     def _parse_single_product(self, response):

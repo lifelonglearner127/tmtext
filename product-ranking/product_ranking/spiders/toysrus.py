@@ -1,11 +1,10 @@
 import re
 import string
 
-from scrapy.log import ERROR, INFO, WARNING
+from scrapy.log import INFO, WARNING
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
-    cond_set_value
+from product_ranking.spiders import BaseProductsSpider, cond_set_value
 from product_ranking.br_bazaarvoice_api_script import BuyerReviewsBazaarApi
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -78,6 +77,9 @@ class ToysrusProductsSpider(BaseProductsSpider):
         # Parse sku
         sku = self._parse_sku(response)
         cond_set_value(product, 'sku', sku)
+
+        # reseller_id
+        cond_set_value(product, 'reseller_id', sku)
 
         # # Parse buyer reviews
         buyer_reviews = self._parse_buyer_reviews(response)

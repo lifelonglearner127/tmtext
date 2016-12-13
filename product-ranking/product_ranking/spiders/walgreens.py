@@ -3,7 +3,6 @@ from __future__ import division, absolute_import, unicode_literals
 import urlparse
 import json
 import re
-import string
 
 from scrapy.http import Request
 
@@ -94,7 +93,7 @@ class WalGreensProductsSpider(BaseProductsSpider):
         if self.searchterms:
             self.searchterms = [st.replace('-', ' ') for st in self.searchterms]
         return super(WalGreensProductsSpider, self).start_requests()
-    
+
     def _parse_single_product(self, response):
         return self.parse_product(response)
 
@@ -184,7 +183,7 @@ class WalGreensProductsSpider(BaseProductsSpider):
         cond_set_value(prod, 'no_longer_available', no_longer_available)
 
         img_url = response.xpath(
-            '//img[@id="main-product-image"]/@src').extract()
+            '//img[@id="main-product-image"]/@data-src').extract()
         if img_url:
             img_url = urlparse.urljoin(self.site, img_url[0])
             prod['image_url'] = img_url
@@ -206,6 +205,11 @@ class WalGreensProductsSpider(BaseProductsSpider):
                 '//section[@class="panel-body wag-colornone"]/text()'
             ).re('Item Code: (\d+)')
         )
+
+        regex = "[Ii][Dd]=prod(\d+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(prod, "reseller_id", reseller_id)
 
         prod_id = re.findall('ID=(.*)-', response.url)[0]
         review_url = self.REVIEW_API_URL.format(prod_id=prod_id)

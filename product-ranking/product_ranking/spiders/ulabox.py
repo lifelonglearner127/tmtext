@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 import string
 import urlparse
 
 from scrapy import Request
 from scrapy.log import WARNING, ERROR
+import re
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 
 
 class UlaboxProductsSpider(BaseProductsSpider):
@@ -80,6 +80,11 @@ class UlaboxProductsSpider(BaseProductsSpider):
                 "/div[@class='product-info']/../@data-product-id").extract(),
             conv=int
         )
+
+        regex = "\/(\d+)[\?\/]?"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
 
         cond_set(
             product,

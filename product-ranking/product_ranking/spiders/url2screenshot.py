@@ -13,11 +13,12 @@ import re
 import urlparse
 import shutil
 import datetime
+from requests.auth import HTTPProxyAuth
 
-import scrapy
+from scrapy import Spider
 from scrapy.conf import settings
 from scrapy.http import Request, FormRequest
-from scrapy.log import INFO, WARNING, ERROR, DEBUG
+from scrapy.log import INFO, WARNING, ERROR
 import lxml.html
 try:
     from pyvirtualdisplay import Display
@@ -34,21 +35,13 @@ sys.path.append(os.path.join(CWD, '..', '..', '..', '..', '..'))
 
 DEBUG_MODE = False  # TODO! fix
 
+from product_ranking.items import ScreenshotItem
+
 try:
     from search.captcha_solver import CaptchaBreakerWrapper
 except ImportError as e:
     CaptchaBreakerWrapper = None
     print 'Error loading captcha breaker!', str(e)
-
-
-class ScreenshotItem(scrapy.Item):
-    url = scrapy.Field()
-    image = scrapy.Field()
-    via_proxy = scrapy.Field()  # IP via webdriver
-    site_settings = scrapy.Field()  # site-specified settings that were activated (if any)
-
-    def __repr__(self):
-        return '[image data]'  # don't dump image data into logs
 
 
 def _get_random_proxy():
@@ -92,7 +85,7 @@ def _check_bad_results_macys(driver):
         return True
 
 
-class URL2ScreenshotSpider(scrapy.Spider):
+class URL2ScreenshotSpider(Spider):
     name = 'url2screenshot_products'
     # allowed_domains = ['*']  # do not remove comment - used in find_spiders()
     available_drivers = ['chromium', 'firefox']
@@ -116,10 +109,19 @@ class URL2ScreenshotSpider(scrapy.Spider):
         self.remove_img = kwargs.get('remove_img', True)
         # proxy support has been dropped after we switched to Chrome
         self.proxy = kwargs.get('proxy', '')  # e.g. 192.168.1.42:8080
+        self.proxy_auth = None
         self.proxy_type = kwargs.get('proxy_type', '')  # http|socks5
         self.code_200_required = kwargs.get('code_200_required', True)
         self.close_popups = kwargs.get('close_popups', kwargs.get('close_popup', None))
         self.driver = kwargs.get('driver', None)  # if None, then a random UA will be used
+
+        self.extra_handle_httpstatus_list = kwargs.get('extra_handle_httpstatus_list', None)
+        if self.extra_handle_httpstatus_list:
+            for extra_code in self.extra_handle_httpstatus_list.split(','):
+                extra_code = int(extra_code.strip())
+                if extra_code not in self.handle_httpstatus_list:
+                    self.handle_httpstatus_list.append(extra_code)
+            self.log('New self.handle_httpstatus_list value: %s' % self.handle_httpstatus_list)
 
         self.disable_site_settings = kwargs.get('disable_site_settings', None)
         if not self.disable_site_settings:
@@ -146,6 +148,33 @@ class URL2ScreenshotSpider(scrapy.Spider):
             self._site_settings_activated_for = domain
             self.log('Site-specified settings activated for: %s' % domain)
             self.check_bad_results_function = _check_bad_results_macys
+        if domain == 'walmart.com':
+            # middlewares = settings.get('DOWNLOADER_MIDDLEWARES')
+            # middlewares['product_ranking.randomproxy.RandomProxy'] = None
+            # settings.overrides['DOWNLOADER_MIDDLEWARES'] = middlewares
+            # self.code_200_required = True
+            crawlera_apikey = "4810848337264489a1d2f2230da5c981"
+
+            # Crawlera auth for phantomjs
+            # self._proxy_auth = "{}:''".format(crawlera_apikey)
+            # self.driver = "phantomjs"
+
+            # self.proxy_auth = HTTPProxyAuth(crawlera_apikey, "")
+            # self.proxy = "content.crawlera.com:8010"
+            # self.proxy_type = 'http'
+            #TODO fix this properly, selenium fails if there is http -> https redirect
+            self.product_url = self.product_url.replace(
+                "http://", "https://") if "http://" in self.product_url else self.product_url
+
+            # Using special squid connector
+            self.proxy = "10.0.5.36:7708"
+            self.proxy_type = 'http'
+
+            settings.overrides['CRAWLERA_URL'] = 'http://content.crawlera.com:8010'
+            settings.overrides['CRAWLERA_APIKEY'] = crawlera_apikey
+            settings.overrides['CRAWLERA_ENABLED'] = True
+            self._site_settings_activated_for = domain
+            self.log('Site-specified settings activated for: %s' % domain)
 
     def make_screenshot_for_macys(self, driver, output_fname):
         #time.sleep(7*60)  # delay for PhantomJS2 unpacking?
@@ -296,8 +325,8 @@ class URL2ScreenshotSpider(scrapy.Spider):
         from selenium import webdriver
         profile = webdriver.FirefoxProfile()
         profile.set_preference("general.useragent.override", self.user_agent)
-        profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
         if self.proxy:
+            profile.set_preference("network.proxy.type", 1)  # manual proxy configuration
             if 'socks' in self.proxy_type:
                 profile.set_preference("network.proxy.socks", self.proxy.split(':')[0])
                 profile.set_preference("network.proxy.socks_port", int(self.proxy.split(':')[1]))
@@ -305,7 +334,12 @@ class URL2ScreenshotSpider(scrapy.Spider):
                 profile.set_preference("network.proxy.http", self.proxy.split(':')[0])
                 profile.set_preference("network.proxy.http_port", int(self.proxy.split(':')[1]))
         profile.update_preferences()
-        driver = webdriver.Firefox(profile)
+        if os.path.exists('/home/spiders/geckodriver'):
+            self.log('Using geckodriver located at /home/spiders/geckodriver')
+            driver = webdriver.Firefox(profile, executable_path='/home/spiders/geckodriver')
+        else:
+            self.log('Geckodriver not found at /home/spiders/geckodriver - using default path')
+            driver = webdriver.Firefox(profile)
         return driver
 
     def init_driver(self, name=None):
@@ -326,7 +360,10 @@ class URL2ScreenshotSpider(scrapy.Spider):
     def prepare_driver(self, driver):
         driver.set_page_load_timeout(int(self.timeout))
         driver.set_script_timeout(int(self.timeout))
-        driver.set_window_size(int(self.width), int(self.height))
+        try:
+            driver.set_window_size(int(self.width), int(self.height))
+        except Exception as e:
+            self.log('Error while trying to maximize the browser: %s' % e, ERROR)
 
     def make_screenshot(self, driver, output_fname):
         driver.get(self.product_url)
@@ -334,7 +371,10 @@ class URL2ScreenshotSpider(scrapy.Spider):
         # maximize height of the window
         _body_height = self._get_js_body_height(driver)
         if _body_height and _body_height > 10:
-            driver.set_window_size(self.width, _body_height)
+            try:
+                driver.set_window_size(self.width, _body_height)
+            except Exception as e:
+                self.log('Error while trying to maximize the browser: %s' % e, ERROR)
         self._solve_captha_in_selenium(driver)
 
         if self.close_popups:
@@ -381,7 +421,9 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
     @staticmethod
     def _get_proxy_ip(driver):
-        driver.get('http://icanhazip.com')
+        # This website acn be down
+        # driver.get('http://icanhazip.com')
+        driver.get('https://api.ipify.org/')
         ip = re.search('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', driver.page_source)
         if ip:
             ip = ip.group(1)
@@ -402,10 +444,14 @@ class URL2ScreenshotSpider(scrapy.Spider):
 
         # we will use requesocks for checking response code
         r_session = requests.session()
+        if self.timeout:
+            self.timeout = int(self.timeout)
         r_session.timeout = self.timeout
-        #if self.proxy:
-        #    r_session.proxies = {'http': self.proxy_type+'://'+self.proxy,
-        #                         'https': self.proxy_type+'://'+self.proxy}
+        # Proxies activated again because of walmart bans
+        if self.proxy:
+            r_session.proxies = {"http": "{}://{}".format(self.proxy_type, self.proxy), \
+                            "https": "{}://{}".format(self.proxy_type, self.proxy)}
+
         if self.user_agent:
             r_session.headers = {'User-Agent': self.user_agent}
 
@@ -480,6 +526,7 @@ class URL2ScreenshotSpider(scrapy.Spider):
         item['url'] = response.url
         item['image'] = base64.b64encode(img_content)
         item['site_settings'] = getattr(self, '_site_settings_activated_for', None)
+        item['creation_datetime'] = datetime.datetime.utcnow().isoformat()
 
         if not DEBUG_MODE:
             display.stop()

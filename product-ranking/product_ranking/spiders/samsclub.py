@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-#
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
+from future_builtins import filter, map
 
 import re
 import string
@@ -13,7 +13,6 @@ import requests
 from product_ranking.items import SiteProductItem, Price, BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider
-from product_ranking.spiders import FLOATING_POINT_RGEX
 from product_ranking.spiders import cond_set, cond_set_value
 from scrapy.http import Request, FormRequest
 from scrapy.log import DEBUG, ERROR, WARNING
@@ -205,6 +204,10 @@ class SamsclubProductsSpider(BaseProductsSpider):
         except:
             pass
 
+        regex = "(prod\d+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
 
         cond_set(
             product,

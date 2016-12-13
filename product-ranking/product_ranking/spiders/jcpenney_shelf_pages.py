@@ -1,8 +1,13 @@
+# -*- coding: utf-8 -*-#
+from __future__ import division, absolute_import, unicode_literals
+
 import re
+import json
 import urlparse
 
 from scrapy.http import Request
 
+from scrapy.log import WARNING
 from product_ranking.items import SiteProductItem
 from .jcpenney import JcpenneyProductsSpider
 
@@ -56,18 +61,25 @@ class JCPenneyShelfPagesSpider(JcpenneyProductsSpider):
 
     def _scrape_product_links(self, response):
         urls = response.xpath(
-            '//div[@class="product_gallery_holder2"]//div[contains(@class, "product_description")]'
-            '//img[contains(@id, "ThumbnailImage")]/../../../a/@href'
+            '//li[contains(@class,"productDisplay")]//div[@class="productDisplay_image"]/a/@href'
         ).extract()
-        urls = [urlparse.urljoin(response.url, x) if x.startswith('/') else x
-                for x in urls]
 
-        sample = response.xpath('//div[@id="breadcrumb"]/'
-                                'ul/li//text()').extract()
-        shelf_categories = [i.strip() for i in sample if i.strip() and i != '>']
+        try:
+            products = re.findall(
+                'var\s?filterResults\s?=\s?jq\.parseJSON\([\'\"](\{.+?\})[\'\"]\);', response.body, re.MULTILINE)[0].decode(
+                'string-escape')
+            products = json.loads(products).get('organicZoneInfo').get('records')
+
+            urls += [product.get('pdpUrl') for product in products]
+        except Exception as e:
+            self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
+            self.log('Extracted urls using xpath: %s' % (len(urls)), WARNING)
+
+        ulrs = [urlparse.urljoin(response.url, url) for url in urls]
+
+        shelf_categories = response.xpath(
+            '//*[contains(@data-anid, "breadcrumbIndex_")]/text()').extract()
         shelf_category = shelf_categories[-1] if shelf_categories else None
-
-        urls = ["".join(i.replace('http://www.jcpenney.com', '')) for i in urls]
 
         for url in urls:
             item = SiteProductItem()

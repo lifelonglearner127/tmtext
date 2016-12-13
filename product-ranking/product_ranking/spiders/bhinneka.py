@@ -87,6 +87,9 @@ class BhinnekaProductsSpider(ProductsSpider):
                  box.css('.prod-itm-link img::attr(src)').extract())
 
     def _populate_from_html(self, response, product):
+        reseller_id = re.findall('\/sku(\d+)', response.url)
+        # reseller_id = reseller_id[0] if reseller_id else None
+        cond_set(product, 'reseller_id', reseller_id)
         cond_set(product, 'title',
                  response.css('[itemprop=name]::text').extract())
         cond_set(product, 'brand',

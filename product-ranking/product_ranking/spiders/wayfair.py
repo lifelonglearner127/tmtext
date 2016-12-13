@@ -5,15 +5,13 @@ import re
 import string
 import collections
 import itertools
-import urllib
 
-from scrapy.http import FormRequest, Request
+from scrapy.http import Request
 from scrapy.log import ERROR, INFO, WARNING
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
-from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
-    cond_set_value
+from product_ranking.spiders import BaseProductsSpider, cond_set_value
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -47,9 +45,9 @@ class WayfairProductSpider(BaseProductsSpider):
 
         # Set product primary sku
         product_sku = is_empty(
-            response.xpath('//span[@class="product_breadcrumb"]/text() |'
-                           '//div[contains(@class,"sku_info_header")]'
-                           '/div[contains(@class, "emphasis")]/text()').extract()
+            response.xpath(
+                '//span[contains(@class,"ProductDetailBreadcrumbs-item--product")]'
+                '//text()').extract()
         )
 
         if product_sku:
@@ -62,10 +60,12 @@ class WayfairProductSpider(BaseProductsSpider):
                 response.url
             ), WARNING)
 
+        cond_set_value(product, 'reseller_id', product_sku)
+
         # Set kitid
         # Needed to choose product own variants
         kit_id = is_empty(
-            response.xpath('//input[@name="kitId"]/@value').extract(),
+            response.xpath('//select[@name="PiID[Size]"]/@kitid').extract(),
             '0'
         )
         response.meta['kit_id'] = int(kit_id)
@@ -155,8 +155,9 @@ class WayfairProductSpider(BaseProductsSpider):
         Parse product title
         """
         title = is_empty(
-            response.xpath('string(//*[@class="prodnameshare"]/h1 |'
-                           '//*[@class="title_name"])').extract()
+            response.xpath(
+                '//span[contains(@class,"ProductDetailInfoBlock-header-title")]//text()'
+            ).extract()
         )
 
         return title
@@ -166,8 +167,7 @@ class WayfairProductSpider(BaseProductsSpider):
         Parse product brand
         """
         brand = is_empty(
-            response.xpath('//*[@class="manu_name"]/a/text() |'
-                           '//*[@class="prodnameshare"]/h1/strong/text()').extract()
+            response.xpath('//meta[@property="og:brand"]/@content').extract()
         )
 
         return brand
@@ -177,10 +177,10 @@ class WayfairProductSpider(BaseProductsSpider):
         Parse product special price
         """
         special_pricing = is_empty(
-            response.xpath('//*[contains(@class, "listprice")] |'
-                           '//span[@id="msrp"]').extract()
+            response.xpath('//span[@data-id="dynamic-sku-price"]//text()').extract()
         )
-
+        if special_pricing:
+            special_pricing = special_pricing.strip()
         return special_pricing
 
     def _parse_image_url(self, response):
@@ -188,8 +188,9 @@ class WayfairProductSpider(BaseProductsSpider):
         Parse product image link
         """
         image_url = is_empty(
-            response.xpath('//*[@id="zoomimg"]/.//*[contains(@class, "pdp_main_carousel_container")]/./'
-                           '/a/img/@src').extract()
+            response.xpath(
+                '//div[@id="zoomimg"]//img[contains(@class,"ProductDetailImagesBlock-carousel-image")]/@src'
+            ).extract()
         )
 
         return image_url
@@ -210,8 +211,10 @@ class WayfairProductSpider(BaseProductsSpider):
         """
         Parse product categories
         """
-        category = response.xpath('//div[contains(@class, "product__nova__breadcrumbs")]/./'
-                                  '/a[contains(@class, "breadcrumb")]/text()').extract()
+        category = response.xpath(
+            '//div[contains(@class,"ProductDetailBreadcrumbs")]'
+            '//a[contains(@class,"ProductDetailBreadcrumbs-item")]//text()'
+        ).extract()
 
         return category
 
@@ -251,23 +254,15 @@ class WayfairProductSpider(BaseProductsSpider):
         Parse product buyer reviews
         """
         num_of_reviews = is_empty(
-            response.xpath('//span[contains(@class, "ratingcount")]/'
-                           'span/text() |'
-                           '//span[contains(@class, "reviews_text")]'
-                           '/text()').extract(), ''
+            response.xpath('//span[@itemprop="reviewCount"]/text()').extract(), ''
         )
 
         if num_of_reviews:
-            num_of_reviews = is_empty(
-                re.findall(r'(\d+) R?r?eviews?', num_of_reviews)
-            )
-
             if num_of_reviews:
                 average_rating = is_empty(
-                    response.xpath('//span[@itemprop="ratingValue"]/'
-                                   'text() |'
-                                   '//a[@href="#reviews"]/span[@class="margin_sm_top"]'
-                                   '/text()').extract(), '0'
+                    response.xpath(
+                        '//span[contains(@class,"ProductDetailReviews-totals-value")]//text()'
+                    ).extract(), '0'
                 )
 
                 histogram = is_empty(
@@ -538,26 +533,13 @@ class WayfairProductSpider(BaseProductsSpider):
         Parse product price
         """
         price = is_empty(
-            response.xpath('//span[contains(@class, "product_price")] |'
-                           '//div[@id="sale_price"]')
+            response.xpath(
+                '//span[@data-id="dynamic-sku-price"]//text()'
+            ).extract()
         )
-
         if price:
-            usd = is_empty(
-                price.xpath('./text()').extract(), ''
-            )
-            coins = is_empty(
-                price.xpath('.//sup/text()').extract(), ''
-            )
-
-            if usd:
-                usd = usd.strip().replace('$', '')
-
-                if coins:
-                    coins = coins.strip()
-                    price = usd + coins
-                else:
-                    price = usd + '00'
+            if price:
+                price = price.strip().replace('$', '')
             else:
                 price = '0.00'
         else:

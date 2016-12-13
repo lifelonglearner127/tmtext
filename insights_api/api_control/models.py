@@ -130,14 +130,11 @@ class BrandTypes(models.Model):
 class Brands(models.Model):
     id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=255)
-    created = models.DateTimeField()
-    company_id = models.IntegerField()
-    brand_type = models.ForeignKey(BrandTypes, models.DO_NOTHING, db_column='brand_type')
-    parent_id = models.IntegerField()
+    image_url = models.TextField()
 
     class Meta:
         managed = False
-        db_table = 'brands'
+        db_table = 'ranking_brands'
 
 
 class PriceData(models.Model):

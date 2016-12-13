@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
 
 from collections import OrderedDict
 import json
@@ -209,6 +208,11 @@ class JohnlewisProductsSpider(BaseProductsSpider):
                 "/strong/text()").extract(),
             conv=strip_price
         )
+
+        reseller_id_regex = "/(p\d+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
 
         if product.get('price', None):
             if not '£' in product['price']:

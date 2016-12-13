@@ -8,7 +8,6 @@ from pytesseract import image_to_string
 
 from scrapy.http import Request
 from product_ranking.spiders import FLOATING_POINT_RGEX
-from product_ranking.items import Price
 
 
 REPLACE_COMMA_WITH_DOT = False  # it's ok to use globals for the whole process
@@ -22,8 +21,8 @@ class Amazon_marketplace(object):
     called_class = None
 
     currencys = {
-        "amazon.ca": "CAD", 
-        "amazon.com": "USD", 
+        "amazon.ca": "CAD",
+        "amazon.com": "USD",
         "amazon.co.uk": "GBP",
         "amazon.co.jp": "JPY",
         "amazon.cn": "CNY",
@@ -132,15 +131,15 @@ class Amazon_marketplace(object):
 
         if name_links:
             return self.get_names(
-                name_links, 
-                marketplaces, 
+                name_links,
+                marketplaces,
                 (self.parse_marketplace, next_link, product, next_req)
             )
 
         if next_link:
             meta = {"product": product, "marketplaces": marketplaces}
             return Request(
-                url=urlparse.urljoin(response.url, next_link), 
+                url=urlparse.urljoin(response.url, next_link),
                 callback=self.parse_marketplace,
                 meta=meta,
                 dont_filter=True,
@@ -253,7 +252,7 @@ class Amazon_marketplace(object):
 
         if isfile(path_to + self.NEW_IMG_FOLDER + file_name):
             os.remove(self.NEW_IMG_FOLDER + file_name)
- 
+
         if not cr.get("name"):
             cr["name"] = []
 

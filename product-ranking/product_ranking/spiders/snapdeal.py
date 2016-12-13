@@ -5,13 +5,13 @@ from urlparse import urljoin
 import json
 import re
 
-from scrapy.http import FormRequest, Request
+from scrapy.http import Request
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
     BuyerReviews
 from product_ranking.settings import ZERO_REVIEWS_VALUE
 from product_ranking.spiders import BaseProductsSpider, cond_set, \
-    dump_url_to_file, FLOATING_POINT_RGEX
+    FLOATING_POINT_RGEX
 from product_ranking.guess_brand import guess_brand_from_first_words
 
 is_empty = lambda x, y=None: x[0] if x else y
@@ -105,8 +105,8 @@ class SnapdealProductSpider(BaseProductsSpider):
             "search/{slTab}/0/{start_pos}?q={qparam}&sort={sort}"
             "&keyword={keyword}&clickSrc={clickSrc}&viewType=List&lang=en"
             "&snr=false".format(
-                qparam=self.qparam, slTab=self.slTab, sort=self.sort_by, 
-                keyword=self.keyword, clickSrc=self.clickSrc, 
+                qparam=self.qparam, slTab=self.slTab, sort=self.sort_by,
+                keyword=self.keyword, clickSrc=self.clickSrc,
                 start_pos=self.start_pos
             )
         )
@@ -157,6 +157,11 @@ class SnapdealProductSpider(BaseProductsSpider):
             "//section[@id='productSpecs']"
         ).extract())
 
+        regex = "\/(\d+)(?:$|\?)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
+
         price = is_empty(response.xpath(
             "//span[@id='selling-price-id']/text() |"
             "//input[@id='productSellingPrice']/@value |"
@@ -173,7 +178,7 @@ class SnapdealProductSpider(BaseProductsSpider):
                 "//span[@id='vendorName']/text()").extract())
             if market_name:
                 product["marketplace"] = [{
-                    "name": market_name, 
+                    "name": market_name,
                     "price": price,
                     "priceCurrency": priceCurrency,
                 }]
@@ -363,7 +368,7 @@ class SnapdealProductSpider(BaseProductsSpider):
             product["buyer_reviews"] = BuyerReviews(
                 num_of_reviews=total, average_rating=avg, rating_by_star=rev)
         else:
-            product["buyer_reviews"] = 0       
+            product["buyer_reviews"] = 0
 
         if reqs:
             return self.send_next_request(reqs, response)
@@ -485,10 +490,10 @@ class SnapdealProductSpider(BaseProductsSpider):
         if self.STOP:
             return None
         url = self.NEXT_PAGI_PAGE.format(sltab=self.slTab, qparam=self.qparam,
-            pos=self.position, sort=self.sort_by, keyword=self.keyword, 
+            pos=self.position, sort=self.sort_by, keyword=self.keyword,
             clickSrc=self.clickSrc, start_pos=self.start_pos)
         self.position += 20
         return url
 
     def _parse_single_product(self, response):
-        return self.parse_product(response)  
+        return self.parse_product(response)

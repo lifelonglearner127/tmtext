@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
+from future_builtins import zip
 
 from datetime import datetime
 import json
@@ -119,6 +119,13 @@ class BootsProductsSpider(BaseProductsSpider):
             'upc',
             response.xpath("//p[@class='itemNumber']/span/text()").extract(),
             conv=int,
+        )
+
+        cond_set(
+            product,
+            'reseller_id',
+            response.xpath("//p[@class='itemNumber']/span/text()").extract(),
+            conv=string.strip,
         )
 
         cond_set(

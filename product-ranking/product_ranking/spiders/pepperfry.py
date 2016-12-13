@@ -1,12 +1,10 @@
 import urllib
 from product_ranking.spiders import BaseProductsSpider, FormatterWithDefaults, \
     cond_set, cond_set_value
-from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
-    BuyerReviews
-from product_ranking.settings import ZERO_REVIEWS_VALUE
+from product_ranking.items import SiteProductItem, RelatedProduct, Price
 from spiders_shared_code.pepperfry_variants import PepperfryVariants
 from scrapy import Request
-from scrapy.log import WARNING, ERROR
+from scrapy.log import ERROR
 
 
 class PepperfryProductsSpider(BaseProductsSpider):
@@ -148,6 +146,12 @@ class PepperfryProductsSpider(BaseProductsSpider):
         # brand
         brand = response.css('input[name=brand_name] ::attr(value)')
         cond_set(prod, 'brand', brand.extract())
+
+        # reseller_id
+        regex = "-(\d+)\."
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(prod, "reseller_id", reseller_id)
 
         # related products
         related = []

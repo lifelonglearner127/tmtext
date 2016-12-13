@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-#
 from __future__ import division, absolute_import, unicode_literals
-from future_builtins import *
+from future_builtins import hex
 from datetime import datetime
 import json
 import random
@@ -149,6 +149,10 @@ class BloomingdalesProductsSpider(BaseProductsSpider):
                  response.css(
                      '.pdp_longDescription[itemprop=description]').extract())
         cond_set_value(product, 'locale', "en-US")
+
+        reseller_id = re.findall('[iI][dD]=(\d+)', response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
 
         productid = response.xpath(
             "//div[@id='productContainer']/input[@id='productId']"
