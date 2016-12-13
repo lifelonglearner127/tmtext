@@ -436,7 +436,8 @@ class AmazonBaseClass(BaseProductsSpider):
                     prc_variants = variants
                 # Parse variants prices
                 # Turn on only for amazon.com for now
-                if prc_variants and ('amazon.com/' or 'amazon.ca/') in response.url:
+                if prc_variants and ('amazon.com/' in response.url or 'amazon.ca/' in response.url):
+
                     js_text = response.xpath('.//script[contains(text(),"immutableURLPrefix")]/text()').extract()
                     js_text = js_text[0] if js_text else None
                     if not js_text:
@@ -447,6 +448,7 @@ class AmazonBaseClass(BaseProductsSpider):
                         # print base_url
                         base_url = base_url[0] if base_url else None
                         for variant in prc_variants:
+
                             # Set default price value
                             variant['price'] = None
                             # print(variant)
@@ -459,7 +461,6 @@ class AmazonBaseClass(BaseProductsSpider):
                                 if req_url:
                                     req = Request(req_url, meta=meta, callback=self._parse_variants_price)
                                     reqs.append(req)
-
 
         # Parse buyer reviews
         buyer_reviews = self._parse_buyer_reviews(response)
@@ -534,7 +535,6 @@ class AmazonBaseClass(BaseProductsSpider):
 
         if reqs:
             return self.send_next_request(reqs, response)
-
         return product
 
     def _parse_variants_price(self, response):
@@ -544,12 +544,12 @@ class AmazonBaseClass(BaseProductsSpider):
         child_asin = re.findall(r'asinList=(.+?)&', response.url)
         child_asin = child_asin[0] if child_asin else None
         text = re.findall('{\s*"price_feature_div"\s*:\s*"(.+?)"\s*}', response.body, re.DOTALL)
-        text = text[0] if text else ''
+        text = text[0].replace('\\"', '"') if text else ''
         selector = Selector(text=text)
-        price = selector.xpath('.//*[contains(@class, "priceblock_ourprice")]/text()').re('([\d\.]+)')
+        price = selector.xpath('//*[contains(@id, "priceblock_ourprice")]/text()').re('([\d\.]+)')
         # Trying alternative regex
         if not price:
-            price = selector.xpath('.//*[contains(@class, "a-color-price")]/text()').re('([\d\.]+)')
+            price = selector.xpath('//span[contains(@class, "a-color-price")]/text()').re('([\d\.]+)')
         if not price:
             fail_var_url = [v.get('url') for v in product["variants"] if v.get('asin')==child_asin]
             self.log('Unable to find price for variant: {} ASIN {} url {}'.format(
