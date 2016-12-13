@@ -41,8 +41,8 @@ class AhScraper(Scraper):
     ############### PREP
     ##########################################
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.ah.nl/.*$"
-    BASE_URL_WEBCOLLAGE_CONTENTS = "http://content.webcollage.net/toysrus/power-page?ird=true&channel-product-id={}"
+    INVALID_URL_MESSAGE = "Expected URL format is http(s)://www.ah.nl/.*$"
+    BASE_URL_WEBCOLLAGE_CONTENTS = "http(s)://content.webcollage.net/toysrus/power-page?ird=true&channel-product-id={}"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -63,7 +63,7 @@ class AhScraper(Scraper):
             True if valid, False otherwise
         """
         # http://www.ah.nl/producten/product/wi94782/ah-mandarijnen-net
-        m = re.match(r"^http://www\.ah\.nl/.*$", self.product_page_url)
+        m = re.match(r"^https?://www\.ah\.nl/.*$", self.product_page_url)
         return not not m
 
     def not_a_product(self):
@@ -88,7 +88,9 @@ class AhScraper(Scraper):
         product_url = self.product_page_url
         product_url = product_url.replace("http://www.ah.nl", "")
         a_url = "http://www.ah.nl/service/rest/delegate?url={product_url}"
-        result = requests.get(a_url.format(product_url=product_url)).text
+        result = requests.get(a_url.format(
+            product_url=product_url.replace("https://www.ah.nl", "")
+            .replace("http://www.ah.nl", ""))).text
         self.embedded_json = json.loads(result)
 
 
