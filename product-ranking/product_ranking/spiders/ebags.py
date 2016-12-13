@@ -28,12 +28,10 @@ def is_num(s):
         return False
 
 
-class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
+class EbagsProductsSpider(BaseValidator, BaseProductsSpider):
     name = 'ebags_products'
     allowed_domains = ["ebags.com"]
     start_urls = []
-
-    settings = HomedepotValidatorSettings
 
     SEARCH_URL = "http://www.ebags.com/s/{search_term}?NCNI-5"
     DETAILS_URL = "http://www.ebags.com/product/%s"
@@ -48,7 +46,7 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
         # All this is to set the site_name since we have several
         # allowed_domains.
         self.br = BuyerReviewsBazaarApi()
-        super(HomedepotProductsSpider, self).__init__(
+        super(EbagsProductsSpider, self).__init__(
             site_name=self.allowed_domains[0],
             *args,
             **kwargs)
