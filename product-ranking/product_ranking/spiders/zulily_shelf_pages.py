@@ -5,7 +5,7 @@ import urlparse
 from product_ranking.items import SiteProductItem
 from .zulily import ZulilyProductsSpider
 from scrapy import Request
-from scrapy.log import DEBUG
+from scrapy.log import DEBUG, ERROR, INFO
 
 
 class ZulilyShelfPagesSpider(ZulilyProductsSpider):
@@ -14,14 +14,12 @@ class ZulilyShelfPagesSpider(ZulilyProductsSpider):
     LOG_IN_URL = "https://www.zulily.com/auth"
     BASE_URL = "http://www.zulily.com/"
 
+    product_filter = []
+
     def __init__(self, *args, **kwargs):
         super(ZulilyShelfPagesSpider, self).__init__(*args, **kwargs)
         self.product_url = kwargs['product_url']
 
-        if "page" in kwargs:
-            self.num_pages = int(kwargs['page'])
-        else:
-            self.num_pages = 1
         self.current_page = 1
         #settings.overrides['CRAWLERA_ENABLED'] = True
 
@@ -31,22 +29,22 @@ class ZulilyShelfPagesSpider(ZulilyProductsSpider):
         if event_id:
             url = self.BASE_URL + "event/" + event_id[0][0]
             yield Request(
-                self.product_url,
+                url,
                 meta={'remaining':self.quantity, "search_term":''},
                 headers=self._get_antiban_headers()
             )
+        else:
+            #Search
+            parsed = urlparse.urlparse(self.product_url)
 
-        #Search
-        parsed = urlparse.urlparse(self.product_url)
-
-        if urlparse.parse_qs(parsed.query)['fromSearch']:
-            search_term = urlparse.parse_qs(parsed.query)['searchTerm']
-            url = self.BASE_URL + "mainpanel/search_carousel/?q=" + search_term
-        yield Request(
-            url,
-            meta={'remaining': self.quantity, "search_term": ''},
-            headers=self._get_antiban_headers()
-        )
+            if urlparse.parse_qs(parsed.query)['fromSearch']:
+                search_term = urlparse.parse_qs(parsed.query)['searchTerm']
+                url = self.BASE_URL + "mainpanel/search_carousel/?q=" + search_term
+                yield Request(
+                    url,
+                    meta={'remaining': self.quantity, "search_term": ''},
+                    headers=self._get_antiban_headers()
+                )
 
     @staticmethod
     def _get_antiban_headers():
@@ -54,8 +52,8 @@ class ZulilyShelfPagesSpider(ZulilyProductsSpider):
             'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:32.0) Gecko/20100101 Firefox/32.0',
             'Connection': 'keep-alive',
             'Accept-Language': 'en-US,en;q=0.8',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'X-Requested-With' : 'XMLHttpRequest',
+            'Accept': '*/*',
+            'X-Requested-With': 'XMLHttpRequest',
             'Accept-Encoding': 'gzip, deflate, sdch'
         }
     @staticmethod
@@ -75,7 +73,7 @@ class ZulilyShelfPagesSpider(ZulilyProductsSpider):
 
         # parse shelf category
         shelf_categories = response.xpath(
-            '//ul[@id="headerCrumb"]/li//text()').extract()
+            '//div[@class="card_container"]//div[contains(@class, "no_gutter")]//a/@href').extract()
         shelf_categories = [category.strip() for category in shelf_categories]
         shelf_categories = filter(None, shelf_categories)
         try:
@@ -83,22 +81,35 @@ class ZulilyShelfPagesSpider(ZulilyProductsSpider):
         except IndexError:
             pass
         for url in urls:
-            if url in self.product_filter:
-                continue
-            self.product_filter.append(url)
             item = SiteProductItem()
             if shelf_categories:
-                if shelf_categories:
-                    item['shelf_name'] = shelf_name
-                    item['shelf_path'] = shelf_categories[1:]
+                item['shelf_name'] = shelf_name
+                item['shelf_path'] = shelf_categories[1:]
             yield url, item
 
+    def page_nums(self, list):
+        num_list = [int(n) for n in list if n.isdigit()]
+        if len(num_list) > 0:
+            return max(num_list)
+        else:
+            return 1
+
     def _scrape_next_results_page_link(self, response):
-        if self.current_page >= self.num_pages:
+        num_pages = self.page_nums(response.xpath("//div[@class='pagination_container']/nav/ul/li/a/text()").extract())
+        if self.current_page >= num_pages:
             return
         self.current_page += 1
-        return super(ZulilyShelfPagesSpider,
-                     self)._scrape_next_results_page_link(response)
 
-    def parse_product(self, response):
-        return super(ZulilyShelfPagesSpider, self).parse_product(response)
+        next_page = response.xpath("//div[@class='pagination_container']/nav/ul/li/a[@class='next_page_on']").extract()
+        if next_page:
+            return urlparse.urljoin(response.url, next_page[0])
+        else:
+            return None
+
+    def _scrape_total_matches(self, response):
+        total = response.xpath("//div[@id='totalProducts']/text()").extract()
+        if total and total[0]:
+            total = total[0].replace(',', '').replace('.', '').strip()
+            return int(total)
+        else:
+            self.log("Failed to parse total number of matches.", level=ERROR)

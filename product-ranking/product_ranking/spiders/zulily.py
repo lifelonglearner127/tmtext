@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import string
 import urllib
+import urlparse
 import re
 import json
 import time
@@ -153,5 +154,5 @@ class ZulilyProductsSpider(BaseProductsSpider):
             return int(total_matches[0].replace(",", ""))
 
     def _scrape_product_links(self, response):
-        for link in response.xpath("//ul[contains(@class, 'products-grid')]/li//a[@contains(class, 'product-image')]").extract():
+        for link in response.xpath("//ul[contains(@class,'products-grid')]/li//a[contains(@class, 'product-image')]/@href").extract():
             yield link.split('?')[0], SiteProductItem()
