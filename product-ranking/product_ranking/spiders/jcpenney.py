@@ -379,10 +379,10 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
                             "https": "https://{}:{}/".format(proxy_host, proxy_port)}
             headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36',
                        'X-Crawlera-UA': 'pass'}
-            for _ in range(10):
+            for _ in range(15):
                 self.log('Retry count {}'.format(_))
                 try:
-                    result = requests.get(size_url, proxies=proxies, timeout=15, auth=proxy_auth, headers=headers)
+                    result = requests.get(size_url, proxies=proxies, timeout=300, auth=proxy_auth, headers=headers, verify=False)
                 except Exception, e:
                     self.log('Non-fatal error %s while fetching URL %s' % (str(e), size_url))
                     continue
