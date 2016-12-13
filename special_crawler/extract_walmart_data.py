@@ -2974,23 +2974,20 @@ class WalmartScraper(Scraper):
                         return txt.strip()
 
     def _directions(self):
-        directions = self.tree_html.xpath("//section[contains(@class,'directions')]/p[2]")
-
-        if not directions:
-            directions = self.tree_html.xpath("//section[contains(@class,'js-directions')]/p[1]")
+        directions = self.tree_html.xpath("//section[contains(@class,'directions')]")
 
         if directions:
             directions = directions[0]
 
-            header = self.tree_html.xpath("//section[contains(@class,'js-directions')]/p[1]/b/text()")
+            directions_text = ''
 
-            if not header:
-                header = directions.xpath('./strong/text()')
+            for e in directions:
+                text_content = e.text_content().strip()
 
-            if header and 'Instructions' in header[0]:
-                for txt in directions.xpath('./text()'):
-                    if txt.strip():
-                        return txt.strip()
+                if e.tag == 'p' and text_content and not text_content  == 'Instructions:':
+                    directions_text += re.sub('\s*<[^>]*>\s*Instructions:\s*<[^>]*>\s*', '', html.tostring(e)).strip()
+
+            return directions_text
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]
