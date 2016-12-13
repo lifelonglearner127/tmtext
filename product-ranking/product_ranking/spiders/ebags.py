@@ -10,7 +10,7 @@ from scrapy import Request, Selector
 from scrapy.log import DEBUG
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price
-from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value,\
+from product_ranking.spiders import BaseProductsSpider, cond_set, \
     FLOATING_POINT_RGEX
 from product_ranking.validation import BaseValidator
 from product_ranking.validators.homedepot_validator import HomedepotValidatorSettings
@@ -29,18 +29,18 @@ def is_num(s):
 
 
 class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
-    name = 'homedepot_products'
-    allowed_domains = ["homedepot.com", "origin.api-beta.homedepot.com"]
+    name = 'ebags_products'
+    allowed_domains = ["ebags.com"]
     start_urls = []
 
     settings = HomedepotValidatorSettings
 
-    SEARCH_URL = "http://www.homedepot.com/s/{search_term}?NCNI-5"
-    DETAILS_URL = "http://www.homedepot.com/p/getSkuDetails?itemId=%s"
-    REVIEWS_URL = "http://homedepot.ugc.bazaarvoice.com/1999m/%s/" \
+    SEARCH_URL = "http://www.ebags.com/s/{search_term}?NCNI-5"
+    DETAILS_URL = "http://www.ebags.com/product/%s"
+    REVIEWS_URL = "http://ebags.ugc.bazaarvoice.com/1999m/%s/" \
         "reviews.djs?format=embeddedhtml"
-    RECOMMENDED_URL = "http://origin.api-beta.homedepot.com/ProductServices/v2/products/" \
-        "recommendation?type=json&key=tRXWvUBGuAwEzFHScjLw9ktZ0Bw7a335"
+    # RECOMMENDED_URL = "http://www.ebags.com/produc/v2/products/" \
+    #     "recommendation?type=json&key=tRXWvUBGuAwEzFHScjLw9ktZ0Bw7a335"
 
     product_filter = []
 
@@ -73,36 +73,27 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
         else:
             product['no_longer_available'] = False
 
-        cond_set(
-            product,
-            'title',
-            response.xpath("//h1[contains(@class, 'product-title')]/text()").extract())
-        brand = response.xpath("//h2[@itemprop='brand']/text()").extract()
-        brand = ["".join(brand).strip()]
-        cond_set(
-            product,
-            'brand',
-            brand)
+        product_info_json = \
+            response.xpath("//script[contains(text(), 'dataLayer = [{')]/text()").extract()
+        product_info_json = product_info_json[0].strip() if product_info_json else ''
+        start_index = product_info_json.find("dataLayer = [") + len("dataLayer = [")
+        end_index = product_info_json.find("];")
+        product_info_json = product_info_json[start_index:end_index].strip()
+        product_info_json = json.loads(product_info_json)
+
+        product['title'] = product_info_json["productName"]
+        product['brand'] = product_info_json["masterId"]
 
         cond_set(
             product,
             'image_url',
-            response.xpath(
-                "//div[@class='product_mainimg']/img/@src |"
-                "//img[@id='mainImage']/@src"
-            ).extract())
+            response.xpath("//img[@id='pdMainImage']/@src").extract())
 
         cond_set(
             product,
             'price',
             response.xpath(
-                "//div[@class='pricingReg']"
-                "/span[@itemprop='price']/text()").extract())
-
-        reseller_id_regex = "\/(\d+)"
-        reseller_id = re.findall(reseller_id_regex, response.url)
-        reseller_id = reseller_id[0] if reseller_id else None
-        cond_set_value(product, 'reseller_id', reseller_id)
+                "//div[@id='divPricing']//h2[@class='alert-drk']/span[@itemprop='price']/text()").extract())
 
         if product.get('price', None):
             if not '$' in product['price']:
@@ -114,22 +105,8 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
                     priceCurrency='USD'
                 )
 
-        if not product.get('price'):
-            price = response.xpath(
-                "//div[@class='pricingReg']"
-                "/span[@itemprop='price']/text() |"
-                "//div[contains(@class, 'pricingReg')]/span[@itemprop='price']"
-            ).re(FLOATING_POINT_RGEX)
-            if price:
-                product["price"] = Price(
-                    priceCurrency="USD",
-                    price=price[0]
-                )
-
         try:
-            product['model'] = response.css(
-                '.product_details.modelNo ::text'
-            ).extract()[0].replace('Model', '').replace('#', '').strip()
+            product['model'] = product_info_json["masterId"]
         except IndexError:
             pass
 
@@ -147,11 +124,8 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
             product["upc"] = upc[0]
 
         desc = response.xpath(
-            "//div[@id='product_description']"
-            "/div[contains(@class,'main_description')]"
-            "/descendant::*[text()]/text()"
-            "//div[contains(@class, 'main_description')] |"
-            "//div[@id='product_description']"
+            "//div[contains(@class,'productDetailsCon')]"
+            "//div[@itemprop='description']/text()"
         ).extract()
         desc = " ".join(l.strip() for l in desc if len(l.strip()) > 0)
         product['description'] = desc
@@ -182,23 +156,17 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
             new_meta['handle_httpstatus_list'] = [404, 415]
             new_meta['internet_no'] = internet_no
             headers = {'Proxy-Connection':'keep-alive', 'Content-Type':'application/json'}
-            return Request(
-                self.RECOMMENDED_URL,
-                callback = self._parse_related_products,
-                headers = headers,
-                body = json.dumps(certona_payload),
-                method = "POST",
-                meta=new_meta,
-                priority=1000,
-            )
+            # return Request(
+            #     self.RECOMMENDED_URL,
+            #     callback = self._parse_related_products,
+            #     headers = headers,
+            #     body = json.dumps(certona_payload),
+            #     method = "POST",
+            #     meta=new_meta,
+            #     priority=1000,
+            # )
 
-        if internet_no:
-            return Request(
-                url=self.REVIEWS_URL % internet_no,
-                callback=self.parse_buyer_reviews,
-                meta={"product": product},
-                dont_filter=True,
-            )
+        self.parse_buyer_reviews(response)
 
         return self._gen_variants_requests(response, product, skus, internet_no)
 
@@ -295,16 +263,6 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
             price = storeskus['storeSku']['pricing']['originalPrice']
             product['price'] = price
 
-            if product.get('price', None):
-                if not '$' in product['price']:
-                    self.log('Unknown currency at' % response.url)
-                else:
-                    product['price'] = Price(
-                        price=product['price'].replace(',', '').replace(
-                            '$', '').strip(),
-                        priceCurrency='USD'
-                    )
-
             desc = jsdata['info']['description']
             product['description'] = desc
 
@@ -338,10 +296,18 @@ class HomedepotProductsSpider(BaseValidator, BaseProductsSpider):
 
     def parse_buyer_reviews(self, response):
         product = response.meta.get("product")
-        brs = self.br.parse_buyer_reviews_per_page(response)
-        self.br.br_count = brs.get('num_of_reviews', None)
-        brs['rating_by_star'] = self.br.get_rating_by_star(response)
-        product['buyer_reviews'] = brs
+
+        avg = response.xpath("//div[contains(@class,'ratings-summary')]//p[@class='ratingNumber']/span/text()").extract()[0]
+        total_data = response.xpath("//div[contains(@class,'ratings-summary')]//p[@itemprop='reviewCount']/text()").extract()[0]
+        total = re.findall("Based on ([\d,]+) Ratings", total_data)[0].replace(",", "")
+
+        reviews = {}
+        reviews['num_of_reviews'] = total
+        reviews['average_rating'] = avg
+        reviews['buyer_reviews'] = {}
+
+        cond_set(product, 'buyer_reviews', None)
+
         return product
 
     def _scrape_total_matches(self, response):

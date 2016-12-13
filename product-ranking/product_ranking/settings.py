@@ -66,7 +66,7 @@ AMAZONFRESH_LOCATION = {
 
 if not 'EXTENSIONS' in globals():
     EXTENSIONS = {}
-EXTENSIONS['product_ranking.extensions.StatsCollector'] = 500
+# EXTENSIONS['product_ranking.extensions.StatsCollector'] = 500
 
 EXTENSIONS['product_ranking.extensions.IPCollector'] = 500
 

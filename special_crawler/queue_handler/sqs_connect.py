@@ -31,14 +31,6 @@ used item from the queue.
 from boto.sqs.message import Message
 import boto.sqs
 import zlib
-import logging
-
-# initialize the logger
-logger = logging.getLogger('basic_logger')
-logger.setLevel(logging.DEBUG)
-fh = logging.StreamHandler()
-fh.setLevel(logging.DEBUG)
-logger.addHandler(fh)
 
 class SQS_Queue():
     # Connect to the SQS Queue
@@ -49,10 +41,8 @@ class SQS_Queue():
 
     # Add message/a list of messages to the queue
     # Messages are strings (or at least serialized to strings)
-    def put(self, message, url):
+    def put(self, message):
         m = Message()
-
-        logger.info('Sending message for %s: %s' % (url, message))
 
         try:
             if isinstance(message, basestring):
@@ -66,8 +56,6 @@ class SQS_Queue():
             for row in message:
                 m.set_body(row)
                 self.q.write(m)
-
-        logger.info('Sent message for %s' % url)
 
     # Get an item from the queue
     # Note : it remains on the queue until you call task_done
