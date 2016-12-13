@@ -406,16 +406,8 @@ class ZulilyScraper(Scraper):
     def _in_stores_out_of_stock(self):
         return 0
 
-    def _in_stock(self):
-        if self._owned_out_of_stock()==1:
-            return 0
-        return 1
-
     def _marketplace(self):
         return 0
-
-    def _seller_from_tree(self):
-        return None
 
     def _marketplace_sellers(self):
         return None
@@ -509,7 +501,6 @@ class ZulilyScraper(Scraper):
         "price_currency" : _price_currency, \
         "temp_price_cut" : _temp_price_cut, \
         "in_stores" : _in_stores, \
-        "in_stock" : _in_stock, \
         "site_online": _site_online, \
         "site_online_out_of_stock": _site_online_out_of_stock, \
         "in_stores_out_of_stock": _in_stores_out_of_stock, \
