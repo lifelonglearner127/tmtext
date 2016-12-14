@@ -2984,7 +2984,7 @@ class WalmartScraper(Scraper):
             for e in directions:
                 text_content = e.text_content().strip()
 
-                if e.tag == 'p' and text_content and not text_content  == 'Instructions:':
+                if not e.tag == 'h3' and text_content and not text_content == 'Instructions:':
                     directions_text += re.sub('\s*<[^>]*>\s*Instructions:\s*<[^>]*>\s*', '', html.tostring(e)).strip()
 
             return directions_text
