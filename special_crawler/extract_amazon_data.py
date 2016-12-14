@@ -1177,7 +1177,7 @@ class AmazonScraper(Scraper):
         if len(image_url)==0:
             image_url = self.tree_html.xpath("//div[@id='thumbs-image']//img/@src")
         for v in image_url:
-            if v.find("player")>0 :
+            if v.find("player")>0 and not re.search('\.png$', v):
                 temp.append(v)
 
         video_urls = re.findall('"url":"([^"]+.mp4)"', html.tostring(self.tree_html))
