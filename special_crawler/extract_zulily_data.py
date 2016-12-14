@@ -366,7 +366,7 @@ class ZulilyScraper(Scraper):
     ############### CONTAINER : SELLERS
     ##########################################
     def _price(self):
-        return self.product_json.get("style_data", {}).get("originalPrice")
+        return self.product_json.get("style_data", {}).get("price")
 
     def _price_amount(self):
         return float( self._price()[1:].replace(',',''))
