@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/python
 
-
 import urllib, urllib2
 import re
 import sys
@@ -1666,10 +1665,15 @@ class AmazonScraper(Scraper):
         categories = self.tree_html.xpath("//div[@id='wayfinding-breadcrumbs_feature_div']//ul//a[@class='a-link-normal a-color-tertiary']/text()")
         categories = [category.strip() for category in categories]
 
-        if not categories:
-            return None
+        if categories:
+            return categories
 
-        return categories
+        if self._seller_ranking():
+            return self._seller_ranking()[-1].get('category').split(' > ')
+
+        nav = self.tree_html.xpath('//span[@class="nav-search-label"]/text()')
+        if nav and nav[0] != 'All':
+            return nav
 
     def _brand(self):
         bn=self.tree_html.xpath('//div[@id="mbc"]/@data-brand')
