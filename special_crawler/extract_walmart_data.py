@@ -1539,7 +1539,7 @@ class WalmartScraper(Scraper):
         if self._features_from_tree():
             for feature in self._features_from_tree().split('\n'):
                 feature = feature.split(':')
-                if feature[0] == 'Manufacturer Part Number':
+                if feature[0] in ['Manufacturer Part Number', 'manufacturer_part_number']:
                     return feature[1]
 
     def _categories_hierarchy(self):
