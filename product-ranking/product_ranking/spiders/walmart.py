@@ -912,6 +912,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             brand = guess_brand_from_first_words(product.get('title', '').replace(u'®', ''))
         elif '&amp;' in brand:
             brand = brand.replace('&amp;', "&")
+        brand = brand.replace('\ufffd','')
         cond_set_value(product, 'brand', brand)
 
         try:
@@ -931,6 +932,7 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
                 "//h1[contains(@class, 'product-name product-heading')]/text()"
                 " | //h1[@class='productTitle']/text()"
             ).extract())
+            brand = brand.replace('\ufffd', '')
             cond_set(
                 product,
                 'brand',
@@ -1197,7 +1199,9 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _parse_brand_alternative(selected_product):
-        return selected_product.get('productAttributes', {}).get('brand')
+        brand = selected_product.get('productAttributes', {}).get('brand')
+        brand = brand.replace('\ufffd', '')
+        return brand
 
     @staticmethod
     def _parse_title_alternative(selected_product):
@@ -1456,10 +1460,12 @@ class WalmartProductsSpider(BaseValidator, BaseProductsSpider):
             pass
 
         try:
+            brand = data['analyticsData']['brand']
+            brand = brand.replace('\ufffd', '')
             cond_set_value(
                 product,
                 'brand',
-                data['analyticsData']['brand'],
+                brand,
                 conv=unicode)
         except KeyError:
             pass

@@ -10,9 +10,11 @@ import random
 import urlparse
 
 import requests
+from requests.auth import HTTPProxyAuth
 from scrapy.http import Request
 from scrapy import Selector
 from scrapy.log import WARNING
+from scrapy.conf import settings
 
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price, \
@@ -73,7 +75,8 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         'rating_desc': 'RHL'
     }
 
-    use_proxies = True
+    # disabled TOR proxies due 403 status code
+    # use_proxies = True
 
     REVIEW_URL = "http://jcpenney.ugc.bazaarvoice.com/1573-en_us/{product_id}" \
                  "/reviews.djs?format=embeddedhtml"
@@ -114,6 +117,11 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             site_name=self.allowed_domains[0],
             *args,
             **kwargs)
+        settings.overrides['CRAWLERA_ENABLED'] = True
+        default_headers = settings.get('DEFAULT_REQUEST_HEADERS')
+        default_headers['X-Crawlera-UA'] = 'pass'
+        settings.overrides['DEFAULT_REQUEST_HEADERS'] = default_headers
+        self.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36'
 
     def start_requests(self):
         cookies = {'pageTemplate': 'new'}
@@ -351,19 +359,30 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             except TypeError:
                 _rp = None
 
+            # replaced tor proxies with crawlera
             # try to fetch the page using a random proxy until it works
-            for _ in range(100):
-                if _rp is not None:
-                    random_proxy = random.choice(_rp.proxies.keys())
-                else:
-                    random_proxy = None
-                proxies = {"http": random_proxy, "https": random_proxy}
-                self.log('Using "Requests" lib to scrape the following url: %s, proxy: %s' % (
-                    size_url, random_proxy))
+            # for _ in range(100):
+            #     if _rp is not None:
+            #         random_proxy = random.choice(_rp.proxies.keys())
+            #     else:
+            #         random_proxy = None
+            #     proxies = {"http": random_proxy, "https": random_proxy}
+            #     self.log('Using "Requests" lib to scrape the following url: %s, proxy: %s' % (
+            #         size_url, random_proxy))
 
-                # perform sync request
+            # perform sync request
+            proxy_host = "content.crawlera.com"
+            proxy_port = "8010"
+            CRAWLERA_APIKEY = '0dc1db337be04e8fb52091b812070ccf'
+            proxy_auth = HTTPProxyAuth(CRAWLERA_APIKEY, "")
+            proxies = {"http": "http://{}:{}/".format(proxy_host, proxy_port), \
+                            "https": "https://{}:{}/".format(proxy_host, proxy_port)}
+            headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36',
+                       'X-Crawlera-UA': 'pass'}
+            for _ in range(15):
+                self.log('Retry count {}'.format(_))
                 try:
-                    result = requests.get(size_url, proxies=proxies, timeout=15)
+                    result = requests.get(size_url, proxies=proxies, timeout=300, auth=proxy_auth, headers=headers, verify=False)
                 except Exception, e:
                     self.log('Non-fatal error %s while fetching URL %s' % (str(e), size_url))
                     continue
@@ -392,25 +411,29 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             self.log('Error loading JSON: %s at URL: %s' % (str(e), response.url), WARNING)
             variant['in_stock'] = None
 
-        if result.get('priceHtml', None):
-            price_data = result['priceHtml']
-            if price_data:
-                price = re.findall(r'\$(\d+\.*\d+)&nbsp', price_data)
-                if price:
-                    try:
-                        price = price[1]
-                    except:
-                        price = price[0]
-                    variant['price'] = price
-        # find of such a combination is available
-        if color:
-            _avail = [a['options'] for a in result['skuOptions'] if a.get('key', None).lower() == 'color']
-            if _avail:
-                _avail = {k['option']: k['availability'] == 'true' for k in _avail[0]}
-                if not color in _avail:
-                    variant['in_stock'] = False
-                    return  # not defined; availability unknown
-                variant['in_stock'] = _avail[color]
+        if isinstance(result, dict):
+            if result.get('priceHtml', None):
+                price_data = result['priceHtml']
+                if price_data:
+                    price = re.findall(r'\$(\d+\.*\d+)&nbsp', price_data)
+                    if price:
+                        try:
+                            price = price[1]
+                        except:
+                            price = price[0]
+                        variant['price'] = price
+            # find of such a combination is available
+            if color:
+                _avail = [a['options'] for a in result['skuOptions'] if a.get('key', None).lower() == 'color']
+                if _avail:
+                    _avail = {k['option']: k['availability'] == 'true' for k in _avail[0]}
+                    if not color in _avail:
+                        variant['in_stock'] = False
+                        return  # not defined; availability unknown
+                    variant['in_stock'] = _avail[color]
+        else:
+            # TODO: fix this behaviour
+            self.log('Result variable isn\'t a dictionary, please fix')
         yield product
 
     @staticmethod
