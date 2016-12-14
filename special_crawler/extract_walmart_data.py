@@ -210,6 +210,8 @@ class WalmartScraper(Scraper):
                     'Cache-Control': 'no-cache',
                     'DNT': '1'}
 
+            headers = {'x-crawlera-cookies': 'disable'}
+
             return requests.get(url, \
                     headers=headers, \
                     proxies=self.proxies, \
