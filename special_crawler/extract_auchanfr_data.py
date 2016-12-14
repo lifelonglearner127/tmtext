@@ -32,6 +32,9 @@ class AuchanfrScraper(Scraper):
         self.has_webcollage_pdf = False
         self.has_webcollage_product_tour_view = False
         self.webcollage_videos = []
+        self.review_count = None
+        self.average_review = None
+        self.reviews = None
 
     def check_url_format(self):
         """Checks product URL format for this scraper instance is valid.
@@ -304,19 +307,13 @@ class AuchanfrScraper(Scraper):
     ##########################################
 
     def _average_review(self):
-        if self._review_count() > 0:
-            return float(self.tree_html.xpath("//span[@class='pr-rating pr-rounded average']/text()")[0])
-
-        return None
+        reviews = self._reviews()
+        return self.average_review
 
     def _review_count(self):
-        review_count = self.tree_html.xpath("//p[@class='pr-snapshot-average-based-on-text']/span[@class='count']/text()")
-
-        if review_count:
-            return int(review_count[0])
-        else:
-
-
+        reviews = self._reviews()
+        if self.review_count:
+            return self.review_count
         return 0
 
     def _max_review(self):
@@ -340,14 +337,27 @@ class AuchanfrScraper(Scraper):
         return None
 
     def _reviews(self):
-        if self._review_count() > 0:
-            rating_mark_list = self.tree_html.xpath("//p[@class='pr-histogram-count']/span/text()")[:5]
-            rating_mark_list = [int(count[1:-1]) for count in rating_mark_list]
-            rating_mark_list = [[5 - index, count] for index, count in enumerate(rating_mark_list)]
+        if self.reviews:
+            return self.reviews
+        h = {"User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36"}
+        # https://api.bazaarvoice.com/data/batch.json?passkey=syzh21yn6lf39vjo00ndkig63&apiversion=5.5&displaycode=6073-fr_fr&resource.q0=products&filter.q0=id:eq:CA28549&stats.q0=reviews
+        review_URL = "https://api.bazaarvoice.com/data/batch.json?" \
+                     "passkey=syzh21yn6lf39vjo00ndkig63&apiversion=5.5&" \
+                     "displaycode=6073-fr_fr&" \
+                     "resource.q0=products&" \
+                     "filter.q0=id:eq:%s&" \
+                     "stats.q0=reviews" % self._product_id()
+        contents = requests.get(review_URL, headers=h).text
+        data = json.loads(contents)
+        data = data["BatchedResults"]["q0"]["Results"][0]["ReviewStatistics"]
+        self.review_count = data["TotalReviewCount"]
+        self.average_review = data["AverageOverallRating"]
 
-            return rating_mark_list
+        rating_mark_list = []
+        for item in data["RatingDistribution"]:
+            rating_mark_list.append([item["RatingValue"], item["Count"]])
 
-        return None
+        return rating_mark_list
 
     ##########################################
     ############### CONTAINER : SELLERS
