@@ -1771,6 +1771,11 @@ class WalmartScraper(Scraper):
                 if upc:
                     return upc
 
+            upc = product_info_json.get("wupc")
+
+            if upc:
+                return upc
+
             if self.is_bundle_product:
                 return self._filter_key_fields("upc", None)
             else:
