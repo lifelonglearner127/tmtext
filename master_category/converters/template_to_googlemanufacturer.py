@@ -23,7 +23,7 @@ def convert_upc_to_gtin(upc):
     elif type(upc) == float:
         s_upc = u'%.f' % upc
     gtin_code = u''
-    if len(s_upc) == 12:
+    if len(s_upc) <= 14 or len(s_upc) >= 12:
         gtin_code = s_upc
     if len(s_upc) == 8:
         gtin_code = u'0000' + s_upc
