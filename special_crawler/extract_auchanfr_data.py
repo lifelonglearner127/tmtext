@@ -70,7 +70,7 @@ class AuchanfrScraper(Scraper):
         return None
 
     def _product_id(self):
-        product_id = self.tree_html.xpath("//input[@id='productCode']/@value")[0].strip()
+        product_id = self.tree_html.xpath("//label[@id='prod_Reference']/text()")[0].strip()
         return product_id
 
     def _site_id(self):
@@ -314,6 +314,8 @@ class AuchanfrScraper(Scraper):
 
         if review_count:
             return int(review_count[0])
+        else:
+
 
         return 0
 
