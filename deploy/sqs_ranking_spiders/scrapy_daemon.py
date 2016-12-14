@@ -551,6 +551,7 @@ def install_geckodriver(
         github_latest_url='https://github.com/mozilla/geckodriver/releases/latest'):
     import lxml.html
     import requests
+    logger.info('Installing geckodriver')
 
     response = requests.get(github_latest_url)
 
@@ -568,6 +569,7 @@ def install_geckodriver(
     os.system('tar xf _geckodriver.tar.gz')
     os.system('mv geckodriver /home/spiders/')
     os.system('chmod +x /home/spiders/geckodriver')
+    logger.info('Geckodriver installation finished')
 
 
 class ScrapyTask(object):
@@ -783,6 +785,7 @@ class ScrapyTask(object):
         zips all log giles, found in the /tmp dir to the output_fname
         """
         log_files = list(self._get_daemon_logs_files())
+        logger.warning('Trying to zip all daemon log files, got log_files: {}'.format(log_files))
         if os.path.exists(output_fname):
             os.unlink(output_fname)
         compress_multiple_files(output_fname, *log_files)
@@ -882,9 +885,9 @@ class ScrapyTask(object):
             logger.error("Failed to load info to results sqs. Amazon keys "
                          "wasn't received. data_key=%r, logs_key=%r.",
                          data_key, logs_key)
-
-        logger.info("Spider default output:\n%s%s",
-                    self.process.stderr.read(),
+        # TODO Fix spider stderr output
+        logger.info("Spider default output:\n%s",
+                    # self.process.stderr.read(),
                     self.process.stdout.read().strip())
         logger.info('Finish task #%s.', self.task_data.get('task_id', 0))
 
@@ -892,6 +895,7 @@ class ScrapyTask(object):
         daemon_logs_zipfile = None
         try:
             daemon_logs_zipfile = self._zip_daemon_logs()
+            logger.warning('Got daemon_logs_zipfile: {}'.format(daemon_logs_zipfile))
         except Exception as e:
             logger.warning('Could not create daemon ZIP: %s' % str(e))
         if daemon_logs_zipfile and os.path.exists(daemon_logs_zipfile):
@@ -1787,7 +1791,7 @@ def main():
                     MAX_CONCURRENT_TASKS -= 3 if MAX_CONCURRENT_TASKS > 0 else 0
                     logger.info('Decreasing MAX_CONCURRENT_TASKS to %i'
                                 ' (because of big walmart BS)' % MAX_CONCURRENT_TASKS)
-        elif (task_data['site'] in ('dockers', 'nike')) or 'checkout' in task_data['site']:
+        elif (task_data['site'] in ('dockers', 'nike', 'costco')) or 'checkout' in task_data['site']:
             MAX_CONCURRENT_TASKS -= 6 if MAX_CONCURRENT_TASKS > 0 else 0
             logger.info('Decreasing MAX_CONCURRENT_TASKS to %i because of Selenium-based spider in use' % MAX_CONCURRENT_TASKS)
         elif ScrapyTask(None, task_data, None).is_screenshot_job():
