@@ -117,6 +117,7 @@ class Scraper():
             "no_longer_available",
             "assembled_size",
             "item_num",
+            "mpn",
             "temporary_unavailable",
             "variants", # list of variants
             "swatches", # list of swatches
@@ -285,7 +286,7 @@ class Scraper():
                         "bullet_feature_16", "bullet_feature_17", "bullet_feature_18", "bullet_feature_19", "bullet_feature_20", "bullets",
                         "usage", "directions", "warnings", "indications", "amazon_ingredients",
                             "specs", "temporary_unavailable", "mfg", "assembled_size",
-                        "item_num"],
+                        "item_num", "mpn"],
         "page_attributes": ["mobile_image_same", "image_count", "image_urls", "image_alt_text", "image_alt_text_len", "image_dimensions", "no_image_available", "video_count", "video_urls", "wc_360", \
                             "wc_emc", "wc_video", "wc_pdf", "wc_prodtour", "flixmedia", "pdf_count", "pdf_urls", "webcollage", "htags", "loaded_in_seconds", "keywords",\
                             "meta_tags", "meta_tag_count", "meta_description_count", \

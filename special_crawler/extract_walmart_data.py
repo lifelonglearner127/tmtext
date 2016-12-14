@@ -1535,6 +1535,13 @@ class WalmartScraper(Scraper):
 
         return self.tree_html.xpath("//meta[@itemprop='model']/@content")[0]
 
+    def _mpn(self):
+        if self._features_from_tree():
+            for feature in self._features_from_tree().split('\n'):
+                feature = feature.split(':')
+                if feature[0] == 'Manufacturer Part Number':
+                    return feature[1]
+
     def _categories_hierarchy(self):
         """Extracts full path of hierarchy of categories
         this product belongs to, from the lowest level category
@@ -3409,6 +3416,7 @@ class WalmartScraper(Scraper):
         "htags": _htags_from_tree, \
         "model": _model_from_tree, \
         "model_meta": _meta_model_from_tree, \
+        "mpn": _mpn, \
         "features": _features_from_tree, \
         "feature_count": _nr_features_from_tree, \
         "title_seo": _title_from_tree, \
