@@ -60,6 +60,36 @@
                 {% endfor %}
             </ul>
         </li>
+	        <li>
+            Today jobs by site:
+	    <a href="#" onclick="javascript: toggle_jobs_metrics(event, this);">Show</a>
+            <ul hidden="hidden">
+                {% if today_jobs_by_site.term and today_jobs_by_site.url %}
+                <li>
+                    Search Terms:
+                    <ul>
+                        {% for site, value in today_jobs_by_site.term.items() %}
+                            <li>{{ site }}: {{ value }}</li>
+                        {% else %}
+                            <li style="list-style: none;">Data was not found.</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                <li>
+                    URLs:
+                    <ul>
+                        {% for site, value in today_jobs_by_site.url.items() %}
+                            <li>{{ site }}: {{ value }}</li>
+                        {% else %}
+                            <li style="list-style: none;">Data was not found.</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                {% else %}
+                    <li style="list-style: none;">Data was not found.</li>
+                {% endif %}
+            </ul>
+        </li>
         <li>
             Today executed tasks: {{ today_executed_tasks }}
             <ul>
