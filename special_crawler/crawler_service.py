@@ -102,6 +102,7 @@ from extract_jet_data import JetScraper
 from extract_westmarine_data import WestmarineScraper
 from extract_shoprite_data import ShopriteScraper
 from extract_hayneedle_data import HayneedleScraper
+from extract_ah_data import AhScraper
 from extract_cheaperthandirt_data import CheaperthandirtScraper
 from extract_zulily_data import ZulilyScraper
 
@@ -221,6 +222,7 @@ SUPPORTED_SITES = {
                     "jet" : JetScraper,
                     "shoprite" : ShopriteScraper,
                     "hayneedle" : HayneedleScraper,
+                    "ah" : AhScraper,
                     "zulily" : ZulilyScraper,
                     "cheaperthandirt" : CheaperthandirtScraper
                     }
