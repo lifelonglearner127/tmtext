@@ -5,8 +5,9 @@ from __future__ import division, absolute_import, unicode_literals
 from scrapy.log import ERROR
 
 from product_ranking.items import SiteProductItem, Price
-from product_ranking.spiders import BaseProductsSpider, cond_set, \
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value, \
     FormatterWithDefaults, populate_from_open_graph
+import re
 
 
 class MorrisonsProductsSpider(BaseProductsSpider):
@@ -46,6 +47,11 @@ class MorrisonsProductsSpider(BaseProductsSpider):
 
         brand = response.xpath("//span[@itemprop='name']/text()").extract()
         cond_set(product, 'brand', brand)
+
+        regex = "\/(\d+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
 
         price = response.xpath("//meta[@itemprop='price']/@content").extract()
         cond_set(product, 'price', price)

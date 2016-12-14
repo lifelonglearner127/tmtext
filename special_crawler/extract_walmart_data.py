@@ -74,7 +74,7 @@ class WalmartScraper(Scraper):
 
     CRAWLERA_APIKEY = '6b7c3e13db4e440db31d457bc10e6be8'
 
-    INVALID_URL_MESSAGE = "Expected URL format is http://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
+    INVALID_URL_MESSAGE = "Expected URL format is http(s)://www.walmart.com/ip[/<optional-part-of-product-name>]/<product_id>"
 
     def __init__(self, **kwargs):# **kwargs are presumably (url, bot)
         Scraper.__init__(self, **kwargs)
@@ -338,7 +338,7 @@ class WalmartScraper(Scraper):
             True if valid, False otherwise
         """
 
-        m = re.match("https?://www\.walmart\.com(/.*)?/[0-9]+(\?www=true)?$", self.product_page_url)
+        m = re.match("https?://www\.walmart\.com(/.*)?/[0-9]+(\?.*)?", self.product_page_url)
         return not not m
 
     def _is_collection_url(self):
@@ -1287,7 +1287,8 @@ class WalmartScraper(Scraper):
             if shelf_description_html and shelf_description_html.strip():
                 return HTMLParser().unescape(shelf_description_html.strip())
 
-        return None
+        self._extract_product_info_json()
+        return self.product_info_json.get('shortDescription')
 
     def _variants(self):
         if self._no_longer_available():
@@ -2973,23 +2974,20 @@ class WalmartScraper(Scraper):
                         return txt.strip()
 
     def _directions(self):
-        directions = self.tree_html.xpath("//section[contains(@class,'directions')]/p[2]")
-
-        if not directions:
-            directions = self.tree_html.xpath("//section[contains(@class,'js-directions')]/p[1]")
+        directions = self.tree_html.xpath("//section[contains(@class,'directions')]")
 
         if directions:
             directions = directions[0]
 
-            header = self.tree_html.xpath("//section[contains(@class,'js-directions')]/p[1]/b/text()")
+            directions_text = ''
 
-            if not header:
-                header = directions.xpath('./strong/text()')
+            for e in directions:
+                text_content = e.text_content().strip()
 
-            if header and 'Instructions' in header[0]:
-                for txt in directions.xpath('./text()'):
-                    if txt.strip():
-                        return txt.strip()
+                if e.tag == 'p' and text_content and not text_content  == 'Instructions:':
+                    directions_text += re.sub('\s*<[^>]*>\s*Instructions:\s*<[^>]*>\s*', '', html.tostring(e)).strip()
+
+            return directions_text
 
     def _canonical_link(self):
         canonical_link = self.tree_html.xpath("//link[@rel='canonical']/@href")[0]

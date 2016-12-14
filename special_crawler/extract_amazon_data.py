@@ -1253,7 +1253,7 @@ class AmazonScraper(Scraper):
     def _review_count(self):
         if not self.is_review_checked:
             self._reviews()
-        if self.review_list:
+        if self.review_list and len(self.review_list) == 5:
             sumup = 0
             for i,v in self.review_list:
                 sumup +=int(v)

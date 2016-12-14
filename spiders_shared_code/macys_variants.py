@@ -4,6 +4,12 @@ import lxml.html
 import itertools
 import re, copy
 
+def normalize_product_json_string(product_json_string):
+    #1st issue pattern ex ----> "\tRustic Woodland":
+    product_json_string = product_json_string.replace('"\t', '"')
+
+    return product_json_string
+
 
 class MacysVariants(object):
     IMAGE_BASE_URL = "http://slimages.macysassets.com/is/image/MCY/products/"
@@ -21,7 +27,7 @@ class MacysVariants(object):
 
     def _extract_product_info_json(self):
         try:
-            return json.loads(self.tree_html.xpath('//script[@id="productMainData" or @id="pdpMainData"]/text()')[0])
+            return json.loads(normalize_product_json_string(self.tree_html.xpath('//script[@id="productMainData" or @id="pdpMainData"]/text()')[0]))
         except:
             print "Parsing error of product info json"
         return None

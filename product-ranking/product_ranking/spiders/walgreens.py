@@ -206,6 +206,11 @@ class WalGreensProductsSpider(BaseProductsSpider):
             ).re('Item Code: (\d+)')
         )
 
+        regex = "[Ii][Dd]=prod(\d+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(prod, "reseller_id", reseller_id)
+
         prod_id = re.findall('ID=(.*)-', response.url)[0]
         review_url = self.REVIEW_API_URL.format(prod_id=prod_id)
         price_variants_url = self.PRICE_VARI_API_URL.format(prod_id=prod_id)

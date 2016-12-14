@@ -4,8 +4,9 @@ import string
 import urlparse
 
 from product_ranking.items import SiteProductItem, RelatedProduct, Price
-from product_ranking.spiders import BaseProductsSpider, cond_set
+from product_ranking.spiders import BaseProductsSpider, cond_set, cond_set_value
 from scrapy.log import ERROR
+import re
 
 
 class KruidvatProductsSpider(BaseProductsSpider):
@@ -87,6 +88,11 @@ class KruidvatProductsSpider(BaseProductsSpider):
             'brand',
             response.xpath("//var[@itemprop='brand']/text()").extract(),
         )
+
+        reseller_id_regex = "p/(\d+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, 'reseller_id', reseller_id)
 
         res = response.xpath(
             "//div[contains(@class,'component') "

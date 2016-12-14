@@ -147,6 +147,12 @@ class PepperfryProductsSpider(BaseProductsSpider):
         brand = response.css('input[name=brand_name] ::attr(value)')
         cond_set(prod, 'brand', brand.extract())
 
+        # reseller_id
+        regex = "-(\d+)\."
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(prod, "reseller_id", reseller_id)
+
         # related products
         related = []
         rel_key = ' '.join(response.xpath('//div[@class="moreby_brand"]'

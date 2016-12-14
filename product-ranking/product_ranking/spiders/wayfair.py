@@ -60,6 +60,8 @@ class WayfairProductSpider(BaseProductsSpider):
                 response.url
             ), WARNING)
 
+        cond_set_value(product, 'reseller_id', product_sku)
+
         # Set kitid
         # Needed to choose product own variants
         kit_id = is_empty(

@@ -59,12 +59,9 @@ class ChewyProductsSpider(ProductsSpider):
         return categories[-1] if categories else None
 
     def _parse_price(self, response):
-        price = response.css('.our-price::text').re('[\d\.]+')
+        price = response.xpath('//li[@class="our-price"]//span[@class="ga-eec__price"]/text()')[0].extract().strip()
 
-        if not price:
-            return None
-
-        return Price(price=price[0], priceCurrency='USD')
+        return price
 
     def _parse_image_url(self, response):
         image_url = response.xpath(
@@ -111,7 +108,7 @@ class ChewyProductsSpider(ProductsSpider):
 
     def _parse_is_out_of_stock(self, response):
         status = response.xpath(
-            '//*[@id="availability"]/span[text()="In Stock"]')
+            '//*[@id="availability"]/span[text()="In stock"]')
 
         return not bool(status)
 
@@ -122,10 +119,9 @@ class ChewyProductsSpider(ProductsSpider):
         return shipping_text == ' & FREE Shipping'
 
     def _parse_description(self, response):
-        description = response.xpath(
-            '//*[@class="longDescription"]').extract()
+        description = response.xpath('//section[contains(@class,"descriptions__content")]').extract()
 
-        return ''.join(description).strip() if description else None
+        return description[0] if description else None
 
     def send_next_request(self, reqs, response):
         """
@@ -138,10 +134,29 @@ class ChewyProductsSpider(ProductsSpider):
             new_meta["reqs"] = reqs
         return req.replace(meta=new_meta)
 
+    @staticmethod
+    def _parse_no_longer_available(response):
+        message = response.xpath(
+            '//div[@class="error" and '
+            'contains(., "The product you are trying to view is not currently available.")]')
+        return bool(message)
+
+    def _parse_reseller_id(self, response):
+        reseller_id = re.findall('dp\/(\d+)', response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        return reseller_id
+
     def parse_product(self, response):
         reqs = []
         product = response.meta['product']
         response.meta['product_response'] = response
+
+        if self._parse_no_longer_available(response):
+            product['no_longer_available'] = True
+            return product
+        else:
+            product['no_longer_available'] = False
+
         # Set locale
         product['locale'] = 'en_US'
 
@@ -180,6 +195,9 @@ class ChewyProductsSpider(ProductsSpider):
         # Sku
         sku = self._parse_sku(response)
         cond_set_value(product, 'sku', sku)
+
+        reseller_id = self._parse_reseller_id(response)
+        cond_set_value(product, 'reseller_id', reseller_id)
 
         # Brand
         brand = self._parse_brand(response)

@@ -214,6 +214,10 @@ class StaplesadvantageProductsSpider(ProductsSpider):
         cond_set(product, 'image_url', image_url)
         model = re.findall('"model" : "([^"]*)"', response.body)
         cond_set(product, 'model', model)
+        regex = "currentSKUNbr=(\d+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(product, "reseller_id", reseller_id)
         self._populate_related_products(response, product)
 
     def _populate_related_products(self, response, product):

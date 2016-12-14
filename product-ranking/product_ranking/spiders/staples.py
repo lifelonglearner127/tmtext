@@ -109,6 +109,10 @@ class StaplesProductsSpider(BaseProductsSpider):
         description = self.parse_description(response)
         cond_set_value(product, 'description', description)
 
+        # Parse reseller_id
+        reseller_id = self.parse_reseller_id(response)
+        cond_set_value(product, "reseller_id", reseller_id)
+
         product['buyer_reviews'] = BuyerReviews(
             num_of_reviews=js_data['review']['count'],
             average_rating=js_data['review']['rating'],
@@ -120,6 +124,12 @@ class StaplesProductsSpider(BaseProductsSpider):
             product['variants'] = []
         # Parse price, related_product, reviews
         return self.parse_addition_data(response, sku, js_data)
+
+    def parse_reseller_id(self, response):
+        regex = "product_(\d+)"
+        reseller_id = re.findall(regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        return reseller_id
 
     def parse_brand(self, product):
         title = product.get('title', None)

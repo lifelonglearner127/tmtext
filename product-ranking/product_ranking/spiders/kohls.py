@@ -145,6 +145,11 @@ class KohlsProductsSpider(BaseValidator, BaseProductsSpider):
         kv.setupSC(response)
         prod['variants'] = kv._variants()
 
+        reseller_id_regex = "prd-(\d+)"
+        reseller_id = re.findall(reseller_id_regex, response.url)
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(prod, 'reseller_id', reseller_id)
+
         cond_set_value(prod, 'locale', 'en-US')
         self._populate_from_html(response, prod)
 

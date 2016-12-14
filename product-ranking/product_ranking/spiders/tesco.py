@@ -190,6 +190,11 @@ class TescoProductsSpider(BaseProductsSpider):
 
         prod['url'] = response.url
 
+        regex = "id=([A-Z0-9\-]+)"
+        reseller_id = re.findall(regex, prod.get('url', ''))
+        reseller_id = reseller_id[0] if reseller_id else None
+        cond_set_value(prod, "reseller_id", reseller_id)
+
         cond_set(prod, 'locale', ['en-GB'])
 
         title = response.xpath(
@@ -231,6 +236,10 @@ class TescoProductsSpider(BaseProductsSpider):
             product["is_out_of_stock"] = not productdata["available"]
             product["url"] = "http://www.tesco.com/groceries/product/details/"\
                 "?id=" + str(productdata["productId"])
+            regex = "id=([A-Z0-9\-]+)"
+            reseller_id = re.findall(regex, product.get('url', ''))
+            reseller_id = reseller_id[0] if reseller_id else None
+            cond_set_value(product, "reseller_id", reseller_id)
             try:
                 product["price"] = Price(
                     price=productdata["price"],
@@ -242,5 +251,8 @@ class TescoProductsSpider(BaseProductsSpider):
             product["search_term"] = ""
             product["brand"] = is_empty(self.brand_from_title(product["title"]))
             product["site"] = is_empty(self.allowed_domains)
-
+        if self.product_url:
+            product['is_single_result'] = True
+            if product.get("search_term"):
+                del product['search_term']
         return product
