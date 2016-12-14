@@ -250,6 +250,10 @@ class WalmartScraper(Scraper):
                         return
 
                     url = resp.headers['location']
+
+                    if url.startswith('/'):
+                        url = 'https://www.walmart.com' + url
+
                     resp = self._request(url, allow_redirects=False)
 
                 if resp.status_code != 200:
@@ -1287,8 +1291,11 @@ class WalmartScraper(Scraper):
             if shelf_description_html and shelf_description_html.strip():
                 return HTMLParser().unescape(shelf_description_html.strip())
 
-        self._extract_product_info_json()
-        return self.product_info_json.get('shortDescription')
+        try:
+            self._extract_product_info_json()
+            return self.product_info_json.get('shortDescription')
+        except:
+            pass
 
     def _variants(self):
         if self._no_longer_available():
