@@ -117,10 +117,11 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
             site_name=self.allowed_domains[0],
             *args,
             **kwargs)
-        settings.overrides['CRAWLERA_ENABLED'] = True
-        default_headers = settings.get('DEFAULT_REQUEST_HEADERS')
-        default_headers['X-Crawlera-UA'] = 'pass'
-        settings.overrides['DEFAULT_REQUEST_HEADERS'] = default_headers
+        # settings.overrides['CRAWLERA_ENABLED'] = True
+        # default_headers = settings.get('DEFAULT_REQUEST_HEADERS')
+        # default_headers['X-Crawlera-UA'] = 'pass'
+        # default_headers['X-Forwarded-For'] = '127.0.0.1'
+        # settings.overrides['DEFAULT_REQUEST_HEADERS'] = default_headers
         self.user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36'
 
     def start_requests(self):
@@ -756,25 +757,17 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     @staticmethod
     def _get_product_json(product_id):
         url = "http://m.jcpenney.com/v4/products/{product_id}".format(product_id=product_id)
-        proxy_host = "content.crawlera.com"
-        proxy_port = "8010"
-        CRAWLERA_APIKEY = '0dc1db337be04e8fb52091b812070ccf'
-        proxy_auth = HTTPProxyAuth(CRAWLERA_APIKEY, "")
-        proxies = {"http": "http://{}:{}/".format(proxy_host, proxy_port), \
-                   "https": "https://{}:{}/".format(proxy_host, proxy_port)}
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36',
-            'X-Crawlera-UA': 'pass'}
-        text = requests.get(url, proxies=proxies, timeout=300, auth=proxy_auth, headers=headers,
-                                      verify=False).text
-        return json.loads(text) if text else None
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36'}
+        text = requests.get(url, headers=headers).text
+        return json.loads(text) if text else {}
 
     @staticmethod
     def _build_properties_dict(product_json):
-        properties = product_json.get('dimensions')
+        properties = product_json.get('dimensions', [])
         properties_dict = {}
         for property in properties:
-            options = property.get('options')
+            options = property.get('options', [])
             name = property.get('name')
             for option in options:
                 option_id = option.get('id')
@@ -786,7 +779,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
     def _extract_availability_json(body):
         pattern = re.compile('var\s*jcpPPJSON\s*=\s*({.+?})\s*;', re.DOTALL)
         availability_json = pattern.search(body)
-        return json.loads(availability_json.group(1)) if availability_json else None
+        return json.loads(availability_json.group(1)) if availability_json else {}
 
     @staticmethod
     def _build_availability_dict(availability_json):
@@ -794,7 +787,7 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
         products = availability_json.get('products')
         lots = products[0].get('lots') if products else []
         for lot in lots:
-            skus = lot.get('skus')
+            skus = lot.get('skus', [])
             for sku in skus:
                 sku_id = sku.get('skuID')
                 sku_availability = sku.get('skuStatus') != 'NotAvailable'
@@ -803,10 +796,10 @@ class JcpenneyProductsSpider(BaseValidator, BaseProductsSpider):
 
     @staticmethod
     def _build_variants(product_json, properties_dict, availability_dict, price):
-        lots = product_json.get('lots')
+        lots = product_json.get('lots', [])
         variants = []
         for lot in lots:
-            items = lot.get('items')
+            items = lot.get('items', [])
             for item in items:
                 sku_id = item.get('id')
                 variant = {}
