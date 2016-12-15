@@ -224,7 +224,7 @@ SUPPORTED_SITES = {
                     "jet" : JetScraper,
                     "shoprite" : ShopriteScraper,
                     "hayneedle" : HayneedleScraper,
-                    "auchan" : AuchanfrScraper
+                    "auchan" : AuchanfrScraper,
                     "allmodern" : AllmodernScraper,
                     "ah" : AhScraper,
                     "zulily" : ZulilyScraper,
