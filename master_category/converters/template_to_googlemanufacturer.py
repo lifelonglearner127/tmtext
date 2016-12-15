@@ -57,6 +57,12 @@ def generate_bullets(desc):
     return [desc]
 
 
+def parse_xls_value(val):
+    if type(val) == float:
+        return '%.f' % val
+    return val
+
+
 def generate_google_manufacturer_xml(template_env, input_file):
     available_extensions = ['.csv', '.xls']
     items = []
@@ -117,11 +123,11 @@ def generate_google_manufacturer_xml(template_env, input_file):
                         ci[c.value] = i
                 else:
                     data = {
-                        'id': row[ci[MPN]].value if ci[MPN] > -1 else '',
+                        'id': parse_xls_value(row[ci[MPN]].value) if ci[MPN] > -1 else '',
                         'brand': row[ci[BRAND]].value if ci[BRAND] > -1 else '',
                         'title': row[ci[TITLE]].value if ci[TITLE] > -1 else '',
-                        'gtin': row[ci[GTIN]].value if ci[GTIN] > -1 else '',
-                        'mpn': row[ci[MPN]].value if ci[MPN] > -1 else '',
+                        'gtin': parse_xls_value(row[ci[GTIN]].value) if ci[GTIN] > -1 else '',
+                        'mpn': parse_xls_value(row[ci[MPN]].value) if ci[MPN] > -1 else '',
                         'description': row[ci[DESC]].value if ci[DESC] > -1 else '',
                         'bullet_points': row[ci[L_DESC]].value if ci[L_DESC] > -1 else '',
                     }
