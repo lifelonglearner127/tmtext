@@ -219,7 +219,7 @@ def switch_branch_if_required(metadata):
                'git checkout {default_branch} -- remote_instance_starter.py &&'
                ' git checkout {default_branch} -- upload_logs_to_s3.py')
         cmd = cmd.format(branch=branch_name, default_branch=default_branch)
-        logger.info("Run '%s'", cmd)
+        logger.info("Run command '%s'", cmd)
         os.system(cmd)
 
 
@@ -417,17 +417,21 @@ def put_msg_to_sqs(queue_name_or_instance, msg):
         write_msg_to_sqs(queue_name_or_instance, msg)
 
 
-def compress_multiple_files(output_fname, *filenames):
+def compress_multiple_files(output_fname, filenames):
     """ Creates a single ZIP archive with the given files in it """
     try:
         import zlib
         mode = zipfile.ZIP_DEFLATED
     except ImportError:
         mode = zipfile.ZIP_STORED
-    zf = zipfile.ZipFile(output_fname, 'a', mode, allowZip64=True)
-    for filename in filenames:
-        zf.write(filename=filename, arcname=os.path.basename(filename))
-    zf.close()
+    try:
+        zf = zipfile.ZipFile(output_fname, 'a', mode, allowZip64=True)
+        for filename in filenames:
+            zf.write(filename=filename, arcname=os.path.basename(filename))
+    except Exception as e:
+        logger.error('Error trying to zip multiple log files: {}'.format(e))
+    else:
+        zf.close()
 
 
 def put_file_into_s3(bucket_name, fname, compress=True,
@@ -673,14 +677,15 @@ class ScrapyTask(object):
             s += self.current_signal[1]['wait']
 
         # This is needed when there are low number of jobs, so
-        if self.is_screenshot_job():
-            output_path = self.get_output_path()
-            jl_results_path = output_path + '.screenshot.jl'
-            if not os.path.exists(jl_results_path) or os.path.exists(
-                    jl_results_path) and not os.path.getsize(jl_results_path):
-                logger.warning('Screenshot output file does not exist, adding 90 seconds to max wait time')
-                # screenshot task not finished yet? add 90 seconds to max wait time
-                s += 90
+        # Already handled in other place
+        # if self.is_screenshot_job():
+        #     output_path = self.get_output_path()
+        #     jl_results_path = output_path + '.screenshot.jl'
+        #     if not os.path.exists(jl_results_path) or os.path.exists(
+        #             jl_results_path) and not os.path.getsize(jl_results_path):
+        #         logger.warning('Screenshot output file does not exist, adding 90 seconds to max wait time')
+        #         # screenshot task not finished yet? add 90 seconds to max wait time
+        #         s += 90
         return s
 
     def _dispose(self):
@@ -688,12 +693,14 @@ class ScrapyTask(object):
         used to terminate scrapy process, called from finish method
         kill process if running, drop connection if opened
         """
+
         if self.process_bsr and self.process_bsr.poll() is None:
             try:
                 os.killpg(os.getpgid(self.process_bsr.pid), 9)
             except OSError as e:
                 logger.error('OSError: %s', e)
         if self.process and self.process.poll() is None:
+            logger.warning('Trying to dispose process: {}'.format(self.process.pid))
             try:
                 os.killpg(os.getpgid(self.process.pid), 9)
             except OSError as e:
@@ -788,7 +795,7 @@ class ScrapyTask(object):
         logger.warning('Trying to zip all daemon log files, got log_files: {}'.format(log_files))
         if os.path.exists(output_fname):
             os.unlink(output_fname)
-        compress_multiple_files(output_fname, *log_files)
+        compress_multiple_files(output_fname, log_files)
         return output_fname
 
     @staticmethod
@@ -1273,7 +1280,7 @@ class ScrapyTask(object):
 
     def report(self):
         """returns string with the task running stats"""
-        s = 'Task #%s, command %r.\n' % (self.task_data.get('task_id', 0),
+        s = 'Parsed task #%s, command %r.\n' % (self.task_data.get('task_id', 0),
                                          self._parse_task_and_get_cmd())
         if self.start_date:
             s += 'Task started at %s.\n' % str(self.start_date.time())
@@ -1413,7 +1420,7 @@ def notify_cache(task, is_from_cache=False):
     """send request to cache (for statistics)"""
     url = CACHE_HOST + CACHE_URL_STATS
     json_task = json.dumps(task)
-    logger.info('Notify cache task: %s', json_task)
+    logger.info('notify_cache: sending request to cache for stats, task: %s', json_task)
     data = dict(task=json_task, is_from_cache=json.dumps(is_from_cache))
     if 'start_time' in task and task['start_time']:
         if ('finish_time' in task and not task['finish_time']) or \
@@ -1423,10 +1430,10 @@ def notify_cache(task, is_from_cache=False):
     try:
         resp = requests.post(url, data=data, timeout=CACHE_TIMEOUT,
                              auth=CACHE_AUTH)
-        logger.info('Cache: updated task (%s), status %s.',
+        logger.info('notify_cache: updated task (%s), status %s.',
                     task.get('task_id'), resp.status_code)
     except Exception as ex:
-        logger.warning('Cache: update completed task error: %s.', ex)
+        logger.warning('notify_cache: update completed task error: %s.', ex)
 
 
 def del_duplicate_tasks(tasks):
@@ -1451,7 +1458,10 @@ def is_task_taken(new_task, tasks):
     new_task_id = new_task.get('task_id')
     if new_task_id is None:
         return False
-    return new_task_id in task_ids
+    taken = bool(new_task_id in task_ids)
+    if taken:
+        logger.info('Task {} is already taken'.format(new_task_id))
+    return taken
 
 
 def store_tasks_metrics(task, redis_db):
@@ -1728,6 +1738,7 @@ def main():
     # max number of tries to get tasks is reached
     while len(tasks_taken) < MAX_CONCURRENT_TASKS and max_tries and \
             not is_end_billing_instance_time():
+        logger.info('Tasks taken/Max concurrent tasks: {}/{}'.format(len(tasks_taken), MAX_CONCURRENT_TASKS))
         # Skip if needed getting first task. After restarting task
         # in old options. For work scrapy daemon with a new source code
         # from new branch and with old task.
